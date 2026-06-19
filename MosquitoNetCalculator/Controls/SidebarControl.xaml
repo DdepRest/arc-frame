@@ -1,0 +1,92 @@
+<UserControl x:Class="MosquitoNetCalculator.Controls.SidebarControl"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:controls="clr-namespace:MosquitoNetCalculator.Controls">
+    <Border Background="{DynamicResource Surface}" CornerRadius="10"
+            Margin="8,8,0,8" Padding="0"
+            BorderBrush="{DynamicResource Border}" BorderThickness="1"
+            Style="{DynamicResource Card}">
+        <ScrollViewer VerticalScrollBarVisibility="Hidden"
+                      HorizontalScrollBarVisibility="Disabled"
+                      Padding="0">
+            <StackPanel Margin="10,10,10,10">
+                <!-- ЗАКАЗЧИК Card -->
+                <Border x:Name="CardClient" Background="{DynamicResource SectionBg}" CornerRadius="8" Padding="12" Margin="0,0,0,8" Opacity="0">
+                    <StackPanel>
+                        <StackPanel Orientation="Horizontal" Margin="0,0,0,10">
+                            <TextBlock Style="{DynamicResource FluentIconSection}" Text="&#xE77B;"/>
+                            <TextBlock Text="ЗАКАЗЧИК" Style="{DynamicResource SectionLabel}" Margin="0"/>
+                        </StackPanel>
+                            <TextBlock Text="Имя" Style="{DynamicResource FieldLabel}"/>
+                            <TextBox x:Name="TxtClientName" Margin="0,0,0,10"
+                                     Text="{Binding ClientInfo.ClientName, UpdateSourceTrigger=PropertyChanged}"
+                                     GotFocus="SelectAll_OnFocus"/>
+                            <TextBlock Text="Телефон" Style="{DynamicResource FieldLabel}"/>
+                            <TextBox x:Name="TxtClientPhone" Margin="0,0,0,10"
+                                     Text="{Binding ClientInfo.ClientPhone, UpdateSourceTrigger=PropertyChanged}"
+                                     GotFocus="SelectAll_OnFocus"/>
+                            <TextBlock Text="Адрес" Style="{DynamicResource FieldLabel}"/>
+                            <TextBox x:Name="TxtClientAddress" Margin="0,0,0,0"
+                                     Text="{Binding ClientInfo.ClientAddress, UpdateSourceTrigger=PropertyChanged}"
+                                     AcceptsReturn="False"
+                                     GotFocus="SelectAll_OnFocus"/>
+                    </StackPanel>
+                </Border>
+
+                <!-- ДОГОВОР Card -->
+                <Border x:Name="CardContract" Background="{DynamicResource SectionBg}" CornerRadius="8" Padding="12" Margin="0,0,0,8" Opacity="0">
+                    <StackPanel>
+                        <StackPanel Orientation="Horizontal" Margin="0,0,0,10">
+                            <TextBlock Style="{DynamicResource FluentIconSection}" Text="&#xE8A5;"/>
+                            <TextBlock Text="ДОГОВОР" Style="{DynamicResource SectionLabel}" Margin="0"/>
+                        </StackPanel>
+                        <TextBlock Text="Номер" Style="{DynamicResource FieldLabel}"/>
+                        <Grid Margin="0,0,0,10">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+                            <TextBox x:Name="TxtContractPrefix" Text="1"
+                                     TextChanged="TxtContractPrefix_TextChanged"
+                                     LostFocus="TxtContractPrefix_LostFocus"
+                                     HorizontalContentAlignment="Center" Padding="4,6"
+                                     GotFocus="SelectAll_OnFocus"/>
+                            <TextBlock Grid.Column="1" Text="&#x2014;" VerticalAlignment="Center"                                                Margin="6,0" Foreground="{DynamicResource TextMuted}" FontWeight="Medium"/>
+                            <TextBox x:Name="TxtContractNumber" Grid.Column="2"
+                                     Text="{Binding ClientInfo.ContractNumber, Mode=OneWay}"
+                                     IsReadOnly="True" HorizontalContentAlignment="Center"
+                                     IsTabStop="False"
+                                     Style="{DynamicResource ReadOnlyTextBox}" Padding="4,6"/>
+                        </Grid>
+                        <TextBlock Text="Дата" Style="{DynamicResource FieldLabel}"/>
+                        <DatePicker x:Name="DpContractDate" Margin="0,0,0,10"
+                                    SelectedDate="{Binding ClientInfo.ContractDate}"/>
+                        <TextBlock Text="Статус" Style="{DynamicResource FieldLabel}"/>
+                        <ComboBox x:Name="CmbStatus" IsEditable="False" Margin="0,0,0,0"/>
+                </StackPanel>
+                </Border>
+
+                <!-- ПРИМЕЧАНИЯ Card -->
+                <Border x:Name="CardNotes" Background="{DynamicResource SectionBg}" CornerRadius="8" Padding="12" Margin="0,0,0,8" Opacity="0">
+                    <StackPanel>
+                        <StackPanel Orientation="Horizontal" Margin="0,0,0,10">
+                            <TextBlock Style="{DynamicResource FluentIconSection}" Text="&#xE70B;"/>
+                            <TextBlock Text="ПРИМЕЧАНИЯ" Style="{DynamicResource SectionLabel}" Margin="0"/>
+                        </StackPanel>
+                        <TextBox x:Name="TxtNotes" Margin="0,0,0,0"
+                                 Text="{Binding ClientInfo.Notes, UpdateSourceTrigger=PropertyChanged}"
+                                 AcceptsReturn="True" Height="60"
+                                 VerticalScrollBarVisibility="Hidden"
+                                 TextWrapping="Wrap"
+                                 VerticalContentAlignment="Top"
+                                 GotFocus="SelectAll_OnFocus"/>
+                    </StackPanel>
+                </Border>
+
+                <!-- ДОПОЛНИТЕЛЬНОЕ КП (UserControl) -->
+                <controls:AdditionalKpsControl x:Name="CardAdditionalKp"/>
+            </StackPanel>
+    </ScrollViewer>
+</Border>
+</UserControl>

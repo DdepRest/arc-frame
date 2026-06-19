@@ -1,0 +1,42 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net8.0-windows</TargetFramework>
+    <Nullable>enable</Nullable>
+    <UseWPF>true</UseWPF>
+    <EnableWindowsTargeting>true</EnableWindowsTargeting>
+    <ApplicationIcon>Resources\app_icon.ico</ApplicationIcon>
+    <Version>3.27.0.0</Version>
+    <RuntimeIdentifiers>win-x64</RuntimeIdentifiers>
+    <!-- Treat every compiler / NuGet warning as an error so the build fails
+         closed if any future change reintroduces a warning. The current
+         source tree compiles clean (verified after the CS8618 suppress-scope
+         fix and UnifyTitle refactor), so enabling this is a zero-cost
+         safety net. NU*** package warnings can be silenced per-id via
+         <NoWarn> if they ever surface. -->
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Web.WebView2" Version="1.0.2210.55" />
+  </ItemGroup>
+
+  <!-- Expose `internal` members to the test project so regression tests
+       can verify private implementation details (e.g. GetInlineTemplate
+       is `internal` so PrintServiceTests can assert it has exactly one
+       `.install-mark` CSS rule, guarding the inline print template
+       against duplication that the public LoadTemplate path would mask
+       by preferring the embedded resource). -->
+  <ItemGroup>
+    <InternalsVisibleTo Include="MosquitoNetCalculator.Tests" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Content Include="prices.json" CopyToOutputDirectory="PreserveNewest" />
+    <EmbeddedResource Include="Resources\print_template.html" />
+    <Resource Include="Resources\app_icon.ico" />
+  </ItemGroup>
+
+
+</Project>
