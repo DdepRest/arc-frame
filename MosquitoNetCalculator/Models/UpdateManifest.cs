@@ -5,7 +5,7 @@ namespace MosquitoNetCalculator.Models
 {
     /// <summary>
     /// DTO для манифеста releases.json, скачиваемого с GitHub Releases.
-    /// Поля соответствуют структуре, описанной в update-system-spec.md §2.3.
+    /// Поля: latest, minRequired, releases[] с version/url/size/sha256.
     /// </summary>
     public class UpdateManifest
     {
