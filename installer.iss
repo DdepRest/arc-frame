@@ -15,7 +15,7 @@
 ; 4. Готовый установщик будет в Output\SetupMosquitoNetCalculator.exe
 
 #define MyAppName "MosquitoNetCalculator"
-#define MyAppVersion "3.34.0"
+#define MyAppVersion "3.34.1"
 #define MyAppPublisher "MosquitoNet"
 #define MyAppURL ""
 #define MyAppExeName "MosquitoNetCalculator.exe"
@@ -680,16 +680,9 @@ end;
 /// Спрашивает пользователя, нужно ли удалить все данные (заказы, настройки, цены).
 /// Используется как Check-функция в [UninstallRun] — возвращает True только
 /// если пользователь явно подтвердил удаление в диалоговом окне.
-/// При тихой деинсталляции (/VERYSILENT) данные всегда сохраняются.
+/// При тихой деинсталляции MsgBox вернёт IDNO (MB_DEFBUTTON2) — данные сохраняются.
 function ShouldDeleteAppData: Boolean;
 begin
-  // Silent uninstall — never delete user data without explicit consent
-  if UninstallSilent() then
-  begin
-    Result := False;
-    Exit;
-  end;
-
   Result := MsgBox(
     'Удалить все данные программы?' + #13#10 + #13#10 +
     'Будут безвозвратно удалены:' + #13#10 +
