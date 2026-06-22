@@ -1,0 +1,99 @@
+<Window x:Class="MosquitoNetCalculator.PrintPreviewWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:wv2="clr-namespace:Microsoft.Web.WebView2.Wpf;assembly=Microsoft.Web.WebView2.Wpf"
+        Title="Предпросмотр КП"
+        Width="1050" Height="780"
+        MinWidth="800" MinHeight="600"
+        WindowStartupLocation="CenterOwner"
+        ShowInTaskbar="False"
+        Background="#FFFFFF">
+    <Window.Resources>
+        <SolidColorBrush x:Key="PrintAccent" Color="#5B7BB4"/>
+        <SolidColorBrush x:Key="PrintAccentHover" Color="#4A6AA0"/>
+        <SolidColorBrush x:Key="PrintAccentPress" Color="#3E5A8A"/>
+        <SolidColorBrush x:Key="PrintSurface" Color="#FFFFFF"/>
+        <SolidColorBrush x:Key="PrintBorder" Color="#DDE1E8"/>
+        <SolidColorBrush x:Key="PrintBorderHover" Color="#B8BFCC"/>
+        <SolidColorBrush x:Key="PrintTextSecondary" Color="#6B7280"/>
+        <SolidColorBrush x:Key="PrintRowHover" Color="#F7F8FC"/>
+
+        <Style x:Key="PrintPrimaryButton" TargetType="Button">
+            <Setter Property="Background" Value="{StaticResource PrintAccent}"/>
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="FontSize" Value="12"/>
+            <Setter Property="FontWeight" Value="Medium"/>
+            <Setter Property="Padding" Value="18,8"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="Bd" Background="{Binding Background, RelativeSource={RelativeSource TemplatedParent}}"
+                                CornerRadius="6" Padding="{Binding Padding, RelativeSource={RelativeSource TemplatedParent}}">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="Bd" Property="Background" Value="{StaticResource PrintAccentHover}"/>
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter TargetName="Bd" Property="Background" Value="{StaticResource PrintAccentPress}"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <Style x:Key="PrintGhostButton" TargetType="Button">
+            <Setter Property="Background" Value="{StaticResource PrintSurface}"/>
+            <Setter Property="Foreground" Value="{StaticResource PrintTextSecondary}"/>
+            <Setter Property="FontSize" Value="12"/>
+            <Setter Property="FontWeight" Value="Medium"/>
+            <Setter Property="Padding" Value="16,8"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="BorderBrush" Value="{StaticResource PrintBorder}"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="Bd" Background="{Binding Background, RelativeSource={RelativeSource TemplatedParent}}"
+                                CornerRadius="6" Padding="{Binding Padding, RelativeSource={RelativeSource TemplatedParent}}"
+                                BorderThickness="1" BorderBrush="{Binding BorderBrush, RelativeSource={RelativeSource TemplatedParent}}">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="Bd" Property="Background" Value="{StaticResource PrintRowHover}"/>
+                                <Setter TargetName="Bd" Property="BorderBrush" Value="{StaticResource PrintBorderHover}"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+    </Window.Resources>
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+
+        <!-- Toolbar -->
+        <Border Grid.Row="0" Background="#F4F5F9" CornerRadius="0"
+                Padding="16,10" Margin="0"
+                BorderBrush="#DDE1E8" BorderThickness="0,0,0,1">
+            <StackPanel Orientation="Horizontal">
+                <Button Content="Печать" Style="{StaticResource PrintPrimaryButton}"
+                        Click="BtnPrint_Click" Margin="0,0,10,0"
+                        ToolTip="Открыть диалог печати повторно (открывается автоматически при загрузке)"/>
+                <Button Content="Закрыть" Style="{StaticResource PrintGhostButton}"
+                        Click="BtnClose_Click"/>
+            </StackPanel>
+        </Border>
+
+        <!-- WebView2 browser control -->
+        <wv2:WebView2 x:Name="WebView" Grid.Row="1"/>
+    </Grid>
+</Window>

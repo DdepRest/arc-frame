@@ -1,0 +1,105 @@
+﻿<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+        <!-- ═══════════════════════════════════════════════════════ -->
+        <!-- TOAST NOTIFICATION STYLE                                 -->
+        <!-- ═══════════════════════════════════════════════════════ -->
+        <Style x:Key="ToastBorder" TargetType="Border">
+            <Setter Property="Background" Value="{DynamicResource Surface}"/>
+            <Setter Property="CornerRadius" Value="8"/>
+            <Setter Property="Padding" Value="14,10"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource SubtleBorder}"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="Effect">
+                <Setter.Value>
+                    <DropShadowEffect BlurRadius="20" ShadowDepth="4" Opacity="0.10" Direction="270" Color="#1A1A1A"/>
+                </Setter.Value>
+            </Setter>
+        </Style>
+        <!-- ═══════════════════════════════════════════════════════ -->
+        <!-- SEPARATOR — subtle, modern                              -->
+        <!-- ═══════════════════════════════════════════════════════ -->
+        <Style TargetType="Separator">
+            <Setter Property="Height" Value="1"/>
+            <Setter Property="Margin" Value="8,4"/>
+            <Setter Property="Background" Value="{DynamicResource SubtleBorder}"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Separator">
+                        <Border Background="{Binding Background, RelativeSource={RelativeSource TemplatedParent}}"
+                                Height="{Binding Height, RelativeSource={RelativeSource TemplatedParent}}"
+                                Margin="{Binding Margin, RelativeSource={RelativeSource TemplatedParent}}"
+                                SnapsToDevicePixels="True"/>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+        <!-- ═══════════════════════════════════════════════════════ -->
+        <!-- LISTVIEW — Orders tab                                   -->
+        <!-- ═══════════════════════════════════════════════════════ -->
+        <Style TargetType="ListView">
+            <Setter Property="Background" Value="{DynamicResource Surface}"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource Border}"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="FontSize" Value="13"/>
+            <Setter Property="Foreground" Value="{DynamicResource TextPrimary}"/>
+        </Style>
+
+        <!-- GridViewColumnHeader — Fluent -->
+        <Style TargetType="GridViewColumnHeader">
+            <Setter Property="Background" Value="{DynamicResource HeaderBg}"/>
+            <Setter Property="Foreground" Value="{DynamicResource HeaderText}"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="FontSize" Value="11"/>
+            <Setter Property="HorizontalContentAlignment" Value="Center"/>
+            <Setter Property="Padding" Value="10,8"/>
+            <Setter Property="MinHeight" Value="36"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource HeaderBorder}"/>
+            <Setter Property="BorderThickness" Value="0,0,1,0"/>
+            <Style.Triggers>                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter Property="Background" Value="{DynamicResource HeaderBorder}"/>
+                                <Setter Property="Foreground" Value="{DynamicResource HeaderText}"/>
+                            </Trigger>
+                <Trigger Property="IsPressed" Value="True">
+                    <Setter Property="Background" Value="{DynamicResource HeaderPress}"/>
+                    <Setter Property="Foreground" Value="{DynamicResource TextMuted}"/>
+                </Trigger>
+            </Style.Triggers>
+        </Style>
+
+        <!-- ListViewItem — Fluent alternating rows -->
+        <Style TargetType="ListViewItem">
+            <Setter Property="Background" Value="{DynamicResource Surface}"/>
+            <Setter Property="Foreground" Value="{DynamicResource TextPrimary}"/>
+            <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
+            <Setter Property="VerticalContentAlignment" Value="Center"/>
+            <Setter Property="MinHeight" Value="38"/>
+            <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
+            <Style.Triggers>
+                <Trigger Property="ItemsControl.AlternationIndex" Value="1">
+                    <Setter Property="Background" Value="{DynamicResource RowAlt}"/>
+                </Trigger>
+                <Trigger Property="IsMouseOver" Value="True">
+                    <Setter Property="Background" Value="{DynamicResource RowHover}"/>
+                </Trigger>
+                <Trigger Property="IsSelected" Value="True">
+                    <Setter Property="Background" Value="{DynamicResource AccentLight}"/>
+                    <Setter Property="Foreground" Value="{DynamicResource TextPrimary}"/>
+                </Trigger>
+                <MultiTrigger>
+                    <MultiTrigger.Conditions>
+                        <Condition Property="ItemsControl.AlternationIndex" Value="1"/>
+                        <Condition Property="IsMouseOver" Value="True"/>
+                    </MultiTrigger.Conditions>
+                    <Setter Property="Background" Value="{DynamicResource RowAltHover}"/>
+                </MultiTrigger>
+                <MultiTrigger>
+                    <MultiTrigger.Conditions>
+                        <Condition Property="ItemsControl.AlternationIndex" Value="1"/>
+                        <Condition Property="IsSelected" Value="True"/>
+                    </MultiTrigger.Conditions>
+                    <Setter Property="Background" Value="{DynamicResource RowAltSelected}"/>
+                </MultiTrigger>
+            </Style.Triggers>
+        </Style>
+</ResourceDictionary>

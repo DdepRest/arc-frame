@@ -367,7 +367,10 @@ namespace MosquitoNetCalculator
                 ClientInfo.ClientAddress = "";
                 ClientInfo.Notes = "";
                 ClientInfo.HasAdditionalKp = false;
+                ClientInfo.AdditionalKps.Clear();
                 Sidebar.CmbOrderStatus.SelectedItem = OrderStatuses.All[0];
+
+                QuickAddControl.ResetAnwisMode();
 
                 ViewModel.CalcVM.UnsubscribeAll(UpdateTotal);
                 ViewModel.CalcVM.ClearAll();
@@ -531,39 +534,21 @@ namespace MosquitoNetCalculator
             }
         }
 
-        internal void AnwisModePill_Click(object sender, RoutedEventArgs e)
+        internal void AnwisModePillRightClick(object sender, MouseButtonEventArgs e)
         {
-            if (sender is not Button btn || btn.DataContext is not OrderItem item) return;
+            if (sender is not FrameworkElement fe || fe.DataContext is not OrderItem item) return;
             if (!item.IsAnwis) return;
 
-            var menu = new ContextMenu
-            {
-                Style = (Style)FindResource(typeof(ContextMenu))
-            };
-
-            void SetMode(AnwisSizeMode mode)
-            {
-                PushUndo();
-                item.AnwisSizeMode = mode;
-                MarkDirty();
-            }
-
-            foreach (AnwisSizeMode mode in Enum.GetValues<AnwisSizeMode>())
-            {
-                var mi = new MenuItem
+            var menu = Controls.AnwisContextMenuBuilder.Build(
+                item.AnwisSizeMode,
+                mode =>
                 {
-                    Header = $"{Services.AnwisSizeService.FullLabels[mode]} — {Services.AnwisSizeService.Descriptions[mode]}",
-                    ToolTip = Services.AnwisSizeService.HintTexts.GetValueOrDefault(mode, ""),
-                    IsCheckable = true,
-                    IsChecked = item.AnwisSizeMode == mode
-                };
-                var capturedMode = mode;
-                mi.Click += (_, _) => SetMode(capturedMode);
-                menu.Items.Add(mi);
-            }
+                    PushUndo();
+                    item.AnwisSizeMode = mode;
+                    MarkDirty();
+                },
+                fe);
 
-            menu.PlacementTarget = btn;
-            menu.Placement = System.Windows.Controls.Primitives.PlacementMode.Bottom;
             menu.IsOpen = true;
         }
 
@@ -757,7 +742,6 @@ namespace MosquitoNetCalculator
             DataGridColumnAutoSizer.SetColumnMinWidth(grid, DataGridColumnAutoSizer.FindCol(grid, "Монтаж"), "Монтаж",
                 OrderItems.Select(i => i.InstallationDisplay),
                 contentPad: 40, contentWeight: FontWeights.Bold, contentFontSize: 14);
-            DataGridColumnAutoSizer.SetColumnMinWidth(grid, DataGridColumnAutoSizer.FindCol(grid, "Режим"), "Режим");
             DataGridColumnAutoSizer.SetColumnMinWidth(grid, DataGridColumnAutoSizer.FindCol(grid, "Кол-во"), "Кол-во",
                 OrderItems.Select(i => i.Quantity > 0 ? i.Quantity.ToString() : ""),
                 contentPad: 24);
@@ -942,6 +926,20 @@ namespace MosquitoNetCalculator
 
         private void OrdersList_MouseDoubleClick(object sender, MouseButtonEventArgs e)
         {
+            // MouseDoubleClick fires on the entire DataGrid — including
+            // the scrollbars and column headers. Double-clicking a column
+            // header (to autofit its width, for example) must NOT silently
+            // overwrite the user's currently-loaded order in the «Расчёт»
+            // tab. Skip when the double-click originated from a header
+            // chrome element (column header or row header).
+            var hit = e.OriginalSource as DependencyObject;
+            while (hit != null)
+            {
+                if (hit is System.Windows.Controls.Primitives.DataGridColumnHeader
+                    || hit is System.Windows.Controls.Primitives.DataGridRowHeader)
+                    return;
+                hit = VisualTreeHelper.GetParent(hit);
+            }
             OpenSelectedOrder();
         }
 
@@ -998,6 +996,8 @@ namespace MosquitoNetCalculator
                     }
 
                     Sidebar.CmbOrderStatus.SelectedItem = order.Status;
+
+                    QuickAddControl.ResetAnwisMode();
 
                     ViewModel.CalcVM.UnsubscribeAll(UpdateTotal);
                     ViewModel.CalcVM.LoadFromOrderData(order, UpdateTotal);
@@ -1222,14 +1222,43 @@ namespace MosquitoNetCalculator
 
         internal void OrdersList_Sorting(object sender, DataGridSortingEventArgs e)
         {
-            foreach (var col in OrdersHistoryControl.OrdersGrid.Columns)
-            {
-                string clean = DataGridColumnAutoSizer.StripSortIndicator(col.Header?.ToString());
-                if (col.SortDirection.HasValue)
-                    col.Header = clean + (col.SortDirection.Value == ListSortDirection.Ascending ? " \u25B2" : " \u25BC");
-                else
-                    col.Header = clean;
-            }
+            // DataGrid raises the Sorting event BEFORE applying the new
+            // SortDirection to e.Column. Reading col.SortDirection inside
+            // this handler gives the OLD value, so any indicator update
+            // here lags by one click (the previous glyph persists).
+            // Defer the refresh until after WPF's internal Sorting pass
+            // completes — Background priority is the lowest normal
+            // priority and runs after default input processing.
+            Dispatcher.BeginInvoke(new Action(UpdateSortIndicatorsFromSortDescriptions),
+                System.Windows.Threading.DispatcherPriority.Background);
+        }
+
+        /// <summary>
+        /// Resolves the property name WPF uses internally for sorting
+        /// a column — explicit <c>SortMemberPath</c> takes priority,
+        /// otherwise it falls back to the binding's <c>Path.Path</c> for
+        /// <see cref="DataGridBoundColumn"/> children (TextColumn etc.).
+        /// Returns null when neither is available — the column can't be
+        /// matched to a <see cref="SortDescription"/> in that case and
+        /// must be treated as un-sorted.
+        ///
+        /// We need this because OrdersHistoryControl.xaml does NOT set
+        /// SortMemberPath on every column — WPF auto-derives it from the
+        /// binding path AT SORT TIME and stores the result in
+        /// <c>Items.SortDescriptions[i].PropertyName</c>. Reading
+        /// <c>col.SortMemberPath</c> post-hoc returns an empty string for
+        /// these columns, so naively matching it against the
+        /// SortDescription wipes the sort indicator on every Refresh.
+        /// </summary>
+        private static string? GetColumnSortKey(System.Windows.Controls.DataGridColumn col)
+        {
+            if (!string.IsNullOrEmpty(col.SortMemberPath))
+                return col.SortMemberPath;
+            if (col is System.Windows.Controls.DataGridBoundColumn bound
+                && bound.Binding is System.Windows.Data.Binding b
+                && b.Path != null)
+                return b.Path.Path;
+            return null;
         }
 
         internal void UpdateSortIndicatorsFromSortDescriptions()
@@ -1237,8 +1266,12 @@ namespace MosquitoNetCalculator
             foreach (var col in OrdersHistoryControl.OrdersGrid.Columns)
             {
                 string clean = DataGridColumnAutoSizer.StripSortIndicator(col.Header?.ToString());
-                var match = OrdersHistoryControl.OrdersGrid.Items.SortDescriptions.FirstOrDefault(x => x.PropertyName == col.SortMemberPath);
-                if (match.PropertyName != null)
+                string? sortKey = GetColumnSortKey(col);
+                var match = !string.IsNullOrEmpty(sortKey)
+                    ? OrdersHistoryControl.OrdersGrid.Items.SortDescriptions
+                        .FirstOrDefault(x => x.PropertyName == sortKey)
+                    : default;
+                if (!string.IsNullOrEmpty(match.PropertyName))
                 {
                     col.Header = clean + (match.Direction == ListSortDirection.Ascending ? " \u25B2" : " \u25BC");
                     col.SortDirection = match.Direction;

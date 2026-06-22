@@ -15,7 +15,7 @@
 ; 4. Готовый установщик будет в Output\SetupMosquitoNetCalculator.exe
 
 #define MyAppName "MosquitoNetCalculator"
-#define MyAppVersion "3.27.0"
+#define MyAppVersion "3.34.0"
 #define MyAppPublisher "MosquitoNet"
 #define MyAppURL ""
 #define MyAppExeName "MosquitoNetCalculator.exe"
@@ -62,20 +62,25 @@ Name: "english"; MessagesFile: "compiler:Default.isl"
 Name: "desktopicon"; Description: "Создать ярлык на &рабочем столе"; GroupDescription: "Дополнительные значки:"; Flags: checkedonce
 
 [Files]
-; Все файлы из папки publish (включая подпапки runtimes, Resources)
-Source: "publish\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
+; Основные файлы программы — копируются в выбранную пользователем папку.
+Source: "publish\MosquitoNetCalculator.exe"; DestDir: "{app}"; Flags: ignoreversion
+Source: "publish\*.dll"; DestDir: "{app}"; Flags: ignoreversion
+Source: "publish\app_icon.ico"; DestDir: "{app}"; Flags: ignoreversion
+Source: "publish\runtimes\*"; DestDir: "{app}\runtimes"; Flags: ignoreversion recursesubdirs createallsubdirs
 
 [Icons]
-; Ярлык в меню Пуск
+; Ярлыки в меню Пуск и на рабочем столе
 Name: "{group}\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"; WorkingDir: "{app}"; IconFilename: "{app}\app_icon.ico"
-; Ярлык на рабочем столе (опционально)
 Name: "{autodesktop}\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"; WorkingDir: "{app}"; IconFilename: "{app}\app_icon.ico"; Tasks: desktopicon
-; Ярлык удаления
 Name: "{group}\{cm:UninstallProgram,{#MyAppName}}"; Filename: "{uninstallexe}"; IconFilename: "{app}\app_icon.ico"
 
 [Run]
-; Запустить программу после установки (опционально)
+; Запуск программы после установки (опционально)
 Filename: "{app}\{#MyAppExeName}"; Description: "{cm:LaunchProgram,{#MyAppName}}"; Flags: nowait postinstall skipifsilent
+
+[UninstallRun]
+; Удаление пользовательских данных из %AppData% — с подтверждением (MsgBox).
+Filename: "{cmd}"; Parameters: "/c if exist ""{userappdata}\MosquitoNetCalculator"" rmdir /s /q ""{userappdata}\MosquitoNetCalculator"""; Flags: runhidden; Check: ShouldDeleteAppData
 
 [Code]
 // =====================================================================
@@ -472,7 +477,6 @@ procedure InstallVCRedistIfNeeded;
 var
   LocalPath: String;
   ResultCode: Integer;
-  StatusLine: String;
 begin
   if IsVCRedistInstalledAndCurrent then
     Exit;
@@ -492,8 +496,9 @@ begin
 
   if Exec(LocalPath, '/install /quiet /norestart', '', SW_SHOW, ewWaitUntilTerminated, ResultCode) then
   begin
-    if ResultCode = 0 then
+    if (ResultCode = 0) or (ResultCode = 1638) then
     begin
+      // 0 = успех, 1638 = другая версия уже установлена (не ошибка)
       DependencyReportLines.Add('• VC++ Redistributable 2015-2022 — установлен');
     end
     else if ResultCode = 3010 then
@@ -536,7 +541,7 @@ begin
 
   if Exec(LocalPath, '/silent /install', '', SW_SHOW, ewWaitUntilTerminated, ResultCode) then
   begin
-    if ResultCode = 0 then
+    if (ResultCode = 0) or (ResultCode = 1638) then
       DependencyReportLines.Add('• WebView2 Runtime — установлен')
     else if ResultCode = 3010 then
       DependencyReportLines.Add('• WebView2 Runtime — установлен (потребуется перезагрузка Windows)')
@@ -553,7 +558,7 @@ end;
 // Хуки установщика
 // =====================================================================
 
-/// Инициализация — проверка критичных зависимостей до начала установки
+// Инициализация — проверка критичных зависимостей до начала установки
 function InitializeSetup: Boolean;
 var
   ErrorMsg: String;
@@ -616,6 +621,28 @@ begin
   Result := Result + ReportText;
 end;
 
+/// Создаёт ярлык через Shell API с защитой от ошибок COM
+procedure CreateShortcut(const AShortcut, AExecutable, AArguments, AWorkingDir, AIconPath: String);
+var
+  ShellObj: Variant;
+  ShortcutObj: Variant;
+begin
+  try
+    ShellObj := CreateOleObject('WScript.Shell');
+    ShortcutObj := ShellObj.CreateShortcut(AShortcut);
+    ShortcutObj.TargetPath := AExecutable;
+    if AArguments <> '' then
+      ShortcutObj.Arguments := AArguments;
+    if AWorkingDir <> '' then
+      ShortcutObj.WorkingDirectory := AWorkingDir;
+    if AIconPath <> '' then
+      ShortcutObj.IconLocation := AIconPath;
+    ShortcutObj.Save;
+  except
+    // Если COM-объект недоступен — не фатально, программа работать будет
+  end;
+end;
+
 /// После установки файлов — автоматически доустанавливаем компоненты
 procedure CurStepChanged(CurStep: TSetupStep);
 var
@@ -631,13 +658,12 @@ begin
     WizardForm.StatusLabel.Caption := 'Установка завершена!';
   end;
 
-  // Финальный отчёт
+  // Финальный отчёт + создание ярлыков + запуск
   if CurStep = ssDone then
   begin
-    // Перестроение TStringList в строку вручную (TStringList.ToStringArray и
-    // StringJoin отсутствуют в Inno Setup Pascal)
+    // ── Финальный отчёт ──
     StatusLine := 'Итог установки:' + #13#10 + #13#10 +
-                  '• Сама программа установлена в полном объёме (включает встроенный .NET 8).' + #13#10;
+                  '• Программа установлена. Автообновления через GitHub Releases.' + #13#10;
     if DependencyReportLines.Count > 0 then
     begin
       StatusLine := StatusLine + #13#10 + 'Дополнительные компоненты:' + #13#10 + #13#10;
@@ -645,10 +671,33 @@ begin
     end
     else
     begin
-      StatusLine := StatusLine + #13#10 + 'Все необходимые компоненты уже были установлены в системе — ничего дополнительно не скачивалось.';
+      StatusLine := StatusLine + #13#10 + 'Все необходимые компоненты уже были установлены в системе.';
     end;
     MsgBox(StatusLine, mbInformation, MB_OK);
   end;
+end;
+
+/// Спрашивает пользователя, нужно ли удалить все данные (заказы, настройки, цены).
+/// Используется как Check-функция в [UninstallRun] — возвращает True только
+/// если пользователь явно подтвердил удаление в диалоговом окне.
+/// При тихой деинсталляции (/VERYSILENT) данные всегда сохраняются.
+function ShouldDeleteAppData: Boolean;
+begin
+  // Silent uninstall — never delete user data without explicit consent
+  if UninstallSilent() then
+  begin
+    Result := False;
+    Exit;
+  end;
+
+  Result := MsgBox(
+    'Удалить все данные программы?' + #13#10 + #13#10 +
+    'Будут безвозвратно удалены:' + #13#10 +
+    '• заказы' + #13#10 +
+    '• настройки' + #13#10 +
+    '• цены' + #13#10 + #13#10 +
+    'Если планируете переустановить программу — нажмите «Нет».',
+    mbConfirmation, MB_YESNO or MB_DEFBUTTON2) = IDYES;
 end;
 
 /// Очистка

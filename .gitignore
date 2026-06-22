@@ -1,0 +1,179 @@
+# ────────────────────────────────────────────────────────────────────────────
+# ARC-Frame / MosquitoNetCalculator — .gitignore
+# ────────────────────────────────────────────────────────────────────────────
+# This file excludes build outputs, IDE files, secrets, OS junk, project-specific
+# artifacts (Velopack legacy dumps, publish outputs) from version control.
+# It does NOT exclude  releases.json  (manifest intentionally tracked, see
+# update-system-spec.md § 2.2).
+# ────────────────────────────────────────────────────────────────────────────
+
+# ═══════════════════════════════════════════════════════════════════════════
+# SECTION 1 — Build artifacts (.NET 8 WPF)
+# ═══════════════════════════════════════════════════════════════════════════
+# Anything that comes out of `dotnet build` / `dotnet publish`
+bin/
+obj/
+publish/
+out/
+TestResults/
+tests/bin/
+tests/obj/
+
+# Publish RID-specific outputs (from `dotnet publish -r win-x64`)
+win-x64/
+win-x86/
+win-arm64/
+linux-x64/
+osx-x64/
+
+# Build logs
+*.binlog
+*.userlog
+[Bb]uild[Ll]og.*
+*.[Ll]og.
+
+# ═══════════════════════════════════════════════════════════════════════════
+# SECTION 2 — .NET tooling / caches
+# ═══════════════════════════════════════════════════════════════════════════
+.dotnet/
+.tools/
+.nuget/
+packages/
+
+# Coverage / test results
+coverage/
+*.coverage
+*.coveragexml
+[Cc]overage[Rr]eport*/
+
+# ═══════════════════════════════════════════════════════════════════════════
+# SECTION 3 — IDE files (Visual Studio / Rider / VS Code)
+# ═══════════════════════════════════════════════════════════════════════════
+
+# --- Visual Studio ---
+.vs/
+*.user
+*.userosscache
+*.suo
+*.sln.docstates
+*.userprefs
+*.vsp
+*.vspx
+
+# --- JetBrains Rider / IntelliJ ---
+.idea/
+*.DotSettings.user
+*.ReSharper*
+
+# --- VS Code ---
+.vscode/
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+
+# --- Others ---
+*.swp
+*.swo
+*~
+
+# ═══════════════════════════════════════════════════════════════════════════
+# SECTION 4 — OS garbage (Windows-first since app targets win-x64)
+# ═══════════════════════════════════════════════════════════════════════════
+Thumbs.db
+ehthumbs.db
+ehthumbs_vista.db
+Desktop.ini
+$RECYCLE.BIN/
+*.lnk
+
+# Windows quirks — accidentally created by `> nul` redirections in .bat
+nul
+_nul
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+._*
+
+# Linux
+.fuse_hidden*
+.trash-*
+
+# ═══════════════════════════════════════════════════════════════════════════
+# SECTION 5 — Secrets / credentials (NEVER commit)
+# ═══════════════════════════════════════════════════════════════════════════
+.env
+.env.local
+.env.*.local
+*.pfx
+*.p12
+*.key
+*.pem
+credentials.json
+deploy.local.bat
+deploy.local.sh
+
+# GitHub CLI token files
+gh_token.txt
+*.gh-token
+gh-*.txt
+
+# ═══════════════════════════════════════════════════════════════════════════
+# SECTION 6 — Velopack legacy artifacts (being removed in v3.34)
+# ═══════════════════════════════════════════════════════════════════════════
+# Velopack uploads to Velopack Flow are deprecated; removed in upcoming release
+velo-release/
+velopack-setup.exe
+ARC-Frame-*-full.nupkg
+ARC-Frame-*-delta.nupkg
+ARC-Frame-win-Setup.exe
+ARC-Frame-win-Portable.zip
+assets.win.json
+releases.win.json
+RELEASES
+
+# ═══════════════════════════════════════════════════════════════════════════
+# SECTION 7 — Inno Setup build artifacts
+# ═══════════════════════════════════════════════════════════════════════════
+InnoSetup.log
+Output/
+Setup-*.exe
+*-setup.exe
+*.exe.config
+scripts/Output/
+
+# ═══════════════════════════════════════════════════════════════════════════
+# SECTION 8 — PowerShell / Batch local files
+# ═══════════════════════════════════════════════════════════════════════════
+*.ps1.bak
+*.bat.bak
+*.psm1~
+
+# ═══════════════════════════════════════════════════════════════════════════
+# SECTION 9 — App data that lives in %AppData% (NOT in repo)
+# ═══════════════════════════════════════════════════════════════════════════
+# These files belong to user's local store — DO NOT commit even if accidentally
+# copied to project tree:
+orders/
+prices.json
+settings.json
+mosquito-net-calculator-data/
+
+# But release-manifest IS tracked:
+# !releases.json
+# (Already excluded by default since it's named normally; comment is FYI only)
+
+# ═══════════════════════════════════════════════════════════════════════════
+# SECTION 10 — Misc / catch-all
+# ═══════════════════════════════════════════════════════════════════════════
+*.bak
+*.tmp
+*.temp
+*.swp
+*.orig
+*.rej
+.cache/
+.parcel-cache/
+.history/

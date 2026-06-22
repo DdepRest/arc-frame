@@ -1,0 +1,22 @@
+﻿<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+        <!-- ═══════════════════════════════════════════════════════ -->
+        <!-- CARD — subtle Fluent elevation shadow for major cards  -->
+        <!-- ═══════════════════════════════════════════════════════ -->
+        <Style x:Key="Card" TargetType="Border">
+            <Setter Property="Effect">
+                <Setter.Value>
+                    <DropShadowEffect BlurRadius="16" ShadowDepth="2" Opacity="0.06" Direction="270" Color="#1A1A1A"/>
+                </Setter.Value>
+            </Setter>
+            <Style.Triggers>
+                <Trigger Property="IsMouseOver" Value="True">
+                    <Setter Property="Effect">
+                        <Setter.Value>
+                            <DropShadowEffect BlurRadius="24" ShadowDepth="4" Opacity="0.12" Direction="270" Color="#1A1A1A"/>
+                        </Setter.Value>
+                    </Setter>
+                </Trigger>
+            </Style.Triggers>
+        </Style>
+</ResourceDictionary>

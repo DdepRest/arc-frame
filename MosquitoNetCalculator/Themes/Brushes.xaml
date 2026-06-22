@@ -1,0 +1,71 @@
+<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+    <!-- ═══════════════════════════════════════════════════════ -->
+    <!-- COLOR PALETTE — dynamically updated by ThemeService      -->
+    <!-- ═══════════════════════════════════════════════════════ -->
+    <SolidColorBrush x:Key="AppBg"        Color="#F3F3F3"/>
+    <SolidColorBrush x:Key="Surface"       Color="#FFFFFF"/>
+    <SolidColorBrush x:Key="Accent"        Color="#005FB8"/>
+    <SolidColorBrush x:Key="AccentHover"   Color="#004E99"/>
+    <SolidColorBrush x:Key="AccentPress"   Color="#003E7A"/>
+    <SolidColorBrush x:Key="AccentLight"   Color="#EBF3FD"/>
+    <SolidColorBrush x:Key="OnAccent"      Color="#FFFFFF"/>
+    <SolidColorBrush x:Key="OnSuccess"     Color="#FFFFFF"/>
+    <SolidColorBrush x:Key="OnDanger"      Color="#FFFFFF"/>
+    <SolidColorBrush x:Key="GhostBg"       Color="#FFFFFF"/>
+    <SolidColorBrush x:Key="GhostBorder"   Color="#D0D0D0"/>
+    <SolidColorBrush x:Key="SectionBg"     Color="#F8F9FB"/>
+    <SolidColorBrush x:Key="SectionAccent" Color="#005FB8"/>
+    <SolidColorBrush x:Key="TextPrimary"   Color="#1A1A1A"/>
+    <SolidColorBrush x:Key="TextSecondary" Color="#5D5D5D"/>
+    <SolidColorBrush x:Key="TextMuted"     Color="#8A8A8A"/>
+    <SolidColorBrush x:Key="Border"        Color="#D9D9D9"/>
+    <SolidColorBrush x:Key="BorderHover"   Color="#B8B8B8"/>
+    <SolidColorBrush x:Key="RowHover"      Color="#F5F5F5"/>
+    <SolidColorBrush x:Key="RowAlt"        Color="#FAFAFA"/>
+    <SolidColorBrush x:Key="RowAltHover"   Color="#F0F0F0"/>
+    <SolidColorBrush x:Key="RowAltSelected" Color="#EBF3FD"/>
+    <SolidColorBrush x:Key="Success"       Color="#0F7B3F"/>
+    <SolidColorBrush x:Key="SuccessHover"  Color="#0A6333"/>
+    <SolidColorBrush x:Key="Danger"        Color="#C42B1C"/>
+    <SolidColorBrush x:Key="DangerHover"   Color="#A61B10"/>
+    <SolidColorBrush x:Key="TotalBg"       Color="#1B1B1B"/>
+    <SolidColorBrush x:Key="QuickBg"       Color="#F9F9F9"/>
+    <SolidColorBrush x:Key="ChipBg"        Color="#EFF4FB"/>
+    <SolidColorBrush x:Key="Warning"       Color="#D48C00"/>
+    <SolidColorBrush x:Key="DangerLight"   Color="#FDE7E9"/>
+    <SolidColorBrush x:Key="HeaderBg"      Color="#F9F9F9"/>
+    <SolidColorBrush x:Key="HeaderBorder"  Color="#E8E8E8"/>
+    <SolidColorBrush x:Key="HeaderText"    Color="#424242"/>
+    <SolidColorBrush x:Key="HeaderPress"   Color="#E0E0E0"/>
+    <SolidColorBrush x:Key="GridLine"      Color="#F0F0F0"/>
+    <SolidColorBrush x:Key="TrackBg"       Color="#D4D4D4"/>
+    <SolidColorBrush x:Key="ScrollBarThumb" Color="#B0B0B0"/>
+    <SolidColorBrush x:Key="SubtleBorder"  Color="#EBEBEB"/>
+    <SolidColorBrush x:Key="DangerGhostBorder" Color="#F0C6CA"/>
+    <SolidColorBrush x:Key="MenuItemPressed"   Color="#E8EDF5"/>
+    <Color x:Key="ShadowColor">#1A1A1A</Color>
+    <!--
+      Animation-target colors (mirror the corresponding SolidColorBrush above).
+      Existed as Brushes only before, but ColorAnimation needs plain Color values
+      to animate DataGridRow.Background smoothly. ThemeService updates both the
+      Brush and the Color in lockstep on theme switch.
+    -->
+    <Color x:Key="RowHoverColor">#F5F5F5</Color>
+    <Color x:Key="AccentLightColor">#EBF3FD</Color>
+    <SolidColorBrush x:Key="InstallGreen" Color="#0F7B3F"/>
+    <SolidColorBrush x:Key="InstallRed" Color="#C42B1C"/>
+    <SolidColorBrush x:Key="InstallGray" Color="#8A8A8A"/>
+    <SolidColorBrush x:Key="BadgeDefaultBg" Color="#EFF4FB"/>
+    <SolidColorBrush x:Key="BadgeDefaultFg" Color="#005FB8"/>
+    <SolidColorBrush x:Key="BadgeSuccessBg" Color="#E6F5EC"/>
+    <SolidColorBrush x:Key="BadgeSuccessFg" Color="#0F7B3F"/>
+    <SolidColorBrush x:Key="BadgeWarningBg" Color="#FFF4CE"/>
+    <SolidColorBrush x:Key="BadgeWarningFg" Color="#D48C00"/>
+    <SolidColorBrush x:Key="BadgeDangerBg" Color="#FDE7E9"/>
+    <SolidColorBrush x:Key="BadgeDangerFg" Color="#C42B1C"/>
+    <SolidColorBrush x:Key="TotalText" Color="#FFFFFF"/>
+    <SolidColorBrush x:Key="TotalTextMuted" Color="#A0A0A0"/>
+
+</ResourceDictionary>

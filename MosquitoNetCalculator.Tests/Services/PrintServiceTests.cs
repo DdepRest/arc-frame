@@ -1,0 +1,256 @@
+using System.Collections.Generic;
+using MosquitoNetCalculator.Models;
+using MosquitoNetCalculator.Services;
+using Xunit;
+
+namespace MosquitoNetCalculator.Tests.Services
+{
+    public class PrintServiceTests
+    {
+        private readonly PrintService _service = new();
+
+        [Fact]
+        public void GenerateKpHtml_ReturnsEmpty_WhenNoValidItems()
+        {
+            var items = new List<OrderItem>
+            {
+                new() { Name = "", Total = 0 }
+            };
+            var client = new ClientInfo();
+            var result = _service.GenerateKpHtml(items, client, 0, "ноль рублей 00 копеек");
+            Assert.Equal("", result);
+        }
+
+        [Fact]
+        public void GenerateKpHtml_ReturnsEmpty_WhenEmptyList()
+        {
+            var result = _service.GenerateKpHtml(new List<OrderItem>(), new ClientInfo(), 0, "");
+            Assert.Equal("", result);
+        }
+
+        [Fact]
+        public void GenerateKpHtml_ReturnsHtml_WithValidItems()
+        {
+            var items = new List<OrderItem>
+            {
+                new() { Name = "Anwis", Color = "Белый", Width = 1000, Height = 1000, Quantity = 1, Price = 1800, Total = 1.8 }
+            };
+            var client = new ClientInfo { ContractNumber = "1-5", ContractDate = new System.DateTime(2026, 1, 15) };
+            var result = _service.GenerateKpHtml(items, client, 1.8, "Один рубль 80 копеек");
+
+            Assert.Contains("<!DOCTYPE html>", result);
+            Assert.Contains("1-5", result);
+            Assert.Contains("15.01.2026", result);
+            Assert.Contains("Anwis", result);
+            Assert.Contains("Белый", result);
+        }
+
+        [Fact]
+        public void GenerateKpHtml_ContainsClientInfo()
+        {
+            var items = new List<OrderItem>
+            {
+                new() { Name = "Anwis", Total = 100 }
+            };
+            var client = new ClientInfo
+            {
+                ClientName = "Иванов И.И.",
+                ClientPhone = "+7 999 123-45-67",
+                ClientAddress = "г. Москва, ул. Пушкина, д. 10"
+            };
+            var result = _service.GenerateKpHtml(items, client, 100, "Сто рублей 00 копеек");
+            Assert.Contains("Иванов И.И.", result);
+            Assert.Contains("+7 999 123-45-67", result);
+            Assert.Contains("г. Москва", result);
+        }
+
+        [Fact]
+        public void GenerateKpHtml_EscapesHtml_InClientName()
+        {
+            var items = new List<OrderItem>
+            {
+                new() { Name = "Anwis", Total = 100 }
+            };
+            var client = new ClientInfo { ClientName = "<script>alert('xss')</script>" };
+            var result = _service.GenerateKpHtml(items, client, 100, "Сто рублей");
+
+            Assert.DoesNotContain("<script>", result);
+            Assert.Contains("&lt;script&gt;", result);
+        }
+
+        [Fact]
+        public void GenerateKpHtml_ContainsNotes_WhenNotEmpty()
+        {
+            var items = new List<OrderItem>
+            {
+                new() { Name = "Anwis", Total = 100 }
+            };
+            var client = new ClientInfo { Notes = "Тестовая заметка" };
+            var result = _service.GenerateKpHtml(items, client, 100, "Сто рублей");
+
+            Assert.Contains("Тестовая заметка", result);
+            Assert.Contains("Примечания", result);
+        }
+
+        [Fact]
+        public void GenerateKpHtml_DoesNotContainNotes_WhenEmpty()
+        {
+            var items = new List<OrderItem>
+            {
+                new() { Name = "Anwis", Total = 100 }
+            };
+            var client = new ClientInfo { Notes = "" };
+            var result = _service.GenerateKpHtml(items, client, 100, "Сто рублей");
+            Assert.DoesNotContain("Примечания", result);
+        }
+
+        [Fact]
+        public void GenerateKpHtml_ContainsAdditionalKp_WhenActive()
+        {
+            var items = new List<OrderItem>
+            {
+                new() { Name = "Anwis", Total = 100 }
+            };
+            var client = new ClientInfo { HasAdditionalKp = true };
+            client.AdditionalKps.Add(new AdditionalKpItem { Number = "2-1", Amount = 500, IsActive = true });
+
+            var result = _service.GenerateKpHtml(items, client, 100, "Сто рублей");
+            Assert.Contains("Дополнительное", result);
+            Assert.Contains("2-1", result);
+        }
+
+        [Fact]
+        public void GenerateKpHtml_ShowsGrandTotal_WithAdditionalKp()
+        {
+            var items = new List<OrderItem>
+            {
+                new() { Name = "Anwis", Total = 100 }
+            };
+            var client = new ClientInfo { HasAdditionalKp = true };
+            client.AdditionalKps.Add(new AdditionalKpItem { Number = "2-1", Amount = 500, IsActive = true });
+
+            var result = _service.GenerateKpHtml(items, client, 100, "Сто рублей");
+            Assert.Contains("ОБЩИЙ ИТОГ", result);
+            Assert.Contains("600,00", result); // 100 + 500 formatted
+        }
+
+        [Fact]
+        public void GenerateKpHtml_SkipsItemWithZeroTotal()
+        {
+            var items = new List<OrderItem>
+            {
+                new() { Name = "Anwis", Total = 0 },
+                new() { Name = "Отлив", Total = 100 }
+            };
+            var client = new ClientInfo();
+            var result = _service.GenerateKpHtml(items, client, 100, "Сто рублей");
+            // Only "Отлив" should be in the table rows
+            Assert.Contains("Отлив", result);
+        }
+
+        // ─── Installation mark (KP column) regression tests ──────
+        // These lock in the structure of the new <span class='install-mark'>
+        // wrapper added when installation icons migrated to ✓ / ✗ / —. If
+        // the next refactor of FillTemplate drops either the class or the
+        // title attribute, these tests will fail.
+
+        [Fact]
+        public void GenerateKpHtml_InstallMark_ContainsClassAndTitle_ForMode0()
+        {
+            var items = new List<OrderItem>
+            {
+                new() { Name = "Anwis", Width = 1000, Height = 1000, Quantity = 1, Price = 1800, Total = 1.8, InstallationMode = 0 }
+            };
+            var result = _service.GenerateKpHtml(items, new ClientInfo(), 1.8, "");
+            Assert.Contains("<span class='install-mark' title='Монтаж включён'>✓</span>", result);
+        }
+
+        [Fact]
+        public void GenerateKpHtml_InstallMark_ContainsClassAndTitle_ForMode1()
+        {
+            var items = new List<OrderItem>
+            {
+                new() { Name = "Anwis", Width = 1000, Height = 1000, Quantity = 1, Price = 1800, Total = 1.8, InstallationMode = 1, InstallationDeduction = 500 }
+            };
+            var result = _service.GenerateKpHtml(items, new ClientInfo(), 1.8, "");
+            Assert.Contains("<span class='install-mark' title='Без монтажа'>✗</span>", result);
+        }
+
+        [Fact]
+        public void GenerateKpHtml_InstallMark_ContainsClassAndTitle_ForMode2()
+        {
+            // Mode 2 («В конструкцию») emits a Cyrillic "В" letter glyph in the
+            // printed КП instead of the same ✓ as mode 0, so the two "yes" modes
+            // are visually distinguishable at a glance.
+            var items = new List<OrderItem>
+            {
+                new() { Name = "Anwis", Width = 1000, Height = 1000, Quantity = 1, Price = 1800, Total = 1.8, InstallationMode = 2, InstallationSurcharge = 200 }
+            };
+            var result = _service.GenerateKpHtml(items, new ClientInfo(), 1.8, "");
+            Assert.Contains("<span class='install-mark' title='В конструкцию'>В</span>", result);
+        }
+
+        [Fact]
+        public void GenerateKpHtml_InstallMark_NonApplicableProduct_HasDashAndNotSupportedTitle()
+        {
+            // Отлив is not eligible for the installation toggle, so the cell
+            // shows "—" with the not-supported label as a tooltip.
+            var items = new List<OrderItem>
+            {
+                new() { Name = "Отлив", Width = 1000, Height = 100, Quantity = 1, Price = 2150, Total = 2150 }
+            };
+            var result = _service.GenerateKpHtml(items, new ClientInfo(), 2150, "");
+            Assert.Contains("<span class='install-mark' title='Монтаж не предусмотрен'>—</span>", result);
+        }
+
+        [Fact]
+        public void GenerateKpHtml_ContainsAmountInWords()
+        {
+            var items = new List<OrderItem>
+            {
+                new() { Name = "Anwis", Total = 100 }
+            };
+            var client = new ClientInfo();
+            var result = _service.GenerateKpHtml(items, client, 100, "Сто рублей 00 копеек");
+            Assert.Contains("Сто рублей 00 копеек", result);
+        }
+
+        // ─── CSS duplication regression tests ─────────────────
+        // Bug #2 from v3.22.0 analysis: the inline print template
+        // had two identical `.install-mark { ... }` CSS rules back-to-back
+        // (apparent copy-paste artifact). Browsers dedupe, so it didn't
+        // affect rendering, but it inflated the file and risked drift if
+        // one copy was ever edited and not the other. These tests lock
+        // the deduped state so the duplicate cannot creep back in.
+
+        [Fact]
+        public void GenerateKpHtml_InstallMarkCss_AppearsExactlyOnce()
+        {
+            // Call GetInlineTemplate() directly. LoadTemplate() prefers the
+            // embedded print_template.html resource (which has only one rule),
+            // so testing through GenerateKpHtml would silently exercise the
+            // file-based template and never catch duplication in this inline
+            // fallback string — which is the surface that had the bug.
+            string inline = _service.GetInlineTemplate();
+            int count = System.Text.RegularExpressions.Regex.Matches(
+                inline,
+                @"\.install-mark\s*\{").Count;
+            Assert.Equal(1, count);
+        }
+
+        [Fact]
+        public void GenerateKpHtml_RenderedHtml_ContainsInstallMarkClass()
+        {
+            // Defensive: a future refactor that strips the install-mark class
+            // from the inline template would quietly break the КП's install
+            // column. The mode-specific InstallMark tests above cover the
+            // output path indirectly, but this assertion is more visible.
+            var items = new List<OrderItem>
+            {
+                new() { Name = "Anwis", Total = 100, InstallationMode = 0 }
+            };
+            var result = _service.GenerateKpHtml(items, new ClientInfo(), 100, "");
+            Assert.Contains("class='install-mark'", result);
+        }
+    }
+}

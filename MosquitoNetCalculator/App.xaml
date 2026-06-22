@@ -1,0 +1,40 @@
+<Application x:Class="MosquitoNetCalculator.App"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:conv="clr-namespace:MosquitoNetCalculator.Converters"
+             ShutdownMode="OnExplicitShutdown"
+             >
+    <Application.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <!-- Brushes first: styles reference brushes via DynamicResource —
+                     they must be loaded before styles, especially ShadowColor
+                     used in the Card style's DropShadowEffect (a Freezable). -->
+                <ResourceDictionary Source="Themes/Brushes.xaml"/>
+                <!-- Base/dependency-free styles -->
+                <ResourceDictionary Source="Themes/CardStyles.xaml"/>
+                <ResourceDictionary Source="Themes/FontStyles.xaml"/>
+                <ResourceDictionary Source="Themes/TabStyles.xaml"/>
+                <ResourceDictionary Source="Themes/ButtonStyles.xaml"/>
+                <ResourceDictionary Source="Themes/InputStyles.xaml"/>
+                <ResourceDictionary Source="Themes/DataGridStyles.xaml"/>
+                <ResourceDictionary Source="Themes/ScrollViewerStyles.xaml"/>
+                <ResourceDictionary Source="Themes/ContextMenuStyles.xaml"/>
+                <ResourceDictionary Source="Themes/MiscStyles.xaml"/>
+            </ResourceDictionary.MergedDictionaries>
+
+            <!-- ═══════════════════════════════════════════════════════ -->
+            <!-- CONVERTERS — used via StaticResource, never change     -->
+            <!-- ═══════════════════════════════════════════════════════ -->
+            <conv:DimensionConverter x:Key="DimConv"/>
+            <BooleanToVisibilityConverter x:Key="BoolToVis"/>
+            <conv:StatusToBadgeBackgroundConverter x:Key="StatusToBadgeBg"/>
+            <conv:StatusToBadgeForegroundConverter x:Key="StatusToBadgeFg"/>
+            <conv:MoneyConverter x:Key="MoneyConv"/>
+            <conv:RussianDateConverter x:Key="RussianDateConv"/>
+            <conv:UpdateTypeToBrushConverter x:Key="UpdateTypeBrush"/>
+            <conv:UpdateTypeToIconConverter x:Key="UpdateTypeIcon"/>
+
+        </ResourceDictionary>
+    </Application.Resources>
+</Application>

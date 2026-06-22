@@ -1,0 +1,35 @@
+<UserControl x:Class="MosquitoNetCalculator.Controls.TotalCardControl"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <Border x:Name="CardTotal" CornerRadius="10" Padding="20,12"
+            Background="{DynamicResource TotalBg}" Margin="0,10,0,0"
+            Style="{DynamicResource Card}" Opacity="0">
+        <Grid>
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="Auto"/>
+            </Grid.ColumnDefinitions>
+
+            <StackPanel Grid.Column="0" VerticalAlignment="Center" Margin="0,0,24,0">
+                <TextBlock FontSize="13" FontWeight="SemiBold" Foreground="{DynamicResource TotalText}" Text="ИТОГО"/>
+                <TextBlock x:Name="TxtTotalSub" FontSize="10" Foreground="{DynamicResource TotalTextMuted}" Margin="0,2,0,0"/>
+            </StackPanel>
+
+            <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
+                <TextBlock FontSize="22" FontWeight="SemiBold" Foreground="{DynamicResource TotalText}" Margin="0,0,8,0">
+                    <Run x:Name="RunTotalAmount" Text="0.00"/>
+                </TextBlock>
+                <TextBlock FontSize="12" Foreground="{DynamicResource TotalTextMuted}" VerticalAlignment="Center" Margin="0,4,0,0">
+                    <Run Text="руб."/>
+                </TextBlock>
+            </StackPanel>
+
+            <TextBlock Grid.Column="3" VerticalAlignment="Center"
+                       x:Name="TxtAmountInWords" FontSize="10"
+                       Foreground="{DynamicResource TotalTextMuted}"
+                       TextWrapping="Wrap" MaxWidth="380" TextAlignment="Right"/>
+        </Grid>
+    </Border>
+</UserControl>
