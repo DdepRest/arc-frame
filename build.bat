@@ -1,7 +1,7 @@
 @echo off
 echo ============================================
 echo  MosquitoNetCalculator - Build Script
-echo  Version: %DATE% (Velopack auto-update)
+echo  Version: %DATE% (GitHub Releases auto-update)
 echo ============================================
 echo.
 
@@ -54,14 +54,14 @@ REM Copy dependency checker scripts to publish folder (so they ship with the ins
 copy /y "check-deps.bat" "publish\check-deps.bat" >nul
 copy /y "check-deps.ps1" "publish\check-deps.ps1" >nul
 
-REM Create fresh settings.json with Velopack Flow enabled
+REM Create fresh settings.json
 copy /y NUL "publish\settings.json" >NUL
-echo {"Theme":"light","ContractPrefix":"1","LocationName":"","FirstRunComplete":false,"UseVelopackFlow":true} > "publish\settings.json"
+echo {"Theme":"light","ContractPrefix":"1","LocationName":"","FirstRunComplete":false} > "publish\settings.json"
 
-REM ── Velopack: package the published output for auto-update ──
+REM ── Package for GitHub Releases ──
 echo.
 echo ============================================
-echo  Packaging for Velopack auto-update...
+echo  Packaging for GitHub Releases...
 echo ============================================
 
 REM Extract version from csproj
@@ -70,28 +70,16 @@ for /f "tokens=*" %%i in ('dotnet msbuild MosquitoNetCalculator\MosquitoNetCalcu
 if "%APP_VERSION%"=="" set "APP_VERSION=0.0.0"
 echo   Version: %APP_VERSION%
 
-vpk pack ^
-  --packId ARC-Frame ^
-  --packVersion %APP_VERSION% ^
-  --packDir publish ^
-  --mainExe MosquitoNetCalculator.exe ^
-  --packTitle "A.R.C. Frame" ^
-  --outputDir publish\velo-release
+REM Create ZIP for GitHub Release (exe + dlls only — no settings/prices/orders)
+powershell -NoProfile -Command "Compress-Archive -Force -Path 'publish\MosquitoNetCalculator.exe','publish\*.dll' -DestinationPath 'publish\ARC-Frame-%APP_VERSION%-full.zip'" 2>nul
 
-if %errorlevel% neq 0 (
+if exist "publish\ARC-Frame-%APP_VERSION%-full.zip" (
+    echo   ZIP created: publish\ARC-Frame-%APP_VERSION%-full.zip
     echo.
-    echo   VELOPACK PACK FAILED!
-    echo   Install vpk:  dotnet tool install -g vpk
-    echo   The .exe is still usable; only auto-update packaging was skipped.
+    echo   Next step: run gh release upload v%APP_VERSION% publish\ARC-Frame-%%APP_VERSION%%-full.zip
+    echo   Or: run update-releases-json.ps1 to update the manifest
 ) else (
-    echo   Velopack package created: publish\velo-release\
-    echo.
-    REM Copy Velopack Setup.exe to publish root for Inno Setup to bundle
-    copy /y "publish\velo-release\ARC-Frame-win-Setup.exe" "publish\velopack-setup.exe" >nul
-    echo   Velopack setup copied to publish\velopack-setup.exe for Inno Setup.
-    echo.
-    echo   Next step: run deploy-flow.bat to upload to Velopack Flow ^(free^)
-    echo   Or manually upload publish\velo-release\ to your server.
+    echo   ZIP creation failed!
 )
 
 echo.
@@ -100,7 +88,7 @@ echo  BUILD SUCCESS!
 echo  Output: publish\MosquitoNetCalculator.exe
 echo ============================================
 echo.
-echo  Next: run deploy-flow.bat to publish to Velopack Flow
+echo  Next: use gh release upload to publish to GitHub Releases
 echo ============================================
 
 REM === Launch the application (the published one) ===
