@@ -97,9 +97,10 @@ namespace MosquitoNetCalculator
 
         protected override void OnStartup(StartupEventArgs e)
         {
-            // ── Velopack: intercepts special command-line args for
-            // install / update / uninstall lifecycle hooks. MUST be first.
-            Velopack.VelopackApp.Build().Run();
+            // ── Watchdog: handle --self-test and clean up leftover
+            // watchdog.bat from a previous crashed update attempt.
+            if (!WatchdogService.HandleStartup(e.Args))
+                return; // self-test mode — Exit() already called
 
             base.OnStartup(e);
 
@@ -140,7 +141,7 @@ namespace MosquitoNetCalculator
 
             // ── Data migration: old versions stored orders/settings/prices
             // alongside the .exe (BaseDirectory). v3.28+ stores them in
-            // %AppData%\MosquitoNetCalculator\ so they survive Velopack updates.
+            // %AppData%\MosquitoNetCalculator\ so they survive app updates.
             // On first run of the new version, migrate existing data.
             MigrateDataToAppData();
 

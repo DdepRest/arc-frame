@@ -111,7 +111,7 @@ namespace MosquitoNetCalculator
             ToastService.Initialize(ToastCanvas);
             ViewModel.UndoRedo.SetDirtyCallback(UpdateDirtyIndicator);
 
-            _appVersion = System.Reflection.Assembly.GetExecutingAssembly().GetName().Version;
+            _appVersion = UpdateService.CurrentVersion;
             UpdateBaseTitle();
 
             // Theme is now driven entirely from the settings-menu radio items in

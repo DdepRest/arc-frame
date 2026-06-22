@@ -716,7 +716,7 @@ namespace MosquitoNetCalculator.Tests.App
             var selectables = FactoryTextService.BuildSelectableItems(items, Enumerable.Empty<AdditionalKpItem>());
             selectables.ForEach(s => s.IsSelected = true);
             var text = FactoryTextService.Generate("", selectables);
-            Assert.Contains("Anwis:", text);
+            Assert.Contains("Anwis, размер проёма (ББ 60):", text);
         }
 
         [Fact]

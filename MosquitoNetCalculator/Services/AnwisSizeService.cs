@@ -52,10 +52,10 @@ namespace MosquitoNetCalculator.Services
 
         /// <summary>
         /// Заголовок секции Anwis для FactoryTextService.
-        /// Пример: "Anwis, размер проёма (Режим: Брусбокс 60)".
+        /// Пример: "Anwis, размер проёма (ББ 60)".
         /// </summary>
         public static string GetSectionHeader(AnwisSizeMode mode)
-            => $"Anwis, размер проёма (Режим: {FullLabels[mode]})";
+            => $"Anwis, размер проёма ({ShortLabels[mode]})";
 
         /// <summary>
         /// Генерирует объяснение для выбранного режима Anwis в формате

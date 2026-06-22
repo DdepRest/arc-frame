@@ -50,9 +50,8 @@ copy /y "MosquitoNetCalculator\prices.json" "publish\prices.json" >nul
 REM Copy icon to publish folder
 copy /y "MosquitoNetCalculator\Resources\app_icon.ico" "publish\app_icon.ico" >nul
 
-REM Copy dependency checker scripts to publish folder (so they ship with the installer)
+REM Copy dependency checker script to publish folder (so it ships with the installer)
 copy /y "check-deps.bat" "publish\check-deps.bat" >nul
-copy /y "check-deps.ps1" "publish\check-deps.ps1" >nul
 
 REM Create fresh settings.json
 copy /y NUL "publish\settings.json" >NUL

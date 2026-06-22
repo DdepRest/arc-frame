@@ -103,9 +103,10 @@ namespace MosquitoNetCalculator.Services
                     if (read < 100) return 1;
                 }
 
+                // Assembly.Location returns empty string in single-file publish;
+                // non-null GetEntryAssembly() is sufficient proof of coherent load.
                 Assembly? entry = Assembly.GetEntryAssembly();
                 if (entry == null) return 1;
-                _ = entry.Location;
 
                 return 0;
             }

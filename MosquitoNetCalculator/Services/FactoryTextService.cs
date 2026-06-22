@@ -145,12 +145,18 @@ namespace MosquitoNetCalculator.Services
 
             if (selectedOrderItems.Count > 0)
             {
-                // Group by product Name only — all Anwis items merge into
-                // one section regardless of their AnwisSizeMode. The factory
-                // text returns plain Ш×В dimensions per row and doesn't leak
-                // mode information into the printed output.
+                // Group by product Name AND AnwisSizeMode — different modes
+                // of Anwis get separate sections with mode-aware headers
+                // (e.g. "Anwis, размер проёма (ББ 60):").
+                // Non-Anwis products group by name only as before.
                 var groups = selectedOrderItems
-                    .GroupBy(item => item.Name)
+                    .GroupBy(item => new
+                    {
+                        item.Name,
+                        Mode = AnwisSizeService.IsApplicable(item.Name)
+                            ? item.AnwisSizeMode
+                            : (AnwisSizeMode?)null
+                    })
                     .ToList();
 
                 bool first = true;
@@ -159,7 +165,10 @@ namespace MosquitoNetCalculator.Services
                     if (!first) sb.AppendLine();
                     first = false;
 
-                    sb.AppendLine($"{group.Key}:");
+                    string header = group.Key.Mode.HasValue
+                        ? AnwisSizeService.GetSectionHeader(group.Key.Mode.Value) + ":"
+                        : $"{group.Key.Name}:";
+                    sb.AppendLine(header);
 
                     foreach (var item in group)
                     {

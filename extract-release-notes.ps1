@@ -3,7 +3,7 @@
 # Parses MosquitoNetCalculator/Services/UpdateLog.cs and writes the
 # LATEST UpdateItem (newest version) as a Markdown file. Target
 # consumers: `vpk pack --releaseNotes publish\release-notes.md` which
-# embeds the markdown into the .nupkg manifest for Velopack Flow.
+# embeds the markdown into the GitHub Release notes.
 #
 # Project convention (per file comment in UpdateLog.cs):
 #   "To add a new version, append a new UpdateItem to the END of _entries."

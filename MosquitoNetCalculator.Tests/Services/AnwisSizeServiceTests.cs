@@ -113,10 +113,10 @@ namespace MosquitoNetCalculator.Tests.Services
         }
 
         [Fact]
-        public void GetSectionHeader_UsesFullLabel()
+        public void GetSectionHeader_UsesShortLabel()
         {
             var header = AnwisSizeService.GetSectionHeader(AnwisSizeMode.Брусбокс60);
-            Assert.Equal("Anwis, размер проёма (Режим: Брусбокс 60)", header);
+            Assert.Equal("Anwis, размер проёма (ББ 60)", header);
         }
 
         [Fact]

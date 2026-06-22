@@ -215,34 +215,11 @@ namespace MosquitoNetCalculator.Tests.Services
             Assert.Contains("Сто рублей 00 копеек", result);
         }
 
-        // ─── CSS duplication regression tests ─────────────────
-        // Bug #2 from v3.22.0 analysis: the inline print template
-        // had two identical `.install-mark { ... }` CSS rules back-to-back
-        // (apparent copy-paste artifact). Browsers dedupe, so it didn't
-        // affect rendering, but it inflated the file and risked drift if
-        // one copy was ever edited and not the other. These tests lock
-        // the deduped state so the duplicate cannot creep back in.
-
-        [Fact]
-        public void GenerateKpHtml_InstallMarkCss_AppearsExactlyOnce()
-        {
-            // Call GetInlineTemplate() directly. LoadTemplate() prefers the
-            // embedded print_template.html resource (which has only one rule),
-            // so testing through GenerateKpHtml would silently exercise the
-            // file-based template and never catch duplication in this inline
-            // fallback string — which is the surface that had the bug.
-            string inline = _service.GetInlineTemplate();
-            int count = System.Text.RegularExpressions.Regex.Matches(
-                inline,
-                @"\.install-mark\s*\{").Count;
-            Assert.Equal(1, count);
-        }
-
         [Fact]
         public void GenerateKpHtml_RenderedHtml_ContainsInstallMarkClass()
         {
             // Defensive: a future refactor that strips the install-mark class
-            // from the inline template would quietly break the КП's install
+            // from print_template.html would quietly break the КП's install
             // column. The mode-specific InstallMark tests above cover the
             // output path indirectly, but this assertion is more visible.
             var items = new List<OrderItem>

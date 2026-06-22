@@ -10,7 +10,7 @@ namespace MosquitoNetCalculator.Services
     public class OrderStorageService
     {
         // Data lives in %AppData%\MosquitoNetCalculator\, NOT in the app directory.
-        // Velopack auto-updates wipe and recreate the `current` folder, so any
+        // App updates may replace the install directory, so any
         // user data stored alongside the .exe gets lost on every update.
         // %AppData% is persistent across updates.
         private static readonly string AppDataDir = Path.Combine(

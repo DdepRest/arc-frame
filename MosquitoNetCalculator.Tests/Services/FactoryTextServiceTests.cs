@@ -111,7 +111,7 @@ namespace MosquitoNetCalculator.Tests.Services
         }
 
         [Fact]
-        public void Generate_AnbisSectionHeader_ContainsModeLabel()
+        public void Generate_AnwisSectionHeader_ContainsShortModeLabel()
         {
             var items = new List<OrderItem>
             {
@@ -126,13 +126,14 @@ namespace MosquitoNetCalculator.Tests.Services
 
             var text = FactoryTextService.Generate("", selectable);
 
-            Assert.Contains("Anwis:", text);
+            Assert.Contains("Anwis, размер проёма (ББ 60):", text);
+            Assert.DoesNotContain("\nAnwis:", text); // plain header without mode
         }
 
         // ─── Generate: Anwis mode grouping ──────────────────────
 
         [Fact]
-        public void Generate_AnwisItemsWithDifferentModes_MergeIntoOneSection()
+        public void Generate_AnwisItemsWithDifferentModes_SplitIntoSeparateSections()
         {
             var items = new List<OrderItem>
             {
@@ -152,9 +153,9 @@ namespace MosquitoNetCalculator.Tests.Services
 
             var text = FactoryTextService.Generate("", selectable);
 
-            // Single "Anwis:" section — mode is NOT leaked to factory text.
-            int headerCount = text.Split('\n').Count(l => l.Trim() == "Anwis:");
-            Assert.Equal(1, headerCount);
+            // Different modes → separate sections with short mode labels.
+            Assert.Contains("Anwis, размер проёма (ББ 60):", text);
+            Assert.Contains("Anwis, размер проёма (ПП):", text);
         }
 
         [Fact]
@@ -178,8 +179,9 @@ namespace MosquitoNetCalculator.Tests.Services
 
             var text = FactoryTextService.Generate("", selectable);
 
-            // One section header only — just "Anwis:", no mode suffix.
-            int headerCount = text.Split('\n').Count(l => l.Trim() == "Anwis:");
+            // Same mode → one section header with short mode label.
+            int headerCount = text.Split('\n').Count(
+                l => l.Trim() == "Anwis, размер проёма (ББ 60):");
             Assert.Equal(1, headerCount);
         }
 

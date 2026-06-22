@@ -10,7 +10,7 @@ namespace MosquitoNetCalculator.Services
     public class PriceService
     {
         // Data lives in %AppData%\MosquitoNetCalculator\, NOT in the app directory.
-        // Velopack updates wipe the `current` folder — price edits must survive.
+        // App updates may replace the install directory — price edits must survive.
         private static readonly string AppDataDir = Path.Combine(
             Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
             "MosquitoNetCalculator");
