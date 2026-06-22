@@ -79,23 +79,34 @@
                                     <TextBlock Text="{Binding Name}" VerticalAlignment="Center"
                                                Foreground="{DynamicResource TextPrimary}" FontWeight="Medium"
                                                TextWrapping="Wrap"/>
-                                    <Border Background="{DynamicResource Accent}" CornerRadius="5"
-                                            Padding="8,2" Margin="6,0,0,0" Cursor="Hand"
+                                    <Border Background="{DynamicResource AccentLight}" CornerRadius="4"
+                                            Padding="7,2" Margin="6,0,0,0" Cursor="Hand"
                                             Visibility="{Binding IsAnwis, Converter={StaticResource BoolToVis}}"
                                             ToolTip="{Binding AnwisSizeToolTip}"
+                                            PreviewMouseLeftButtonDown="AnwisModePill_PreviewLeftClick"
                                             PreviewMouseRightButtonDown="AnwisModePill_PreviewRightClick">
                                         <Border.Style>
                                             <Style TargetType="Border">
                                                 <Style.Triggers>
                                                     <Trigger Property="IsMouseOver" Value="True">
-                                                        <Setter Property="Background" Value="{DynamicResource AccentHover}"/>
+                                                        <Setter Property="Background" Value="{DynamicResource Accent}"/>
                                                     </Trigger>
                                                 </Style.Triggers>
                                             </Style>
                                         </Border.Style>
                                         <TextBlock Text="{Binding AnwisSizeShortLabel}"
-                                                   FontSize="10.5" FontWeight="SemiBold"
-                                                   Foreground="{DynamicResource OnAccent}"/>
+                                                   FontSize="10" FontWeight="SemiBold">
+                                            <TextBlock.Style>
+                                                <Style TargetType="TextBlock">
+                                                    <Setter Property="Foreground" Value="{DynamicResource Accent}"/>
+                                                    <Style.Triggers>
+                                                        <DataTrigger Binding="{Binding IsMouseOver, RelativeSource={RelativeSource AncestorType=Border}}" Value="True">
+                                                            <Setter Property="Foreground" Value="{DynamicResource OnAccent}"/>
+                                                        </DataTrigger>
+                                                    </Style.Triggers>
+                                                </Style>
+                                            </TextBlock.Style>
+                                        </TextBlock>
                                     </Border>
                                 </StackPanel>
                             </DataTemplate>

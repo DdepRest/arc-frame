@@ -97,16 +97,9 @@ namespace MosquitoNetCalculator
 
         protected override void OnStartup(StartupEventArgs e)
         {
-            // ── WatchdogService: replaces VelopackApp.Build().Run().
-            // Runs FIRST, before WPF base.OnStartup, before any Window.
-            // • If --self-test arg present → App.Exit with code 0/1 (watchdog.bat
-            //   uses this to validate a downloaded .exe before swapping).
-            // • Otherwise → wipes a leftover arc-update-watchdog.bat from a
-            //   previous crashed attempt, then continues with normal startup.
-            if (!WatchdogService.HandleStartup(e.Args))
-            {
-                return;
-            }
+            // ── Velopack: intercepts special command-line args for
+            // install / update / uninstall lifecycle hooks. MUST be first.
+            Velopack.VelopackApp.Build().Run();
 
             base.OnStartup(e);
 
@@ -147,7 +140,7 @@ namespace MosquitoNetCalculator
 
             // ── Data migration: old versions stored orders/settings/prices
             // alongside the .exe (BaseDirectory). v3.28+ stores them in
-            // %AppData%\MosquitoNetCalculator\ so they survive updates.
+            // %AppData%\MosquitoNetCalculator\ so they survive Velopack updates.
             // On first run of the new version, migrate existing data.
             MigrateDataToAppData();
 

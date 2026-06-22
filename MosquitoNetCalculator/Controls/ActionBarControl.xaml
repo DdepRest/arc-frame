@@ -118,7 +118,11 @@
                             <MenuItem Header="Сменить точку установки…"
                                       Click="MenuChangeLocation_Click"/>
                             <Separator/>
-
+                            <MenuItem x:Name="MenuFlowToggle"
+                                      Header="Автообновления (Velopack Flow)"
+                                      IsCheckable="True"
+                                      Click="MenuFlowToggle_Click"/>
+                            <Separator/>
                             <MenuItem Header="Проверить обновления"
                                       Click="MenuCheckUpdates_Click"/>
                         </ContextMenu>

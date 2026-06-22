@@ -6,6 +6,5 @@ echo === Starting ISCC.exe ===
 "C:\Program Files (x86)\Inno Setup 6\ISCC.exe" "installer.iss"
 echo === ISCC exit code: %errorlevel% ===
 echo === Listing Output\ ===
-dir /b "Output\SetupMosquitoNetCalculator-3.34.1.exe" 2>nul
-echo === Done ===
+dir /b "Output\SetupMosquitoNetCalculator-3.24.0.exe" 2>nul
 exit /b %errorlevel%

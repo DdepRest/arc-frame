@@ -29,7 +29,7 @@ namespace MosquitoNetCalculator.Controls
         public System.Windows.Shapes.Ellipse UpdateBadgeDot => UpdateBadge;
         public MenuItem MenuItemThemeLight => MenuThemeLight;
         public MenuItem MenuItemThemeDark => MenuThemeDark;
-
+        public MenuItem MenuItemFlowToggle => MenuFlowToggle;
 
         // Single delegate instance reused across subscribe/unsubscribe.
         // Method-group conversion creates a fresh delegate on every call, so
@@ -84,6 +84,9 @@ namespace MosquitoNetCalculator.Controls
             if (MenuThemeLight != null) MenuThemeLight.IsChecked = !isDark;
             if (MenuThemeDark != null) MenuThemeDark.IsChecked = isDark;
 
+            // Sync Velopack Flow toggle with current settings value
+            if (MenuFlowToggle != null)
+                MenuFlowToggle.IsChecked = AppSettingsService.IsFlowEnabled();
 
             // Show/hide update badge based on pending update status
             if (UpdateBadge != null)
@@ -239,6 +242,20 @@ namespace MosquitoNetCalculator.Controls
             // Reuse the existing WelcomeWindow flow — it persists prefix + location
             // and refreshes the sidebar / title / contract number on close.
             mw.OpenWelcomeWindow();
+        }
+
+        private void MenuFlowToggle_Click(object sender, RoutedEventArgs e)
+        {
+            // Toggle the Velopack Flow setting. The MenuItem's IsChecked
+            // is already flipped by WPF before this handler runs (IsCheckable).
+            bool enabled = MenuFlowToggle.IsChecked;
+            AppSettingsService.SetFlowEnabled(enabled);
+
+            ToastService.ShowToast(
+                enabled
+                    ? "Автообновления включены (Velopack Flow)"
+                    : "Автообновления отключены",
+                ToastType.Info);
         }
 
         private async void MenuCheckUpdates_Click(object sender, RoutedEventArgs e)

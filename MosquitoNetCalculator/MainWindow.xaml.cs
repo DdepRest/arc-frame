@@ -534,6 +534,24 @@ namespace MosquitoNetCalculator
             }
         }
 
+        internal void AnwisModePillLeftClick(object sender, MouseButtonEventArgs e)
+        {
+            if (sender is not FrameworkElement fe || fe.DataContext is not OrderItem item) return;
+            if (!item.IsAnwis) return;
+
+            var menu = Controls.AnwisContextMenuBuilder.Build(
+                item.AnwisSizeMode,
+                mode =>
+                {
+                    PushUndo();
+                    item.AnwisSizeMode = mode;
+                    MarkDirty();
+                },
+                fe);
+
+            menu.IsOpen = true;
+        }
+
         internal void AnwisModePillRightClick(object sender, MouseButtonEventArgs e)
         {
             if (sender is not FrameworkElement fe || fe.DataContext is not OrderItem item) return;

@@ -40,6 +40,9 @@ namespace MosquitoNetCalculator.Controls
         private void BtnToggleInstallation_Click(object sender, RoutedEventArgs e) =>
             TryForwardToMain(nameof(BtnToggleInstallation_Click), mw => mw.BtnToggleInstallation_Click(sender, e));
 
+        private void AnwisModePill_PreviewLeftClick(object sender, System.Windows.Input.MouseButtonEventArgs e) =>
+            TryForwardToMain(nameof(AnwisModePill_PreviewLeftClick), mw => mw.AnwisModePillLeftClick(sender, e));
+
         private void AnwisModePill_PreviewRightClick(object sender, System.Windows.Input.MouseButtonEventArgs e) =>
             TryForwardToMain(nameof(AnwisModePill_PreviewRightClick), mw => mw.AnwisModePillRightClick(sender, e));
 

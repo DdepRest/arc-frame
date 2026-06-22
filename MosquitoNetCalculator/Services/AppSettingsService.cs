@@ -16,7 +16,7 @@ namespace MosquitoNetCalculator.Services
         // FieldInfo.SetValue against initonly fields, so the property
         // must be public-mutable from inside the class itself.
         // Data lives in %AppData%\MosquitoNetCalculator\, not in the app directory.
-        // GitHub Releases updates write into the app directory — user settings must
+        // Velopack updates wipe the `current` folder — user settings must
         // survive across updates, so they go into %AppData%.
         public static string SettingsPath { get; set; } =
             Path.Combine(
@@ -32,6 +32,7 @@ namespace MosquitoNetCalculator.Services
             public string LocationName { get; set; } = "";
             public bool FirstRunComplete { get; set; } = false;
             public string UpdateUrl { get; set; } = "";
+            public bool UseVelopackFlow { get; set; } = false;
             public string? PendingUpdateVersion { get; set; }
         }
 
@@ -164,10 +165,33 @@ namespace MosquitoNetCalculator.Services
         }
 
         /// <summary>
-        /// Returns the manifest URL override or empty string (= use default).
-        /// Repurposed from the old Velopack 'UpdateUrl'; now used by
-        /// <see cref="UpdateService.GetManifestUrl()"/> to override the
-        /// GitHub Releases default.
+        /// Returns true if Velopack Flow is enabled.
+        /// </summary>
+        public static bool IsFlowEnabled()
+        {
+            lock (_lock)
+            {
+                var settings = LoadSettings();
+                return settings.UseVelopackFlow;
+            }
+        }
+
+        /// <summary>
+        /// Enables or disables Velopack Flow auto-updates.
+        /// </summary>
+        public static void SetFlowEnabled(bool enabled)
+        {
+            lock (_lock)
+            {
+                var settings = LoadSettings();
+                settings.UseVelopackFlow = enabled;
+                SaveSettings(settings);
+            }
+        }
+
+        /// <summary>
+        /// Returns the configured update URL for Velopack auto-updates.
+        /// Empty string means auto-update is disabled.
         /// </summary>
         public static string LoadUpdateUrl()
         {
@@ -179,7 +203,7 @@ namespace MosquitoNetCalculator.Services
         }
 
         /// <summary>
-        /// Saves a custom manifest-URL override.
+        /// Saves the update URL for Velopack auto-updates.
         /// </summary>
         public static void SaveUpdateUrl(string url)
         {

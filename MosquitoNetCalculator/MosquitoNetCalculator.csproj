@@ -7,7 +7,7 @@
     <UseWPF>true</UseWPF>
     <EnableWindowsTargeting>true</EnableWindowsTargeting>
     <ApplicationIcon>Resources\app_icon.ico</ApplicationIcon>
-    <Version>3.34.1</Version>
+    <Version>3.34.3</Version>
     <RuntimeIdentifiers>win-x64</RuntimeIdentifiers>
     <!-- Treat every compiler / NuGet warning as an error so the build fails
          closed if any future change reintroduces a warning. The current
@@ -20,6 +20,7 @@
 
   <ItemGroup>
     <PackageReference Include="Microsoft.Web.WebView2" Version="1.0.2210.55" />
+    <PackageReference Include="Velopack" Version="1.2.0" />
   </ItemGroup>
 
   <!-- Expose `internal` members to the test project so regression tests
