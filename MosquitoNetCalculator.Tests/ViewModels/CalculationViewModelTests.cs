@@ -468,5 +468,61 @@ namespace MosquitoNetCalculator.Tests.ViewModels
             Assert.Equal(998, item.Width);   // 1000 − 2 (ББ70 stored formula)
             Assert.Equal(970, item.Height);  // 1000 − 30 (ББ70/ББ60 share H formula)
         }
+
+        // ─── v3.35.0: non-Anwis AddItem regression tests ─────────
+
+        [Theory]
+        [InlineData("Откос материал")]
+        [InlineData("Работа")]
+        [InlineData("Пояс")]
+        [InlineData("Брус")]
+        [InlineData("Доставка")]
+        [InlineData("Отлив")]
+        [InlineData("ПСУЛ")]
+        [InlineData("Уплотнение")]
+        [InlineData("Козырёк")]
+        [InlineData("Короб")]
+        public void AddItem_NonAnwis_StoresWidthHeightAsIs(string productName)
+        {
+            // v3.35.0 regression: Anwis calc formulas (W+2, H−30 for ББ60)
+            // must NOT leak into non-Anwis products. Width/Height are stored
+            // exactly as passed, no adjustment.
+            var item = _vm.AddItem(productName, "", 250, 100, 1, 500,
+                anwisMode: AnwisSizeMode.Брусбокс60)!;
+
+            Assert.Equal(productName, item.Name);
+            Assert.Equal(250, item.Width);
+            Assert.Equal(100, item.Height);
+            Assert.Equal(AnwisSizeMode.Брусбокс60, item.AnwisSizeMode);
+            Assert.False(item.IsAnwis);
+        }
+
+        [Fact]
+        public void AddItem_NonAnwis_NonDefaultMode_StillIdentity()
+        {
+            // Even with a non-default Anwis mode (ББ70), non-Anwis
+            // products must store dimensions as-is.
+            var item = _vm.AddItem("Откос материал", "", 250, 100, 1, 500,
+                anwisMode: AnwisSizeMode.Брусбокс70)!;
+
+            Assert.Equal(250, item.Width);
+            Assert.Equal(100, item.Height);
+            Assert.Equal(AnwisSizeMode.Брусбокс70, item.AnwisSizeMode);
+        }
+
+        [Theory]
+        [InlineData("Откос материал")]
+        [InlineData("Работа")]
+        [InlineData("Пояс")]
+        public void AddItem_NonAnwis_ZeroHeight_StaysZero(string productName)
+        {
+            // The original 30mm bug: non-Anwis with Height=0 would
+            // show 30 via ВысотаВвод. This test verifies the full
+            // add pipeline stores and displays Height=0 correctly.
+            var item = _vm.AddItem(productName, "", 250, 0, 1, 500)!;
+
+            Assert.Equal(0, item.Height);
+            Assert.Equal(0, item.ВысотаВвод);
+        }
     }
 }
