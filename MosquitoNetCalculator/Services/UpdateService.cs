@@ -378,9 +378,11 @@ namespace MosquitoNetCalculator.Services
         }
 
         /// <summary>
-        /// Safely parses a version string, returning null on failure.
+        /// Safely parses a version string, returning null on failure
+        /// (null input, empty whitespace, or malformed value).
+        /// Exposed as <c>internal</c> for direct unit testing.
         /// </summary>
-        private static Version? ParseSafe(string version)
+        internal static Version? ParseSafe(string? version)
         {
             if (string.IsNullOrWhiteSpace(version))
                 return null;
@@ -393,8 +395,9 @@ namespace MosquitoNetCalculator.Services
         /// that .NET SDK automatically appends to
         /// <c>AssemblyInformationalVersionAttribute</c> when source control
         /// info is available. Also strips any pre-release suffix after '-'.
+        /// Exposed as <c>internal</c> for direct unit testing.
         /// </summary>
-        private static string? StripVersionSuffix(string? version)
+        internal static string? StripVersionSuffix(string? version)
         {
             if (string.IsNullOrEmpty(version))
                 return version;
@@ -408,32 +411,61 @@ namespace MosquitoNetCalculator.Services
         }
 
         /// <summary>
-        /// Резолвит текущую версию с подробным логированием для диагностики.
-        /// Используется один раз при инициализации <see cref="CurrentVersion"/>
-        /// и при ошибке вернёт <c>new Version(0, 0, 0)</c> с записью в Debug.
+        /// Резолвит версию из произвольной сборки (тестируется с динамическими сборками).
+        /// Приоритет источников (от качественного к фоллбэку):
+        /// 1. <c>AssemblyInformationalVersionAttribute</c> — содержит «3.34.4+gitHash»
+        ///    при наличии source control, отсекаем суффикс → чистый 3-part («v3.34.4» в заголовке).
+        /// 2. <c>AssemblyFileVersionAttribute</c> — без git hash, но содержит 4-ю часть («3.34.4.0»).
+        /// 3. <c>Assembly.GetName().Version</c> — legacy fallback (в single-file обычно null).
+        /// При ошибке — null (caller подставит 0.0.0 + запишет в Debug).
         /// </summary>
-        internal static Version? TryResolveCurrentVersion()
+        internal static Version? ResolveVersion(Assembly? assembly)
         {
             try
             {
-                var assembly = typeof(UpdateService).Assembly;
-                var attr = assembly.GetCustomAttribute<AssemblyInformationalVersionAttribute>();
-                if (attr == null)
+                if (assembly == null) return null;
+
+                // 1. InformationalVersion (3.34.4+gitHash) — лучший display-источник.
+                var infoAttr = assembly.GetCustomAttribute<AssemblyInformationalVersionAttribute>();
+                var vInfo = ParseSafe(StripVersionSuffix(infoAttr?.InformationalVersion));
+                if (vInfo != null)
                 {
-                    Debug.WriteLine($"[UpdateService] AssemblyInformationalVersionAttribute NOT FOUND on {assembly.FullName}");
-                    return null;
+                    Debug.WriteLine($"[UpdateService] Resolved via InformationalVersion='{infoAttr?.InformationalVersion}' -> {vInfo}");
+                    return vInfo;
                 }
-                var raw = attr.InformationalVersion;
-                var cleaned = StripVersionSuffix(raw);
-                Debug.WriteLine($"[UpdateService] InformationalVersion raw='{raw}' cleaned='{cleaned}'");
-                return ParseSafe(cleaned ?? string.Empty);
+
+                // 2. FileVersion (3.34.4.0) — fallback, даст «v3.34.4.0».
+                var fileAttr = assembly.GetCustomAttribute<AssemblyFileVersionAttribute>();
+                var vFile = ParseSafe(fileAttr?.Version);
+                if (vFile != null)
+                {
+                    Debug.WriteLine($"[UpdateService] Resolved via FileVersion='{fileAttr?.Version}' -> {vFile}");
+                    return vFile;
+                }
+
+                // 3. GetName().Version — legacy fallback.
+                var nameVer = assembly.GetName().Version;
+                if (nameVer != null)
+                {
+                    Debug.WriteLine($"[UpdateService] Resolved via GetName().Version -> {nameVer}");
+                    return nameVer;
+                }
+
+                Debug.WriteLine("[UpdateService] All version sources failed");
             }
             catch (Exception ex)
             {
                 Debug.WriteLine($"[UpdateService] Version resolve exception: {ex}");
-                return null;
             }
+            return null;
         }
+
+        /// <summary>
+        /// Резолвит текущую версию приложения (из сборки UpdateService).
+        /// Production-call site для <see cref="CurrentVersion"/>.
+        /// </summary>
+        internal static Version? TryResolveCurrentVersion()
+            => ResolveVersion(typeof(UpdateService).Assembly);
 
         /// <summary>
         /// Tries to delete a file, swallowing any exceptions.
