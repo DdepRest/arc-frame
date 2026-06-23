@@ -177,8 +177,8 @@ namespace MosquitoNetCalculator.Models
         /// Width as entered by the user (raw input). For Anwis products this
         /// reverses the calc adjustment from the stored Width; for all other
         /// products it returns the stored Width unchanged.
-        /// The setter applies the Anwis calc adjustment before storing, so
-        /// editing in the DataGrid preserves correct calculations.
+        /// The setter applies the Anwis calc adjustment before storing for Anwis
+        /// products, but stores identity (raw=calc) for non-Anwis products.
         /// </summary>
         public double ШиринаВвод
         {
@@ -186,7 +186,9 @@ namespace MosquitoNetCalculator.Models
             set
             {
                 var raw = Math.Max(0, value);
-                _width = AnwisSize.ОтВвода(raw, Размеры.ВысотаОтображение, _anwisSizeMode).ШиринаРасчёт;
+                _width = IsAnwis
+                    ? AnwisSize.ОтВвода(raw, Размеры.ВысотаОтображение, _anwisSizeMode).ШиринаРасчёт
+                    : raw;
                 OnPropertyChanged(nameof(Размеры));
                 OnPropertyChanged(nameof(ШиринаВвод));
                 Recalculate();
@@ -197,8 +199,8 @@ namespace MosquitoNetCalculator.Models
         /// Height as entered by the user (raw input). For Anwis products this
         /// reverses the calc adjustment from the stored Height; for all other
         /// products it returns the stored Height unchanged.
-        /// The setter applies the Anwis calc adjustment before storing, so
-        /// editing in the DataGrid preserves correct calculations.
+        /// The setter applies the Anwis calc adjustment before storing for Anwis
+        /// products, but stores identity (raw=calc) for non-Anwis products.
         /// </summary>
         public double ВысотаВвод
         {
@@ -206,7 +208,9 @@ namespace MosquitoNetCalculator.Models
             set
             {
                 var raw = Math.Max(0, value);
-                _height = AnwisSize.ОтВвода(Размеры.ШиринаОтображение, raw, _anwisSizeMode).ВысотаРасчёт;
+                _height = IsAnwis
+                    ? AnwisSize.ОтВвода(Размеры.ШиринаОтображение, raw, _anwisSizeMode).ВысотаРасчёт
+                    : raw;
                 OnPropertyChanged(nameof(Размеры));
                 OnPropertyChanged(nameof(ВысотаВвод));
                 Recalculate();
@@ -281,7 +285,7 @@ namespace MosquitoNetCalculator.Models
         /// При изменении режима Width/Height пересчитываются:
         ///  1. Обратный пересчёт из текущего режима → сырые размеры
         ///  2. Прямой пересчёт сырых размеров в новый режим
-        /// Для не-Anwis товаров формулы возвращают те же значения (холостой проход).
+        /// Для не-Anwis товаров — no-op: режим не применяется к размерам.
         /// </summary>
         public AnwisSizeMode AnwisSizeMode
         {
@@ -291,22 +295,31 @@ namespace MosquitoNetCalculator.Models
                 if (_anwisSizeMode == value)
                     return;
 
-                // Reverse current mode to get raw dimensions,
-                // then apply new mode to store calc-adjusted values.
-                // Uses AnwisSize for unified conversion.
-                var size = AnwisSize.ОтХранимого(_width, _height, _anwisSizeMode);
-                var newSize = size.СРежимом(value);
+                // Only recalculate dimensions for Anwis products.
+                if (IsAnwis)
+                {
+                    // Capture old mode before overwriting, then reverse to raw
+                    // and apply new mode.
+                    var oldMode = _anwisSizeMode;
+                    _anwisSizeMode = value;
 
-                _anwisSizeMode = value;
-                _width = newSize.ШиринаРасчёт;
-                _height = newSize.ВысотаРасчёт;
+                    var oldSize = AnwisSize.ОтХранимого(_width, _height, oldMode);
+                    var newSize = oldSize.СРежимом(value);
+                    _width = newSize.ШиринаРасчёт;
+                    _height = newSize.ВысотаРасчёт;
+
+                    OnPropertyChanged(nameof(Width));
+                    OnPropertyChanged(nameof(Height));
+                    Recalculate();
+                }
+                else
+                {
+                    _anwisSizeMode = value;
+                }
 
                 OnPropertyChanged();
-                OnPropertyChanged(nameof(Width));
-                OnPropertyChanged(nameof(Height));
                 OnPropertyChanged(nameof(AnwisSizeShortLabel));
                 OnPropertyChanged(nameof(AnwisSizeToolTip));
-                Recalculate();
             }
         }
 

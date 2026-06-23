@@ -852,6 +852,64 @@ namespace MosquitoNetCalculator.Tests.Models
             Assert.Equal(1170, item.Height, 0);
         }
 
+        [Fact]
+        public void ШиринаВвод_Setter_NonAnwis_StoresIdentity()
+        {
+            // v3.35.0 fix: editing width on non-Anwis (e.g. Откос материал)
+            // should store raw value directly, not apply Anwis calc (+2 for ББ60).
+            var item = new OrderItem
+            {
+                Name = "Откос материал",
+                Width = 250, Height = 0,
+            };
+            Assert.Equal(250, item.ШиринаВвод);
+
+            // Edit width to 300 → stored Width should be 300, not 302.
+            item.ШиринаВвод = 300;
+            Assert.Equal(300, item.ШиринаВвод);
+            Assert.Equal(300, item.Width);
+        }
+
+        [Fact]
+        public void ВысотаВвод_Setter_NonAnwis_StoresIdentity()
+        {
+            // v3.35.0 fix: editing height on non-Anwis should store
+            // raw value directly, not Minus30.
+            // (Height is usually disabled for ManualPiece in UI, but
+            //  the property should still behave correctly if set via code.)
+            var item = new OrderItem
+            {
+                Name = "Работа",
+                Width = 0, Height = 0,
+            };
+
+            item.ВысотаВвод = 50;
+            Assert.Equal(50, item.ВысотаВвод);
+            Assert.Equal(50, item.Height);
+        }
+
+        [Fact]
+        public void AnwisSizeMode_Change_NonAnwis_PreservesDimensions()
+        {
+            // v3.35.0 fix: changing AnwisSizeMode on non-Anwis products
+            // must NOT reverse/re-apply Anwis formulas to Width/Height.
+            var item = new OrderItem
+            {
+                Name = "Отлив",
+                Width = 1500, Height = 100,
+            };
+
+            item.AnwisSizeMode = AnwisSizeMode.Брусбокс70;
+            Assert.Equal(1500, item.Width);
+            Assert.Equal(100, item.Height);
+            Assert.Equal(AnwisSizeMode.Брусбокс70, item.AnwisSizeMode);
+
+            // And back to default — still no dimension change.
+            item.AnwisSizeMode = AnwisSizeMode.Брусбокс60;
+            Assert.Equal(1500, item.Width);
+            Assert.Equal(100, item.Height);
+        }
+
         // ─── Anwis computed properties tests ─────────────────
 
         [Fact]
