@@ -10,12 +10,20 @@
 ;
 ; Инструкция по сборке:
 ; 1. Запустите build.bat — он создаст publish\ со всеми файлами
-; 2. Откройте этот файл (installer.iss) в Inno Setup
-; 3. Нажмите Build > Compile (или Ctrl+F9)
-; 4. Готовый установщик будет в Output\SetupMosquitoNetCalculator.exe
+; 2. Запустите compile-installer.bat — он сам прочитает версию из .csproj
+;    и скомпилирует установщик через ISCC.exe.
+; 3. Готовый установщик будет в Output\SetupMosquitoNetCalculator-*.exe
+;
+; Примечание: если открываете installer.iss в Inno Setup Studio вручную,
+; укажите параметр /DMyAppVersion=3.x.x в настройках компиляции,
+; иначе версия будет "0.0.0".
 
 #define MyAppName "MosquitoNetCalculator"
-#define MyAppVersion "3.34.4"
+; Версия автоматически пробрасывается из compile-installer.bat (читает из .csproj).
+; Если запускать ISCC вручную — укажите /DMyAppVersion=3.x.x или будет "0.0.0".
+#ifndef MyAppVersion
+#define MyAppVersion "0.0.0"
+#endif
 #define MyAppPublisher "MosquitoNet"
 #define MyAppURL ""
 #define MyAppExeName "MosquitoNetCalculator.exe"
