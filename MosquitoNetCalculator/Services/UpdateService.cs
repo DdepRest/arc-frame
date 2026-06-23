@@ -48,9 +48,11 @@ namespace MosquitoNetCalculator.Services
         /// Assembly.GetName().Version, поэтому этот подход работает.
         /// </summary>
         internal static readonly Version CurrentVersion = ParseSafe(
-                typeof(UpdateService).Assembly
-                    .GetCustomAttribute<AssemblyInformationalVersionAttribute>()
-                    ?.InformationalVersion ?? "0.0.0"
+                StripVersionSuffix(
+                    typeof(UpdateService).Assembly
+                        .GetCustomAttribute<AssemblyInformationalVersionAttribute>()
+                        ?.InformationalVersion
+                ) ?? "0.0.0"
             ) ?? new Version(0, 0, 0);
 
         private static bool _isChecking;
@@ -389,6 +391,25 @@ namespace MosquitoNetCalculator.Services
                 return null;
             try { return new Version(version); }
             catch { return null; }
+        }
+
+        /// <summary>
+        /// Strips the git commit hash suffix (e.g., "3.34.4+abc123" → "3.34.4")
+        /// that .NET SDK automatically appends to
+        /// <c>AssemblyInformationalVersionAttribute</c> when source control
+        /// info is available. Also strips any pre-release suffix after '-'.
+        /// </summary>
+        private static string? StripVersionSuffix(string? version)
+        {
+            if (string.IsNullOrEmpty(version))
+                return version;
+            int plusIdx = version.IndexOf('+');
+            if (plusIdx >= 0)
+                version = version.Substring(0, plusIdx);
+            int dashIdx = version.IndexOf('-');
+            if (dashIdx >= 0)
+                version = version.Substring(0, dashIdx);
+            return version;
         }
 
         /// <summary>
