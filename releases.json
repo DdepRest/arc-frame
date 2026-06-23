@@ -1,7 +1,22 @@
 {
-    "latest":  "3.34.4",
+    "latest":  "3.34.5",
     "minRequired":  "",
     "releases":  [
+                     {
+                         "version":  "3.34.5",
+                         "date":  "2026-06-23",
+                         "type":  "Исправление",
+                         "title":  "Версия в заголовке: многослойный fallback с логированием",
+                         "changes":  [
+                                         "UpdateService.CurrentVersion теперь читается из AssemblyInformationalVersionAttribute с автоматическим отсечением git-source-link суффикса («3.34.4+abc123» → «3.34.4»)",
+                                         "Добавлен многослойный fallback: InformationalVersion → FileVersion → GetName().Version — гарантирует корректную версию даже в single-file publish",
+                                         "Добавлено подробное Debug-логирование в TryResolveCurrentVersion — если fallback сработает, в Debug-выводе будет видно, какая попытка провалилась",
+                                         "Версия для релиза поднята до 3.34.5 — у пользователей со сломанной предыдущей сборкой auto-update предложит обновление"
+                                     ],
+                         "url":  "https://github.com/DdepRest/arc-frame/releases/download/v3.34.5/ARC-Frame-3.34.5-full.zip",
+                         "size":  66659921,
+                         "sha256":  "1e1dfa98f476f0dfdeaeb554abfccf141aa86167a53290b89a07db0f0bc305de"
+                     },
                      {
                          "version":  "3.34.4",
                          "date":  "2026-06-23",
