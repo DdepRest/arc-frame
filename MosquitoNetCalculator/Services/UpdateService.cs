@@ -47,13 +47,8 @@ namespace MosquitoNetCalculator.Services
         /// В single-file publish атрибут сохраняется, в отличие от
         /// Assembly.GetName().Version, поэтому этот подход работает.
         /// </summary>
-        internal static readonly Version CurrentVersion = ParseSafe(
-                StripVersionSuffix(
-                    typeof(UpdateService).Assembly
-                        .GetCustomAttribute<AssemblyInformationalVersionAttribute>()
-                        ?.InformationalVersion
-                ) ?? "0.0.0"
-            ) ?? new Version(0, 0, 0);
+        internal static readonly Version CurrentVersion =
+            TryResolveCurrentVersion() ?? new Version(0, 0, 0);
 
         private static bool _isChecking;
         private static double _downloadProgress;
@@ -410,6 +405,34 @@ namespace MosquitoNetCalculator.Services
             if (dashIdx >= 0)
                 version = version.Substring(0, dashIdx);
             return version;
+        }
+
+        /// <summary>
+        /// Резолвит текущую версию с подробным логированием для диагностики.
+        /// Используется один раз при инициализации <see cref="CurrentVersion"/>
+        /// и при ошибке вернёт <c>new Version(0, 0, 0)</c> с записью в Debug.
+        /// </summary>
+        internal static Version? TryResolveCurrentVersion()
+        {
+            try
+            {
+                var assembly = typeof(UpdateService).Assembly;
+                var attr = assembly.GetCustomAttribute<AssemblyInformationalVersionAttribute>();
+                if (attr == null)
+                {
+                    Debug.WriteLine($"[UpdateService] AssemblyInformationalVersionAttribute NOT FOUND on {assembly.FullName}");
+                    return null;
+                }
+                var raw = attr.InformationalVersion;
+                var cleaned = StripVersionSuffix(raw);
+                Debug.WriteLine($"[UpdateService] InformationalVersion raw='{raw}' cleaned='{cleaned}'");
+                return ParseSafe(cleaned ?? string.Empty);
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"[UpdateService] Version resolve exception: {ex}");
+                return null;
+            }
         }
 
         /// <summary>
