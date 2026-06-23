@@ -15,8 +15,8 @@
                                          "Добавлены юнит-тесты на все 4 точки утечки + AddItem для всех не-Anwis товаров"
                                      ],
                          "url":  "https://github.com/DdepRest/arc-frame/releases/download/v3.35.0/ARC-Frame-3.35.0-full.zip",
-                         "size":  66659871,
-                         "sha256":  "eaa8e9a20d06829065acb6c6fcbd9199a890d96826cee9b9f1230dbc7b719585"
+                         "size":  66659897,
+                         "sha256":  "21720f0c30f9448adb1b04f7523eb1dc7638377b63a1ed3ef78f3fd9b4bafc80"
                      },
                      {
                          "version":  "3.34.5",
