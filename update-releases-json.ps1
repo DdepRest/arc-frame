@@ -24,33 +24,20 @@ if (Test-Path $manifestPath) {
 # Remove existing entry for this version (idempotent re-run)
 $manifest.releases = @($manifest.releases | Where-Object { $_.version -ne $Version })
 
-# Extract release notes from the version's UpdateItem entry (if any)
-$updateLogPath = Join-Path $PSScriptRoot "MosquitoNetCalculator\Services\UpdateLog.cs"
+# Extract release notes from update-log.json (single source of truth)
+$updateLogPath = Join-Path $PSScriptRoot "MosquitoNetCalculator\Resources\update-log.json"
 $changes = @()
 $type = "Улучшение"
 $title = "ARC-Frame $Version"
 
-# Fetch changes from UpdateLog.cs for this version
+# Read release info from the JSON file
 if (Test-Path $updateLogPath) {
-    $updateLogText = Get-Content $updateLogPath -Raw -Encoding UTF8
-    # Find the UpdateItem block for this version
-    $pattern = '(?s)new UpdateItem\s*\{[^}]*?\bVersion\s*=\s*"' + [regex]::Escape($Version) + '"[^}]*?\}'
-    $match = [regex]::Match($updateLogText, $pattern)
-    if ($match.Success) {
-        $block = $match.Value
-        # Extract Type
-        if ($block -match 'Type\s*=\s*"([^"]+)"') { $type = $matches[1] }
-        # Extract Title
-        if ($block -match 'Title\s*=\s*"([^"]+)"') { $title = $matches[1] }
-        # Extract Changes list
-        $changesPattern = '(?s)Changes\s*=\s*new List<string>\s*\{([^}]+)\}'
-        if ($block -match $changesPattern) {
-            $changesRaw = $matches[1]
-            $changeMatches = [regex]::Matches($changesRaw, '"([^"]+)"')
-            foreach ($cm in $changeMatches) {
-                $changes += $cm.Groups[1].Value
-            }
-        }
+    $allEntries = Get-Content $updateLogPath -Raw -Encoding UTF8 | ConvertFrom-Json
+    $entry = $allEntries | Where-Object { $_.version -eq $Version } | Select-Object -First 1
+    if ($entry) {
+        $type   = $entry.type
+        $title  = $entry.title
+        $changes = @($entry.changes)
     }
 }
 
