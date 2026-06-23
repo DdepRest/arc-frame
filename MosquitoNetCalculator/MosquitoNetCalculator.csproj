@@ -7,7 +7,7 @@
     <UseWPF>true</UseWPF>
     <EnableWindowsTargeting>true</EnableWindowsTargeting>
     <ApplicationIcon>Resources\app_icon.ico</ApplicationIcon>
-    <Version>3.34.5</Version>
+    <Version>3.35.0</Version>
     <RuntimeIdentifiers>win-x64</RuntimeIdentifiers>
     <!-- Treat every compiler / NuGet warning as an error so the build fails
          closed if any future change reintroduces a warning. The current
