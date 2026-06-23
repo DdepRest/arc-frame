@@ -15,8 +15,8 @@
                                          "Удалены мёртвые строки и неиспользуемые импорты, общий объём кода сокращён более чем на 2000 строк"
                                      ],
                          "url":  "https://github.com/DdepRest/arc-frame/releases/download/v3.34.4/ARC-Frame-3.34.4-full.zip",
-                         "size":  66659329,
-                         "sha256":  "bdefd63d42dc7b779147ae93c2329ce787a66bcf615a288423485a43f2146d36"
+                         "size":  66659538,
+                         "sha256":  "77c0a3f86a0ca4fdcfa1bcdf592f05224f22c26236ae4a5098d45b0fc1c12e34"
                      },
                      {
                          "version":  "3.34.3",
