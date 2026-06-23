@@ -2,6 +2,7 @@ using System;
 using System.Diagnostics;
 using System.IO;
 using System.Net.Http;
+using System.Reflection;
 using System.Security.Cryptography;
 using System.Text.Json;
 using System.Threading;
@@ -39,11 +40,18 @@ namespace MosquitoNetCalculator.Services
             "https://raw.githubusercontent.com/DdepRest/arc-frame/main/releases.json";
 
         /// <summary>
-        /// Текущая версия приложения. Обновляется bump.py при релизе.
-        /// В single-file publish Assembly.GetName().Version недоступен,
-        /// поэтому версия хранится как константа.
+        /// Текущая версия приложения. Автоматически читается из
+        /// <c>AssemblyInformationalVersionAttribute</c>, который .NET SDK
+        /// генерирует из свойства <c>&lt;Version&gt;</c> в .csproj.
+        /// Менять версию нужно только в .csproj — сюда она подтянется сама.
+        /// В single-file publish атрибут сохраняется, в отличие от
+        /// Assembly.GetName().Version, поэтому этот подход работает.
         /// </summary>
-        internal static readonly Version CurrentVersion = new Version(3, 34, 4);
+        internal static readonly Version CurrentVersion = ParseSafe(
+                typeof(UpdateService).Assembly
+                    .GetCustomAttribute<AssemblyInformationalVersionAttribute>()
+                    ?.InformationalVersion ?? "0.0.0"
+            ) ?? new Version(0, 0, 0);
 
         private static bool _isChecking;
         private static double _downloadProgress;
