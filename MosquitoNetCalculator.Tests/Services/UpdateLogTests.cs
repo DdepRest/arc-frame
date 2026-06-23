@@ -21,8 +21,10 @@ namespace MosquitoNetCalculator.Tests.Services
         {
             var items = UpdateLog.AllNewestFirst();
 
-            // The latest version in the JSON is 3.34.3
-            Assert.Equal("3.34.3", items[0].Version);
+            // The latest version in the JSON is 3.34.5 (update this when bumping).
+            // AllNewestFirst_VersionsInDescendingOrder below already proves ordering
+            // is correct, but this lock-in catches accidental version-string typos.
+            Assert.Equal("3.34.5", items[0].Version);
         }
 
         [Fact]
