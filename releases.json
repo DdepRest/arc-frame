@@ -1,7 +1,23 @@
 {
-    "latest":  "3.34.3",
+    "latest":  "3.34.4",
     "minRequired":  "",
     "releases":  [
+                     {
+                         "version":  "3.34.4",
+                         "date":  "2026-06-23",
+                         "type":  "Улучшение",
+                         "title":  "Рефакторинг: разбиение больших файлов на partial-классы и модульные стили",
+                         "changes":  [
+                                         "MainWindow.xaml.cs разбит на 5 partial-файлов: Items, Orders, TitleDirty, WindowChrome, DataGrid — каждый отвечает за свою область",
+                                         "OrderItem.cs разбит на partial-файлы: OrderItem.Calculations.cs (расчёты) и OrderItem.Installation.cs (монтаж)",
+                                         "InputStyles.xaml разделён на отдельные файлы по типу контрола: TextBox, ComboBox, CheckBox, DatePicker",
+                                         "Services/DialogService.cs и UpdateLog.cs реорганизованы — код стал чище и прозрачнее",
+                                         "Удалены мёртвые строки и неиспользуемые импорты, общий объём кода сокращён более чем на 2000 строк"
+                                     ],
+                         "url":  "https://github.com/DdepRest/arc-frame/releases/download/v3.34.4/ARC-Frame-3.34.4-full.zip",
+                         "size":  66659329,
+                         "sha256":  "bdefd63d42dc7b779147ae93c2329ce787a66bcf615a288423485a43f2146d36"
+                     },
                      {
                          "version":  "3.34.3",
                          "date":  "2026-06-22",

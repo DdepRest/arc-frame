@@ -15,7 +15,7 @@
 ; 4. Готовый установщик будет в Output\SetupMosquitoNetCalculator.exe
 
 #define MyAppName "MosquitoNetCalculator"
-#define MyAppVersion "3.34.3"
+#define MyAppVersion "3.34.4"
 #define MyAppPublisher "MosquitoNet"
 #define MyAppURL ""
 #define MyAppExeName "MosquitoNetCalculator.exe"
