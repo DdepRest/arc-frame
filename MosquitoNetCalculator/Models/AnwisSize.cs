@@ -89,6 +89,13 @@ namespace MosquitoNetCalculator.Models
         public AnwisSize СРежимом(AnwisSizeMode newMode)
             => ОтВвода(ШиринаОтображение, ВысотаОтображение, newMode);
 
+        /// <summary>
+        /// Identity AnwisSize where all three layers (Отображение, Расчёт, Завод) are equal.
+        /// Used for non-Anwis products where no size conversion is needed.
+        /// </summary>
+        public static AnwisSize Identity(double w, double h)
+            => new AnwisSize(w, h, w, h, AnwisSizeMode.Габаритный);
+
         // ─── Формулы расчётных корректировок ──────────────────────────
 
         private static double ApplyCalcWidth(double rawW, AnwisSizeMode mode) => mode switch

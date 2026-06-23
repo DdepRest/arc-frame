@@ -787,15 +787,39 @@ namespace MosquitoNetCalculator.Tests.Models
         }
 
         [Fact]
-        public void ШиринаВвод_NonAnwis_PassesThroughAnwisSizeMode()
+        public void ШиринаВвод_NonAnwis_ReturnsIdentity()
         {
-            // For non-Anwis products, ШиринаВвод still uses the current
-            // AnwisSizeMode for reverse calculation. Default mode ББ60
-            // subtracts 2. This doesn't affect UI because ШиринаВвод is
-            // hidden for non-Anwis products.
+            // v3.35.0 fix: for non-Anwis products, Размеры returns identity
+            // (all three layers equal). ШиринаВвод = stored Width = 1500.
             var item = new OrderItem { Name = "Отлив", Width = 1500 };
-            // With ББ60: ReverseCalcWidth(1500) = 1500 - 2 = 1498
-            Assert.Equal(1498, item.ШиринаВвод);
+            Assert.Equal(1500, item.ШиринаВвод);
+        }
+
+        [Fact]
+        public void ВысотаВвод_NonAnwis_ReturnsIdentity_NotPlus30()
+        {
+            // Regression test for v3.35.0 bug: non-Anwis products (Откос материал,
+            // Работа, Пояс) showed height=30mm because ReverseCalcHeight(0, ББ60)
+            // returned 0+30=30. After fix, ВысотаВвод = stored Height = 0.
+            var item = new OrderItem { Name = "Откос материал", Width = 250, Height = 0 };
+            Assert.Equal(0, item.ВысотаВвод);
+        }
+
+        [Theory]
+        [InlineData("Откос материал")]
+        [InlineData("Работа")]
+        [InlineData("Пояс")]
+        public void Размеры_NonAnwis_DisplayEqualsCalc(string name)
+        {
+            // For non-Anwis products, Отображение and Расчёт layers are identity.
+            // (Завод layer = calc − 20 is never read for non-Anwis —
+            //  FactoryTextService gates on IsApplicable before accessing it.)
+            var item = new OrderItem { Name = name, Width = 250, Height = 0 };
+            var s = item.Размеры;
+            Assert.Equal(item.Width, s.ШиринаОтображение);
+            Assert.Equal(item.Width, s.ШиринаРасчёт);
+            Assert.Equal(item.Height, s.ВысотаОтображение);
+            Assert.Equal(item.Height, s.ВысотаРасчёт);
         }
 
         [Fact]

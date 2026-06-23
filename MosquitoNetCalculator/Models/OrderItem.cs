@@ -218,7 +218,9 @@ namespace MosquitoNetCalculator.Models
         /// Отображение (сырые размеры пользователя), Расчёт (для площади/цены/КП),
         /// Завод (для текста «На завод»). Для не-Anwis товаров все слои равны.
         /// </summary>
-        public AnwisSize Размеры => AnwisSize.ОтХранимого(_width, _height, _anwisSizeMode);
+        public AnwisSize Размеры => IsAnwis
+            ? AnwisSize.ОтХранимого(_width, _height, _anwisSizeMode)
+            : AnwisSize.Identity(_width, _height);
 
         public int Quantity
         {
