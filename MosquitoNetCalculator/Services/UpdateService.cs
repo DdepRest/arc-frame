@@ -43,7 +43,7 @@ namespace MosquitoNetCalculator.Services
         /// В single-file publish Assembly.GetName().Version недоступен,
         /// поэтому версия хранится как константа.
         /// </summary>
-        internal static readonly Version CurrentVersion = new Version(3, 34, 3);
+        internal static readonly Version CurrentVersion = new Version(3, 34, 4);
 
         private static bool _isChecking;
         private static double _downloadProgress;
