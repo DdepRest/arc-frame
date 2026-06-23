@@ -600,12 +600,12 @@ namespace MosquitoNetCalculator.Tests.App
         [Fact]
         public void Check11_MainWindow_WndProc_Handles_WM_GETMINMAXINFO()
         {
-            // §11 — v3.21.0 fix: развёрнутое окно учитывает rcWork
-            // (рабочую область монитора), а не полный экран. WM_GETMINMAXINFO
-            // — приватный Win32-обработчик в MainWindow.xaml.cs; проверяем
-            // статически, что компоненты clamping логики присутствуют, вместо
-            // того чтобы поднимать STA + WndProc.
-            var src = File.ReadAllText(Path.Combine(LocateSourceProjectDir(), "MainWindow.xaml.cs"));
+            // §11 — v3.34.4: WndProc & Win32 interop moved to
+            // MainWindow.WindowChrome.cs (partial class).
+            // Check all partial files for the clamping-logic strings.
+            var dir = LocateSourceProjectDir();
+            var src = File.ReadAllText(Path.Combine(dir, "MainWindow.xaml.cs"))
+                + File.ReadAllText(Path.Combine(dir, "MainWindow.WindowChrome.cs"));
             Assert.Contains("WM_GETMINMAXINFO", src);
             Assert.Contains("GetMonitorInfo", src);
             Assert.Contains("ptMaxPosition", src);

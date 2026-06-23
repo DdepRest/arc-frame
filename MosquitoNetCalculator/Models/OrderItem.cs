@@ -7,7 +7,7 @@ using MosquitoNetCalculator.Services;
 
 namespace MosquitoNetCalculator.Models
 {
-    public class OrderItem : INotifyPropertyChanged
+    public partial class OrderItem : INotifyPropertyChanged
     {
         // Products eligible for the installation toggle
         private static readonly HashSet<string> InstallationApplicableProducts = new()
@@ -85,6 +85,9 @@ namespace MosquitoNetCalculator.Models
         /// </summary>
         public bool IsWidthOnly => WidthOnlyProducts.Contains(Name);
 
+        /// <summary>True for products that support the installation toggle (Anwis, На навесах).</summary>
+        public bool IsInstallationApplicable => InstallationApplicableProducts.Contains(Name);
+
         /// <summary>
         /// Returns a themed brush from application resources so it updates automatically when the theme changes.
         /// </summary>
@@ -101,13 +104,8 @@ namespace MosquitoNetCalculator.Models
         private double _width;
         private double _height;
         private int _quantity = 1;
-        private double _calculatedValue;
         private double _price;
-        private double _total;
         private bool _isActive = true;
-        private int _installationMode; // 0 = включён, 1 = без монтажа, 2 = в конструкцию
-        private double _installationDeduction = 500;   // для mode 1 (вычет)
-        private double _installationSurcharge = 500;   // для mode 2 (вычет)
         private AnwisSizeMode _anwisSizeMode = AnwisSizeMode.Брусбокс60;
         private double _defaultPrice = -1;             // -1 = не зафиксирована (первая установка через SetDefaultPrice)
 
@@ -259,12 +257,6 @@ namespace MosquitoNetCalculator.Models
             }
         }
 
-        public double CalculatedValue
-        {
-            get => _calculatedValue;
-            set { _calculatedValue = value; OnPropertyChanged(); }
-        }
-
         public double Price
         {
             get => _price;
@@ -281,238 +273,6 @@ namespace MosquitoNetCalculator.Models
             }
         }
 
-        public double Total
-        {
-            get => _total;
-            set { _total = value; OnPropertyChanged(); }
-        }
-
-        /// <summary>
-        /// Unit of measurement for a given product name.
-        /// - "м.п." (perimeter/length) for ПСУЛ, Уплотнение
-        /// - "шт." (per piece, manual sum) for Откос материал, Работа, Брус, Пояс, Доставка
-        /// - "м²" (area) for all other products
-        /// </summary>
-        public static string GetUnit(string name) => name switch
-        {
-            "ПСУЛ" => "м.п.",
-            "Уплотнение" => "м.п.",
-            "Откос материал" => "шт.",
-            "Работа" => "шт.",
-            "Брус" => "шт.",
-            "Пояс" => "шт.",
-            "Доставка" => "шт.",
-            _ => "м²"
-        };
-
-        /// <summary>Unit of measurement for this item (see <see cref="GetUnit"/>).</summary>
-        public string Unit => GetUnit(Name);
-
-        /// <summary>
-        /// Display string for the full calculated quantity (CalculatedValue × Quantity) with unit.
-        /// Empty when CalculatedValue is 0. Uses Russian culture (comma decimal separator)
-        /// to stay consistent with <see cref="MoneyFormatService"/>.
-        /// </summary>
-        public string CalculatedValueDisplay
-        {
-            get
-            {
-                if (CalculatedValue <= 0) return "";
-                double total = CalculatedValue * Quantity;
-                return Unit == "шт."
-                    ? $"{(int)total} {Unit}"
-                    : $"{total.ToString("F3", MoneyFormatService.RuCulture)} {Unit}";
-            }
-        }
-
-        /// <summary>Display string for price (empty when 0)</summary>
-        public string PriceDisplay => Price > 0 ? Services.MoneyFormatService.Format(Price) : "";
-
-        /// <summary>Display string for effective total (with installation deduction applied)</summary>
-        public string TotalDisplay => TotalWithDeduction > 0 ? Services.MoneyFormatService.Format(TotalWithDeduction) : "";
-
-        /// <summary>Display string for quantity (empty when 0)</summary>
-        public string QuantityDisplay => Quantity > 0 ? Quantity.ToString() : "";
-
-        /// <summary>
-        /// Installation mode:
-        /// 0 = монтаж включён (без изменений)
-        /// 1 = без монтажа (Total - InstallationDeduction)
-        /// 2 = в конструкцию (Total - InstallationSurcharge)
-        /// </summary>
-        public int InstallationMode
-        {
-            get => _installationMode;
-            set
-            {
-                var clamped = Math.Clamp(value, 0, 2);
-                if (_installationMode != clamped)
-                {
-                    _installationMode = clamped;
-                    OnPropertyChanged();
-                    OnPropertyChanged(nameof(InstallationDisplay));
-                    OnPropertyChanged(nameof(KpInstallationDisplay));
-                    OnPropertyChanged(nameof(InstallationLabel));
-                    OnPropertyChanged(nameof(InstallationForegroundColor));
-                    OnPropertyChanged(nameof(InstallationToolTip));
-                    Recalculate();
-                }
-            }
-        }
-
-        /// <summary>Deduction applied to Total in mode 1 (Без монтажа). Default 500 ₽.</summary>
-        public double InstallationDeduction
-        {
-            get => _installationDeduction;
-            set
-            {
-                var clamped = Math.Max(0, value);
-                if (Math.Abs(_installationDeduction - clamped) > 0.01)
-                {
-                    _installationDeduction = clamped;
-                    OnPropertyChanged();
-                    Recalculate();
-                }
-            }
-        }
-
-        /// <summary>Amount deducted from Total in mode 2 (В конструкцию). Default 0 ₽.</summary>
-        public double InstallationSurcharge
-        {
-            get => _installationSurcharge;
-            set
-            {
-                var clamped = Math.Max(0, value);
-                if (Math.Abs(_installationSurcharge - clamped) > 0.01)
-                {
-                    _installationSurcharge = clamped;
-                    OnPropertyChanged();
-                    Recalculate();
-                }
-            }
-        }
-
-        /// <summary>Returns the amount shown in the context-menu field for the current mode.</summary>
-        public double CurrentInstallationAmount => _installationMode switch
-        {
-            1 => _installationDeduction,
-            2 => _installationSurcharge,
-            _ => 0
-        };
-
-        /// <summary>Sets the per-mode amount from the context-menu field.</summary>
-        public void SetCurrentInstallationAmount(double value)
-        {
-            if (value < 0) value = 0;
-            if (_installationMode == 1) InstallationDeduction = value;
-            else if (_installationMode == 2) InstallationSurcharge = value;
-        }
-
-        /// <summary>
-        /// Whether the installation toggle is applicable for this product.
-        /// Only applies to: Anwis, На навесах.
-        /// </summary>
-        public bool IsInstallationApplicable => InstallationApplicableProducts.Contains(Name);
-
-        /// <summary>
-        /// Display icon for installation status (in the product list / grid).
-        /// Shows "—" for non-applicable products,
-        /// "✓" (green) when included (mode 0),
-        /// "В" (green) when in construction (mode 2) — Cyrillic Ve letter, matches
-        /// the printed КП so the grid and the printed document stay in sync,
-        /// "✕" (red) when without (mode 1).
-        /// </summary>
-        public string InstallationDisplay => !IsInstallationApplicable
-            ? "\u2014"
-            : _installationMode switch
-            {
-                0 => "\u2713", // ✓ Монтаж включён
-                1 => "\u2717", // ✕ Без монтажа
-                _ => "В"        // «В конструкцию»
-            };
-
-        /// <summary>Display icon for installation status in the printed KP table.
-        /// Shows "✓" when included (mode 0),
-        /// "В" (Cyrillic Ve, for «В конструкцию») when in construction (mode 2),
-        /// "✕" when without (mode 1),
-        /// "—" when not applicable.
-        /// Mode 2 uses a distinct letter glyph instead of the same checkmark
-        /// as mode 0 so the printed KP disambiguates the two "yes" modes at a
-        /// glance without the reader having to check the title attribute.
-        /// Rendered with the explicit .install-mark class in the KP template
-        /// (pure black) so it doesn't drift with theme/page colour.
-        /// </summary>
-        public string KpInstallationDisplay => !IsInstallationApplicable
-            ? "—"
-            : _installationMode switch
-            {
-                0 => "\u2713", // ✓ Монтаж включён
-                1 => "\u2717", // ✕ Без монтажа
-                _ => "В"        // «В конструкцию»
-            };
-
-        /// <summary>
-        /// The effective total after applying the installation adjustment.
-        /// Mode 0 (монтаж включён): Total unchanged (0).
-        /// Mode 1 (без монтажа): Total - InstallationDeduction (clamped to 0).
-        /// Mode 2 (в конструкцию): Total - InstallationSurcharge (clamped to 0).
-        /// For non-applicable products: Total unchanged.
-        /// </summary>
-        public double TotalWithDeduction
-        {
-            get
-            {
-                if (!IsInstallationApplicable) return Total;
-                return _installationMode switch
-                {
-                    1 => Math.Round(Math.Max(0, Total - InstallationDeduction), 2),
-                    2 => Math.Round(Math.Max(0, Total - InstallationSurcharge), 2),
-                    _ => Total
-                };
-            }
-        }
-
-        /// <summary>Display string for total with deduction (empty when 0)</summary>
-        public string TotalWithDeductionDisplay => TotalWithDeduction > 0
-            ? Services.MoneyFormatService.Format(TotalWithDeduction)
-            : "";
-
-        /// <summary>Color for the installation toggle button — live themed brush.
-        /// Both "yes" modes (included / in construction) use green ✓;
-        /// "no" mode uses red ✕.</summary>
-        public Brush InstallationForegroundColor
-        {
-            get
-            {
-                if (!IsInstallationApplicable) return GetThemedBrush("InstallGray");
-                return _installationMode == 1
-                    ? GetThemedBrush("InstallRed")
-                    : GetThemedBrush("InstallGreen");
-            }
-        }
-
-        /// <summary>
-        /// Short human-readable label for the current installation mode.
-        /// Source of truth for both the grid tooltip and the printed КП title
-        /// attribute — keep wording here so they never drift apart.
-        /// </summary>
-        public string InstallationLabel => !IsInstallationApplicable
-            ? "Монтаж не предусмотрен"
-            : _installationMode switch
-            {
-                0 => "Монтаж включён",
-                1 => "Без монтажа",
-                _ => "В конструкцию"
-            };
-
-        /// <summary>Tooltip for the installation toggle button</summary>
-        public string InstallationToolTip => !IsInstallationApplicable
-            ? "Монтаж не предусмотрен для данного товара"
-            : (_installationMode == 0
-                ? $"{InstallationLabel} (нажмите для переключения)"
-                : _installationMode == 1
-                    ? $"{InstallationLabel}, −{Services.MoneyFormatService.FormatWhole(InstallationDeduction)} руб. (нажмите для переключения)"
-                    : $"{InstallationLabel}, \u2212{Services.MoneyFormatService.FormatWhole(InstallationSurcharge)} руб. (нажмите для переключения)");
 
         /// <summary>
         /// Режим выбора типа размера Anwis.
@@ -663,62 +423,6 @@ namespace MosquitoNetCalculator.Models
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
         }
 
-        private void Recalculate()
-        {
-            if (Name == "ПСУЛ")
-            {
-                // ПСУЛ: (Width+Height)*2/1000 м.п. (perimeter in meters)
-                CalculatedValue = Math.Round((Width + Height) * 2 / 1000.0, 3);
-            }
-            else if (Name == "Уплотнение")
-            {
-                CalculatedValue = Math.Round((Width + Height) * 2 / 1000.0, 3);
-            }
-            else if (Name == "Откос материал" || Name == "Работа" || Name == "Брус" || Name == "Пояс" || Name == "Доставка")
-            {
-                // Откос материал / Работа / Брус / Пояс / Доставка: no auto-calculation, value = 1 шт.
-                CalculatedValue = 1;
-            }
-            else if (!string.IsNullOrEmpty(Name))
-            {
-                // Area-based products (Anwis, На навесах, Оконная на метал. крепл., Отлив, Козырёк, Короб)
-                // and any future product without explicit per-piece/linear handling: W*H/1000000 м²
-                // Width/Height are already calc-adjusted for Anwis (applied at AddItem / mode change).
-                CalculatedValue = Math.Round(Width * Height / 1000000.0, 3);
-            }
-            else
-            {
-                CalculatedValue = 0;
-            }
 
-            _total = Math.Round(CalculatedValue * Price * Quantity, 2);
-
-            // Notify display properties
-            OnPropertyChanged(nameof(Unit));
-            OnPropertyChanged(nameof(ШиринаВвод));
-            OnPropertyChanged(nameof(ВысотаВвод));
-            OnPropertyChanged(nameof(Размеры));
-            OnPropertyChanged(nameof(CalculatedValueDisplay));
-            OnPropertyChanged(nameof(PriceDisplay));
-            OnPropertyChanged(nameof(TotalDisplay));
-            // QuantityDisplay is notified directly in the Quantity setter
-
-            // Notify installation-related properties
-            OnPropertyChanged(nameof(IsInstallationApplicable));
-            OnPropertyChanged(nameof(IsManualPiece));
-            OnPropertyChanged(nameof(IsWidthOnly));
-            OnPropertyChanged(nameof(IsAnwis));
-            OnPropertyChanged(nameof(AnwisSizeShortLabel));
-            OnPropertyChanged(nameof(AnwisSizeToolTip));
-            OnPropertyChanged(nameof(TotalWithDeduction));
-            OnPropertyChanged(nameof(TotalWithDeductionDisplay));
-            OnPropertyChanged(nameof(InstallationDisplay));
-            OnPropertyChanged(nameof(KpInstallationDisplay));
-            OnPropertyChanged(nameof(InstallationLabel));
-            OnPropertyChanged(nameof(InstallationForegroundColor));
-            OnPropertyChanged(nameof(InstallationToolTip));
-
-            RecalculateRequested?.Invoke();
-        }
     }
 }

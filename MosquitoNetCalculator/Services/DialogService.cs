@@ -113,13 +113,20 @@ namespace MosquitoNetCalculator.Services
             return style != null;
         }
 
-        public static bool ShowConfirm(string message, string title = "Подтверждение", Window? owner = null)
+        /// <summary>
+        /// Builds the shared dialog shell — chromeless window, rounded card with
+        /// drop shadow, custom title bar with close button and drag support, and
+        /// an empty content <see cref="StackPanel"/> ready for message + buttons.
+        /// Returns the <paramref name="closeResult"/> action wired to the close
+        /// button (callers invoke it from their own button handlers).
+        /// </summary>
+        private static (Window Window, StackPanel ContentPanel, Action CloseResult) BuildDialogBase(
+            string title, int width, Window? owner, Action closeResult)
         {
-            // Chromeless Fluent dialog — matches ShowSaveDiscardCancel design
             var window = new Window
             {
                 Title = title,
-                Width = 380,
+                Width = width,
                 WindowStartupLocation = WindowStartupLocation.CenterOwner,
                 Owner = owner,
                 ResizeMode = ResizeMode.NoResize,
@@ -148,7 +155,7 @@ namespace MosquitoNetCalculator.Services
 
             var rootStack = new StackPanel();
 
-            // ─── Custom title bar ───
+            // Custom title bar
             var titleBar = new Border
             {
                 Background = GetBrush("HeaderBg", Brushes.WhiteSmoke),
@@ -172,7 +179,7 @@ namespace MosquitoNetCalculator.Services
             Grid.SetColumn(titleText, 0);
             titleBarGrid.Children.Add(titleText);
 
-            var closeBtn = CreateFluentCloseButton(() => { window.DialogResult = false; window.Close(); });
+            var closeBtn = CreateFluentCloseButton(() => { closeResult(); window.Close(); });
             Grid.SetColumn(closeBtn, 1);
             titleBarGrid.Children.Add(closeBtn);
 
@@ -180,12 +187,23 @@ namespace MosquitoNetCalculator.Services
             {
                 if (e.ChangedButton == MouseButton.Left) window.DragMove();
             };
-
             titleBar.Child = titleBarGrid;
             rootStack.Children.Add(titleBar);
 
-            // ─── Content ───
             var content = new StackPanel { Margin = new Thickness(24, 20, 24, 20) };
+            rootStack.Children.Add(content);
+
+            card.Child = rootStack;
+            window.Content = card;
+
+            return (window, content, closeResult);
+        }
+
+        public static bool ShowConfirm(string message, string title = "Подтверждение", Window? owner = null)
+        {
+            bool result = false;
+            var (window, content, _) = BuildDialogBase(title, 380, owner, () => result = false);
+
             content.Children.Add(new TextBlock
             {
                 Text = message,
@@ -220,7 +238,7 @@ namespace MosquitoNetCalculator.Services
                 btnNo.Background = GetBrush("GhostBg", Brushes.White);
                 btnNo.Foreground = GetBrush("TextPrimary", Brushes.Black);
             }
-            btnNo.Click += (s, e) => { window.DialogResult = false; window.Close(); };
+            btnNo.Click += (s, e) => { result = false; window.Close(); };
 
             var btnYes = new Button
             {
@@ -241,18 +259,14 @@ namespace MosquitoNetCalculator.Services
                 btnYes.Background = GetBrush("Accent", Brushes.SteelBlue);
                 btnYes.Foreground = GetBrush("OnAccent", Brushes.White);
             }
-            btnYes.Click += (s, e) => { window.DialogResult = true; window.Close(); };
+            btnYes.Click += (s, e) => { result = true; window.Close(); };
 
             btnPanel.Children.Add(btnNo);
             btnPanel.Children.Add(btnYes);
             content.Children.Add(btnPanel);
 
-            rootStack.Children.Add(content);
-            card.Child = rootStack;
-            window.Content = card;
-
             window.ShowDialog();
-            return window.DialogResult == true;
+            return result;
         }
 
         /// <summary>
@@ -262,75 +276,8 @@ namespace MosquitoNetCalculator.Services
         /// </summary>
         public static bool ShowUpdateAvailable(string version, Window? owner = null)
         {
-            var window = new Window
-            {
-                Title = "Доступно обновление",
-                Width = 400,
-                WindowStartupLocation = WindowStartupLocation.CenterOwner,
-                Owner = owner,
-                ResizeMode = ResizeMode.NoResize,
-                ShowInTaskbar = false,
-                WindowStyle = WindowStyle.None,
-                AllowsTransparency = true,
-                Background = Brushes.Transparent,
-                SizeToContent = SizeToContent.Height
-            };
-
-            var card = new Border
-            {
-                Background = GetBrush("Surface", Brushes.White),
-                BorderBrush = GetBrush("Border", Brushes.Gray),
-                BorderThickness = new Thickness(1),
-                CornerRadius = new CornerRadius(12),
-                Margin = new Thickness(8),
-                Effect = new System.Windows.Media.Effects.DropShadowEffect
-                {
-                    Color = GetColor("ShadowColor", Colors.Black),
-                    BlurRadius = 20,
-                    ShadowDepth = 2,
-                    Opacity = 0.25
-                }
-            };
-
-            var rootStack = new StackPanel();
-
-            // Title bar
-            var titleBar = new Border
-            {
-                Background = GetBrush("HeaderBg", Brushes.WhiteSmoke),
-                CornerRadius = new CornerRadius(12, 12, 0, 0),
-                Height = 32,
-                Padding = new Thickness(14, 0, 0, 0)
-            };
-            var titleBarGrid = new Grid();
-            titleBarGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
-            titleBarGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
-
-            var titleText = new TextBlock
-            {
-                Text = "Доступно обновление",
-                FontSize = 12,
-                FontWeight = FontWeights.SemiBold,
-                Foreground = GetBrush("TextPrimary", Brushes.Black),
-                VerticalAlignment = VerticalAlignment.Center,
-                HorizontalAlignment = HorizontalAlignment.Left
-            };
-            Grid.SetColumn(titleText, 0);
-            titleBarGrid.Children.Add(titleText);
-
-            var closeBtn = CreateFluentCloseButton(() => { window.DialogResult = false; window.Close(); });
-            Grid.SetColumn(closeBtn, 1);
-            titleBarGrid.Children.Add(closeBtn);
-
-            titleBar.MouseLeftButtonDown += (s, e) =>
-            {
-                if (e.ChangedButton == MouseButton.Left) window.DragMove();
-            };
-            titleBar.Child = titleBarGrid;
-            rootStack.Children.Add(titleBar);
-
-            // Content
-            var content = new StackPanel { Margin = new Thickness(24, 20, 24, 20) };
+            bool result = false;
+            var (window, content, _) = BuildDialogBase("Доступно обновление", 400, owner, () => result = false);
 
             // Version badge
             var badge = new Border
@@ -368,7 +315,6 @@ namespace MosquitoNetCalculator.Services
                 Margin = new Thickness(0, 0, 0, 20)
             });
 
-            // Buttons
             var btnPanel = new StackPanel
             {
                 Orientation = Orientation.Horizontal,
@@ -390,7 +336,7 @@ namespace MosquitoNetCalculator.Services
                 btnCancel.Style = cancelStyle;
             else
                 btnCancel.Background = GetBrush("GhostBg", Brushes.White);
-            btnCancel.Click += (s, e) => { window.DialogResult = false; window.Close(); };
+            btnCancel.Click += (s, e) => { result = false; window.Close(); };
 
             var btnDownload = new Button
             {
@@ -407,106 +353,21 @@ namespace MosquitoNetCalculator.Services
                 btnDownload.Style = downloadStyle;
             else
                 btnDownload.Background = GetBrush("Success", Brushes.Green);
-            btnDownload.Click += (s, e) => { window.DialogResult = true; window.Close(); };
+            btnDownload.Click += (s, e) => { result = true; window.Close(); };
 
             btnPanel.Children.Add(btnCancel);
             btnPanel.Children.Add(btnDownload);
             content.Children.Add(btnPanel);
 
-            rootStack.Children.Add(content);
-            card.Child = rootStack;
-            window.Content = card;
-
             window.ShowDialog();
-            return window.DialogResult == true;
+            return result;
         }
 
         public static DialogResult ShowSaveDiscardCancel(string message, string title = "Несохранённые изменения", Window? owner = null)
         {
-            // Chromeless dialog (WindowStyle.None + AllowsTransparency) with a
-            // custom 32px title bar matching the main window's TitleBarControl
-            // — the program uses a custom title bar everywhere, so the dialog
-            // must too (a Windows-native chrome here would feel out of place).
             string result = "cancel";
+            var (window, content, _) = BuildDialogBase(title, 420, owner, () => result = "cancel");
 
-            var window = new Window
-            {
-                Title = title, // for taskbar / accessibility
-                Width = 420,
-                WindowStartupLocation = WindowStartupLocation.CenterOwner,
-                Owner = owner,
-                ResizeMode = ResizeMode.NoResize,
-                ShowInTaskbar = false,
-                WindowStyle = WindowStyle.None,
-                AllowsTransparency = true,
-                Background = Brushes.Transparent,
-                SizeToContent = SizeToContent.Height
-            };
-
-            // Outer card with rounded corners and drop shadow.
-            var card = new Border
-            {
-                Background = GetBrush("Surface", Brushes.White),
-                BorderBrush = GetBrush("Border", Brushes.Gray),
-                BorderThickness = new Thickness(1),
-                CornerRadius = new CornerRadius(12),
-                Margin = new Thickness(8),
-                Effect = new System.Windows.Media.Effects.DropShadowEffect
-                {
-                    Color = GetColor("ShadowColor", Colors.Black),
-                    BlurRadius = 20,
-                    ShadowDepth = 2,
-                    Opacity = 0.25
-                }
-            };
-
-            var rootStack = new StackPanel();
-
-            // ─── Custom title bar (matches TitleBarControl look) ──────────────
-            var titleBar = new Border
-            {
-                Background = GetBrush("HeaderBg", Brushes.WhiteSmoke),
-                CornerRadius = new CornerRadius(12, 12, 0, 0),
-                Height = 32,
-                Padding = new Thickness(14, 0, 0, 0)
-            };
-            var titleBarGrid = new Grid();
-            titleBarGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
-            titleBarGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
-
-            var titleText = new TextBlock
-            {
-                Text = title,
-                FontSize = 12,
-                FontWeight = FontWeights.SemiBold,
-                Foreground = GetBrush("TextPrimary", Brushes.Black),
-                VerticalAlignment = VerticalAlignment.Center,
-                HorizontalAlignment = HorizontalAlignment.Left
-            };
-            Grid.SetColumn(titleText, 0);
-            titleBarGrid.Children.Add(titleText);
-
-            // Close (✕) button — same Segoe Fluent Icons glyph as the main
-            // window's close button. Transparent background, hover lightens
-            // via inline trigger.
-            var closeBtn = CreateFluentCloseButton(() => { result = "cancel"; window.Close(); });
-            Grid.SetColumn(closeBtn, 1);
-            titleBarGrid.Children.Add(closeBtn);
-
-            titleBar.Child = titleBarGrid;
-
-            // Make the whole title bar a drag region (excludes the close
-            // button which captures its own click). This mirrors how the main
-            // window's TitleBarControl handles drag.
-            titleBar.MouseLeftButtonDown += (s, e) =>
-            {
-                if (e.ChangedButton == MouseButton.Left) window.DragMove();
-            };
-
-            rootStack.Children.Add(titleBar);
-
-            // ─── Content area (message + 3 buttons) ──────────────────────────
-            var content = new StackPanel { Margin = new Thickness(24, 20, 24, 20) };
             content.Children.Add(new TextBlock
             {
                 Text = message,
@@ -522,11 +383,6 @@ namespace MosquitoNetCalculator.Services
                 HorizontalAlignment = HorizontalAlignment.Right
             };
 
-            // Buttons use the styled ControlTemplate (rounded border + colors)
-            // from GhostButton / DangerGhostButton / SuccessButton via direct
-            // Style assignment (SetCurrentValue on the Style DP doesn't
-            // reliably re-template). Local Padding / FontSize / FontWeight
-            // keep the buttons at a dialog-appropriate size.
             var btnCancel = new Button
             {
                 Content = "Отмена",
@@ -593,10 +449,6 @@ namespace MosquitoNetCalculator.Services
             btnPanel.Children.Add(btnNo);
             btnPanel.Children.Add(btnSave);
             content.Children.Add(btnPanel);
-
-            rootStack.Children.Add(content);
-            card.Child = rootStack;
-            window.Content = card;
 
             window.ShowDialog();
             return result switch { "save" => DialogResult.Save, "discard" => DialogResult.Discard, _ => DialogResult.Cancel };

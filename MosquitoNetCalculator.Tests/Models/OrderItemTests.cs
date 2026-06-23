@@ -689,5 +689,300 @@ namespace MosquitoNetCalculator.Tests.Models
             // Width/Height are calc-adjusted (1000×1000). Total = 1000.0, 1000-333.50 = 666.50
             Assert.Equal(666.50, item.TotalWithDeduction, 2);
         }
+
+        // ─── AnwisSizeMode tests ────────────────────────────
+
+        [Fact]
+        public void AnwisSizeMode_Default_Brusbox60()
+        {
+            var item = new OrderItem { Name = "Anwis" };
+            Assert.Equal(AnwisSizeMode.Брусбокс60, item.AnwisSizeMode);
+        }
+
+        [Fact]
+        public void AnwisSizeMode_Change_RecalculatesDimensions()
+        {
+            // Default mode is ББ 60. Смена на ББ 70 пересчитывает размеры.
+            var item = new OrderItem
+            {
+                Name = "Anwis",
+                Width = 1002, Height = 970, // calc-adjusted for ББ 60 from raw 1000×1000
+            };
+            Assert.Equal(AnwisSizeMode.Брусбокс60, item.AnwisSizeMode);
+
+            // Switch to ББ 70: reverse ББ 60 → raw 1000×1000 → apply ББ 70 → 998×970
+            item.AnwisSizeMode = AnwisSizeMode.Брусбокс70;
+            Assert.Equal(998, item.Width, 0);
+            Assert.Equal(970, item.Height, 0);
+            Assert.Equal(AnwisSizeMode.Брусбокс70, item.AnwisSizeMode);
+        }
+
+        [Fact]
+        public void AnwisSizeMode_SameMode_NoChange()
+        {
+            var item = new OrderItem { Name = "Anwis" };
+            int fireCount = 0;
+            item.PropertyChanged += (s, e) => fireCount++;
+
+            item.AnwisSizeMode = AnwisSizeMode.Брусбокс60;
+
+            Assert.Equal(0, fireCount);
+        }
+
+        [Fact]
+        public void SetAnwisModeQuiet_DoesNotRecalculateDimensions()
+        {
+            // Use SetAnwisModeQuiet to set the initial mode WITHOUT triggering
+            // the reverse/apply logic that the public setter would do.
+            var item = new OrderItem
+            {
+                Name = "Anwis",
+                Width = 1000, Height = 1000,
+            };
+            item.SetAnwisModeQuiet(AnwisSizeMode.Профипласт);
+
+            // Switch back to ББ 60 quietly — dimensions should stay as-is
+            item.SetAnwisModeQuiet(AnwisSizeMode.Брусбокс60);
+            Assert.Equal(AnwisSizeMode.Брусбокс60, item.AnwisSizeMode);
+            Assert.Equal(1000, item.Width);
+            Assert.Equal(1000, item.Height);
+        }
+
+        [Fact]
+        public void SetAnwisModeQuiet_SameMode_NoOp()
+        {
+            var item = new OrderItem { Name = "Anwis", AnwisSizeMode = AnwisSizeMode.Брусбокс60 };
+            int fireCount = 0;
+            item.PropertyChanged += (s, e) => fireCount++;
+
+            item.SetAnwisModeQuiet(AnwisSizeMode.Брусбокс60);
+
+            Assert.Equal(0, fireCount);
+        }
+
+        // ─── ШиринаВвод / ВысотаВвод tests (AnwisSize integration) ─
+
+        [Fact]
+        public void ШиринаВвод_ReturnsDisplayWidth()
+        {
+            var item = new OrderItem
+            {
+                Name = "Anwis",
+                Width = 1002, Height = 970, // calc-adjusted for ББ 60
+            };
+            // Raw width should be 1000 (reverse of 1002 via ББ 60: -2)
+            Assert.Equal(1000, item.ШиринаВвод);
+        }
+
+        [Fact]
+        public void ВысотаВвод_ReturnsDisplayHeight()
+        {
+            var item = new OrderItem
+            {
+                Name = "Anwis",
+                Width = 1002, Height = 970, // calc-adjusted for ББ 60
+            };
+            // Raw height should be 1000 (reverse of 970 via ББ 60: +30)
+            Assert.Equal(1000, item.ВысотаВвод);
+        }
+
+        [Fact]
+        public void ШиринаВвод_NonAnwis_PassesThroughAnwisSizeMode()
+        {
+            // For non-Anwis products, ШиринаВвод still uses the current
+            // AnwisSizeMode for reverse calculation. Default mode ББ60
+            // subtracts 2. This doesn't affect UI because ШиринаВвод is
+            // hidden for non-Anwis products.
+            var item = new OrderItem { Name = "Отлив", Width = 1500 };
+            // With ББ60: ReverseCalcWidth(1500) = 1500 - 2 = 1498
+            Assert.Equal(1498, item.ШиринаВвод);
+        }
+
+        [Fact]
+        public void ШиринаВвод_Setter_UpdatesStoredWidth()
+        {
+            var item = new OrderItem
+            {
+                Name = "Anwis",
+                Width = 1002, Height = 970,
+                AnwisSizeMode = AnwisSizeMode.Брусбокс60
+            };
+
+            // Set raw to 1100 → stored width becomes 1102 (W+2)
+            item.ШиринаВвод = 1100;
+            Assert.Equal(1102, item.Width, 0);
+        }
+
+        [Fact]
+        public void ВысотаВвод_Setter_UpdatesStoredHeight()
+        {
+            var item = new OrderItem
+            {
+                Name = "Anwis",
+                Width = 1002, Height = 970,
+                AnwisSizeMode = AnwisSizeMode.Брусбокс60
+            };
+
+            // Set raw to 1200 → stored height becomes 1170 (H-30)
+            item.ВысотаВвод = 1200;
+            Assert.Equal(1170, item.Height, 0);
+        }
+
+        // ─── Anwis computed properties tests ─────────────────
+
+        [Fact]
+        public void IsAnwis_True_ForAnwis()
+        {
+            Assert.True(new OrderItem { Name = "Anwis" }.IsAnwis);
+        }
+
+        [Fact]
+        public void IsAnwis_False_ForOtherProducts()
+        {
+            Assert.False(new OrderItem { Name = "Отлив" }.IsAnwis);
+            Assert.False(new OrderItem { Name = "ПСУЛ" }.IsAnwis);
+            Assert.False(new OrderItem { Name = "Работа" }.IsAnwis);
+        }
+
+        [Fact]
+        public void AnwisSizeShortLabel_NonAnwis_ReturnsEmpty()
+        {
+            Assert.Equal("", new OrderItem { Name = "Отлив" }.AnwisSizeShortLabel);
+        }
+
+        [Fact]
+        public void AnwisSizeShortLabel_Anwis_ReturnsModeLabel()
+        {
+            var item = new OrderItem { Name = "Anwis", AnwisSizeMode = AnwisSizeMode.Брусбокс60 };
+            Assert.Equal("ББ 60", item.AnwisSizeShortLabel);
+        }
+
+        [Fact]
+        public void AnwisSizeShortLabel_ChangesWithMode()
+        {
+            var item = new OrderItem { Name = "Anwis", AnwisSizeMode = AnwisSizeMode.Брусбокс60 };
+            Assert.Equal("ББ 60", item.AnwisSizeShortLabel);
+
+            item.AnwisSizeMode = AnwisSizeMode.Профипласт;
+            Assert.Equal("ПП", item.AnwisSizeShortLabel);
+        }
+
+        [Fact]
+        public void AnwisSizeToolTip_Anwis_ContainsModeDescription()
+        {
+            var item = new OrderItem { Name = "Anwis" };
+            Assert.Contains("Брусбокс 60", item.AnwisSizeToolTip);
+        }
+
+        [Fact]
+        public void AnwisSizeToolTip_NonAnwis_ReturnsEmpty()
+        {
+            Assert.Equal("", new OrderItem { Name = "Отлив" }.AnwisSizeToolTip);
+        }
+
+        // ─── InstallationToolTip tests ───────────────────────
+
+        [Fact]
+        public void InstallationToolTip_Applicable_Mode0_ShowsLabelAndHint()
+        {
+            var item = new OrderItem { Name = "Anwis", InstallationMode = 0 };
+            Assert.Contains("Монтаж включён", item.InstallationToolTip);
+            Assert.Contains("нажмите для переключения", item.InstallationToolTip);
+        }
+
+        [Fact]
+        public void InstallationToolTip_Mode1_ShowsDeductionAmount()
+        {
+            var item = new OrderItem
+            {
+                Name = "Anwis",
+                InstallationMode = 1,
+                InstallationDeduction = 500
+            };
+            Assert.Contains("−", item.InstallationToolTip);
+            Assert.Contains("500", item.InstallationToolTip);
+        }
+
+        [Fact]
+        public void InstallationToolTip_NonApplicable_ReturnsNotSupported()
+        {
+            var item = new OrderItem { Name = "Отлив" };
+            Assert.Equal("Монтаж не предусмотрен для данного товара", item.InstallationToolTip);
+        }
+
+        // ─── CurrentInstallationAmount tests ─────────────────
+
+        [Fact]
+        public void CurrentInstallationAmount_Mode0_Zero()
+        {
+            var item = new OrderItem { Name = "Anwis", InstallationMode = 0 };
+            Assert.Equal(0, item.CurrentInstallationAmount);
+        }
+
+        [Fact]
+        public void CurrentInstallationAmount_Mode1_ReturnsDeduction()
+        {
+            var item = new OrderItem { Name = "Anwis", InstallationMode = 1, InstallationDeduction = 300 };
+            Assert.Equal(300, item.CurrentInstallationAmount);
+        }
+
+        [Fact]
+        public void CurrentInstallationAmount_Mode2_ReturnsSurcharge()
+        {
+            var item = new OrderItem { Name = "Anwis", InstallationMode = 2, InstallationSurcharge = 200 };
+            Assert.Equal(200, item.CurrentInstallationAmount);
+        }
+
+        // ─── InstallationDeduction/Surcharge clamping ────────
+
+        [Fact]
+        public void InstallationDeduction_ClampedToZero()
+        {
+            var item = new OrderItem { Name = "Anwis" };
+            item.InstallationDeduction = -100;
+            Assert.Equal(0, item.InstallationDeduction);
+        }
+
+        [Fact]
+        public void InstallationSurcharge_ClampedToZero()
+        {
+            var item = new OrderItem { Name = "Anwis" };
+            item.InstallationSurcharge = -100;
+            Assert.Equal(0, item.InstallationSurcharge);
+        }
+
+        // ─── Clone with AnwisSizeMode test ───────────────────
+
+        [Fact]
+        public void Clone_PreservesAnwisSizeMode()
+        {
+            var original = new OrderItem
+            {
+                Name = "Anwis",
+                Width = 998, Height = 970, // calc-adjusted for ББ 70
+            };
+            original.SetAnwisModeQuiet(AnwisSizeMode.Брусбокс70);
+
+            var clone = original.Clone();
+            Assert.Equal(AnwisSizeMode.Брусбокс70, clone.AnwisSizeMode);
+            Assert.Equal(original.Width, clone.Width);
+            Assert.Equal(original.Height, clone.Height);
+        }
+
+        // ─── Размеры computed property test ──────────────────
+
+        [Fact]
+        public void Размеры_ReturnsSizeBasedOnStoredValues()
+        {
+            var item = new OrderItem
+            {
+                Name = "Anwis",
+                Width = 1002, Height = 970,
+            };
+
+            Assert.Equal(1000, item.Размеры.ШиринаОтображение);
+            Assert.Equal(1002, item.Размеры.ШиринаРасчёт);
+            Assert.Equal(982, item.Размеры.ШиринаЗавод);
+        }
     }
 }

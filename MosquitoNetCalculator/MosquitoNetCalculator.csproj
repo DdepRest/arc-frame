@@ -7,7 +7,7 @@
     <UseWPF>true</UseWPF>
     <EnableWindowsTargeting>true</EnableWindowsTargeting>
     <ApplicationIcon>Resources\app_icon.ico</ApplicationIcon>
-    <Version>3.34.3</Version>
+    <Version>3.34.4</Version>
     <RuntimeIdentifiers>win-x64</RuntimeIdentifiers>
     <!-- Treat every compiler / NuGet warning as an error so the build fails
          closed if any future change reintroduces a warning. The current
@@ -33,6 +33,7 @@
   <ItemGroup>
     <Content Include="prices.json" CopyToOutputDirectory="PreserveNewest" />
     <EmbeddedResource Include="Resources\print_template.html" />
+    <EmbeddedResource Include="Resources\update-log.json" />
     <Resource Include="Resources\app_icon.ico" />
   </ItemGroup>
 
