@@ -20,6 +20,8 @@ namespace MosquitoNetCalculator.ViewModels
 
         public string GenerateContractNumber(string prefix) => _orderStorage.GenerateContractNumber(prefix);
 
+        public string GenerateCopyContractNumber(string sourceNumber) => _orderStorage.GenerateCopyContractNumber(sourceNumber);
+
         public void ExportOrders(List<OrderData> orders, string filePath) =>
             _orderStorage.ExportOrders(orders, filePath);
 

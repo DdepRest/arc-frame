@@ -191,6 +191,104 @@ namespace MosquitoNetCalculator.Tests.Services
             Assert.Equal("1-4", number);
         }
 
+        // ──── GenerateCopyContractNumber tests ──────────────────────
+
+        [Fact]
+        public void GenerateCopyContractNumber_Basic_AppendsDotOne()
+        {
+            string result = _service.GenerateCopyContractNumber("2-8");
+            Assert.Equal("2-8.1", result);
+        }
+
+        [Fact]
+        public void GenerateCopyContractNumber_IncrementsSuffix()
+        {
+            _service.SaveOrder(new OrderData { ContractNumber = "2-8" });
+            _service.SaveOrder(new OrderData { ContractNumber = "2-8.1" });
+            string result = _service.GenerateCopyContractNumber("2-8");
+            Assert.Equal("2-8.2", result);
+        }
+
+        [Fact]
+        public void GenerateCopyContractNumber_StripsSuffix_ThenIncrements()
+        {
+            // "2-8.1" → base = "2-8", max suffix = 1 → "2-8.2"
+            _service.SaveOrder(new OrderData { ContractNumber = "2-8.1" });
+            string result = _service.GenerateCopyContractNumber("2-8.1");
+            Assert.Equal("2-8.2", result);
+        }
+
+        [Fact]
+        public void GenerateCopyContractNumber_EmptyOrNull_ProducesOneDotOne()
+        {
+            Assert.Equal("1.1", _service.GenerateCopyContractNumber(""));
+            Assert.Equal("1.1", _service.GenerateCopyContractNumber(null!));
+        }
+
+        [Fact]
+        public void GenerateCopyContractNumber_NoDash_UsesNumberAsBase()
+        {
+            string result = _service.GenerateCopyContractNumber("5");
+            Assert.Equal("5.1", result);
+        }
+
+        [Fact]
+        public void GenerateCopyContractNumber_MultipleDots_StripsToFirst()
+        {
+            _service.SaveOrder(new OrderData { ContractNumber = "2-8.1" });
+            _service.SaveOrder(new OrderData { ContractNumber = "2-8.2" });
+            // "2-8.1.1" → strip to "2-8" → max suffix 2 → "2-8.3"
+            string result = _service.GenerateCopyContractNumber("2-8.1.1");
+            Assert.Equal("2-8.3", result);
+        }
+
+        [Fact]
+        public void GenerateCopyContractNumber_TrimsWhitespace()
+        {
+            _service.SaveOrder(new OrderData { ContractNumber = "2-8.1" });
+            string result = _service.GenerateCopyContractNumber("  2-8.1  ");
+            Assert.Equal("2-8.2", result);
+        }
+
+        [Fact]
+        public void GenerateCopyContractNumber_NoExistingCopies_ReturnsOne()
+        {
+            // Even if the original exists, no copies with ".N" suffix yet
+            _service.SaveOrder(new OrderData { ContractNumber = "2-8" });
+            _service.SaveOrder(new OrderData { ContractNumber = "3-5" });
+            string result = _service.GenerateCopyContractNumber("2-8");
+            Assert.Equal("2-8.1", result);
+        }
+
+        [Fact]
+        public void GenerateCopyContractNumber_ThreeCopiesInARow()
+        {
+            // Copy source once
+            string first = _service.GenerateCopyContractNumber("2-8");
+            Assert.Equal("2-8.1", first);
+
+            // Save the copy so it's visible to the next scan
+            _service.SaveOrder(new OrderData { ContractNumber = first });
+
+            // Copy source again — should get .2
+            string second = _service.GenerateCopyContractNumber("2-8");
+            Assert.Equal("2-8.2", second);
+
+            _service.SaveOrder(new OrderData { ContractNumber = second });
+
+            string third = _service.GenerateCopyContractNumber("2-8");
+            Assert.Equal("2-8.3", third);
+        }
+
+        [Fact]
+        public void GenerateCopyContractNumber_IgnoresDashNumbers()
+        {
+            // "2-8.1" is a copy, "2-8-extra" is a dash-number (different format)
+            _service.SaveOrder(new OrderData { ContractNumber = "2-8-extra" });
+            string result = _service.GenerateCopyContractNumber("2-8");
+            Assert.Equal("2-8.1", result);
+        }
+
         [Fact]
         public void SaveOrder_UpdatesTimestamp()
         {
@@ -241,6 +339,90 @@ namespace MosquitoNetCalculator.Tests.Services
             Assert.Equal(2, loaded.AdditionalKps.Count);
             Assert.Equal(500, loaded.AdditionalKps[0].Amount);
             Assert.False(loaded.AdditionalKps[1].IsActive);
+        }
+
+        // ──── CopyOrder integration test ───────────────────────────
+
+        [Fact]
+        public void CopyOrder_PreservesAllData_AndMutatesIdentityFields()
+        {
+            // 1. Create a rich source order
+            var source = new OrderData
+            {
+                Id = Guid.NewGuid().ToString(),
+                ContractNumber = "2-8",
+                ContractDate = new DateTime(2026, 6, 1),
+                ClientName = "Иванов Иван",
+                ClientPhone = "+79991234567",
+                ClientAddress = "ул. Ленина, д. 5, кв. 12",
+                Notes = "Позвонить за час",
+                Status = "Подтверждён",
+                TotalAmount = 15000,
+                HasAdditionalKp = true,
+                AdditionalKps = new List<AdditionalKpItem>
+                {
+                    new() { Number = "3-1", Amount = 500, IsActive = true },
+                    new() { Number = "3-2", Amount = 300, IsActive = false }
+                },
+                Items = new List<OrderItemData>
+                {
+                    new() { Name = "Anwis", Color = "Белый", Width = 1000, Height = 1000, Quantity = 2, Price = 1800, IsActive = true, AnwisSizeMode = 0 },
+                    new() { Name = "Работа", Quantity = 1, Price = 5000, IsActive = true }
+                }
+            };
+            _service.SaveOrder(source);
+
+            // 2. Deep-clone via JSON (same as CopySelectedOrder in MainWindow)
+            string json = System.Text.Json.JsonSerializer.Serialize(source, OrderStorageService.JsonOptions);
+            var copy = System.Text.Json.JsonSerializer.Deserialize<OrderData>(json, OrderStorageService.JsonOptions);
+            Assert.NotNull(copy);
+
+            // 3. Mutate identity fields
+            var beforeSave = DateTime.Now.AddSeconds(-1);
+            copy!.Id = Guid.NewGuid().ToString();
+            copy.Status = OrderStatuses.All[0]; // «Новый»
+            copy.ContractNumber = _service.GenerateCopyContractNumber(source.ContractNumber);
+            copy.CreatedAt = DateTime.Now;
+            copy.UpdatedAt = DateTime.Now;
+            _service.SaveOrder(copy);
+
+            // 4. Load the copy from disk
+            var loaded = new OrderStorageService().LoadOrder(copy.Id);
+            Assert.NotNull(loaded);
+
+            // 5. Verify identity changes
+            Assert.NotEqual(source.Id, loaded!.Id);
+            Assert.Equal(OrderStatuses.All[0], loaded.Status); // «Новый»
+            Assert.Equal("2-8.1", loaded.ContractNumber);
+            Assert.True(loaded.UpdatedAt >= beforeSave);
+            Assert.True(loaded.CreatedAt >= beforeSave);
+
+            // 6. Verify data preservation
+            Assert.Equal(source.ClientName, loaded.ClientName);
+            Assert.Equal(source.ClientPhone, loaded.ClientPhone);
+            Assert.Equal(source.ClientAddress, loaded.ClientAddress);
+            Assert.Equal(source.Notes, loaded.Notes);
+            Assert.Equal(source.ContractDate, loaded.ContractDate);
+            Assert.Equal(source.TotalAmount, loaded.TotalAmount);
+            Assert.True(loaded.HasAdditionalKp);
+            Assert.Equal(2, loaded.AdditionalKps.Count);
+            Assert.Equal(500, loaded.AdditionalKps[0].Amount);
+            Assert.Equal("3-1", loaded.AdditionalKps[0].Number);
+            Assert.True(loaded.AdditionalKps[0].IsActive);
+            Assert.False(loaded.AdditionalKps[1].IsActive);
+
+            // 7. Verify Items preservation
+            Assert.Equal(2, loaded.Items.Count);
+            Assert.Equal("Anwis", loaded.Items[0].Name);
+            Assert.Equal("Белый", loaded.Items[0].Color);
+            Assert.Equal(1000, loaded.Items[0].Width);
+            Assert.Equal(1000, loaded.Items[0].Height);
+            Assert.Equal(2, loaded.Items[0].Quantity);
+            Assert.Equal(1800, loaded.Items[0].Price);
+            Assert.True(loaded.Items[0].IsActive);
+            Assert.Equal("Работа", loaded.Items[1].Name);
+            Assert.Equal(5000, loaded.Items[1].Price);
+            Assert.True(loaded.Items[1].IsActive);
         }
     }
 }

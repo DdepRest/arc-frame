@@ -98,6 +98,8 @@
                         <MenuItem x:Name="CtxStatusMenu" Header="Изменить статус" IsEnabled="False" Style="{StaticResource {x:Type MenuItem}}"/>
                         <MenuItem x:Name="CtxExportMenu" Header="Экспорт заказа" IsEnabled="False" Click="CtxExport_Click" Style="{StaticResource {x:Type MenuItem}}"/>
                         <Separator Style="{StaticResource {x:Type Separator}}"/>
+                        <MenuItem x:Name="CtxCopyMenu" Header="Копировать" IsEnabled="False" Click="CtxCopy_Click" Style="{StaticResource {x:Type MenuItem}}"/>
+                        <Separator Style="{StaticResource {x:Type Separator}}"/>
                         <MenuItem x:Name="CtxDeleteMenu" Header="Удалить заказ" IsEnabled="False" Click="CtxDelete_Click" Foreground="{DynamicResource Danger}" Style="{StaticResource {x:Type MenuItem}}"/>
                     </ContextMenu>
                 </DataGrid.ContextMenu>

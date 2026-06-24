@@ -408,6 +408,29 @@ namespace MosquitoNetCalculator
             window.ShowDialog();
         }
 
+        internal void CopySelectedOrder()
+        {
+            if (OrdersHistoryControl.OrdersGrid.SelectedItem is not OrderData source) return;
+
+            // Clone the order — deep copy
+            string json = System.Text.Json.JsonSerializer.Serialize(source, OrderStorageService.JsonOptions);
+            var copy = System.Text.Json.JsonSerializer.Deserialize<OrderData>(json, OrderStorageService.JsonOptions);
+            if (copy == null) return;
+
+            // New identity
+            copy.Id = Guid.NewGuid().ToString();
+            copy.CreatedAt = DateTime.Now;
+            copy.UpdatedAt = DateTime.Now;
+            copy.Status = OrderStatuses.All[0]; // «Новый»
+
+            // Generate copy contract number: "2-8" → "2-8.1", "2-8.1" → "2-8.2"
+            copy.ContractNumber = ViewModel.OrdersVM.GenerateCopyContractNumber(source.ContractNumber);
+
+            ViewModel.OrdersVM.SaveOrder(copy);
+            RefreshOrdersList();
+            ToastService.ShowToast($"Заказ скопирован: {copy.ContractNumber}", ToastType.Success);
+        }
+
         internal void DeleteSelectedOrder()
         {
             if (OrdersHistoryControl.OrdersGrid.SelectedItem is not OrderData order) return;

@@ -196,10 +196,12 @@ namespace MosquitoNetCalculator
             OrdersHistoryControl.OrdersGrid.SelectionChanged += (_, _) =>
             {
                 var hasSelection = OrdersHistoryControl.OrdersGrid.SelectedItem is OrderData;
-                if (OrdersHistoryControl.CtxStatusMenu != null)
-                    OrdersHistoryControl.CtxStatusMenu.IsEnabled = hasSelection;
                 if (OrdersHistoryControl.CtxOpenMenu != null)
                     OrdersHistoryControl.CtxOpenMenu.IsEnabled = hasSelection;
+                if (OrdersHistoryControl.CtxStatusMenu != null)
+                    OrdersHistoryControl.CtxStatusMenu.IsEnabled = hasSelection;
+                if (OrdersHistoryControl.CtxCopyMenu != null)
+                    OrdersHistoryControl.CtxCopyMenu.IsEnabled = hasSelection;
                 if (OrdersHistoryControl.CtxExportMenu != null)
                     OrdersHistoryControl.CtxExportMenu.IsEnabled = hasSelection;
                 if (OrdersHistoryControl.CtxDeleteMenu != null)

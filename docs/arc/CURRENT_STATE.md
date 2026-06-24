@@ -55,6 +55,7 @@ docs/arc/AUTO_UPDATE.md
 - **v3.34.4** — рефакторинг: разбиение больших файлов на partial-классы.
 - **v3.34.3** — сегментированный контроль режима Anwis в QuickAdd.
 - **A.R.C. portability migration** — master-файл multi-agent control перенесён из `~/.claude/skills/` в `docs/arc/`. Устранена циклическая переадресация, source of truth теперь версионируется в репозитории.
+- **Копирование заказов** — добавлен пункт «Копировать» в контекстное меню списка «Заказы». Deep-clone через JSON, новый номер договора от базового ("2-8" → "2-8.1", "2-8.1" → "2-8.2"). Метод `GenerateCopyContractNumber` вынесен в `OrderStorageService`. Добавлены 10 unit-тестов + 1 интеграционный тест.
 
 ## Что выглядит незавершённым / требует внимания
 
@@ -82,7 +83,7 @@ docs/arc/AUTO_UPDATE.md
 
 1. **Владелец: подтвердить эталонные расчётные кейсы** в `CALCULATION_TEST_CASES.md` (поставить статус «Подтверждено владельцем»).
 2. После подтверждения кейсов — зафиксировать A.R.C. в git одним коммитом: `git add AGENT.md AGENTS.md CLAUDE.md GEMINI.md CHANGELOG.md docs/arc && git commit -m "docs: accept A.R.C. project memory (master moved into repo)"` (не выполнять без явного разрешения).
-3. **(Отдельная мини-задача)** Исправить устаревший XML-комментарий в `OrderItem.Installation.cs` — `InstallationSurcharge` фактически равен 500, но комментарий говорит «0 ₽» (см. `GOTCHAS.md`, грабля «Устаревший комментарий по InstallationSurcharge»). Бизнес-логику не менять.
+3. **(Уже исправлено)** ~~Исправить устаревший XML-комментарий в `OrderItem.Installation.cs`~~ — комментарий исправлен (см. `GOTCHAS.md`).
 4. **Обновить README.md** для GitHub — добавить описание, скриншоты, инструкцию по установке (низкий приоритет).
 5. **Настроить CI/CD** (GitHub Actions) для автоматической сборки и публикации релизов (низкий приоритет).
 
@@ -96,4 +97,4 @@ docs/arc/AUTO_UPDATE.md
 
 ## Last verified
 
-2026-06-24 (multi-agent portability migration завершена).
+2026-06-24 (копирование заказов реализовано; 591/592 тестов зелёные).

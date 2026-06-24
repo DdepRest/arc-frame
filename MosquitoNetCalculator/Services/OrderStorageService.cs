@@ -152,6 +152,41 @@ namespace MosquitoNetCalculator.Services
             return $"{prefix}-{next}";
         }
 
+        /// <summary>
+        /// Generates a contract number for a copied order.
+        /// Always starts from the base number: "2-8" → "2-8.1",
+        /// "2-8.1" → "2-8.2", "2-8.5.3" → "2-8.6".
+        /// Strips any existing suffix before scanning for the next free index.
+        /// </summary>
+        public string GenerateCopyContractNumber(string sourceNumber)
+        {
+            string baseNumber = (sourceNumber ?? string.Empty).Trim();
+            if (string.IsNullOrEmpty(baseNumber))
+                baseNumber = "1";
+
+            // Strip existing suffix to get the true base: "2-8.1" → "2-8"
+            int dotIndex = baseNumber.IndexOf('.');
+            if (dotIndex >= 0)
+                baseNumber = baseNumber.Substring(0, dotIndex).Trim();
+
+            // Load all orders to find max suffix for this base
+            var allOrders = LoadAllOrders();
+            int maxSuffix = 0;
+            string prefix = baseNumber + ".";
+
+            foreach (var o in allOrders)
+            {
+                if (o.ContractNumber != null && o.ContractNumber.StartsWith(prefix))
+                {
+                    string suffixPart = o.ContractNumber.Substring(prefix.Length);
+                    if (int.TryParse(suffixPart, out int s) && s > maxSuffix)
+                        maxSuffix = s;
+                }
+            }
+
+            return baseNumber + "." + (maxSuffix + 1);
+        }
+
         // ──── Export ────
 
         public string ExportOrders(List<OrderData> orders, string filePath)

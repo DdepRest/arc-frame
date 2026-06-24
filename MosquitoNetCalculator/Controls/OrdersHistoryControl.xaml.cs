@@ -77,6 +77,9 @@ namespace MosquitoNetCalculator.Controls
         private void CtxExport_Click(object sender, RoutedEventArgs e) =>
             TryForwardToMain(nameof(CtxExport_Click), mw => mw.ExportSelectedOrder());
 
+        private void CtxCopy_Click(object sender, RoutedEventArgs e) =>
+            TryForwardToMain(nameof(CtxCopy_Click), mw => mw.CopySelectedOrder());
+
         private void CtxDelete_Click(object sender, RoutedEventArgs e) =>
             TryForwardToMain(nameof(CtxDelete_Click), mw => mw.DeleteSelectedOrder());
     }

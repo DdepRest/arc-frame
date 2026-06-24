@@ -51,7 +51,7 @@ namespace MosquitoNetCalculator.Models
             }
         }
 
-        /// <summary>Amount deducted from Total in mode 2 (В конструкцию). Default 0 ₽.</summary>
+        /// <summary>Amount deducted from Total in mode 2 (В конструкцию). Default 500 ₽.</summary>
         public double InstallationSurcharge
         {
             get => _installationSurcharge;
