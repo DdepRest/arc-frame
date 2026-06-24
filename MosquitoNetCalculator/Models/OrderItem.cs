@@ -45,6 +45,20 @@ namespace MosquitoNetCalculator.Models
         };
 
         /// <summary>
+        /// Manual-piece products that display ONLY the sum (сумма) —
+        /// no quantity, no width, no height, no area/length.
+        /// Subset of ManualPieceProducts. In the Quick-Add panel the
+        /// Qty, Width and Height fields are disabled; in the DataGrid
+        /// the Qty and Площ./Дл. columns show empty content.
+        /// </summary>
+        public static readonly HashSet<string> AmountOnlyProducts = new()
+        {
+            "Брус",
+            "Пояс",
+            "Доставка"
+        };
+
+        /// <summary>
         /// Manual-piece products that ALSO record Width as a per-row spec —
         /// Width is captured (e.g. slope material 250 mm) but does NOT enter
         /// the Total formula because CalculatedValue = 1 шт. for these products.
@@ -77,6 +91,9 @@ namespace MosquitoNetCalculator.Models
 
         /// <summary>True when Color/Width/Height columns should be hidden.</summary>
         public bool IsManualPiece => ManualPieceProducts.Contains(Name);
+
+        /// <summary>True when only the sum should be displayed — Qty, Width, Height, Area are hidden.</summary>
+        public bool IsAmountOnly => AmountOnlyProducts.Contains(Name);
 
         /// <summary>
         /// True for ManualPiece products that additionally record Width as

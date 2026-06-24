@@ -116,14 +116,18 @@ namespace MosquitoNetCalculator.Controls
                 }
 
                 bool isManualPiece = OrderItem.ManualPieceProducts.Contains(type);
+                bool isAmountOnly = OrderItem.AmountOnlyProducts.Contains(type);
                 bool widthEnabled = !isManualPiece || OrderItem.WidthOnlyProducts.Contains(type);
                 bool heightEnabled = !isManualPiece;
                 TxtQuickWidth.IsEnabled = widthEnabled;
                 TxtQuickHeight.IsEnabled = heightEnabled;
+                TxtQuickQty.IsEnabled = !isAmountOnly;
                 if (!widthEnabled)
                     TxtQuickWidth.Text = string.Empty;
                 if (!heightEnabled)
                     TxtQuickHeight.Text = string.Empty;
+                if (isAmountOnly)
+                    TxtQuickQty.Text = "1";
 
                 // v3.35.0: show/hide Anwis mode pill panel with animation.
                 ToggleAnwisModePanel(AnwisSizeService.IsApplicable(type));
@@ -235,7 +239,8 @@ namespace MosquitoNetCalculator.Controls
             double area = 0, total = 0;
             string unit = OrderItem.GetUnit(type);
 
-            if (OrderItem.ManualPieceProducts.Contains(type)) { total = price * qty; }
+            if (OrderItem.AmountOnlyProducts.Contains(type)) { total = price; }
+            else if (OrderItem.ManualPieceProducts.Contains(type)) { total = price * qty; }
             else if (OrderItem.AreaBasedProducts.Contains(type))
             {
                 // For Anwis, show calc-adjusted dimensions in the preview.
@@ -255,7 +260,9 @@ namespace MosquitoNetCalculator.Controls
             else { area = (width * height) / 1_000_000.0; total = area * price * qty; }
 
             PreviewChip.Visibility = Visibility.Visible;
-            if (area > 0)
+            if (OrderItem.AmountOnlyProducts.Contains(type))
+                TxtQuickPreview.Text = $"{price:N2} руб";
+            else if (area > 0)
                 TxtQuickPreview.Text = $"{area:F2} {unit} × {price:N2} руб × {qty} = {total:N2} руб";
             else
                 TxtQuickPreview.Text = $"{price:N2} руб × {qty} = {total:N2} руб";

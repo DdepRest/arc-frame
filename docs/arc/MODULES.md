@@ -18,7 +18,7 @@
 | `OrderSnapshot.cs` | Снимок для Undo/Redo. | — |
 | `ClientInfo.cs` | Данные клиента, Доп.КП, примечания. | — |
 | `PriceItem.cs` | Модель цены (Name, Color, Price). | — |
-| `UpdateItem.cs` | Модель записи "Что нового". | — |
+| `UpdateItem.cs` | Модель записи "Обновления". | — |
 | `UpdateManifest.cs` | DTO для releases.json (версия, URL, SHA-256). | Поля должны соответствовать releases.json. |
 | `AdditionalKpItem.cs` | Модель дополнительного КП. | — |
 | `LocationOptions.cs` | Список точек установки для экрана приветствия. | — |
@@ -118,4 +118,4 @@
 
 ## Last verified
 
-2026-06-23
+2026-06-24

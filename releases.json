@@ -1,7 +1,26 @@
 {
-    "latest":  "3.36.0",
+    "latest":  "3.36.1",
     "minRequired":  "",
     "releases":  [
+                     {
+                         "version":  "3.36.1",
+                         "date":  "2026-06-24",
+                         "type":  "Улучшение",
+                         "title":  "A.R.C. v2+v3: полная автоматизация AI-документирования",
+                         "changes":  [
+                                         "CHEATSHEET.md — быстрый вход (40 строк критических правил + routing-таблица)",
+                                         "DOCUMENTATION_MATRIX.md + documentation-matrix.json — механическая карта «файл → документы»",
+                                         "PROMPTS.md — готовые prompt-шаблоны (включая self-check)",
+                                         "what-to-update.ps1 — git diff → список docs к обновлению (фаза Document = 100% авто)",
+                                         "generate-update-log.ps1 — автогенерация update-log.json из CHANGELOG.md",
+                                         "validate-docs.ps1 — 8 автоматических проверок консистентности",
+                                         "MULTI_AGENT_ARC_CALC_CONTROL.md — гранулярный routing (12 категорий), убрано дублирование",
+                                         "AGENTS.md — inline routing, automation tools"
+                                     ],
+                         "url":  "https://github.com/DdepRest/arc-frame/releases/download/v3.36.1/ARC-Frame-3.36.1-full.zip",
+                         "size":  66959357,
+                         "sha256":  "ae008656a166d63cfa0bb11a3ab37efa96e6717978a3e55b4ec3d56849cacef5"
+                     },
                      {
                          "version":  "3.36.0",
                          "date":  "2026-06-24",

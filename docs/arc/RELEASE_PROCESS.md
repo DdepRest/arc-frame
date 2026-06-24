@@ -167,4 +167,4 @@ update-releases-json.ps1
 
 ## Last verified
 
-2026-06-23 (версия 3.35.0)
+2026-06-24 (A.R.C. upgrade v3)

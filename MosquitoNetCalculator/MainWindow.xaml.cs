@@ -156,7 +156,15 @@ namespace MosquitoNetCalculator
                     // enter the Total formula. WidthOnly products (Откос материал)
                     // additionally record Width as a per-row spec but ignore it
                     // in Total — Width alone stays editable for those.
-                    if (item.IsWidthOnly)
+                    if (item.IsAmountOnly)
+                    {
+                        if (header is "Цвет" or "Ширина" or "Высота" or "Кол-во")
+                        {
+                            e.Cancel = true;
+                            return;
+                        }
+                    }
+                    else if (item.IsWidthOnly)
                     {
                         if (header is "Цвет" or "Высота")
                         {
@@ -346,16 +354,16 @@ namespace MosquitoNetCalculator
                 OrderItems.Select(i => i.RowNumber.ToString()), headerPad: 20);
             DataGridColumnAutoSizer.SetColumnMinWidth(grid, DataGridColumnAutoSizer.FindCol(grid, "Наименование"), "Наименование");
             DataGridColumnAutoSizer.SetColumnMinWidth(grid, DataGridColumnAutoSizer.FindCol(grid, "Цвет"), "Цвет",
-                OrderItems.Select(i => i.Color));
+                OrderItems.Select(i => i.IsAmountOnly ? "" : i.Color));
             DataGridColumnAutoSizer.SetColumnMinWidth(grid, DataGridColumnAutoSizer.FindCol(grid, "Ширина"), "Ширина",
-                OrderItems.Select(i => i.Width > 0 ? $"{i.Width:F0} мм" : ""));
+                OrderItems.Select(i => i.IsAmountOnly ? "" : i.Width > 0 ? $"{i.Width:F0} мм" : ""));
             DataGridColumnAutoSizer.SetColumnMinWidth(grid, DataGridColumnAutoSizer.FindCol(grid, "Высота"), "Высота",
-                OrderItems.Select(i => i.Height > 0 ? $"{i.Height:F0} мм" : ""));
+                OrderItems.Select(i => i.IsAmountOnly ? "" : i.Height > 0 ? $"{i.Height:F0} мм" : ""));
             DataGridColumnAutoSizer.SetColumnMinWidth(grid, DataGridColumnAutoSizer.FindCol(grid, "Монтаж"), "Монтаж",
                 OrderItems.Select(i => i.InstallationDisplay),
                 contentPad: 40, contentWeight: FontWeights.Bold, contentFontSize: 14);
             DataGridColumnAutoSizer.SetColumnMinWidth(grid, DataGridColumnAutoSizer.FindCol(grid, "Кол-во"), "Кол-во",
-                OrderItems.Select(i => i.Quantity > 0 ? i.Quantity.ToString() : ""),
+                OrderItems.Select(i => i.IsAmountOnly ? "" : i.Quantity > 0 ? i.Quantity.ToString() : ""),
                 contentPad: 24);
             DataGridColumnAutoSizer.SetColumnMinWidth(grid, DataGridColumnAutoSizer.FindCol(grid, "Площ./Дл."), "Площ./Дл.",
                 OrderItems.Select(i => i.CalculatedValueDisplay),

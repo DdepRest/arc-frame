@@ -40,6 +40,7 @@ namespace MosquitoNetCalculator.Models
         {
             get
             {
+                if (IsAmountOnly) return "";
                 if (CalculatedValue <= 0) return "";
                 double total = CalculatedValue * Quantity;
                 return Unit == "шт."
@@ -54,8 +55,8 @@ namespace MosquitoNetCalculator.Models
         /// <summary>Display string for effective total (with installation deduction applied)</summary>
         public string TotalDisplay => TotalWithDeduction > 0 ? Services.MoneyFormatService.Format(TotalWithDeduction) : "";
 
-        /// <summary>Display string for quantity (empty when 0)</summary>
-        public string QuantityDisplay => Quantity > 0 ? Quantity.ToString() : "";
+        /// <summary>Display string for quantity (empty when 0 or amount-only product)</summary>
+        public string QuantityDisplay => Quantity > 0 && !IsAmountOnly ? Quantity.ToString() : "";
 
         private void Recalculate()
         {
@@ -92,6 +93,7 @@ namespace MosquitoNetCalculator.Models
 
             OnPropertyChanged(nameof(IsInstallationApplicable));
             OnPropertyChanged(nameof(IsManualPiece));
+            OnPropertyChanged(nameof(IsAmountOnly));
             OnPropertyChanged(nameof(IsWidthOnly));
             OnPropertyChanged(nameof(IsAnwis));
             OnPropertyChanged(nameof(AnwisSizeShortLabel));

@@ -194,13 +194,19 @@
                         </DataGridTemplateColumn.CellTemplate>
                     </DataGridTemplateColumn>
 
-                    <!-- Кол-во (editable) -->
+                    <!-- Кол-во (editable; hidden for amount-only products) -->
                     <DataGridTextColumn Header="Кол-во" Width="Auto" MinWidth="55">
                         <DataGridTextColumn.Binding>
                             <Binding Path="Quantity" UpdateSourceTrigger="PropertyChanged"/>
                         </DataGridTextColumn.Binding>
                         <DataGridTextColumn.ElementStyle>
-                            <Style TargetType="TextBlock" BasedOn="{StaticResource CenterCell}"/>
+                            <Style TargetType="TextBlock" BasedOn="{StaticResource CenterCell}">
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding IsAmountOnly}" Value="True">
+                                        <Setter Property="Visibility" Value="Collapsed"/>
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
                         </DataGridTextColumn.ElementStyle>
                         <DataGridTextColumn.EditingElementStyle>
                             <Style TargetType="TextBox">
@@ -216,11 +222,20 @@
                         </DataGridTextColumn.EditingElementStyle>
                     </DataGridTextColumn>
 
-                    <!-- Площ./Дл. -->
+                    <!-- Площ./Дл. (hidden for amount-only products) -->
                     <DataGridTextColumn Header="Площ./Дл." Width="Auto" MinWidth="70"
                                                             Binding="{Binding CalculatedValueDisplay}"
-                                                            IsReadOnly="True"
-                                                            ElementStyle="{DynamicResource RightCell}"/>
+                                                            IsReadOnly="True">
+                        <DataGridTextColumn.ElementStyle>
+                            <Style TargetType="TextBlock" BasedOn="{StaticResource RightCell}">
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding IsAmountOnly}" Value="True">
+                                        <Setter Property="Visibility" Value="Collapsed"/>
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </DataGridTextColumn.ElementStyle>
+                    </DataGridTextColumn>
 
                     <!-- Цена (editable — user can override the unit price per row) -->
                     <DataGridTextColumn Header="Цена" Width="Auto" MinWidth="70">

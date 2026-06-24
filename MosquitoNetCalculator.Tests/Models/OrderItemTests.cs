@@ -603,9 +603,38 @@ namespace MosquitoNetCalculator.Tests.Models
         [Fact]
         public void CalculatedValueDisplay_ManualPiece_MultipliedByQuantity()
         {
-            // Bug #3 fix: CalculatedValueDisplay must account for Quantity, not show 1 for Брус × 5.
-            var item = new OrderItem { Name = "Брус", Quantity = 5, Price = 1000 };
+            // Работа is ManualPiece but NOT AmountOnly — Quantity is still shown.
+            var item = new OrderItem { Name = "Работа", Quantity = 5, Price = 1000 };
             Assert.Equal("5 шт.", item.CalculatedValueDisplay);
+        }
+
+        [Fact]
+        public void CalculatedValueDisplay_AmountOnly_ReturnsEmpty()
+        {
+            // AmountOnly products (Брус, Пояс, Доставка) hide CalculatedValueDisplay.
+            var brus = new OrderItem { Name = "Брус", Quantity = 5, Price = 1000 };
+            Assert.Equal("", brus.CalculatedValueDisplay);
+
+            var pojas = new OrderItem { Name = "Пояс", Quantity = 3, Price = 500 };
+            Assert.Equal("", pojas.CalculatedValueDisplay);
+
+            var delivery = new OrderItem { Name = "Доставка", Quantity = 2, Price = 1000 };
+            Assert.Equal("", delivery.CalculatedValueDisplay);
+        }
+
+        [Fact]
+        public void QuantityDisplay_AmountOnly_ReturnsEmpty()
+        {
+            // AmountOnly products hide QuantityDisplay.
+            var brus = new OrderItem { Name = "Брус", Quantity = 5, Price = 1000 };
+            Assert.Equal("", brus.QuantityDisplay);
+
+            var pojas = new OrderItem { Name = "Пояс", Quantity = 1, Price = 500 };
+            Assert.Equal("", pojas.QuantityDisplay);
+
+            // Non-AmountOnly ManualPiece (Работа) still shows quantity.
+            var work = new OrderItem { Name = "Работа", Quantity = 5, Price = 1000 };
+            Assert.Equal("5", work.QuantityDisplay);
         }
 
         [Fact]
@@ -614,6 +643,45 @@ namespace MosquitoNetCalculator.Tests.Models
             var item = new OrderItem { Name = "Anwis", Width = 1000, Height = 1000, Quantity = 3, Price = 1800 };
             // Width/Height are calc-adjusted (1000×1000), area = 1.0 м², × Qty 3 = 3.000 м²
             Assert.Equal("3,000 м²", item.CalculatedValueDisplay);
+        }
+
+        // ─── IsAmountOnly tests ───────────────────────────────────────────────────────────
+
+        [Theory]
+        [InlineData("Брус")]
+        [InlineData("Пояс")]
+        [InlineData("Доставка")]
+        public void IsAmountOnly_True_ForAmountOnlyProducts(string name)
+        {
+            Assert.True(new OrderItem { Name = name }.IsAmountOnly);
+        }
+
+        [Theory]
+        [InlineData("Работа")]
+        [InlineData("Откос материал")]
+        [InlineData("Anwis")]
+        [InlineData("Отлив")]
+        [InlineData("ПСУЛ")]
+        public void IsAmountOnly_False_ForOtherProducts(string name)
+        {
+            Assert.False(new OrderItem { Name = name }.IsAmountOnly);
+        }
+
+        [Fact]
+        public void IsAmountOnly_ReflectsNamePropertyChange()
+        {
+            var item = new OrderItem { Name = "Работа" };
+            Assert.False(item.IsAmountOnly);
+
+            bool fired = false;
+            item.PropertyChanged += (s, e) =>
+            {
+                if (e.PropertyName == nameof(OrderItem.IsAmountOnly))
+                    fired = true;
+            };
+            item.Name = "Брус";
+            Assert.True(item.IsAmountOnly);
+            Assert.True(fired, "IsAmountOnly must fire PropertyChanged when Name changes");
         }
 
         // ─── IsWidthOnly tests ───────────────────────────────────────────────────────────

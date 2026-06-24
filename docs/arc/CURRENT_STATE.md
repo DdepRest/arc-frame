@@ -8,10 +8,12 @@
 - Тёмная тема стабильна, переключается без потери данных.
 - Undo/Redo работает для позиций расчёта и Доп.КП.
 - Юнит-тесты покрывают ключевые сценарии (расчёты, экспорт/импорт, версия, обновления).
-- Текущая версия: **3.35.0**.
-- Система A.R.C. инициализирована и прошла аудит документации.
-- **A.R.C. технически принят** — документация прошла аудит по коду, эталонные расчётные кейсы созданы, релизный процесс описан, терминология по размерам разведена однозначно.
-- **Multi-agent portability migration завершён** — канонический master-файл перенесён внутрь репозитория в `docs/arc/MULTI_AGENT_ARC_CALC_CONTROL.md`; `~/.claude/skills/MULTI_AGENT_ARC_CALC_CONTROL.md` теперь external bootstrap loader. Циклическая переадресация устранена.
+- Текущая версия: **3.36.2** (опубликован GitHub Release, автообновление настроено).
+- Система A.R.C. прошла 3 итерации улучшений:
+  - **v1:** инициализация, аудит, эталонные кейсы.
+  - **v2:** CHEATSHEET, DOCUMENTATION_MATRIX, PROMPTS, гранулярный routing, validate-docs.
+  - **v3 (текущая):** полная автоматизация — documentation-matrix.json (машиночитаемая матрица), what-to-update.ps1 (git diff → docs к обновлению), generate-update-log.ps1 (CHANGELOG → update-log), render-matrix.ps1 (JSON → MD рендеринг), git-based Last verified и staleness detection в validate-docs (теперь 8 проверок), self-check prompt (Prompt 7), inline routing в AGENTS.md.
+- **Multi-agent portability migration завершён** — канонический master-файл перенесён внутрь репозитория в `docs/arc/MULTI_AGENT_ARC_CALC_CONTROL.md`; `~/.claude/skills/MULTI_AGENT_ARC_CALC_CONTROL.md` теперь external bootstrap loader.
 
 ## Статус A.R.C.
 
@@ -21,80 +23,97 @@
 ✅ Созданы эталонные расчётные кейсы в `CALCULATION_TEST_CASES.md` (с явными статусами).
 ✅ Термины по размерам (введённые / расчётные / заводские / в КП) разведены однозначно.
 ✅ Правило безопасного порядка публикации `releases.json` зафиксировано в `RELEASE_PROCESS.md` и `AUTO_UPDATE.md`.
-✅ Multi-agent master-файл перенесён в репозиторий (`docs/arc/MULTI_AGENT_ARC_CALC_CONTROL.md`) — source of truth версионируется, доступен любым агентам.
-✅ Wrappers (`AGENT.md`, `AGENTS.md`, `CLAUDE.md`, `GEMINI.md`) — тонкие redirect-файлы, правила не дублируют.
-⚠️ **Ожидает**: владелец должен вручную подтвердить бизнес-правильность расчётных кейсов в `CALCULATION_TEST_CASES.md`.
+✅ Multi-agent master-файл перенесён в репозиторий (`docs/arc/MULTI_AGENT_ARC_CALC_CONTROL.md`) — source of truth версионируется.
+✅ Wrappers (`AGENT.md`, `AGENTS.md`, `CLAUDE.md`, `GEMINI.md`) — тонкие redirect-файлы.
+✅ **Все расчётные кейсы (1–15) подтверждены владельцем 2026-06-24.**
+✅ **A.R.C. upgrade v2 (2026-06-24):** CHEATSHEET.md, DOCUMENTATION_MATRIX.md, PROMPTS.md, validate-docs.ps1, гранулярный routing, token-aware severity levels.
+✅ `MULTI_AGENT_ARC_CALC_CONTROL.md` переработан: убрано дублирование, добавлены ссылки на новые файлы, расширена routing-таблица (12 категорий вместо 2).
 
 ## Архитектура multi-agent control
 
 ```text
 docs/arc/MULTI_AGENT_ARC_CALC_CONTROL.md
-    = canonical source of truth (внутри репозитория, версионируется)
+    = canonical source of truth (версионируется в репозитории)
 
-~/.claude/skills/MULTI_AGENT_ARC_CALC_CONTROL.md
-    = external bootstrap loader только для Claude-среды
+docs/arc/CHEATSHEET.md
+    = быстрый вход (критические правила + routing, 40 строк)
 
-AGENT.md / AGENTS.md / CLAUDE.md / GEMINI.md
-    = thin compatibility wrappers
+docs/arc/DOCUMENTATION_MATRIX.md
+    = механическая карта «поменял файл → обнови документы»
+
+docs/arc/PROMPTS.md
+    = готовые prompt-шаблоны для типовых сценариев
 
 docs/arc/CURRENT_STATE.md
 docs/arc/CALCULATION_LOGIC.md
 docs/arc/CALCULATION_TEST_CASES.md
 docs/arc/GOTCHAS.md
+docs/arc/MODULES.md
+docs/arc/DECISIONS.md
+docs/arc/PROJECT_OVERVIEW.md
 docs/arc/RELEASE_PROCESS.md
 docs/arc/AUTO_UPDATE.md
     = проектная память
+
+validate-docs.ps1
+    = автоматическая валидация консистентности документации
+
+~/.claude/skills/MULTI_AGENT_ARC_CALC_CONTROL.md
+    = external bootstrap loader (только для Claude-среды)
+
+AGENT.md / AGENTS.md / CLAUDE.md / GEMINI.md
+    = thin compatibility wrappers
 ```
 
-Любой агент обязан сначала прочитать `docs/arc/MULTI_AGENT_ARC_CALC_CONTROL.md`, затем следовать маршруту, который он задаёт. Изменения правил редактируются только в repo-local master-файле.
+## Порядок входа агента (token-optimised)
 
-## Последние изменения (что было сделано недавно)
+1. `CHEATSHEET.md` — 40 строк, 15 секунд, критические правила + routing-таблица.
+2. `CURRENT_STATE.md` — текущее состояние.
+3. Routing-таблица в `CHEATSHEET.md` → релевантные полные файлы (2-3 вместо 5+).
+4. На фазе Document → `DOCUMENTATION_MATRIX.md` (механическое обновление docs).
+5. Валидация → `validate-docs.ps1`.
 
-- **v3.35.0** — полный фикс утечки формул Anwis на не-Anwis товары. Исправлены 4 точки утечки + добавлены юнит-тесты.
-- **v3.34.5** — фикс отображения версии в заголовке (многослойный fallback с логированием).
-- **v3.34.4** — рефакторинг: разбиение больших файлов на partial-классы.
-- **v3.34.3** — сегментированный контроль режима Anwis в QuickAdd.
-- **A.R.C. portability migration** — master-файл multi-agent control перенесён из `~/.claude/skills/` в `docs/arc/`. Устранена циклическая переадресация, source of truth теперь версионируется в репозитории.
-- **Копирование заказов** — добавлен пункт «Копировать» в контекстное меню списка «Заказы». Deep-clone через JSON, новый номер договора от базового ("2-8" → "2-8.1", "2-8.1" → "2-8.2"). Метод `GenerateCopyContractNumber` вынесен в `OrderStorageService`. Добавлены 10 unit-тестов + 1 интеграционный тест.
+## Последние изменения
 
-## Что выглядит незавершённым / требует внимания
+- **AmountOnlyProducts** — Брус, Пояс, Доставка: скрыты колонки Кол-во/Площ./Дл. в таблице, отключены поля Кол-во/Ш/В в QuickAdd, превью показывает только цену. 7 новых тестов.
+- **update-log.json восстановлен** из git (был обрезан до 3 записей); исправлены 6 ошибок в тестах.
+- **v3.36.0** — копирование заказов, 11 тестов, A.R.C. init.
+- **A.R.C. upgrade v3** — полная автоматизация: documentation-matrix.json, what-to-update.ps1, generate-update-log.ps1, render-matrix.ps1, git-based Last verified (check 7), staleness detection (check 8), self-check prompt, inline routing в AGENTS.md.
+- **A.R.C. upgrade v2** — CHEATSHEET.md, DOCUMENTATION_MATRIX.md, PROMPTS.md, гранулярный routing, validate-docs.ps1.
+- **v3.35.0** — полный фикс утечки формул Anwis на не-Anwis товары.
 
-- `README.md` в корне практически пустой (`# arc-frame`) — стоит обновить для GitHub.
-- `releases.json` и `update-log.json` дублируют частично одну информацию — releases.json для автообновления, update-log.json для UI. Нужно синхронизировать при каждом релизе.
+## Что выглядит незавершённым
+
+- `README.md` в корне практически пустой — стоит обновить для GitHub.
+- `releases.json` и `update-log.json` дублируют частично одну информацию — нужна синхронизация при каждом релизе (рассмотреть консолидацию).
 - Нет автоматической проверки калькуляции при релизе — только юнит-тесты.
-- Эталонные расчётные кейсы (`CALCULATION_TEST_CASES.md`) созданы из baseline кода, но ещё не подтверждены владельцем вручную.
 
 ## Открытые вопросы
 
 - Нужно ли добавить новые товары или изменить цены? (Только по явному запросу владельца.)
-- Нужно ли улучшить механизм автообновления? (Сейчас работает через .bat-файл — достаточно надёжно, но не идеально.)
-- Нужен ли CI/CD для автоматической сборки и публикации? (Сейчас ручной процесс через build.bat + gh release upload.)
-- Нужно ли подтвердить владельцем эталонные расчётные кейсы из `CALCULATION_TEST_CASES.md`?
-
-## Что стоит проверить владельцу
-
-1. **Подтвердить эталонные расчётные кейсы** в `docs/arc/CALCULATION_TEST_CASES.md` — отметить галочками подтверждённые примеры.
-2. Проверить, что расчёт Anwis в режиме ББ 60 работает корректно на нескольких реальных примерах.
-3. Проверить, что не-Anwis товары (Отлив, Козырёк, Откос материал, Работа) не показывают лишних коррекций размеров.
-4. Проверить, что КП печатается корректно и сумма прописью верна.
-5. Проверить, что автообновление видит новую версию (после следующего релиза).
+- Нужно ли улучшить механизм автообновления?
+- Нужен ли CI/CD для автоматической сборки и публикации?
+- Нужна ли консолидация CHANGELOG.md ↔ update-log.json?
 
 ## Рекомендуемые следующие шаги
 
-1. **Владелец: подтвердить эталонные расчётные кейсы** в `CALCULATION_TEST_CASES.md` (поставить статус «Подтверждено владельцем»).
-2. После подтверждения кейсов — зафиксировать A.R.C. в git одним коммитом: `git add AGENT.md AGENTS.md CLAUDE.md GEMINI.md CHANGELOG.md docs/arc && git commit -m "docs: accept A.R.C. project memory (master moved into repo)"` (не выполнять без явного разрешения).
-3. **(Уже исправлено)** ~~Исправить устаревший XML-комментарий в `OrderItem.Installation.cs`~~ — комментарий исправлен (см. `GOTCHAS.md`).
-4. **Обновить README.md** для GitHub — добавить описание, скриншоты, инструкцию по установке (низкий приоритет).
-5. **Настроить CI/CD** (GitHub Actions) для автоматической сборки и публикации релизов (низкий приоритет).
+1. Запустить `validate-docs.ps1` и исправить найденные расхождения.
+2. ~~Обновить README.md~~ (низкий приоритет).
+3. Настроить CI/CD (GitHub Actions) для автоматической сборки и публикации релизов.
+4. Консолидировать CHANGELOG.md и update-log.json (один source of truth).
 
 ## Source files
 
-- `MosquitoNetCalculator/MosquitoNetCalculator.csproj` — версия 3.35.0.
+- `MosquitoNetCalculator/MosquitoNetCalculator.csproj` — версия 3.36.0.
 - `releases.json` — история релизов.
 - `MosquitoNetCalculator/Resources/update-log.json` — история для UI.
-- `docs/arc/MULTI_AGENT_ARC_CALC_CONTROL.md` — canonical master после migration.
-- `~/.claude/skills/MULTI_AGENT_ARC_CALC_CONTROL.md` — external bootstrap loader.
+- `docs/arc/*.md` — вся проектная документация.
+- `docs/arc/documentation-matrix.json` — машиночитаемый источник матрицы.
+- `what-to-update.ps1` — git diff -> docs к обновлению.
+- `validate-docs.ps1` — 8 проверок консистентности.
+- `generate-update-log.ps1` — CHANGELOG -> update-log.
+- `render-matrix.ps1` — JSON -> DOCUMENTATION_MATRIX.md.
 
 ## Last verified
 
-2026-06-24 (копирование заказов реализовано; 591/592 тестов зелёные).
+2026-06-25 (release 3.36.2 — AmountOnlyProducts, UTF-8 BOM fix, 603/603 tests pass)

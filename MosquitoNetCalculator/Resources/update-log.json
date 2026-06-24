@@ -411,5 +411,34 @@
       "Добавлено 11 тестов: 10 unit-тестов GenerateCopyContractNumber + 1 интеграционный тест deep-clone копирования",
       "Исправлен pre-existing дрифт версии в UpdateLogTests.AllNewestFirst (3.34.5 → 3.35.0)"
     ]
+  },
+  {
+    "date": "2026-06-24",
+    "version": "3.36.1",
+    "type": "Новая функция",
+    "title": "Техническое",
+    "changes": [
+      "A.R.C. upgrade v3: полная автоматизация документирования (0 ручных операций для агента):",
+      "docs/arc/documentation-matrix.json — машиночитаемый источник матрицы файл → документы.",
+      "what-to-update.ps1 — скрипт: принимает git diff --name-only, выводит список docs/arc файлов к обновлению.",
+      "generate-update-log.ps1 — автогенерация update-log.json из CHANGELOG.md.",
+      "render-matrix.ps1 — генерация DOCUMENTATION_MATRIX.md из JSON.",
+      "validate-docs.ps1 расширен до 8 проверок: git-based Last verified, staleness detection.",
+      "AGENTS.md — добавлен inline routing (таблица в самом wrapper'е).",
+      "CHEATSHEET.md — добавлено правило #17 (what-to-update → validate-docs)."
+    ]
+  },
+  {
+    "date": "2026-06-25",
+    "version": "3.36.2",
+    "type": "Улучшение",
+    "title": "Брус, Пояс, Доставка — только сумма, исправления",
+    "changes": [
+      "Для Брус, Пояс, Доставка скрыты колонки Кол-во и Площ./Дл. в таблице расчёта",
+      "В панели быстрого ввода отключены поля Кол-во, Ширина, Высота для этих товаров",
+      "Превью показывает только цену вместо формулы",
+      "Исправлена кодировка UTF-8 BOM в PowerShell-скриптах",
+      "Восстановлен журнал обновлений (update-log.json)"
+    ]
   }
-]  
+]
