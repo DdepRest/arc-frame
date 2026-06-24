@@ -1,7 +1,24 @@
 {
-    "latest":  "3.35.0",
+    "latest":  "3.36.0",
     "minRequired":  "",
     "releases":  [
+                     {
+                         "version":  "3.36.0",
+                         "date":  "2026-06-24",
+                         "type":  "Новинка",
+                         "title":  "Копирование заказов через ПКМ, миграция метода нумерации в сервис, 11 новых тестов",
+                         "changes":  [
+                                         "Добавлено копирование заказов через ПКМ: полная копия с новым номером (2-8 → 2-8.1), статусом «Новый» и актуальной датой",
+                                         "Нумерация копий всегда от базового номера: 2-8.1 → копия → 2-8.2 (суффикс копии стрипается)",
+                                         "GenerateCopyContractNumber перенесён из MainWindow в OrderStorageService",
+                                         "Исправлен XML-комментарий InstallationSurcharge: 0 ₽ → 500 ₽",
+                                         "Добавлено 11 тестов: 10 unit + 1 integration",
+                                         "Исправлен pre-existing дрифт версии в UpdateLogTests.AllNewestFirst"
+                                     ],
+                         "url":  "https://github.com/DdepRest/arc-frame/releases/download/v3.36.0/ARC-Frame-3.36.0-full.zip",
+                         "size":  66659973,
+                         "sha256":  "a13004171582413f5aa23d04ccf6701182710bf7eb551479c2c24c6dd5b0ed33"
+                     },
                      {
                          "version":  "3.35.0",
                          "date":  "2026-06-23",
