@@ -1,0 +1,234 @@
+# CALCULATION_LOGIC.md
+
+## Где находится расчёт стоимости
+
+Главные файлы:
+
+1. **`MosquitoNetCalculator/Models/OrderItem.Calculations.cs`** — расчёт `CalculatedValue` и `Total` для одной строки.
+2. **`MosquitoNetCalculator/Models/AnwisSize.cs`** — коррекция размеров Anwis (3 слоя: Ввод → Расчёт → Завод).
+3. **`MosquitoNetCalculator/ViewModels/CalculationViewModel.cs`** — агрегация итогов по всем позициям.
+4. **`MosquitoNetCalculator/Services/PriceService.cs`** — загрузка и поиск цен.
+
+---
+
+## Какие данные входят в расчёт
+
+Для каждой строки заказа (`OrderItem`):
+
+| Поле | Описание |
+|------|----------|
+| `Name` | Название товара (Anwis, Отлив, ПСУЛ, Работа и т.д.) |
+| `Color` | Цвет товара |
+| `Width` | Ширина в мм (хранимое/расчётное значение) |
+| `Height` | Высота в мм (хранимое/расчётное значение) |
+| `Quantity` | Количество (минимум 1) |
+| `Price` | Цена за единицу (за м², м.п. или шт.) |
+| `IsActive` | Включена ли позиция в итог |
+| `InstallationMode` | 0=включён, 1=без монтажа, 2=в конструкцию |
+| `AnwisSizeMode` | Режим Anwis (только для Anwis) |
+
+---
+
+## Единицы измерения по товарам
+
+```csharp
+"ПСУЛ"          → "м.п."   // периметр: (W+H)*2 / 1000
+"Уплотнение"    → "м.п."   // периметр: (W+H)*2 / 1000
+"Откос материал"→ "шт."    // 1 шт.
+"Работа"        → "шт."    // 1 шт.
+"Брус"          → "шт."    // 1 шт.
+"Пояс"          → "шт."    // 1 шт.
+"Доставка"      → "шт."    // 1 шт.
+остальные       → "м²"     // площадь: W*H / 1_000_000
+```
+
+---
+
+## Формулы расчёта CalculatedValue (за 1 штуку)
+
+```csharp
+// ПСУЛ и Уплотнение — периметр в метрах
+CalculatedValue = Math.Round((Width + Height) * 2 / 1000.0, 3)
+
+// Откос материал, Работа, Брус, Пояс, Доставка — фиксированно 1 шт.
+CalculatedValue = 1
+
+// Всё остальное (Anwis, Отлив, Козырёк, Короб, На навесах) — площадь в м²
+CalculatedValue = Math.Round(Width * Height / 1_000_000.0, 3)
+```
+
+---
+
+## Формула итоговой стоимости строки
+
+```csharp
+Total = Math.Round(CalculatedValue * Price * Quantity, 2)
+```
+
+**Пример:** Anwis 1000×1000 мм, цена 1800 руб/м², кол-во 2
+- CalculatedValue = 1000 * 1000 / 1_000_000 = 1.0 м²
+- Total = 1.0 * 1800 * 2 = 3600.00 руб.
+
+---
+
+## 4 типа размеров для Anwis
+
+Для Anwis существует 4 представления размеров. Важно не путать их:
+
+| Тип | Название в коде | Описание |
+|-----|-----------------|----------|
+| 1. **Введённые (raw)** | `ШиринаВвод` / `ВысотаВвод` | То, что пользователь набрал в поле ввода. Для Anwis получается обратным пересчётом из хранимых значений. |
+| 2. **Хранимые / Расчётные** | `OrderItem.Width` / `Height` | Размеры после применения коррекции режима. Используются для расчёта площади, цены и **КП**. |
+| 3. **Заводские** | `Размеры.ШиринаЗавод` / `ВысотаЗавод` | Расчётные размеры минус 20 мм. Уходят в текст «На завод». |
+| 4. **Отображаемые в таблице** | `OrderItem.Width` / `Height` | Те же хранимые значения, что видны в DataGrid. |
+
+### Формулы коррекции режимов (Ввод → Расчёт)
+
+| Режим | Ширина ввод → расчёт | Высота ввод → расчёт |
+|-------|---------------------|---------------------|
+| ББ 60 | W + 2 мм | H − 30 мм |
+| ББ 70 | W − 2 мм | H − 30 мм |
+| Профипласт | без изменений | без изменений |
+| Размер проёма | W + 20 мм | H + 20 мм |
+| Габаритный | без изменений | без изменений |
+
+### Заводские размеры (Расчёт → Завод)
+
+От расчётных размеров отнимается 20 мм по ширине и высоте **для всех режимов**:
+
+```
+Завод_W = Расчёт_W − 20
+Завод_H = Расчёт_H − 20
+```
+
+Если расчётный размер меньше 20 мм, заводской размер clamps to 0.
+
+### Для не-Anwis товаров
+
+Все 4 типа равны (identity): Ввод = Расчёт = Завод = КП.
+
+**Критически важно:** формулы Anwis НЕ должны применяться к не-Anwis товарам. Это было источником бага в v3.35.0.
+
+---
+
+## Какие размеры используются где
+
+| Назначение | Какой размер используется | Пример (Anwis ББ 60, ввод 1000×1000) |
+|-----------|--------------------------|--------------------------------------|
+| **Отображение пользователю в поле ввода** | `ШиринаВвод` / `ВысотаВвод` | 1000 × 1000 |
+| **Отображение в таблице расчёта** | `OrderItem.Width` / `Height` | 1002 × 970 |
+| **Расчёт площади и цены** | `OrderItem.Width` / `Height` | 1002 × 970 |
+| **КП (коммерческое предложение)** | `OrderItem.Width` / `Height` | 1002 × 970 |
+| **Отправка на завод** | `Размеры.ШиринаЗавод` / `ВысотаЗавод` | 982 × 950 |
+
+> **Важно:** В КП попадают **хранимые (расчётные)** размеры (`Width`/`Height`), а не введённые пользователем (`ШиринаВвод`/`ВысотаВвод`). Это текущее поведение кода. Если владелец хочет, чтобы в КП шли исходные (введённые) размеры — это изменение поведения, которое требует явного согласования.
+
+---
+
+## Итоговая сумма заказа (TotalInfo)
+
+```csharp
+// В CalculationViewModel.CalculateTotal(double additionalKpTotal):
+
+var validItems = OrderItems.Where(i => !string.IsNullOrEmpty(i.Name) && i.IsActive && i.Total > 0).ToList();
+
+double itemsTotal = validItems.Sum(i => i.TotalWithDeduction);
+double total = itemsTotal + additionalKpTotal;
+
+// Подытоги:
+double totalArea   = validItems.Where(i => i.Unit == "м²").Sum(i => i.CalculatedValue * i.Quantity);
+double totalLinear = validItems.Where(i => i.Unit == "м.п.").Sum(i => i.CalculatedValue * i.Quantity);
+int    totalPieces = validItems.Where(i => i.Unit == "шт.").Sum(i => i.Quantity);
+```
+
+---
+
+## Монтаж (вычеты из стоимости)
+
+Только для `Anwis` и `На навесах`:
+
+| Режим | Эффект |
+|-------|--------|
+| 0 (включён) | Без изменений |
+| 1 (без монтажа) | Total − InstallationDeduction (по умолч. 500 руб.) |
+| 2 (в конструкцию) | Total − InstallationSurcharge (по умолч. 500 руб.) |
+
+```csharp
+TotalWithDeduction = _installationMode switch
+{
+    1 => Math.Round(Math.Max(0, Total - InstallationDeduction), 2),
+    2 => Math.Round(Math.Max(0, Total - InstallationSurcharge), 2),
+    _ => Total
+};
+```
+
+---
+
+## Откуда берутся цены
+
+1. **Стартовый каталог** — зашит в `PriceService.DefaultPrices` (26 записей, 13 товаров).
+2. **Пользовательские цены** — сохраняются в `%AppData%\MosquitoNetCalculator\prices.json`.
+3. При первом запуске копируются дефолтные цены в AppData.
+4. Пользователь может редактировать цены во вкладке "Цены".
+
+---
+
+## Как расчёт связан с КП
+
+`PrintService.GenerateKpHtml` берёт `OrderItem.Width` и `OrderItem.Height` (хранимые/расчётные размеры) и подставляет их в HTML-шаблон.
+
+Подробнее:
+- `PrintService.FillTemplate` строки 48–49: `item.Width:F0`, `item.Height:F0`.
+- Для Anwis в КП попадают расчётные размеры после применения режима (например, 1002×970 для ББ 60 при вводе 1000×1000).
+- Для не-Anwis в КП попадают хранимые размеры без изменений.
+- Расчёт `CalculatedValue` и `TotalWithDeduction` использует те же хранимые размеры.
+
+> **Проверить владельцу:** Должны ли в КП показываться **введённые** размеры (1000×1000) вместо **расчётных** (1002×970)? Сейчас код показывает расчётные.
+
+---
+
+## Как расчёт связан с отправкой на завод
+
+`FactoryTextService.Generate` использует `item.Размеры.ШиринаЗавод` / `ВысотаЗавод` для Anwis и обычные `Width`/`Height` для остальных.
+
+---
+
+## Места, которые НЕЛЬЗЯ менять без явного разрешения владельца
+
+1. Формулы `CalculatedValue` в `OrderItem.Calculations.cs`.
+2. Формулы `ApplyCalcWidth/Height` и `ReverseCalcWidth/Height` в `AnwisSize.cs`.
+3. Значения `InstallationDeduction` / `InstallationSurcharge` по умолчанию.
+4. `DefaultPrices` в `PriceService.cs`.
+5. Логика `TotalWithDeduction`.
+6. Округление (`Math.Round(..., 2)` для денег, `Math.Round(..., 3)` для площади/периметра).
+
+---
+
+## Как вручную проверить, что расчёт работает правильно
+
+1. Добавить Anwis 1000×1000 мм, цена 1800, кол-во 1.
+   - Ожидается: CalculatedValue = 1.000 м², Total = 1800.00 руб.
+2. Добавить Anwis 1000×2000 мм, режим ББ 60.
+   - Хранимая ширина должна быть 1002, хранимая высота 1970.
+   - CalculatedValue = 1002 * 1970 / 1_000_000 = 1.974 м².
+3. Добавить ПСУЛ 1000×1000 мм.
+   - CalculatedValue = (1000+1000)*2/1000 = 4.000 м.п.
+4. Добавить Откос материал.
+   - CalculatedValue = 1 шт., ширина и высота не влияют на стоимость.
+5. Проверить КП — сумма в КП должна совпадать с итогом в программе.
+6. Проверить "На завод" — размеры Anwis должны быть меньше на 20 мм.
+
+## Source files
+
+- `MosquitoNetCalculator/Models/OrderItem.Calculations.cs`
+- `MosquitoNetCalculator/Models/AnwisSize.cs`
+- `MosquitoNetCalculator/Models/OrderItem.Installation.cs`
+- `MosquitoNetCalculator/ViewModels/CalculationViewModel.cs`
+- `MosquitoNetCalculator/Services/PriceService.cs`
+- `MosquitoNetCalculator/Services/PrintService.cs`
+- `MosquitoNetCalculator/Services/FactoryTextService.cs`
+- `MosquitoNetCalculator/Models/OrderItem.cs` (Width/Height setter'ы, ШиринаВвод/ВысотаВвод)
+
+## Last verified
+
+2026-06-23 (версия 3.35.0)
