@@ -8,39 +8,52 @@
 
 ## Архитектура
 
+### Обновлённая архитектура (unreleased rework)
+
 ```
 ┌─────────────────┐     ┌──────────────────┐     ┌─────────────────┐
 │  App startup    │────▶│ CheckOnStartup   │────▶│ Fetch manifest  │
-│                 │     │ (silent, bg)     │     │ from GitHub     │
+│                 │     │ (auto-dialog)    │     │ from GitHub     │
 └─────────────────┘     └──────────────────┘     └─────────────────┘
                                                            │
                               ┌────────────────────────────┘
                               ▼
                     ┌──────────────────┐
-                    │ Compare versions │
-                    │ Current vs Latest│
+                    │ GetAvailableUpdate│
+                    │ (pure logic)     │
                     └──────────────────┘
                            │
               ┌────────────┴────────────┐
               ▼                         ▼
         ┌──────────┐              ┌──────────┐
         │ Update   │              │ No update│
-        │ available│              │          │
+        │ available│              │ (silent) │
         └────┬─────┘              └──────────┘
              │
              ▼
 ┌─────────────────────────┐
-│ User clicks "Update"    │
-│ → CheckAndApplyAsync    │
+│ ShowUpdateAvailable()   │
+│ (dialog + changelog)    │
+└─────────────────────────┘
+             │
+    ┌────────┴────────┐
+    ▼                 ▼
+┌────────┐      ┌────────────┐
+│ Скачать│      │ Отмена     │
+└───┬────┘      │ → pending  │
+    │           │   badge    │
+    ▼           └────────────┘
+┌─────────────────────────┐
+│ TitleBar progress bar   │
+│ (3px, фоновое скачив.)  │
 └─────────────────────────┘
              │
              ▼
 ┌─────────────────────────┐
-│ 1. Download ZIP         │
-│ 2. Verify SHA-256       │
-│ 3. Stage update         │
-│ 4. Launch watchdog.bat  │
-│ 5. Application.Shutdown │
+│ 1. Verify SHA-256       │
+│ 2. Stage update         │
+│ 3. Launch watchdog.bat  │
+│ 4. Application.Shutdown │
 └─────────────────────────┘
              │
              ▼
@@ -58,6 +71,16 @@
 └─────────────────────────┘
 ```
 
+### Ключевые изменения (update notification rework)
+
+| Аспект | Было | Стало |
+|--------|------|-------|
+| Уведомление при запуске | Toast "Доступна новая версия" | Автоматический диалог с changelog |
+| Диалог | Только версия, без контекста | Changelog пропущенных версий + type-бейджи |
+| Прогресс скачивания | `DownloadProgressPanel` в ActionBar | Тонкая полоска (3px) под TitleBar |
+| Toast (авто) | 3–4 toast'а подряд | Только ошибки + важные статусы |
+| Отклонённое обновление | Забывалось до ручной проверки | Показывается снова при каждом запуске |
+
 ---
 
 ## Где находится код
@@ -65,6 +88,9 @@
 | Компонент | Файл |
 |-----------|------|
 | Проверка обновлений | `MosquitoNetCalculator/Services/UpdateService.cs` |
+| Диалог обновления | `MosquitoNetCalculator/Services/DialogService.cs` |
+| Changelog (embedded) | `MosquitoNetCalculator/Services/UpdateLog.cs` |
+| TitleBar-прогресс | `MosquitoNetCalculator/MainWindow.xaml` + `.xaml.cs` |
 | Watchdog (.bat) | `MosquitoNetCalculator/Services/WatchdogService.cs` |
 | Манифест релизов | `releases.json` (в корне репозитория) |
 | Настройки обновления | `MosquitoNetCalculator/Services/AppSettingsService.cs` |
@@ -103,7 +129,10 @@
 
 1. Скачивает `releases.json` через `HttpClient` (таймаут 15 сек).
 2. Десериализует в `UpdateManifest`.
-3. Берёт `manifest.Latest` и `manifest.Releases[0]`.
+3. Вызывает `GetAvailableUpdate(manifest, CurrentVersion)` — pure-метод, возвращает `ReleaseInfo?` если обновление доступно.
+4. Если `null` — приложение up-to-date или манифест невалиден.
+
+`GetAvailableUpdate` вынесен как `internal static` для юнит-тестирования (не зависит от UI).
 
 ---
 
@@ -131,14 +160,68 @@
 ## Как сравниваются версии
 
 ```csharp
-Version? latestVersion = ParseSafe(manifest.Latest);
-if (latestVersion == null || latestVersion <= CurrentVersion)
-    return; // Нет обновления
+ReleaseInfo? release = GetAvailableUpdate(manifest, CurrentVersion);
+if (release == null)
+    return; // Нет обновления или манифест невалиден
 ```
+
+`GetAvailableUpdate` проверяет:
+1. `manifest != null && manifest.Releases.Count > 0`
+2. `ParseSafe(manifest.Latest) != null`
+3. `latestVersion > currentVersion`
+
+Возвращает `manifest.Releases[0]` (новейший релиз, предполагается newest-first).
 
 `CurrentVersion` — это `UpdateService.TryResolveCurrentVersion()`, который читает `AssemblyInformationalVersionAttribute`.
 
 **Важно:** Версия в `.csproj` (`<Version>3.35.0</Version>`) = единственный источник правды.
+
+---
+
+## Диалог с changelog
+
+При обнаружении новой версии показывается `DialogService.ShowUpdateAvailable()`:
+
+1. **Заголовок:** badge с номером версии (`Accent` background).
+2. **Changelog:** `ScrollViewer` (max 220px) с компактными карточками версий:
+   - Type-бейдж с цветовой кодировкой: `Новинка` → Success (зелёный), `Исправление` → Danger (красный), остальное → Warning (оранжевый).
+   - Заголовок версии (bold bullet) + список изменений.
+   - Данные берутся из `UpdateLog.GetChangesSince(CurrentVersion)` — фильтрует embedded `update-log.json` по версии, возвращает хронологический порядок (старая → новая).
+3. **Fallback:** если changelog пуст — показывается "Список изменений недоступен".
+4. **Кнопки:** "Отмена" + "Скачать и установить".
+
+**Что показывать:** при обновлении с 3.34.0 → 3.36.2 показываются изменения **всех** пропущенных версий (3.34.1, 3.35.0, 3.36.0, 3.36.1, 3.36.2).
+
+---
+
+## TitleBar-полоска прогресса
+
+Вместо `DownloadProgressPanel` в ActionBar используется тонкая полоска под TitleBar:
+
+- **Расположение:** `MainWindow.xaml`, строка Grid `Auto` (3px) между TitleBar и TabControl.
+- **Стиль:** `Height="3"`, `BorderThickness="0"`, `Background="Transparent"`, `Foreground="{DynamicResource Accent}"`.
+- **Видимость:** только при `UpdateService.IsDownloading == true`.
+- **Подписка:** `UpdateService.ProgressChanged` в `MainWindow.xaml.cs`.
+
+Пользователь может закрыть диалог во время скачивания — загрузка продолжается в фоне, прогресс виден в полоске.
+
+---
+
+## Toast-фильтрация
+
+Флаг `isAutomatic` в `CheckAndApplyAsync` / `RunUpdateFlowAsync` различает авто- и ручную проверку:
+
+| Toast | Авто | Ручная |
+|-------|------|--------|
+| "Проверка наличия обновлений..." | ❌ Убран | ✅ Оставлен |
+| "Доступна новая версия..." | ❌ Заменён диалогом | ❌ Заменён диалогом |
+| "Обновлений нет ✓" | ❌ Молча | ✅ Success |
+| Ошибка получения манифеста (сеть, парсинг) | ❌ Молча | ✅ Warning toast |
+| Ошибка скачивания / SHA-256 | ✅ Toast Error | ✅ MessageBox Error |
+| "Проверка целостности..." | ✅ Info | ✅ Info |
+| "Установка обновления..." | ✅ Info | ✅ Info |
+
+При `isAutomatic == true` ошибки скачивания/проверки показываются через `ToastService.Error` вместо `MessageBox`.
 
 ---
 
@@ -205,22 +288,28 @@ Watchdog .bat запускает обновлённый `MosquitoNetCalculator.e
 1. Собрать проект (`build.bat`).
 2. Временно понизить версию в `.csproj` (например, `3.34.0`).
 3. Запустить приложение.
-4. Убедиться, что тост "Доступна новая версия" появился.
-5. Нажать "Проверить обновления" → скачать → установить.
-6. Убедиться, что приложение перезапустилось и показывает новую версию.
-7. **Важно:** Вернуть версию в `.csproj` обратно перед коммитом!
+4. Убедиться, что **диалог обновления** появился автоматически (с changelog).
+5. Нажать "Скачать и установить" → убедиться, что TitleBar-полоска показывает прогресс.
+6. Закрыть диалог во время скачивания → убедиться, что полоска остаётся видна.
+7. Дождаться перезапуска и проверить новую версию.
+8. **Важно:** Вернуть версию в `.csproj` обратно перед коммитом!
 
 ---
 
 ## Source files
 
 - `MosquitoNetCalculator/Services/UpdateService.cs`
+- `MosquitoNetCalculator/Services/DialogService.cs`
+- `MosquitoNetCalculator/Services/UpdateLog.cs`
 - `MosquitoNetCalculator/Services/WatchdogService.cs`
 - `MosquitoNetCalculator/Services/AppSettingsService.cs`
+- `MosquitoNetCalculator/MainWindow.xaml`
+- `MosquitoNetCalculator/MainWindow.xaml.cs`
 - `MosquitoNetCalculator/Models/UpdateManifest.cs`
+- `MosquitoNetCalculator/Models/UpdateItem.cs`
 - `releases.json`
 - `build.bat`
 
 ## Last verified
 
-2026-06-24 (A.R.C. upgrade v3 — система валидации обновлена)
+2026-06-27 (update notification rework: RunUpdateFlowAsync, changelog dialog, TitleBar progress, toast filtering, isAutomatic)

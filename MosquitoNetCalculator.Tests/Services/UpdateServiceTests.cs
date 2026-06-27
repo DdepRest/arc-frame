@@ -1,6 +1,7 @@
 using System;
 using System.Reflection;
 using System.Reflection.Emit;
+using MosquitoNetCalculator.Models;
 using MosquitoNetCalculator.Services;
 using Xunit;
 
@@ -263,6 +264,126 @@ namespace MosquitoNetCalculator.Tests.Services
             // > (strict) catches both 0.0.0 and any future accidental low version.
             Assert.True(UpdateService.CurrentVersion > new Version(0, 0, 0),
                 $"CurrentVersion should be > 0.0.0, got {UpdateService.CurrentVersion}");
+        }
+
+        // ─── GetAvailableUpdate ──────────────────────────────────────
+
+        [Fact]
+        public void GetAvailableUpdate_NullManifest_ReturnsNull()
+        {
+            var result = UpdateService.GetAvailableUpdate(null, new Version(3, 36, 0));
+            Assert.Null(result);
+        }
+
+        [Fact]
+        public void GetAvailableUpdate_EmptyReleases_ReturnsNull()
+        {
+            var manifest = new UpdateManifest { Latest = "3.36.2", Releases = new() };
+            var result = UpdateService.GetAvailableUpdate(manifest, new Version(3, 36, 0));
+            Assert.Null(result);
+        }
+
+        [Fact]
+        public void GetAvailableUpdate_LatestGreaterThanCurrent_ReturnsRelease()
+        {
+            var manifest = new UpdateManifest
+            {
+                Latest = "3.36.2",
+                Releases = new()
+                {
+                    new ReleaseInfo { Version = "3.36.2", Url = "http://example.com/zip", Sha256 = "abc" }
+                }
+            };
+            var result = UpdateService.GetAvailableUpdate(manifest, new Version(3, 36, 1));
+
+            Assert.NotNull(result);
+            Assert.Equal("3.36.2", result!.Version);
+            Assert.Equal("http://example.com/zip", result.Url);
+            Assert.Equal(manifest.Latest, result.Version);
+        }
+
+        [Fact]
+        public void GetAvailableUpdate_LatestEqualToCurrent_ReturnsNull()
+        {
+            var manifest = new UpdateManifest
+            {
+                Latest = "3.36.2",
+                Releases = new()
+                {
+                    new ReleaseInfo { Version = "3.36.2", Url = "http://example.com/zip" }
+                }
+            };
+            var result = UpdateService.GetAvailableUpdate(manifest, new Version(3, 36, 2));
+            Assert.Null(result);
+        }
+
+        [Fact]
+        public void GetAvailableUpdate_LatestLessThanCurrent_ReturnsNull()
+        {
+            var manifest = new UpdateManifest
+            {
+                Latest = "3.36.1",
+                Releases = new()
+                {
+                    new ReleaseInfo { Version = "3.36.1", Url = "http://example.com/zip" }
+                }
+            };
+            var result = UpdateService.GetAvailableUpdate(manifest, new Version(3, 36, 2));
+            Assert.Null(result);
+        }
+
+        [Fact]
+        public void GetAvailableUpdate_UnparseableLatest_ReturnsNull()
+        {
+            var manifest = new UpdateManifest
+            {
+                Latest = "not-a-version",
+                Releases = new()
+                {
+                    new ReleaseInfo { Version = "not-a-version", Url = "http://example.com/zip" }
+                }
+            };
+            var result = UpdateService.GetAvailableUpdate(manifest, new Version(3, 36, 0));
+            Assert.Null(result);
+        }
+
+        [Fact]
+        public void GetAvailableUpdate_EmptyLatest_ReturnsNull()
+        {
+            var manifest = new UpdateManifest
+            {
+                Latest = "",
+                Releases = new()
+                {
+                    new ReleaseInfo { Version = "3.36.2", Url = "http://example.com/zip" }
+                }
+            };
+            var result = UpdateService.GetAvailableUpdate(manifest, new Version(3, 36, 0));
+            Assert.Null(result);
+        }
+
+        // ─── HasPendingUpdate ────────────────────────────────────────
+
+        [Fact]
+        public void HasPendingUpdate_AfterSavingVersion_ReturnsTrue()
+        {
+            AppSettingsService.SavePendingUpdateVersion("9.99.9");
+            try
+            {
+                Assert.True(UpdateService.HasPendingUpdate());
+            }
+            finally
+            {
+                AppSettingsService.SavePendingUpdateVersion(null);
+            }
+        }
+
+        [Fact]
+        public void HasPendingUpdate_AfterClearing_ReturnsFalse()
+        {
+            AppSettingsService.SavePendingUpdateVersion("9.99.9");
+            AppSettingsService.SavePendingUpdateVersion(null);
+            Assert.False(UpdateService.HasPendingUpdate());
         }
 
         // ─── Test helpers ──────────────────────────────────────────

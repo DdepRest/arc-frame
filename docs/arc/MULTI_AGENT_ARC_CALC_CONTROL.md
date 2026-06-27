@@ -8,6 +8,8 @@
 docs/arc/
   MULTI_AGENT_ARC_CALC_CONTROL.md   ← этот файл (source of truth)
   CHEATSHEET.md                     ← быстрый вход (читай первым!)
+  INTENTS.md                        ← mapping намерений на файлы (A.R.C. v4)
+  SYMBOL_INDEX.md                   ← индекс классов/методов/свойств (A.R.C. v4, авто-генерация)
   DOCUMENTATION_MATRIX.md          ← карта «файл → документы»
   PROMPTS.md                       ← готовые prompt-шаблоны
   CURRENT_STATE.md                 ← текущее состояние проекта
@@ -86,7 +88,27 @@ docs/arc/CHEATSHEET.md
 
 Если агент физически не имеет доступа к `docs/arc/MULTI_AGENT_ARC_CALC_CONTROL.md` — остановиться и сообщить владельцу. Запрещено использовать `AGENT.md` как source of truth.
 
-### Третий шаг: DOCUMENTATION_MATRIX
+### Третий шаг: SYMBOL_INDEX для поиска символов (A.R.C. v4)
+
+Если агент ищет конкретный класс, метод или свойство — проверить:
+
+```text
+docs/arc/SYMBOL_INDEX.md
+```
+
+Этот файл содержит индекс 60+ классов с их свойствами, методами и файлами. Генерируется автоматически через `gensymbols.ps1`. Вместо чтения полных исходников, агент grep'ает этот индекс → находит файл → code_searcher для точной строки → экономит ~90% токенов на поиск символов.
+
+### Четвёртый шаг: INTENTS для быстрого routing (A.R.C. v4)
+
+Если задача неочевидна или агент хочет проверить, какие файлы релевантны запросу — проверить:
+
+```text
+docs/arc/INTENTS.md
+```
+
+Этот файл mapping'ит пользовательские фразы («скрыть колонку», «добавить товар») на конкретные файлы в проекте. 50+ mapping записей в 7 категориях. Вместо исследования кодовой базы агент может сразу перейти к релевантным файлам.
+
+### Пятый шаг: DOCUMENTATION_MATRIX
 
 На фазе **Document** цикла работы агент обязан свериться с:
 
@@ -211,14 +233,16 @@ Intake → Context → Plan → Execute → Verify → Document → Report
 
 ## 9. Инструменты автоматизации
 
-В проекте есть 4 скрипта, которые делают документирование механическим:
+В проекте есть 6 скриптов, которые делают документирование механическим:
 
 | Скрипт | Назначение |
 |--------|-----------|
+| `gensymbols.ps1` | Сканирует .cs файлы → генерирует `docs/arc/SYMBOL_INDEX.md`. **Запускать после добавления/удаления классов.** |
 | `what-to-update.ps1 $(git diff --name-only)` | Принимает список изменённых файлов → выводит, какие `docs/arc/*.md` обновить. Читает `documentation-matrix.json`. |
 | `validate-docs.ps1` | 8 автоматических проверок: версия, ссылки MODULES, CHEATSHEET cross-refs, MATRIX cross-refs, CONTROL cross-refs, полнота docs/arc, git-based Last verified, staleness. |
 | `generate-update-log.ps1` | Генерирует `update-log.json` из `CHANGELOG.md` (при релизе). |
 | `render-matrix.ps1` | Генерирует `DOCUMENTATION_MATRIX.md` из `documentation-matrix.json`. |
+| `arc-check.ps1` | Проверяет, что все docs/arc актуальны. Используется как pre-commit safety net. |
 
 **Обязательный финальный ритуал после любых изменений:**
 
@@ -285,4 +309,4 @@ docs/arc/MULTI_AGENT_ARC_CALC_CONTROL.md
 
 ## Last verified
 
-2026-06-24 (переработан: гранулярный routing, CHEATSHEET, DOCUMENTATION_MATRIX, PROMPTS вынесены)
+2026-06-25 (A.R.C. v4: SYMBOL_INDEX, INTENTS, gensymbols, arc-check)

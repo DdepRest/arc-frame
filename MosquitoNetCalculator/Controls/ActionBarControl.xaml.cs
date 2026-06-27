@@ -47,11 +47,6 @@ namespace MosquitoNetCalculator.Controls
             ThemeService.ThemeChanged += _themeChangedHandler;
             Unloaded += (_, _) => ThemeService.ThemeChanged -= _themeChangedHandler;
 
-            // Subscribe to download progress — when an update is being
-            // downloaded, show the progress bar above the Settings button
-            // instead of spamming toast notifications.
-            UpdateService.ProgressChanged += OnDownloadProgressChanged;
-
             // Delayed badge refresh — CheckOnStartupAsync completes a few
             // seconds after launch and saves pending-update version. This
             // one-shot timer picks it up so the badge appears without the
@@ -285,25 +280,5 @@ namespace MosquitoNetCalculator.Controls
             }
         }
 
-        /// <summary>
-        /// Handles UpdateService.ProgressChanged — shows/hides the compact
-        /// download progress bar above the Settings button during update
-        /// downloads, replacing the old toast-spam approach.
-        /// </summary>
-        private void OnDownloadProgressChanged(object? sender, EventArgs e)
-        {
-            if (UpdateService.IsDownloading)
-            {
-                DownloadProgressPanel.Visibility = Visibility.Visible;
-                DownloadBar.Value = UpdateService.DownloadProgress;
-                DownloadPercentText.Text = $"{UpdateService.DownloadProgress:F0}%";
-            }
-            else
-            {
-                DownloadProgressPanel.Visibility = Visibility.Collapsed;
-                DownloadBar.Value = 0;
-                DownloadPercentText.Text = "0%";
-            }
-        }
     }
 }

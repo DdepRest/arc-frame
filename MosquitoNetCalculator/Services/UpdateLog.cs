@@ -51,5 +51,29 @@ namespace MosquitoNetCalculator.Services
         {
             return new ObservableCollection<UpdateItem>(_entries.Value.AsEnumerable().Reverse());
         }
+
+        /// <summary>
+        /// Возвращает записи changelog для всех версий строго newerThan <paramref name="currentVersion"/>.
+        /// Результат отсортирован от старой версии к новой (хронологический порядок).
+        /// Используется для показа пропущенных изменений в диалоге обновления.
+        /// </summary>
+        public static UpdateItem[] GetChangesSince(Version currentVersion)
+        {
+            return _entries.Value
+                .Where(e => ParseVersion(e.Version) > currentVersion)
+                .ToArray();
+        }
+
+        /// <summary>
+        /// Парсит строку версии (например, "3.36.2") в <see cref="Version"/>.
+        /// Возвращает <c>null</c> при ошибке парсинга.
+        /// </summary>
+        private static Version? ParseVersion(string? version)
+        {
+            if (string.IsNullOrWhiteSpace(version))
+                return null;
+            try { return new Version(version); }
+            catch { return null; }
+        }
     }
 }

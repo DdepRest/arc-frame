@@ -38,6 +38,7 @@
     <Grid Background="{DynamicResource AppBg}">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
             <RowDefinition Height="*"/>
         </Grid.RowDefinitions>
 
@@ -46,7 +47,20 @@
         <!-- ═══════════════════════════════════════════════════════ -->
         <controls:TitleBarControl x:Name="TitleBarControl" Grid.Row="0"/>
 
-        <TabControl x:Name="MainTabControl" Grid.Row="1" Margin="0">
+        <!-- Update download progress — thin bar under title bar (ref: VS Code, Chrome) -->
+        <ProgressBar x:Name="UpdateDownloadBar"
+                     Grid.Row="1"
+                     Height="3"
+                     Minimum="0" Maximum="100"
+                     Value="0"
+                     Visibility="Collapsed"
+                     Opacity="0"
+                     BorderThickness="0"
+                     Background="Transparent"
+                     Foreground="{DynamicResource Accent}"
+                     VerticalAlignment="Top"/>
+
+        <TabControl x:Name="MainTabControl" Grid.Row="2" Margin="0">
 
             <!-- ═══════════════════════════════════════════════════════ -->
             <!-- TAB: РАСЧЁТ                                            -->
@@ -132,7 +146,7 @@
         </TabControl>
 
         <!-- Toast notification container — overlays on top of everything -->
-        <Grid x:Name="ToastCanvas" Grid.Row="1" IsHitTestVisible="False"
+        <Grid x:Name="ToastCanvas" Grid.Row="2" IsHitTestVisible="False"
               HorizontalAlignment="Stretch" VerticalAlignment="Stretch"
               ClipToBounds="True"/>
     </Grid>

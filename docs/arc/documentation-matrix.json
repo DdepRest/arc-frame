@@ -53,6 +53,10 @@
     {"file": "releases.json",                        "docs": ["AUTO_UPDATE.md", "RELEASE_PROCESS.md", "CURRENT_STATE.md"]},
     {"file": "build.bat",                            "docs": ["RELEASE_PROCESS.md", "CHANGELOG.md"]},
     {"file": "installer.iss",                        "docs": ["RELEASE_PROCESS.md", "CHANGELOG.md"]},
-    {"file": "*.Tests.cs",                           "docs": ["CURRENT_STATE.md"], "note": "количество тестов, если изменилось"}
+    {"file": "*.Tests.cs",                           "docs": ["CURRENT_STATE.md"], "note": "количество тестов, если изменилось"},
+    {"file": "docs/arc/INTENTS.md",                  "docs": ["CURRENT_STATE.md"], "note": "A.R.C. v4: intent-to-file routing"},
+    {"file": "docs/arc/SYMBOL_INDEX.md",             "docs": ["CURRENT_STATE.md"], "note": "A.R.C. v4: auto-generated symbol index"},
+    {"file": "gensymbols.ps1",                       "docs": ["CURRENT_STATE.md"], "note": "A.R.C. v4: symbol index generator"},
+    {"file": "arc-check.ps1",                        "docs": ["CURRENT_STATE.md"], "note": "A.R.C. v4: pre-commit doc sync check"}
   ]
 }

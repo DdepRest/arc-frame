@@ -24,6 +24,9 @@
 
 ## Быстрый routing
 
+Только что вошёл? Используй **INTENTS.md** для полного mapping'а намерений.
+Нужен конкретный символ/класс? Используй **SYMBOL_INDEX.md** (60 классов, 16 модулей).
+
 ```
 Задача про →            Читай (кроме CHEATSHEET)
 ──────────────────────────────────────────────────────────
@@ -34,6 +37,8 @@ UI, темы, стили          CURRENT_STATE + GOTCHAS#7 + DECISIONS#10
 Сохранение/загрузка      CURRENT_STATE + GOTCHAS#3,#9,#2 + DECISIONS#3
 Цены                     CURRENT_STATE + GOTCHAS#4 + CALCULATION_LOGIC#цены
 Тесты                    CURRENT_STATE + CALCULATION_TEST_CASES
+Навигация по коду        SYMBOL_INDEX.md (index классов/методов/свойств)
+Понимание намерений       INTENTS.md (mapping фраз на файлы)
 Всё остальное            CURRENT_STATE
 Тривиально (≤10 строк)   Только CHEATSHEET, затем grep GOTCHAS.md по имени изменённого файла
 ```
@@ -51,10 +56,12 @@ UI, темы, стили          CURRENT_STATE + GOTCHAS#7 + DECISIONS#10
 ## Инструменты автоматизации
 
 ```
-what-to-update.ps1 $(git diff --name-only)   # что обновить в docs?
+gensymbols.ps1                                # Генерация SYMBOL_INDEX.md (индекс классов)
+what-to-update.ps1 $(git diff --name-only)   # Что обновить в docs?
 validate-docs.ps1                             # 8 проверок консистентности
 generate-update-log.ps1                       # CHANGELOG.md → update-log.json
 render-matrix.ps1                             # JSON → DOCUMENTATION_MATRIX.md
+arc-check.ps1                                 # Проверка docs перед коммитом
 ```
 
 ## Source files
@@ -63,7 +70,9 @@ render-matrix.ps1                             # JSON → DOCUMENTATION_MATRIX.md
 - `docs/arc/DOCUMENTATION_MATRIX.md` — карта «файл → документы» (генерируется из JSON)
 - `docs/arc/documentation-matrix.json` — машиночитаемый источник матрицы
 - `docs/arc/CURRENT_STATE.md` — текущее состояние проекта
+- `docs/arc/SYMBOL_INDEX.md` — индекс классов/методов/свойств (60 классов, 16 модулей)
+- `docs/arc/INTENTS.md` — mapping намерений на файлы
 
 ## Last verified
 
-2026-06-24 (создан)
+2026-06-25 (A.R.C. v4: SYMBOL_INDEX, INTENTS, gensymbols, arc-check)

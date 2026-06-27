@@ -8,6 +8,7 @@
         WindowStartupLocation="CenterScreen"
         ResizeMode="NoResize"
         ShowInTaskbar="True"
+        Icon="pack://application:,,,/Resources/app_icon.ico"
         WindowStyle="None"
         AllowsTransparency="True"
         Background="Transparent">

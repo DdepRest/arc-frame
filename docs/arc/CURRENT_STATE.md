@@ -8,7 +8,7 @@
 - Тёмная тема стабильна, переключается без потери данных.
 - Undo/Redo работает для позиций расчёта и Доп.КП.
 - Юнит-тесты покрывают ключевые сценарии (расчёты, экспорт/импорт, версия, обновления).
-- Текущая версия: **3.36.2** (опубликован GitHub Release, автообновление настроено).
+- Текущая версия: **3.37.0** (опубликован GitHub Release, автообновление настроено).
 - Система A.R.C. прошла 3 итерации улучшений:
   - **v1:** инициализация, аудит, эталонные кейсы.
   - **v2:** CHEATSHEET, DOCUMENTATION_MATRIX, PROMPTS, гранулярный routing, validate-docs.
@@ -27,6 +27,7 @@
 ✅ Wrappers (`AGENT.md`, `AGENTS.md`, `CLAUDE.md`, `GEMINI.md`) — тонкие redirect-файлы.
 ✅ **Все расчётные кейсы (1–15) подтверждены владельцем 2026-06-24.**
 ✅ **A.R.C. upgrade v2 (2026-06-24):** CHEATSHEET.md, DOCUMENTATION_MATRIX.md, PROMPTS.md, validate-docs.ps1, гранулярный routing, token-aware severity levels.
+✅ **A.R.C. upgrade v4 (2026-06-25):** SYMBOL_INDEX.md, INTENTS.md, gensymbols.ps1, arc-check.ps1.
 ✅ `MULTI_AGENT_ARC_CALC_CONTROL.md` переработан: убрано дублирование, добавлены ссылки на новые файлы, расширена routing-таблица (12 категорий вместо 2).
 
 ## Архитектура multi-agent control
@@ -75,6 +76,13 @@ AGENT.md / AGENTS.md / CLAUDE.md / GEMINI.md
 
 ## Последние изменения
 
+- **Update notification rework** — редизайн системы обновлений:
+  - `UpdateLog.GetChangesSince(Version)` — фильтрация embedded changelog по версии.
+  - `DialogService.ShowUpdateAvailable()` — новый диалог с changelog (ScrollViewer, type-бейджи, compact cards).
+  - `UpdateService.RunUpdateFlowAsync()` — общий flow для авто/ручной проверки с флагом `isAutomatic`.
+  - TitleBar-полоска прогресса (3px ProgressBar) вместо ActionBar `DownloadProgressPanel`.
+  - Toast-фильтрация: убран спам при запуске, "Обновлений нет ✓" при ручной проверке.
+  - 8 новых тестов: 6 для `GetAvailableUpdate` + 2 для `HasPendingUpdate`.
 - **AmountOnlyProducts** — Брус, Пояс, Доставка: скрыты колонки Кол-во/Площ./Дл. в таблице, отключены поля Кол-во/Ш/В в QuickAdd, превью показывает только цену. 7 новых тестов.
 - **update-log.json восстановлен** из git (был обрезан до 3 записей); исправлены 6 ошибок в тестах.
 - **v3.36.0** — копирование заказов, 11 тестов, A.R.C. init.
@@ -87,6 +95,7 @@ AGENT.md / AGENTS.md / CLAUDE.md / GEMINI.md
 - `README.md` в корне практически пустой — стоит обновить для GitHub.
 - `releases.json` и `update-log.json` дублируют частично одну информацию — нужна синхронизация при каждом релизе (рассмотреть консолидацию).
 - Нет автоматической проверки калькуляции при релизе — только юнит-тесты.
+- Редизайн системы обновлений частично завершён (core-логика + тесты готовы, UI-полировка в процессе). Спецификация: `docs/arc/update-notification-rework-spec.md`.
 
 ## Открытые вопросы
 
@@ -104,7 +113,7 @@ AGENT.md / AGENTS.md / CLAUDE.md / GEMINI.md
 
 ## Source files
 
-- `MosquitoNetCalculator/MosquitoNetCalculator.csproj` — версия 3.36.0.
+- `MosquitoNetCalculator/MosquitoNetCalculator.csproj` — версия 3.37.0.
 - `releases.json` — история релизов.
 - `MosquitoNetCalculator/Resources/update-log.json` — история для UI.
 - `docs/arc/*.md` — вся проектная документация.
@@ -116,4 +125,4 @@ AGENT.md / AGENTS.md / CLAUDE.md / GEMINI.md
 
 ## Last verified
 
-2026-06-25 (release 3.36.2 — AmountOnlyProducts, UTF-8 BOM fix, 603/603 tests pass)
+2026-06-27 (update notification rework — 609/609 tests pass)

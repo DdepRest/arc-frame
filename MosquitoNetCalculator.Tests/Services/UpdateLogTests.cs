@@ -1,3 +1,4 @@
+using System;
 using System.Linq;
 using MosquitoNetCalculator.Services;
 using Xunit;
@@ -24,7 +25,7 @@ namespace MosquitoNetCalculator.Tests.Services
             // The latest version in the JSON is 3.36.1 (update this when bumping).
             // AllNewestFirst_VersionsInDescendingOrder below already proves ordering
             // is correct, but this lock-in catches accidental version-string typos.
-            Assert.Equal("3.36.1", items[0].Version);
+            Assert.Equal("3.37.0", items[0].Version);
         }
 
         [Fact]
@@ -100,6 +101,76 @@ namespace MosquitoNetCalculator.Tests.Services
             Assert.Contains("Отключение позиций", v310.Title);
             Assert.Contains(v310.Changes, c => c.Contains("отключать"));
             Assert.Equal(4, v310.Changes.Count);
+        }
+
+        // ─── GetChangesSince tests ─────────────────────────────────────
+
+        [Fact]
+        public void GetChangesSince_LatestVersion_ReturnsEmpty()
+        {
+            var changes = UpdateLog.GetChangesSince(new Version(3, 37, 0));
+
+            Assert.NotNull(changes);
+            Assert.Empty(changes);
+        }
+
+        [Fact]
+        public void GetChangesSince_NewerThanLatest_ReturnsEmpty()
+        {
+            var changes = UpdateLog.GetChangesSince(new Version(99, 99, 99));
+
+            Assert.NotNull(changes);
+            Assert.Empty(changes);
+        }
+
+        [Fact]
+        public void GetChangesSince_OldestVersion_ReturnsAllExceptFirst()
+        {
+            var changes = UpdateLog.GetChangesSince(new Version(3, 10));
+
+            Assert.NotNull(changes);
+            Assert.True(changes.Length >= 24, $"Expected ≥24 entries, got {changes.Length}");
+            Assert.DoesNotContain(changes, c => c.Version == "3.10");
+        }
+
+        [Fact]
+        public void GetChangesSince_ReturnsChronologicalOrder()
+        {
+            var changes = UpdateLog.GetChangesSince(new Version(3, 30));
+
+            // Chronological order: older → newer
+            for (int i = 1; i < changes.Length; i++)
+            {
+                var prev = new Version(changes[i - 1].Version);
+                var curr = new Version(changes[i].Version);
+                Assert.True(curr > prev,
+                    $"Item {i - 1} ({changes[i - 1].Version}) should be < item {i} ({changes[i].Version})");
+            }
+        }
+
+        [Fact]
+        public void GetChangesSince_SpecificVersion_ReturnsOnlyNewer()
+        {
+            var changes = UpdateLog.GetChangesSince(new Version(3, 36, 1));
+
+            // All returned versions must be strictly newer than 3.36.1
+            Assert.All(changes, c =>
+                Assert.True(new Version(c.Version) > new Version(3, 36, 1),
+                    $"Version {c.Version} should be > 3.36.1"));
+        }
+
+        [Fact]
+        public void GetChangesSince_EachResultHasRequiredFields()
+        {
+            var changes = UpdateLog.GetChangesSince(new Version(3, 34));
+
+            Assert.NotEmpty(changes);
+            foreach (var item in changes)
+            {
+                Assert.False(string.IsNullOrEmpty(item.Version), "Version should not be empty");
+                Assert.False(string.IsNullOrEmpty(item.Type), "Type should not be empty");
+                Assert.NotNull(item.Changes);
+            }
         }
     }
 }

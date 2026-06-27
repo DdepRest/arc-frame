@@ -122,87 +122,94 @@ namespace MosquitoNetCalculator.Services
 
         /// <summary>
         /// Silent background check on startup. If an update is available,
-        /// shows a toast notification. Does NOT auto-download or restart.
+        /// shows the update dialog automatically with changelog.
         /// Called from App.OnStartup after MainWindow is shown.
         /// </summary>
         public static async Task CheckOnStartupAsync()
         {
-            IsChecking = true;
-            try
-            {
-                var manifest = await FetchManifestAsync().ConfigureAwait(false);
-                if (manifest == null || manifest.Releases.Count == 0)
-                    return;
+            var owner = Application.Current?.MainWindow;
+            if (owner == null) return;
 
-                Version? latestVersion = ParseSafe(manifest.Latest);
-                if (latestVersion == null || latestVersion <= CurrentVersion)
-                    return;
-
-                // Update available — show a notification toast on the UI thread
-                Application.Current?.Dispatcher.Invoke(() =>
-                {
-                    ToastService.ShowToast(
-                        $"Доступна новая версия: {manifest.Latest}. " +
-                        "Нажмите «Проверить обновления» в Настройках для установки.",
-                        ToastType.Info);
-                });
-
-                AppSettingsService.SavePendingUpdateVersion(manifest.Latest);
-            }
-            catch (Exception ex)
-            {
-                Debug.WriteLine($"[UpdateService] Startup check failed: {ex.Message}");
-            }
-            finally
-            {
-                IsChecking = false;
-            }
+            await RunUpdateFlowAsync(owner, isAutomatic: true);
         }
 
         /// <summary>
         /// Interactive update flow — shows dialogs, downloads, and restarts.
         /// Call from UI thread (button click handler).
+        /// <paramref name="isAutomatic"/> distinguishes startup auto-check from
+        /// manual check via Settings menu (affects toast verbosity).
         /// </summary>
-        public static async Task CheckAndApplyAsync(Window owner)
+        public static async Task CheckAndApplyAsync(Window owner, bool isAutomatic = false)
+        {
+            await RunUpdateFlowAsync(owner, isAutomatic);
+        }
+
+        /// <summary>
+        /// Analyzes an update manifest against a reference version and returns
+        /// the newest <see cref="ReleaseInfo"/> if an update is available,
+        /// or <c>null</c> if the app is up-to-date or the manifest is invalid.
+        /// Exposed as <c>internal</c> for unit testing.
+        /// </summary>
+        internal static ReleaseInfo? GetAvailableUpdate(UpdateManifest? manifest, Version currentVersion)
+        {
+            if (manifest == null || manifest.Releases.Count == 0)
+                return null;
+
+            Version? latestVersion = ParseSafe(manifest.Latest);
+            if (latestVersion == null)
+                return null;
+
+            if (latestVersion <= currentVersion)
+                return null;
+
+            return manifest.Releases[0]; // newest first
+        }
+
+        /// <summary>
+        /// Shared update flow: fetch manifest → show changelog dialog → download →
+        /// verify → restart. Used by both startup auto-check and manual check.
+        /// </summary>
+        private static async Task RunUpdateFlowAsync(Window? owner, bool isAutomatic)
         {
             if (IsChecking)
             {
-                ToastService.ShowToast("Проверка обновлений уже выполняется...", ToastType.Info);
+                if (!isAutomatic)
+                    ToastService.ShowToast("Проверка обновлений уже выполняется...", ToastType.Info);
                 return;
             }
 
             IsChecking = true;
             try
             {
-                // Phase 1: Fetch manifest
-                ToastService.ShowToast("Проверка наличия обновлений...", ToastType.Info);
+                if (!isAutomatic)
+                    ToastService.ShowToast("Проверка наличия обновлений...", ToastType.Info);
 
                 var manifest = await FetchManifestAsync().ConfigureAwait(true);
-                if (manifest == null || manifest.Releases.Count == 0)
-                {
-                    ToastService.ShowToast("Не удалось получить список обновлений.", ToastType.Warning);
-                    return;
-                }
+                var release = GetAvailableUpdate(manifest, CurrentVersion);
 
-                Version? latestVersion = ParseSafe(manifest.Latest);
-                if (latestVersion == null)
+                if (release == null)
                 {
-                    ToastService.ShowToast("Не удалось определить версию обновления.", ToastType.Warning);
-                    return;
-                }
-
-                if (latestVersion <= CurrentVersion)
-                {
-                    ToastService.ShowToast("У вас последняя версия.", ToastType.Success);
+                    if (!isAutomatic)
+                    {
+                        if (manifest == null || manifest.Releases.Count == 0)
+                            ToastService.ShowToast("Не удалось получить список обновлений.", ToastType.Warning);
+                        else if (ParseSafe(manifest.Latest) == null)
+                            ToastService.ShowToast("Не удалось определить версию обновления.", ToastType.Warning);
+                        else
+                            ToastService.ShowToast("Обновлений нет ✓", ToastType.Success);
+                    }
                     AppSettingsService.SavePendingUpdateVersion(null);
                     return;
                 }
 
-                var release = manifest.Releases[0]; // newest first
-
-                // Phase 2: Confirm download
-                bool confirmed = DialogService.ShowUpdateAvailable(manifest.Latest, owner);
-                if (!confirmed) return;
+                // Phase 2: Confirm download with changelog
+                var changelog = UpdateLog.GetChangesSince(CurrentVersion);
+                bool confirmed = DialogService.ShowUpdateAvailable(manifest!.Latest, changelog, owner);
+                if (!confirmed)
+                {
+                    AppSettingsService.SavePendingUpdateVersion(manifest.Latest);
+                    return;
+                }
 
                 // Phase 3: Download with progress
                 IsDownloading = true;
@@ -220,11 +227,18 @@ namespace MosquitoNetCalculator.Services
                 {
                     IsDownloading = false;
                     TryDelete(tempZip);
-                    MessageBox.Show(
-                        $"Не удалось скачать обновление:\n{ex.Message}",
-                        "Ошибка скачивания",
-                        MessageBoxButton.OK,
-                        MessageBoxImage.Error);
+                    if (isAutomatic)
+                    {
+                        ToastService.ShowToast($"Не удалось скачать обновление: {ex.Message}", ToastType.Error);
+                    }
+                    else
+                    {
+                        MessageBox.Show(
+                            $"Не удалось скачать обновление:\n{ex.Message}",
+                            "Ошибка скачивания",
+                            MessageBoxButton.OK,
+                            MessageBoxImage.Error);
+                    }
                     return;
                 }
 
@@ -240,11 +254,18 @@ namespace MosquitoNetCalculator.Services
                     if (!string.Equals(actualHash, release.Sha256, StringComparison.OrdinalIgnoreCase))
                     {
                         TryDelete(tempZip);
-                        MessageBox.Show(
-                            "Хеш-сумма архива не совпадает. Возможно, файл повреждён при скачивании.",
-                            "Ошибка проверки",
-                            MessageBoxButton.OK,
-                            MessageBoxImage.Error);
+                        if (isAutomatic)
+                        {
+                            ToastService.ShowToast("Хеш-сумма архива не совпадает. Возможно, файл повреждён.", ToastType.Error);
+                        }
+                        else
+                        {
+                            MessageBox.Show(
+                                "Хеш-сумма архива не совпадает. Возможно, файл повреждён при скачивании.",
+                                "Ошибка проверки",
+                                MessageBoxButton.OK,
+                                MessageBoxImage.Error);
+                        }
                         return;
                     }
                 }
@@ -274,11 +295,18 @@ namespace MosquitoNetCalculator.Services
             catch (Exception ex)
             {
                 var errorMsg = ex.InnerException?.Message ?? ex.Message;
-                MessageBox.Show(
-                    $"Не удалось проверить обновления:\n{errorMsg}",
-                    "Ошибка обновления",
-                    MessageBoxButton.OK,
-                    MessageBoxImage.Error);
+                if (isAutomatic)
+                {
+                    ToastService.ShowToast($"Не удалось проверить обновления: {errorMsg}", ToastType.Error);
+                }
+                else
+                {
+                    MessageBox.Show(
+                        $"Не удалось проверить обновления:\n{errorMsg}",
+                        "Ошибка обновления",
+                        MessageBoxButton.OK,
+                        MessageBoxImage.Error);
+                }
                 Debug.WriteLine($"[UpdateService] Check failed: {ex}");
             }
             finally

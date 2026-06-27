@@ -223,4 +223,4 @@ powershell -ExecutionPolicy Bypass -File validate-docs.ps1
 
 ## Last verified
 
-2026-06-24 (создан)
+2026-06-25 (A.R.C. v4 — обновлён)

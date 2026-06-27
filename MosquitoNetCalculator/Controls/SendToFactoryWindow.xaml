@@ -9,7 +9,8 @@
         AllowsTransparency="True"
         Background="Transparent"
         ResizeMode="CanResizeWithGrip"
-        ShowInTaskbar="false">
+        ShowInTaskbar="false"
+        Icon="pack://application:,,,/Resources/app_icon.ico">
     <Window.Resources>
         <Storyboard x:Key="WindowOpenAnimation">
             <DoubleAnimation From="0.0" To="1.0" Duration="0:0:0.25"

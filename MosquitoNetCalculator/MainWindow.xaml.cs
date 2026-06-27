@@ -70,6 +70,8 @@ namespace MosquitoNetCalculator
             ToastService.Initialize(ToastCanvas);
             ViewModel.UndoRedo.SetDirtyCallback(UpdateDirtyIndicator);
 
+            UpdateService.ProgressChanged += OnUpdateProgressChanged;
+
             _appVersion = UpdateService.CurrentVersion;
             UpdateBaseTitle();
 
@@ -236,6 +238,8 @@ namespace MosquitoNetCalculator
                 ToastService.RepositionToasts();
             };
 
+            Closed += (_, _) => UpdateService.ProgressChanged -= OnUpdateProgressChanged;
+
             StateChanged += (s, e) =>
             {
                 if (TitleBarControl.MaxIcon != null)
@@ -319,6 +323,72 @@ namespace MosquitoNetCalculator
             // InvalidateVisual stays as a defensive safety net for any custom
             // visual that might miss the Freezable invalidation cascade.
             TitleBarControl.TitleBarBorder.InvalidateVisual();
+        }
+
+        private Storyboard? _progressBarStoryboard;
+
+        private void OnProgressBarFadeOutCompleted(object? sender, EventArgs e)
+        {
+            if (!UpdateService.IsDownloading && UpdateDownloadBar != null)
+                UpdateDownloadBar.Visibility = Visibility.Collapsed;
+        }
+
+        private void OnUpdateProgressChanged(object? sender, EventArgs e)
+        {
+            if (UpdateDownloadBar == null) return;
+
+            UpdateDownloadBar.Value = UpdateService.DownloadProgress;
+
+            bool shouldBeVisible = UpdateService.IsDownloading;
+            bool currentlyVisible = UpdateDownloadBar.Visibility == Visibility.Visible;
+
+            if (shouldBeVisible == currentlyVisible)
+                return; // No state change — avoid re-triggering animation
+
+            if (_progressBarStoryboard != null)
+            {
+                _progressBarStoryboard.Completed -= OnProgressBarFadeOutCompleted;
+                _progressBarStoryboard.Stop(UpdateDownloadBar);
+            }
+
+            _progressBarStoryboard = new Storyboard();
+
+            if (shouldBeVisible)
+            {
+                // Fade in
+                UpdateDownloadBar.Visibility = Visibility.Visible;
+                UpdateDownloadBar.Opacity = 0;
+
+                var fadeIn = new DoubleAnimation
+                {
+                    From = 0.0,
+                    To = 1.0,
+                    Duration = TimeSpan.FromMilliseconds(200),
+                    EasingFunction = new CubicEase { EasingMode = EasingMode.EaseOut }
+                };
+
+                Storyboard.SetTarget(fadeIn, UpdateDownloadBar);
+                Storyboard.SetTargetProperty(fadeIn, new PropertyPath(OpacityProperty));
+                _progressBarStoryboard.Children.Add(fadeIn);
+            }
+            else
+            {
+                // Fade out, then collapse
+                var fadeOut = new DoubleAnimation
+                {
+                    From = UpdateDownloadBar.Opacity,
+                    To = 0.0,
+                    Duration = TimeSpan.FromMilliseconds(250),
+                    EasingFunction = new CubicEase { EasingMode = EasingMode.EaseIn }
+                };
+
+                Storyboard.SetTarget(fadeOut, UpdateDownloadBar);
+                Storyboard.SetTargetProperty(fadeOut, new PropertyPath(OpacityProperty));
+                _progressBarStoryboard.Children.Add(fadeOut);
+                _progressBarStoryboard.Completed += OnProgressBarFadeOutCompleted;
+            }
+
+            _progressBarStoryboard.Begin(UpdateDownloadBar);
         }
 
         internal void UpdateEmptyState()

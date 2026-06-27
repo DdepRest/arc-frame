@@ -55,19 +55,27 @@ _width = IsAnwis
 
 ---
 
-### 5. Автообновление: имена файлов и версии (КРИТИЧНО)
+### 5. Автообновление: имена файлов, версии и UX-flow (КРИТИЧНО)
 
-**Где:** `UpdateService.cs`, `WatchdogService.cs`, `releases.json`.
+**Где:** `UpdateService.cs`, `WatchdogService.cs`, `releases.json`, `DialogService.cs`.
 
 **Что может сломаться:**
 - Имя ZIP в `releases.json` не совпадает с фактическим именем файла в GitHub Release.
 - Версия в `.csproj` не совпадает с версией в `releases.json`.
 - Изменение имени `ExeFileName` в `WatchdogService` без обновления `build.bat`.
+- `GetAvailableUpdate` возвращает `Releases[0]` без проверки, что он соответствует `manifest.Latest` — предполагается newest-first ordering (см. `UpdateServiceTests.GetAvailableUpdate_LatestGreaterThanCurrent_ReturnsRelease`).
 
 **Правило:**
 - Версия = единственный источник правды в `.csproj` (`<Version>X.Y.Z</Version>`).
 - `releases.json` должен быть синхронизирован вручную (или через скрипт).
 - Имя asset'а: `ARC-Frame-X.Y.Z-full.zip`.
+- `update-log.json` должен содержать записи для всех версий, иначе changelog в диалоге будет пуст.
+
+**Изменения update notification rework:**
+- `CheckOnStartupAsync` теперь показывает **диалог** автоматически (вместо toast).
+- `RunUpdateFlowAsync` — общий метод с флагом `isAutomatic` для различения авто/ручной проверки.
+- Ошибки при `isAutomatic=true` показываются через `ToastService.Error`, не `MessageBox` (не блокируют UI).
+- TitleBar-полоска прогресса заменила `DownloadProgressPanel` в ActionBar.
 
 ---
 
@@ -172,4 +180,4 @@ _width = IsAnwis
 
 ## Last verified
 
-2026-06-24 (версия 3.36.0 — грабля №11 исправлена, кейсы подтверждены)
+2026-06-25 (A.R.C. v4 — SYMBOL_INDEX, INTENTS, arc-check)

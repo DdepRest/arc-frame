@@ -27,6 +27,8 @@ UI, темы, стили          GOTCHAS#7 + DECISIONS#10
 Сохранение/загрузка      GOTCHAS#2,#3,#9 + DECISIONS#3
 Цены                     GOTCHAS#4 + CALCULATION_LOGIC#цены
 Тесты                    CALCULATION_TEST_CASES
+Навигация по коду        SYMBOL_INDEX.md (60 классов, 16 модулей)
+Понимание намерений       INTENTS.md (mapping фраз на файлы)
 Всё остальное            (ничего)
 Тривиально (≤10 строк)   grep GOTCHAS по имени изменённого файла
 ```
@@ -49,6 +51,9 @@ docs/arc/AUTO_UPDATE.md            — автообновление
 ## Automation tools
 
 ```powershell
+# Сгенерировать SYMBOL_INDEX.md (после добавления/удаления классов)
+powershell -ExecutionPolicy Bypass -File gensymbols.ps1
+
 # Что обновить в документации?
 what-to-update.ps1 $(git diff --name-only)
 
@@ -60,6 +65,9 @@ powershell -ExecutionPolicy Bypass -File generate-update-log.ps1
 
 # Перегенерировать DOCUMENTATION_MATRIX.md из JSON
 powershell -ExecutionPolicy Bypass -File render-matrix.ps1
+
+# Проверить синхронизацию docs перед коммитом
+powershell -ExecutionPolicy Bypass -File arc-check.ps1
 ```
 
 ---
@@ -74,3 +82,19 @@ powershell -ExecutionPolicy Bypass -File render-matrix.ps1
 ---
 
 Если `docs/arc/MULTI_AGENT_ARC_CALC_CONTROL.md` недоступен — остановись и сообщи владельцу. Не придумывай правила.
+
+---
+
+## Application Icon
+
+Файл иконки приложения: **`A.R.C.Icon.png`** (корень репозитория).
+
+Копии, используемые при сборке:
+- `MosquitoNetCalculator/Resources/app_icon.png` — PNG-версия
+- `MosquitoNetCalculator/Resources/app_icon.ico` — ICO-версия (сконвертирована из PNG)
+
+### Обновление иконки
+
+1. Заменить `A.R.C.Icon.png` в корне репозитория.
+2. Скопировать в `MosquitoNetCalculator/Resources/app_icon.png`.
+3. Сконвертировать в ICO: `python -c "from PIL import Image; img=Image.open('MosquitoNetCalculator/Resources/app_icon.png'); img.save('MosquitoNetCalculator/Resources/app_icon.ico', format='ICO', sizes=[(16,16),(32,32),(48,48),(256,256)])"`

@@ -6,6 +6,7 @@
         WindowStartupLocation="CenterOwner"
         ResizeMode="CanResize"
         ShowInTaskbar="false"
+        Icon="pack://application:,,,/Resources/app_icon.ico"
         WindowStyle="None"
         AllowsTransparency="True"
         Background="Transparent"

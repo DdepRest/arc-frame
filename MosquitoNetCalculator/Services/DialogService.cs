@@ -1,10 +1,13 @@
 using System;
+using System.Collections.Generic;
 using System.Diagnostics;
+using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Animation;
+using MosquitoNetCalculator.Models;
 
 namespace MosquitoNetCalculator.Services
 {
@@ -100,6 +103,39 @@ namespace MosquitoNetCalculator.Services
 
             btn.Click += (s, e) => closeAction();
             return btn;
+        }
+
+        /// <summary>
+        /// Builds a compact horizontal bullet row (• text) for changelog items.
+        /// </summary>
+        private static StackPanel CreateBullet(string text, bool isBold)
+        {
+            var panel = new StackPanel
+            {
+                Orientation = Orientation.Horizontal,
+                Margin = new Thickness(8, 2, 0, 2)
+            };
+
+            panel.Children.Add(new TextBlock
+            {
+                Text = "•",
+                FontSize = 12,
+                Foreground = GetBrush("TextMuted", Brushes.Gray),
+                Margin = new Thickness(0, 0, 6, 0)
+            });
+
+            var tb = new TextBlock
+            {
+                Text = text,
+                FontSize = 12,
+                Foreground = GetBrush("TextSecondary", Brushes.DarkSlateGray),
+                TextWrapping = TextWrapping.Wrap
+            };
+            if (isBold)
+                tb.FontWeight = FontWeights.SemiBold;
+
+            panel.Children.Add(tb);
+            return panel;
         }
 
         /// <summary>
@@ -275,18 +311,26 @@ namespace MosquitoNetCalculator.Services
         /// to download & restart. Returns true if user clicked "Скачать".
         /// </summary>
         public static bool ShowUpdateAvailable(string version, Window? owner = null)
+            => ShowUpdateAvailable(version, Array.Empty<UpdateItem>(), owner);
+
+        /// <summary>
+        /// Fluent-styled update-available dialog with changelog.
+        /// Shows version badge, changelog of skipped versions, and
+        /// download confirmation. Returns true if user clicked "Скачать и установить".
+        /// </summary>
+        public static bool ShowUpdateAvailable(string version, IEnumerable<UpdateItem> changelog, Window? owner = null)
         {
             bool result = false;
-            var (window, content, _) = BuildDialogBase("Доступно обновление", 400, owner, () => result = false);
+            var (window, content, _) = BuildDialogBase("Доступно обновление", 460, owner, () => result = false);
 
-            // Version badge
+            // ── Version badge ──
             var badge = new Border
             {
                 Background = GetBrush("Accent", Brushes.SteelBlue),
                 CornerRadius = new CornerRadius(6),
                 Padding = new Thickness(12, 5, 12, 5),
                 HorizontalAlignment = HorizontalAlignment.Left,
-                Margin = new Thickness(0, 0, 0, 16)
+                Margin = new Thickness(0, 0, 0, 14)
             };
             badge.Child = new TextBlock
             {
@@ -297,18 +341,116 @@ namespace MosquitoNetCalculator.Services
             };
             content.Children.Add(badge);
 
-            content.Children.Add(new TextBlock
+            // ── Changelog ──
+            var changelogItems = changelog as UpdateItem[] ?? changelog.ToArray();
+            if (changelogItems.Length > 0)
             {
-                Text = "Скачать и установить обновление?",
-                FontSize = 13,
-                Foreground = GetBrush("TextPrimary", Brushes.Black),
-                TextWrapping = TextWrapping.Wrap,
-                Margin = new Thickness(0, 0, 0, 4)
-            });
+                var changelogPanel = new StackPanel { Margin = new Thickness(0, 0, 0, 16) };
+
+                var scrollViewer = new ScrollViewer
+                {
+                    MaxHeight = 220,
+                    VerticalScrollBarVisibility = ScrollBarVisibility.Auto,
+                    HorizontalScrollBarVisibility = ScrollBarVisibility.Disabled,
+                    Margin = new Thickness(0, 0, 0, 0)
+                };
+
+                var versionsStack = new StackPanel();
+
+                foreach (var item in changelogItems)
+                {
+                    // Version header row: version + date + type badge
+                    var headerPanel = new StackPanel
+                    {
+                        Orientation = Orientation.Horizontal,
+                        Margin = new Thickness(0, 10, 0, 4)
+                    };
+
+                    var versionText = new TextBlock
+                    {
+                        Text = $"v{item.Version}",
+                        FontSize = 13,
+                        FontWeight = FontWeights.SemiBold,
+                        Foreground = GetBrush("TextPrimary", Brushes.Black),
+                        VerticalAlignment = VerticalAlignment.Center
+                    };
+                    headerPanel.Children.Add(versionText);
+
+                    // Type badge (coloured by update type)
+                    var typeBrush = item.Type switch
+                    {
+                        "Новинка" => GetBrush("Success", Brushes.Green),
+                        "Исправление" => GetBrush("Danger", Brushes.Red),
+                        _ => GetBrush("Warning", Brushes.Orange)
+                    };
+                    var typeBadge = new Border
+                    {
+                        Background = typeBrush,
+                        CornerRadius = new CornerRadius(4),
+                        Padding = new Thickness(6, 1, 6, 1),
+                        Margin = new Thickness(8, 0, 0, 0),
+                        VerticalAlignment = VerticalAlignment.Center
+                    };
+                    typeBadge.Child = new TextBlock
+                    {
+                        Text = item.Type,
+                        FontSize = 10,
+                        FontWeight = FontWeights.SemiBold,
+                        Foreground = GetBrush("OnAccent", Brushes.White)
+                    };
+                    headerPanel.Children.Add(typeBadge);
+
+                    // Date
+                    if (item.Date != default)
+                    {
+                        var dateText = new TextBlock
+                        {
+                            Text = item.Date.ToString("dd.MM.yyyy"),
+                            FontSize = 11,
+                            Foreground = GetBrush("TextMuted", Brushes.Gray),
+                            Margin = new Thickness(8, 0, 0, 0),
+                            VerticalAlignment = VerticalAlignment.Center
+                        };
+                        headerPanel.Children.Add(dateText);
+                    }
+
+                    versionsStack.Children.Add(headerPanel);
+
+                    // Title as first bullet (summary line)
+                    if (!string.IsNullOrEmpty(item.Title) &&
+                        (item.Changes == null || !item.Changes.Contains(item.Title)))
+                    {
+                        versionsStack.Children.Add(CreateBullet(item.Title, isBold: true));
+                    }
+
+                    // Changes list
+                    if (item.Changes?.Count > 0)
+                    {
+                        foreach (var change in item.Changes)
+                            versionsStack.Children.Add(CreateBullet(change, isBold: false));
+                    }
+                }
+
+                scrollViewer.Content = versionsStack;
+                changelogPanel.Children.Add(scrollViewer);
+                content.Children.Add(changelogPanel);
+            }
+            else
+            {
+                // Fallback when no changelog available
+                content.Children.Add(new TextBlock
+                {
+                    Text = "Список изменений недоступен.",
+                    FontSize = 12,
+                    Foreground = GetBrush("TextMuted", Brushes.Gray),
+                    FontStyle = FontStyles.Italic,
+                    Margin = new Thickness(0, 0, 0, 16)
+                });
+            }
 
             content.Children.Add(new TextBlock
             {
-                Text = "Приложение будет перезапущено.",
+                Text = "Приложение будет перезапущено после установки.",
                 FontSize = 12,
                 Foreground = GetBrush("TextMuted", Brushes.Gray),
                 TextWrapping = TextWrapping.Wrap,
@@ -340,8 +482,8 @@ namespace MosquitoNetCalculator.Services
 
             var btnDownload = new Button
             {
-                Content = "Скачать",
-                MinWidth = 110,
+                Content = "Скачать и установить",
+                MinWidth = 150,
                 Padding = new Thickness(16, 7, 16, 7),
                 Margin = new Thickness(8, 0, 0, 0),
                 FontSize = 13,

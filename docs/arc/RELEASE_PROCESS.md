@@ -167,4 +167,4 @@ update-releases-json.ps1
 
 ## Last verified
 
-2026-06-24 (A.R.C. upgrade v3)
+2026-06-25 (A.R.C. v4 — SYMBOL_INDEX, INTENTS, arc-check)
