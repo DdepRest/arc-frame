@@ -63,4 +63,4 @@
 
 ## Last verified
 
-2026-06-25 (A.R.C. v4 — SYMBOL_INDEX, INTENTS, arc-check)
+2026-06-27 (A.R.C. v4 — SYMBOL_INDEX, INTENTS, arc-check)

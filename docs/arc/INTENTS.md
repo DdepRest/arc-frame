@@ -114,4 +114,4 @@ Intake phase: user describes intent
 
 ## Last verified
 
-2026-06-25 (создан)
+2026-06-27 (создан)

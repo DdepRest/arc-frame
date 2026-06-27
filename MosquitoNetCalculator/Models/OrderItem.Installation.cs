@@ -106,6 +106,10 @@ namespace MosquitoNetCalculator.Models
 
         /// <summary>
         /// The effective total after applying the installation adjustment.
+        /// The deduction is multiplied by Quantity: skipping installation work
+        /// on N units subtracts the per-unit fee N times (one per piece, not
+        /// once per row). See GOTCHAS.md#12 for the historical bug that
+        /// returned a flat fee regardless of Quantity.
         /// </summary>
         public double TotalWithDeduction
         {
@@ -114,8 +118,8 @@ namespace MosquitoNetCalculator.Models
                 if (!IsInstallationApplicable) return Total;
                 return _installationMode switch
                 {
-                    1 => Math.Round(Math.Max(0, Total - InstallationDeduction), 2),
-                    2 => Math.Round(Math.Max(0, Total - InstallationSurcharge), 2),
+                    1 => Math.Round(Math.Max(0, Total - InstallationDeduction * Quantity), 2),
+                    2 => Math.Round(Math.Max(0, Total - InstallationSurcharge * Quantity), 2),
                     _ => Total
                 };
             }
@@ -148,13 +152,16 @@ namespace MosquitoNetCalculator.Models
                 _ => "В конструкцию"
             };
 
-        /// <summary>Tooltip for the installation toggle button</summary>
+        /// <summary>Tooltip for the installation toggle button.
+        /// For modes 1/2 the per-unit fee is shown explicitly with «× Кол-во»
+        /// so the user understands that the displayed fee is PER PIECE and the
+        /// final deduction scales with Quantity. See GOTCHAS.md#12 for context.</summary>
         public string InstallationToolTip => !IsInstallationApplicable
             ? "Монтаж не предусмотрен для данного товара"
             : (_installationMode == 0
                 ? $"{InstallationLabel} (нажмите для переключения)"
                 : _installationMode == 1
-                    ? $"{InstallationLabel}, −{Services.MoneyFormatService.FormatWhole(InstallationDeduction)} руб. (нажмите для переключения)"
-                    : $"{InstallationLabel}, \u2212{Services.MoneyFormatService.FormatWhole(InstallationSurcharge)} руб. (нажмите для переключения)");
+                    ? $"{InstallationLabel}, −{Services.MoneyFormatService.FormatWhole(InstallationDeduction)} руб./шт. × Кол-во (нажмите для переключения)"
+                    : $"{InstallationLabel}, \u2212{Services.MoneyFormatService.FormatWhole(InstallationSurcharge)} руб./шт. × Кол-во (нажмите для переключения)");
     }
 }

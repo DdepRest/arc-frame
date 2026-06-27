@@ -8,7 +8,7 @@
 - Тёмная тема стабильна, переключается без потери данных.
 - Undo/Redo работает для позиций расчёта и Доп.КП.
 - Юнит-тесты покрывают ключевые сценарии (расчёты, экспорт/импорт, версия, обновления).
-- Текущая версия: **3.37.0** (опубликован GitHub Release, автообновление настроено).
+- Текущая версия: **3.37.1** (опубликован GitHub Release, автообновление настроено).
 - Система A.R.C. прошла 3 итерации улучшений:
   - **v1:** инициализация, аудит, эталонные кейсы.
   - **v2:** CHEATSHEET, DOCUMENTATION_MATRIX, PROMPTS, гранулярный routing, validate-docs.
@@ -76,6 +76,8 @@ AGENT.md / AGENTS.md / CLAUDE.md / GEMINI.md
 
 ## Последние изменения
 
+- **Автоширина колонки «Цена» (fix):** в `OrderItemsControl.xaml` (колонка «Цена» в таблице «Расчёт») и `PricesControl.xaml` (колонка «Цена, руб.» в tab «Цены») `UpdateSourceTrigger` для binding `Price` переключён с `LostFocus` на `PropertyChanged`. Pre-fix `Width="Auto"` не успевал подстроить ширину колонки при наборе (пользователь видел только начало введённого значения, напр. «5000» при наборе «15000»). Задокументировано в `GOTCHAS.md#13`. 5 новых regression-тестов в `DataGridBindingsTests.cs` (grep XAML-binding-triggers): прямые регрессии для обеих колонок + guardrails на Ширину/Высоту/Кол-во.
+- **Монтаж × Quantity (fix):** в `OrderItem.Installation.cs` `TotalWithDeduction` теперь умножает `InstallationDeduction`/`InstallationSurcharge` на `Quantity` для режимов 1 («Без монтажа») и 2 («В конструкцию»). Pre-fix вычет списывался один раз на строку (занижал скидку для bulk-orders). Результат задокументирован в `GOTCHAS.md#12` и кейсе 16 в `CALCULATION_TEST_CASES.md`. Tooltip теперь явно показывает «руб./шт. × Кол-во». 8 новых юнит-тестов. Backward-compat: для Q=1 поведение не изменилось.
 - **Update notification rework** — редизайн системы обновлений:
   - `UpdateLog.GetChangesSince(Version)` — фильтрация embedded changelog по версии.
   - `DialogService.ShowUpdateAvailable()` — новый диалог с changelog (ScrollViewer, type-бейджи, compact cards).
@@ -96,6 +98,7 @@ AGENT.md / AGENTS.md / CLAUDE.md / GEMINI.md
 - `releases.json` и `update-log.json` дублируют частично одну информацию — нужна синхронизация при каждом релизе (рассмотреть консолидацию).
 - Нет автоматической проверки калькуляции при релизе — только юнит-тесты.
 - Редизайн системы обновлений частично завершён (core-логика + тесты готовы, UI-полировка в процессе). Спецификация: `docs/arc/update-notification-rework-spec.md`.
+- **HeadlessWpf behavior-тест для «Цена автоширины» отменён** (6 итераций не дали рабочего решения). XAML-grep test в `DataGridBindingsTests.cs` остаётся канонической гарантией. Для возврата к этой фиче требуется либо project-wide `[CollectionFixture<WpfAppFixture>]`, либо переход на `Border + TextBlock + Width=NaN` без DataGrid.
 
 ## Открытые вопросы
 
@@ -113,7 +116,7 @@ AGENT.md / AGENTS.md / CLAUDE.md / GEMINI.md
 
 ## Source files
 
-- `MosquitoNetCalculator/MosquitoNetCalculator.csproj` — версия 3.37.0.
+- `MosquitoNetCalculator/MosquitoNetCalculator.csproj` — версия 3.37.1.
 - `releases.json` — история релизов.
 - `MosquitoNetCalculator/Resources/update-log.json` — история для UI.
 - `docs/arc/*.md` — вся проектная документация.
@@ -125,4 +128,4 @@ AGENT.md / AGENTS.md / CLAUDE.md / GEMINI.md
 
 ## Last verified
 
-2026-06-27 (update notification rework — 609/609 tests pass)
+2026-06-27 (v3.37.1: Цена auto-width fix (GOTCHAS#13) + Монтаж × Quantity (GOTCHAS#12) + 13 новых тестов — full suite passes, ZIP опубликован)

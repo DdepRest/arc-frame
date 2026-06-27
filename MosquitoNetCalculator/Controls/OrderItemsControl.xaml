@@ -237,10 +237,12 @@
                         </DataGridTextColumn.ElementStyle>
                     </DataGridTextColumn>
 
-                    <!-- Цена (editable — user can override the unit price per row) -->
+                    <!-- Цена (editable — user can override the unit price per row).
+                         PropertyChanged (not LostFocus) — required for Width="Auto" to grow
+                         while user types. See docs/arc/GOTCHAS.md#13. -->
                     <DataGridTextColumn Header="Цена" Width="Auto" MinWidth="70">
                         <DataGridTextColumn.Binding>
-                            <Binding Path="Price" Converter="{StaticResource MoneyConv}" UpdateSourceTrigger="LostFocus"/>
+                            <Binding Path="Price" Converter="{StaticResource MoneyConv}" UpdateSourceTrigger="PropertyChanged"/>
                         </DataGridTextColumn.Binding>
                         <DataGridTextColumn.ElementStyle>
                             <Style TargetType="TextBlock" BasedOn="{StaticResource RightCell}">

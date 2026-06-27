@@ -75,4 +75,4 @@ arc-check.ps1                                 # Проверка docs перед
 
 ## Last verified
 
-2026-06-25 (A.R.C. v4: SYMBOL_INDEX, INTENTS, gensymbols, arc-check)
+2026-06-27 (A.R.C. v4: SYMBOL_INDEX, INTENTS, gensymbols, arc-check)

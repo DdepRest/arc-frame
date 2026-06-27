@@ -29,7 +29,7 @@
                         <DataGridTextColumn Header="Цвет" Width="Auto" MinWidth="65"
                                             Binding="{Binding Color}" IsReadOnly="True"/>
                         <DataGridTextColumn Header="Цена, руб." Width="Auto" MinWidth="75"
-                                            Binding="{Binding Price, Converter={StaticResource MoneyConv}, UpdateSourceTrigger=LostFocus}"/>
+                                            Binding="{Binding Price, Converter={StaticResource MoneyConv}, UpdateSourceTrigger=PropertyChanged}"/>
                     </DataGrid.Columns>
                 </DataGrid>
 

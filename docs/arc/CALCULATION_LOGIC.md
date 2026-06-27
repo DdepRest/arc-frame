@@ -150,17 +150,26 @@ int    totalPieces = validItems.Where(i => i.Unit == "шт.").Sum(i => i.Quantit
 | Режим | Эффект |
 |-------|--------|
 | 0 (включён) | Без изменений |
-| 1 (без монтажа) | Total − InstallationDeduction (по умолч. 500 руб.) |
-| 2 (в конструкцию) | Total − InstallationSurcharge (по умолч. 500 руб.) |
+| 1 (без монтажа) | Total − InstallationDeduction × Quantity (по умолч. 500 руб./шт.) |
+| 2 (в конструкцию) | Total − InstallationSurcharge × Quantity (по умолч. 500 руб./шт.) |
 
 ```csharp
 TotalWithDeduction = _installationMode switch
 {
-    1 => Math.Round(Math.Max(0, Total - InstallationDeduction), 2),
-    2 => Math.Round(Math.Max(0, Total - InstallationSurcharge), 2),
+    1 => Math.Round(Math.Max(0, Total - InstallationDeduction * Quantity), 2),
+    2 => Math.Round(Math.Max(0, Total - InstallationSurcharge * Quantity), 2),
     _ => Total
 };
 ```
+
+**Семантика per-piece:** вычет указывается как `руб./шт.` в UI и применяется один раз за каждую
+единицу товара в строке. Например: Anwis ×3 шт., режим «В конструкцию», surcharge 500 →
+итоговый вычет 1500 ₽ (а не 500 ₽). Quantity-1 → backward-compatible: для одной штуки
+формула даёт тот же результат, что и до фикса. Текущий `Quantity` зажимается снизу на 1,
+поэтому манипуляций с Quantity=0 для вычета не возникает. JSON-схема (`InstallationDeduction`,
+`InstallationSurcharge`) не меняется — это всё ещё per-unit поля.
+
+> Если deduction × Quantity > Total — результат зажимается на 0 (никогда не отрицательный).
 
 ---
 
@@ -231,4 +240,4 @@ TotalWithDeduction = _installationMode switch
 
 ## Last verified
 
-2026-06-25 (A.R.C. v4 — SYMBOL_INDEX, INTENTS, arc-check)
+2026-06-27 (A.R.C. v4 — SYMBOL_INDEX, INTENTS, arc-check)

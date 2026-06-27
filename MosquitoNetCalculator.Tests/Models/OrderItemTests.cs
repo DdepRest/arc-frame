@@ -263,6 +263,163 @@ namespace MosquitoNetCalculator.Tests.Models
             Assert.Equal(item.Total, item.TotalWithDeduction);
         }
 
+        // ─── TotalWithDeduction QuantityMultiplier tests (bug #12 fix) ──
+        //
+        // Pre-fix: deduction was subtracted once per row, regardless of Quantity.
+        // This understated the discount for bulk orders with Quantity > 1.
+        // Post-fix: deduction × Quantity — one per-piece fee, never a flat fee.
+        // See docs/arc/GOTCHAS.md#12.
+
+        [Fact]
+        public void TotalWithDeduction_Mode2_Quantity3_SubtractsPerPiece_NotOnce()
+        {
+            // Regression for the bug as filed: «В конструкцию» with 3 pieces
+            // must subtract 3 × 500 ₽, not just 500 ₽.
+            // Use На навесах (identity-sized, no Anwis formula) for clean math.
+            var item = new OrderItem
+            {
+                Name = "На навесах",
+                Width = 1500, Height = 1000,
+                Quantity = 3,
+                Price = 3000,
+                InstallationMode = 2
+            };
+            // CV = 1.5 м², Total = 1.5 × 3000 × 3 = 13500 ₽
+            Assert.Equal(13500, item.Total, 2);
+            // Post-fix: 13500 − 500×3 = 12000 ₽  (was 13000 ₽ pre-fix)
+            Assert.Equal(12000, item.TotalWithDeduction, 2);
+        }
+
+        [Fact]
+        public void TotalWithDeduction_Mode1_Quantity3_SubtractsPerPiece()
+        {
+            // Same fix applies to «Без монтажа» — deduction is per piece.
+            var item = new OrderItem
+            {
+                Name = "На навесах",
+                Width = 1500, Height = 1000,
+                Quantity = 3,
+                Price = 3000,
+                InstallationMode = 1
+            };
+            Assert.Equal(13500, item.Total, 2);
+            Assert.Equal(12000, item.TotalWithDeduction, 2);
+        }
+
+        [Fact]
+        public void TotalWithDeduction_Mode0_Quantity3_StillNoDeduction()
+        {
+            // Mode 0 («Монтаж включён») — no deduction regardless of Quantity.
+            // Lockdown that scaling Quantity doesn't accidentally re-introduce
+            // a deduction in the default mode.
+            var item = new OrderItem
+            {
+                Name = "На навесах",
+                Width = 1500, Height = 1000,
+                Quantity = 3,
+                Price = 3000,
+                InstallationMode = 0
+            };
+            Assert.Equal(item.Total, item.TotalWithDeduction);
+        }
+
+        [Fact]
+        public void TotalWithDeduction_Mode2_CustomSurcharge_Quantity3_MultipliesPerPiece()
+        {
+            // User-entered surcharge is PER PIECE (CurrentInstallationAmount
+            // is the field value). Final deduction = surcharge × Quantity.
+            var item = new OrderItem
+            {
+                Name = "На навесах",
+                Width = 1500, Height = 1000,
+                Quantity = 3,
+                Price = 3000,
+                InstallationMode = 2,
+                InstallationSurcharge = 200
+            };
+            // 13500 − 200×3 = 12900 ₽
+            Assert.Equal(12900, item.TotalWithDeduction, 2);
+        }
+
+        [Fact]
+        public void TotalWithDeduction_AnwisMode2_Quantity3_SubtractsPerPiece()
+        {
+            // Same behaviour for Anwis. Use Профипласт mode (size identity
+            // — no W+2/H−30 shift) so Width/Height stay user-typed = stored.
+            var item = new OrderItem
+            {
+                Name = "Anwis",
+                AnwisSizeMode = AnwisSizeMode.Профипласт,
+                Width = 1000, Height = 1000,
+                Quantity = 3,
+                Price = 1800,
+                InstallationMode = 2
+            };
+            // CV = 1.0, Total = 5400, TotalWithDeduction = 5400 − 1500 = 3900
+            Assert.Equal(5400, item.Total, 2);
+            Assert.Equal(3900, item.TotalWithDeduction, 2);
+        }
+
+        [Theory]
+        [InlineData(1)]
+        [InlineData(2)]
+        [InlineData(5)]
+        public void TotalWithDeduction_Mode2_QuantityScaling_IsLinearWithQ(int qty)
+        {
+            var item = new OrderItem
+            {
+                Name = "На навесах",
+                Width = 1500, Height = 1000,
+                Quantity = qty,
+                Price = 3000,
+                InstallationMode = 2
+            };
+            // CV = 1.5 м², Total = 1.5 × 3000 × qty = 4500 × qty
+            // deduction = 500 × qty
+            // TotalWithDeduction = (4500 − 500) × qty = 4000 × qty
+            // Linear-in-qty assertion: scaling is the proof that deduction
+            // multiplies by Quality and not a flat fee.
+            double expectedTotal = 4500.0 * qty;
+            double expectedTotalWithDeduction = 4000.0 * qty;
+            Assert.Equal(expectedTotal, item.Total, 2);
+            Assert.Equal(expectedTotalWithDeduction, item.TotalWithDeduction, 2);
+        }
+
+        [Fact]
+        public void TotalWithDeduction_NonApplicable_Quantity3_StillIgnoresDeduction()
+        {
+            // Отлив is not subject to any installation mode — TotalWithDeduction
+            // must equal Total regardless of Quantity or InstallationMode.
+            // Guards against a regression that accidentally re-applies the
+            // formula on non-eligible products.
+            var item = new OrderItem
+            {
+                Name = "Отлив",
+                Width = 1500, Height = 100,
+                Quantity = 3,
+                Price = 2150,
+                InstallationMode = 2
+            };
+            Assert.Equal(item.Total, item.TotalWithDeduction);
+        }
+
+        [Fact]
+        public void TotalWithDeduction_Mode2_HighQuantity_ClampsToZero()
+        {
+            // When deduction × Q exceeds Total, the result is clamped to 0,
+            // never negative. Cheap product × big Q × default 500 surcharge.
+            var item = new OrderItem
+            {
+                Name = "На навесах",
+                Width = 100, Height = 100,
+                Quantity = 50,
+                Price = 100,
+                InstallationMode = 2
+            };
+            // CV = 0.01, Total = 0.01*100*50 = 50 ₽, deduction = 500*50 = 25000 ₽ → clamp to 0
+            Assert.Equal(0, item.TotalWithDeduction, 2);
+        }
+
         // ─── IsInstallationApplicable tests ──────────────────
 
         [Fact]
@@ -1051,6 +1208,39 @@ namespace MosquitoNetCalculator.Tests.Models
             };
             Assert.Contains("−", item.InstallationToolTip);
             Assert.Contains("500", item.InstallationToolTip);
+        }
+
+        // ─── Per-piece tooltip tests (GOTCHAS.md#12 UI signal) ──
+        //
+        // The tooltip explicitly shows «руб./шт. × Кол-во» so users understand
+        // that the entered fee is per piece, not a flat row fee. These tests
+        // lock that signal — a regression that strips the suffix would not be
+        // caught by InstallationToolTip_Mode1_ShowsDeductionAmount above
+        // (it only checks the minus sign and the number).
+
+        [Fact]
+        public void InstallationToolTip_Mode1_ShowsPerPieceSuffix()
+        {
+            var item = new OrderItem { Name = "Anwis", InstallationMode = 1 };
+            Assert.Contains("руб./шт.", item.InstallationToolTip);
+            Assert.Contains("× Кол-во", item.InstallationToolTip);
+        }
+
+        [Fact]
+        public void InstallationToolTip_Mode2_ShowsPerPieceSuffix()
+        {
+            var item = new OrderItem { Name = "Anwis", InstallationMode = 2 };
+            Assert.Contains("руб./шт.", item.InstallationToolTip);
+            Assert.Contains("× Кол-во", item.InstallationToolTip);
+        }
+
+        [Fact]
+        public void InstallationToolTip_Mode0_DoesNotShowPerPieceSuffix()
+        {
+            // Mode 0 («Монтаж включён») has no deduction — the per-piece
+            // suffix «× Кол-во» would be misleading, so it must NOT appear.
+            var item = new OrderItem { Name = "Anwis", InstallationMode = 0 };
+            Assert.DoesNotContain("× Кол-во", item.InstallationToolTip);
         }
 
         [Fact]

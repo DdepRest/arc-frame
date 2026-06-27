@@ -309,4 +309,4 @@ docs/arc/MULTI_AGENT_ARC_CALC_CONTROL.md
 
 ## Last verified
 
-2026-06-25 (A.R.C. v4: SYMBOL_INDEX, INTENTS, gensymbols, arc-check)
+2026-06-27 (A.R.C. v4: SYMBOL_INDEX, INTENTS, gensymbols, arc-check)
