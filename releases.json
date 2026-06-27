@@ -1,7 +1,19 @@
 {
-    "latest":  "3.37.0",
+    "latest":  "3.37.1",
     "minRequired":  "",
     "releases":  [
+                     {
+                         "version":  "3.37.1",
+                         "date":  "2026-06-27",
+                         "type":  "РЈР»СѓС‡С€РµРЅРёРµ",
+                         "title":  "ARC-Frame 3.37.1",
+                         "changes":  [
+
+                                     ],
+                         "url":  "https://github.com/DdepRest/arc-frame/releases/download/v3.37.1/ARC-Frame-3.37.1-full.zip",
+                         "size":  66656385,
+                         "sha256":  "e389217c6062e38560a32a61fa01d74622ef86d9a40cab7558b2d0caa8d29657"
+                     },
                      {
                          "version":  "3.37.0",
                          "date":  "2026-06-27",

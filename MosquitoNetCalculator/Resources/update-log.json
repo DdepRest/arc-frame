@@ -1,5 +1,20 @@
 [
   {
+    "date": "2026-06-27",
+    "version": "3.37.1",
+    "type": "Исправление",
+    "title": "Цена — автоширина колонки + Монтаж × Quantity, 13 новых тестов",
+    "changes": [
+      "Монтаж с Quantity > 1: в режимах «Без монтажа» и «В конструкцию» deduction теперь умножается на Quantity (per piece), а не списывается один раз. Например: Anwis 1000×1000 × 3 шт. × режим «В конструкцию» с вычетом 500 ₽ → итоговый вычет 1500 ₽ (а не 500 ₽). Backward-compat для Q=1.",
+      "Уточнён tooltip монтажа для режимов 1/2: теперь явно показывает «руб./шт. × Кол-во», чтобы пользователь видел, что введённая сумма применяется за каждую штуку.",
+      "Автоширина колонки «Цена» в DataGrid: колонка «Цена» в таблице «Расчёт» (и «Цена, руб.» в tab «Цены») не успевала расширяться при наборе — Width=\"Auto\" рекомпьютил ширину по старому значению Price (binding имел UpdateSourceTrigger=\"LostFocus\"). Теперь Price обновляется по PropertyChanged, и колонка подстраивается под набор в реальном времени.",
+      "InstallationToolTip дополнен суффиксом «руб./шт. × Кол-во» для modes 1/2.",
+      "UpdateSourceTrigger в OrderItemsControl.xaml (Цена) и PricesControl.xaml (Цена, руб.) переключён с LostFocus на PropertyChanged.",
+      "Добавлено 8 новых юнит-тестов на TotalWithDeduction × Quantity (включая linear-scaling Q∈{1,2,5}, clamp-to-0 для высокого Q, regression для «В конструкцию» с Q=3).",
+      "Добавлен DataGridBindingsTests.cs (5 regression-тестов через grep XAML-binding-triggers) — guardrails на правильный UpdateSourceTrigger для всех редактируемых колонок с Width=\"Auto\"."
+    ]
+  },
+  {
     "date": "2026-06-10",
     "version": "3.10",
     "type": "Улучшение",
