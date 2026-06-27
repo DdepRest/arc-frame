@@ -6,6 +6,22 @@
 
 ---
 
+## 3.37.2 — 2026-06-27
+
+### Исправления
+
+- **SelectAll race fix:** обработчик `SelectAll_OnFocus` теперь синхронный (`tb.SelectAll()` без `BeginInvoke`) — при клике в ячейку Ширины/Высоты текст выделяется до первого нажатия клавиши, ввод заменяет значение, а не дописывает. Деталь см. `docs/arc/GOTCHAS.md#14`.
+- **Mid-typing formula clamp fix:** Ширина и Высота переключены с `UpdateSourceTrigger=PropertyChanged` на `LostFocus` — формула Anwis (напр. `max(0, raw−30)`) больше не перехватывает значение на каждом нажатии, набор идёт свободно. Деталь см. `docs/arc/GOTCHAS.md#15`.
+- **DeleteRowButton padding fix:** `Padding="4,0"` → `Padding="5"` — кнопка удаления строки теперь 20×20px, красный hover-фон с `CornerRadius=5` выглядит пропорционально, а не сплюснуто.
+
+### Техническое
+
+- **UpdateLog sort-in-code:** `AllNewestFirst()` и `GetChangesSince()` теперь сортируют записи по дате/версии в коде (`.OrderByDescending`/`.OrderBy`) — порядок записей в JSON-файле больше не имеет значения. Устраняет повторяющийся баг с ручным prepend'ом записей при релизе.
+- **`ParseVersion` диагностика:** добавлен `Debug.WriteLine` при битой строке версии в JSON — опечатка видна в отладчике сразу, а не через молчаливый fallback.
+- 2 регрессионных теста в `DataGridBindingsTests.cs` перепрофилированы: `PropertyChanged` → `LostFocus` для Ширины/Высоты.
+
+---
+
 ## 3.37.1 — 2026-06-27
 
 ### Исправления

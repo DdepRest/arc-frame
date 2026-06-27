@@ -1,6 +1,20 @@
 [
   {
     "date": "2026-06-27",
+    "version": "3.37.2",
+    "type": "Исправление",
+    "title": "SelectAll race fix + Mid-typing formula clamp fix + DeleteRowButton padding, UpdateLog sort-in-code",
+    "changes": [
+      "SelectAll_OnFocus теперь синхронный (без BeginInvoke) — ввод заменяет значение, а не дописывает к старому (GOTCHAS#14).",
+      "Ширина и Высота: UpdateSourceTrigger=LostFocus вместо PropertyChanged — формула Anwis больше не перехватывает значение на каждом нажатии, набор идёт свободно (GOTCHAS#15).",
+      "Кнопка удаления строки: Padding=\"5\" вместо \"4,0\" — красный hover-фон с CornerRadius=5 выглядит пропорционально, а не сплюснуто.",
+      "UpdateLog.AllNewestFirst() и GetChangesSince() сортируют записи по дате/версии в коде — порядок в JSON больше не важен, баг с prepend'ом при релизе устранён.",
+      "ParseVersion: Debug.WriteLine при битой строке версии в JSON — диагностика вместо молчаливого fallback'а.",
+      "2 новых регрессионных теста в DataGridBindingsTests.cs на LostFocus для Ширины/Высоты."
+    ]
+  },
+  {
+    "date": "2026-06-27",
     "version": "3.37.1",
     "type": "Исправление",
     "title": "Цена — автоширина колонки + Монтаж × Quantity, 13 новых тестов",

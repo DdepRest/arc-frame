@@ -270,6 +270,7 @@ trade-off trailing-запятой исчезнет (потому что "15000,"
 | Данные | Потеря заказов при миграции путей | ВЫСОКИЙ |
 | UI | Краш при переключении темы | СРЕДНИЙ |
 | UI | `Width="Auto"` колонки не растёт при наборе (`LostFocus` без `PropertyChanged`) | СРЕДНИЙ |
+| UI | DataGridTextColumn SelectAll race (отложенный BeginInvoke проигрывает первому keystroke, текст дописывается) | СРЕДНИЙ |
 
 ## Source files
 
@@ -282,6 +283,84 @@ trade-off trailing-запятой исчезнет (потому что "15000,"
 - `MosquitoNetCalculator/Services/ThemeService.cs`
 - `MosquitoNetCalculator/Services/AppSettingsService.cs`
 
+---
+
+### 14. DataGridTextColumn SelectAll race: «Dispatcher.BeginInvoke» проигрывает первому нажатию клавиши (СРЕДНИЙ)
+
+**Где:** `MosquitoNetCalculator/Controls/OrderItemsControl.xaml.cs` — метод `SelectAll_OnFocus`;
+XAML — все редактируемые колонки `Ширина`, `Высота`, `Кол-во`, `Цена` в `OrderItemsControl.xaml`.
+
+**Симптом бага:**
+1. Пользователь добавил Anvis ББ 60 с малым raw (например H=100 мм) → после формулы `stored = max(0, 100−30) = 70 мм`, или `30` при H=60.
+2. Пользователь кликает в ячейку «Ширина» / «Высота», видит курсор в позиции клика (WPF по умолчанию
+   не делает select-all на вход в edit-режим).
+3. Набирает `1200`.
+4. Получает `701200`, `301200`, `31200` и т.д. — **текст дописан, не заменён**.
+
+**Корень:** `SelectAll_OnFocus` был реализован с отложенным `Dispatcher.BeginInvoke`:
+```csharp
+if (sender is TextBox tb)
+    tb.Dispatcher.BeginInvoke(() => tb.SelectAll());   // ← deferred
+```
+`BeginInvoke` помещает SelectAll в очередь dispatcher'а после обработки текущего сообщения.
+Между моментом, когда клик установил позицию курсора, и моментом, когда `SelectAll` запустился,
+пользователь успевает нажать клавишу → символ вставляется в позицию курсора, не заменяя
+выделение (потому что выделения ещё нет).
+
+**Решение:** убрать `BeginInvoke` — делать SelectAll синхронно в GotFocus:
+```csharp
+if (sender is TextBox tb)
+    tb.SelectAll();   // ← synchronous, runs in same dispatch frame as GotFocus
+```
+GotFocus прибывает после `PreviewMouseLeftButtonDown` (который уже позиционировал курсор)
+в том же диспетчерском цикле, поэтому синхронный `SelectAll` переопределяет положение курсора
+и выделяет весь текст. Любое последующее нажатие → символ заменяет выделение → результат: `1200` ✓.
+
+**Тонкости:**
+- Touch (тап вместо клика): ведёт себя идентично — `PreviewMouseLeftButtonDown` + `GotFocus` идут
+  той же дорогой, `SelectAll` срабатывает до первого ввода.
+- Клавиатурная навигация (Tab/F2 → ячейка): TextBox получает фокус без клика → GotFocus arrives
+  до любого ввода → SelectAll выделяет всё → первый keystroke заменяет.
+
+**Не нужно:** изощрённый шаблон с `PreviewMouseLeftButtonDown` + `e.Handled = true; Focus(); SelectAll()`
+— для задачи «click into cell → typing replaces» это overkill. Синхронный SelectAll в GotFocus
+достаточен для всех путей ввода в проекте.
+
+**Регрессионный тест:** см. `MosquitoNetCalculator.Tests.DataGridBindingsTests`
+(паттерн «SelectAll_OnFocus_Синхронный» — следит, что обработчик не вернёт `BeginInvoke`
+в будущих рефакторингах).
+
+**Правило для будущих колонок:** если редактируемая ячейка показывает derived/stored значение,
+которое пользователь хочет полностью заменить, **ВСЕГДА** использовать синхронный SelectAll
+в `GotFocus`. Никогда не оборачивать в `Dispatcher.BeginInvoke` / `Dispatcher.InvokeAsync`.
+
+---
+
+---
+
+### 15. PropertyChanged на Ширине/Высоте: формула ББ60 перехватывает значение на каждом нажатии (СРЕДНИЙ)
+
+**Где:** `MosquitoNetCalculator/Controls/OrderItemsControl.xaml` — колонки Ширина и Высота.
+
+**Симптом:**
+1. У Anwis в режиме ББ60 высота = 30 мм (формула `max(0, raw−30)` при raw=60).
+2. Пользователь кликает в ячейку «Высота» — видит «30».
+3. Набирает «1» → `PropertyChanged` срабатывает → `ВысотаВвод` setter: `ОтВвода(W, 1, ББ60)` → `ApplyCalcHeight(1, ББ60) = max(0, 1−30) = 0` → stored=0 → reverse=30. Ячейка обновляется до «30».
+4. Набирает «2» → дописывается к «30» → «302». И так далее.
+5. Итог: вместо «1200» получается «301200».
+
+**Корень:** `UpdateSourceTrigger=PropertyChanged` заставляет формулу срабатывать на КАЖДОМ нажатии клавиши. Формула `max(0, raw−30)` создаёт разрыв на 30: любое raw<30 → stored=0 → reverse=30 → дисплей возвращается к 30. Следующий символ дописывается к тому, что показывает ячейка.
+
+**Решение:** переключить Ширину и Высоту на `UpdateSourceTrigger=LostFocus`. Формула применяется один раз, когда пользователь покидает ячейку (клик в другую ячейку, Enter, Tab). Во время набора — никакого вмешательства формулы.
+
+**Трейдофф:** `Width="Auto"` больше не отслеживает набор посимвольно для этих двух колонок (но для 3-4 значных размеров это некритично). Цена и Кол-во сохраняют `PropertyChanged` — для них формула не создаёт разрыва.
+
+**Тесты:** `DataGridBindingsTests.Расчёт_Ширина_UsesLostFocus_ToPreventMidTypingClamp` + `Расчёт_Высота_UsesLostFocus_ToPreventMidTypingClamp`.
+
+**Правило:** `PropertyChanged` допустим только для колонок, где setter НЕ создаёт разрыва в отображении (нет `max(0, x−N)` или аналогичной логики). Если setter может изменить отображаемое значение непредсказуемо для пользователя — используй `LostFocus`.
+
+---
+
 ## Last verified
 
-2026-06-27 (Цена auto-width fix (GOTCHAS#13) — 636/636 tests pass)
+2026-06-27 (SelectAll race fix (GOTCHAS#14) + LostFocus на Ширине/Высоте (GOTCHAS#15) — 647/647 tests pass)

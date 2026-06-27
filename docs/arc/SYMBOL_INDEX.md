@@ -170,4 +170,4 @@ Context phase: grep SYMBOL_INDEX.md for the class/method you need
 
 ## Last generated
 
-2026-06-27 (наша эраen312654bol31.p311)
+2026-06-27 (наша эраen22633bol2.p21)

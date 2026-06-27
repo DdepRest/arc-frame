@@ -28,7 +28,14 @@ namespace MosquitoNetCalculator.Tests
         // pattern as ManualChecklistTests.LocateSourceProjectDir.
         private static readonly string RepoRoot = LocateRepoRoot();
 
-        private static string ReadXaml(string relativePath) =>
+        /// <summary>
+        /// Reads any text file under the repo root by relative path.
+        /// Used both for XAML files and for code-behind sources
+        /// (.xaml.cs) — earlier iteration had a duplicate
+        /// <c>ReadSource</c> wrapper whose only purpose was naming clarity,
+        /// which has since been folded into this single helper.
+        /// </summary>
+        private static string ReadFile(string relativePath) =>
             File.ReadAllText(Path.Combine(RepoRoot, relativePath));
 
         private static string LocateRepoRoot()
@@ -48,7 +55,7 @@ namespace MosquitoNetCalculator.Tests
         [Fact]
         public void Расчёт_Цена_UsesPropertyChanged_So_AutoWidthTracksTyping()
         {
-            var content = ReadXaml("MosquitoNetCalculator/Controls/OrderItemsControl.xaml");
+            var content = ReadFile("MosquitoNetCalculator/Controls/OrderItemsControl.xaml");
             var trigger = GetColumnUpdateTrigger(content, columnHeader: "Цена");
             Assert.Equal("PropertyChanged", trigger);
         }
@@ -56,7 +63,7 @@ namespace MosquitoNetCalculator.Tests
         [Fact]
         public void Цены_Цена_UsesPropertyChanged_So_AutoWidthTracksTyping()
         {
-            var content = ReadXaml("MosquitoNetCalculator/Controls/PricesControl.xaml");
+            var content = ReadFile("MosquitoNetCalculator/Controls/PricesControl.xaml");
             // Same helper — it handles BOTH the multi-line
             //   <DataGridTextColumn.Binding><Binding …/></DataGridTextColumn.Binding>
             // and the single-line
@@ -68,26 +75,33 @@ namespace MosquitoNetCalculator.Tests
 
         // ─── Guardrails on neighboring columns we did NOT change ─────
 
+        /// <summary>
+        /// GOTCHAS#15: Ширина и Высота используют <c>LostFocus</c> (а не
+        /// <c>PropertyChanged</c>) чтобы формула ББ60/ББ70 не перехватывала
+        /// значение на каждом нажатии клавиши. При <c>PropertyChanged</c>
+        /// набор «1» → raw=1 → max(0,1−30)=0 → reverse display=30 →
+        /// следующий символ дописывается к «30».
+        /// </summary>
         [Fact]
-        public void Расчёт_Ширина_StillUsesPropertyChanged()
+        public void Расчёт_Ширина_UsesLostFocus_ToPreventMidTypingClamp()
         {
-            var content = ReadXaml("MosquitoNetCalculator/Controls/OrderItemsControl.xaml");
+            var content = ReadFile("MosquitoNetCalculator/Controls/OrderItemsControl.xaml");
             var trigger = GetColumnUpdateTrigger(content, columnHeader: "Ширина");
-            Assert.Equal("PropertyChanged", trigger);
+            Assert.Equal("LostFocus", trigger);
         }
 
         [Fact]
-        public void Расчёт_Высота_StillUsesPropertyChanged()
+        public void Расчёт_Высота_UsesLostFocus_ToPreventMidTypingClamp()
         {
-            var content = ReadXaml("MosquitoNetCalculator/Controls/OrderItemsControl.xaml");
+            var content = ReadFile("MosquitoNetCalculator/Controls/OrderItemsControl.xaml");
             var trigger = GetColumnUpdateTrigger(content, columnHeader: "Высота");
-            Assert.Equal("PropertyChanged", trigger);
+            Assert.Equal("LostFocus", trigger);
         }
 
         [Fact]
         public void Расчёт_Колво_StillUsesPropertyChanged()
         {
-            var content = ReadXaml("MosquitoNetCalculator/Controls/OrderItemsControl.xaml");
+            var content = ReadFile("MosquitoNetCalculator/Controls/OrderItemsControl.xaml");
             var trigger = GetColumnUpdateTrigger(content, columnHeader: "Кол-во");
             Assert.Equal("PropertyChanged", trigger);
         }
@@ -193,6 +207,119 @@ namespace MosquitoNetCalculator.Tests
                 return xaml.Substring(tagStart, searchStart + selfClose - tagStart);
 
             return null;
+        }
+
+        // ─── Regression guard for ГОТЧА #14 ──────────────────────────
+
+        /// <summary>
+        /// GOTCHAS#14: editable DataGrid-TextBox <c>SelectAll_OnFocus</c>
+        /// must execute SelectAll synchronously. If a future refactor
+        /// re-introduces <c>Dispatcher.BeginInvoke</c> a degraded UX bug
+        /// returns: typing into a cell with existing value appends instead
+        /// of replacing («30» + typed «1200» → «301200»).
+        ///
+        /// This guard scans <c>OrderItemsControl.xaml.cs</c>, locates the
+        /// <c>SelectAll_OnFocus</c> method body via balanced-brace scan, and
+        /// asserts none of the deferred invocation patterns appear there.
+        /// </summary>
+        [Fact]
+        public void SelectAll_OnFocus_HasNoBeginInvoke()
+        {
+            var source = ReadFile("MosquitoNetCalculator/Controls/OrderItemsControl.xaml.cs");
+            var methodStart = source.IndexOf("private void SelectAll_OnFocus", StringComparison.Ordinal);
+            Assert.True(methodStart >= 0, "SelectAll_OnFocus handler not found in OrderItemsControl.xaml.cs");
+
+            // Find the opening `{` of the method body.
+            var openBrace = source.IndexOf('{', methodStart);
+            Assert.True(openBrace > 0, "SelectAll_OnFocus: opening '{' not found");
+
+            // Balanced-brace scan from there to the matching close `}`,
+            // so the inspected slice contains ONLY statements (and any
+            // inline comments inside the body). XML-doc / `<remarks>`
+            // blocks above the method declaration are excluded by design.
+            var braceDepth = 0;
+            var methodEnd = openBrace;
+            for (var i = openBrace; i < source.Length; i++)
+            {
+                if (source[i] == '{') braceDepth++;
+                else if (source[i] == '}')
+                {
+                    braceDepth--;
+                    if (braceDepth == 0) { methodEnd = i + 1; break; }
+                }
+            }
+            Assert.True(methodEnd > openBrace, "SelectAll_OnFocus method body never closed (brace scan failed)");
+
+            var body = source.Substring(openBrace, methodEnd - openBrace);
+
+            // Whitespace-tolerant regex guards. Cosmetic reformatting
+            // (extra spaces, line-broken calls, null-forgiving `!`) does
+            // not fragment the regression guard. The patterns forbid the
+            // call form, not the token in comments / string literals.
+            Assert.DoesNotMatch(new Regex(@"\.BeginInvoke\b"), body);
+            Assert.DoesNotMatch(new Regex(@"\.InvokeAsync\b"), body);
+
+            // Guard against a stealth rename wrapper that captures
+            // `tb.SelectAll` into a delegate then routes it back through
+            // BeginInvoke. The synchronous-safe pattern is an in-place
+            // call: `tb.SelectAll()` somewhere in the method body.
+            Assert.Matches(new Regex(@"tb\s*\.\s*SelectAll\s*\(\s*\)"), body);
+
+            // TODO(future-proof): this regex bridge is good enough for v3.37.2
+            // but cannot catch non-`Dispatcher` deferred wrappers such as
+            // `Task.Run(() => tb.SelectAll())`. If a future regression slips
+            // through that path, switch to Roslyn (`Microsoft.CodeAnalysis.CSharp`,
+            // `CSharpSyntaxTree`) to inspect the method's StatementSyntax —
+            // walk for any InvocationExpression targeting `tb.SelectAll` and
+            // fail if it sits inside a LambdaExpression or AwaitExpression.
+            // Until then, the regex is the practical guard.
+        }
+
+        /// <summary>
+        /// GOTCHAS#14 cross-check: the synchronous <c>SelectAll_OnFocus</c>
+        /// handler is wired by an <c>&lt;EventSetter Event="GotFocus" Handler="…"/&gt;</c>
+        /// in the editable columns of every <c>DataGridTextColumn</c> that uses
+        /// <c>Width="Auto"</c>. If a future refactor renames the handler or
+        /// leaves only some columns wired, the XAML ↔ handler mapping must
+        /// still resolve to <c>SelectAll_OnFocus</c> OR a documented successor
+        /// (the test fails on silent partial rewires).
+        /// </summary>
+        [Fact]
+        public void AllAutoWidthEditableColumns_ReferenceSelectAll_OnFocus()
+        {
+            var xaml = ReadFile("MosquitoNetCalculator/Controls/OrderItemsControl.xaml");
+
+            // The editable columns whose HandleReplacement bug applies:
+            // Ширина + Высота + Кол-во + Цена.
+            // Each `<DataGridTextColumn>` must declare:
+            //   <DataGridTextColumn.EditingElementStyle>
+            //     <Style TargetType="TextBox">
+            //       <EventSetter Event="GotFocus" Handler="SelectAll_OnFocus"/>
+            //     </Style>
+            //   </DataGridTextColumn.EditingElementStyle>
+            string[] columns =
+            {
+                "Ширина",
+                "Высота",
+                "Кол-во",
+                "Цена",
+            };
+
+            foreach (var column in columns)
+            {
+                var element = ExtractDataGridTextColumnElement(xaml, column);
+                Assert.True(element != null, $"DataGridTextColumn with Header=\"{column}\" not found in OrderItemsControl.xaml");
+                var match = Regex.Match(
+                    element!,
+                    @"EventSetter\s+Event=""GotFocus""\s+Handler=""(?<h>[^""]+)""",
+                    RegexOptions.Singleline);
+                Assert.True(
+                    match.Success,
+                    $"Column \"{column}\" has no <EventSetter Event=\"GotFocus\" Handler=\"…\"/> in its EditingElementStyle. Reloadable click into the cell would append typed characters without Selection.");
+                Assert.Equal(
+                    "SelectAll_OnFocus",
+                    match.Groups["h"].Value);
+            }
         }
     }
 }

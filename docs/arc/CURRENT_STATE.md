@@ -8,7 +8,7 @@
 - Тёмная тема стабильна, переключается без потери данных.
 - Undo/Redo работает для позиций расчёта и Доп.КП.
 - Юнит-тесты покрывают ключевые сценарии (расчёты, экспорт/импорт, версия, обновления).
-- Текущая версия: **3.37.1** (опубликован GitHub Release, автообновление настроено).
+- Текущая версия: **3.37.2** (опубликован GitHub Release, автообновление настроено).
 - Система A.R.C. прошла 3 итерации улучшений:
   - **v1:** инициализация, аудит, эталонные кейсы.
   - **v2:** CHEATSHEET, DOCUMENTATION_MATRIX, PROMPTS, гранулярный routing, validate-docs.
@@ -76,6 +76,11 @@ AGENT.md / AGENTS.md / CLAUDE.md / GEMINI.md
 
 ## Последние изменения
 
+- **SelectAll race fix (GOTCHAS#14):** `SelectAll_OnFocus` теперь синхронный (`tb.SelectAll()` без `BeginInvoke`) — при клике в ячейку Ширины/Высоты текст выделяется до первого нажатия, ввод заменяет значение, а не дописывает.
+- **Mid-typing formula clamp fix (GOTCHAS#15):** Ширина и Высота переключены с `UpdateSourceTrigger=PropertyChanged` на `LostFocus` — формула Anwis больше не перехватывает значение на каждом нажатии.
+- **DeleteRowButton padding fix:** `Padding="4,0"` → `Padding="5"` — кнопка удаления строки 20×20px, hover-фон пропорциональный.
+- **UpdateLog sort-in-code:** `AllNewestFirst()` и `GetChangesSince()` сортируют по дате/версии в коде — порядок в JSON больше не важен.
+- **ParseVersion диагностика:** `Debug.WriteLine` при битой строке версии.
 - **Автоширина колонки «Цена» (fix):** в `OrderItemsControl.xaml` (колонка «Цена» в таблице «Расчёт») и `PricesControl.xaml` (колонка «Цена, руб.» в tab «Цены») `UpdateSourceTrigger` для binding `Price` переключён с `LostFocus` на `PropertyChanged`. Pre-fix `Width="Auto"` не успевал подстроить ширину колонки при наборе (пользователь видел только начало введённого значения, напр. «5000» при наборе «15000»). Задокументировано в `GOTCHAS.md#13`. 5 новых regression-тестов в `DataGridBindingsTests.cs` (grep XAML-binding-triggers): прямые регрессии для обеих колонок + guardrails на Ширину/Высоту/Кол-во.
 - **Монтаж × Quantity (fix):** в `OrderItem.Installation.cs` `TotalWithDeduction` теперь умножает `InstallationDeduction`/`InstallationSurcharge` на `Quantity` для режимов 1 («Без монтажа») и 2 («В конструкцию»). Pre-fix вычет списывался один раз на строку (занижал скидку для bulk-orders). Результат задокументирован в `GOTCHAS.md#12` и кейсе 16 в `CALCULATION_TEST_CASES.md`. Tooltip теперь явно показывает «руб./шт. × Кол-во». 8 новых юнит-тестов. Backward-compat: для Q=1 поведение не изменилось.
 - **Update notification rework** — редизайн системы обновлений:
@@ -128,4 +133,4 @@ AGENT.md / AGENTS.md / CLAUDE.md / GEMINI.md
 
 ## Last verified
 
-2026-06-27 (v3.37.1: Цена auto-width fix (GOTCHAS#13) + Монтаж × Quantity (GOTCHAS#12) + 13 новых тестов — full suite passes, ZIP опубликован)
+2026-06-27 (v3.37.2: SelectAll race fix (GOTCHAS#14) + Mid-typing clamp fix (GOTCHAS#15) + DeleteRowButton padding + UpdateLog sort-in-code + ParseVersion диагностика + 2 новых теста — full suite passes)

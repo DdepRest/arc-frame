@@ -127,10 +127,14 @@
                     </DataGridTextColumn>
 
 
-                    <!-- Ширина (editable with auto-recalc) -->
+                    <!-- Ширина (v3.37.2 (GOTCHAS#15): LostFocus — формула ББ60/ББ70 не срабатывает
+                         на каждом нажатии клавиши. При PropertyChanged набор «1» → raw=1 →
+                         max(0,1−30)=0 → reverse=30 → ячейка перезаписывается «30», следующий
+                         символ дописывается → «301200». LostFocus применяет формулу один раз при уходе
+                         из ячейки. Auto-width для 3-4 значных размеров не критичен.) -->
                     <DataGridTextColumn Header="Ширина" Width="Auto" MinWidth="70">
                         <DataGridTextColumn.Binding>
-                            <Binding Path="ШиринаВвод" Converter="{StaticResource DimConv}" ConverterParameter=" мм" UpdateSourceTrigger="PropertyChanged"/>
+                            <Binding Path="ШиринаВвод" Converter="{StaticResource DimConv}" ConverterParameter=" мм" UpdateSourceTrigger="LostFocus"/>
                         </DataGridTextColumn.Binding>
                         <DataGridTextColumn.ElementStyle>
                             <Style TargetType="TextBlock">
@@ -148,15 +152,16 @@
                                 <Setter Property="Background" Value="{DynamicResource Surface}"/>
                                 <Setter Property="Foreground" Value="{DynamicResource TextPrimary}"/>
                                 <Setter Property="Padding" Value="4,2"/>
+                                <!-- v3.37.2 (GOTCHAS#14): synchronous SelectAll — see SelectAll_OnFocus comment. -->
                                 <EventSetter Event="GotFocus" Handler="SelectAll_OnFocus"/>
                             </Style>
                         </DataGridTextColumn.EditingElementStyle>
                     </DataGridTextColumn>
 
-                    <!-- Высота (editable with auto-recalc) -->
+                    <!-- Высота (v3.37.2 (GOTCHAS#15): LostFocus — см. комментарий на Ширине.) -->
                     <DataGridTextColumn Header="Высота" Width="Auto" MinWidth="70">
                         <DataGridTextColumn.Binding>
-                            <Binding Path="ВысотаВвод" Converter="{StaticResource DimConv}" ConverterParameter=" мм" UpdateSourceTrigger="PropertyChanged"/>
+                            <Binding Path="ВысотаВвод" Converter="{StaticResource DimConv}" ConverterParameter=" мм" UpdateSourceTrigger="LostFocus"/>
                         </DataGridTextColumn.Binding>
                         <DataGridTextColumn.ElementStyle>
                             <Style TargetType="TextBlock">
@@ -174,6 +179,7 @@
                                 <Setter Property="Background" Value="{DynamicResource Surface}"/>
                                 <Setter Property="Foreground" Value="{DynamicResource TextPrimary}"/>
                                 <Setter Property="Padding" Value="4,2"/>
+                                <!-- v3.37.2 (GOTCHAS#14): synchronous SelectAll — see SelectAll_OnFocus comment. -->
                                 <EventSetter Event="GotFocus" Handler="SelectAll_OnFocus"/>
                             </Style>
                         </DataGridTextColumn.EditingElementStyle>

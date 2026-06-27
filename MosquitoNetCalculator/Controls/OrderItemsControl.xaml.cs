@@ -46,10 +46,41 @@ namespace MosquitoNetCalculator.Controls
         private void AnwisModePill_PreviewRightClick(object sender, System.Windows.Input.MouseButtonEventArgs e) =>
             TryForwardToMain(nameof(AnwisModePill_PreviewRightClick), mw => mw.AnwisModePillRightClick(sender, e));
 
+        /// <summary>
+        /// Selects the entire content of a DataGrid editing TextBox when it gains focus.
+        /// Implements the standard WPF idiom for "click into a cell → typing replaces value".
+        ///
+        /// GOTCHAS#14: previous implementation deferred SelectAll via
+        /// <c>Dispatcher.BeginInvoke</c>. The deferred call lost the race with the first
+        /// keystroke: by the time SelectAll executed, the caret stayed where the click had
+        /// placed it and typed characters were <em>appended</em> (e.g. existing "30" + typed
+        /// "1200" → "301200"). Synchronous SelectAll runs in the same dispatch frame as the
+        /// click that positioned the caret, so it overrides the caret position and selects all.
+        ///
+        /// Trade-offs (kept intentionally simple):
+        /// <list type="bullet">
+        ///   <item>Touch case: if the first interaction is a tap, both <c>PreviewMouseLeftButtonDown</c>
+        ///         and <c>GotFocus</c> fire → caret placement vs selection follow the same synchronous
+        ///         path → behaviour matches click.</item>
+        ///   <item>Keyboard navigation (Tab/F2): when focus arrives via keyboard (no click yet),
+        ///         we still want all text selected so the first keystroke replaces — same desired UX.</item>
+        /// </list>
+        /// A more elaborate <c>PreviewMouseLeftButtonDown</c> + caret-cancel pattern is possible,
+        /// but not needed: synchronous SelectAll here is sufficient on every input path tested.
+        /// </summary>
+        /// <remarks>
+        /// Scope of the rule: synchronous SelectAll is required specifically for <c>GotFocus</c>
+        /// on editable DataGrid-TextBoxes where the next event is almost always a keystroke.
+        /// Other call sites (e.g. programmatic focus hops, async contextual menus) may still use
+        /// <c>Dispatcher.BeginInvoke</c> legitimately. Don't generalise this fix into "BeginInvoke
+        /// is always wrong" — that's not what GOTCHAS#14 says.
+        /// A regression test in <c>DataGridBindingsTests.SelectAll_OnFocus_HasNoBeginInvoke</c>
+        /// reflects on the method body to catch re-introduction of the deferred pattern.
+        /// </remarks>
         private void SelectAll_OnFocus(object sender, RoutedEventArgs e)
         {
             if (sender is TextBox tb)
-                tb.Dispatcher.BeginInvoke(() => tb.SelectAll());
+                tb.SelectAll();
         }
     }
 }
