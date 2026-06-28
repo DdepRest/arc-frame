@@ -1,6 +1,22 @@
 {
-    "latest":  "3.37.2",
+    "latest":  "3.38.0",
     "minRequired":  "",        "releases":  [
+                     {
+                         "version":  "3.38.0",
+                         "date":  "2026-06-28",
+                         "type":  "Улучшение",
+                         "title":  "XAML-анимация прогресса, UI-polish, zero-byte fix, интеграционные тесты",
+                         "changes":  [
+                                         "UI-polish: CornerRadius увеличен с 4 до 7 в AdditionalKpsControl и DataGridStyles — более мягкий внешний вид.",
+                                         "XAML-анимация UpdateDownloadBar: fade-in/fade-out через Storyboard ресурсы в MainWindow.xaml, динамический From для fade-out.",
+                                         "Zero-byte download fix: корректный 100% прогресс при отсутствии Content-Length или нулевом размере ответа.",
+                                         "UpdateService тестируемость: FetchManifestAsync и DownloadWithProgressAsync принимают опциональный HttpClient для моков.",
+                                         "7 интеграционных тестов UpdateService + 3 новых теста PrintService."
+                                     ],
+                         "url":  "https://github.com/DdepRest/arc-frame/releases/download/v3.38.0/ARC-Frame-3.38.0-full.zip",
+                         "size":  70007768,
+                         "sha256":  "66815d41e967410442f4fa0e1340448d3a3cfe1136610e8b277ca205da68bb43"
+                     },
                      {
                          "version":  "3.37.2",
                          "date":  "2026-06-27",
@@ -15,16 +31,22 @@
                                          "2 регрессионных теста в DataGridBindingsTests.cs перепрофилированы: PropertyChanged → LostFocus для Ширины/Высоты."
                                      ],
                          "url":  "https://github.com/DdepRest/arc-frame/releases/download/v3.37.2/ARC-Frame-3.37.2-full.zip",
-                         "size":  0,
-                         "sha256":  "заполнить после build.bat"
+                         "size":  66648529,
+                         "sha256":  "5b8ace32a3a86872788fafdf4f7d8e892be3216ec2e889ab0fd074bfa1ff84da"
                      },
                      {
                          "version":  "3.37.1",
                          "date":  "2026-06-27",
-                         "type":  "РЈР»СѓС‡С€РµРЅРёРµ",
-                         "title":  "ARC-Frame 3.37.1",
+                         "type":  "Исправление",
+                         "title":  "Цена — автоширина колонки + Монтаж × Quantity, 13 новых тестов",
                          "changes":  [
-
+                                         "Монтаж с Quantity > 1: в режимах «Без монтажа» и «В конструкцию» deduction теперь умножается на Quantity (per piece), а не списывается один раз. Например: Anwis 1000×1000 × 3 шт. × режим «В конструкцию» с вычетом 500 ₽ → итоговый вычет 1500 ₽ (а не 500 ₽). Backward-compat для Q=1.",
+                                         "Уточнён tooltip монтажа для режимов 1/2: теперь явно показывает «руб./шт. × Кол-во», чтобы пользователь видел, что введённая сумма применяется за каждую штуку.",
+                                         "Автоширина колонки «Цена» в DataGrid: колонка «Цена» в таблице «Расчёт» (и «Цена, руб.» в tab «Цены») не успевала расширяться при наборе — Width=\"Auto\" рекомпьютил ширину по старому значению Price (binding имел UpdateSourceTrigger=\"LostFocus\"). Теперь Price обновляется по PropertyChanged, и колонка подстраивается под набор в реальном времени.",
+                                         "InstallationToolTip дополнен суффиксом «руб./шт. × Кол-во» для modes 1/2.",
+                                         "UpdateSourceTrigger в OrderItemsControl.xaml (Цена) и PricesControl.xaml (Цена, руб.) переключён с LostFocus на PropertyChanged.",
+                                         "Добавлено 8 новых юнит-тестов на TotalWithDeduction × Quantity (включая linear-scaling Q∈{1,2,5}, clamp-to-0 для высокого Q, regression для «В конструкцию» с Q=3).",
+                                         "Добавлен DataGridBindingsTests.cs (5 regression-тестов через grep XAML-binding-triggers) — guardrails на правильный UpdateSourceTrigger для всех редактируемых колонок с Width=\"Auto\"."
                                      ],
                          "url":  "https://github.com/DdepRest/arc-frame/releases/download/v3.37.1/ARC-Frame-3.37.1-full.zip",
                          "size":  66656385,
