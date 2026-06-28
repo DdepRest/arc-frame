@@ -47,6 +47,7 @@
                                 BorderBrush="{Binding BorderBrush, RelativeSource={RelativeSource TemplatedParent}}"
                                 BorderThickness="{Binding BorderThickness, RelativeSource={RelativeSource TemplatedParent}}"
                                 Padding="{Binding Padding, RelativeSource={RelativeSource TemplatedParent}}"
+                                CornerRadius="4"
                                 SnapsToDevicePixels="True">
                             <ContentPresenter HorizontalAlignment="{Binding HorizontalContentAlignment, RelativeSource={RelativeSource TemplatedParent}}"
                                               VerticalAlignment="Center"/>
@@ -98,9 +99,9 @@
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="DataGridRow">
-                        <Border x:Name="DGR_RowBorder" Background="{TemplateBinding Background}">
-                            <DataGridCellsPresenter ItemsPanel="{TemplateBinding ItemsPanel}"/>
-                        </Border>
+                <Border x:Name="DGR_RowBorder" Background="{TemplateBinding Background}" CornerRadius="4">
+                    <DataGridCellsPresenter ItemsPanel="{TemplateBinding ItemsPanel}"/>
+                </Border>
                     </ControlTemplate>
                 </Setter.Value>
             </Setter>
@@ -146,9 +147,9 @@
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="DataGridRow">
-                        <Border x:Name="DGR_RowBorder" Background="{TemplateBinding Background}">
-                            <DataGridCellsPresenter ItemsPanel="{TemplateBinding ItemsPanel}"/>
-                        </Border>
+                <Border x:Name="DGR_RowBorder" Background="{TemplateBinding Background}" CornerRadius="4">
+                    <DataGridCellsPresenter ItemsPanel="{TemplateBinding ItemsPanel}"/>
+                </Border>
                     </ControlTemplate>
                 </Setter.Value>
             </Setter>
@@ -168,9 +169,9 @@
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="DataGridRow">
-                        <Border x:Name="DGR_RowBorder" Background="{TemplateBinding Background}">
-                            <DataGridCellsPresenter ItemsPanel="{TemplateBinding ItemsPanel}"/>
-                        </Border>
+                <Border x:Name="DGR_RowBorder" Background="{TemplateBinding Background}" CornerRadius="4">
+                    <DataGridCellsPresenter ItemsPanel="{TemplateBinding ItemsPanel}"/>
+                </Border>
                     </ControlTemplate>
                 </Setter.Value>
             </Setter>
@@ -194,6 +195,7 @@
                     <ControlTemplate TargetType="DataGridCell">
                         <Border x:Name="Bd" Background="Transparent"
                                 BorderBrush="Transparent" BorderThickness="0"
+                                CornerRadius="3"
                                 SnapsToDevicePixels="True">
                             <ContentPresenter HorizontalAlignment="{Binding HorizontalContentAlignment, RelativeSource={RelativeSource TemplatedParent}}"
                                               VerticalAlignment="{Binding VerticalContentAlignment, RelativeSource={RelativeSource TemplatedParent}}"

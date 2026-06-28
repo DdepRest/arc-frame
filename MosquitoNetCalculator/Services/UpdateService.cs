@@ -321,23 +321,34 @@ namespace MosquitoNetCalculator.Services
         /// <summary>
         /// Fetches and deserializes the releases.json manifest from GitHub.
         /// Returns null on any failure (network, parse, etc.).
+        /// <paramref name="httpClient"/> allows injection of a mock for testing.
         /// </summary>
-        private static async Task<UpdateManifest?> FetchManifestAsync()
+        internal static async Task<UpdateManifest?> FetchManifestAsync(HttpClient? httpClient = null)
         {
             try
             {
-                using var http = new HttpClient();
-                http.Timeout = TimeSpan.FromSeconds(15);
-                http.DefaultRequestHeaders.UserAgent.ParseAdd("MosquitoNetCalculator/3.0");
+                var ownsClient = httpClient == null;
+                var http = httpClient ?? new HttpClient();
+                if (ownsClient)
+                {
+                    http.Timeout = TimeSpan.FromSeconds(15);
+                    http.DefaultRequestHeaders.UserAgent.ParseAdd("MosquitoNetCalculator/3.0");
+                }
+                try
+                {
+                    var response = await http.GetAsync(ManifestUrl,
+                        HttpCompletionOption.ResponseHeadersRead).ConfigureAwait(false);
 
-                var response = await http.GetAsync(ManifestUrl,
-                    HttpCompletionOption.ResponseHeadersRead).ConfigureAwait(false);
+                    if (!response.IsSuccessStatusCode)
+                        return null;
 
-                if (!response.IsSuccessStatusCode)
-                    return null;
-
-                var json = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
-                return JsonSerializer.Deserialize<UpdateManifest>(json);
+                    var json = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
+                    return JsonSerializer.Deserialize<UpdateManifest>(json);
+                }
+                finally
+                {
+                    if (ownsClient) http.Dispose();
+                }
             }
             catch (Exception ex)
             {
@@ -349,50 +360,62 @@ namespace MosquitoNetCalculator.Services
         /// <summary>
         /// Downloads a file from <paramref name="url"/> to <paramref name="destinationPath"/>,
         /// reporting progress 0–100 via <paramref name="progress"/>.
+        /// <paramref name="httpClient"/> allows injection of a mock for testing.
         /// </summary>
-        private static async Task DownloadWithProgressAsync(
-            string url, string destinationPath, IProgress<int> progress)
+        internal static async Task DownloadWithProgressAsync(
+            string url, string destinationPath, IProgress<int> progress, HttpClient? httpClient = null)
         {
-            using var http = new HttpClient();
-            http.Timeout = TimeSpan.FromMinutes(10);
-            http.DefaultRequestHeaders.UserAgent.ParseAdd("MosquitoNetCalculator/3.0");
-
-            using var response = await http.GetAsync(url,
-                HttpCompletionOption.ResponseHeadersRead).ConfigureAwait(false);
-
-            response.EnsureSuccessStatusCode();
-
-            long? totalBytes = response.Content.Headers.ContentLength;
-
-            using var contentStream = await response.Content.ReadAsStreamAsync().ConfigureAwait(false);
-            using var fileStream = new FileStream(destinationPath, FileMode.Create,
-                FileAccess.Write, FileShare.None, 8192, useAsync: true);
-
-            var buffer = new byte[8192];
-            long totalRead = 0;
-            int bytesRead;
-            int lastPercent = -1;
-
-            while ((bytesRead = await contentStream.ReadAsync(
-                buffer, 0, buffer.Length).ConfigureAwait(false)) > 0)
+            var ownsClient = httpClient == null;
+            var http = httpClient ?? new HttpClient();
+            if (ownsClient)
             {
-                await fileStream.WriteAsync(buffer, 0, bytesRead).ConfigureAwait(false);
-                totalRead += bytesRead;
+                http.Timeout = TimeSpan.FromMinutes(10);
+                http.DefaultRequestHeaders.UserAgent.ParseAdd("MosquitoNetCalculator/3.0");
+            }
+            try
+            {
+                using var response = await http.GetAsync(url,
+                    HttpCompletionOption.ResponseHeadersRead).ConfigureAwait(false);
 
-                if (totalBytes.HasValue && totalBytes.Value > 0)
+                response.EnsureSuccessStatusCode();
+
+                long? totalBytes = response.Content.Headers.ContentLength;
+
+                using var contentStream = await response.Content.ReadAsStreamAsync().ConfigureAwait(false);
+                using var fileStream = new FileStream(destinationPath, FileMode.Create,
+                    FileAccess.Write, FileShare.None, 8192, useAsync: true);
+
+                var buffer = new byte[8192];
+                long totalRead = 0;
+                int bytesRead;
+                int lastPercent = -1;
+
+                while ((bytesRead = await contentStream.ReadAsync(
+                    buffer, 0, buffer.Length).ConfigureAwait(false)) > 0)
                 {
-                    int percent = (int)(totalRead * 100 / totalBytes.Value);
-                    if (percent != lastPercent)
+                    await fileStream.WriteAsync(buffer, 0, bytesRead).ConfigureAwait(false);
+                    totalRead += bytesRead;
+
+                    if (totalBytes.HasValue && totalBytes.Value > 0)
                     {
-                        lastPercent = percent;
-                        progress.Report(percent);
+                        int percent = (int)(totalRead * 100 / totalBytes.Value);
+                        if (percent != lastPercent)
+                        {
+                            lastPercent = percent;
+                            progress.Report(percent);
+                        }
                     }
                 }
-            }
 
-            // If we couldn't determine total size, report 100 at the end
-            if (!totalBytes.HasValue)
+            // Report 100% when download is complete — covers both missing
+            // Content-Length and zero-byte responses (Content-Length = 0).
+            if (!totalBytes.HasValue || totalBytes.Value == 0)
                 progress.Report(100);
+            }
+            finally
+            {
+                if (ownsClient) http.Dispose();
+            }
         }
 
         /// <summary>

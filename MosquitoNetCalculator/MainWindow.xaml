@@ -36,6 +36,31 @@
     </Window.CommandBindings>
 
     <Grid Background="{DynamicResource AppBg}">
+        <Grid.Resources>
+            <!-- Fade-in / fade-out storyboards for UpdateDownloadBar.
+                 Triggered from code-behind (OnUpdateProgressChanged) because
+                 they react to UpdateService.IsDownloading state changes. -->
+            <Storyboard x:Key="UpdateBarFadeIn">
+                <DoubleAnimation Storyboard.TargetName="UpdateDownloadBar"
+                                 Storyboard.TargetProperty="Opacity"
+                                 From="0.0" To="1.0"
+                                 Duration="0:0:0.2">
+                    <DoubleAnimation.EasingFunction>
+                        <CubicEase EasingMode="EaseOut"/>
+                    </DoubleAnimation.EasingFunction>
+                </DoubleAnimation>
+            </Storyboard>
+            <Storyboard x:Key="UpdateBarFadeOut">
+                <DoubleAnimation Storyboard.TargetName="UpdateDownloadBar"
+                                 Storyboard.TargetProperty="Opacity"
+                                 To="0.0"
+                                 Duration="0:0:0.25">
+                    <DoubleAnimation.EasingFunction>
+                        <CubicEase EasingMode="EaseIn"/>
+                    </DoubleAnimation.EasingFunction>
+                </DoubleAnimation>
+            </Storyboard>
+        </Grid.Resources>
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="Auto"/>
@@ -47,7 +72,20 @@
         <!-- ═══════════════════════════════════════════════════════ -->
         <controls:TitleBarControl x:Name="TitleBarControl" Grid.Row="0"/>
 
-        <!-- Update download progress — thin bar under title bar (ref: VS Code, Chrome) -->
+        <!-- ═══════════════════════════════════════════════════════ -->
+        <!-- UPDATE DOWNLOAD PROGRESS BAR                             -->
+        <!-- ═══════════════════════════════════════════════════════ -->
+        <!-- Thin bar under title bar (ref: VS Code, Chrome).         -->
+        <!-- ANIMATION NOTE: fade-in / fade-out is driven in code-    -->
+        <!-- behind (MainWindow.OnUpdateProgressChanged) because it   -->
+        <!-- must react to UpdateService.IsDownloading / progress     -->
+        <!-- events.  The XAML Storyboard/Trigger system cannot       -->
+        <!-- directly bind to those service-level state changes.      -->
+        <!--                                                          -->
+        <!--  • Fade in  : 200 ms, CubicEase EaseOut                  -->
+        <!--  • Fade out : 250 ms, CubicEase EaseIn                   -->
+        <!--  • Collapse : after fade-out completes (Completed event) -->
+        <!-- ═══════════════════════════════════════════════════════ -->
         <ProgressBar x:Name="UpdateDownloadBar"
                      Grid.Row="1"
                      Height="3"

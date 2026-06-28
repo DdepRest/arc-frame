@@ -6,6 +6,24 @@
 
 ---
 
+## 3.38.0 — 2026-06-28
+
+### Улучшения
+
+- **UI-polish:** `CornerRadius` увеличен с 4 до 7 в `AdditionalKpsControl.xaml`; добавлен `CornerRadius` в `DataGridStyles.xaml` для ячеек и строк — более мягкий и единообразный внешний вид.
+- **XAML-анимация UpdateDownloadBar:** fade-in (200 мс, CubicEase EaseOut) и fade-out (250 мс, CubicEase EaseIn) вынесены в `Storyboard` ресурсы `MainWindow.xaml` (баг #8). `From` для fade-out задаётся динамически из текущего `Opacity` — без визуальных скачков при прерывании.
+
+### Исправления
+
+- **Zero-byte download fix:** `DownloadWithProgressAsync` теперь корректно сообщает 100% прогресс при отсутствии `Content-Length` или нулевом размере ответа — раньше полоска оставалась на 0%.
+
+### Техническое
+
+- **UpdateService тестируемость:** `FetchManifestAsync` и `DownloadWithProgressAsync` теперь принимают опциональный `HttpClient?` — возможность инъекции моков для интеграционных тестов. Паттерн `ownsClient` гарантирует, что внешний `HttpClient` не будет `Dispose`'нут. Добавлено 7 интеграционных тестов (`UpdateServiceIntegrationTests.cs`).
+- **Тесты:** 3 новых теста в `PrintServiceTests.cs` — проверка отображения расчётных размеров Anwis ББ 60 в КП, HTML-экранирование спецсимволов (`&`, `"`, `'`), и конвертация переводов строк в `<br/>` в примечаниях.
+
+---
+
 ## 3.37.2 — 2026-06-27
 
 ### Исправления

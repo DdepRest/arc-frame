@@ -108,7 +108,7 @@
 | ToastService | static class | Services/ToastService.cs | | Methods: Initialize, RepositionToasts, ShowToast | Static: M:Initialize, M:RepositionToasts, M:ShowToast |
 | UndoRedoService | class | Services/UndoRedoService.cs | Props: CanRedo, CanUndo, IsDirty | Methods: Clear, MarkClean, MarkDirty, PushUndo, Redo, SetDirtyCallback, SuppressDirtyChanges, TryPeekTopSnapshot, Undo |
 | UpdateLog | static class | Services/UpdateLog.cs | | Methods: AllNewestFirst, GetChangesSince | Static: M:AllNewestFirst, M:GetChangesSince |
-| UpdateService | static class | Services/UpdateService.cs | | Methods: CheckAndApplyAsync, CheckOnStartupAsync, GetAvailableUpdate, HasPendingUpdate, ParseSafe, ResolveVersion, StripVersionSuffix, TryResolveCurrentVersion | Static: M:CheckAndApplyAsync, M:CheckOnStartupAsync, M:GetAvailableUpdate, M:HasPendingUpdate, M:ParseSafe, M:ResolveVersion, M:StripVersionSuffix, M:TryResolveCurrentVersion |
+| UpdateService | static class | Services/UpdateService.cs | | Methods: CheckAndApplyAsync, CheckOnStartupAsync, DownloadWithProgressAsync, FetchManifestAsync, GetAvailableUpdate, HasPendingUpdate, ParseSafe, ResolveVersion, StripVersionSuffix, TryResolveCurrentVersion | Static: M:CheckAndApplyAsync, M:CheckOnStartupAsync, M:DownloadWithProgressAsync, M:FetchManifestAsync, M:GetAvailableUpdate, M:HasPendingUpdate, M:ParseSafe, M:ResolveVersion, M:StripVersionSuffix, M:TryResolveCurrentVersion |
 | WatchdogService | static class | Services/WatchdogService.cs | | Methods: HandleStartup, StageUpdate | Static: M:HandleStartup, M:StageUpdate |
 
 ### ViewModels
@@ -170,4 +170,4 @@ Context phase: grep SYMBOL_INDEX.md for the class/method you need
 
 ## Last generated
 
-2026-06-27 (наша эраen22633bol2.p21)
+2026-06-28 (наша эраen132616bol13.p131)

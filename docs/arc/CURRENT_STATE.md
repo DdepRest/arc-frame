@@ -8,7 +8,8 @@
 - Тёмная тема стабильна, переключается без потери данных.
 - Undo/Redo работает для позиций расчёта и Доп.КП.
 - Юнит-тесты покрывают ключевые сценарии (расчёты, экспорт/импорт, версия, обновления).
-- Текущая версия: **3.37.2** (опубликован GitHub Release, автообновление настроено).
+- Текущая версия: **3.38.0** (готовится к публикации).
+- Последние изменения: UpdateService DI для тестирования, zero-byte download fix, XAML-анимация UpdateDownloadBar, UI-polish (CornerRadius), новые интеграционные и unit-тесты, исправления документации.
 - Система A.R.C. прошла 3 итерации улучшений:
   - **v1:** инициализация, аудит, эталонные кейсы.
   - **v2:** CHEATSHEET, DOCUMENTATION_MATRIX, PROMPTS, гранулярный routing, validate-docs.
@@ -82,6 +83,11 @@ AGENT.md / AGENTS.md / CLAUDE.md / GEMINI.md
 - **UpdateLog sort-in-code:** `AllNewestFirst()` и `GetChangesSince()` сортируют по дате/версии в коде — порядок в JSON больше не важен.
 - **ParseVersion диагностика:** `Debug.WriteLine` при битой строке версии.
 - **Автоширина колонки «Цена» (fix):** в `OrderItemsControl.xaml` (колонка «Цена» в таблице «Расчёт») и `PricesControl.xaml` (колонка «Цена, руб.» в tab «Цены») `UpdateSourceTrigger` для binding `Price` переключён с `LostFocus` на `PropertyChanged`. Pre-fix `Width="Auto"` не успевал подстроить ширину колонки при наборе (пользователь видел только начало введённого значения, напр. «5000» при наборе «15000»). Задокументировано в `GOTCHAS.md#13`. 5 новых regression-тестов в `DataGridBindingsTests.cs` (grep XAML-binding-triggers): прямые регрессии для обеих колонок + guardrails на Ширину/Высоту/Кол-во.
+- **UpdateService тестируемость:** `FetchManifestAsync` и `DownloadWithProgressAsync` переработаны для приёма опционального `HttpClient?` — инъекция моков в интеграционных тестах. Паттерн `ownsClient` предотвращает преждевременное `Dispose` внешнего клиента. 7 новых интеграционных тестов покрывают fetch-манифеста, скачивание с прогрессом, zero-byte payload и ошибки HTTP.
+- **Zero-byte download fix:** `DownloadWithProgressAsync` корректно отчитывает 100% прогресс при `Content-Length: 0` или отсутствии заголовка — ранее полоска зависала на 0%.
+- **XAML-анимация UpdateDownloadBar (баг #8):** `Storyboard` ресурсы `UpdateBarFadeIn` (200 мс, CubicEase EaseOut) и `UpdateBarFadeOut` (250 мс, CubicEase EaseIn) добавлены в `MainWindow.xaml`. Code-behind использует `FindResource` + `Clone()` для запуска. Динамический `From` для fade-out предотвращает скачок при прерывании fade-in.
+- **UI-polish:** `CornerRadius` увеличен с 4 до 7 в `AdditionalKpsControl.xaml`; добавлен `CornerRadius` в `DataGridStyles.xaml` для единообразия.
+- **Тесты печати КП:** добавлены 3 теста в `PrintServiceTests.cs` — проверка расчётных размеров Anwis ББ 60 в HTML КП, HTML-экранирование спецсимволов (`&`, `"`, `'`), конвертация переводов строк в `<br/>`.
 - **Монтаж × Quantity (fix):** в `OrderItem.Installation.cs` `TotalWithDeduction` теперь умножает `InstallationDeduction`/`InstallationSurcharge` на `Quantity` для режимов 1 («Без монтажа») и 2 («В конструкцию»). Pre-fix вычет списывался один раз на строку (занижал скидку для bulk-orders). Результат задокументирован в `GOTCHAS.md#12` и кейсе 16 в `CALCULATION_TEST_CASES.md`. Tooltip теперь явно показывает «руб./шт. × Кол-во». 8 новых юнит-тестов. Backward-compat: для Q=1 поведение не изменилось.
 - **Update notification rework** — редизайн системы обновлений:
   - `UpdateLog.GetChangesSince(Version)` — фильтрация embedded changelog по версии.
@@ -121,7 +127,7 @@ AGENT.md / AGENTS.md / CLAUDE.md / GEMINI.md
 
 ## Source files
 
-- `MosquitoNetCalculator/MosquitoNetCalculator.csproj` — версия 3.37.1.
+- `MosquitoNetCalculator/MosquitoNetCalculator.csproj` — версия 3.37.2.
 - `releases.json` — история релизов.
 - `MosquitoNetCalculator/Resources/update-log.json` — история для UI.
 - `docs/arc/*.md` — вся проектная документация.
@@ -133,4 +139,4 @@ AGENT.md / AGENTS.md / CLAUDE.md / GEMINI.md
 
 ## Last verified
 
-2026-06-27 (v3.37.2: SelectAll race fix (GOTCHAS#14) + Mid-typing clamp fix (GOTCHAS#15) + DeleteRowButton padding + UpdateLog sort-in-code + ParseVersion диагностика + 2 новых теста — full suite passes)
+2026-06-28 (UpdateService DI + zero-byte fix + XAML-анимация UpdateDownloadBar + UI-polish + 10 новых тестов — full suite 650+/650+ passes, validate-docs и arc-check PASS)

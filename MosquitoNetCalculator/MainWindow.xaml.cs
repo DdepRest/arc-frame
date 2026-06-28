@@ -351,40 +351,22 @@ namespace MosquitoNetCalculator
                 _progressBarStoryboard.Stop(UpdateDownloadBar);
             }
 
-            _progressBarStoryboard = new Storyboard();
-
             if (shouldBeVisible)
             {
-                // Fade in
+                // Fade in — storyboard defined in XAML (UpdateBarFadeIn)
                 UpdateDownloadBar.Visibility = Visibility.Visible;
                 UpdateDownloadBar.Opacity = 0;
 
-                var fadeIn = new DoubleAnimation
-                {
-                    From = 0.0,
-                    To = 1.0,
-                    Duration = TimeSpan.FromMilliseconds(200),
-                    EasingFunction = new CubicEase { EasingMode = EasingMode.EaseOut }
-                };
-
-                Storyboard.SetTarget(fadeIn, UpdateDownloadBar);
-                Storyboard.SetTargetProperty(fadeIn, new PropertyPath(OpacityProperty));
-                _progressBarStoryboard.Children.Add(fadeIn);
+                _progressBarStoryboard = ((Storyboard)FindResource("UpdateBarFadeIn")).Clone();
             }
             else
             {
-                // Fade out, then collapse
-                var fadeOut = new DoubleAnimation
-                {
-                    From = UpdateDownloadBar.Opacity,
-                    To = 0.0,
-                    Duration = TimeSpan.FromMilliseconds(250),
-                    EasingFunction = new CubicEase { EasingMode = EasingMode.EaseIn }
-                };
-
-                Storyboard.SetTarget(fadeOut, UpdateDownloadBar);
-                Storyboard.SetTargetProperty(fadeOut, new PropertyPath(OpacityProperty));
-                _progressBarStoryboard.Children.Add(fadeOut);
+                // Fade out — storyboard defined in XAML (UpdateBarFadeOut).
+                // From-value is set dynamically so the fade starts from the
+                // bar's current opacity (handles interruption mid-fade-in).
+                _progressBarStoryboard = ((Storyboard)FindResource("UpdateBarFadeOut")).Clone();
+                if (_progressBarStoryboard.Children.OfType<DoubleAnimation>().FirstOrDefault() is { } fadeOutAnim)
+                    fadeOutAnim.From = UpdateDownloadBar.Opacity;
                 _progressBarStoryboard.Completed += OnProgressBarFadeOutCompleted;
             }
 

@@ -94,6 +94,7 @@
 | Watchdog (.bat) | `MosquitoNetCalculator/Services/WatchdogService.cs` |
 | Манифест релизов | `releases.json` (в корне репозитория) |
 | Настройки обновления | `MosquitoNetCalculator/Services/AppSettingsService.cs` |
+| Интеграционные тесты | `MosquitoNetCalculator.Tests/Services/UpdateServiceIntegrationTests.cs` |
 
 ---
 
@@ -133,6 +134,10 @@
 4. Если `null` — приложение up-to-date или манифест невалиден.
 
 `GetAvailableUpdate` вынесен как `internal static` для юнит-тестирования (не зависит от UI).
+
+**Инъекция `HttpClient` для тестирования (unreleased):**
+`FetchManifestAsync` и `DownloadWithProgressAsync` теперь принимают опциональный `HttpClient? httpClient = null`.
+Паттерн `ownsClient` (`httpClient == null ? создать : использовать переданный`) гарантирует, что внешний клиент (например, из теста с `MockHttpMessageHandler`) не будет `Dispose`'нут. Production-настройки (timeout 15 сек, User-Agent) применяются только к самоуправляемому `HttpClient`.
 
 ---
 
@@ -202,6 +207,7 @@ if (release == null)
 - **Стиль:** `Height="3"`, `BorderThickness="0"`, `Background="Transparent"`, `Foreground="{DynamicResource Accent}"`.
 - **Видимость:** только при `UpdateService.IsDownloading == true`.
 - **Подписка:** `UpdateService.ProgressChanged` в `MainWindow.xaml.cs`.
+- **Анимация:** fade-in (200 мс, CubicEase EaseOut) и fade-out (250 мс, CubicEase EaseIn) реализованы через `Storyboard` ресурсы в `Grid.Resources` `MainWindow.xaml`. Code-behind использует `FindResource` + `Clone()` для запуска. `From` для fade-out задаётся динамически из текущего `Opacity`, чтобы избежать визуального скачка при прерывании fade-in (например, быстрое завершение скачивания).
 
 Пользователь может закрыть диалог во время скачивания — загрузка продолжается в фоне, прогресс виден в полоске.
 
@@ -234,6 +240,9 @@ if (release == null)
 Внутри ZIP:
 - `MosquitoNetCalculator.exe` (single-file)
 - Зависимые DLL (WebView2 и др.)
+
+**Zero-byte edge case (unreleased fix):**
+Если сервер возвращает `Content-Length: 0` или не возвращает заголовок, `DownloadWithProgressAsync` теперь корректно отчитывает 100% прогресс после завершения скачивания. Ранее полоска оставалась на 0%, потому что тело цикла `while` не выполнялось, а финальный `Report(100)` не вызывался.
 
 ---
 
@@ -309,7 +318,8 @@ Watchdog .bat запускает обновлённый `MosquitoNetCalculator.e
 - `MosquitoNetCalculator/Models/UpdateItem.cs`
 - `releases.json`
 - `build.bat`
+- `MosquitoNetCalculator.Tests/Services/UpdateServiceIntegrationTests.cs`
 
 ## Last verified
 
-2026-06-27 (update notification rework: RunUpdateFlowAsync, changelog dialog, TitleBar progress, toast filtering, isAutomatic)
+2026-06-28 (HttpClient DI + zero-byte fix + XAML animation + integration tests)

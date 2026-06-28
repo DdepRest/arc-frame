@@ -1,5 +1,18 @@
 [
   {
+    "date": "2026-06-28",
+    "version": "3.38.0",
+    "type": "Улучшение",
+    "title": "XAML-анимация прогресса, UI-polish, zero-byte fix, интеграционные тесты",
+    "changes": [
+      "UI-polish: CornerRadius увеличен с 4 до 7 в AdditionalKpsControl и DataGridStyles — более мягкий внешний вид.",
+      "XAML-анимация UpdateDownloadBar: fade-in/fade-out через Storyboard ресурсы в MainWindow.xaml, динамический From для fade-out.",
+      "Zero-byte download fix: корректный 100% прогресс при отсутствии Content-Length или нулевом размере ответа.",
+      "UpdateService тестируемость: FetchManifestAsync и DownloadWithProgressAsync принимают опциональный HttpClient для моков.",
+      "7 интеграционных тестов UpdateService + 3 новых теста PrintService."
+    ]
+  },
+  {
     "date": "2026-06-27",
     "version": "3.37.2",
     "type": "Исправление",

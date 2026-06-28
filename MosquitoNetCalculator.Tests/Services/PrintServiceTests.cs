@@ -229,5 +229,60 @@ namespace MosquitoNetCalculator.Tests.Services
             var result = _service.GenerateKpHtml(items, new ClientInfo(), 100, "");
             Assert.Contains("class='install-mark'", result);
         }
+
+        // ─── Case 11 regression: KP shows calc-adjusted sizes, not raw input ─
+        // CALCULATION_TEST_CASES.md Case 11: for Anwis ББ 60 the KP must
+        // display the stored (calc-adjusted) sizes 1002 × 970, not the raw
+        // input 1000 × 1000. This locks in the contract confirmed by the owner.
+
+        [Fact]
+        public void GenerateKpHtml_AnwisBrusbox60_ShowsCalcAdjustedSizes()
+        {
+            var items = new List<OrderItem>
+            {
+                new()
+                {
+                    Name = "Anwis", Color = "Белый",
+                    Width = 1002, Height = 970, Quantity = 1, Price = 1800, Total = 1749.60,
+                    AnwisSizeMode = AnwisSizeMode.Брусбокс60
+                }
+            };
+            var result = _service.GenerateKpHtml(items, new ClientInfo(), 1749.60, "Одна тысяча семьсот сорок девять рублей 60 копеек");
+
+            // Must contain the calc-adjusted sizes (not raw 1000×1000)
+            Assert.Contains("1002", result);
+            Assert.Contains("970", result);
+        }
+
+        [Fact]
+        public void GenerateKpHtml_EscapesAmpersand_AndQuotes_InNotes()
+        {
+            var items = new List<OrderItem>
+            {
+                new() { Name = "Anwis", Total = 100 }
+            };
+            var client = new ClientInfo { Notes = "A & B \"test\" 'value'" };
+            var result = _service.GenerateKpHtml(items, client, 100, "");
+
+            Assert.DoesNotContain("A & B", result);
+            Assert.Contains("A &amp; B", result);
+            Assert.DoesNotContain("\"test\"", result);
+            Assert.Contains("&quot;test&quot;", result);
+            Assert.Contains("&#39;value&#39;", result);
+        }
+
+        [Fact]
+        public void GenerateKpHtml_ConvertsNewlinesToBr_InNotes()
+        {
+            var items = new List<OrderItem>
+            {
+                new() { Name = "Anwis", Total = 100 }
+            };
+            var client = new ClientInfo { Notes = "Line 1\nLine 2\r\nLine 3" };
+            var result = _service.GenerateKpHtml(items, client, 100, "");
+
+            Assert.DoesNotContain("Line 1\nLine 2", result);
+            Assert.Contains("Line 1<br/>\nLine 2<br/>\nLine 3", result);
+        }
     }
 }
