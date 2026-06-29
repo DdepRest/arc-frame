@@ -1,6 +1,20 @@
 [
   {
     "date": "2026-06-29",
+    "version": "3.40.0",
+    "type": "Улучшение",
+    "title": "WinAPI idle detection, anti-recommend text, minimized guard",
+    "changes": [
+      "UpdateCheckScheduler теперь использует WinAPI GetLastInputInfo для системного idle-детекции вместо UI-событий.",
+      "Anti-recommend text в диалоге обновления: при автоматическом обнаружении кнопка «Отмена» → «Отложить» с предупреждающим текстом.",
+      "Minimized window guard: фоновая проверка пропускает toast, если окно свёрнуто.",
+      "UpdateCheckScheduler: удалён NotifyActivity; добавлен GetSystemIdleTime callback.",
+      "UpdateService: добавлен GetIdleTime() через WinAPI; убрана логика IsCellEditing / retry-таймеры.",
+      "16 тестов UpdateCheckSchedulerTests обновлены под новую модель idle-детекции."
+    ]
+  },
+  {
+    "date": "2026-06-29",
     "version": "3.39.0",
     "type": "Улучшение",
     "title": "Background auto-update checks: 30 мин periodic + 10 мин idle, persistent toast с кнопками",

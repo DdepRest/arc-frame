@@ -8,7 +8,7 @@
 - Тёмная тема стабильна, переключается без потери данных.
 - Undo/Redo работает для позиций расчёта и Доп.КП.
 - Юнит-тесты покрывают ключевые сценарии (расчёты, экспорт/импорт, версия, обновления).
-- Текущая версия: **3.39.0** (готовится к публикации).
+- Текущая версия: **3.40.0** (готовится к публикации).
 - Последние изменения: UpdateService DI для тестирования, zero-byte download fix, XAML-анимация UpdateDownloadBar, UI-polish (CornerRadius), новые интеграционные и unit-тесты, исправления документации.
 - Система A.R.C. прошла 3 итерации улучшений:
   - **v1:** инициализация, аудит, эталонные кейсы.
@@ -139,4 +139,4 @@ AGENT.md / AGENTS.md / CLAUDE.md / GEMINI.md
 
 ## Last verified
 
-2026-06-29 (v3.39.0 release prep: Background auto-update checks via UpdateCheckScheduler + persistent notification toast — full suite 670+/670+ passes, validate-docs и arc-check PASS)
+2026-06-29 (v3.40.0 release prep: WinAPI idle detection replaces UI-event tracking in UpdateCheckScheduler, anti-recommend text in auto-update dialog, minimized window guard for background checks — full suite passes, validate-docs и arc-check PASS)

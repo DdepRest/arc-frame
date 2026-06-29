@@ -9,7 +9,8 @@ namespace MosquitoNetCalculator.Tests.Services
     /// Tests for <see cref="UpdateCheckScheduler.ShouldCheckAt"/> pure logic.
     ///
     /// Strategy: drive the scheduler with a fake clock (<see cref="FakeClock"/>)
-    /// and verify decisions at each (lastCheck, lastActivity, now) triple.
+    /// and a fake idle provider (<see cref="FakeIdle"/>) and verify decisions
+    /// at each (lastCheck, idleTime, now) triple.
     /// DispatcherTimer is NOT exercised here — production behaviour for the
     /// timer is covered by integration smoke (no need for a brittle timer test).
     /// </summary>
@@ -27,12 +28,23 @@ namespace MosquitoNetCalculator.Tests.Services
         }
 
         /// <summary>
-        /// Builds a scheduler with the production defaults + the injected clock.
+        /// Manually-controllable idle-time provider. Replaces the old
+        /// <c>NotifyActivity</c> pattern — tests set <see cref="IdleTime"/>
+        /// directly to simulate "system has been idle for X minutes".
+        /// </summary>
+        private sealed class FakeIdle
+        {
+            public TimeSpan IdleTime { get; set; } = TimeSpan.Zero;
+        }
+
+        /// <summary>
+        /// Builds a scheduler with the production defaults + injected fakes.
         /// Defaults are: CheckInterval=30m, IdleThreshold=10m, MinGap=2m.
         /// </summary>
-        private static (UpdateCheckScheduler Scheduler, FakeClock Clock) MakeScheduler()
+        private static (UpdateCheckScheduler Scheduler, FakeClock Clock, FakeIdle Idle) MakeScheduler()
         {
             var clock = new FakeClock();
+            var idle = new FakeIdle();
             var s = new UpdateCheckScheduler
             {
                 CheckInterval = TimeSpan.FromMinutes(30),
@@ -40,8 +52,9 @@ namespace MosquitoNetCalculator.Tests.Services
                 MinGap = TimeSpan.FromMinutes(2),
                 TickInterval = TimeSpan.FromMinutes(60),
                 Now = () => clock.Now,
+                GetSystemIdleTime = () => idle.IdleTime,
             };
-            return (s, clock);
+            return (s, clock, idle);
         }
 
         // ─── Default state after Start() ──────────────────────────────
@@ -49,15 +62,15 @@ namespace MosquitoNetCalculator.Tests.Services
         [Fact]
         public void Start_SetsLastCheckTimeToNow_SuppressesImmediateTrigger()
         {
-            var (s, clock) = MakeScheduler();
-            // До Start: lastCheck = MinValue (first-time branch)
+            var (s, clock, _) = MakeScheduler();
+            // До Start: lastCheck = MinValue
             Assert.Equal(DateTime.MinValue, s.LastCheckTime);
 
             clock.Now = clock.Now; // = T0
             s.Start();
 
             // Сразу после Start: lastCheck == now → throttle-гарантирует
-            // никаких сразу-fire-pроверок.
+            // никаких сразу-fire-проверок.
             Assert.True(s.IsRunning);
             Assert.False(s.ShouldCheckAt(clock.Now),
                 "Right after Start() nothing should trigger — startup-check already happened.");
@@ -66,7 +79,7 @@ namespace MosquitoNetCalculator.Tests.Services
         [Fact]
         public void Start_IsIdempotent_CallingTwiceDoesNotRestartTimer()
         {
-            var (s, _) = MakeScheduler();
+            var (s, _, _) = MakeScheduler();
             s.Start();
             var first = s.LastCheckTime;
             s.Start(); // no-op
@@ -77,7 +90,7 @@ namespace MosquitoNetCalculator.Tests.Services
         [Fact]
         public void Stop_StopsScheduler_PreservesState()
         {
-            var (s, clock) = MakeScheduler();
+            var (s, clock, _) = MakeScheduler();
             clock.Now = new DateTime(2026, 1, 1, 12, 0, 0, DateTimeKind.Utc);
             s.Start();
 
@@ -85,11 +98,10 @@ namespace MosquitoNetCalculator.Tests.Services
             s.Stop();
             Assert.False(s.IsRunning);
 
-            // Можно стартовать снова — state сохранён.
+            // Можно стартовать снова — state сохранён (lastCheck перезаписывается).
             clock.Now = clock.Now.AddMinutes(15);
             s.Start();
             Assert.True(s.IsRunning);
-            // После re-Start lastCheck снова = now.
             Assert.Equal(clock.Now, s.LastCheckTime);
             Assert.NotEqual(saved, s.LastCheckTime);
         }
@@ -99,26 +111,23 @@ namespace MosquitoNetCalculator.Tests.Services
         [Fact]
         public void ShouldCheckAt_LastCheck30MinAgo_TrueEvenIfUserActive()
         {
-            var (s, clock) = MakeScheduler();
+            var (s, clock, idle) = MakeScheduler();
             s.Start(); // lastCheck = T0
-            clock.Now = clock.Now.AddMinutes(15);
-            s.NotifyActivity(); // activity = T+15
+            clock.Now = clock.Now.AddMinutes(31); // periodic gate
+            idle.IdleTime = TimeSpan.FromMinutes(1); // user active recently
 
-            // T+31 — 31 min от T0, periodic gate:
-            clock.Now = clock.Now.AddMinutes(16); // = T+31
             Assert.True(s.ShouldCheckAt(clock.Now));
         }
 
         [Fact]
         public void ShouldCheckAt_LastCheck15MinAgo_False_NotYetPeriodic()
         {
-            var (s, clock) = MakeScheduler();
+            var (s, clock, idle) = MakeScheduler();
             s.Start();
             clock.Now = clock.Now.AddMinutes(15);
-            s.NotifyActivity();
+            idle.IdleTime = TimeSpan.FromMinutes(1); // not idle
 
-            // T+15, 15 < 30 min AND < MinGap (15 > 2 min) — но time-since-activity=0
-            // и не idle — false.
+            // T+15, 15 < 30 min AND not idle → false.
             Assert.False(s.ShouldCheckAt(clock.Now));
         }
 
@@ -127,39 +136,37 @@ namespace MosquitoNetCalculator.Tests.Services
         [Fact]
         public void ShouldCheckAt_IdleFor10Min_TrueAfterMinGap()
         {
-            var (s, clock) = MakeScheduler();
-            s.Start(); // lastCheck = T0, lastActivity = T0
-            clock.Now = clock.Now.AddMinutes(5);
-            s.NotifyActivity(); // activity = T+5, lastCheck = T0
+            var (s, clock, idle) = MakeScheduler();
+            s.Start(); // lastCheck = T0
+            clock.Now = clock.Now.AddMinutes(15);
+            idle.IdleTime = TimeSpan.FromMinutes(10); // exactly at threshold
 
-            // T+15: idle = 10 min, time-since-last-check = 15 min >= MinGap (2 min) → true.
-            clock.Now = clock.Now.AddMinutes(10);
+            // T+15: time-since-last-check = 15 min >= MinGap (2 min) → true.
             Assert.True(s.ShouldCheckAt(clock.Now));
         }
 
         [Fact]
         public void ShouldCheckAt_IdleFor15Min_PeriodicAlsoHits_StillTrue()
         {
-            var (s, clock) = MakeScheduler();
+            var (s, clock, idle) = MakeScheduler();
             s.Start(); // T0
-
-            // Никакой activity — просто сдвигаем время.
             clock.Now = clock.Now.AddMinutes(15);
-            Assert.True(s.ShouldCheckAt(clock.Now));
+            idle.IdleTime = TimeSpan.FromMinutes(15);
+
             // time-since-last-check=15 min < CheckInterval=30 min → periodic НЕ сработал.
-            // time-since-last-activity=15 min >= IdleThreshold=10 min → idle сработал.
+            // idle=15 min >= IdleThreshold=10 min → idle сработал.
+            Assert.True(s.ShouldCheckAt(clock.Now));
         }
 
         [Fact]
         public void ShouldCheckAt_IdleNotEnough_False()
         {
-            var (s, clock) = MakeScheduler();
+            var (s, clock, idle) = MakeScheduler();
             s.Start(); // T0
-            clock.Now = clock.Now.AddMinutes(1);
-            s.NotifyActivity(); // activity = T+1
+            clock.Now = clock.Now.AddMinutes(8);
+            idle.IdleTime = TimeSpan.FromMinutes(7); // 7 < 10
 
-            // T+8: idle 7 min < 10 min, periodic 8 min < 30 min → false.
-            clock.Now = clock.Now.AddMinutes(7);
+            // idle 7 min < 10 min, periodic 8 min < 30 min → false.
             Assert.False(s.ShouldCheckAt(clock.Now));
         }
 
@@ -168,31 +175,29 @@ namespace MosquitoNetCalculator.Tests.Services
         [Fact]
         public void ShouldCheckAt_WithinMinGap_False_EvenIfBothGatesHit()
         {
-            var (s, clock) = MakeScheduler();
+            var (s, clock, idle) = MakeScheduler();
             // Запись "проверки" руками: не через Start, а через прямое MarkChecked.
             clock.Now = clock.Now.AddMinutes(5);
             s.MarkChecked(); // lastCheck = T+5
-            clock.Now = clock.Now.AddMinutes(20); // lastActivity = T+0 (default) → 25 min idle!
-            // 25 - 25 = idle. Но lastCheck = T+5, now = T+25 → diff = 20 min < MinGap (2 min? нет, > 2)
-            // Однако time-since-last-check = 20 min > MinGap, поэтому throttle не сработает.
-            // Сделаем тест жёстче: проверим ИМЕННО throttle-ветку.
+            idle.IdleTime = TimeSpan.FromMinutes(25); // way idle
+            clock.Now = clock.Now.AddMinutes(20); // now = T+25
+
+            // time-since-last-check = 20 min > MinGap → throttle OK.
+            // idle = 25 min >= 10 → idle YES.
             Assert.True(s.ShouldCheckAt(clock.Now));
 
             // Теперь — свежий сценарий: только что отметили checked, idle есть.
-            // Set up: lastCheck = T+5, lastActivity = T+5 (без activity после).
-            var (s2, c2) = MakeScheduler();
+            var (s2, c2, i2) = MakeScheduler();
             c2.Now = new DateTime(2026, 1, 1, 12, 0, 0, DateTimeKind.Utc);
-            s2.Start(); // lastCheck = T0, lastActivity = T0
+            s2.Start(); // lastCheck = T0
 
             c2.Now = c2.Now.AddMinutes(5);
             s2.MarkChecked(); // lastCheck = T+5
-            // lastActivity всё ещё T0.
+            i2.IdleTime = TimeSpan.FromMinutes(20); // idle throughout
 
             // Прошло 30 секунд с момента MarkChecked:
             c2.Now = c2.Now.AddSeconds(30);
-            // lastActivity устарела на 5.5 min, lastCheck устарел на 0.5 min.
-            // Periodic: 0.5 < 30 → нет.
-            // Idle: 5.5 < 10 → нет. FALSE.
+            // time-since-last-check = 30 sec < MinGap (2 min) → throttle → false.
             Assert.False(s2.ShouldCheckAt(c2.Now));
         }
 
@@ -200,32 +205,25 @@ namespace MosquitoNetCalculator.Tests.Services
         public void ShouldCheckAt_AfterMinGap_OldBehaviourHolds()
         {
             // Контр-тест к throttle: если подождали MinGap — оба триггера работают.
-            var (s, clock) = MakeScheduler();
+            var (s, clock, idle) = MakeScheduler();
             clock.Now = new DateTime(2026, 1, 1, 12, 0, 0, DateTimeKind.Utc);
             s.Start();
 
-            // 9 минут спустя: idle=True (9min<10min? Зависит.). Давайте 11 min idle:
+            // 11 min спустя:
             clock.Now = clock.Now.AddMinutes(11);
-            // Start: lastCheck = T0, lastActivity = T0.
-            // now: T+11.
+            idle.IdleTime = TimeSpan.FromMinutes(11);
             // diff(now, lastCheck) = 11 min > MinGap (2 min) → throttle ОК.
             // diff(now, lastCheck) = 11 min < CheckInterval (30 min) → periodic НЕТ.
-            // diff(now, lastActivity) = 11 min >= IdleThreshold (10 min) → idle YES.
+            // idle = 11 min >= IdleThreshold (10 min) → idle YES.
             Assert.True(s.ShouldCheckAt(clock.Now));
         }
 
         // ─── Post-startup state — production behaviour ────────────────
-        // В production Start() всегда синхронизирует _lastCheckTime = now
-        // (startup-чек уже отработал в App.CheckOnStartupAsync).
-        //
-        // Production-path: scheduler никогда не работает без Start, поэтому
-        // тесты «без Start» сделаны не нужны — first-time branch удалён из
-        // UpdateCheckScheduler.cs (см. commit message + coder review).
 
         [Fact]
         public void ShouldCheckAt_ImmediatelyAfterStart_False_Throttled()
         {
-            var (s, clock) = MakeScheduler();
+            var (s, clock, _) = MakeScheduler();
             clock.Now = new DateTime(2026, 1, 1, 12, 0, 0, DateTimeKind.Utc);
             s.Start();
 
@@ -236,62 +234,65 @@ namespace MosquitoNetCalculator.Tests.Services
         [Fact]
         public void ShouldCheckAt_FewMinutesAfterStart_StillFalse()
         {
-            var (s, clock) = MakeScheduler();
+            var (s, clock, idle) = MakeScheduler();
             clock.Now = new DateTime(2026, 1, 1, 12, 0, 0, DateTimeKind.Utc);
             s.Start();
 
             // T+1m: throttle держит (1 < 2), idle 1 < 10 — false в любом случае.
             clock.Now = clock.Now.AddMinutes(1);
+            idle.IdleTime = TimeSpan.FromMinutes(1);
             Assert.False(s.ShouldCheckAt(clock.Now));
         }
 
         [Fact]
-        public void ShouldCheckAt_FewMinutesAfterStart_ActivityResetsIdle_StillFalse()
+        public void ShouldCheckAt_FewMinutesAfterStart_NotIdle_StillFalse()
         {
-            var (s, clock) = MakeScheduler();
+            var (s, clock, idle) = MakeScheduler();
             clock.Now = new DateTime(2026, 1, 1, 12, 0, 0, DateTimeKind.Utc);
             s.Start();
 
             clock.Now = clock.Now.AddMinutes(1);
-            s.NotifyActivity();
+            idle.IdleTime = TimeSpan.Zero; // not idle at all
             // Throttle (1 < 2) + idle (0 < 10) → false.
             Assert.False(s.ShouldCheckAt(clock.Now));
         }
 
-        // ─── Activity tracker resets idle ─────────────────────────────────────────
+        // ─── Idle resets via GetSystemIdleTime ────────────────────────
 
         [Fact]
-        public void NotifyActivity_ResetsIdleClock()
+        public void GetSystemIdleTime_ResetsIdleClock()
         {
-            var (s, clock) = MakeScheduler();
+            var (s, clock, idle) = MakeScheduler();
             clock.Now = new DateTime(2026, 1, 1, 12, 0, 0, DateTimeKind.Utc);
             s.Start();
-            clock.Now = clock.Now.AddMinutes(9); // было почти idle
-            // 9 min idle, periodic OPS не сработал.
+            clock.Now = clock.Now.AddMinutes(9);
+            idle.IdleTime = TimeSpan.FromMinutes(9);
+            // 9 min idle < 10 → false.
             Assert.False(s.ShouldCheckAt(clock.Now));
 
-            // NotifyActivity сдвигает activity в T+9.
-            s.NotifyActivity();
-
-            // Теперь от T+9 прибавим ещё 1 минуту = T+10. Idle от activity = 1 min.
-            clock.Now = clock.Now.AddMinutes(1);
+            // User moves mouse → idle resets to 0.
+            idle.IdleTime = TimeSpan.Zero;
             Assert.False(s.ShouldCheckAt(clock.Now),
-                "Activity сбросило idle, фокус на T+1 после lastActivity = T+9.");
+                "Idle reset to 0 — not enough time passed.");
 
-            // Подождём ещё 10 минут = T+19. От activity T+9 idle = 10 min.
+            // Подождём ещё 10 минут = T+19. Idle теперь 10 min.
             clock.Now = clock.Now.AddMinutes(10);
+            idle.IdleTime = TimeSpan.FromMinutes(10);
             Assert.True(s.ShouldCheckAt(clock.Now));
         }
 
         [Fact]
-        public void NotifyActivity_Called100TimesInOneSec_PerformanceSafe()
+        public void GetSystemIdleTime_CalledFrequently_PerformanceSafe()
         {
-            // Проверка что NotifyActivity() не делает тяжёлой работы.
-            var (s, clock) = MakeScheduler();
-            clock.Now = DateTime.UtcNow;
-            for (int i = 0; i < 100; i++) s.NotifyActivity();
-            // Если бы был `await` / lock / IO — этот цикл бы тормозил. Просто smoke.
-            Assert.NotEqual(DateTime.MinValue, s.LastActivityTime);
+            // Проверка что GetSystemIdleTime() не делает тяжёлой работы
+            // (в production это O(1) WinAPI call).
+            var (s, _, _) = MakeScheduler();
+            for (int i = 0; i < 100; i++)
+            {
+                _ = s.GetSystemIdleTime();
+            }
+            // Smoke: не бросает и не тормозит.
+            Assert.True(true);
         }
 
         // ─── MarkChecked semantics ────────────────────────────────────
@@ -299,7 +300,7 @@ namespace MosquitoNetCalculator.Tests.Services
         [Fact]
         public void MarkChecked_ResetsLastCheckTime()
         {
-            var (s, clock) = MakeScheduler();
+            var (s, clock, idle) = MakeScheduler();
             clock.Now = new DateTime(2026, 1, 1);
             s.Start(); // lastCheck = T0
 
@@ -312,8 +313,9 @@ namespace MosquitoNetCalculator.Tests.Services
 
             // Через MinGap + чуть-чуть idle — periodic сработает.
             clock.Now = clock.Now.AddMinutes(2).AddSeconds(1);
+            idle.IdleTime = TimeSpan.FromMinutes(22); // idle throughout
             // 2 min 1 sec < CheckInterval 30 → periodic нет.
-            // idle с lastActivity = T0, total 22 min 1 sec ≥ 10 → idle YES.
+            // idle = 22 min ≥ 10 → idle YES.
             Assert.True(s.ShouldCheckAt(clock.Now));
         }
 
@@ -325,19 +327,20 @@ namespace MosquitoNetCalculator.Tests.Services
         [Fact]
         public void ShouldCheckAt_IdleEqualsThreshold_True()
         {
-            var (s, clock) = MakeScheduler();
+            var (s, clock, idle) = MakeScheduler();
             clock.Now = new DateTime(2026, 1, 1, 12, 0, 0, DateTimeKind.Utc);
             s.Start();
 
             // T+10m ровно: idle == IdleThreshold → true (gate `>=`).
             clock.Now = clock.Now.AddMinutes(10);
+            idle.IdleTime = TimeSpan.FromMinutes(10);
             Assert.True(s.ShouldCheckAt(clock.Now));
         }
 
         [Fact]
         public void ShouldCheckAt_LastCheckEqualsMinGap_FalseFromThrottle()
         {
-            var (s, clock) = MakeScheduler();
+            var (s, clock, _) = MakeScheduler();
             clock.Now = new DateTime(2026, 1, 1, 12, 0, 0, DateTimeKind.Utc);
             s.Start();
 
@@ -350,15 +353,14 @@ namespace MosquitoNetCalculator.Tests.Services
         [Fact]
         public void ShouldCheckAt_PeriodicExactlyEqualsInterval_True()
         {
-            var (s, clock) = MakeScheduler();
+            var (s, clock, idle) = MakeScheduler();
             clock.Now = new DateTime(2026, 1, 1, 12, 0, 0, DateTimeKind.Utc);
             s.Start();
-            // Снимаем idle так чтобы не пересекаться с idle-gate.
-            clock.Now = clock.Now.AddSeconds(1);
-            s.NotifyActivity();
+            // Keep idle low so only periodic gate fires.
+            idle.IdleTime = TimeSpan.FromMinutes(1);
 
             // T+30m ровно: periodic == CheckInterval → true.
-            clock.Now = clock.Now.AddMinutes(28).AddSeconds(59);
+            clock.Now = clock.Now.AddMinutes(30);
             Assert.True(s.ShouldCheckAt(clock.Now));
         }
 
@@ -366,24 +368,25 @@ namespace MosquitoNetCalculator.Tests.Services
         public void ShouldCheckAt_IdleWhenPeriodicJustUnder_IdleGateFires()
         {
             // 29m59s от Start: periodic нет (29:59 < 30:00), НО idle-гейт сработал.
-            var (s, clock) = MakeScheduler();
+            var (s, clock, idle) = MakeScheduler();
             clock.Now = new DateTime(2026, 1, 1, 12, 0, 0, DateTimeKind.Utc);
             s.Start();
             clock.Now = clock.Now.AddMinutes(29).AddSeconds(59);
+            idle.IdleTime = TimeSpan.FromMinutes(29).Add(TimeSpan.FromSeconds(59));
             // idle = 29:59 >= 10 → gate сработал до periodic-check.
             Assert.True(s.ShouldCheckAt(clock.Now));
         }
 
         [Fact]
-        public void ShouldCheckAt_PeriodicExactlyInterval_ActivityJustBefore_True()
+        public void ShouldCheckAt_PeriodicExactlyInterval_NotIdle_True()
         {
             // Periodic ровно = true, если throttle отпустил.
-            var (s, clock) = MakeScheduler();
+            var (s, clock, idle) = MakeScheduler();
             clock.Now = new DateTime(2026, 1, 1, 12, 0, 0, DateTimeKind.Utc);
             s.Start();
             // Ждём пока throttle (MinGap=2min) пройдёт, и потом periodic попадёт в window без idle.
             clock.Now = clock.Now.AddMinutes(2);
-            s.NotifyActivity();
+            idle.IdleTime = TimeSpan.Zero; // not idle
             // T+30m: ровно CheckInterval.
             clock.Now = clock.Now.AddMinutes(28);
             Assert.True(s.ShouldCheckAt(clock.Now));
@@ -401,12 +404,19 @@ namespace MosquitoNetCalculator.Tests.Services
             Assert.Equal(TimeSpan.FromSeconds(60), s.TickInterval);
         }
 
+        [Fact]
+        public void Default_GetSystemIdleTime_ReturnsZero()
+        {
+            var s = new UpdateCheckScheduler();
+            Assert.Equal(TimeSpan.Zero, s.GetSystemIdleTime());
+        }
+
         // ─── OnCheckDue callback (logic-only surrogate) ───────────────
 
         [Fact]
         public async Task ShouldCheckDue_Callback_FiresOncePerCheck()
         {
-            var (s, clock) = MakeScheduler();
+            var (s, clock, idle) = MakeScheduler();
             int fireCount = 0;
             s.OnCheckDue = () =>
             {
@@ -415,14 +425,10 @@ namespace MosquitoNetCalculator.Tests.Services
             };
 
             s.Start(); // lastCheck = T0
-            clock.Now = clock.Now.AddMinutes(11); // idle=11 → триггерит
+            clock.Now = clock.Now.AddMinutes(11);
+            idle.IdleTime = TimeSpan.FromMinutes(11); // idle=11 → триггерит
 
-            // Эмулируем OnTick вручную (без DispatcherTimer):
-            // Нужно дёрнуть OnTick-логику; проще через прямой API.
-            // Используем internal-метод через ShouldCheckAt + MarkChecked + OnCheckDue():
-            // → рефактор: вынести tick в отдельный internal-метод TickNow().
-            // (Альтернатива — оставить как есть, не тестируя Tick-handler.)
-            // Вместо этого — smoke: ShouldCheckAt возвращает true.
+            // Smoke: ShouldCheckAt возвращает true.
             Assert.True(s.ShouldCheckAt(clock.Now));
 
             // Симулируем "tick handle": перед вызовом OnCheckDue шедулер

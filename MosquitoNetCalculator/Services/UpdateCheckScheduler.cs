@@ -40,7 +40,6 @@ namespace MosquitoNetCalculator.Services
     public sealed class UpdateCheckScheduler
     {
         private DateTime _lastCheckTime = DateTime.MinValue;
-        private DateTime _lastActivityTime;
         private DispatcherTimer? _timer;
 
         /// <summary>
@@ -69,6 +68,14 @@ namespace MosquitoNetCalculator.Services
         /// не ухудшает battery life.
         /// </summary>
         public TimeSpan TickInterval { get; set; } = TimeSpan.FromSeconds(60);
+
+        /// <summary>
+        /// Возвращает время системного простоя (с момента последнего ввода
+        /// пользователя — мышь или клавиатура). Production-default:
+        /// <c>UpdateService.GetIdleTime</c> через WinAPI <c>GetLastInputInfo</c>.
+        /// В тестах подменяется на фейковый провайдер.
+        /// </summary>
+        public Func<TimeSpan> GetSystemIdleTime { get; set; } = () => TimeSpan.Zero;
 
         /// <summary>
         /// Источник времени. Production-default <c>() => DateTime.Now</c>;
@@ -103,11 +110,7 @@ namespace MosquitoNetCalculator.Services
         /// </summary>
         public DateTime LastCheckTime => _lastCheckTime;
 
-        /// <summary>
-        /// Время последней активности пользователя. Используется
-        /// как input в <see cref="ShouldCheckAt"/>.
-        /// </summary>
-        public DateTime LastActivityTime => _lastActivityTime;
+
 
         /// <summary>
         /// Запускает таймер. Идемпотентно: повторный вызов без <see cref="Stop"/>
@@ -123,7 +126,6 @@ namespace MosquitoNetCalculator.Services
             if (_timer != null) return;
 
             var now = Now();
-            _lastActivityTime = now;
             _lastCheckTime = now; // startup-чек уже отработал
             _timer = new DispatcherTimer { Interval = TickInterval };
             _timer.Tick += OnTick;
@@ -144,19 +146,7 @@ namespace MosquitoNetCalculator.Services
             _timer = null;
         }
 
-        /// <summary>
-        /// Уведомление об активности пользователя. Вызывается из
-        /// <c>MainWindow.PreviewMouseMove</c>/<c>PreviewKeyDown</c>.
-        /// Просто сдвигает «последнюю активность» в <see cref="Now"/> — никаких
-        /// сайд-эффектов, вызовов UI, блокировок (можно дёргать хоть 1000 раз в
-        /// секунду: современная мышь на 1600 DPI генерирует до 1000 событий; каждый
-        /// вызов — одно field-assignment ~0.1–1 μs; суммарно <1 мс/сек на
-        /// battery, поэтому throttle НЕ нужен).
-        ///
-        /// Если поведение метода начнёт расти (UI-события, IO) — добавить debounce
-        /// ≤50 ms granularity: `if (Now() - _lastActivityTime < TimeSpan.FromMilliseconds(50)) return;`.
-        /// </summary>
-        public void NotifyActivity() => _lastActivityTime = Now();
+
 
         /// <summary>
         /// Отметка «проверка только что стартовала». Вызывается в <see cref="OnTick"/>
@@ -210,14 +200,11 @@ namespace MosquitoNetCalculator.Services
         /// без WPF <see cref="Dispatcher"/>.
         ///
         /// Алгоритм:
-        /// 1. Если <c>_lastCheckTime == MinValue</c> (никогда не проверяли) —
-        ///    true только если пользователь простаивает ≥ <see cref="IdleThreshold"/>.
-        ///    Это «превращает» Start в первую idle-проверку.
-        /// 2. Если с последней проверки прошло < <see cref="MinGap"/> — false (throttle).
-        /// 3. Если с последней проверки прошло ≥ <see cref="CheckInterval"/> — true (periodic).
-        /// 4. Если с последней активности прошло ≥ <see cref="IdleThreshold"/> — true (idle).
+        /// 1. Если с последней проверки прошло < <see cref="MinGap"/> — false (throttle).
+        /// 2. Если с последней проверки прошло ≥ <see cref="CheckInterval"/> — true (periodic).
+        /// 3. Если системный простой ≥ <see cref="IdleThreshold"/> — true (idle).
         ///
-        /// Пункты 3 и 4 объединяются через OR. Пункт 2 гарантирует анти-спам.
+        /// Пункты 2 и 3 объединяются через OR. Пункт 1 гарантирует анти-спам.
         /// </summary>
         public bool ShouldCheckAt(DateTime now)
         {
@@ -229,8 +216,8 @@ namespace MosquitoNetCalculator.Services
             if (now - _lastCheckTime >= CheckInterval)
                 return true;
 
-            // Idle gate.
-            if (now - _lastActivityTime >= IdleThreshold)
+            // Idle gate via WinAPI (or injected fake in tests).
+            if (GetSystemIdleTime() >= IdleThreshold)
                 return true;
 
             return false;

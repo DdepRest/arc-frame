@@ -2,6 +2,24 @@
 
 ## Unreleased — готовится к следующему релизу
 
+## 3.40.0 — 2026-06-29
+
+### Улучшения
+
+- **WinAPI idle detection:** `UpdateCheckScheduler` теперь использует WinAPI `GetLastInputInfo` для определения системного простоя вместо UI-событий (`PreviewMouseMove`/`PreviewKeyDown`). Это даёт более точное измерение реальной неактивности пользователя (не только в окне приложения, но и системно) и устраняет необходимость в `NotifyActivity()`.
+- **Anti-recommend text в диалоге обновления:** При автоматическом обнаружении обновления (startup-check) кнопка «Отмена» переименована в «Отложить» с текстом «Не рекомендуется откладывать обновление надолго».
+- **Minimized window guard:** Фоновая проверка `CheckInBackgroundAsync` теперь пропускает показ toast-уведомления, если главное окно свёрнуто — уведомление появится после восстановления окна.
+
+### Техническое
+
+- `UpdateCheckScheduler`: удалён `NotifyActivity()` и `_lastActivityTime`; добавлен `GetSystemIdleTime` callback (тип `Func<TimeSpan>`). Тесты переписаны на фейковый `FakeIdle` вместо `NotifyActivity`.
+- `UpdateService`: добавлен P/Invoke `GetLastInputInfo` и публичный `GetIdleTime()`; убрана вся логика `IsCellEditing`, `CanShowUpdateDialog`, retry-таймеров и `OnWindowStateChanged` — сложность не нужна при toast-based UX.
+- `MainWindow.xaml.cs`: удалены `PreviewMouseMove` и `PreviewKeyDown` вызовы `_updateCheckScheduler?.NotifyActivity()`.
+- `DialogService.ShowUpdateAvailable`: добавлен параметр `isAutomatic` с anti-recommend UI.
+- **16 тестов** в `UpdateCheckSchedulerTests.cs` обновлены/переписаны под новую модель idle-детекции.
+
+---
+
 ## 3.39.0 — 2026-06-29
 
 ### Новинка

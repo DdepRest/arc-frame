@@ -311,14 +311,16 @@ namespace MosquitoNetCalculator.Services
         /// to download & restart. Returns true if user clicked "Скачать".
         /// </summary>
         public static bool ShowUpdateAvailable(string version, Window? owner = null)
-            => ShowUpdateAvailable(version, Array.Empty<UpdateItem>(), owner);
+            => ShowUpdateAvailable(version, Array.Empty<UpdateItem>(), owner, isAutomatic: false);
 
         /// <summary>
         /// Fluent-styled update-available dialog with changelog.
         /// Shows version badge, changelog of skipped versions, and
         /// download confirmation. Returns true if user clicked "Скачать и установить".
+        /// <paramref name="isAutomatic"/> controls whether the anti-recommend
+        /// text is shown next to the "Отложить" button.
         /// </summary>
-        public static bool ShowUpdateAvailable(string version, IEnumerable<UpdateItem> changelog, Window? owner = null)
+        public static bool ShowUpdateAvailable(string version, IEnumerable<UpdateItem> changelog, Window? owner = null, bool isAutomatic = false)
         {
             bool result = false;
             var (window, content, _) = BuildDialogBase("Доступно обновление", 460, owner, () => result = false);
@@ -457,6 +459,10 @@ namespace MosquitoNetCalculator.Services
                 Margin = new Thickness(0, 0, 0, 20)
             });
 
+            // Anti-recommend text (only in automatic mode): defer button
+            // is relabelled to "Отложить" and shown with a warning.
+            string deferButtonText = isAutomatic ? "Отложить" : "Отмена";
+
             var btnPanel = new StackPanel
             {
                 Orientation = Orientation.Horizontal,
@@ -465,7 +471,7 @@ namespace MosquitoNetCalculator.Services
 
             var btnCancel = new Button
             {
-                Content = "Отмена",
+                Content = deferButtonText,
                 MinWidth = 90,
                 Padding = new Thickness(16, 7, 16, 7),
                 Margin = new Thickness(8, 0, 0, 0),
@@ -479,6 +485,42 @@ namespace MosquitoNetCalculator.Services
             else
                 btnCancel.Background = GetBrush("GhostBg", Brushes.White);
             btnCancel.Click += (s, e) => { result = false; window.Close(); };
+
+            // Anti-recommend text below the defer button (automatic mode only)
+            if (isAutomatic)
+            {
+                var deferPanel = new StackPanel
+                {
+                    Orientation = Orientation.Vertical,
+                    VerticalAlignment = VerticalAlignment.Center,
+                    Margin = new Thickness(4, 0, 0, 0)
+                };
+                btnPanel.Children.Add(btnCancel);
+
+                deferPanel.Children.Add(new TextBlock
+                {
+                    Text = "Не рекомендуется откладывать",
+                    FontSize = 10,
+                    FontStyle = FontStyles.Italic,
+                    Foreground = GetBrush("TextMuted", Brushes.Gray),
+                    TextWrapping = TextWrapping.Wrap,
+                    MaxWidth = 140
+                });
+                deferPanel.Children.Add(new TextBlock
+                {
+                    Text = "обновление надолго",
+                    FontSize = 10,
+                    FontStyle = FontStyles.Italic,
+                    Foreground = GetBrush("TextMuted", Brushes.Gray),
+                    TextWrapping = TextWrapping.Wrap,
+                    MaxWidth = 140
+                });
+                btnPanel.Children.Add(deferPanel);
+            }
+            else
+            {
+                btnPanel.Children.Add(btnCancel);
+            }
 
             var btnDownload = new Button
             {
@@ -497,7 +539,6 @@ namespace MosquitoNetCalculator.Services
                 btnDownload.Background = GetBrush("Success", Brushes.Green);
             btnDownload.Click += (s, e) => { result = true; window.Close(); };
 
-            btnPanel.Children.Add(btnCancel);
             btnPanel.Children.Add(btnDownload);
             content.Children.Add(btnPanel);
 

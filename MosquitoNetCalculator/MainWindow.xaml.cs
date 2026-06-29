@@ -137,19 +137,9 @@ namespace MosquitoNetCalculator
 
             PreviewKeyDown += (_, args) =>
             {
-                // Activity-signal для scheduler (сбрасывает idle-timer).
-                // Вызов ДО обработки горячих клавиш — даже mute shortcut
-                // считается «пользователь на приложении».
-                _updateCheckScheduler?.NotifyActivity();
-
                 if (Keyboard.Modifiers == ModifierKeys.Control && args.Key == Key.Z) { Undo(); args.Handled = true; }
                 else if (Keyboard.Modifiers == ModifierKeys.Control && args.Key == Key.Y) { Redo(); args.Handled = true; }
             };
-
-            // Activity-tracker: каждое движение мыши = пользователь здесь.
-            // NotifyActivity() — O(1), не блокирует, можно дёргать хоть 100 раз/сек.
-            // Используется update-scheduler'ом для решения «триггерить idle-проверку».
-            PreviewMouseMove += (_, _) => _updateCheckScheduler?.NotifyActivity();
 
             MainTabControl.SelectionChanged += (_, _) =>
             {
@@ -283,6 +273,7 @@ namespace MosquitoNetCalculator
             {
                 ShouldSkipCheck = () => UpdateService.IsChecking || UpdateService.IsDownloading,
                 OnCheckDue = () => UpdateService.CheckInBackgroundAsync(),
+                GetSystemIdleTime = () => UpdateService.GetIdleTime(),
             };
             _updateCheckScheduler.Start();
 

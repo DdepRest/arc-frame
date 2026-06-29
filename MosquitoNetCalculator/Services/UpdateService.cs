@@ -3,6 +3,7 @@ using System.Diagnostics;
 using System.IO;
 using System.Net.Http;
 using System.Reflection;
+using System.Runtime.InteropServices;
 using System.Security.Cryptography;
 using System.Text.Json;
 using System.Threading;
@@ -38,6 +39,35 @@ namespace MosquitoNetCalculator.Services
     {
         private const string ManifestUrl =
             "https://raw.githubusercontent.com/DdepRest/arc-frame/main/releases.json";
+
+        // ─── Idle detection (WinAPI) ─────────────────────────────────
+
+        [DllImport("user32.dll")]
+        private static extern bool GetLastInputInfo(ref LASTINPUTINFO plii);
+
+        [StructLayout(LayoutKind.Sequential)]
+        private struct LASTINPUTINFO
+        {
+            public uint cbSize;
+            public uint dwTime;
+        }
+
+        /// <summary>
+        /// Returns the time span since the last user input (mouse or keyboard)
+        /// across the entire system, using WinAPI <c>GetLastInputInfo</c>.
+        /// Used by <see cref="UpdateCheckScheduler.GetSystemIdleTime"/>.
+        /// </summary>
+        public static TimeSpan GetIdleTime()
+        {
+            var plii = new LASTINPUTINFO();
+            plii.cbSize = (uint)Marshal.SizeOf(plii);
+            if (GetLastInputInfo(ref plii))
+            {
+                uint idleTicks = unchecked((uint)Environment.TickCount - plii.dwTime);
+                return TimeSpan.FromMilliseconds(idleTicks);
+            }
+            return TimeSpan.Zero;
+        }
 
         /// <summary>
         /// Текущая версия приложения. Автоматически читается из
@@ -153,7 +183,12 @@ namespace MosquitoNetCalculator.Services
         /// </summary>
         public static async Task CheckInBackgroundAsync()
         {
-            // Re-entry guard на случай параллельного тика sся шедулером
+            // Skip if window is minimized — toast would be invisible and
+            // the next tick after restore will catch up (periodic gate).
+            var owner = Application.Current?.MainWindow;
+            if (owner?.WindowState == WindowState.Minimized) return;
+
+            // Re-entry guard на случай параллельного тика шедулером
             // или одновременного ручного вызова.
             if (IsChecking) return;
             IsChecking = true;
@@ -175,7 +210,6 @@ namespace MosquitoNetCalculator.Services
                 if (_lastNotifiedVersion == release.Version) return;
                 _lastNotifiedVersion = release.Version;
 
-                var owner = Application.Current?.MainWindow;
                 var changelog = UpdateLog.GetChangesSince(CurrentVersion);
 
                 // Снимок owner для замыкания — иначе к моменту клика по
@@ -298,7 +332,7 @@ namespace MosquitoNetCalculator.Services
 
                 // Phase 2: Confirm download with changelog
                 var changelog = UpdateLog.GetChangesSince(CurrentVersion);
-                bool confirmed = DialogService.ShowUpdateAvailable(manifest!.Latest, changelog, owner);
+                bool confirmed = DialogService.ShowUpdateAvailable(manifest!.Latest, changelog, owner, isAutomatic);
                 if (!confirmed)
                 {
                     AppSettingsService.SavePendingUpdateVersion(manifest.Latest);
