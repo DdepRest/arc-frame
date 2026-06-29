@@ -1,0 +1,215 @@
+name: Release
+
+# ─────────────────────────────────────────────────────────────────────
+#  Trigger: push of any tag matching `vX.Y.Z` (semver).
+#  Pattern is fnmatch-style (not regex); brackets/literals are difficult,
+#  so the simple glob `v*.*.*` covers stable + RC cases.
+#
+#  Why manual tag trigger? Releases are explicit user intent — we
+#  don't want every merge-to-main to publish. Branch-protection rules
+#  on `main` guarantee the tag's source commit has already passed the
+#  ci.yml workflow's build+test gate.
+# ─────────────────────────────────────────────────────────────────────
+on:
+  push:
+    tags:
+      - 'v*.*.*'
+
+# ─────────────────────────────────────────────────────────────────────
+#  Permissions
+# ─────────────────────────────────────────────────────────────────────
+#  contents: write — needed for both:
+#   • gh release create (publishes artifacts under this tag)
+#   • git push origin HEAD:main (commits releases.json manifest update)
+#  issues: read / pull-requests: read / id-token: write would be
+#  excessive for this pipeline — explicitly omitted so the default
+#  least-privilege doesn't apply.
+permissions:
+  contents: write
+
+# Avoid two simultaneous release runs racing on manifest push.
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false  # NEVER cancel a release — finish it.
+
+jobs:
+  release:
+    name: Build, Test, Publish, Release
+    # ⚠ Single-owner-repo caveat: this job pushes the manifest commit to
+    # main directly via `git push origin HEAD:main` using GITHUB_TOKEN.
+    # GITHUB_TOKEN is exempt from branch-protection rules — bypassing the
+    # code-review safety net that protects multi-collaborator repos. For
+    # this single-owner repo it's acceptable; if collaborators are added,
+    # switch to a PR-based manifest update (e.g. a separate `manifest-update.yml`
+    # triggered on `release: published` that opens a PR instead of pushing).
+    timeout-minutes: 30
+    runs-on: windows-latest
+
+    steps:
+      # 1. Source — fetch full history (some tests build dynamic assemblies
+      #    that may need git context, and the version attribute surface
+      #    the commit hash through InformationalVersion).
+      - name: Checkout tag
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      # 2. .NET 8 SDK pinning (same rationale as ci.yml).
+      - name: Setup .NET 8 SDK
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 8.0.x
+
+      # 3. Strip "v" prefix from ref_name → plain semver. Used downstream
+      #    by every step that references the version (file names, manifest
+      #    entries, release title).
+      - name: Extract version
+        id: version
+        shell: bash
+        run: echo "VERSION=${GITHUB_REF_NAME#v}" >> "$GITHUB_OUTPUT"
+
+      # 4. Restore.
+      - name: Restore
+        run: dotnet restore MosquitoNetCalculator/MosquitoNetCalculator.csproj
+
+      # 5. Build (no-restore: rely on the step above).
+      - name: Build (Release)
+        run: dotnet build MosquitoNetCalculator/MosquitoNetCalculator.csproj -c Release --no-restore -v minimal
+
+      # 6. Test — gate the publish step. If tests fail, the entire job
+      #    aborts and no release is created on GitHub. This is the
+      #    gate that prevents untested code from reaching users.
+      - name: Test
+        run: dotnet test MosquitoNetCalculator.sln -c Release --no-build --verbosity minimal
+
+      # 7. Publish as single-file win-x64 self-contained. Mirror
+      #    build.bat's `-p:PublishSingleFile=true` + compression. We
+      #    don't run the EXE here — WatchdogService.StageUpdate and
+      #    the auto-update flow do. This step just produces the
+      #    artifact to be zipped and released.
+      - name: Publish (single-file, win-x64)
+        shell: pwsh
+        run: |
+          dotnet publish MosquitoNetCalculator/MosquitoNetCalculator.csproj `
+            -c Release -r win-x64 --self-contained `
+            -p:PublishSingleFile=true `
+            -p:EnableCompressionInSingleFile=true `
+            -p:DebugType=embedded `
+            -o publish
+
+      # 8. Create the ZIP that ships to users. Same content set as
+      #    build.bat: just the EXE + transitive DLLs (no settings.json,
+      #    prices.json, orders — those live in %AppData% on the user's
+      #    machine after first launch).
+      - name: Create ZIP
+        id: zip
+        shell: pwsh
+        run: |
+          $version = "${{ steps.version.outputs.VERSION }}"
+          $zipPath = "publish/ARC-Frame-$version-full.zip"
+          Compress-Archive -Force `
+            -Path 'publish/MosquitoNetCalculator.exe','publish/*.dll' `
+            -DestinationPath $zipPath
+          echo "ZIP_PATH=$zipPath" >> "$env:GITHUB_OUTPUT"
+          echo "ZIP_SIZE=$((Get-Item $zipPath).Length)" >> "$env:GITHUB_OUTPUT"
+          Write-Host "ZIP created: $zipPath ($((Get-Item $zipPath).Length) bytes)"
+
+      # 9. Compute SHA-256. Use bash + sha256sum for speed (PowerShell's
+      #    Get-FileHash pauses on large files; linux sha256sum is
+      #    dramatically faster).
+      - name: Compute SHA-256
+        id: hash
+        shell: bash
+        run: |
+          SHA=$(sha256sum "${{ steps.zip.outputs.ZIP_PATH }}" | cut -d' ' -f1)
+          echo "SHA256=$SHA" >> "$GITHUB_OUTPUT"
+          echo "Computed SHA-256: $SHA"
+
+      # 10. Update releases.json manifest — append the just-published
+      #     release at the top of the `releases` array (newest-first
+      #     convention) and bump `latest` to point to the new tag.
+      #
+      #     IMPORTANT: depth=10 is required because the top-level
+      #     object nests `releases[N].changes` strings one level
+      #     deeper. Without it, ConvertTo-Json silently truncates
+      #     the second changes array.
+      #
+      #     Encoding note: we hand-write UTF-8 (no BOM) via .NET
+      #     API to avoid pwsh5/pwsh7 Output-File BOM differences.
+      #     PowerShell's default Out-File adds BOM, which the
+      #     release manifest is documented as not having.
+      - name: Update releases.json
+        shell: pwsh
+        run: |
+          $version = "${{ steps.version.outputs.VERSION }}"
+          $size = [int]"${{ steps.zip.outputs.ZIP_SIZE }}"
+          $sha = "${{ steps.hash.outputs.SHA256 }}"
+
+          # Defensive UTF-8 BOM check — release.json in this repo is BOM-free,
+          # but if a contributor accidentally checks in a UTF-8-with-BOM file
+          # we'd silently preserve the BOM and break consumers that compare
+          # byte-for-byte. Throw early to make the regression visible.
+          $bytes = [System.IO.File]::ReadAllBytes('releases.json')
+          if ($bytes.Length -ge 3 -and $bytes[0] -eq 0xEF -and $bytes[1] -eq 0xBB -and $bytes[2] -eq 0xBF) {
+            throw "releases.json has a UTF-8 BOM — strip it before re-running."
+          }
+
+          $json = Get-Content releases.json -Raw | ConvertFrom-Json
+
+          $entry = [ordered]@{
+            version  = $version
+            date     = (Get-Date -Format 'yyyy-MM-dd')
+            type     = 'Исправление'
+            title    = "v$version release"
+            changes  = @('Auto-published via .github/workflows/release.yml')
+            url      = "https://github.com/${{ github.repository }}/releases/download/v$version/ARC-Frame-$version-full.zip"
+            size     = $size
+            sha256   = $sha
+          }
+
+          $json.releases = @($entry) + @($json.releases)
+          $json.latest = $version
+
+          $utf8NoBom = [System.Text.UTF8Encoding]::new($false)
+          [System.IO.File]::WriteAllText("releases.json", ($json | ConvertTo-Json -Depth 10), $utf8NoBom)
+
+      # 11. Commit the manifest update to main. We use
+      #     `git push origin HEAD:main` rather than `git push origin main`
+      #     because we're on a detached HEAD (after `actions/checkout@v4`
+      #     against a tag) — local main doesn't exist; HEAD is the
+      #     manifest commit we just created.
+      - name: Commit manifest update
+        run: |
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git config user.name "github-actions[bot]"
+          git add releases.json
+          git commit -m "release: update releases.json manifest for ${{ steps.version.outputs.VERSION }}"
+          git push origin HEAD:main
+
+      # 12. Create the GitHub Release. `gh release create` creates the
+      #     release under the just-pushed tag and attaches the ZIP.
+      #     Notes include the SHA-256 so users can verify integrity
+      #     even if their download was redirected through a CDN.
+      #
+      #     The notes string is built via concat (NOT a PowerShell
+      #     here-string) because here-strings span multiple lines at
+      #     indent 0, which terminates the YAML `run: |` block and
+      #     breaks parsing (line 187 of original draft). Concat keeps
+      #     every line at >= 10 spaces indent, so YAML treats them
+      #     all as part of the literal block.
+      - name: Create GitHub Release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        shell: pwsh
+        run: |
+          $version  = "${{ steps.version.outputs.VERSION }}"
+          $tag      = "v$version"
+          $zip      = "${{ steps.zip.outputs.ZIP_PATH }}"
+          $sha      = "${{ steps.hash.outputs.SHA256 }}"
+          $sizeKb   = [math]::Round("${{ steps.zip.outputs.ZIP_SIZE }}" / 1KB, 1)
+          $notes    = "Auto-published via .github/workflows/release.yml.`n`n" +
+                      "- Source commit: ${{ github.sha }}`n" +
+                      "- ZIP: $(Split-Path $zip -Leaf) ($sizeKb KB)`n" +
+                      "- SHA-256: $sha`n" +
+                      "- Full release notes & changelog: https://github.com/${{ github.repository }}/releases/tag/$tag"
+          gh release create $tag $zip --title "$tag" --notes "$notes"

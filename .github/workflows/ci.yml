@@ -1,0 +1,58 @@
+name: CI
+
+# ─────────────────────────────────────────────────────────────────────
+#  Trigger: every push/PR to main runs build + tests.
+#  Purpose: gate merges at "all tests pass on Windows + Release config".
+#  No publish / no release here — that's the release.yml job's job.
+# ─────────────────────────────────────────────────────────────────────
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+# Cancel in-progress CI on the same ref when a new commit lands.
+# Saves Runner-minutes on PRs that get force-pushed.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build-test:
+    name: Build & Test (Release, win-x64)
+    # 20 min cap; default is 360 min which wastes Runner-minutes on hung builds.
+    timeout-minutes: 20
+    runs-on: windows-latest
+
+    steps:
+      # 1. Source — full history (fetch-depth: 0) so any git-version-derived
+      #    attribute tests can resolve commits if needed.
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      # 2. .NET 8 SDK — pin to a major version so the runner's automatic
+      #    bumps don't accidentally jump to .NET 9 mid-release.
+      - name: Setup .NET 8 SDK
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 8.0.x
+
+      # 3. Restore both the app and test projects. WebView2 package lives
+      #    in the main project's csproj; restoring at solution level
+      #    catches any new references added by future PRs.
+      - name: Restore
+        run: dotnet restore MosquitoNetCalculator.sln
+
+      # 4. Build. --no-restore because the restore step above is the source
+      #    of truth (avoids silent cache mismatches between restore and build).
+      - name: Build (Release)
+        run: dotnet build MosquitoNetCalculator.sln -c Release --no-restore -v minimal
+
+      # 5. Test. --no-build forces test to use freshly built binaries
+      #    (prevents stale DLLs from a previous test run). xUnit's
+      #    [Collection("STA")] in ProgressBarUpdateAnimatorTests.cs
+      #    handles WPF STA isolation internally — no project-config needed.
+      - name: Test
+        run: dotnet test MosquitoNetCalculator.sln -c Release --no-build --verbosity minimal
