@@ -1,7 +1,22 @@
 {
-    "latest":  "3.40.1",
+    "latest":  "3.40.2",
     "minRequired":  "",        "releases":  [
                      {
+                         "version":  "3.40.2",
+                         "date":  "2026-06-29",
+                         "type":  "Исправление",
+                         "title":  "Belt-and-suspenders try/catch для прогресс-бара + стартовый баннер",
+                         "changes":  [
+                                         "OnUpdateProgressChanged обёрнут в try/catch: ЛЮБОЕ исключение внутри (включая future-регрессии в XAML/BAML) логируется в Debug и НЕ пробрасывается в Dispatcher.Invoke.",
+                                         "MainWindow_Loaded: проверка CurrentVersion в [3.40.0, 3.40.2) — на сломанных версиях показывает toast со ссылкой на GitHub Releases (15 сек, Warning).",
+                                         "Hardening от повторения v3.40.0-стиля бага: auto-update больше не может быть разорван исключением из UI прогресс-бара.",
+                                         "Пользователям v3.40.0 вручную заменить exe на v3.40.1 или v3.40.2 — ссылка будет в плашке при апдейте."
+                                     ],
+                         "url":  "https://github.com/DdepRest/arc-frame/releases/download/v3.40.2/ARC-Frame-3.40.2-full.zip",
+                         "size":  66750908,
+                         "sha256":  "19990b7e610d24f48f1b503eda4321fd2aec7a00d4b539ff420bf717afaf0369"
+                     },
+                                          {
                          "version":  "3.40.1",
                          "date":  "2026-06-29",
                          "type":  "Исправление",
