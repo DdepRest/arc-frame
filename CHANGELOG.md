@@ -2,6 +2,25 @@
 
 ## Unreleased — готовится к следующему релизу
 
+## 3.40.3 — 2026-06-29
+
+### Техническое
+
+- **`MainWindow.OnUpdateProgressChanged` извлечён в отдельный тестируемый хелпер `Helpers/ProgressBarUpdateAnimator.cs`:** тело метода стало однострочным делегатом `_progressAnimator?.Animate(...)`. Хелпер инкапсулирует всю логику `TryFindResource` + Storyboard fade (fade-in 200 мс / fade-out 250 мс) + belt-and-suspenders `try/catch` с явным re-throw для `OutOfMemoryException` / `StackOverflowException`. Отделён от `UpdateService` через `Func<double>` (текущий прогресс) и `Func<bool>` (идёт ли скачивание) — это позволило покрыть контракт «UI прогресс-бар не роняет auto-update flow» юнит-тестами впервые за всю историю проекта.
+- **`UpdateService.IsCurrentVersionBrokenForAutoUpdate(Version?)`** (internal): проверка half-open interval `[3.40.0, 3.40.2)` через прямую int-сравнку `Major`/`Minor`/`Build` (избегает footgun `Version(3,40,1,0) > Version(3,40,1)` из-за `Revision 0 > -1`). Ранее та же проверка дублировалась inline-литералами в `MainWindow_Loaded`.
+- **30 новых юнит-тестов** (711/711, было 681):
+  - `UpdateServiceTests.cs`: 14 inline-кейсов на boundary диапазона (3-part и 4-part версии, before/after/different major) + null-arg + smoke test на `CurrentVersion`.
+  - `ProgressBarUpdateAnimatorTests.cs`: 10 тестов — no-throw контракт для не-fatal исключений (`InvalidOperationException`, `InvalidCastException`, `ArgumentException`, `FormatException` через `[Theory]`), явный `Assert.Throws` для OOM/SOF, fallback Visibility/Opacity path при отсутствии Storyboard, no-op early-return, конструкторские null-проверки.
+- **xUnit `[Collection("STA")]` с `DisableParallelization`:** изолирует STA-тесты от параллельного исполнения, чтобы избежать гонки на AppDomain-wide `Application.Current`. Сами тесты НЕ создают `Application` — `FrameworkElement.TryFindResource` корректно обрабатывает `Application.Current == null`, что даёт штатный fallback path для тестирования и устраняет конфликт с `AppLifecycleTests`.
+
+### Заметки
+
+- Полностью обратно-совместимо с v3.40.0 → v3.40.2 (никаких регрессий). Production-поведение `OnUpdateProgressChanged` идентично v3.40.2.
+- v3.40.3 — первый релиз проекта, где контракт «UI ошибка не роняет auto-update» имеет **testable regression coverage** (а не только в комментариях).
+- Пользователям v3.40.0 / v3.40.1 переход на v3.40.3 безопасен, но не обязателен — видимое поведение не менялось. Рекомендуется всем, кто хочет unit-test гарантии от регрессий этого типа.
+
+---
+
 ## 3.40.2 — 2026-06-29
 
 ### Исправления

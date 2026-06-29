@@ -266,6 +266,59 @@ namespace MosquitoNetCalculator.Tests.Services
                 $"CurrentVersion should be > 0.0.0, got {UpdateService.CurrentVersion}");
         }
 
+        // ─── IsCurrentVersionBrokenForAutoUpdate ──────────────────────
+        //
+        // Tests for the half-open interval [BrokenVersionStart, BrokenVersionEnd)
+        // used by <c>MainWindow_Loaded</c> to decide whether to show the
+        // startup banner pointing affected users at the manual install URL.
+        //
+        // The comparator ignores Revision on purpose (see the docstring on
+        // <c>UpdateService.IsCurrentVersionBrokenForAutoUpdate</c>) — the
+        // 3-part and 4-part paths must produce identical results. v3.40.3
+        // testability refactor.
+
+        [Theory]
+        // Within range — inclusive at start, exclusive at end.
+        [InlineData("3.40.0", true)]    // start boundary (>=)
+        [InlineData("3.40.0.0", true)]  // 4-part equal to start (Revision=0)
+        [InlineData("3.40.0.99", true)] // 4-part advance Revision only
+        [InlineData("3.40.1", true)]    // middle
+        [InlineData("3.40.1.5", true)]  // 4-part in middle
+        // Outside range — end is <, not ≤.
+        [InlineData("3.40.2", false)]   // end boundary — FALSE because < not ≤
+        [InlineData("3.40.2.0", false)] // 4-part exactly at end (compare on triple)
+        [InlineData("3.40.3", false)]   // just after end
+        [InlineData("3.40.99", false)]  // arbitrarily after end
+        [InlineData("3.39.0", false)]   // before start
+        [InlineData("3.39.9", false)]   // right before start
+        [InlineData("2.40.1", false)]   // different major (downgrade)
+        [InlineData("4.0.0", false)]    // different major (upgrade)
+        [InlineData("0.0.0", false)]    // zero
+        public void IsCurrentVersionBrokenForAutoUpdate_RangeBoundaries(string raw, bool expected)
+        {
+            Assert.Equal(expected, UpdateService.IsCurrentVersionBrokenForAutoUpdate(new Version(raw)));
+        }
+
+        [Fact]
+        public void IsCurrentVersionBrokenForAutoUpdate_NullVersion_ReturnsFalse()
+        {
+            // Private null-check (defensive — production callers always
+            // pass UpdateService.CurrentVersion, which is never null post-init).
+            Assert.False(UpdateService.IsCurrentVersionBrokenForAutoUpdate(null));
+        }
+
+        [Fact]
+        public void IsCurrentVersionBrokenForAutoUpdate_CurrentVersion_IsConsistent()
+        {
+            // Smoke test: production calls this with UpdateService.CurrentVersion.
+            // Whatever it returns must be a valid bool (not throw, not crash).
+            // The exact value depends on the assembly's version stamping at
+            // build time, so we don't pin it here — just lock the contract.
+            bool result = UpdateService.IsCurrentVersionBrokenForAutoUpdate(UpdateService.CurrentVersion);
+            // No exception → contract holds.
+            _ = result;
+        }
+
         // ─── GetAvailableUpdate ──────────────────────────────────────
 
         [Fact]

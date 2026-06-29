@@ -8,7 +8,7 @@
 - Тёмная тема стабильна, переключается без потери данных.
 - Undo/Redo работает для позиций расчёта и Доп.КП.
 - Юнит-тесты покрывают ключевые сценарии (расчёты, экспорт/импорт, версия, обновления).
-- Текущая версия: **3.40.2** (готовится к публикации).
+- Текущая версия: **3.40.3** (готовится к публикации).
 - Последние изменения: UpdateService DI для тестирования, zero-byte download fix, XAML-анимация UpdateDownloadBar, UI-polish (CornerRadius), новые интеграционные и unit-тесты, исправления документации.
 - Система A.R.C. прошла 3 итерации улучшений:
   - **v1:** инициализация, аудит, эталонные кейсы.
@@ -127,7 +127,7 @@ AGENT.md / AGENTS.md / CLAUDE.md / GEMINI.md
 
 ## Source files
 
-- `MosquitoNetCalculator/MosquitoNetCalculator.csproj` — версия 3.39.0.
+- `MosquitoNetCalculator/MosquitoNetCalculator.csproj` — версия 3.40.3.
 - `releases.json` — история релизов.
 - `MosquitoNetCalculator/Resources/update-log.json` — история для UI.
 - `docs/arc/*.md` — вся проектная документация.
@@ -139,4 +139,4 @@ AGENT.md / AGENTS.md / CLAUDE.md / GEMINI.md
 
 ## Last verified
 
-2026-06-29 (v3.40.2 patch prep: belt-and-suspenders try/catch wrapper in OnUpdateProgressChanged (любой exception в UI больше не роняет auto-update flow), стартовый баннер при CurrentVersion ∈ [3.40.0, 3.40.2) — full suite passes, validate-docs и arc-check PASS)
+2026-06-29 (v3.40.3 patch: OnUpdateProgressChanged извлечён в testable ProgressBarUpdateAnimator, IsCurrentVersionBrokenForAutoUpdate (internal) с explicit (Major,Minor,Build) check. 711/711 tests pass — 30 new tests for the v3.40.x alarm-defense contract.)

@@ -150,6 +150,73 @@ namespace MosquitoNetCalculator.Services
             return !string.IsNullOrEmpty(pending);
         }
 
+        // ──────────────────────────────────────────────────────────────────
+        //  Broken-version detection (startup banner)
+        // ──────────────────────────────────────────────────────────────────
+        //
+        // Versions in the half-open interval [BrokenVersionStart, BrokenVersionEnd)
+        // ship with a known-broken auto-update flow. MainWindow_Loaded shows
+        // a Warning toast with a manual-install URL for users in this range.
+        //
+        // Maintenance: bump BrokenVersionEnd every time a fix is published.
+        // Each publication effectively retires the previous broken range —
+        // keeping the range narrow ensures only the actually-affected users
+        // see the banner.
+        //
+        // History:
+        //   • v3.40.0 — Original broken release (ResourceReferenceKeyNotFound
+        //                Exception in OnUpdateProgressChanged aborts the
+        //                auto-update flow).
+        //   • v3.40.1 — First patch (FindResource → TryFindResource;
+        //                moved Storyboards to Window.Resources).
+        //   • v3.40.2 — Belt-and-suspenders try/catch + this banner.
+        //                Bump BrokenVersionEnd to (3,40,3) on the NEXT
+        //                release so any future regression here retires
+        //                automatically.
+        //
+        // Why tuples and not System.Version? `Version(3,40,1,0) > Version(3,40,1)`
+        // is true because Revision 0 > -1, even though both represent the
+        // same release (InformationalVersion vs. FileVersion parsing paths).
+        // Comparing on (Major, Minor, Build) only avoids the footgun and
+        // produces the expected equal-or-greater result for both 3-part and
+        // 4-part Version objects.
+        // Constants are private — only IsCurrentVersionBrokenForAutoUpdate uses
+        // them. External API surface is the method itself.
+        private const int BrokenVersionMajor = 3;
+        private const int BrokenVersionMinor = 40;
+        private const int BrokenVersionStartBuild = 0;
+        private const int BrokenVersionEndBuild   = 2;
+
+        /// <summary>
+        /// Returns <c>true</c> if <paramref name="version"/> falls into the
+        /// known-broken-for-auto-update half-open interval
+        /// <c>[3.40.<paramref name="BrokenVersionStartBuild"/>, 3.40.<paramref name="BrokenVersionEndBuild"/>)</c>.
+        ///
+        /// Comparison ignores <c>Revision</c> on purpose — we look only at
+        /// <c>(Major, Minor, Build)</c>. This avoids the <see cref="Version"/>
+        /// comparison footgun where <c>Version(3,40,1,0) &gt; Version(3,40,1)</c>
+        /// because Revision <c>0 &gt; -1</c>, even though both represent the
+        /// same release (InformationalVersion vs. FileVersion parsing paths).
+        ///
+        /// Visibility is <c>internal</c> rather than <c>public</c> — only
+        /// <c>MainWindow_Loaded</c> calls it. Tests access via the existing
+        /// <c>InternalsVisibleTo("MosquitoNetCalculator.Tests")</c> in the
+        /// main .csproj.
+        /// </summary>
+        internal static bool IsCurrentVersionBrokenForAutoUpdate(Version? version)
+        {
+            if (version == null) return false;
+
+            // Major and Minor are fixed inside the broken range — keep the
+            // comparison explicit so the contract is obvious at the call site.
+            // Avoids both System.Version overload surprises AND tuple
+            // comparison operator syntax (which varies by LangVer).
+            return version.Major == BrokenVersionMajor
+                && version.Minor == BrokenVersionMinor
+                && version.Build >= BrokenVersionStartBuild
+                && version.Build < BrokenVersionEndBuild;
+        }
+
         /// <summary>
         /// Версия, для которой уже была показана фоновая плашка в текущей
         /// сессии. Используется чтобы не спамить одной и той же плашкой при
