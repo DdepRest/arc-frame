@@ -1,6 +1,25 @@
 {
-    "latest":  "3.39.0",
+    "latest":  "3.40.0",
     "minRequired":  "",        "releases":  [
+                     {
+                         "version":  "3.40.0",
+                         "date":  "2026-06-29",
+                         "type":  "Улучшение",
+                         "title":  "WinAPI idle detection, anti-recommend text, minimized guard",
+                         "changes":  [
+                                         "UpdateCheckScheduler теперь использует WinAPI GetLastInputInfo для системного idle-детекции вместо UI-событий (PreviewMouseMove/PreviewKeyDown).",
+                                         "Anti-recommend text в диалоге обновления: при автоматическом обнаружении кнопка «Отмена» переименована в «Отложить» с предупреждающим текстом.",
+                                         "Minimized window guard: фоновая проверка пропускает toast, если окно свёрнуто — уведомление появится после восстановления.",
+                                         "UpdateCheckScheduler: удалён NotifyActivity и _lastActivityTime; добавлен GetSystemIdleTime callback (Func<TimeSpan>).",
+                                         "UpdateService: добавлен P/Invoke GetLastInputInfo и публичный GetIdleTime(); убрана логика IsCellEditing / CanShowUpdateDialog / retry-таймеры.",
+                                         "MainWindow.xaml.cs: удалены вызовы NotifyActivity из PreviewMouseMove и PreviewKeyDown.",
+                                         "DialogService.ShowUpdateAvailable: добавлен параметр isAutomatic с anti-recommend UI.",
+                                         "16 тестов UpdateCheckSchedulerTests обновлены под новую модель idle-детекции."
+                                     ],
+                         "url":  "https://github.com/DdepRest/arc-frame/releases/download/v3.40.0/ARC-Frame-3.40.0-full.zip",
+                         "size":  66651830,
+                         "sha256":  "036e7336516fbceb4a39f363bd34e558a871b551b320602dc228c6ec5de72ec6"
+                     },
                      {
                          "version":  "3.39.0",
                          "date":  "2026-06-29",
