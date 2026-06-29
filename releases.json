@@ -1,7 +1,23 @@
 {
-    "latest":  "3.40.2",
+    "latest":  "3.40.3",
     "minRequired":  "",        "releases":  [
                      {
+                         "version":  "3.40.3",
+                         "date":  "2026-06-29",
+                         "type":  "Исправление",
+                         "title":  "Testability refactor: ProgressBarUpdateAnimator + IsCurrentVersionBrokenForAutoUpdate",
+                         "changes":  [
+                                         "MainWindow.OnUpdateProgressChanged body извлечён в Helpers/ProgressBarUpdateAnimator.cs — тестируемый в изоляции от WPF Application, отделён от UpdateService через Func<double> / Func<bool> коллбэки.",
+                                         "UpdateService.IsCurrentVersionBrokenForAutoUpdate(Version?) — internal-метод для startup-баннера, прямое int-сравнение Major/Minor/Build (избегает Version.Revision footgun).",
+                                         "UpdateServiceTests: 14 inline-кейсов покрывают boundary диапазона [3.40.0, 3.40.2) — 3-part и 4-part версии, before/after/different major.",
+                                         "ProgressBarUpdateAnimatorTests: 10 тестов на no-throw контракт (InvalidOperationException, InvalidCastException, ArgumentException, FormatException), явный re-throw для OOM/SOF, fallback Visibility/Opacity, no-op early-return, конструкторские null-проверки. STA tests с [Collection(\"STA\")] для изоляции.",
+                                         "711/711 тестов проходят."
+                                     ],
+                         "url":  "https://github.com/DdepRest/arc-frame/releases/download/v3.40.3/ARC-Frame-3.40.3-full.zip",
+                         "size":  66751587,
+                         "sha256":  "440e6015233654bb18b75df489ecec0b1db9f297ab2f3089f43f0da034e1764a"
+                     },
+                                          {
                          "version":  "3.40.2",
                          "date":  "2026-06-29",
                          "type":  "Исправление",
