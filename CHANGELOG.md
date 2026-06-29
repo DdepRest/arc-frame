@@ -2,7 +2,27 @@
 
 ## Unreleased — готовится к следующему релизу
 
-**Статус:** Пусто. Следующие изменения будут добавлены перед следующим релизом.
+## 3.39.0 — 2026-06-29
+
+### Новинка
+
+- **Background auto-update checks** (Variant A из спеки `update-notification-rework-spec.md`):
+  - Periodic checks каждые 30 минут от последней проверки.
+  - Idle checks после 10 минут простоя пользователя.
+  - Anti-spam throttle: минимум 2 минуты между двумя реальными проверками.
+  - Реализовано в новом `Services/UpdateCheckScheduler.cs` с pure-логикой `ShouldCheckAt(...)` для unit-тестов.
+- **Persistent update notification toast** (`ToastService.ShowUpdateNotification`):
+  - Показывается при фоновом обнаружении обновления взамен модального диалога.
+  - Action-кнопки `Обновить` / `Позже`; не исчезает сама пока пользователь не выберет.
+  - Click-обработчик корректно работает с `ToastCanvas.IsHitTestVisible="False"`: явно ставит `IsHitTestVisible = true` на toast Border (иначе кнопки молча не получают Click из-за Inheritable DP).
+- `UpdateService.CheckInBackgroundAsync` — фоновая проверка, отличается от стартап-чека тем, что открывает persistent toast вместо модального диалога (стартап — модал по прежнему).
+- Activity-tracking в `MainWindow.xaml.cs`: `PreviewMouseMove` и `PreviewKeyDown` сбрасывают idle-таймер scheduler'а.
+
+### Техническое
+
+- `UpdateService`: добавлено поле `_lastNotifiedVersion` (anti-spam в сессии для notification toast), сбрасывается на успешной установке и при ручном «Обновить» в плашке.
+- `MainWindow.xaml.cs`: scheduler стартует в `Loaded`, останавливается в `Closed`.
+- **20+ новых юнит-тестов** для `UpdateCheckScheduler.ShouldCheckAt` (`UpdateCheckSchedulerTests.cs`): edge-cases `>=`/`<=` gate, throttle/idle/periodic state-machine, activity-reset, `OnCheckDue` SafeInvoke contract.
 
 ---
 

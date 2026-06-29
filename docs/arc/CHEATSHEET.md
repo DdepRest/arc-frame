@@ -75,4 +75,4 @@ arc-check.ps1                                 # Проверка docs перед
 
 ## Last verified
 
-2026-06-27 (A.R.C. v4: SYMBOL_INDEX, INTENTS, gensymbols, arc-check)
+2026-06-29 (v3.39.0 — background auto-update checks via UpdateCheckScheduler: periodic 30 мин + idle 10 мин + persistent notification toast с кнопками [Обновить]/[Позже])

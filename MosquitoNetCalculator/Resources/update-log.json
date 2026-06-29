@@ -1,5 +1,23 @@
 [
   {
+    "date": "2026-06-29",
+    "version": "3.39.0",
+    "type": "Улучшение",
+    "title": "Background auto-update checks: 30 мин periodic + 10 мин idle, persistent toast с кнопками",
+    "changes": [
+      "Background auto-update checks: каждые 30 минут от последней проверки и после 10 минут непрерывного простоя пользователя.",
+      "Anti-spam throttle: минимум 2 мин между двумя реальными проверками.",
+      "Реализован Services/UpdateCheckScheduler.cs с pure-логикой ShouldCheckAt(...) для unit-тестов.",
+      "Persistent update notification toast (ToastService.ShowUpdateNotification) с action-кнопками «Обновить» / «Позже» — не исчезает сама, пока пользователь не выберет.",
+      "Click-обработчик корректно работает с ToastCanvas.IsHitTestVisible=False: явно ставит IsHitTestVisible=true на toast Border.",
+      "UpdateService.CheckInBackgroundAsync — фоновая проверка, открывает toast вместо модального диалога (стартап — модал по-прежнему).",
+      "UpdateService._lastNotifiedVersion — anti-spam в сессии для notification toast.",
+      "Activity-tracking в MainWindow: PreviewMouseMove и PreviewKeyDown сбрасывают idle-таймер scheduler'а.",
+      "Scheduler стартует в Loaded, останавливается в Closed.",
+      "20+ новых юнит-тестов для UpdateCheckScheduler.ShouldCheckAt."
+    ]
+  },
+  {
     "date": "2026-06-28",
     "version": "3.38.0",
     "type": "Улучшение",

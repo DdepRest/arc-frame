@@ -8,7 +8,7 @@
 - Тёмная тема стабильна, переключается без потери данных.
 - Undo/Redo работает для позиций расчёта и Доп.КП.
 - Юнит-тесты покрывают ключевые сценарии (расчёты, экспорт/импорт, версия, обновления).
-- Текущая версия: **3.38.0** (готовится к публикации).
+- Текущая версия: **3.39.0** (готовится к публикации).
 - Последние изменения: UpdateService DI для тестирования, zero-byte download fix, XAML-анимация UpdateDownloadBar, UI-polish (CornerRadius), новые интеграционные и unit-тесты, исправления документации.
 - Система A.R.C. прошла 3 итерации улучшений:
   - **v1:** инициализация, аудит, эталонные кейсы.
@@ -127,7 +127,7 @@ AGENT.md / AGENTS.md / CLAUDE.md / GEMINI.md
 
 ## Source files
 
-- `MosquitoNetCalculator/MosquitoNetCalculator.csproj` — версия 3.37.2.
+- `MosquitoNetCalculator/MosquitoNetCalculator.csproj` — версия 3.39.0.
 - `releases.json` — история релизов.
 - `MosquitoNetCalculator/Resources/update-log.json` — история для UI.
 - `docs/arc/*.md` — вся проектная документация.
@@ -139,4 +139,4 @@ AGENT.md / AGENTS.md / CLAUDE.md / GEMINI.md
 
 ## Last verified
 
-2026-06-28 (UpdateService DI + zero-byte fix + XAML-анимация UpdateDownloadBar + UI-polish + 10 новых тестов — full suite 650+/650+ passes, validate-docs и arc-check PASS)
+2026-06-29 (v3.39.0 release prep: Background auto-update checks via UpdateCheckScheduler + persistent notification toast — full suite 670+/670+ passes, validate-docs и arc-check PASS)

@@ -322,4 +322,85 @@ Watchdog .bat запускает обновлённый `MosquitoNetCalculator.e
 
 ## Last verified
 
+2026-06-29 (idle/periodic background checks via UpdateCheckScheduler + ShowUpdateNotification toast + CheckInBackgroundAsync)
+
+---
+
+## Idle/Periodic background checks (`UpdateCheckScheduler`)
+
+В дополнение к startup-проверке и ручной проверке из меню Настроек, приложение теперь проверяет обновления в фоне по двум стратегиям:
+
+| Стратегия | Триггер | Поведение |
+|-----------|---------|-----------|
+| **Periodic** | Каждые 30 мин от последней проверки | Независимо от активности пользователя. Production-default: `CheckInterval = 30 min`. |
+| **Idle**     | 10 мин непрерывного простоя | `MainWindow.PreviewMouseMove` / `PreviewKeyDown` сбрасывают таймер. Production-default: `IdleThreshold = 10 min`. |
+| **Throttle** | Минимум 2 мин между двумя реальными проверками | Анти-спам: periodic + idle одновременно сработать два раза подряд не могут. Production-default: `MinGap = 2 min`. |
+
+### Архитектура
+
+```
+┌────────────────────┐   ┌──────────────────────┐   ┌────────────────────┐
+│ DispatcherTimer     │──▶│ ShouldCheckAt()      │──▶│ OnCheckDue (Func
+│ TickInterval=60 sec │   │ — pure logic         │   │  <Task>)            │
+└────────────────────┘   │ — throttle/periodic/ │   └────────────────────┘
+        ▲                │   idle gates          │            │
+        │                └──────────────────────┘            ▼
+        │                                            ┌──────────────────────┐
+        │                                            │ UpdateService.       │
+        │                                            │   CheckInBackgroundAsync
+        │                                            └──────────────────────┘
+        │                                                      │
+        │                                                      ▼
+        │                                            ┌──────────────────────┐
+        │                                            │ ToastService.        │
+        │                                            │   ShowUpdateNotify   │
+        │                                            │ — persistent toast  │
+        │                                            │ — [Обновить][Позже] │
+        │                                            └──────────────────────┘
+        │
+┌──────────────────────────────────────────────────────────────────┐
+│ Activity tracking:                                                │
+│ • MainWindow.PreviewMouseMove → NotifyActivity                   │
+│ • MainWindow.PreviewKeyDown   → NotifyActivity                   │
+└──────────────────────────────────────────────────────────────────┘
+```
+
+### Контракт scheduler'а
+
+1. **Start()** идемпотентен. Ставит `_lastCheckTime = Now()`, что подавляет немедленную проверку после первого тика (startup-чек уже отработал в `App.CheckOnStartupAsync`).
+2. **ShouldCheckAt(now)** — pure-метод. Алгоритм:
+   1. `now - _lastCheckTime < MinGap` → **throttle**, false.
+   2. `now - _lastCheckTime ≥ CheckInterval` → **periodic**, true.
+   3. `now - _lastActivityTime ≥ IdleThreshold` → **idle**, true.
+   4. Иначе false.
+3. **ShouldSkipCheck** callback (`Func<bool>`) — production-wire: `() => UpdateService.IsChecking || UpdateService.IsDownloading`. Если возвращает `true`, tick игнорируется (не запускаем вторую параллельную проверку).
+4. **OnCheckDue** callback (`Func<Task>`) — production-wire: `() => UpdateService.CheckInBackgroundAsync()`. Scheduler вызывает его через fire-and-forget после `MarkChecked()`. Синхронные броски безопасны — обёртка `SafeInvoke` в scheduler'е логирует исключения в `Debug.WriteLine`.
+
+### Уведомление в фоне (`ShowUpdateNotification`)
+
+Плашка появляется в правом нижнем углу и **не исчезает сама** — пользователь обязан выбрать одно из двух действий:
+
+| Действие | Эффект |
+|----------|--------|
+| **Обновить** | `CloseAndDispatch`: сначала `RemoveToast(toast)`, потом `CheckAndApplyAsync(owner, isAutomatic: false)` → existing modal-dialog from `DialogService.ShowUpdateAvailable` (с changelog) → download. После успешного pending обнуляется, `_lastNotifiedVersion = null` (чтобы при ошибке загрузки следующий tick смог предложить снова). |
+| **Позже** | `CloseAndDispatch`: `RemoveToast`, nothing more. Pending остаётся в settings.json — следующая фоновая проверка НЕ покажет плашку снова для того же релиза (guard `if (_lastNotifiedVersion == release.Version) return;` в `CheckInBackgroundAsync`). |
+
+**Известное ограничение:** `ToastCanvas.IsHitTestVisible="False"` (в `MainWindow.xaml`) пробрасывает наследуемое свойство вниз по дереву и блокирует клики на всех children. Notification toast явно ставит `toast.IsHitTestVisible = true` — НЕ удаляйте эту строку, иначе кнопки «Обновить» / «Позже» перестанут получать `Click`.
+
+### Анти-флуд
+
+- `_lastNotifiedVersion` (static в `UpdateService`) — гарантирует, что плашка не показывается дважды для одной версии за сессию.
+- `MinGap` (production 2 мин) — не позволяет двум стратегиям стартовать две проверки подряд.
+- Periodic в любом случае срабатывает раз в 30 мин даже если пользователь весь день кликает мышью. Idle отрабатывает только если пользователь действительно отошёл.
+
+### Source files (new + changed)
+
+- `MosquitoNetCalculator/Services/UpdateCheckScheduler.cs` (NEW)
+- `MosquitoNetCalculator/Services/UpdateService.cs` (`CheckInBackgroundAsync` + `_lastNotifiedVersion`)
+- `MosquitoNetCalculator/Services/ToastService.cs` (`ShowUpdateNotification` + `ShowUpdateNotification` constants)
+- `MosquitoNetCalculator/MainWindow.xaml.cs` (scheduler lifecycle + activity hooks)
+- `MosquitoNetCalculator.Tests/Services/UpdateCheckSchedulerTests.cs` (NEW, 20+ tests)
+
+## Last verified
+
 2026-06-28 (HttpClient DI + zero-byte fix + XAML animation + integration tests)

@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Animation;
 
@@ -132,6 +133,209 @@ namespace MosquitoNetCalculator.Services
 
             AnimateToastIn(toast);
             ScheduleToastRemoval(toast, durationMs);
+        }
+
+        /// <summary>
+        /// Показывает persistent (не auto-disappearing) плашку об обнаруженном
+        /// обновлении. Используется фоновой проверкой из <see cref="UpdateService.CheckInBackgroundAsync"/>.
+        ///
+        /// ─── Зачем отличается от обычного <see cref="ShowToast"/> ───────────
+        /// • У обычных toast'ов fixed lifetime (3500 ms по умолчанию) — для
+        ///   уведомления «обнаружено обновление» это слишком коротко: пользователь
+        ///   может пропустить плашку и забыть.
+        /// • Persistent = пока пользователь явно не нажмёт «Обновить» или
+        ///   «Позже» — плашка висит. Это согласуется с задачей
+        ///   «можно отложить, но не рекомендуется»: пользователь не сможет
+        ///   случайно «не заметить» обновление.
+        ///
+        /// ─── Layout ─────────────────────────────────────────────────────────
+        /// ┌─────────────────────────────────────────────────────────────────┐
+        /// │ ┃ ⓘ  Доступно обновление                          [ Обновить ]   │ │
+        /// │ ┃    Версия 3.37.3 • 5 новых версий. Рекомендуем…  [ Позже ]    │ │
+        /// └─────────────────────────────────────────────────────────────────┘
+        /// Ширина 400 px (шире обычного 360 — нужно место под 2 кнопки).
+        /// </summary>
+        public static void ShowUpdateNotification(
+            string version,
+            int changelogCount,
+            Action onUpdate,
+            Action onLater)
+        {
+            if (_toastCanvas == null) return;
+
+            // Detail-text занимает не всю ширину: слева accent-bar (4px) +
+            // icon (24px) + margins (12+10) ≈ 50px; 10px запаса на textStack.
+            const double UpdateToastWidth = 400;
+            const double DetailTextMaxWidthOffset = 60;
+
+            var accentBrush = GetAccentBrush(ToastType.Info);
+            var iconChar = GetIconChar(ToastType.Info);
+
+            var accentBar = new Border
+            {
+                Width = 4,
+                CornerRadius = new CornerRadius(2),
+                Background = accentBrush,
+                Margin = new Thickness(0, 0, 12, 0),
+                VerticalAlignment = VerticalAlignment.Stretch,
+            };
+
+            var iconBorder = new Border
+            {
+                Width = 24,
+                Height = 24,
+                CornerRadius = new CornerRadius(12),
+                Background = accentBrush,
+                Margin = new Thickness(0, 0, 10, 0),
+                VerticalAlignment = VerticalAlignment.Center,
+                Child = new TextBlock
+                {
+                    Text = iconChar,
+                    Foreground = Brushes.White,
+                    FontSize = 11,
+                    FontWeight = FontWeights.Bold,
+                    HorizontalAlignment = HorizontalAlignment.Center,
+                    VerticalAlignment = VerticalAlignment.Center,
+                }
+            };
+
+            var titleBlock = new TextBlock
+            {
+                Text = "Доступно обновление",
+                FontSize = 13,
+                FontWeight = FontWeights.SemiBold,
+                Foreground = (Brush?)Application.Current?.FindResource("TextPrimary") ?? Brushes.Black,
+                Margin = new Thickness(0, 0, 0, 1),
+            };
+
+            var detailBlock = new TextBlock
+            {
+                FontSize = 11,
+                Foreground = (Brush?)Application.Current?.FindResource("TextSecondary") ?? Brushes.DarkSlateGray,
+                TextWrapping = TextWrapping.Wrap,
+                MaxWidth = UpdateToastWidth - DetailTextMaxWidthOffset,
+            };
+            detailBlock.Text = changelogCount > 0
+                ? $"Версия {version} \u2022 {changelogCount} новых версий. Рекомендуем обновиться."
+                : $"Версия {version}. Рекомендуем обновиться.";
+
+            var textStack = new StackPanel();
+            textStack.Children.Add(titleBlock);
+            textStack.Children.Add(detailBlock);
+
+            var headerStack = new StackPanel
+            {
+                Orientation = Orientation.Horizontal,
+                VerticalAlignment = VerticalAlignment.Top,
+            };
+            headerStack.Children.Add(iconBorder);
+            headerStack.Children.Add(textStack);
+
+            var updateBtn = new Button
+            {
+                Content = "Обновить",
+                Padding = new Thickness(14, 6, 14, 6),
+                Margin = new Thickness(0, 0, 6, 0),
+                FontSize = 12,
+                FontWeight = FontWeights.SemiBold,
+                Cursor = Cursors.Hand,
+                MinWidth = 80,
+            };
+            if (Application.Current?.FindResource("PrimaryButton") is Style primaryStyle)
+                updateBtn.Style = primaryStyle;
+            else
+            {
+                updateBtn.Background = accentBrush;
+                updateBtn.Foreground = Brushes.White;
+                updateBtn.BorderThickness = new Thickness(0);
+            }
+
+            var laterBtn = new Button
+            {
+                Content = "Позже",
+                Padding = new Thickness(14, 6, 14, 6),
+                Margin = new Thickness(0, 0, 0, 0),
+                FontSize = 12,
+                FontWeight = FontWeights.Normal,
+                Cursor = Cursors.Hand,
+                MinWidth = 70,
+            };
+            if (Application.Current?.FindResource("GhostButton") is Style ghostStyle)
+                laterBtn.Style = ghostStyle;
+            else
+            {
+                laterBtn.Background = (Brush?)Application.Current?.FindResource("GhostBg") ?? Brushes.Transparent;
+                laterBtn.Foreground = (Brush?)Application.Current?.FindResource("TextPrimary") ?? Brushes.Black;
+                laterBtn.BorderThickness = new Thickness(1);
+                laterBtn.BorderBrush = (Brush?)Application.Current?.FindResource("Border") ?? Brushes.Gray;
+            }
+
+            var btnPanel = new StackPanel
+            {
+                Orientation = Orientation.Horizontal,
+                HorizontalAlignment = HorizontalAlignment.Right,
+                Margin = new Thickness(0, 8, 0, 0),
+            };
+            btnPanel.Children.Add(updateBtn);
+            btnPanel.Children.Add(laterBtn);
+
+            var contentStack = new StackPanel();
+            contentStack.Children.Add(headerStack);
+            contentStack.Children.Add(btnPanel);
+
+            var rootPanel = new DockPanel { LastChildFill = true };
+            DockPanel.SetDock(accentBar, Dock.Left);
+            rootPanel.Children.Add(accentBar);
+            rootPanel.Children.Add(contentStack);
+
+            // Явно ставим IsHitTestVisible=true: ToastCanvas в XAML объявлен с
+            // IsHitTestVisible=False, и это inheritable DP — кнопки внутри
+            // Border'а наследуют False и не получают Click. Override на этом
+            // Border восстанавливает реактивность; дальше вниз по дереву
+            // наследование работает нормально.
+            var toast = new Border
+            {
+                Child = rootPanel,
+                HorizontalAlignment = HorizontalAlignment.Right,
+                VerticalAlignment = VerticalAlignment.Bottom,
+                MaxWidth = UpdateToastWidth,
+                IsHitTestVisible = true,
+            };
+            if (Application.Current?.FindResource("ToastBorder") is Style toastStyle)
+                toast.Style = toastStyle;
+
+            // Подписываемся на Click ПОСЛЕ полной сборки toast — замыкание
+            // захватывает переменную, а не значение, так что к моменту первого
+            // Click toast уже валиден. Убираем плашку ДО вызова callback,
+            // чтобы новый modal-диалог (если onUpdate запускает CheckAndApplyAsync)
+            // перекрывал её сразу, а не после репейнта.
+            void CloseAndDispatch(Action body)
+            {
+                RemoveToast(toast);
+                body();
+            }
+            updateBtn.Click += (_, _) => CloseAndDispatch(onUpdate);
+            laterBtn.Click += (_, _) => CloseAndDispatch(onLater);
+
+            // Позиционируем в стопке существующих toast'ов как обычные.
+            double existingHeight = 0;
+            foreach (UIElement child in _toastCanvas.Children)
+            {
+                if (child is Border existingToast && !TabIndicatorTag.Equals(existingToast.Tag))
+                {
+                    existingHeight += existingToast.ActualHeight + ToastSpacing;
+                }
+            }
+            toast.Margin = new Thickness(0, 0, ToastRightMargin, ToastBottomMargin + existingHeight);
+
+            _toastCanvas.Children.Add(toast);
+            _activeToasts.Add(toast);
+
+            AnimateToastIn(toast);
+
+            // Умышленно НЕ вызываем ScheduleToastRemoval — плашка persistent,
+            // закрывается только по нажатию на «Обновить» или «Позже»
+            // (см. CloseAndDispatch выше).
         }
 
         public static void RepositionToasts()

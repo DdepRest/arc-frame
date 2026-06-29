@@ -63,6 +63,12 @@ namespace MosquitoNetCalculator
 
         private System.Windows.Threading.DispatcherTimer? _updateTotalDebounceTimer;
 
+        // ─── Idle/periodic update check scheduler ───────────────────────────
+        // Запускается в Loaded после startup-проверки. Триггерит CheckInBackgroundAsync
+        // каждые CheckInterval (30 мин) или после IdleThreshold (10 мин) простоя.
+        // Activity-tracker: PreviewMouseMove + PreviewKeyDown сбрасывают idle.
+        private UpdateCheckScheduler? _updateCheckScheduler;
+
         public MainWindow()
         {
             InitializeComponent();
@@ -131,9 +137,19 @@ namespace MosquitoNetCalculator
 
             PreviewKeyDown += (_, args) =>
             {
+                // Activity-signal для scheduler (сбрасывает idle-timer).
+                // Вызов ДО обработки горячих клавиш — даже mute shortcut
+                // считается «пользователь на приложении».
+                _updateCheckScheduler?.NotifyActivity();
+
                 if (Keyboard.Modifiers == ModifierKeys.Control && args.Key == Key.Z) { Undo(); args.Handled = true; }
                 else if (Keyboard.Modifiers == ModifierKeys.Control && args.Key == Key.Y) { Redo(); args.Handled = true; }
             };
+
+            // Activity-tracker: каждое движение мыши = пользователь здесь.
+            // NotifyActivity() — O(1), не блокирует, можно дёргать хоть 100 раз/сек.
+            // Используется update-scheduler'ом для решения «триггерить idle-проверку».
+            PreviewMouseMove += (_, _) => _updateCheckScheduler?.NotifyActivity();
 
             MainTabControl.SelectionChanged += (_, _) =>
             {
@@ -238,7 +254,11 @@ namespace MosquitoNetCalculator
                 ToastService.RepositionToasts();
             };
 
-            Closed += (_, _) => UpdateService.ProgressChanged -= OnUpdateProgressChanged;
+            Closed += (_, _) =>
+            {
+                UpdateService.ProgressChanged -= OnUpdateProgressChanged;
+                _updateCheckScheduler?.Stop();
+            };
 
             StateChanged += (s, e) =>
             {
@@ -252,6 +272,19 @@ namespace MosquitoNetCalculator
             RefreshOrdersList();
             RecalculatePriceGridColumnWidths();
             _initialLoadDone = true;
+
+            // ── Запуск фонового планировщика проверок обновлений ────────
+            // Создаём здесь (а не в ctor) — нам нужен реальный Window owner
+            // и Activity-tracker на PreviewMouseMove/PreviewKeyDown уже подписан.
+            // Startup-проверка уже отработала в App.CheckOnStartupAsync — поэтому
+            // Start() сбрасывает _lastCheckTime = Now, и первая фоновая проверка
+            // случится не раньше 10 мин idle / 30 мин интервала.
+            _updateCheckScheduler = new UpdateCheckScheduler
+            {
+                ShouldSkipCheck = () => UpdateService.IsChecking || UpdateService.IsDownloading,
+                OnCheckDue = () => UpdateService.CheckInBackgroundAsync(),
+            };
+            _updateCheckScheduler.Start();
 
             // Defer the entrance cascade animation until AFTER the initial
             // layout/render pass has stabilized. Dispatching into the Loaded

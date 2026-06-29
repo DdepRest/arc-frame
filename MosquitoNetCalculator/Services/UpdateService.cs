@@ -121,6 +121,100 @@ namespace MosquitoNetCalculator.Services
         }
 
         /// <summary>
+        /// Версия, для которой уже была показана фоновая плашка в текущей
+        /// сессии. Используется чтобы не спамить одной и той же плашкой при
+        /// каждом тике <see cref="UpdateCheckScheduler"/>. Сбрасывается:
+        /// • при ручном «Обновить сейчас» из плашки (чтобы при ошибке загрузки
+        ///   следующий scheduler-tick снова предложил установку);
+        /// • при успешном завершении обновления (pending уже null).
+        /// </summary>
+        private static string? _lastNotifiedVersion;
+
+        /// <summary>
+        /// Тихая фоновая проверка, вызываемая из <see cref="UpdateCheckScheduler"/>
+        /// каждые <see cref="UpdateCheckScheduler.CheckInterval"/> или после
+        /// <see cref="UpdateCheckScheduler.IdleThreshold"/> простоя.
+        ///
+        /// В отличие от <see cref="CheckOnStartupAsync"/> / <see cref="CheckAndApplyAsync"/>,
+        /// НЕ открывает модальный диалог — пользователь увидит плашку
+        /// (<see cref="ToastService.ShowUpdateNotification"/>) с кнопками
+        /// «Обновить сейчас» и «Позже».
+        ///
+        /// Поведение:
+        /// • Манифест пуст / up-to-date / ошибка — silent (никаких toast).
+        /// • Update available — сохранить pending + показать плашку (один раз
+        ///   на версию в сессии).
+        /// • «Обновить сейчас» → <see cref="CheckAndApplyAsync"/>(manual),
+        ///   который уже открывает modal с changelog.
+        /// • «Позже» → pending остаётся сохранённым, плашка закрывается.
+        ///
+        /// Плашка показывается только если ещё не показывалась для этой версии
+        /// в текущей сессии.
+        /// </summary>
+        public static async Task CheckInBackgroundAsync()
+        {
+            // Re-entry guard на случай параллельного тика sся шедулером
+            // или одновременного ручного вызова.
+            if (IsChecking) return;
+            IsChecking = true;
+            try
+            {
+                var manifest = await FetchManifestAsync().ConfigureAwait(true);
+                var release = GetAvailableUpdate(manifest, CurrentVersion);
+
+                if (release == null)
+                {
+                    // silent — фоновые проверки не должны шуметь
+                    return;
+                }
+
+                // Доступно обновление — фиксируем pending (на случай краша).
+                AppSettingsService.SavePendingUpdateVersion(release.Version);
+
+                // Плашку показываем только один раз на версию за сессию.
+                if (_lastNotifiedVersion == release.Version) return;
+                _lastNotifiedVersion = release.Version;
+
+                var owner = Application.Current?.MainWindow;
+                var changelog = UpdateLog.GetChangesSince(CurrentVersion);
+
+                // Снимок owner для замыкания — иначе к моменту клика по
+                // кнопке приложение могло закрыться.
+                Action onUpdate = () =>
+                {
+                    // Сбрасываем «уже показывали», чтобы при ошибке загрузки
+                    // следующий фоновый tick смог предложить установить снова.
+                    _lastNotifiedVersion = null;
+                    if (owner != null)
+                        _ = CheckAndApplyAsync(owner, isAutomatic: false);
+                };
+
+                // onLater — пользователь сам решил не сейчас. Pending остаётся,
+                // плашка закрывается. При следующем tick-е того же релиза —
+                // плашка НЕ покажется (см. guard выше); покажется при выходе
+                // новой версии.
+                Action onLater = () => { /* pending уже сохранён */ };
+
+                ToastService.ShowUpdateNotification(
+                    version: release.Version,
+                    changelogCount: changelog.Length,
+                    onUpdate: onUpdate,
+                    onLater: onLater);
+            }
+            catch (Exception ex)
+            {
+                // Фоновая проверка не должна крашить приложение; логируем
+                // в Debug и тихо выходим. Rollbar / sentry сюда добавлять
+                // в будущем, если потребуется.
+                Debug.WriteLine($"[UpdateService] Background check failed: {ex}");
+            }
+            finally
+            {
+                IsChecking = false;
+            }
+        }
+
+        /// <summary>
         /// Silent background check on startup. If an update is available,
         /// shows the update dialog automatically with changelog.
         /// Called from App.OnStartup after MainWindow is shown.
@@ -273,6 +367,9 @@ namespace MosquitoNetCalculator.Services
                 // Phase 5: Stage update and restart
                 ToastService.ShowToast("Установка обновления...", ToastType.Info);
                 AppSettingsService.SavePendingUpdateVersion(null);
+                // Сбрасываем «уже показывали плашку» — обновление завершено,
+                // следующий фоновый tick сможет предложить новую версию.
+                _lastNotifiedVersion = null;
 
                 WatchdogService.StageUpdate(tempZip);
 
