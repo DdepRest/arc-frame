@@ -1,6 +1,26 @@
 {
-    "latest":  "3.38.0",
+    "latest":  "3.39.0",
     "minRequired":  "",        "releases":  [
+                     {
+                         "version":  "3.39.0",
+                         "date":  "2026-06-29",
+                         "type":  "Улучшение",
+                         "title":  "Background auto-update checks: 30 мин periodic + 10 мин idle, persistent notification toast",
+                         "changes":  [
+                                         "Background auto-update checks: каждые 30 минут от последней проверки и после 10 минут непрерывного простоя пользователя.",
+                                         "Anti-spam throttle: минимум 2 минуты между двумя реальными проверками.",
+                                         "Реализован Services/UpdateCheckScheduler.cs с pure-логикой ShouldCheckAt(...) для unit-тестов.",
+                                         "Persistent update notification toast (ToastService.ShowUpdateNotification) с action-кнопками «Обновить» / «Позже» — не исчезает сама, пока пользователь не выберет.",
+                                         "Click-обработчик корректно работает с ToastCanvas.IsHitTestVisible=False: явно ставит IsHitTestVisible=true на toast Border.",
+                                         "UpdateService.CheckInBackgroundAsync — фоновая проверка, открывает toast вместо модального диалога (стартап — модал по-прежнему).",
+                                         "UpdateService._lastNotifiedVersion — anti-spam в сессии для notification toast (сбрасывается на успешной установке и при ручном «Обновить» в плашке).",
+                                         "Activity-tracking в MainWindow.xaml.cs: PreviewMouseMove и PreviewKeyDown сбрасывают idle-таймер scheduler'а. Scheduler стартует в Loaded, останавливается в Closed.",
+                                         "20+ новых юнит-тестов для UpdateCheckScheduler.ShouldCheckAt (UpdateCheckSchedulerTests.cs): edge-cases границ (>= / <=), throttle/idle/periodic state-machine, activity-reset, OnCheckDue SafeInvoke контракт."
+                                     ],
+                         "url":  "https://github.com/DdepRest/arc-frame/releases/download/v3.39.0/ARC-Frame-3.39.0-full.zip",
+                         "size":  66661009,
+                         "sha256":  "0bb556d7318cbf495b01990f215b0a759b51a92e2b4813924f28a3021c99c95e"
+                     },
                      {
                          "version":  "3.38.0",
                          "date":  "2026-06-28",
