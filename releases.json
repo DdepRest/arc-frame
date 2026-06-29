@@ -1,7 +1,22 @@
 {
-    "latest":  "3.40.0",
+    "latest":  "3.40.1",
     "minRequired":  "",        "releases":  [
                      {
+                         "version":  "3.40.1",
+                         "date":  "2026-06-29",
+                         "type":  "Исправление",
+                         "title":  "Ручная проверка обновлений: fix ResourceReferenceKeyNotFoundException",
+                         "changes":  [
+                                         "MainWindow.xaml: Storyboards UpdateBarFadeIn / UpdateBarFadeOut перенесены из <Grid.Resources> в <Window.Resources> — WPF FindResource ходит ВВЕРХ по логическому дереву, ресурсы потомков были невидимы из this.FindResource('UpdateBarFadeIn').",
+                                         "MainWindow.OnUpdateProgressChanged: FindResource(...).Clone() заменён на TryFindResource(...) is Storyboard — если ресурс когда-то потеряется, бар показывается/скрывается без анимации вместо краша.",
+                                         "Bug существовал с v3.38.0; v3.40.0 его активировал, потому что CheckAndApplyAsync стал активно прогонять пользователей через ручной путь «Check updates».",
+                                         "Tests: 681/681 passes (без изменений в test-count). Добавлены 2 hardcoded-versions assertions в UpdateLogTests под v3.40.1."
+                                     ],
+                         "url":  "https://github.com/DdepRest/arc-frame/releases/download/v3.40.1/ARC-Frame-3.40.1-full.zip",
+                         "size":  66652176,
+                         "sha256":  "fba37dc323788a111f38df1d4d583ddccc8788d7f478c322508e4391a4f03831"
+                     },
+                                          {
                          "version":  "3.40.0",
                          "date":  "2026-06-29",
                          "type":  "Улучшение",
