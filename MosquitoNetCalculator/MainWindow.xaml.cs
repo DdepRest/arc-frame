@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using Microsoft.Win32;
@@ -375,23 +376,33 @@ namespace MosquitoNetCalculator
                 _progressBarStoryboard.Stop(UpdateDownloadBar);
             }
 
-            if (shouldBeVisible)
+            // TryFindResource (not FindResource): never throws.
+            // Null result would be a code/XAML mismatch — fall back to
+            // a direct visibility flip so the bar still appears without
+            // animation (better UX than a crash).
+            string key = shouldBeVisible ? "UpdateBarFadeIn" : "UpdateBarFadeOut";
+            if (TryFindResource(key) is not Storyboard template)
             {
-                // Fade in — storyboard defined in XAML (UpdateBarFadeIn)
-                UpdateDownloadBar.Visibility = Visibility.Visible;
-                UpdateDownloadBar.Opacity = 0;
-
-                _progressBarStoryboard = ((Storyboard)FindResource("UpdateBarFadeIn")).Clone();
+                Debug.WriteLine($"[MainWindow] Storyboard '{key}' not found — bar visibility set without animation.");
+                UpdateDownloadBar.Visibility = shouldBeVisible ? Visibility.Visible : Visibility.Collapsed;
+                UpdateDownloadBar.Opacity = shouldBeVisible ? 1.0 : 0.0;
+                return;
             }
-            else
+
+            _progressBarStoryboard = template.Clone();
+            if (!shouldBeVisible)
             {
-                // Fade out — storyboard defined in XAML (UpdateBarFadeOut).
                 // From-value is set dynamically so the fade starts from the
                 // bar's current opacity (handles interruption mid-fade-in).
-                _progressBarStoryboard = ((Storyboard)FindResource("UpdateBarFadeOut")).Clone();
                 if (_progressBarStoryboard.Children.OfType<DoubleAnimation>().FirstOrDefault() is { } fadeOutAnim)
                     fadeOutAnim.From = UpdateDownloadBar.Opacity;
                 _progressBarStoryboard.Completed += OnProgressBarFadeOutCompleted;
+            }
+
+            if (shouldBeVisible)
+            {
+                UpdateDownloadBar.Visibility = Visibility.Visible;
+                UpdateDownloadBar.Opacity = 0;
             }
 
             _progressBarStoryboard.Begin(UpdateDownloadBar);

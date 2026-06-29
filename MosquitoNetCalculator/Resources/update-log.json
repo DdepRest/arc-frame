@@ -1,6 +1,17 @@
 [
   {
     "date": "2026-06-29",
+    "version": "3.40.1",
+    "type": "Исправление",
+    "title": "Ручная проверка обновлений: падение ResourceReferenceKeyNotFoundException",
+    "changes": [
+      "Исправлен краш при ручной проверке обновлений через меню: Storyboards UpdateBarFadeIn/UpdateFadeOut для прогресс-бара перенесены из Grid.Resources в Window.Resources - WPF FindResource ходит ВВЕРХ по логическому дереву, ресурсы потомков невидимы.",
+      "Defense-in-depth в MainWindow.OnUpdateProgressChanged: FindResource(...).Clone() заменён на TryFindResource(...) is Storyboard - если ресурс не найден, бар показывается без анимации вместо краша (debug-лог пишется).",
+      "Баг существовал с v3.38.0; v3.40.0 усугубил ситуацию тем, что CheckAndApplyAsync стал активно использоваться пользователями."
+    ]
+  },
+  {
+    "date": "2026-06-29",
     "version": "3.40.0",
     "type": "Улучшение",
     "title": "WinAPI idle detection, anti-recommend text, minimized guard",

@@ -35,32 +35,36 @@
         <CommandBinding Command="ApplicationCommands.Save" Executed="BtnSaveOrder_Click"/>
     </Window.CommandBindings>
 
+    <Window.Resources>
+        <!-- Fade-in / fade-out storyboards for UpdateDownloadBar.
+             Triggered from code-behind (OnUpdateProgressChanged) because
+             they react to UpdateService.IsDownloading state changes.
+             MUST live in Window.Resources (not inside any child Grid)
+             because this.FindResource(...) walks UP the logical tree
+             and cannot see resources declared in descendants. -->
+        <Storyboard x:Key="UpdateBarFadeIn">
+            <DoubleAnimation Storyboard.TargetName="UpdateDownloadBar"
+                             Storyboard.TargetProperty="Opacity"
+                             From="0.0" To="1.0"
+                             Duration="0:0:0.2">
+                <DoubleAnimation.EasingFunction>
+                    <CubicEase EasingMode="EaseOut"/>
+                </DoubleAnimation.EasingFunction>
+            </DoubleAnimation>
+        </Storyboard>
+        <Storyboard x:Key="UpdateBarFadeOut">
+            <DoubleAnimation Storyboard.TargetName="UpdateDownloadBar"
+                             Storyboard.TargetProperty="Opacity"
+                             To="0.0"
+                             Duration="0:0:0.25">
+                <DoubleAnimation.EasingFunction>
+                    <CubicEase EasingMode="EaseIn"/>
+                </DoubleAnimation.EasingFunction>
+            </DoubleAnimation>
+        </Storyboard>
+    </Window.Resources>
+
     <Grid Background="{DynamicResource AppBg}">
-        <Grid.Resources>
-            <!-- Fade-in / fade-out storyboards for UpdateDownloadBar.
-                 Triggered from code-behind (OnUpdateProgressChanged) because
-                 they react to UpdateService.IsDownloading state changes. -->
-            <Storyboard x:Key="UpdateBarFadeIn">
-                <DoubleAnimation Storyboard.TargetName="UpdateDownloadBar"
-                                 Storyboard.TargetProperty="Opacity"
-                                 From="0.0" To="1.0"
-                                 Duration="0:0:0.2">
-                    <DoubleAnimation.EasingFunction>
-                        <CubicEase EasingMode="EaseOut"/>
-                    </DoubleAnimation.EasingFunction>
-                </DoubleAnimation>
-            </Storyboard>
-            <Storyboard x:Key="UpdateBarFadeOut">
-                <DoubleAnimation Storyboard.TargetName="UpdateDownloadBar"
-                                 Storyboard.TargetProperty="Opacity"
-                                 To="0.0"
-                                 Duration="0:0:0.25">
-                    <DoubleAnimation.EasingFunction>
-                        <CubicEase EasingMode="EaseIn"/>
-                    </DoubleAnimation.EasingFunction>
-                </DoubleAnimation>
-            </Storyboard>
-        </Grid.Resources>
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="Auto"/>

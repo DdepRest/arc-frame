@@ -2,6 +2,20 @@
 
 ## Unreleased — готовится к следующему релизу
 
+## 3.40.1 — 2026-06-29
+
+### Исправления
+
+- **Ручная проверка обновлений не падала с `ResourceReferenceKeyNotFoundException`:** Storyboards `UpdateBarFadeIn` / `UpdateBarFadeOut` для прогресс-бара определены в `Grid.Resources` (внутри корневого `<Grid>`), а `MainWindow.OnUpdateProgressChanged` дёргал `this.FindResource(...)`. WPF-метод `FindResource` ходит ВВЕРХ по логическому дереву — ресурсы потомков невидимы. Storyboards перенесены в `<Window.Resources>` — теперь `FindResource("UpdateBarFadeIn")` находит их.
+- **Defense-in-depth в `OnUpdateProgressChanged`:** заменён `FindResource(...).Clone()` (бросает `InvalidCastException` если ресурс не найден) на `TryFindResource(...) is Storyboard` — если ресурс когда-то «потеряется» (XAML-удаление, merge-конфликт), теперь видим debug-лог и бар показывается/скрывается без анимации, вместо краша.
+
+### Заметки
+
+- Баг существовал с v3.38.0 (когда был добавлен XAML-анимация UpdateDownloadBar); v3.40.0 его только «активировал», потому что публичный метод ручной проверки `CheckAndApplyAsync` теперь корректно прокидывал `isAutomatic` в диалог — пользователи увидели путь до краша.
+- Pubished as patch release (3.40.0 → 3.40.1), не minor — поведение в остальном не менялось.
+
+---
+
 ## 3.40.0 — 2026-06-29
 
 ### Улучшения
