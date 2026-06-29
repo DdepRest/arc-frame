@@ -278,6 +278,23 @@ namespace MosquitoNetCalculator
             };
             _updateCheckScheduler.Start();
 
+            // ── Стартовый баннер для известных сломанных версий (v3.40.2) ──
+            // Если по какой-то причине CurrentVersion оказалась в диапазоне
+            // [3.40.0, 3.40.2) — у пользователя проблемная сборка автообновления.
+            // Показываем toast-предупреждение с прямой ссылкой на GitHub Releases,
+            // чтобы пользователь мог обновиться вручную. Это no-op для
+            // нормальных версий (CurrentVersion >= 3.40.2).
+            if (UpdateService.CurrentVersion >= new Version(3, 40, 0)
+                && UpdateService.CurrentVersion < new Version(3, 40, 2))
+            {
+                string v = UpdateService.CurrentVersion.ToString();
+                string url = "https://github.com/DdepRest/arc-frame/releases/latest";
+                ToastService.ShowToast(
+                    $"Версия {v} имеет известную проблему автообновления. Обновите вручную: {url}",
+                    ToastType.Warning,
+                    durationMs: 15000);
+            }
+
             // Defer the entrance cascade animation until AFTER the initial
             // layout/render pass has stabilized. Dispatching into the Loaded
             // priority queue keeps Storyboard.Begin + 9 simultaneous timer
@@ -360,52 +377,91 @@ namespace MosquitoNetCalculator
 
         private void OnUpdateProgressChanged(object? sender, EventArgs e)
         {
-            if (UpdateDownloadBar == null) return;
-
-            UpdateDownloadBar.Value = UpdateService.DownloadProgress;
-
-            bool shouldBeVisible = UpdateService.IsDownloading;
-            bool currentlyVisible = UpdateDownloadBar.Visibility == Visibility.Visible;
-
-            if (shouldBeVisible == currentlyVisible)
-                return; // No state change — avoid re-triggering animation
-
-            if (_progressBarStoryboard != null)
+            // ───── Belt-and-suspenders try/catch (v3.40.2) ──────
+            // Критично: ранее в v3.40.0 любой unhandled exception в этом
+            // методе ронял Dispatcher.Invoke(), DispatcherUnhandledException
+            // показывал MessageBox — и РАЗРЫВАЛ auto-update-flow, потому что
+            // вызывающий код в UpdateService.RunUpdateFlowAsync ставил
+            // IsDownloading = true ровно перед скачиванием. Любая future-регрессия
+            // в этом коде (BAML mismatch, XAML refactor, third-party change)
+            // теперь НЕ сможет сломать автообновление, потому что catch глушит
+            // всё, логирует в Debug, и показывает бар без анимации.
+            try
             {
-                _progressBarStoryboard.Completed -= OnProgressBarFadeOutCompleted;
-                _progressBarStoryboard.Stop(UpdateDownloadBar);
-            }
+                if (UpdateDownloadBar == null) return;
 
-            // TryFindResource (not FindResource): never throws.
-            // Null result would be a code/XAML mismatch — fall back to
-            // a direct visibility flip so the bar still appears without
-            // animation (better UX than a crash).
-            string key = shouldBeVisible ? "UpdateBarFadeIn" : "UpdateBarFadeOut";
-            if (TryFindResource(key) is not Storyboard template)
+                UpdateDownloadBar.Value = UpdateService.DownloadProgress;
+
+                bool shouldBeVisible = UpdateService.IsDownloading;
+                bool currentlyVisible = UpdateDownloadBar.Visibility == Visibility.Visible;
+
+                if (shouldBeVisible == currentlyVisible)
+                    return; // No state change — avoid re-triggering animation
+
+                if (_progressBarStoryboard != null)
+                {
+                    _progressBarStoryboard.Completed -= OnProgressBarFadeOutCompleted;
+                    _progressBarStoryboard.Stop(UpdateDownloadBar);
+                }
+
+                // TryFindResource (not FindResource): never throws.
+                // Null result would be a code/XAML mismatch — fall back to
+                // a direct visibility flip so the bar still appears without
+                // animation (better UX than a crash).
+                string key = shouldBeVisible ? "UpdateBarFadeIn" : "UpdateBarFadeOut";
+                if (TryFindResource(key) is not Storyboard template)
+                {
+                    Debug.WriteLine($"[MainWindow] Storyboard '{key}' not found — bar visibility set without animation.");
+                    UpdateDownloadBar.Visibility = shouldBeVisible ? Visibility.Visible : Visibility.Collapsed;
+                    UpdateDownloadBar.Opacity = shouldBeVisible ? 1.0 : 0.0;
+                    return;
+                }
+
+                _progressBarStoryboard = template.Clone();
+                if (!shouldBeVisible)
+                {
+                    // From-value is set dynamically so the fade starts from the
+                    // bar's current opacity (handles interruption mid-fade-in).
+                    if (_progressBarStoryboard.Children.OfType<DoubleAnimation>().FirstOrDefault() is { } fadeOutAnim)
+                        fadeOutAnim.From = UpdateDownloadBar.Opacity;
+                    _progressBarStoryboard.Completed += OnProgressBarFadeOutCompleted;
+                }
+
+                if (shouldBeVisible)
+                {
+                    UpdateDownloadBar.Visibility = Visibility.Visible;
+                    UpdateDownloadBar.Opacity = 0;
+                }
+
+                _progressBarStoryboard.Begin(UpdateDownloadBar);
+            }
+            catch (Exception ex)
             {
-                Debug.WriteLine($"[MainWindow] Storyboard '{key}' not found — bar visibility set without animation.");
-                UpdateDownloadBar.Visibility = shouldBeVisible ? Visibility.Visible : Visibility.Collapsed;
-                UpdateDownloadBar.Opacity = shouldBeVisible ? 1.0 : 0.0;
-                return;
-            }
+                // Последний рубеж обороны: прогресс-бар не должен ронять
+                // auto-update. Логируем в Debug, бар показываем «как есть»
+                // (без анимации; пользователь увидит, что идёт скачивание,
+                // даже если визуально без fade). Через DispatcherInvoke
+                // исключение пойдёт дальше, но app-level DispatcherUnhandledException
+                // его подберёт и просто покажет лог в Debug, не сломав flow.
+                //
+                // ⚠ НЕ swallow'им OutOfMemoryException / StackOverflowException —
+                // если процесс в состоянии OOM, продолжение работы на
+                // полу-разрушенном WPF-состоянии хуже, чем краш. CLR-конвенция:
+                // эти типы не должны быть catch'нуты, поэтому rethrow явно,
+                // чтобы ни LOH-failure ни infinite recursion не остались
+                // незамеченными при downstream-инспекции.
+                if (ex is OutOfMemoryException or StackOverflowException)
+                    throw;
 
-            _progressBarStoryboard = template.Clone();
-            if (!shouldBeVisible)
-            {
-                // From-value is set dynamically so the fade starts from the
-                // bar's current opacity (handles interruption mid-fade-in).
-                if (_progressBarStoryboard.Children.OfType<DoubleAnimation>().FirstOrDefault() is { } fadeOutAnim)
-                    fadeOutAnim.From = UpdateDownloadBar.Opacity;
-                _progressBarStoryboard.Completed += OnProgressBarFadeOutCompleted;
+                Debug.WriteLine($"[MainWindow] OnUpdateProgressChanged swallowed exception: {ex}");
+                if (UpdateDownloadBar != null)
+                {
+                    UpdateDownloadBar.Visibility = UpdateService.IsDownloading
+                        ? Visibility.Visible
+                        : Visibility.Collapsed;
+                    UpdateDownloadBar.Opacity = UpdateService.IsDownloading ? 1.0 : 0.0;
+                }
             }
-
-            if (shouldBeVisible)
-            {
-                UpdateDownloadBar.Visibility = Visibility.Visible;
-                UpdateDownloadBar.Opacity = 0;
-            }
-
-            _progressBarStoryboard.Begin(UpdateDownloadBar);
         }
 
         internal void UpdateEmptyState()

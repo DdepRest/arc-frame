@@ -1,6 +1,18 @@
 [
   {
     "date": "2026-06-29",
+    "version": "3.40.2",
+    "type": "Исправление",
+    "title": "Belt-and-suspenders try/catch для прогресс-бара + стартовый баннер для сломанных версий",
+    "changes": [
+      "OnUpdateProgressChanged обёрнут в try/catch: ЛЮБОЕ исключение внутри (включая future-регрессии в XAML/BAML) теперь логируется в Debug и НЕ пробрасывается в Dispatcher.Invoke. Auto-update-flow защищён от разрыва.",
+      "MainWindow_Loaded: проверка CurrentVersion в [3.40.0, 3.40.2) — если пользователь работает на известной сломанной версии, при запуске показывается toast с ссылкой на GitHub Releases (15 сек, Warning).",
+      "Исправляет уязвимость v3.40.0: auto-update у пользователей v3.40.0 был физически сломан (OnUpdateProgressChanged крашился при IsDownloading=true → DispatcherUnhandledException → MessageBox → abort скачивания). Всем пользователям v3.40.0 необходимо вручную заменить exe на v3.40.1 или v3.40.2.",
+      "681/681 тестов проходят. ZIP 66,7 MB."
+    ]
+  },
+  {
+    "date": "2026-06-29",
     "version": "3.40.1",
     "type": "Исправление",
     "title": "Ручная проверка обновлений: падение ResourceReferenceKeyNotFoundException",
