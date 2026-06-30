@@ -76,7 +76,7 @@
                         <DataGridTemplateColumn.CellTemplate>
                             <DataTemplate>
                                 <StackPanel Orientation="Horizontal">
-                                    <TextBlock Text="{Binding Name}" VerticalAlignment="Center"
+                                    <TextBlock Text="{Binding DisplayName}" VerticalAlignment="Center"
                                                Foreground="{DynamicResource TextPrimary}" FontWeight="Medium"
                                                TextWrapping="Wrap"/>
                                     <Border Background="{DynamicResource AccentLight}" CornerRadius="4"

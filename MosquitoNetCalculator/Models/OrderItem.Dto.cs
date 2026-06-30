@@ -23,5 +23,6 @@ namespace MosquitoNetCalculator.Models
         public double InstallationSurcharge { get; set; } = 500;
         public bool IsActive { get; set; } = true;
         public int AnwisSizeMode { get; set; }
+        public bool IsAnticat { get; set; }
     }
 }

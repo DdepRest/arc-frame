@@ -1291,6 +1291,70 @@ namespace MosquitoNetCalculator.Tests.Models
             Assert.Equal(0, item.InstallationSurcharge);
         }
 
+        // ─── Anticat tests ───────────────────────────────────
+
+        [Fact]
+        public void DisplayName_ReturnsName_WhenNotAnticat()
+        {
+            var item = new OrderItem { Name = "Anwis" };
+            Assert.Equal("Anwis", item.DisplayName);
+        }
+
+        [Fact]
+        public void DisplayName_AppendsSuffix_WhenAnticat()
+        {
+            var item = new OrderItem { Name = "Anwis", IsAnticat = true };
+            Assert.Equal("Anwis (Антикошка)", item.DisplayName);
+        }
+
+        [Fact]
+        public void IsAnticat_FiresPropertyChanged()
+        {
+            var item = new OrderItem { Name = "Anwis" };
+            bool fired = false;
+            item.PropertyChanged += (s, e) =>
+            {
+                if (e.PropertyName == nameof(OrderItem.IsAnticat))
+                    fired = true;
+            };
+            item.IsAnticat = true;
+            Assert.True(fired);
+        }
+
+        [Fact]
+        public void IsAnticat_FiresDisplayNamePropertyChanged()
+        {
+            var item = new OrderItem { Name = "Anwis" };
+            bool fired = false;
+            item.PropertyChanged += (s, e) =>
+            {
+                if (e.PropertyName == nameof(OrderItem.DisplayName))
+                    fired = true;
+            };
+            item.IsAnticat = true;
+            Assert.True(fired);
+        }
+
+        [Fact]
+        public void Clone_PreservesIsAnticat()
+        {
+            var original = new OrderItem { Name = "Anwis", IsAnticat = true };
+            var clone = original.Clone();
+            Assert.True(clone.IsAnticat);
+            Assert.Equal("Anwis (Антикошка)", clone.DisplayName);
+        }
+
+        [Theory]
+        [InlineData("Anwis", true)]
+        [InlineData("На навесах", true)]
+        [InlineData("Оконная на метал. крепл.", true)]
+        [InlineData("Отлив", false)]
+        [InlineData("ПСУЛ", false)]
+        public void AnticatApplicableProducts_ContainsExpected(string name, bool expected)
+        {
+            Assert.Equal(expected, OrderItem.AnticatApplicableProducts.Contains(name));
+        }
+
         // ─── Clone with AnwisSizeMode test ───────────────────
 
         [Fact]

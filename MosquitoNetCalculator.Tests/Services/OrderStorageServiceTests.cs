@@ -341,6 +341,67 @@ namespace MosquitoNetCalculator.Tests.Services
             Assert.False(loaded.AdditionalKps[1].IsActive);
         }
 
+        [Fact]
+        public void SaveOrder_AndLoad_PreservesIsAnticat()
+        {
+            var order = new OrderData
+            {
+                Id = Guid.NewGuid().ToString(),
+                Items = new List<OrderItemData>
+                {
+                    new()
+                    {
+                        Name = "Anwis", Color = "Белый", Width = 1000, Height = 1000,
+                        Quantity = 1, Price = 3800, IsAnticat = true
+                    },
+                    new()
+                    {
+                        Name = "Anwis", Color = "Серый", Width = 800, Height = 1000,
+                        Quantity = 2, Price = 1800, IsAnticat = false
+                    }
+                }
+            };
+            _service.SaveOrder(order);
+
+            // Load via a fresh instance to bypass any in-memory cache
+            var loaded = new OrderStorageService().LoadOrder(order.Id);
+
+            Assert.NotNull(loaded);
+            Assert.Equal(2, loaded!.Items.Count);
+            Assert.True(loaded.Items[0].IsAnticat);
+            Assert.False(loaded.Items[1].IsAnticat);
+        }
+
+        [Fact]
+        public void CopyOrder_PreservesIsAnticat()
+        {
+            var source = new OrderData
+            {
+                Id = Guid.NewGuid().ToString(),
+                Items = new List<OrderItemData>
+                {
+                    new()
+                    {
+                        Name = "Anwis", Color = "Белый", Width = 1000, Height = 1000,
+                        Quantity = 1, Price = 3800, IsAnticat = true
+                    }
+                }
+            };
+
+            // Deep-clone via JSON (same path as MainWindow.CopySelectedOrder)
+            string json = JsonSerializer.Serialize(source, OrderStorageService.JsonOptions);
+            var copy = JsonSerializer.Deserialize<OrderData>(json, OrderStorageService.JsonOptions);
+            Assert.NotNull(copy);
+
+            copy!.Id = Guid.NewGuid().ToString();
+            _service.SaveOrder(copy);
+
+            var loaded = new OrderStorageService().LoadOrder(copy.Id);
+            Assert.NotNull(loaded);
+            Assert.Single(loaded!.Items);
+            Assert.True(loaded.Items[0].IsAnticat);
+        }
+
         // ──── CopyOrder integration test ───────────────────────────
 
         [Fact]

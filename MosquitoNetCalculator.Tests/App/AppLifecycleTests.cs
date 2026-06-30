@@ -297,19 +297,24 @@ namespace MosquitoNetCalculator.Tests.App
                 }
             }
             Assert.True(scanned > 0, "Expected at least one .xaml file in the source tree.");
-        }
-
-        [Fact]
+        }        [Fact]
         public void Print_Template_Has_No_Slash_Dogovor()
         {
             // The printed КП title was originally "Коммерческое предложение
             // / Договор". We deliberately trimmed the "/ Договор" suffix.
-            // Any collapse that re-adds " / Договор" in either the resource
+            // Any collapse that re-adds "/ Договор" in either the resource
             // template or the inline fallback (and the source-side print
             // service) is a regression.
+            //
+            // After Phase-2 decomposition FillTemplate (the inline fallback)
+            // lives in PrintService.HtmlBuilder.cs — scan all PrintService*.cs
+            // partial files so a regression in any partial is caught.
             string html = ReadSource("Resources/print_template.html");
-            string cs   = ReadSource("Services/PrintService.cs");
-            foreach (var (src, name) in new[] { (html, "print_template.html"), (cs, "PrintService.cs") })
+            var csFiles = Directory.GetFiles(SourceProjectDir, "PrintService*.cs", SearchOption.AllDirectories);
+            Assert.True(csFiles.Length > 0, "No PrintService*.cs files found.");
+            string cs = string.Join("\n", csFiles.Select(File.ReadAllText));
+
+            foreach (var (src, name) in new[] { (html, "print_template.html"), (cs, "PrintService*.cs") })
             {
                 Assert.DoesNotContain("Коммерческое предложение / Договор", src);
                 Assert.DoesNotContain("Коммерческое предложение/Договор", src);
@@ -371,14 +376,23 @@ namespace MosquitoNetCalculator.Tests.App
             // body rather than the whole file — a future unrelated code
             // path may legitimately use SetResourceReference on a
             // different brush key.
-            var src = ReadSource("MainWindow.xaml.cs");
-            var body = Regex.Match(
-                src,
-                @"private\s+void\s+OnThemeChanged\s*\(\s*\)\s*\{[\s\S]*?^\s*\}",
-                RegexOptions.Multiline);
-            Assert.True(body.Success,
-                "OnThemeChanged() method not found in MainWindow.xaml.cs — " +
-                "the theme-toggle handler that subscribes via ThemeService.ThemeChanged went missing.");
+            //
+            // After Phase-1 decomposition OnThemeChanged lives in
+            // MainWindow.Animations.cs — scan all MainWindow partials.
+            string[] mainWindowFiles = Directory.GetFiles(SourceProjectDir, "MainWindow*.cs");
+            Assert.True(mainWindowFiles.Length > 0, "No MainWindow*.cs files found.");
+
+            string? body = null;
+            foreach (var file in mainWindowFiles)
+            {
+                var src = File.ReadAllText(file);
+                var m = Regex.Match(
+                    src,
+                    @"private\s+void\s+OnThemeChanged\s*\(\s*\)\s*\{[\s\S]*?^\s*\}",
+                    RegexOptions.Multiline);
+                if (m.Success) { body = m.Value; break; }
+            }
+            Assert.NotNull(body);
 
             // Match the actual call signature `.SetResourceReference(` so we
             // catch real code rebinds but DON'T false-match the explanatory
@@ -386,13 +400,13 @@ namespace MosquitoNetCalculator.Tests.App
             // method by name). A future maintainer who deletes the
             // comment line and re-introduces the duplicate wiring would
             // still trip this assertion.
-            Assert.DoesNotContain(".SetResourceReference(", body.Value);
+            Assert.DoesNotContain(".SetResourceReference(", body);
 
             // InvalidateVisual stays as the defensive safety net for any
             // custom visual that might miss the Freezable invalidation
             // cascade. Pin it so a future "tidier is better" refactor
             // doesn't strip the only re-paint guarantee we have here.
-            Assert.Contains("InvalidateVisual", body.Value);
+            Assert.Contains("InvalidateVisual", body);
         }
 
         [Fact]

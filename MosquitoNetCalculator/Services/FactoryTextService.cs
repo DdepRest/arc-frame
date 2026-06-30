@@ -29,17 +29,21 @@ namespace MosquitoNetCalculator.Services
 
         /// <summary>
         /// Builds a list of <see cref="SelectableItem"/> from the current order.
-        /// Items typically not sent to production (Работа, ПСУЛ, Доставка, Брус, Пояс)
+        /// Items typically not sent to production (Работа, ПСУЛ, Отлив, Доставка, Брус, Пояс)
         /// are unchecked by default; all others are checked.
         /// </summary>
         public static List<SelectableItem> BuildSelectableItems(
             IEnumerable<OrderItem> orderItems,
             IEnumerable<AdditionalKpItem> additionalKps)
         {
-            // Product names that are usually NOT sent to production
+            // Product names that are usually NOT sent to production.
+            // "Отлив" is staged separately (not made out of netting —
+            // it's a finished metal/plastic sill) so the user opts in
+            // explicitly via the checkbox before it travels with the
+            // factory batch.
             var notForProduction = new HashSet<string>
             {
-                "Работа", "ПСУЛ", "Доставка", "Брус", "Пояс", "Откос материал", "Уплотнение", "Короб"
+                "Работа", "ПСУЛ", "Отлив", "Доставка", "Брус", "Пояс", "Откос материал", "Уплотнение", "Короб"
             };
 
             var result = new List<SelectableItem>();
@@ -68,7 +72,7 @@ namespace MosquitoNetCalculator.Services
                 result.Add(new SelectableItem
                 {
                     OrderItem = item,
-                    DisplayName = item.Name,
+                    DisplayName = item.DisplayName,
                     Detail = detail,
                     IsSelected = !notForProduction.Contains(item.Name)
                 });
@@ -152,7 +156,7 @@ namespace MosquitoNetCalculator.Services
                 var groups = selectedOrderItems
                     .GroupBy(item => new
                     {
-                        item.Name,
+                        Name = item.DisplayName,
                         Mode = AnwisSizeService.IsApplicable(item.Name)
                             ? item.AnwisSizeMode
                             : (AnwisSizeMode?)null
@@ -166,7 +170,7 @@ namespace MosquitoNetCalculator.Services
                     first = false;
 
                     string header = group.Key.Mode.HasValue
-                        ? AnwisSizeService.GetSectionHeader(group.Key.Mode.Value) + ":"
+                        ? AnwisSizeService.GetSectionHeader(group.Key.Mode.Value).Replace("Anwis", group.Key.Name) + ":"
                         : $"{group.Key.Name}:";
                     sb.AppendLine(header);
 

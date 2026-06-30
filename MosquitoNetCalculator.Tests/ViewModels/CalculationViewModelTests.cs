@@ -293,6 +293,22 @@ namespace MosquitoNetCalculator.Tests.ViewModels
             Assert.Equal(0, callCount);
         }
 
+        [Fact]
+        public void LoadFromOrderData_PreservesIsAnticat()
+        {
+            var order = new OrderData
+            {
+                Items = new System.Collections.Generic.List<OrderItemData>
+                {
+                    new() { Name = "Anwis", Color = "Белый", Width = 1000, Height = 1000, Quantity = 1, Price = 3800, IsAnticat = true }
+                }
+            };
+            _vm.LoadFromOrderData(order, () => { });
+            Assert.Single(_vm.OrderItems);
+            Assert.True(_vm.OrderItems[0].IsAnticat);
+            Assert.Equal("Anwis (Антикошка)", _vm.OrderItems[0].DisplayName);
+        }
+
         // ─── LoadFromOrderData tests ─────────────────────────
 
         [Fact]

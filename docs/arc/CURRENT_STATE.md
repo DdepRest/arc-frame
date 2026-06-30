@@ -8,7 +8,7 @@
 - Тёмная тема стабильна, переключается без потери данных.
 - Undo/Redo работает для позиций расчёта и Доп.КП.
 - Юнит-тесты покрывают ключевые сценарии (расчёты, экспорт/импорт, версия, обновления).
-- Текущая версия: **3.40.3** (готовится к публикации).
+- Текущая версия: **3.40.4** (публикуется).
 - Последние изменения: UpdateService DI для тестирования, zero-byte download fix, XAML-анимация UpdateDownloadBar, UI-polish (CornerRadius), новые интеграционные и unit-тесты, исправления документации.
 - Система A.R.C. прошла 3 итерации улучшений:
   - **v1:** инициализация, аудит, эталонные кейсы.
@@ -77,6 +77,20 @@ AGENT.md / AGENTS.md / CLAUDE.md / GEMINI.md
 
 ## Последние изменения
 
+- **«Отлив» больше не выбирается автоматически в диалоге «На завод»** — UX-фикс (Unreleased, план. v3.41.x):
+  - `FactoryTextService.BuildSelectableItems` теперь включает `Отлив` в `notForProduction` HashSet. Отлив — это готовый подоконник/оконный слив, не сетка, поэтому пользователь явно включает его галочкой перед отправкой партии на завод.
+  - **Расчётная логика НЕ затронута**: формулы Anwis/площадь/периметр работают как раньше. Заводские размеры Anwis по-прежнему `Расчёт − 20 мм`. Меняется только поведение пресет-чексбоксов в `SendToFactoryWindow`.
+  - Покрыто тестами: `FactoryTextServiceTests.BuildSelectableItems_NonProduction_IsNotSelected` (теория включает «Отлив»), `ManualChecklistTests.Check12_BuildSelectableItems_Production_On_NonProduction_Off` (counts 7→8 order items / 8→9 total, явная проверка `Отлив` == `!IsSelected`).
+  - Документация: `TESTING_CHECKLIST.md §12.2` (Отлив перенесён из «включены» в «выключены»), `CHANGELOG.md Unreleased → Улучшения`, `CALCULATION_LOGIC.md#завод` (контракт auto-selection). Матрица `documentation-matrix.json` не требует изменений — изменение только UX.
+  - 742/742 tests pass после фикса.
+- **Антикошка (завершён)** — функционал надбавки +2000 ₽/м² для трёх сеток (`Anwis`, `На навесах`, `Оконная на метал. крепл.`):
+  - **Модель**: `IsAnticat` (bool) в `OrderItem`, метод `DisplayName` возвращает `Anwis (Антикошка)` при активном флаге; формула расчёта не меняется — надбавка зашита в цену при добавлении через `SetDefaultPrice` для корректной работы `IsPriceOverridden`.
+  - **QuickAdd UI**: `CheckBox` → стилизованный `ToggleButton` (pill, GhostButton-стиль: `Surface`-фон + `Border`-рамка, активное — Accent), перенесён из нижней строки в `StackPanel` поля «Тип» (появляется сразу после выбора применимого типа); извлечён тестируемый статический хелпер `UpdateAnticatToggleState`.
+  - **Печать КП и заводской текст**: `PrintService.FillTemplate` и `FactoryTextService.Generate` используют `DisplayName` — обычный `Anwis` и `Anwis (Антикошка)` попадают в разные секции заводского текста (`Anwis (Антикошка), размер проёма (ББ 60):`).
+  - **Persistence**: `IsAnticat` сериализуется в JSON (round-trip через `OrderStorageService` + deep-clone проверены).
+  - **Документация**: раздел «Антикошка (надбавка +2000 ₽/м²)» в `CALCULATION_LOGIC.md`; запись в `CHANGELOG.md`.
+  - **Тесты**: ~20 новых (PrintService×1, FactoryTextService×3, OrderStorageService×2, QuickAddControl×14 STA-thread). 742/742 tests pass.
+  - **Ограничение**: переключатель доступен только в QuickAdd — после добавления позиции изменить `IsAnticat` нельзя (по явному решению владельца).
 - **SelectAll race fix (GOTCHAS#14):** `SelectAll_OnFocus` теперь синхронный (`tb.SelectAll()` без `BeginInvoke`) — при клике в ячейку Ширины/Высоты текст выделяется до первого нажатия, ввод заменяет значение, а не дописывает.
 - **Mid-typing formula clamp fix (GOTCHAS#15):** Ширина и Высота переключены с `UpdateSourceTrigger=PropertyChanged` на `LostFocus` — формула Anwis больше не перехватывает значение на каждом нажатии.
 - **DeleteRowButton padding fix:** `Padding="4,0"` → `Padding="5"` — кнопка удаления строки 20×20px, hover-фон пропорциональный.
@@ -139,4 +153,4 @@ AGENT.md / AGENTS.md / CLAUDE.md / GEMINI.md
 
 ## Last verified
 
-2026-06-29 (v3.40.3 patch: OnUpdateProgressChanged извлечён в testable ProgressBarUpdateAnimator, IsCurrentVersionBrokenForAutoUpdate (internal) с explicit (Major,Minor,Build) check. 711/711 tests pass — 30 new tests for the v3.40.x alarm-defense contract.)
+2026-06-30 (v3.40.4 публикуется: «Отлив» opt-in + Антикошка финальный + декомпозиция Phase 1+2. 742/742 tests pass.)

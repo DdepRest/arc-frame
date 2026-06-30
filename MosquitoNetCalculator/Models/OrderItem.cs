@@ -75,6 +75,21 @@ namespace MosquitoNetCalculator.Models
         };
 
         /// <summary>
+        /// Products that support the anti-cat fabric surcharge.
+        /// A fixed +2000 ₽/m² is added to the catalog price when the user checks
+        /// the "Антикошка" option in QuickAdd.
+        /// </summary>
+        public static readonly HashSet<string> AnticatApplicableProducts = new()
+        {
+            "Anwis",
+            "На навесах",
+            "Оконная на метал. крепл."
+        };
+
+        /// <summary>Fixed surcharge for anti-cat fabric (₽ per m²).</summary>
+        public const double AnticatSurcharge = 2000;
+
+        /// <summary>
         /// Products that do not have color variants.
         /// Color dropdown is disabled for these products in QuickAdd.
         /// ПСУЛ is included because it ships without a color choice (perimeter-based).
@@ -124,6 +139,7 @@ namespace MosquitoNetCalculator.Models
         private double _price;
         private bool _isActive = true;
         private AnwisSizeMode _anwisSizeMode = AnwisSizeMode.Брусбокс60;
+        private bool _isAnticat;
         private double _defaultPrice = -1;             // -1 = не зафиксирована (первая установка через SetDefaultPrice)
 
         public int RowNumber
@@ -304,6 +320,30 @@ namespace MosquitoNetCalculator.Models
         ///  2. Прямой пересчёт сырых размеров в новый режим
         /// Для не-Anwis товаров — no-op: режим не применяется к размерам.
         /// </summary>
+        /// <summary>
+        /// Anti-cat fabric flag. When true the product name is displayed
+        /// with a "(Антикошка)" suffix and the catalog price includes the surcharge.
+        /// </summary>
+        public bool IsAnticat
+        {
+            get => _isAnticat;
+            set
+            {
+                if (_isAnticat != value)
+                {
+                    _isAnticat = value;
+                    OnPropertyChanged();
+                    OnPropertyChanged(nameof(DisplayName));
+                }
+            }
+        }
+
+        /// <summary>
+        /// Display name shown in the grid, КП and factory text.
+        /// Appends "(Антикошка)" when <see cref="IsAnticat"/> is true.
+        /// </summary>
+        public string DisplayName => IsAnticat ? $"{Name} (Антикошка)" : Name;
+
         public AnwisSizeMode AnwisSizeMode
         {
             get => _anwisSizeMode;
@@ -428,6 +468,7 @@ namespace MosquitoNetCalculator.Models
                 InstallationMode = InstallationMode,
                 InstallationDeduction = InstallationDeduction,
                 InstallationSurcharge = InstallationSurcharge,
+                IsAnticat = IsAnticat,
                 _defaultPrice = _defaultPrice
             };
             // SetAnwisModeQuiet — Width/Height above are already stored for this

@@ -158,7 +158,8 @@ namespace MosquitoNetCalculator.ViewModels
                     InstallationMode = od.InstallationMode != 0 ? od.InstallationMode : (od.HasInstallation ? 0 : 1),
                     InstallationDeduction = od.InstallationDeduction,
                     InstallationSurcharge = od.InstallationSurcharge,
-                    IsActive = od.IsActive
+                    IsActive = od.IsActive,
+                    IsAnticat = od.IsAnticat
                 };
                 // Use SetAnwisModeQuiet — Width/Height above are already-final stored
                 // values for the loaded od.AnwisSizeMode. The public setter would

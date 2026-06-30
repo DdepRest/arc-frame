@@ -631,10 +631,14 @@ namespace MosquitoNetCalculator.Tests.App
             // §12.2 — производственные товары включены, непроизводственные сняты.
             // BuildSelectableItems filters by `i.Total > 0` so every item
             // need a non-zero price (manual-piece products set CalculatedValue = 1).
+            // Note: "Отлив" is in the non-production set since vNext — it's
+            // a finished sill, not a netting product, so the user opts in
+            // explicitly via the checkbox.
             var order = new CalculationViewModel();
             order.AddItem("Anwis", "Белый", 1000, 1000, 1, 1800);    // ✓
             order.AddItem("На навесах", "Белый", 1000, 1000, 1, 2900); // ✓
             order.AddItem("ПСУЛ", "", 1000, 2000, 1, 100);            // ✗
+            order.AddItem("Отлив", "Белый", 1000, 200, 1, 2150);      // ✗ (finished sill, opt-in)
             order.AddItem("Работа", "", 0, 0, 1, 5000);               // ✗
             order.AddItem("Доставка", "", 0, 0, 1, 500);              // ✗
             order.AddItem("Брус", "", 0, 0, 2, 100);                  // ✗ (price > 0!)
@@ -646,18 +650,19 @@ namespace MosquitoNetCalculator.Tests.App
             };
 
             var selectables = FactoryTextService.BuildSelectableItems(order.OrderItems, kps);
-            // 7 order items + 1 KP. Use local int variables to bypass
+            // 8 order items + 1 KP. Use local int variables to bypass
             // xUnit2013 (Assert.Equal on collection .Count).
             int totalCount = selectables.Count;
-            Assert.Equal(8, totalCount);
+            Assert.Equal(9, totalCount);
             int orderCount = selectables.Count(s => s.OrderItem != null);
-            Assert.Equal(7, orderCount);
+            Assert.Equal(8, orderCount);
             int kpCount = selectables.Count(s => s.AdditionalKp != null);
             Assert.Equal(1, kpCount);
             Assert.True(selectables.Single(s => s.IsAdditionalKp).IsSelected);
             Assert.True(selectables.Single(s => s.OrderItem?.Name == "Anwis").IsSelected);
             Assert.True(selectables.Single(s => s.OrderItem?.Name == "На навесах").IsSelected);
             Assert.False(selectables.Single(s => s.OrderItem?.Name == "ПСУЛ").IsSelected);
+            Assert.False(selectables.Single(s => s.OrderItem?.Name == "Отлив").IsSelected);
             Assert.False(selectables.Single(s => s.OrderItem?.Name == "Работа").IsSelected);
             Assert.False(selectables.Single(s => s.OrderItem?.Name == "Доставка").IsSelected);
             Assert.False(selectables.Single(s => s.OrderItem?.Name == "Брус").IsSelected);

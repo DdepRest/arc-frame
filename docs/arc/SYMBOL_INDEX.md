@@ -18,7 +18,7 @@
 | OrderItemsControl | class | Controls/OrderItemsControl.xaml.cs | |
 | OrdersHistoryControl | class | Controls/OrdersHistoryControl.xaml.cs | | Methods: SetOrdersCount |
 | PricesControl | class | Controls/PricesControl.xaml.cs | |
-| QuickAddControl | class | Controls/QuickAddControl.xaml.cs | | Methods: RefreshPreview, ResetAnwisMode |
+| QuickAddControl | class | Controls/QuickAddControl.xaml.cs | |
 | SendToFactoryWindow | class | Controls/SendToFactoryWindow.xaml.cs | |
 | SidebarControl | class | Controls/SidebarControl.xaml.cs | |
 | TitleBarControl | class | Controls/TitleBarControl.xaml.cs | |
@@ -46,7 +46,7 @@
 | ClientInfo | class | Models/ClientInfo.cs | Props: AdditionalKps |
 | LocationOptions | static class | Models/LocationOptions.cs | Props: All | Methods: GetByPrefixOrDefault, IsValidPrefix | Static: M:GetByPrefixOrDefault, M:IsValidPrefix, P:All |
 | OrderItem | class | Models/OrderItem.Installation.cs | | Methods: SetCurrentInstallationAmount |
-| OrderItemData | class | Models/OrderItem.Dto.cs | Props: AnwisSizeMode, Color, HasInstallation, Height, InstallationDeduction, InstallationMode, InstallationSurcharge, IsActive, Name, Price, Quantity, Width |
+| OrderItemData | class | Models/OrderItem.Dto.cs | Props: AnwisSizeMode, Color, HasInstallation, Height, InstallationDeduction, InstallationMode, InstallationSurcharge, IsActive, IsAnticat, Name, Price, Quantity, Width |
 | OrderSnapshot | class | Models/OrderSnapshot.cs | Props: AdditionalKps, Items |
 | OrderStatuses | static class | Models/OrderData.cs | | Methods: GetRank | Static: M:GetRank |
 | PriceItem | class | Models/PriceItem.cs | |
@@ -61,21 +61,45 @@
 
 | ImportDialogWindow | class | ImportDialogWindow.xaml.cs | Props: DialogResultOk, SelectedOrders |
 
+### MosquitoNetCalculator/MainWindow.Animations.cs
+
+| MainWindow | class | MainWindow.Animations.cs | |
+
+### MosquitoNetCalculator/MainWindow.Contracts.cs
+
+| MainWindow | class | MainWindow.Contracts.cs | | Methods: Dispose, SuppressContractNumberUpdates, SyncContractPrefix, UpdateContractNumber, UpdateCurrentOrderInfo |
+
 ### MosquitoNetCalculator/MainWindow.DataGrid.cs
 
 | MainWindow | class | MainWindow.DataGrid.cs | | Methods: AttachRowHover, Grid_PreviewMouseLeftButtonDown | Static: M:AttachRowHover |
 
+### MosquitoNetCalculator/MainWindow.GridColumns.cs
+
+| MainWindow | class | MainWindow.GridColumns.cs | | Methods: RecalculateOrderGridColumnWidths |
+
 ### MosquitoNetCalculator/MainWindow.Items.cs
 
-| MainWindow | class | MainWindow.Items.cs | | Methods: AnwisModePillLeftClick, AnwisModePillRightClick, BtnDeleteRow_Click, BtnSaveOrder_Click, BtnToggleInstallation_Click, Dispose, StartNewOrder, SuppressContractNumberUpdates, SyncContractPrefix, UpdateContractNumber, UpdateCurrentOrderInfo |
+| MainWindow | class | MainWindow.Items.cs | | Methods: AnwisModePillLeftClick, AnwisModePillRightClick, BtnDeleteRow_Click, BtnSaveOrder_Click, BtnToggleInstallation_Click, StartNewOrder |
 
 ### MosquitoNetCalculator/MainWindow.Orders.cs
 
 | MainWindow | class | MainWindow.Orders.cs | | Methods: BtnExportOrders_Click, BtnImportOrders_Click, BtnRefreshOrders_Click, ChangeSelectedOrderStatus, ChangeSelectedOrderStatusInline, CopySelectedOrder, DeleteSelectedOrder, ExportSelectedOrder, OpenSelectedOrder, OrdersList_Sorting, RefreshOrdersList, RefreshStatusSubMenu, UpdateSortIndicatorsFromSortDescriptions |
 
+### MosquitoNetCalculator/MainWindow.Pricing.cs
+
+| MainWindow | class | MainWindow.Pricing.cs | | Methods: LoadPrices, RecalculatePriceGridColumnWidths, RefreshComboBoxColumns |
+
+### MosquitoNetCalculator/MainWindow.Progress.cs
+
+| MainWindow | class | MainWindow.Progress.cs | |
+
 ### MosquitoNetCalculator/MainWindow.TitleDirty.cs
 
 | MainWindow | class | MainWindow.TitleDirty.cs | | Methods: MarkClean, MarkDirty, OpenWelcomeWindow, PushUndo, UpdateBaseTitle |
+
+### MosquitoNetCalculator/MainWindow.Totals.cs
+
+| MainWindow | class | MainWindow.Totals.cs | | Methods: UpdateTotal |
 
 ### MosquitoNetCalculator/MainWindow.WindowChrome.cs
 
@@ -83,7 +107,7 @@
 
 ### MosquitoNetCalculator/MainWindow.xaml.cs
 
-| MainWindow | class | MainWindow.xaml.cs | Props: CurrentOrderId, IsNewOrder, Sidebar, SuppressPrefixSave, ViewModel | Methods: LoadPrices, RecalculateOrderGridColumnWidths, RecalculatePriceGridColumnWidths, RefreshComboBoxColumns, UpdateEmptyState, UpdateTotal |
+| MainWindow | class | MainWindow.xaml.cs | Props: CurrentOrderId, IsNewOrder, Sidebar, SuppressPrefixSave, ViewModel | Methods: UpdateEmptyState |
 
 ### MosquitoNetCalculator/PrintPreviewWindow.xaml.cs
 
@@ -102,13 +126,13 @@
 | MoneyFormatService | static class | Services/MoneyFormatService.cs | | Methods: Format, FormatWhole, TryParse | Static: M:Format, M:FormatWhole, M:TryParse |
 | OrderStorageService | class | Services/OrderStorageService.cs | Props: OrdersDir | Methods: DeleteOrder, ExportOrders, GenerateContractNumber, GenerateCopyContractNumber, GetNextOrderNumber, LoadAllOrders, LoadOrder, SaveOrder | Static: P:OrdersDir |
 | PriceService | class | Services/PriceService.cs | Props: PricesPath | Methods: GetColorsForProduct, GetPrice, GetProductNames, LoadPrices, SavePrices | Static: P:PricesPath |
-| PrintService | class | Services/PrintService.cs | | Methods: GenerateKpHtml |
+| PrintService | class | Services/PrintService.Template.cs | |
 | SelectableItem | class | Services/FactoryTextService.cs | Props: AdditionalKp, Detail, DisplayName, IsSelected, OrderItem | Methods: BuildSelectableItems, Generate | Static: M:BuildSelectableItems, M:Generate |
 | ThemeService | static class | Services/ThemeService.cs | Props: IsDarkTheme, TransitionDuration | Methods: ApplyTheme, LoadTheme, ToggleTheme | Static: M:ApplyTheme, M:LoadTheme, M:ToggleTheme, P:IsDarkTheme, P:TransitionDuration |
-| ToastService | static class | Services/ToastService.cs | | Methods: Initialize, RepositionToasts, ShowToast | Static: M:Initialize, M:RepositionToasts, M:ShowToast |
+| ToastService | static class | Services/ToastService.cs | | Methods: Initialize, RepositionToasts, ShowToast, ShowUpdateNotification | Static: M:Initialize, M:RepositionToasts, M:ShowToast, M:ShowUpdateNotification |
 | UndoRedoService | class | Services/UndoRedoService.cs | Props: CanRedo, CanUndo, IsDirty | Methods: Clear, MarkClean, MarkDirty, PushUndo, Redo, SetDirtyCallback, SuppressDirtyChanges, TryPeekTopSnapshot, Undo |
 | UpdateLog | static class | Services/UpdateLog.cs | | Methods: AllNewestFirst, GetChangesSince | Static: M:AllNewestFirst, M:GetChangesSince |
-| UpdateService | static class | Services/UpdateService.cs | | Methods: CheckAndApplyAsync, CheckOnStartupAsync, DownloadWithProgressAsync, FetchManifestAsync, GetAvailableUpdate, HasPendingUpdate, ParseSafe, ResolveVersion, StripVersionSuffix, TryResolveCurrentVersion | Static: M:CheckAndApplyAsync, M:CheckOnStartupAsync, M:DownloadWithProgressAsync, M:FetchManifestAsync, M:GetAvailableUpdate, M:HasPendingUpdate, M:ParseSafe, M:ResolveVersion, M:StripVersionSuffix, M:TryResolveCurrentVersion |
+| UpdateService | static class | Services/UpdateService.cs | | Methods: CheckAndApplyAsync, CheckInBackgroundAsync, CheckOnStartupAsync, DownloadWithProgressAsync, FetchManifestAsync, GetAvailableUpdate, GetIdleTime, HasPendingUpdate, IsCurrentVersionBrokenForAutoUpdate, ParseSafe, ResolveVersion, StripVersionSuffix, TryResolveCurrentVersion | Static: M:CheckAndApplyAsync, M:CheckInBackgroundAsync, M:CheckOnStartupAsync, M:DownloadWithProgressAsync, M:FetchManifestAsync, M:GetAvailableUpdate, M:GetIdleTime, M:HasPendingUpdate, M:IsCurrentVersionBrokenForAutoUpdate, M:ParseSafe, M:ResolveVersion, M:StripVersionSuffix, M:TryResolveCurrentVersion |
 | WatchdogService | static class | Services/WatchdogService.cs | | Methods: HandleStartup, StageUpdate | Static: M:HandleStartup, M:StageUpdate |
 
 ### ViewModels
@@ -124,7 +148,7 @@
 
 | Symbol | File(s) |
 |---|---|
-| $k | MainWindow.xaml.cs |
+| $k | MainWindow.Pricing.cs |
 | $sym | Models/OrderItem.Dto.cs |
 | $sym | Models/OrderItem.Dto.cs |
 | $sym | Models/OrderItem.Dto.cs |
@@ -136,10 +160,9 @@
 | $sym | Models/OrderItem.Dto.cs |
 | $sym | Models/OrderItem.Dto.cs |
 | $sym | Models/OrderItem.Dto.cs |
-| $methKey | MainWindow.xaml.cs, Services/PriceService.cs, ViewModels/MainWindowViewModel.cs, ViewModels/PricesViewModel.cs |
+| $methKey | MainWindow.Pricing.cs, Services/PriceService.cs, ViewModels/MainWindowViewModel.cs, ViewModels/PricesViewModel.cs |
 | $methKey | Services/PriceService.cs, ViewModels/PricesViewModel.cs |
 | $methKey | Services/PriceService.cs, ViewModels/PricesViewModel.cs |
-| $methKey | Services/PrintService.cs |
 | $methKey | Services/FactoryTextService.cs |
 | $methKey | Services/FactoryTextService.cs |
 | $methKey | ViewModels/CalculationViewModel.cs |
@@ -170,4 +193,4 @@ Context phase: grep SYMBOL_INDEX.md for the class/method you need
 
 ## Last generated
 
-2026-06-28 (наша эраen132616bol13.p131)
+2026-06-30 (наша эраen20260bol20.p201)

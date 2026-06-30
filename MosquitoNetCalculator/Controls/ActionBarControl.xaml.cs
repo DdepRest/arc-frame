@@ -172,7 +172,8 @@ namespace MosquitoNetCalculator.Controls
                     IsActive = i.IsActive,
                     // v3.29.2: AnwisSizeMode was missing from the mapper
                     // so saved orders silently reset to ББ 60 on reopen.
-                    AnwisSizeMode = (int)i.AnwisSizeMode
+                    AnwisSizeMode = (int)i.AnwisSizeMode,
+                    IsAnticat = i.IsAnticat
                 }).ToList()
             };
 

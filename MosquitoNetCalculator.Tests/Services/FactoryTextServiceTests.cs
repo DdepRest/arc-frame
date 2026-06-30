@@ -298,6 +298,7 @@ namespace MosquitoNetCalculator.Tests.Services
         [InlineData("Пояс")]
         [InlineData("Работа")]
         [InlineData("ПСУЛ")]
+        [InlineData("Отлив")]
         [InlineData("Доставка")]
         [InlineData("Откос материал")]
         [InlineData("Уплотнение")]
@@ -318,7 +319,6 @@ namespace MosquitoNetCalculator.Tests.Services
         [InlineData("Anwis")]
         [InlineData("На навесах")]
         [InlineData("Оконная на метал. крепл.")]
-        [InlineData("Отлив")]
         [InlineData("Козырёк")]
         public void BuildSelectableItems_Production_IsSelected(string productName)
         {
@@ -330,6 +330,73 @@ namespace MosquitoNetCalculator.Tests.Services
 
             Assert.Single(selectable);
             Assert.True(selectable[0].IsSelected);
+        }
+
+        // ─── Антикошка display name tests ───────────────────────
+
+        [Fact]
+        public void BuildSelectableItems_AnticatItem_HasCorrectDisplayName()
+        {
+            var items = new List<OrderItem>
+            {
+                new()
+                {
+                    Name = "Anwis", Width = 1000, Height = 1000, Quantity = 1, Price = 3800, Total = 3800,
+                    IsAnticat = true
+                }
+            };
+            var selectable = FactoryTextService.BuildSelectableItems(items, new List<AdditionalKpItem>());
+
+            Assert.Single(selectable);
+            Assert.Equal("Anwis (Антикошка)", selectable[0].DisplayName);
+        }
+
+        [Fact]
+        public void Generate_AnticatItem_ContainsDisplayNameInHeader()
+        {
+            var items = new List<OrderItem>
+            {
+                new()
+                {
+                    Name = "Anwis", Width = 1002, Height = 1170, Quantity = 1, Price = 3800, Total = 3800,
+                    AnwisSizeMode = AnwisSizeMode.Брусбокс60,
+                    IsAnticat = true
+                }
+            };
+            var selectable = FactoryTextService.BuildSelectableItems(items, new List<AdditionalKpItem>());
+            foreach (var si in selectable) si.IsSelected = true;
+
+            var text = FactoryTextService.Generate("", selectable);
+
+            Assert.Contains("Anwis (Антикошка), размер проёма (ББ 60):", text);
+        }
+
+        [Fact]
+        public void Generate_AnticatAndRegularAnwis_AreInSeparateSections()
+        {
+            var items = new List<OrderItem>
+            {
+                new()
+                {
+                    Name = "Anwis", Width = 1002, Height = 1170, Quantity = 1, Price = 1800, Total = 1800,
+                    AnwisSizeMode = AnwisSizeMode.Брусбокс60,
+                    IsAnticat = false
+                },
+                new()
+                {
+                    Name = "Anwis", Width = 800, Height = 1000, Quantity = 1, Price = 3800, Total = 3800,
+                    AnwisSizeMode = AnwisSizeMode.Брусбокс60,
+                    IsAnticat = true
+                }
+            };
+            var selectable = FactoryTextService.BuildSelectableItems(items, new List<AdditionalKpItem>());
+            foreach (var si in selectable) si.IsSelected = true;
+
+            var text = FactoryTextService.Generate("", selectable);
+
+            // Different DisplayName → separate sections.
+            Assert.Contains("Anwis, размер проёма (ББ 60):", text);
+            Assert.Contains("Anwis (Антикошка), размер проёма (ББ 60):", text);
         }
     }
 }

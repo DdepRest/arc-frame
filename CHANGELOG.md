@@ -1,6 +1,36 @@
 # Changelog
 
-## Unreleased — готовится к следующему релизу
+## 3.40.4 — 2026-06-30
+
+### Улучшения
+
+- **«Отлив» больше не выбирается автоматически в диалоге «На завод».** Отлив — это готовый подоконник/отлив (не сетка), и теперь пользователь явно включает его галочкой перед отправкой на завод. Изменён `notForProduction` set в `FactoryTextService.BuildSelectableItems` (добавлено «Отлив») и подтверждающие тесты в `FactoryTextServiceTests` / `ManualChecklistTests`. Документация в `TESTING_CHECKLIST.md` (§12.2) синхронизирована. Ранее «Отлив» попадал в категорию «Производственные товары» рядом с Anwis/Козырьком.
+
+### Новое
+
+- **Полотно «Антикошка»** — для трёх типов сеток (Anwis, На навесах, Оконная на металл крепл.) добавлена опция «Антикошка (+2000 руб/м²)» в панель QuickAdd.
+  - Чекбокс виден только для применимых товаров.
+  - Каталоговая цена автоматически увеличивается на 2000 ₽/м² при включённой галочке.
+  - В таблице расчёта, печатном КП и тексте «На завод» название товара отображается с суффиксом «(Антикошка)».
+  - Флаг `IsAnticat` сохраняется в JSON-заказе и переживает undo/redo через `Clone()`.
+
+### Улучшения
+
+- **Редизайн кнопки «Антикошка»:** ToggleButton в QuickAdd переведён на стиль `GhostButton` (паттерн из `Themes/ButtonStyles.xaml`) — неактивное состояние теперь имеет явный фон `Surface` и рамку `Border`, что устраняет слияние с фоном `QuickBg`. Активное состояние и ховер остаются без изменений.
+
+### Техническое
+
+- **Декомпозиция монолитных файлов (Phase 1 + Phase 2):**
+  - `MainWindow.xaml.cs` разбит на 6 partial-файлов: `MainWindow.Animations.cs`, `MainWindow.Progress.cs`, `MainWindow.GridColumns.cs`, `MainWindow.Pricing.cs`, `MainWindow.Totals.cs`, `MainWindow.Contracts.cs`
+  - `PrintService.cs` разбит на 3 partial-файла: `PrintService.Template.cs`, `PrintService.HtmlBuilder.cs`, `PrintService.SvgDrawer.cs`
+  - `QuickAddControl.xaml.cs` разбит на 4 partial-файла: `QuickAddControl.AddItem.cs`, `QuickAddControl.Preview.cs`, `QuickAddControl.Search.cs`, `QuickAddControl.AnwisMode.cs`
+  - Публичный API не изменён; все 711 тестов проходят.
+  - `AppLifecycleTests.OnThemeChanged_Does_Not_Manually_Rebind_TitleBar_Background` адаптирован под partial-классы (поиск по всем `MainWindow*.cs`).
+  - 742/742 тестов проходят.
+
+### Техническое
+
+- **release.yml**: переработан шаг Update releases.json — теперь он обновляет url/size/sha256/date в существующей записи версии (не перезаписывает type/title/changes плейсхолдером). Изменён порядок шагов: GitHub Release создаётся ДО коммита releases.json в main (соблюдение safety rule из RELEASE_PROCESS.md: пользователи не должны видеть обновление, которое нельзя скачать).
 
 ## 3.40.3 — 2026-06-29
 

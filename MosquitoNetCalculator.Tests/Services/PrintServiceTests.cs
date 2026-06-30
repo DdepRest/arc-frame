@@ -284,5 +284,23 @@ namespace MosquitoNetCalculator.Tests.Services
             Assert.DoesNotContain("Line 1\nLine 2", result);
             Assert.Contains("Line 1<br/>\nLine 2<br/>\nLine 3", result);
         }
+
+        [Fact]
+        public void GenerateKpHtml_AnticatItem_ContainsDisplayName()
+        {
+            var items = new List<OrderItem>
+            {
+                new()
+                {
+                    Name = "Anwis", Color = "Белый", Width = 1000, Height = 1000,
+                    Quantity = 1, Price = 3800, Total = 3800,
+                    IsAnticat = true
+                }
+            };
+            var client = new ClientInfo();
+            var result = _service.GenerateKpHtml(items, client, 3800, "");
+
+            Assert.Contains("Anwis (Антикошка)", result);
+        }
     }
 }

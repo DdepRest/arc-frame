@@ -125,78 +125,74 @@ jobs:
           echo "SHA256=$SHA" >> "$GITHUB_OUTPUT"
           echo "Computed SHA-256: $SHA"
 
-      # 10. Update releases.json manifest — append the just-published
-      #     release at the top of the `releases` array (newest-first
-      #     convention) and bump `latest` to point to the new tag.
+      # 10. Update releases.json manifest — find the entry matching the
+      #     current version and fill in runtime-computed fields (url, size,
+      #     sha256, date). The type/title/changes are already hand-written
+      #     in the committed releases.json (from CHANGELOG.md) and MUST NOT
+      #     be overwritten — CI only fills in what's only known at build time.
       #
-      #     IMPORTANT: depth=10 is required because the top-level
-      #     object nests `releases[N].changes` strings one level
-      #     deeper. Without it, ConvertTo-Json silently truncates
-      #     the second changes array.
-      #
-      #     Encoding note: we hand-write UTF-8 (no BOM) via .NET
-      #     API to avoid pwsh5/pwsh7 Output-File BOM differences.
-      #     PowerShell's default Out-File adds BOM, which the
-      #     release manifest is documented as not having.
+      #     Encoding note: we hand-write UTF-8 (no BOM) via .NET API to
+      #     avoid pwsh5/pwsh7 Output-File BOM differences. PowerShell's
+      #     default Out-File adds BOM, which the release manifest is
+      #     documented as not having.
       - name: Update releases.json
         shell: pwsh
         run: |
           $version = "${{ steps.version.outputs.VERSION }}"
           $size = [int]"${{ steps.zip.outputs.ZIP_SIZE }}"
           $sha = "${{ steps.hash.outputs.SHA256 }}"
+          $url = "https://github.com/${{ github.repository }}/releases/download/v$version/ARC-Frame-$version-full.zip"
 
-          # Defensive UTF-8 BOM check — release.json in this repo is BOM-free,
-          # but if a contributor accidentally checks in a UTF-8-with-BOM file
-          # we'd silently preserve the BOM and break consumers that compare
-          # byte-for-byte. Throw early to make the regression visible.
+          # Defensive UTF-8 BOM check
           $bytes = [System.IO.File]::ReadAllBytes('releases.json')
           if ($bytes.Length -ge 3 -and $bytes[0] -eq 0xEF -and $bytes[1] -eq 0xBB -and $bytes[2] -eq 0xBF) {
             throw "releases.json has a UTF-8 BOM — strip it before re-running."
           }
 
           $json = Get-Content releases.json -Raw | ConvertFrom-Json
+          $json.latest = $version
 
-          $entry = [ordered]@{
-            version  = $version
-            date     = (Get-Date -Format 'yyyy-MM-dd')
-            type     = 'Исправление'
-            title    = "v$version release"
-            changes  = @('Auto-published via .github/workflows/release.yml')
-            url      = "https://github.com/${{ github.repository }}/releases/download/v$version/ARC-Frame-$version-full.zip"
-            size     = $size
-            sha256   = $sha
+          # Find the existing entry for this version and update build-time fields only
+          $found = $false
+          for ($i = 0; $i -lt $json.releases.Count; $i++) {
+            if ($json.releases[$i].version -eq $version) {
+              $json.releases[$i].url    = $url
+              $json.releases[$i].size   = $size
+              $json.releases[$i].sha256 = $sha
+              $json.releases[$i].date   = (Get-Date -Format 'yyyy-MM-dd')
+              $found = $true
+              break
+            }
           }
 
-          $json.releases = @($entry) + @($json.releases)
-          $json.latest = $version
+          if (-not $found) {
+            # Fallback: prepend a minimal entry (shouldn't happen if releases.json is prepped)
+            $json.releases = @(@{
+              version = $version
+              date    = (Get-Date -Format 'yyyy-MM-dd')
+              type    = 'Исправление'
+              title   = "v$version release"
+              changes = @('Auto-published via .github/workflows/release.yml')
+              url     = $url
+              size    = $size
+              sha256  = $sha
+            }) + @($json.releases)
+          }
 
           $utf8NoBom = [System.Text.UTF8Encoding]::new($false)
           [System.IO.File]::WriteAllText("releases.json", ($json | ConvertTo-Json -Depth 10), $utf8NoBom)
 
-      # 11. Commit the manifest update to main. We use
-      #     `git push origin HEAD:main` rather than `git push origin main`
-      #     because we're on a detached HEAD (after `actions/checkout@v4`
-      #     against a tag) — local main doesn't exist; HEAD is the
-      #     manifest commit we just created.
-      - name: Commit manifest update
-        run: |
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-          git config user.name "github-actions[bot]"
-          git add releases.json
-          git commit -m "release: update releases.json manifest for ${{ steps.version.outputs.VERSION }}"
-          git push origin HEAD:main
-
-      # 12. Create the GitHub Release. `gh release create` creates the
-      #     release under the just-pushed tag and attaches the ZIP.
-      #     Notes include the SHA-256 so users can verify integrity
-      #     even if their download was redirected through a CDN.
+      # 11. Create the GitHub Release FIRST (before pushing releases.json
+      #     to main) per the safety rule: releases.json in main is the
+      #     auto-update trigger — users must be able to download the ZIP
+      #     the moment they see the new version. `gh release create`
+      #     creates the tag on the fly and attaches the ZIP asset.
       #
       #     The notes string is built via concat (NOT a PowerShell
       #     here-string) because here-strings span multiple lines at
       #     indent 0, which terminates the YAML `run: |` block and
-      #     breaks parsing (line 187 of original draft). Concat keeps
-      #     every line at >= 10 spaces indent, so YAML treats them
-      #     all as part of the literal block.
+      #     breaks parsing. Concat keeps every line at >= 10 spaces
+      #     indent, so YAML treats them all as part of the literal block.
       - name: Create GitHub Release
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -213,3 +209,17 @@ jobs:
                       "- SHA-256: $sha`n" +
                       "- Full release notes & changelog: https://github.com/${{ github.repository }}/releases/tag/$tag"
           gh release create $tag $zip --title "$tag" --notes "$notes"
+
+      # 12. Commit the manifest update to main ONLY AFTER the GitHub
+      #     Release has been created and the ZIP is downloadable.
+      #     We use `git push origin HEAD:main` rather than
+      #     `git push origin main` because we're on a detached HEAD
+      #     (after `actions/checkout@v4` against a tag) — local main
+      #     doesn't exist; HEAD is the manifest commit we just created.
+      - name: Commit manifest update
+        run: |
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git config user.name "github-actions[bot]"
+          git add releases.json
+          git commit -m "release: update releases.json manifest for ${{ steps.version.outputs.VERSION }}"
+          git push origin HEAD:main

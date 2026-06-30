@@ -143,6 +143,64 @@
                     <TextBlock Text="Тип" Style="{DynamicResource FieldLabel}"/>
                     <ComboBox x:Name="CmbQuickType" Style="{DynamicResource QuickCombo}"
                               SelectionChanged="CmbQuickType_SelectionChanged"/>
+                    <ToggleButton x:Name="TbtnAnticat"
+                                  Content="Антикошка  +2000 ₽/м²"
+                                  FontSize="11" FontWeight="SemiBold"
+                                  Margin="0,4,0,0" Padding="8,3"
+                                  Visibility="Collapsed"
+                                  Click="TbtnAnticat_Click">
+                        <ToggleButton.Style>
+                            <Style TargetType="ToggleButton">
+                                <Setter Property="Background" Value="{DynamicResource Surface}"/>
+                                <Setter Property="Foreground" Value="{DynamicResource TextPrimary}"/>
+                                <Setter Property="BorderBrush" Value="{DynamicResource Border}"/>
+                                <Setter Property="BorderThickness" Value="1"/>
+                                <Setter Property="Cursor" Value="Hand"/>
+                                <Setter Property="Template">
+                                    <Setter.Value>
+                                        <ControlTemplate TargetType="ToggleButton">
+                                            <Border x:Name="Bd"
+                                                    Background="{TemplateBinding Background}"
+                                                    BorderBrush="{TemplateBinding BorderBrush}"
+                                                    BorderThickness="{TemplateBinding BorderThickness}"
+                                                    CornerRadius="6"
+                                                    Padding="{TemplateBinding Padding}"
+                                                    SnapsToDevicePixels="True">
+                                                <ContentPresenter HorizontalAlignment="Center"
+                                                                  VerticalAlignment="Center"/>
+                                            </Border>
+                                            <ControlTemplate.Triggers>
+                                                <Trigger Property="IsChecked" Value="True">
+                                                    <Setter TargetName="Bd" Property="Background"
+                                                            Value="{DynamicResource Accent}"/>
+                                                    <Setter TargetName="Bd" Property="BorderBrush"
+                                                            Value="{DynamicResource Accent}"/>
+                                                    <Setter Property="Foreground"
+                                                            Value="{DynamicResource OnAccent}"/>
+                                                </Trigger>
+                                                <Trigger Property="IsMouseOver" Value="True">
+                                                    <Setter TargetName="Bd" Property="Background"
+                                                            Value="{DynamicResource AccentLight}"/>
+                                                    <Setter TargetName="Bd" Property="BorderBrush"
+                                                            Value="{DynamicResource Accent}"/>
+                                                    <Setter Property="Foreground"
+                                                            Value="{DynamicResource Accent}"/>
+                                                </Trigger>
+                                                <MultiTrigger>
+                                                    <MultiTrigger.Conditions>
+                                                        <Condition Property="IsMouseOver" Value="True"/>
+                                                        <Condition Property="IsChecked" Value="True"/>
+                                                    </MultiTrigger.Conditions>
+                                                    <Setter TargetName="Bd" Property="Background"
+                                                            Value="{DynamicResource AccentHover}"/>
+                                                </MultiTrigger>
+                                            </ControlTemplate.Triggers>
+                                        </ControlTemplate>
+                                    </Setter.Value>
+                                </Setter>
+                            </Style>
+                        </ToggleButton.Style>
+                    </ToggleButton>
                 </StackPanel>
                 <StackPanel Grid.Column="2">
                     <TextBlock Text="Цвет" Style="{DynamicResource FieldLabel}"/>
@@ -188,12 +246,12 @@
                 </Button>
             </Grid>
 
-            <!-- Anwis segmented control (redesigned) — appears only when Anwis is selected -->
-            <StackPanel x:Name="PanelAnwisModes"
-                        Orientation="Horizontal"
-                        Margin="0,8,0,0"
-                        Visibility="Collapsed"
-                        Opacity="0">
+            <!-- Anwis segmented control — appears only when applicable -->
+            <StackPanel Orientation="Horizontal" Margin="0,8,0,0">
+                <StackPanel x:Name="PanelAnwisModes"
+                            Orientation="Horizontal"
+                            Visibility="Collapsed"
+                            Opacity="0">
                 <StackPanel.RenderTransform>
                     <TranslateTransform X="0" Y="0"/>
                 </StackPanel.RenderTransform>
@@ -229,6 +287,7 @@
                 <TextBlock x:Name="TxtAnwisModeHint" FontSize="11" FontWeight="SemiBold" Margin="8,0,0,0"
                            VerticalAlignment="Center"
                            Foreground="{DynamicResource TextSecondary}"/>
+                </StackPanel>
             </StackPanel>
 
             <Border x:Name="PreviewChip" Background="{DynamicResource ChipBg}"

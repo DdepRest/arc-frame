@@ -1,0 +1,1864 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>A.R.C. Frame — Онбординг для новых сотрудников</title>
+<style>
+:root {
+    /* ── Палитра (Modern Corporate) ── */
+    --bg: #f8fafc;
+    --surface: #ffffff;
+    --surface-alt: #f1f5f9;
+    --surface-hover: #f8fafc;
+    --primary: #2563eb;
+    --primary-dark: #1d4ed8;
+    --primary-bg: #eff6ff;
+    --primary-bg-hover: #dbeafe;
+    --text: #0f172a;
+    --text-soft: #475569;
+    --text-muted: #94a3b8;
+    --border: #e2e8f0;
+    --border-strong: #cbd5e1;
+    --success: #059669;
+    --success-bg: #d1fae5;
+    --danger: #dc2626;
+
+    /* ── Тени ── */
+    --shadow-xs: 0 1px 2px rgba(15, 23, 42, 0.05);
+    --shadow-sm: 0 1px 3px rgba(15, 23, 42, 0.06), 0 1px 2px rgba(15, 23, 42, 0.04);
+    --shadow-md: 0 4px 12px rgba(15, 23, 42, 0.08), 0 2px 4px rgba(15, 23, 42, 0.04);
+    --shadow-lg: 0 12px 32px rgba(37, 99, 235, 0.10), 0 4px 12px rgba(15, 23, 42, 0.04);
+
+    /* ── Радиусы ── */
+    --radius-sm: 6px;
+    --radius-md: 10px;
+    --radius-lg: 14px;
+    --radius-xl: 18px;
+
+    /* ── Шкала отступов ── */
+    --s-1: 4px;
+    --s-2: 8px;
+    --s-3: 12px;
+    --s-4: 16px;
+    --s-5: 24px;
+    --s-6: 32px;
+    --s-7: 48px;
+    --s-8: 64px;
+    --s-9: 96px;
+
+    /* ── Типографика ── */
+    --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, Roboto, "Helvetica Neue", Arial, sans-serif;
+    --font-mono: "SF Mono", "Cascadia Code", "Consolas", "Menlo", monospace;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+html { scroll-behavior: smooth; scroll-padding-top: 110px; }
+
+body {
+    font-family: var(--font-sans);
+    font-size: 15px;
+    line-height: 1.6;
+    color: var(--text);
+    background: var(--bg);
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+}
+
+.container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 var(--s-5);
+}
+
+/* ════════════════════════════════════════════════════════ */
+/*                                                              */
+/*                  PROGRESS BAR (sticky top)                  */
+/*                                                              */
+/* ════════════════════════════════════════════════════════ */
+
+/* Author override for [hidden]: UA `[hidden] { display:none }` has lower
+   specificity than rules like .field{display:grid}, so hidden
+   elements (calcModeRow, calcSize, calcQty, calcColor) stay visible.
+   This !important rule makes them actually disappear. */
+[hidden] { display: none !important; }
+
+.progress {
+    position: sticky;
+    top: 0;
+    z-index: 110;
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    height: 32px;
+    display: flex;
+    align-items: center;
+    padding: 0 var(--s-5);
+    font-size: 12.5px;
+    color: var(--text-soft);
+    font-weight: 500;
+}
+
+.progress-track {
+    flex: 1;
+    height: 4px;
+    background: var(--surface-alt);
+    border-radius: 999px;
+    margin: 0 var(--s-4);
+    overflow: hidden;
+    position: relative;
+}
+
+.progress-fill {
+    height: 100%;
+    background: var(--primary);
+    width: 0%;
+    border-radius: 999px;
+    transition: width 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.progress-text { min-width: 110px; text-align: right; }
+
+.progress-reset {
+    background: transparent;
+    border: none;
+    color: var(--text-muted);
+    font-size: 12px;
+    cursor: pointer;
+    padding: 0 var(--s-2);
+    font-family: inherit;
+}
+
+.progress-reset:hover { color: var(--danger); }
+.progress-reset:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; border-radius: 4px; }
+
+/* ════════════════════════════════════════════════════════ */
+/*                                                              */
+/*                             NAV                             */
+/*                                                              */
+/* ════════════════════════════════════════════════════════ */
+
+.nav {
+    position: sticky;
+    top: 32px;
+    z-index: 100;
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+}
+
+.nav-inner {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    height: 64px;
+}
+
+.nav-brand {
+    display: flex;
+    align-items: center;
+    gap: var(--s-3);
+    font-weight: 700;
+    font-size: 17px;
+    color: var(--text);
+    text-decoration: none;
+}
+
+.nav-brand-logo {
+    width: 36px;
+    height: 36px;
+    background: var(--primary);
+    border-radius: var(--radius-md);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-weight: 800;
+    font-size: 16px;
+    box-shadow: var(--shadow-sm);
+}
+
+.nav-links {
+    display: flex;
+    gap: var(--s-1);
+    list-style: none;
+}
+
+.nav-links a {
+    color: var(--text-soft);
+    text-decoration: none;
+    font-weight: 500;
+    font-size: 14px;
+    padding: var(--s-2) var(--s-3);
+    border-radius: var(--radius-sm);
+    transition: all 0.15s;
+}
+
+.nav-links a:hover {
+    color: var(--primary);
+    background: var(--primary-bg);
+}
+
+.nav-links a:focus-visible {
+    outline: 2px solid var(--primary);
+    outline-offset: 2px;
+}
+
+.nav-cta {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--s-2);
+    background: var(--primary);
+    color: white;
+    font-weight: 600;
+    font-size: 13px;
+    padding: var(--s-2) var(--s-4);
+    border-radius: var(--radius-md);
+    text-decoration: none;
+    transition: all 0.15s;
+}
+
+.nav-cta:hover {
+    background: var(--primary-dark);
+    transform: translateY(-1px);
+    box-shadow: var(--shadow-md);
+}
+
+.nav-cta:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
+
+/* ════════════════════════════════════════════════════════ */
+/*                                                              */
+/*                            HERO                             */
+/*                                                              */
+/* ════════════════════════════════════════════════════════ */
+
+.hero {
+    padding: var(--s-9) 0 var(--s-8);
+    text-align: center;
+}
+
+.hero-eyebrow {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--s-2);
+    background: var(--primary-bg);
+    color: var(--primary-dark);
+    padding: 6px var(--s-3);
+    border-radius: 999px;
+    font-size: 13px;
+    font-weight: 600;
+    margin-bottom: var(--s-5);
+}
+
+.hero-eyebrow::before {
+    content: "";
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: var(--success);
+}
+
+.hero h1 {
+    font-size: clamp(36px, 5vw, 56px);
+    font-weight: 800;
+    line-height: 1.08;
+    letter-spacing: -0.025em;
+    color: var(--text);
+    margin-bottom: var(--s-4);
+    max-width: 720px;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+.hero-tagline {
+    font-size: clamp(15px, 1.4vw, 18px);
+    color: var(--text-soft);
+    max-width: 580px;
+    margin: 0 auto var(--s-6);
+    line-height: 1.55;
+}
+
+.hero-buttons {
+    display: inline-flex;
+    flex-wrap: wrap;
+    gap: var(--s-3);
+    justify-content: center;
+}
+
+.btn {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--s-2);
+    padding: 13px var(--s-5);
+    border-radius: var(--radius-md);
+    font-weight: 600;
+    font-size: 14px;
+    text-decoration: none;
+    transition: all 0.15s;
+    border: 1px solid transparent;
+    cursor: pointer;
+    font-family: inherit;
+}
+
+.btn:focus-visible {
+    outline: 2px solid var(--primary);
+    outline-offset: 2px;
+}
+
+.btn-primary {
+    background: var(--primary);
+    color: white;
+}
+
+.btn-primary:hover {
+    background: var(--primary-dark);
+    transform: translateY(-1px);
+    box-shadow: var(--shadow-md);
+}
+
+.btn-secondary {
+    background: var(--surface);
+    color: var(--text);
+    border-color: var(--border-strong);
+}
+
+.btn-secondary:hover {
+    background: var(--surface-alt);
+    border-color: var(--primary);
+    color: var(--primary-dark);
+}
+
+/* ════════════════════════════════════════════════════════ */
+/*                                                              */
+/*                          SECTIONS                           */
+/*                                                              */
+/* ════════════════════════════════════════════════════════ */
+
+section {
+    padding: var(--s-9) 0;
+    border-top: 1px solid var(--border);
+}
+
+section:first-of-type { border-top: none; }
+
+.section-head {
+    text-align: center;
+    max-width: 640px;
+    margin: 0 auto var(--s-7);
+}
+
+.section-eyebrow {
+    display: inline-block;
+    color: var(--primary);
+    background: var(--primary-bg);
+    padding: 5px var(--s-3);
+    border-radius: 999px;
+    font-size: 12.5px;
+    font-weight: 600;
+    margin-bottom: var(--s-4);
+    letter-spacing: 0.02em;
+    text-transform: uppercase;
+}
+
+.section-head h2 {
+    font-size: clamp(28px, 3.4vw, 36px);
+    font-weight: 800;
+    line-height: 1.15;
+    letter-spacing: -0.02em;
+    color: var(--text);
+    margin-bottom: var(--s-3);
+}
+
+.section-head p {
+    font-size: 16px;
+    color: var(--text-soft);
+}
+
+/* ════════════════════════════════════════════════════════ */
+/*                                                              */
+/*                       WORKFLOW STEPS                        */
+/*                                                              */
+/* ════════════════════════════════════════════════════════ */
+
+.steps {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: var(--s-5);
+    counter-reset: step;
+}
+
+.step {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: var(--s-5);
+    position: relative;
+    transition: all 0.2s;
+    counter-increment: step;
+}
+
+.step:hover {
+    border-color: var(--primary);
+    box-shadow: var(--shadow-md);
+}
+
+.step-num {
+    position: absolute;
+    top: -18px;
+    left: var(--s-5);
+    width: 36px;
+    height: 36px;
+    background: var(--primary);
+    color: white;
+    border-radius: var(--radius-md);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: 15px;
+    box-shadow: var(--shadow-sm);
+}
+
+.step h3 {
+    font-size: 17px;
+    font-weight: 700;
+    margin: var(--s-3) 0 var(--s-2);
+    color: var(--text);
+}
+
+.step p {
+    font-size: 14.5px;
+    color: var(--text-soft);
+    line-height: 1.55;
+}
+
+.step kbd {
+    display: inline-block;
+    background: var(--surface-alt);
+    border: 1px solid var(--border-strong);
+    border-bottom-width: 2px;
+    border-radius: 5px;
+    padding: 1px 6px;
+    font-family: var(--font-mono);
+    font-size: 11.5px;
+    color: var(--text);
+    line-height: 1.4;
+    margin: 0 1px;
+}
+
+/* ════════════════════════════════════════════════════════ */
+/*                                                              */
+/*                       MINI CALCULATOR                        */
+/*                                                              */
+/* ════════════════════════════════════════════════════════ */
+
+.calc-section { background: var(--surface-alt); }
+
+.calc-layout {
+    display: grid;
+    grid-template-columns: 1.15fr 1fr;
+    gap: var(--s-6);
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-xl);
+    padding: var(--s-6);
+    box-shadow: var(--shadow-sm);
+}
+
+.calc-form { display: grid; gap: var(--s-4); }
+
+.calc-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: var(--s-3);
+}
+
+.field { display: grid; gap: 6px; }
+
+.field label {
+    font-size: 12.5px;
+    font-weight: 600;
+    color: var(--text-soft);
+}
+
+.field select,
+.field input {
+    width: 100%;
+    background: var(--surface);
+    border: 1px solid var(--border-strong);
+    border-radius: var(--radius-sm);
+    padding: 9px var(--s-3);
+    font-size: 14px;
+    color: var(--text);
+    font-family: inherit;
+    transition: border-color 0.15s, box-shadow 0.15s;
+}
+
+.field select:focus-visible,
+.field input:focus-visible {
+    outline: none;
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.18);
+}
+
+.calc-result {
+    background: var(--primary-bg);
+    border: 1px solid var(--primary-bg-hover);
+    border-radius: var(--radius-lg);
+    padding: var(--s-5);
+    display: grid;
+    align-content: start;
+    gap: var(--s-3);
+}
+
+.calc-result-empty {
+    color: var(--text-muted);
+    font-size: 14px;
+    text-align: center;
+    padding: var(--s-6) 0;
+}
+
+.calc-row-result {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    padding: var(--s-2) 0;
+    border-bottom: 1px dashed var(--border);
+    font-size: 14px;
+}
+
+.calc-row-result:last-of-type { border-bottom: none; }
+
+.calc-row-result .label { color: var(--text-soft); font-weight: 500; }
+.calc-row-result .value {
+    font-family: var(--font-mono);
+    font-weight: 600;
+    color: var(--text);
+    font-size: 15px;
+}
+
+.calc-row-result .value.formula { color: var(--text-muted); font-size: 13px; }
+.calc-row-result .value.big {
+    font-size: 1.5em;
+    color: var(--primary-dark);
+}
+
+/* Anwis sub-mode in calculator */
+.calc-mode-row {
+    display: flex;
+    align-items: center;
+    gap: var(--s-3);
+    padding: var(--s-3);
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+}
+
+.calc-mode-row label {
+    font-size: 12.5px;
+    font-weight: 600;
+    color: var(--text-soft);
+}
+
+.calc-mode-pills {
+    display: inline-flex;
+    background: var(--surface-alt);
+    padding: 3px;
+    border-radius: var(--radius-sm);
+    gap: 2px;
+}
+
+.calc-mode-pill {
+    padding: 6px 11px;
+    font-weight: 600;
+    font-size: 12.5px;
+    color: var(--text-soft);
+    border: none;
+    background: transparent;
+    border-radius: 4px;
+    cursor: pointer;
+    font-family: inherit;
+    transition: all 0.15s;
+}
+
+.calc-mode-pill:hover { color: var(--text); }
+
+.calc-mode-pill.active {
+    background: var(--primary);
+    color: white;
+    box-shadow: var(--shadow-xs);
+}
+
+.calc-mode-pill:focus-visible {
+    outline: 2px solid var(--primary);
+    outline-offset: 2px;
+}
+
+/* Hint when product is amount-only */
+.calc-hint {
+    font-size: 12.5px;
+    color: var(--text-muted);
+    background: var(--surface);
+    border: 1px dashed var(--border-strong);
+    border-radius: var(--radius-sm);
+    padding: var(--s-2) var(--s-3);
+}
+
+/* ════════════════════════════════════════════════════════ */
+/*                                                              */
+/*                          PRODUCTS                           */
+/*                                                              */
+/* ════════════════════════════════════════════════════════ */
+
+.product-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: var(--s-4);
+}
+
+.product {
+    background: var(--surface);
+    border: 1.5px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: var(--s-5);
+    transition: all 0.18s;
+    cursor: pointer;
+    text-align: left;
+    font-family: inherit;
+}
+
+.product:hover {
+    border-color: var(--primary);
+    background: var(--surface-hover);
+}
+
+.product.selected {
+    border-color: var(--primary);
+    background: var(--primary-bg);
+    box-shadow: var(--shadow-sm);
+}
+
+.product:focus-visible {
+    outline: 2px solid var(--primary);
+    outline-offset: 2px;
+}
+
+.product-name {
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--text);
+    margin-bottom: var(--s-3);
+}
+
+.product-colors {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-bottom: var(--s-3);
+}
+
+.color-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    background: var(--surface-alt);
+    padding: 3px 9px;
+    border-radius: 999px;
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--text-soft);
+}
+
+.color-dot {
+    width: 9px;
+    height: 9px;
+    border-radius: 50%;
+    border: 1px solid rgba(15, 23, 42, 0.12);
+    flex-shrink: 0;
+}
+
+.color-dot.Белый { background: #f5f5f5; }
+.color-dot.Коричневый { background: #92400e; border-color: rgba(255,255,255,0.2); }
+.color-dot.Антрацит { background: #1e293b; border-color: rgba(255,255,255,0.1); }
+.color-dot.Золотой-дуб { background: linear-gradient(135deg, #d97706, #92400e); }
+.color-dot.Серый { background: #cbd5e1; }
+.color-dot.Чёрный { background: #0f172a; border-color: rgba(255,255,255,0.15); }
+
+.product-empty-colors {
+    font-size: 12px;
+    color: var(--text-muted);
+    font-style: italic;
+    margin-bottom: var(--s-3);
+}
+
+.product-formula {
+    font-family: var(--font-mono);
+    font-size: 12.5px;
+    color: var(--text-soft);
+    background: var(--surface-alt);
+    padding: 6px 10px;
+    border-radius: 5px;
+    border: 1px solid var(--border);
+}
+
+.product-tag-anwis {
+    display: inline-block;
+    background: var(--primary-bg);
+    color: var(--primary-dark);
+    padding: 2px 8px;
+    border-radius: 999px;
+    font-size: 11px;
+    font-weight: 700;
+    margin-left: var(--s-2);
+    vertical-align: middle;
+}
+
+/* ════════════════════════════════════════════════════════ */
+/*                                                              */
+/*                            ANWIS                            */
+/*                                                              */
+/* ════════════════════════════════════════════════════════ */
+
+.anwis-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-xl);
+    padding: var(--s-6);
+    box-shadow: var(--shadow-sm);
+}
+
+.anwis-bar-label {
+    display: block;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-soft);
+    margin-bottom: var(--s-3);
+}
+
+.anwis-pills {
+    display: inline-flex;
+    background: var(--surface-alt);
+    padding: 4px;
+    border-radius: var(--radius-md);
+    margin-bottom: var(--s-6);
+    border: 1px solid var(--border);
+}
+
+.anwis-pill {
+    padding: 10px 18px;
+    font-weight: 600;
+    font-size: 13.5px;
+    color: var(--text-soft);
+    border: none;
+    background: transparent;
+    border-radius: 7px;
+    cursor: pointer;
+    font-family: inherit;
+    transition: all 0.15s;
+}
+
+.anwis-pill:hover { color: var(--text); background: var(--surface-hover); }
+
+.anwis-pill:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
+
+.anwis-pill.active {
+    background: var(--surface);
+    color: var(--primary-dark);
+    box-shadow: var(--shadow-xs);
+}
+
+.anwis-preview {
+    background: var(--primary-bg);
+    border: 1px solid var(--primary-bg-hover);
+    border-radius: var(--radius-lg);
+    padding: var(--s-5);
+    margin-bottom: var(--s-6);
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: var(--s-5);
+    align-items: start;
+}
+
+.anwis-preview-cell {
+    display: grid;
+    gap: 4px;
+}
+
+.anwis-preview-cell .label {
+    font-size: 11.5px;
+    font-weight: 600;
+    color: var(--text-soft);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+
+.anwis-preview-cell .size {
+    font-family: var(--font-mono);
+    font-size: 26px;
+    font-weight: 700;
+    color: var(--primary-dark);
+    line-height: 1.1;
+}
+
+.anwis-preview-cell .hint {
+    font-size: 12px;
+    color: var(--text-muted);
+    margin-top: 2px;
+}
+
+.anwis-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 14px;
+}
+
+.anwis-table th {
+    text-align: left;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text-muted);
+    padding: var(--s-3);
+    border-bottom: 1px solid var(--border);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+
+.anwis-table td {
+    padding: var(--s-3) var(--s-4);
+    border-bottom: 1px solid var(--border);
+}
+
+.anwis-table tr:last-child td { border-bottom: none; }
+.anwis-table tr { transition: background 0.15s; }
+.anwis-table tr:hover { background: var(--surface-alt); }
+.anwis-table tr.active td { background: var(--primary-bg); }
+.anwis-table tr.active td:first-child { border-left: 3px solid var(--primary); padding-left: calc(var(--s-4) - 3px); }
+
+.anwis-pill-tag {
+    display: inline-block;
+    background: var(--primary-bg);
+    color: var(--primary-dark);
+    font-weight: 700;
+    padding: 4px 11px;
+    border-radius: 6px;
+    font-size: 13px;
+    border: 1px solid var(--primary-bg-hover);
+}
+
+.formula-cell {
+    font-family: var(--font-mono);
+    font-size: 13px;
+    color: var(--text-soft);
+}
+
+/* ════════════════════════════════════════════════════════ */
+/*                                                              */
+/*                          HOTKEYS                            */
+/*                                                              */
+/* ════════════════════════════════════════════════════════ */
+
+.hotkeys-section { background: var(--surface-alt); }
+
+.hotkeys {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: var(--s-4);
+}
+
+.hotkey {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: var(--s-5);
+    text-align: center;
+    transition: all 0.18s;
+}
+
+.hotkey:hover {
+    border-color: var(--primary);
+    box-shadow: var(--shadow-sm);
+}
+
+.key-combo {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    margin-bottom: var(--s-3);
+    justify-content: center;
+}
+
+.key {
+    min-width: 42px;
+    height: 42px;
+    padding: 0 var(--s-3);
+    background: linear-gradient(180deg, var(--surface), var(--surface-alt));
+    border: 1px solid var(--border-strong);
+    border-bottom-width: 3px;
+    border-radius: 7px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-family: var(--font-mono);
+    font-weight: 700;
+    font-size: 14px;
+    color: var(--text);
+    box-shadow: 0 1px 0 rgba(15, 23, 42, 0.05);
+}
+
+.key-plus {
+    font-weight: 700;
+    color: var(--text-muted);
+    font-size: 13px;
+}
+
+.hotkey-name {
+    font-size: 13.5px;
+    color: var(--text-soft);
+    font-weight: 500;
+}
+
+/* ════════════════════════════════════════════════════════ */
+/*                                                              */
+/*                          UPDATES                            */
+/*                                                              */
+/* ════════════════════════════════════════════════════════ */
+
+.updates-list {
+    list-style: none;
+    max-width: 720px;
+    margin: 0 auto;
+    display: grid;
+    gap: var(--s-3);
+}
+
+.updates-list li {
+    display: grid;
+    grid-template-columns: 24px 1fr;
+    gap: var(--s-3);
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    padding: var(--s-4) var(--s-5);
+    font-size: 14px;
+    color: var(--text-soft);
+}
+
+.updates-list li::before {
+    content: "✓";
+    width: 22px;
+    height: 22px;
+    background: var(--success-bg);
+    color: var(--success);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: 12px;
+    flex-shrink: 0;
+}
+
+.updates-list li strong { color: var(--text); font-weight: 600; }
+
+/* ════════════════════════════════════════════════════════ */
+/*                                                              */
+/*                            FOOTER                           */
+/*                                                              */
+/* ════════════════════════════════════════════════════════ */
+
+footer {
+    border-top: 1px solid var(--border);
+    padding: var(--s-6) 0;
+    text-align: center;
+    color: var(--text-muted);
+    font-size: 13.5px;
+    background: var(--surface);
+}
+
+footer a {
+    color: var(--primary);
+    text-decoration: none;
+    font-weight: 600;
+}
+
+footer a:hover { text-decoration: underline; }
+
+/* ════════════════════════════════════════════════════════ */
+/*                                                              */
+/*                         TOAST (100%)                        */
+/*                                                              */
+/* ════════════════════════════════════════════════════════ */
+
+.toast {
+    position: fixed;
+    bottom: var(--s-5);
+    left: 50%;
+    transform: translateX(-50%) translateY(120%);
+    background: var(--success);
+    color: white;
+    padding: var(--s-3) var(--s-5);
+    border-radius: var(--radius-md);
+    box-shadow: var(--shadow-md);
+    font-weight: 600;
+    font-size: 14px;
+    z-index: 200;
+    transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.toast.show { transform: translateX(-50%) translateY(0); }
+
+/* ════════════════════════════════════════════════════════ */
+/*                                                              */
+/*                        RESPONSIVE                           */
+/*                                                              */
+/* ════════════════════════════════════════════════════════ */
+
+@media (max-width: 900px) {
+    .steps,
+    .product-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+    .calc-layout {
+        grid-template-columns: 1fr;
+    }
+    .hotkeys {
+        grid-template-columns: repeat(2, 1fr);
+    }
+    .anwis-preview {
+        grid-template-columns: 1fr;
+    }
+    .nav-links { display: none; }
+    section { padding: var(--s-7) 0; }
+    .hero { padding: var(--s-7) 0 var(--s-6); }
+}
+
+@media (max-width: 560px) {
+    .steps, .product-grid, .hotkeys {
+        grid-template-columns: 1fr;
+    }
+    .container { padding: 0 var(--s-3); }
+    .calc-layout { padding: var(--s-4); }
+    .calc-row { grid-template-columns: 1fr; }
+}
+
+/* ════════════════════════════════════════════════════════ */
+/*                                                              */
+/*                 A11y: REDUCED MOTION                       */
+/*                                                              */
+/* ════════════════════════════════════════════════════════ */
+
+@media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+    }
+    html { scroll-behavior: auto; }
+}
+</style>
+</head>
+<body>
+
+<!-- ═══ Progress bar ═══ -->
+<div class="progress" role="status" aria-label="Прогресс чтения">
+    <span>Прогресс</span>
+    <div class="progress-track" aria-hidden="true">
+        <div class="progress-fill" id="progressFill"></div>
+    </div>
+    <span class="progress-text" id="progressText">0 / 7 разделов</span>
+    <button class="progress-reset" id="progressReset" type="button" aria-label="Сбросить прогресс">↻ Сбросить</button>
+</div>
+
+<!-- ═══ Nav ═══ -->
+<nav class="nav" aria-label="Главная навигация">
+    <div class="container nav-inner">
+        <a href="#hero" class="nav-brand">
+            <span class="nav-brand-logo">A</span>
+            <span>A.R.C. Frame</span>
+        </a>
+        <ul class="nav-links">
+            <li><a href="#workflow">Workflow</a></li>
+            <li><a href="#calculator">Калькулятор</a></li>
+            <li><a href="#products">Продукты</a></li>
+            <li><a href="#anwis">Anwis</a></li>
+            <li><a href="#shortcuts">Клавиши</a></li>
+        </ul>
+        <a href="#calculator" class="nav-cta">Начать расчёт →</a>
+    </div>
+</nav>
+
+<!-- ═══ Hero ═══ -->
+<header class="hero" id="hero">
+    <div class="container">
+        <div class="hero-eyebrow">Версия 3.38.0 · Онбординг</div>
+        <h1>A.R.C. Frame<br>Калькулятор КП для москитных сеток</h1>
+        <p class="hero-tagline">
+            Шесть шагов от пустой таблицы до готового коммерческого предложения.
+            Все функции программы — эмулируются прямо в браузере.
+        </p>
+        <div class="hero-buttons">
+            <a href="#workflow" class="btn btn-primary">▶ Начать знакомство</a>
+            <a href="#calculator" class="btn btn-secondary">Сразу к калькулятору</a>
+        </div>
+    </div>
+</header>
+
+<!-- ═══ Workflow ═══ -->
+<section id="workflow" data-section aria-labelledby="workflow-head">
+    <div class="container">
+        <div class="section-head">
+            <span class="section-eyebrow">Step-by-step</span>
+            <h2 id="workflow-head">Рабочий процесс</h2>
+            <p>Шесть шагов от пустой таблицы до отправки на фабрику — без лишних экранов.</p>
+        </div>
+
+        <div class="steps">
+            <div class="step">
+                <div class="step-num">1</div>
+                <h3>Заказчик и договор</h3>
+                <p>Слева заполните <strong>имя</strong>, <strong>телефон</strong>, <strong>адрес</strong> и <strong>дату</strong> со статусом. Номер договора создаётся автоматически.</p>
+            </div>
+            <div class="step">
+                <div class="step-num">2</div>
+                <h3>Выбор позиции</h3>
+                <p>Справа сверху выберите <strong>Тип</strong>, <strong>Цвет</strong>, введите <strong>Ш × В</strong> в мм и <strong>Кол-во</strong>. <kbd>Enter</kbd> добавляет позицию.</p>
+            </div>
+            <div class="step">
+                <div class="step-num">3</div>
+                <h3>Режим Anwis</h3>
+                <p>Для типа Anwis снизу появится панель пилюль: <strong>ББ 60 · ББ 70 · ПП · Проём · Габарит</strong>. Выберите правильный профиль.</p>
+            </div>
+            <div class="step">
+                <div class="step-num">4</div>
+                <h3>Правка таблицы</h3>
+                <p>В таблице: меняйте <strong>Цену</strong>, <strong>Кол-во</strong>, чекбокс «Вкл». Галочка <strong>Монтаж</strong> — для Anwis и «На навесах».</p>
+            </div>
+            <div class="step">
+                <div class="step-num">5</div>
+                <h3>Дополнительные КП</h3>
+                <p>Внизу слева: галочка <strong>«Есть доп. КП»</strong> и кнопка <strong>+ Добавить КП</strong> для каждого дополнительного расчёта.</p>
+            </div>
+            <div class="step">
+                <div class="step-num">6</div>
+                <h3>Сохранение и вывод</h3>
+                <p><strong>Сохранить</strong> <kbd>Ctrl</kbd>+<kbd>S</kbd>, <strong>На завод</strong> для WhatsApp, или <strong>Печать КП</strong> <kbd>Ctrl</kbd>+<kbd>P</kbd>.</p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- ═══ Mini calculator ═══ -->
+<section id="calculator" class="calc-section" data-section aria-labelledby="calculator-head">
+    <div class="container">
+        <div class="section-head">
+            <span class="section-eyebrow">Calculator</span>
+            <h2 id="calculator-head">Калькулятор стоимости</h2>
+            <p>Введите параметры — справа появится расчёт. Формулы совпадают с программой.</p>
+        </div>
+
+        <div class="calc-layout">
+            <!-- Form -->
+            <form class="calc-form" id="calcForm" autocomplete="off" novalidate>
+                <div class="field">
+                    <label for="calcProduct">Тип продукта</label>
+                    <select id="calcProduct" required>
+                        <option value="">— выберите —</option>
+                    </select>
+                </div>
+
+                <div class="field" id="calcColorField">
+                    <label for="calcColor">Цвет</label>
+                    <select id="calcColor"></select>
+                </div>
+
+                <!-- Anwis mode (only for Anwis) -->
+                <div class="calc-mode-row" id="calcModeRow" hidden>
+                    <label>Режим Anwis:</label>
+                    <div class="calc-mode-pills" role="tablist">
+                        <button type="button" class="calc-mode-pill active" data-mode="Брусбокс60" role="tab" aria-selected="true">ББ 60</button>
+                        <button type="button" class="calc-mode-pill" data-mode="Брусбокс70" role="tab" aria-selected="false">ББ 70</button>
+                        <button type="button" class="calc-mode-pill" data-mode="Профипласт" role="tab" aria-selected="false">ПП</button>
+                        <button type="button" class="calc-mode-pill" data-mode="РазмерПроёма" role="tab" aria-selected="false">Проём</button>
+                        <button type="button" class="calc-mode-pill" data-mode="Габаритный" role="tab" aria-selected="false">Габарит</button>
+                    </div>
+                </div>
+
+                <div class="calc-hint" id="calcHint" hidden></div>
+
+                <div class="calc-row" id="calcSize">
+                    <div class="field">
+                        <label for="calcWidth">Ширина, мм</label>
+                        <input type="number" id="calcWidth" min="0" step="1" placeholder="1000">
+                    </div>
+                    <div class="field">
+                        <label for="calcHeight">Высота, мм</label>
+                        <input type="number" id="calcHeight" min="0" step="1" placeholder="1000">
+                    </div>
+                </div>
+
+                <div class="field" id="calcQtyField">
+                    <label for="calcQty">Количество</label>
+                    <input type="number" id="calcQty" min="1" step="1" value="1">
+                </div>
+            </form>
+
+            <!-- Result -->
+            <div class="calc-result" id="calcResult" aria-live="polite" aria-atomic="true">
+                <div class="calc-result-empty">Выберите продукт, чтобы увидеть расчёт.</div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- ═══ Products grid ═══ -->
+<section id="products" data-section aria-labelledby="products-head">
+    <div class="container">
+        <div class="section-head">
+            <span class="section-eyebrow">Catalog</span>
+            <h2 id="products-head">Продукты и расчёт</h2>
+            <p>Кликните по карточке, чтобы выделить продукт — калькулятор выше подставит его автоматически.</p>
+        </div>
+
+        <div class="product-grid" id="productGrid">
+            <!-- Cards injected by JS -->
+        </div>
+    </div>
+</section>
+
+<!-- ═══ Anwis ═══ -->
+<section id="anwis" data-section aria-labelledby="anwis-head">
+    <div class="container">
+        <div class="section-head">
+            <span class="section-eyebrow">Anwis</span>
+            <h2 id="anwis-head">Режимы размера</h2>
+            <p>Кликайте по пилюлям — таблица и live-preview переключатся в реальном времени. Формулы совпадают с программой.</p>
+        </div>
+
+        <div class="anwis-card">
+            <span class="anwis-bar-label">Сегментированный контрол (как в главной программе):</span>
+            <div class="anwis-pills" role="tablist" id="anwisPills">
+                <button type="button" class="anwis-pill active" data-mode="Брусбокс60" role="tab" aria-selected="true">ББ 60</button>
+                <button type="button" class="anwis-pill" data-mode="Брусбокс70" role="tab" aria-selected="false">ББ 70</button>
+                <button type="button" class="anwis-pill" data-mode="Профипласт" role="tab" aria-selected="false">ПП</button>
+                <button type="button" class="anwis-pill" data-mode="РазмерПроёма" role="tab" aria-selected="false">Проём</button>
+                <button type="button" class="anwis-pill" data-mode="Габаритный" role="tab" aria-selected="false">Габарит</button>
+            </div>
+
+            <!-- Live preview -->
+            <div class="anwis-preview" id="anwisPreview">
+                <div class="anwis-preview-cell">
+                    <span class="label">Ввод (1000 × 1000)</span>
+                    <span class="size" id="anwisIn">1000 × 1000</span>
+                    <span class="hint" id="anwisInHint">Сырой ввод пользователя</span>
+                </div>
+                <div class="anwis-preview-cell">
+                    <span class="label">Расчёт</span>
+                    <span class="size" id="anwisCalc">1002 × 970</span>
+                    <span class="hint" id="anwisCalcHint">W+2 / H−30</span>
+                </div>
+                <div class="anwis-preview-cell">
+                    <span class="label">На завод</span>
+                    <span class="size" id="anwisFactory">980 × 950</span>
+                    <span class="hint">Расчёт − 20 мм по обеим осям</span>
+                </div>
+            </div>
+
+            <!-- Table -->
+            <table class="anwis-table">
+                <thead>
+                    <tr>
+                        <th>Режим</th>
+                        <th>Расчёт (площадь и цена)</th>
+                        <th>Копия на завод</th>
+                    </tr>
+                </thead>
+                <tbody id="anwisTableBody">
+                    <!-- Filled by JS -->
+                </tbody>
+            </table>
+        </div>
+    </div>
+</section>
+
+<!-- ═══ Hotkeys ═══ -->
+<section id="shortcuts" class="hotkeys-section" data-section aria-labelledby="shortcuts-head">
+    <div class="container">
+        <div class="section-head">
+            <span class="section-eyebrow">Speed</span>
+            <h2 id="shortcuts-head">Горячие клавиши</h2>
+            <p>Только реально зарегистрированные в программе комбинации.</p>
+        </div>
+        <div class="hotkeys">
+            <div class="hotkey">
+                <div class="key-combo">
+                    <span class="key">Ctrl</span><span class="key-plus">+</span><span class="key">S</span>
+                </div>
+                <div class="hotkey-name">Сохранить заказ</div>
+            </div>
+            <div class="hotkey">
+                <div class="key-combo">
+                    <span class="key">Ctrl</span><span class="key-plus">+</span><span class="key">P</span>
+                </div>
+                <div class="hotkey-name">Печать (в окне предпросмотра)</div>
+            </div>
+            <div class="hotkey">
+                <div class="key-combo">
+                    <span class="key">Enter</span>
+                </div>
+                <div class="hotkey-name">Добавить позицию в таблице</div>
+            </div>
+            <div class="hotkey">
+                <div class="key-combo">
+                    <span class="key">Esc</span>
+                </div>
+                <div class="hotkey-name">Закрыть окно «На завод»</div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- ═══ Updates ═══ -->
+<section id="updates" data-section aria-labelledby="updates-head">
+    <div class="container">
+        <div class="section-head">
+            <span class="section-eyebrow">Fresh</span>
+            <h2 id="updates-head">Автообновление</h2>
+            <p>Программа сама следит за выходом новых версий.</p>
+        </div>
+        <ul class="updates-list">
+            <li><strong>Автопроверка</strong> при каждом запуске через GitHub Releases.</li>
+            <li><strong>Красная точка</strong> на кнопке «Настройки» при наличии обновления.</li>
+            <li><strong>Скачивание в один клик</strong> с прогресс-полоской под заголовком окна.</li>
+            <li><strong>Все 657 тестов</strong> проходят перед публикацией каждой версии.</li>
+        </ul>
+    </div>
+</section>
+
+<!-- ═══ Footer ═══ -->
+<footer>
+    <div class="container">
+        <strong>A.R.C. Frame v3.38.0</strong> · Калькулятор КП для москитных сеток · <a href="https://github.com/DdepRest/arc-frame/releases">Релизы на GitHub</a>
+    </div>
+</footer>
+
+<!-- ═══ Toast ═══ -->
+<div class="toast" id="toast" role="status" aria-live="polite">✓ Вы прочитали всю инструкцию!</div>
+
+<!-- ════════════════════════════════════════════════════════ -->
+<!--                                                              -->
+<!--                         JAVASCRIPT                          -->
+<!--                                                              -->
+<!-- ════════════════════════════════════════════════════════ -->
+<script>
+(function() {
+'use strict';
+
+/* ── Data ─────────────────────────────────────────────────── */
+
+const PRICES = {
+    "Anwis":            { "Белый": 1800, "Коричневый": 1900, "" : 1800 },
+    "На навесах":       { "Белый": 2900, "Коричневый": 3000, "" : 2900 },
+    "Оконная на метал. крепл.": { "Белый": 3200, "Коричневый": 3300, "" : 3200 },
+    "Отлив":            { "Белый": 2150, "Коричневый": 2150, "Антрацит": 2150, "Золотой дуб": 2650, "" : 2150 },
+    "Козырёк":          { "Белый": 2150, "Коричневый": 2150, "Антрацит": 2150, "Золотой дуб": 2650, "" : 2150 },
+    "Короб":            { "Белый": 2150, "Коричневый": 2150, "Антрацит": 2150, "Золотой дуб": 2650, "" : 2150 },
+    "Уплотнение":       { "Серый": 250, "Чёрный": 250, "" : 250 },
+    "ПСУЛ":             { "" : 100 },
+    "Откос материал":   { "" : 0 },
+    "Работа":           { "" : 0 },
+    "Брус":             { "" : 0 },
+    "Пояс":             { "" : 0 },
+    "Доставка":         { "" : 0 }
+};
+
+const PRODUCTS = [
+    { name: "Anwis",                       formula: "Ш × В × Кол-во × Цена",  areaBased: true,  anwisApplicable: true,  amountOnly: false, colors: ["Белый", "Коричневый"] },
+    { name: "На навесах",                  formula: "Ш × В × Кол-во × Цена",  areaBased: true,  anwisApplicable: false, amountOnly: false, colors: ["Белый", "Коричневый"] },
+    { name: "Оконная на метал. крепл.",    formula: "Ш × В × Кол-во × Цена",  areaBased: true,  anwisApplicable: false, amountOnly: false, colors: ["Белый", "Коричневый"] },
+    { name: "Отлив",                       formula: "Ш × В × Кол-во × Цена",  areaBased: true,  anwisApplicable: false, amountOnly: false, colors: ["Белый", "Коричневый", "Антрацит", "Золотой дуб"] },
+    { name: "Козырёк",                     formula: "Ш × В × Кол-во × Цена",  areaBased: true,  anwisApplicable: false, amountOnly: false, colors: ["Белый", "Коричневый", "Антрацит", "Золотой дуб"] },
+    { name: "Короб",                       formula: "Ш × В × Кол-во × Цена",  areaBased: true,  anwisApplicable: false, amountOnly: false, colors: ["Белый", "Коричневый", "Антрацит", "Золотой дуб"] },
+    // Уплотнение не входит в OrderItem.AreaBasedProducts — расчёт погонными метрами (периметр).
+    { name: "Уплотнение",                  formula: "(Ш+В)×2/1000 × Кол-во × Цена", areaBased: false, anwisApplicable: false, amountOnly: false, perimeter: true, colors: ["Серый", "Чёрный"] },
+    // Откос материал — WidthOnlyProducts: Ш записывается как метаданные, но в Total = 1 шт. × Кол-во × Цена.
+    { name: "Откос материал",              formula: "Кол-во × Цена",          areaBased: false, anwisApplicable: false, amountOnly: false, widthOnly: true, colors: [] },
+    { name: "ПСУЛ",                        formula: "Кол-во × Цена",          areaBased: false, anwisApplicable: false, amountOnly: false, colors: [] },
+    { name: "Работа",                      formula: "Кол-во × Цена",          areaBased: false, anwisApplicable: false, amountOnly: false, manual: true,  colors: [] },
+    { name: "Брус",                        formula: "Сумма вручную",          areaBased: false, anwisApplicable: false, amountOnly: true,  colors: [] },
+    { name: "Пояс",                        formula: "Сумма вручную",          areaBased: false, anwisApplicable: false, amountOnly: true,  colors: [] },
+    { name: "Доставка",                    formula: "Сумма вручную",          areaBased: false, anwisApplicable: false, amountOnly: true,  colors: [] }
+];
+
+/* Anwis calc formulas — must match MosquitoNetCalculator/Models/AnwisSize.cs */
+const ANWIS_FORMULAS = {
+    "Брусбокс60":   { calc: "W+2 / H−30",  calcW: w => w + 2,         calcH: h => Math.max(0, h - 30),  factoryLabel: "Расчёт − 20 мм" },
+    "Брусбокс70":   { calc: "W−2 / H−30",  calcW: w => Math.max(0, w - 2), calcH: h => Math.max(0, h - 30), factoryLabel: "Расчёт − 20 мм" },
+    "Профипласт":   { calc: "без изменений", calcW: w => w,           calcH: h => h,                  factoryLabel: "Расчёт − 20 мм" },
+    "РазмерПроёма": { calc: "W+20 / H+20", calcW: w => w + 20,         calcH: h => h + 20,            factoryLabel: "Расчёт − 20 мм" },
+    "Габаритный":   { calc: "без изменений", calcW: w => w,           calcH: h => h,                  factoryLabel: "Расчёт − 20 мм" }
+};
+
+const STORAGE_KEY = "arc-frame-onboarding-progress";
+const ANWIS_STORAGE = "arc-frame-onboarding-anwis";
+
+/* ── Helpers ─────────────────────────────────────────────── */
+
+function $(id) { return document.getElementById(id); }
+
+function money(n) {
+    if (!isFinite(n)) return "—";
+    return n.toLocaleString("ru-RU", { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + " ₽";
+}
+function dim(n) {
+    if (!isFinite(n)) return "—";
+    return Math.round(n).toLocaleString("ru-RU") + " мм";
+}
+function area(n) {
+    if (!isFinite(n)) return "—";
+    return n.toLocaleString("ru-RU", { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + " м²";
+}
+
+function getProduct(name) {
+    return PRODUCTS.find(p => p.name === name) || null;
+}
+
+function getPrice(name, color) {
+    const table = PRICES[name];
+    if (!table) return 0;
+    if (color && table[color] !== undefined) return table[color];
+    return table[""] || 0;
+}
+
+/* ── Product grid (cards) ─────────────────────────────────── */
+
+function buildProductCards() {
+    const grid = $("productGrid");
+    if (!grid) return;
+    const html = PRODUCTS.map(p => {
+        const colorsHtml = p.colors.length
+            ? `<div class="product-colors">${p.colors.map(c =>
+                `<span class="color-pill"><span class="color-dot ${c.replace(/ /g, '-')}"></span>${c}</span>`
+              ).join("")}</div>`
+            : `<div class="product-empty-colors">без цвета</div>`;
+        const anwisTag = p.anwisApplicable
+            ? `<span class="product-tag-anwis">Anwis</span>`
+            : "";
+        return `<button type="button" class="product" data-name="${escapeHtml(p.name)}" aria-label="Выбрать ${escapeHtml(p.name)}">
+            <div class="product-name">${escapeHtml(p.name)}${anwisTag}</div>
+            ${colorsHtml}
+            <div class="product-formula">${p.formula}</div>
+        </button>`;
+    }).join("");
+    grid.innerHTML = html;
+
+    grid.querySelectorAll(".product").forEach(card => {
+        card.addEventListener("click", () => selectProduct(card.dataset.name, card));
+        card.addEventListener("keydown", e => {
+            if (e.key === "Enter" || e.key === " ") {
+                e.preventDefault();
+                selectProduct(card.dataset.name, card);
+            }
+        });
+    });
+}
+
+function escapeHtml(s) {
+    return String(s).replace(/[&<>"']/g, ch =>
+        ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[ch]);
+}
+
+function selectProduct(name, cardEl) {
+    document.querySelectorAll(".product").forEach(c => c.classList.remove("selected"));
+    if (cardEl) cardEl.classList.add("selected");
+
+    const sel = $("calcProduct");
+    if (sel) {
+        sel.value = name;
+        sel.dispatchEvent(new Event("change"));
+    }
+    recalcCalculator();
+}
+
+/* ── Mini calculator ─────────────────────────────────────── */
+
+function buildProductSelect() {
+    const sel = $("calcProduct");
+    if (!sel) return;
+    sel.innerHTML = `<option value="">— выберите —</option>` +
+        PRODUCTS.map(p => `<option value="${escapeHtml(p.name)}">${escapeHtml(p.name)}</option>`).join("");
+
+    sel.addEventListener("change", onProductChange);
+    ["calcColor", "calcWidth", "calcHeight", "calcQty"].forEach(id => {
+        const el = $(id);
+        if (el) el.addEventListener("input", recalcCalculator);
+    });
+    document.querySelectorAll("#calcModeRow .calc-mode-pill").forEach(pill => {
+        pill.addEventListener("click", () => {
+            document.querySelectorAll("#calcModeRow .calc-mode-pill").forEach(p => {
+                p.classList.remove("active");
+                p.setAttribute("aria-selected", "false");
+            });
+            pill.classList.add("active");
+            pill.setAttribute("aria-selected", "true");
+            recalcCalculator();
+        });
+    });
+}
+
+function getCurrentCalcMode() {
+    const active = document.querySelector("#calcModeRow .calc-mode-pill.active");
+    return active ? active.dataset.mode : "Брусбокс60";
+}
+
+function onProductChange() {
+    const p = getProduct($("calcProduct").value);
+    const colorSel = $("calcColor");
+    const colorField = $("calcColorField");
+    const modeRow = $("calcModeRow");
+    const hint = $("calcHint");
+    const sizeRow = $("calcSize");
+    const qtyField = $("calcQtyField");
+
+    // Colors
+    if (p && p.colors.length) {
+        colorSel.innerHTML = p.colors.map(c =>
+            `<option value="${escapeHtml(c)}">${escapeHtml(c)} ${money(getPrice(p.name, c))}/м²</option>`
+        ).join("");
+        colorField.hidden = false;
+    } else {
+        colorSel.innerHTML = `<option value="">—</option>`;
+        colorField.hidden = true;
+    }
+
+    // Anwis mode row
+    if (p && p.anwisApplicable) {
+        modeRow.hidden = false;
+    } else {
+        modeRow.hidden = true;
+    }
+
+    // Hint for amount-only products
+    if (p && p.amountOnly) {
+        hint.hidden = false;
+        hint.textContent = "ℹ Этот продукт в КП заполняется только суммой вручную — формула неприменима.";
+    } else if (p && p.widthOnly) {
+        hint.hidden = false;
+        hint.textContent = "ℹ Для откоса учитывается только ширина; высота не входит в формулу.";
+    } else {
+        hint.hidden = true;
+        hint.textContent = "";
+    }
+
+    // Width/Height visibility
+    if (p && p.amountOnly) {
+        sizeRow.hidden = true;
+        qtyField.hidden = true;
+    } else {
+        sizeRow.hidden = false;
+        qtyField.hidden = false;
+    }
+
+    recalcCalculator();
+}
+
+function recalcCalculator() {
+    const result = $("calcResult");
+    const name = $("calcProduct").value;
+    const p = getProduct(name);
+    if (!result || !p) {
+        if (result) result.innerHTML = `<div class="calc-result-empty">Выберите продукт, чтобы увидеть расчёт.</div>`;
+        return;
+    }
+
+    const color = $("calcColor").value;
+    const w = parseFloat($("calcWidth").value) || 0;
+    const h = parseFloat($("calcHeight").value) || 0;
+    const qty = Math.max(1, parseInt($("calcQty").value) || 1);
+    const price = getPrice(p.name, color);
+
+    // Special case: amount-only (Брус / Пояс / Доставка)
+    if (p.amountOnly) {
+        result.innerHTML = `<div class="calc-row-result">
+            <span class="label">Сумма в КП</span>
+            <span class="value big">— вводится вручную —</span>
+        </div>
+        <div class="calc-row-result">
+            <span class="label">Цена по умолчанию</span>
+            <span class="value formula">0 ₽</span>
+        </div>
+        <div style="font-size:12px;color:var(--text-muted);margin-top:8px;">
+            В реальной программе сумма для бруса, пояса и доставки вводится напрямую в поле «Сумма» в карточке «ДОПОЛНИТЕЛЬНОЕ КП».
+        </div>`;
+        return;
+    }
+
+    // Width-only (Откос материал): Width is metadata, Total = 1 шт. × Кол-во × Цена.
+    if (p.widthOnly) {
+        const total = 1 * price * qty;
+        const rows = [
+            { label: "Ширина (метаданные)", value: dim(w), mono: true, hint: "Высота не входит в формулу" },
+            { label: "Кол-во", value: `${qty} шт.`, mono: true },
+            { label: "Цена за шт.", value: price > 0 ? money(price) : "0 ₽ (вручную)", mono: true }
+        ];
+        if (price === 0 && !p.amountOnly) {
+            rows.push({ label: "Стоимость", value: "—", big: true, hint: "Цена по умолчанию = 0 ₽. В реальной программе цену правят вручную в колонке «Цена»." });
+        } else {
+            rows.push({ label: `Стоимость (${qty} × ${money(price)})`, value: money(total), big: true });
+        }
+        result.innerHTML = rows.map(r => {
+            const valClass = r.big ? "value big" : "value";
+            const hint = r.hint ? `<div style="font-size:11.5px;color:var(--text-muted);margin-top:2px;">${escapeHtml(r.hint)}</div>` : "";
+            return `<div class="calc-row-result">
+                <span class="label">${escapeHtml(r.label)}</span>
+                <div style="text-align:right;">${hint}<span class="${valClass}">${escapeHtml(r.value)}</span></div>
+            </div>`;
+        }).join("");
+        return;
+    }
+
+    // Perimeter-based (Уплотнение): (Ш+В)×2 / 1000 m → Кол-во × Цена.
+    if (p.perimeter) {
+        const perimM = ((w + h) * 2) / 1000;
+        const total = perimM * price * qty;
+        const rows = [
+            { label: "Периметр (Ш+В)×2", value: dim((w + h) * 2), mono: true, hint: `${perimM.toFixed(2)} пог. м` },
+            { label: "Кол-во", value: `${qty} шт.`, mono: true },
+            { label: "Цена за пог. м", value: money(price), mono: true },
+            { label: "Стоимость", value: money(total), big: true }
+        ];
+        result.innerHTML = rows.map(r => {
+            const valClass = r.big ? "value big" : "value";
+            const hint = r.hint ? `<div style="font-size:11.5px;color:var(--text-muted);margin-top:2px;">${escapeHtml(r.hint)}</div>` : "";
+            return `<div class="calc-row-result">
+                <span class="label">${escapeHtml(r.label)}</span>
+                <div style="text-align:right;">${hint}<span class="${valClass}">${escapeHtml(r.value)}</span></div>
+            </div>`;
+        }).join("");
+        return;
+    }
+
+    // Manual-piece (Работа, ПСУЛ): Кол-во × Цена (but display 1 шт. with manual price hint if price=0)
+    if (p.manual) {
+        const total = 1 * price * qty;
+        const rows = [
+            { label: "Тип расчёта", value: "Кол-во × Цена", mono: true }
+        ];
+        if (price === 0) {
+            rows.push({ label: "Стоимость", value: "—", big: true, hint: "Цена «Работа» по умолчанию = 0 ₽. В реальной программе цену правят вручную в колонке «Цена»." });
+        } else {
+            rows.push({ label: "Кол-во", value: `${qty} шт.`, mono: true });
+            rows.push({ label: "Цена за шт.", value: money(price), mono: true });
+            rows.push({ label: "Стоимость", value: money(total), big: true });
+        }
+        result.innerHTML = rows.map(r => {
+            const valClass = r.big ? "value big" : "value";
+            const hint = r.hint ? `<div style="font-size:11.5px;color:var(--text-muted);margin-top:2px;">${escapeHtml(r.hint)}</div>` : "";
+            return `<div class="calc-row-result">
+                <span class="label">${escapeHtml(r.label)}</span>
+                <div style="text-align:right;">${hint}<span class="${valClass}">${escapeHtml(r.value)}</span></div>
+            </div>`;
+        }).join("");
+        return;
+    }
+
+    // Area-based + Anwis
+    let calcW = w, calcH = h;
+    if (p.anwisApplicable) {
+        const mode = getCurrentCalcMode();
+        const f = ANWIS_FORMULAS[mode];
+        calcW = f.calcW(w);
+        calcH = f.calcH(h);
+    }
+
+    let areaVal;
+    if (p.areaBased || p.anwisApplicable) {
+        areaVal = (calcW * calcH) / 1_000_000;
+    } else {
+        areaVal = 0;
+    }
+
+    const total = areaVal * price * qty;
+
+    let rows = [];
+    if (p.anwisApplicable) {
+        const mode = getCurrentCalcMode();
+        const f = ANWIS_FORMULAS[mode];
+        rows.push({ label: "Ввод", value: `${dim(w)} × ${dim(h)}`, mono: true });
+        rows.push({ label: "Расчёт (площадь)", value: `${dim(calcW)} × ${dim(calcH)}`, mono: true, hint: f.calc });
+        const facW = Math.max(0, calcW - 20);
+        const facH = Math.max(0, calcH - 20);
+        rows.push({ label: "На завод (копия)", value: `${dim(facW)} × ${dim(facH)}`, mono: true, hint: "− 20 мм по обеим осям" });
+    }
+    rows.push({ label: "Площадь", value: area(areaVal), mono: true });
+    rows.push({ label: "Цена за м²", value: money(price), mono: true });
+    rows.push({ label: `Стоимость (${qty} шт.)`, value: money(total), big: true });
+
+    result.innerHTML = rows.map(r => {
+        const valClass = r.big ? "value big" : "value";
+        const hint = r.hint ? `<div style="font-size:11.5px;color:var(--text-muted);margin-top:2px;">${escapeHtml(r.hint)}</div>` : "";
+        return `<div class="calc-row-result">
+            <span class="label">${escapeHtml(r.label)}</span>
+            <div style="text-align:right;">${hint}<span class="${valClass}">${escapeHtml(r.value)}</span></div>
+        </div>`;
+    }).join("");
+}
+
+/* ── Anwis picker ─────────────────────────────────────────── */
+
+function buildAnwisTable() {
+    const tbody = $("anwisTableBody");
+    if (!tbody) return;
+    const modes = Object.keys(ANWIS_FORMULAS);
+    const labels = { "Брусбокс60": "ББ 60", "Брусбокс70": "ББ 70", "Профипласт": "ПП", "РазмерПроёма": "Проём", "Габаритный": "Габарит" };
+    tbody.innerHTML = modes.map(m => {
+        const f = ANWIS_FORMULAS[m];
+        return `<tr data-mode="${m}">
+            <td><span class="anwis-pill-tag">${labels[m]}</span></td>
+            <td class="formula-cell">${escapeHtml(f.calc)}</td>
+            <td class="formula-cell">W−20 / H−20</td>
+        </tr>`;
+    }).join("");
+
+    // Pills click handlers
+    document.querySelectorAll("#anwisPills .anwis-pill").forEach(pill => {
+        pill.addEventListener("click", () => selectAnwisMode(pill.dataset.mode));
+        pill.addEventListener("keydown", e => {
+            if (e.key === "Enter" || e.key === " ") {
+                e.preventDefault();
+                selectAnwisMode(pill.dataset.mode);
+            }
+        });
+    });
+
+    // Restore from storage; fall back to default ББ 60 so the live preview
+    // numbers are always computed by JS instead of relying on hardcoded HTML
+    // (which had 980 instead of 982 for ББ 60).
+    const savedMode = localStorage.getItem(ANWIS_STORAGE);
+    selectAnwisMode((savedMode && ANWIS_FORMULAS[savedMode]) ? savedMode : "Брусбокс60", /*persist*/ false);
+}
+
+function selectAnwisMode(mode, persist = true) {
+    const f = ANWIS_FORMULAS[mode];
+    if (!f) return;
+
+    // Pills active state
+    document.querySelectorAll("#anwisPills .anwis-pill").forEach(p => {
+        const active = p.dataset.mode === mode;
+        p.classList.toggle("active", active);
+        p.setAttribute("aria-selected", active ? "true" : "false");
+    });
+
+    // Table row highlight
+    document.querySelectorAll("#anwisTableBody tr").forEach(tr => {
+        tr.classList.toggle("active", tr.dataset.mode === mode);
+    });
+
+    // Live preview (example: 1000×1000)
+    const w = 1000, h = 1000;
+    const calcW = f.calcW(w);
+    const calcH = f.calcH(h);
+    const labW = Math.max(0, calcW - 20);
+    const labH = Math.max(0, calcH - 20);
+
+    $("anwisIn").textContent = `${w} × ${h}`;
+    $("anwisInHint").textContent = mode === "РазмерПроёма"
+        ? "Чистые размеры от уплотнения до уплотнения"
+        : mode === "Габаритный"
+            ? "Размер с +20 мм от проёма"
+            : "Размеры, что показывает программа";
+
+    $("anwisCalc").textContent = `${Math.round(calcW)} × ${Math.round(calcH)}`;
+    $("anwisCalcHint").textContent = f.calc;
+
+    $("anwisFactory").textContent = `${labW} × ${labH}`;
+
+    if (persist) {
+        try { localStorage.setItem(ANWIS_STORAGE, mode); } catch (e) {}
+    }
+}
+
+/* ── Reading progress ────────────────────────────────────── */
+
+function setupProgress() {
+    const fill = $("progressFill");
+    const text = $("progressText");
+    const reset = $("progressReset");
+    if (!fill || !text) return;
+
+    let visited;
+    try {
+        visited = JSON.parse(localStorage.getItem(STORAGE_KEY) || "{}");
+    } catch (e) {
+        visited = {};
+    }
+
+    const sections = Array.from(document.querySelectorAll("[data-section]"));
+    const totals = sections.length;
+
+    // Mark visited from storage immediately
+    sections.forEach(s => {
+        const id = s.id;
+        if (visited[id]) s.dataset.visited = "1";
+    });
+
+    const update = () => {
+        const done = sections.filter(s => s.dataset.visited === "1").length;
+        const pct = totals ? (done / totals) * 100 : 0;
+        fill.style.width = pct + "%";
+        text.textContent = `${done} / ${totals} разделов`;
+
+        if (totals && done === totals && !visited.completed) {
+            visited.completed = true;
+            try { localStorage.setItem(STORAGE_KEY, JSON.stringify(visited)); } catch (e) {}
+            showToast();
+        }
+    };
+
+    if (reset) {
+        reset.addEventListener("click", () => {
+            if (!confirm("Сбросить прогресс чтения?")) return;
+            try { localStorage.removeItem(STORAGE_KEY); } catch (e) {}
+            sections.forEach(s => delete s.dataset.visited);
+            visited = {};
+            update();
+        });
+    }
+
+    // IntersectionObserver — mark section as visited when 30% in view
+    if ("IntersectionObserver" in window) {
+        const io = new IntersectionObserver(entries => {
+            entries.forEach(entry => {
+                if (entry.intersectionRatio >= 0.3) {
+                    const id = entry.target.id;
+                    entry.target.dataset.visited = "1";
+                    visited[id] = true;
+                    try { localStorage.setItem(STORAGE_KEY, JSON.stringify(visited)); } catch (e) {}
+                    update();
+                }
+            });
+        }, { threshold: [0.3] });
+        sections.forEach(s => io.observe(s));
+    }
+
+    update();
+}
+
+function showToast() {
+    const t = $("toast");
+    if (!t) return;
+    t.classList.add("show");
+    setTimeout(() => t.classList.remove("show"), 4000);
+}
+
+/* ── Init ─────────────────────────────────────────────────── */
+
+document.addEventListener("DOMContentLoaded", () => {
+    buildProductCards();
+    buildProductSelect();
+    buildAnwisTable();
+    setupProgress();
+});
+})();
+</script>
+
+</body>
+</html>
