@@ -18,8 +18,8 @@ namespace MosquitoNetCalculator
 
         internal void UpdateCurrentOrderInfo()
         {
-            if (ActionBarControl?.OrderInfoRun == null) return;
-            ActionBarControl.OrderInfoRun.Text = IsNewOrder
+            if (StatusOrderInfo == null) return;
+            StatusOrderInfo.Text = IsNewOrder
                 ? "Новый заказ"
                 : $"Ред.: {ClientInfo.ContractNumber}";
         }

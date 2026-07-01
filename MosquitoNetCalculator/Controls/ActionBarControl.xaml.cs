@@ -6,88 +6,18 @@ using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Controls.Primitives;
-using System.Windows.Documents;
 
 namespace MosquitoNetCalculator.Controls
 {
     public partial class ActionBarControl : UserControl
     {
         public Border CardBarBorder => CardActionBar;
-        public Run OrderInfoRun => RunCurrentOrderInfo;
-        public Border DirtyChip => DirtyIndicator;
-        // Settings (gear) button + dropdown — replaces the legacy BtnThemeToggle
-        // button. Theme state surfaces through two IsCheckable radio menu items
-        // updated from ThemeChanged; location pipeline lives in the same menu.
-        // Public accessors for callers that want to interact with the settings
-        // gear button + dropdown. Note: `SettingsMenu` is intentionally NOT
-        // re-exposed as a public property because the XAML's `x:Name`
-        // already promotes it to an internal field on the partial class —
-        // a public property of the same name would collide (CS0102) and the
-        // internal field is sufficient for handlers in this class anyway.
-        public Button SettingsBtn => BtnSettings;
-        public System.Windows.Shapes.Ellipse UpdateBadgeDot => UpdateBadge;
-        public MenuItem MenuItemThemeLight => MenuThemeLight;
-        public MenuItem MenuItemThemeDark => MenuThemeDark;
-        // Single delegate instance reused across subscribe/unsubscribe.
-        // Method-group conversion creates a fresh delegate on every call, so
-        // `ThemeService.ThemeChanged -= UpdateSettingsMenu` would silently no-op
-        // and leave this UserControl pinned alive by the static event forever.
-        private Action _themeChangedHandler = null!;
 
         public ActionBarControl()
         {
             InitializeComponent();
-            // Sync radio state once on load; ThemeChanged subscription keeps it
-            // accurate when the theme flips via any path (menu, future shortcut,
-            // external trigger). Unsubscribed on Unload so the static event does
-            // not pin this UserControl alive after MainWindow closes.
-            UpdateSettingsMenu();
-            _themeChangedHandler = UpdateSettingsMenu;
-            ThemeService.ThemeChanged += _themeChangedHandler;
-            Unloaded += (_, _) => ThemeService.ThemeChanged -= _themeChangedHandler;
-
-            // Delayed badge refresh — CheckOnStartupAsync completes a few
-            // seconds after launch and saves pending-update version. This
-            // one-shot timer picks it up so the badge appears without the
-            // user needing to open the settings menu.
-            var badgeTimer = new System.Windows.Threading.DispatcherTimer
-            {
-                Interval = TimeSpan.FromSeconds(4)
-            };
-            badgeTimer.Tick += (s, e) =>
-            {
-                badgeTimer.Stop();
-                if (UpdateBadge != null)
-                    UpdateBadge.Visibility = UpdateService.HasPendingUpdate()
-                        ? Visibility.Visible
-                        : Visibility.Collapsed;
-            };
-            badgeTimer.Start();
         }
 
-        /// <summary>
-        /// Syncs the «Тема» radio menu items to their current values from settings.
-        /// Public so callers (or future opening flows) can force-refresh.
-        /// </summary>
-        public void UpdateSettingsMenu()
-        {
-            bool isDark = ThemeService.IsDarkTheme;
-            if (MenuThemeLight != null) MenuThemeLight.IsChecked = !isDark;
-            if (MenuThemeDark != null) MenuThemeDark.IsChecked = isDark;
-
-            // Show/hide update badge based on pending update status
-            if (UpdateBadge != null)
-                UpdateBadge.Visibility = UpdateService.HasPendingUpdate()
-                    ? Visibility.Visible
-                    : Visibility.Collapsed;
-        }
-
-        /// <summary>
-        /// Resolves the parent MainWindow from DataContext, logging a diagnostic if the
-        /// DataContext is not a MainWindow. Returns false in that case so callers can
-        /// bail out gracefully.
-        /// </summary>
         private bool TryGetMainWindow(string handlerName, [NotNullWhen(true)] out MainWindow? mw)
         {
             if (DataContext is MainWindow window)
@@ -120,8 +50,6 @@ namespace MosquitoNetCalculator.Controls
             preview.ShowDialog();
         }
 
-        // Kept `internal` (not `private`) so MainWindow's `CommandBinding Executed="BtnSaveOrder_Click"`
-        // for ApplicationCommands.Save (Ctrl+S) can forward to the same save logic.
         internal void BtnSaveOrder_Click(object sender, RoutedEventArgs e)
         {
             if (!TryGetMainWindow(nameof(BtnSaveOrder_Click), out var mw)) return;
@@ -161,17 +89,11 @@ namespace MosquitoNetCalculator.Controls
                     Height = i.Height,
                     Quantity = i.Quantity,
                     Price = i.Price,
-                    // CalculatedValue and Total are intentionally NOT copied —
-                    // they're always recomputed by OrderItem.Recalculate() on load
-                    // (see OrderItemData XML doc). They were removed from the DTO
-                    // in v3.22.0 as dead bytes.
                     InstallationMode = i.InstallationMode,
                     HasInstallation = i.InstallationMode == 0,
                     InstallationDeduction = i.InstallationDeduction,
                     InstallationSurcharge = i.InstallationSurcharge,
                     IsActive = i.IsActive,
-                    // v3.29.2: AnwisSizeMode was missing from the mapper
-                    // so saved orders silently reset to ББ 60 on reopen.
                     AnwisSizeMode = (int)i.AnwisSizeMode,
                     IsAnticat = i.IsAnticat
                 }).ToList()
@@ -200,46 +122,6 @@ namespace MosquitoNetCalculator.Controls
 
             mw.StartNewOrder();
             mw.UpdateEmptyState();
-        }
-
-        private void BtnSettings_Click(object sender, RoutedEventArgs e)
-        {
-            // Manually open the ContextMenu positioned right under the gear button.
-            // The button's default right-click handler still works for accessibility.
-            UpdateSettingsMenu();
-            SettingsMenu.PlacementTarget = BtnSettings;
-            SettingsMenu.Placement = PlacementMode.Bottom;
-            SettingsMenu.IsOpen = true;
-        }
-
-        private void MenuThemeLight_Click(object sender, RoutedEventArgs e)
-        {
-            // Idempotent: only toggle if we'd actually change state.
-            if (ThemeService.IsDarkTheme)
-                ThemeService.ToggleTheme();
-        }
-
-        private void MenuThemeDark_Click(object sender, RoutedEventArgs e)
-        {
-            if (!ThemeService.IsDarkTheme)
-                ThemeService.ToggleTheme();
-        }
-
-        private void MenuChangeLocation_Click(object sender, RoutedEventArgs e)
-        {
-            if (!TryGetMainWindow(nameof(MenuChangeLocation_Click), out var mw)) return;
-            // Reuse the existing WelcomeWindow flow — it persists prefix + location
-            // and refreshes the sidebar / title / contract number on close.
-            mw.OpenWelcomeWindow();
-        }
-
-        private async void MenuCheckUpdates_Click(object sender, RoutedEventArgs e)
-        {
-            if (!TryGetMainWindow(nameof(MenuCheckUpdates_Click), out var mw)) return;
-            await UpdateService.CheckAndApplyAsync(mw);
-            // Refresh badge — pending version was cleared if update applied
-            // or not found, set if a new version was found but user cancelled.
-            UpdateSettingsMenu();
         }
 
         private void BtnSendToFactory_Click(object sender, RoutedEventArgs e)

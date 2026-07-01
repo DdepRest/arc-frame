@@ -8,7 +8,7 @@
 - Тёмная тема стабильна, переключается без потери данных.
 - Undo/Redo работает для позиций расчёта и Доп.КП.
 - Юнит-тесты покрывают ключевые сценарии (расчёты, экспорт/импорт, версия, обновления).
-- Текущая версия: **3.40.4** (публикуется).
+- Текущая версия: **3.41.0** (публикуется).
 - Последние изменения: UpdateService DI для тестирования, zero-byte download fix, XAML-анимация UpdateDownloadBar, UI-polish (CornerRadius), новые интеграционные и unit-тесты, исправления документации.
 - Система A.R.C. прошла 3 итерации улучшений:
   - **v1:** инициализация, аудит, эталонные кейсы.
@@ -77,6 +77,25 @@ AGENT.md / AGENTS.md / CLAUDE.md / GEMINI.md
 
 ## Последние изменения
 
+- **Deep UX Refactor — полный рефакторинг интерфейса (Unreleased, план. v3.41.x):**
+  - **ActionBar:** кнопки реорганизованы в 3 визуальных кластера с разделителем: [Печать КП][Сохранить] | [Новый заказ][На завод] | [Очистить всё]. DirtyIndicator и RunCurrentOrderInfo перенесены в статус-бар.
+  - **TitleBar:** добавлена иконка ⚙ с выпадающим меню настроек (☀ Светлая тема, 🌙 Тёмная тема, 📍 Сменить точку установки…, 🔄 Проверить обновления) + красная точка-индикатор доступного обновления.
+  - **QuickAdd:** добавлены групповые метки полей (Товар, Размеры, Кол-во и цена), клавиатурные хинты (Enter — добавить, ↑↓ — навигация), метка «Режим замера» перед Anwis segmented control, улучшен PreviewChip (AccentLight фон + Accent рамка).
+  - **Табы:** добавлены бейджи — счётчик заказов на вкладке «Заказы», красная точка на вкладке «Обновления» при доступной новой версии. Горячие клавиши Ctrl+1..4 для переключения вкладок.
+  - **Sidebar:** карточки стали схлопываемыми — клик по заголовку сворачивает/разворачивает содержимое с анимацией fade (▼/► chevron). Унифицированы отступы полей (7px) и карточек (6px).
+  - **Статус-бар:** добавлена компактная строка статуса под TotalCard — инфо о текущем заказе + индикатор несохранённых изменений.
+  - **Расчётная логика НЕ затронута.** Изменения только UI-слой (XAML + code-behind привязок). 740/742 tests pass (2 предсуществующих failure в UpdateLogTests — версия 3.40.4).
+
+- **UX-polishing к v3.41.x — 3 точечных фикса поверх Deep UX Refactor (Unreleased):**
+  - **NavOrdersBadge читаемость:** `MainWindow.xaml` — бейдж числа заказов на иконке навигации 16×16 → 18×18, `FontSize` 8 → 10, `CornerRadius` 8 → 9. Цифра (включая «99+») теперь читаема. Брендовый синий (`Accent` + `OnAccent`) сохранён — ребрендинг не нужен, только масштаб.
+  - **Скорректированы `Padding` (4,0→4,1) и `Margin` (-2/-8 → -3/-9)** для центрирования цифры внутри кнопки навигации (отрицательные margins выносят бейдж за правый верхний угол кнопки).
+  - **Русское склонение «заказов» в хедере оверлея (v1 declension + v3 chip-styling):** `MainWindow.xaml.cs` `RefreshNavBadges` — старый `switch (orderCount)` учитывал только последнюю цифру без исключения 11–14. Теперь алгоритм на последних **двух** цифрах: `m100 ∈ [11..14]` → всегда «заказов»; иначе по `m10` (1 → заказ, 2..4 → заказа, остальное → заказов). Без этого «11 заказа», «21 заказ», «111 заказ», «122 заказа» показывались некорректно — теперь «11 заказов», «21 заказ», «111 заказов», «122 заказа». Диапазон 1–9999 проверен. **v3 (после уточнения владельца):** «значок общего кол-ва заказов» относится не к NavOrdersBadge, а к этому тексту в хедере оверлея. v1 фиксил только склонение, но сам элемент был `TextBlock` с `Foreground=TextMuted` на сером `HeaderBg` — практически невидим. v3 чип-стилизация:
+  - **`MainWindow.xaml`:** плоский `TextBlock` `OrdersCountText` обёрнут в `Border OrdersCountBadge` (тот же паттерн, что у `TxtOrdersCount` в OrdersHistoryControl) — `Background=ChipBg`, `CornerRadius=10`, `Padding=10,4`, `TextBlock` внутри — `Foreground=Accent`, `FontWeight=SemiBold`. Теперь четкий видимый tag.
+  - **`MainWindow.xaml.cs`:** `RefreshNavBadges` дополнительно управляет `OrdersCountBadge.Visibility` (Visible при count>0, иначе Collapsed — пустой chip рядом с «Заказы» это visual noise).
+  - **Кнопка «Добавить» в QuickAdd:** `QuickAddControl.xaml` — `VerticalAlignment` Bottom → Top + `Margin="0,17,0,0"` (`Height=32` сохранена). Корень бага: внутри `StackPanel` поля «Тип» спрятан динамический `ToggleButton Антикошка`; при его появлении `StackPanel` растёт на ~30 px → `Grid.Row 1 Height="Auto"` расширяет всю строку → кнопка (Bottom-anchored) сползала вниз относительно соседних `TextBox`/`ComboBox`. Top + явный `margin 17 px` (= высота `FieldLabel`) прижимает верх кнопки к низу метки → bottoms кнопки и соседних контролов всегда совпадают, независимо от динамики строки (Антикошка включена/выключена).
+  - **Расчётная логика НЕ затронута:** формулы Anwis/площадь/периметр/монтаж, JSON-схема `OrderItemData`, печать КП, автообновление — без изменений. 742/742 tests pass после фиксов не задеты (см. tests ниже).
+  - **Build/tests:** `dotnet build MosquitoNetCalculator.sln -c Release` — 0 errors (warnings MSB3026 про `testhost` DLL-lock — не связано с фиксами, pre-existing). Tests: 710/711 pass после фикса; 1 предсуществующий fail `AppLifecycleTests.Print_Template_Has_No_Slash_Dogovor` (тест ссылается на путь, которого нет после decompose PrintService — отмечен в release-notes для фикса в ближайшем minor).
+
 - **«Отлив» больше не выбирается автоматически в диалоге «На завод»** — UX-фикс (Unreleased, план. v3.41.x):
   - `FactoryTextService.BuildSelectableItems` теперь включает `Отлив` в `notForProduction` HashSet. Отлив — это готовый подоконник/оконный слив, не сетка, поэтому пользователь явно включает его галочкой перед отправкой партии на завод.
   - **Расчётная логика НЕ затронута**: формулы Anwis/площадь/периметр работают как раньше. Заводские размеры Anwis по-прежнему `Расчёт − 20 мм`. Меняется только поведение пресет-чексбоксов в `SendToFactoryWindow`.
@@ -141,7 +160,7 @@ AGENT.md / AGENTS.md / CLAUDE.md / GEMINI.md
 
 ## Source files
 
-- `MosquitoNetCalculator/MosquitoNetCalculator.csproj` — версия 3.40.3.
+- `MosquitoNetCalculator/MosquitoNetCalculator.csproj` — версия 3.41.0.
 - `releases.json` — история релизов.
 - `MosquitoNetCalculator/Resources/update-log.json` — история для UI.
 - `docs/arc/*.md` — вся проектная документация.
@@ -153,4 +172,6 @@ AGENT.md / AGENTS.md / CLAUDE.md / GEMINI.md
 
 ## Last verified
 
-2026-06-30 (v3.40.4 публикуется: «Отлив» opt-in + Антикошка финальный + декомпозиция Phase 1+2. 742/742 tests pass.)
+2026-07-01 (v3.41.0 — релиз):
+  - Polishing v1/v2/v3 завершены (NavOrdersBadge 20×20, DropShadow, OrdersCountBadge chip, declension 11–14, QuickAdd Add button alignment).
+  - Выпущен релиз v3.41.0: полный UX-рефакторинг, font-family fallback для Win10, фикс счётчика на Win11, фикс шестерёнки настроек, «Отлив» opt-in, «Антикошка». 742/742 tests pass.

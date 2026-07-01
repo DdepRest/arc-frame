@@ -21,6 +21,65 @@
             </StackPanel>
 
             <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
+                <!-- Settings gear button -->
+                <Button x:Name="BtnSettingsGear"
+                        Click="BtnSettingsGear_Click"
+                        Width="40" Height="40" Background="Transparent" BorderThickness="0"
+                        Foreground="{DynamicResource TextPrimary}"
+                        ToolTip="Настройки"
+                        WindowChrome.IsHitTestVisibleInChrome="True">
+                    <Button.Template>
+                        <ControlTemplate TargetType="Button">
+                            <Border Background="{TemplateBinding Background}" BorderThickness="0">
+                                <Grid>
+                                    <Border x:Name="HoverOverlay" Background="{DynamicResource AccentLight}" Opacity="0"/>
+                                    <Ellipse x:Name="UpdateBadge" Width="9" Height="9" Fill="#E81123"
+                                             HorizontalAlignment="Right" VerticalAlignment="Top"
+                                             Margin="0,4,4,0" Visibility="Collapsed"
+                                             ToolTip="Доступна новая версия!"/>
+                                    <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                </Grid>
+                            </Border>
+                            <ControlTemplate.Triggers>
+                                <Trigger Property="IsMouseOver" Value="True">
+                                    <Setter Property="Foreground" Value="{DynamicResource Accent}"/>
+                                    <Trigger.EnterActions>
+                                        <BeginStoryboard>
+                                            <Storyboard>
+                                                <DoubleAnimation Storyboard.TargetName="HoverOverlay"
+                                                                 Storyboard.TargetProperty="Opacity" To="1" Duration="0:0:0.15">
+                                                    <DoubleAnimation.EasingFunction><CubicEase EasingMode="EaseOut"/></DoubleAnimation.EasingFunction>
+                                                </DoubleAnimation>
+                                            </Storyboard>
+                                        </BeginStoryboard>
+                                    </Trigger.EnterActions>
+                                    <Trigger.ExitActions>
+                                        <BeginStoryboard>
+                                            <Storyboard>
+                                                <DoubleAnimation Storyboard.TargetName="HoverOverlay"
+                                                                 Storyboard.TargetProperty="Opacity" To="0" Duration="0:0:0.15">
+                                                    <DoubleAnimation.EasingFunction><CubicEase EasingMode="EaseOut"/></DoubleAnimation.EasingFunction>
+                                                </DoubleAnimation>
+                                            </Storyboard>
+                                        </BeginStoryboard>
+                                    </Trigger.ExitActions>
+                                </Trigger>
+                            </ControlTemplate.Triggers>
+                        </ControlTemplate>
+                    </Button.Template>
+                    <TextBlock Text="&#xE713;" FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets" FontSize="14"/>
+                    <Button.ContextMenu>
+                        <ContextMenu x:Name="SettingsMenu">
+                            <MenuItem x:Name="MenuThemeLight" Header="☀  Светлая тема" IsCheckable="True" Click="MenuThemeLight_Click"/>
+                            <MenuItem x:Name="MenuThemeDark" Header="🌙  Тёмная тема" IsCheckable="True" Click="MenuThemeDark_Click"/>
+                            <Separator/>
+                            <MenuItem Header="📍 Сменить точку установки…" Click="MenuChangeLocation_Click"/>
+                            <Separator/>
+                            <MenuItem Header="🔄 Проверить обновления" Click="MenuCheckUpdates_Click"/>
+                        </ContextMenu>
+                    </Button.ContextMenu>
+                </Button>
+
                 <Button x:Name="BtnMinimize" Click="BtnMinimize_Click"
                         Width="40" Height="40" Background="Transparent" BorderThickness="0"
                         Foreground="{DynamicResource TextPrimary}"
@@ -40,9 +99,7 @@
                                         <BeginStoryboard>
                                             <Storyboard>
                                                 <DoubleAnimation Storyboard.TargetName="HoverOverlay" Storyboard.TargetProperty="Opacity" To="1" Duration="0:0:0.15">
-                                                    <DoubleAnimation.EasingFunction>
-                                                        <CubicEase EasingMode="EaseOut"/>
-                                                    </DoubleAnimation.EasingFunction>
+                                                    <DoubleAnimation.EasingFunction><CubicEase EasingMode="EaseOut"/></DoubleAnimation.EasingFunction>
                                                 </DoubleAnimation>
                                             </Storyboard>
                                         </BeginStoryboard>
@@ -51,9 +108,7 @@
                                         <BeginStoryboard>
                                             <Storyboard>
                                                 <DoubleAnimation Storyboard.TargetName="HoverOverlay" Storyboard.TargetProperty="Opacity" To="0" Duration="0:0:0.15">
-                                                    <DoubleAnimation.EasingFunction>
-                                                        <CubicEase EasingMode="EaseOut"/>
-                                                    </DoubleAnimation.EasingFunction>
+                                                    <DoubleAnimation.EasingFunction><CubicEase EasingMode="EaseOut"/></DoubleAnimation.EasingFunction>
                                                 </DoubleAnimation>
                                             </Storyboard>
                                         </BeginStoryboard>
@@ -62,7 +117,7 @@
                             </ControlTemplate.Triggers>
                         </ControlTemplate>
                     </Button.Template>
-                    <TextBlock Text="&#xE738;" FontFamily="Segoe Fluent Icons" FontSize="10"/>
+                    <TextBlock Text="&#xE738;" FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets" FontSize="10"/>
                 </Button>
                 <Button x:Name="BtnMaximize" Click="BtnMaximize_Click"
                         Width="40" Height="40" Background="Transparent" BorderThickness="0"
@@ -83,9 +138,7 @@
                                         <BeginStoryboard>
                                             <Storyboard>
                                                 <DoubleAnimation Storyboard.TargetName="HoverOverlay" Storyboard.TargetProperty="Opacity" To="1" Duration="0:0:0.15">
-                                                    <DoubleAnimation.EasingFunction>
-                                                        <CubicEase EasingMode="EaseOut"/>
-                                                    </DoubleAnimation.EasingFunction>
+                                                    <DoubleAnimation.EasingFunction><CubicEase EasingMode="EaseOut"/></DoubleAnimation.EasingFunction>
                                                 </DoubleAnimation>
                                             </Storyboard>
                                         </BeginStoryboard>
@@ -94,9 +147,7 @@
                                         <BeginStoryboard>
                                             <Storyboard>
                                                 <DoubleAnimation Storyboard.TargetName="HoverOverlay" Storyboard.TargetProperty="Opacity" To="0" Duration="0:0:0.15">
-                                                    <DoubleAnimation.EasingFunction>
-                                                        <CubicEase EasingMode="EaseOut"/>
-                                                    </DoubleAnimation.EasingFunction>
+                                                    <DoubleAnimation.EasingFunction><CubicEase EasingMode="EaseOut"/></DoubleAnimation.EasingFunction>
                                                 </DoubleAnimation>
                                             </Storyboard>
                                         </BeginStoryboard>
@@ -105,7 +156,7 @@
                             </ControlTemplate.Triggers>
                         </ControlTemplate>
                     </Button.Template>
-                    <TextBlock x:Name="TxtMaximizeIcon" Text="&#xE739;" FontFamily="Segoe Fluent Icons" FontSize="10"/>
+                    <TextBlock x:Name="TxtMaximizeIcon" Text="&#xE739;" FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets" FontSize="10"/>
                 </Button>
                 <Button x:Name="BtnClose" Click="BtnClose_Click"
                         Width="40" Height="40" Background="Transparent" BorderThickness="0"
@@ -126,9 +177,7 @@
                                         <BeginStoryboard>
                                             <Storyboard>
                                                 <DoubleAnimation Storyboard.TargetName="HoverOverlay" Storyboard.TargetProperty="Opacity" To="1" Duration="0:0:0.15">
-                                                    <DoubleAnimation.EasingFunction>
-                                                        <CubicEase EasingMode="EaseOut"/>
-                                                    </DoubleAnimation.EasingFunction>
+                                                    <DoubleAnimation.EasingFunction><CubicEase EasingMode="EaseOut"/></DoubleAnimation.EasingFunction>
                                                 </DoubleAnimation>
                                             </Storyboard>
                                         </BeginStoryboard>
@@ -137,9 +186,7 @@
                                         <BeginStoryboard>
                                             <Storyboard>
                                                 <DoubleAnimation Storyboard.TargetName="HoverOverlay" Storyboard.TargetProperty="Opacity" To="0" Duration="0:0:0.15">
-                                                    <DoubleAnimation.EasingFunction>
-                                                        <CubicEase EasingMode="EaseOut"/>
-                                                    </DoubleAnimation.EasingFunction>
+                                                    <DoubleAnimation.EasingFunction><CubicEase EasingMode="EaseOut"/></DoubleAnimation.EasingFunction>
                                                 </DoubleAnimation>
                                             </Storyboard>
                                         </BeginStoryboard>
@@ -148,7 +195,7 @@
                             </ControlTemplate.Triggers>
                         </ControlTemplate>
                     </Button.Template>
-                    <TextBlock Text="&#xE8BB;" FontFamily="Segoe Fluent Icons" FontSize="10"/>
+                    <TextBlock Text="&#xE8BB;" FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets" FontSize="10"/>
                 </Button>
             </StackPanel>
         </Grid>

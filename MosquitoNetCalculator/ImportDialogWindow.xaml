@@ -87,7 +87,7 @@
                                 </ControlTemplate.Triggers>
                             </ControlTemplate>
                         </Button.Template>
-                        <TextBlock Text="&#xE8BB;" FontFamily="Segoe Fluent Icons" FontSize="10"/>
+                        <TextBlock Text="&#xE8BB;" FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets" FontSize="10"/>
                     </Button>
                 </Grid>
             </Border>

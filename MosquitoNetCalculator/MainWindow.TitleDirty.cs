@@ -56,8 +56,8 @@ namespace MosquitoNetCalculator
             bool dirty = ViewModel?.UndoRedo?.IsDirty ?? false;
             Title = dirty ? BuildBaseTitle() + "  •" : BuildBaseTitle();
 
-            if (ActionBarControl?.DirtyChip != null)
-                ActionBarControl.DirtyChip.Visibility = dirty ? Visibility.Visible : Visibility.Collapsed;
+            if (StatusDirtyIndicator != null)
+                StatusDirtyIndicator.Visibility = dirty ? Visibility.Visible : Visibility.Collapsed;
         }
 
         private void UpdateDirtyIndicator() => ApplyTitle();

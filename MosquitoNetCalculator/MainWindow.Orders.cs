@@ -52,6 +52,8 @@ namespace MosquitoNetCalculator
             if (OrdersHistoryControl?.OrdersCount != null)
                 OrdersHistoryControl.OrdersCount.Text = $"Заказов: {orders.Count}";
             OrdersHistoryControl?.SetOrdersCount(orders.Count);
+
+            RefreshNavBadges();
         }
 
         /// <summary>Update the persisted order status from a context-menu
@@ -262,7 +264,7 @@ namespace MosquitoNetCalculator
                 MarkClean();
                 ViewModel.UndoRedo.Clear();
 
-                MainTabControl.SelectedIndex = 0;
+                NavigateToCalculation();
             }
             finally
             {

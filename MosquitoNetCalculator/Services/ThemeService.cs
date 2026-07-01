@@ -226,6 +226,9 @@ namespace MosquitoNetCalculator.Services
             ["AccentHover"]   = "#004E99",
             ["AccentPress"]   = "#003E7A",
             ["AccentLight"]   = "#EBF3FD",
+            // AccentShadowColor — mirror of Accent (brush) as Color for NavOrdersBadge DropShadow.
+            // WPF cannot bind a Brush to a Color DependencyProperty.
+            ["AccentShadowColor"] = "#005FB8",
             // Text
             ["TextPrimary"]   = "#1A1A1A",
             ["TextSecondary"] = "#5D5D5D",
@@ -316,6 +319,9 @@ namespace MosquitoNetCalculator.Services
             ["AccentHover"]   = "#4DB8E8",
             ["AccentPress"]   = "#3AA0D0",
             ["AccentLight"]   = "#1A3A54",
+            // AccentShadowColor — mirror of Accent for DropShadowEffect on dark theme.
+            // Same hue as Accent brush — glow is brighter cyan on dark background.
+            ["AccentShadowColor"] = "#60CDFF",
             // Text
             ["TextPrimary"]   = "#FFFFFF",
             ["TextSecondary"] = "#C5C5C5",

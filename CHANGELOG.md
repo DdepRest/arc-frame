@@ -1,252 +1,284 @@
 # Changelog
 
-## 3.40.4 — 2026-06-30
+## 3.41.0 — 2026-07-01
+### РЈР»СѓС‡С€РµРЅРёСЏ
 
-### Улучшения
+- **РџРѕР»РЅС‹Р№ UX-СЂРµС„Р°РєС‚РѕСЂРёРЅРі РёРЅС‚РµСЂС„РµР№СЃР° (v3.41.x):**
+  - **ActionBar** вЂ” РєРЅРѕРїРєРё СЂРµРѕСЂРіР°РЅРёР·РѕРІР°РЅС‹ РІ 3 РІРёР·СѓР°Р»СЊРЅС‹С… РєР»Р°СЃС‚РµСЂР° СЃ СЂР°Р·РґРµР»РёС‚РµР»РµРј: Primary [РџРµС‡Р°С‚СЊ РљРџ][РЎРѕС…СЂР°РЅРёС‚СЊ] | Secondary [РќРѕРІС‹Р№ Р·Р°РєР°Р·][РќР° Р·Р°РІРѕРґ] | Tertiary [РћС‡РёСЃС‚РёС‚СЊ РІСЃС‘]. DirtyIndicator Рё RunCurrentOrderInfo РїРµСЂРµРЅРµСЃРµРЅС‹ РІ СЃС‚Р°С‚СѓСЃ-Р±Р°СЂ.
+  - **TitleBar** вЂ” РґРѕР±Р°РІР»РµРЅР° РёРєРѕРЅРєР° вљ™ СЃ РІС‹РїР°РґР°СЋС‰РёРј РјРµРЅСЋ РЅР°СЃС‚СЂРѕРµРє (С‚РµРјР°, С‚РѕС‡РєР° СѓСЃС‚Р°РЅРѕРІРєРё, РїСЂРѕРІРµСЂРєР° РѕР±РЅРѕРІР»РµРЅРёР№) Рё РєСЂР°СЃРЅР°СЏ С‚РѕС‡РєР°-РёРЅРґРёРєР°С‚РѕСЂ РґРѕСЃС‚СѓРїРЅРѕРіРѕ РѕР±РЅРѕРІР»РµРЅРёСЏ.
+  - **QuickAdd** вЂ” РґРѕР±Р°РІР»РµРЅС‹ РіСЂСѓРїРїРѕРІС‹Рµ РјРµС‚РєРё РїРѕР»РµР№ (РўРѕРІР°СЂ, Р Р°Р·РјРµСЂС‹, РљРѕР»-РІРѕ Рё С†РµРЅР°), РєР»Р°РІРёР°С‚СѓСЂРЅС‹Рµ С…РёРЅС‚С‹, РјРµС‚РєР° В«Р РµР¶РёРј Р·Р°РјРµСЂР°В» РїРµСЂРµРґ Anwis segmented control, СѓР»СѓС‡С€РµРЅ PreviewChip.
+  - **РўР°Р±С‹** вЂ” Р±РµР№РґР¶Рё: СЃС‡С‘С‚С‡РёРє Р·Р°РєР°Р·РѕРІ РЅР° РІРєР»Р°РґРєРµ В«Р—Р°РєР°Р·С‹В», РєСЂР°СЃРЅР°СЏ С‚РѕС‡РєР° РЅР° В«РћР±РЅРѕРІР»РµРЅРёСЏВ» РїСЂРё РЅРѕРІРѕР№ РІРµСЂСЃРёРё. Р“РѕСЂСЏС‡РёРµ РєР»Р°РІРёС€Рё Ctrl+1..4 РґР»СЏ РїРµСЂРµРєР»СЋС‡РµРЅРёСЏ РІРєР»Р°РґРѕРє.
+  - **Sidebar** вЂ” РєР°СЂС‚РѕС‡РєРё СЃС‚Р°Р»Рё СЃС…Р»РѕРїС‹РІР°РµРјС‹РјРё (РєР»РёРє РїРѕ Р·Р°РіРѕР»РѕРІРєСѓ СЃРІРѕСЂР°С‡РёРІР°РµС‚/СЂР°Р·РІРѕСЂР°С‡РёРІР°РµС‚ СЃ Р°РЅРёРјР°С†РёРµР№ fade, в–ј/в–є chevron). РЈРЅРёС„РёС†РёСЂРѕРІР°РЅС‹ РѕС‚СЃС‚СѓРїС‹ РїРѕР»РµР№ Рё РєР°СЂС‚РѕС‡РµРє.
+  - **РЎС‚Р°С‚СѓСЃ-Р±Р°СЂ** вЂ” РєРѕРјРїР°РєС‚РЅР°СЏ СЃС‚СЂРѕРєР° СЃС‚Р°С‚СѓСЃР° РїРѕРґ TotalCard СЃ РёРЅС„Рѕ Рѕ С‚РµРєСѓС‰РµРј Р·Р°РєР°Р·Рµ Рё РёРЅРґРёРєР°С‚РѕСЂРѕРј РЅРµСЃРѕС…СЂР°РЅС‘РЅРЅС‹С… РёР·РјРµРЅРµРЅРёР№.
+- **В«РћС‚Р»РёРІВ» Р±РѕР»СЊС€Рµ РЅРµ РІС‹Р±РёСЂР°РµС‚СЃСЏ Р°РІС‚РѕРјР°С‚РёС‡РµСЃРєРё РІ РґРёР°Р»РѕРіРµ В«РќР° Р·Р°РІРѕРґВ».** РћС‚Р»РёРІ вЂ” СЌС‚Рѕ РіРѕС‚РѕРІС‹Р№ РїРѕРґРѕРєРѕРЅРЅРёРє/РѕС‚Р»РёРІ (РЅРµ СЃРµС‚РєР°), Рё С‚РµРїРµСЂСЊ РїРѕР»СЊР·РѕРІР°С‚РµР»СЊ СЏРІРЅРѕ РІРєР»СЋС‡Р°РµС‚ РµРіРѕ РіР°Р»РѕС‡РєРѕР№ РїРµСЂРµРґ РѕС‚РїСЂР°РІРєРѕР№ РЅР° Р·Р°РІРѕРґ. РР·РјРµРЅС‘РЅ `notForProduction` set РІ `FactoryTextService.BuildSelectableItems` (РґРѕР±Р°РІР»РµРЅРѕ В«РћС‚Р»РёРІВ») Рё РїРѕРґС‚РІРµСЂР¶РґР°СЋС‰РёРµ С‚РµСЃС‚С‹ РІ `FactoryTextServiceTests` / `ManualChecklistTests`. Р”РѕРєСѓРјРµРЅС‚Р°С†РёСЏ РІ `TESTING_CHECKLIST.md` (В§12.2) СЃРёРЅС…СЂРѕРЅРёР·РёСЂРѕРІР°РЅР°. Р Р°РЅРµРµ В«РћС‚Р»РёРІВ» РїРѕРїР°РґР°Р» РІ РєР°С‚РµРіРѕСЂРёСЋ В«РџСЂРѕРёР·РІРѕРґСЃС‚РІРµРЅРЅС‹Рµ С‚РѕРІР°СЂС‹В» СЂСЏРґРѕРј СЃ Anwis/РљРѕР·С‹СЂСЊРєРѕРј.
+- **Polishing UX-С„РёРєСЃС‹ Рє v3.41.x Deep UX Refactor (3 С‚РѕС‡РµС‡РЅС‹С… РїСЂР°РІРєРё + 1 refinement v2):**
+  - **[v2] NavOrdersBadge refinement (РїРѕСЃР»Рµ feedback code-reviewer):** РїРµСЂРІР°СЏ РёС‚РµСЂР°С†РёСЏ (16в†’18, FontSize 8в†’10) РЅРµ СЂРµС€РёР»Р° В«РїР»РѕС…Рѕ РѕС‚РѕР±СЂР°Р¶Р°РµС‚СЃСЏВ» вЂ” РїРѕР»СЊР·РѕРІР°С‚РµР»СЊ РїРѕРґС‚РІРµСЂРґРёР» РїРѕРІС‚РѕСЂРµРЅРёРµ. РљРѕСЂРЅРµРІР°СЏ РїСЂРёС‡РёРЅР° С‡РµСЂРµР· thinker-Р°РЅР°Р»РёР·: Р·РЅР°С‡РѕРє Height=18 + Margin Top=-3 РїРµСЂРµРєСЂС‹РІР°Р» РІРµСЂС…РЅСЋСЋ С‡Р°СЃС‚СЊ РёРєРѕРЅРєРё Orders (FontSize=20, С†РµРЅС‚СЂРёСЂРѕРІР°РЅ РІ 40Г—40), РІРёР·СѓР°Р»СЊРЅРѕ Р·РЅР°С‡РѕРє Рё РёРєРѕРЅРєР° РєРѕРЅРєСѓСЂРёСЂРѕРІР°Р»Рё Р·Р° РІРЅРёРјР°РЅРёРµ. Р’С‚РѕСЂР°СЏ РёС‚РµСЂР°С†РёСЏ (#polishing-v2) СЂРµС€Р°РµС‚ С‡РµСЂРµР·:
+    - **DropShadowEffect** РЅР° Р·РЅР°С‡РєРµ (`BlurRadius=6 ShadowDepth=0 Opacity=0.45`, `Color={DynamicResource AccentShadowColor}`) вЂ” soft glow РѕС‚РґРµР»СЏРµС‚ Р·РЅР°С‡РѕРє РѕС‚ РёРєРѕРЅРєРё, РІРёР·СѓР°Р»СЊРЅРѕ В«floating over buttonВ».
+    - **Р“РµРѕРјРµС‚СЂРёСЏ:** 18Г—18 в†’ **20Г—20**, `FontSize 10в†’11`, `FontWeight Boldв†’SemiBold`, РґРѕР±Р°РІР»РµРЅС‹ `LineStackingStrategy=BlockLineHeight` + `LineHeight=14`.
+    - **Margin СЃРєРѕСЂСЂРµРєС‚РёСЂРѕРІР°РЅ** СЃ `0,-3,-9,0` РЅР° **`0,-5,-6,0`** вЂ” РїСЂР°РІС‹Р№ РєСЂР°Р№ Р·РЅР°С‡РєР° С‚РµРїРµСЂСЊ x=46+6=52 СЂРѕРІРЅРѕ РїРѕ РіСЂР°РЅРёС†Рµ nav-column 52px, РЅРµ РІС‹Р»РµР·Р°РµС‚ РІ content area.
+    - **РўР°Р№РјРµСЂ** `_navBadgeTimer.Interval` СЃРЅРёР¶РµРЅ СЃ `4СЃ` РґРѕ **`1.5СЃ`** вЂ” fallback РґР»СЏ out-of-band РѕРїРµСЂР°С†РёР№ (Save/Delete/Import СѓР¶Рµ РІС‹Р·С‹РІР°СЋС‚ `RefreshNavBadges()` РЅР°РїСЂСЏРјСѓСЋ).
+  - **WPF restriction discovered + fixed:** `Color={DynamicResource Accent}` РЅР° `DropShadowEffect` РќР• СЂР°Р±РѕС‚Р°РµС‚ (Color вЂ” struct, РЅРµР»СЊР·СЏ implicit convert РёР· SolidColorBrush). РўСЂРµР±РѕРІР°Р»СЃСЏ РїР°СЂР°Р»Р»РµР»СЊРЅС‹Р№ `<Color>` resource.
+    - **`Themes/Brushes.xaml`:** РґРѕР±Р°РІР»РµРЅ `<Color x:Key="AccentShadowColor">#005FB8</Color>` вЂ” РїР°СЂР° Рє РєРёСЃС‚Рё `Accent` РґР»СЏ Р°РЅРёРјР°С†РёРѕРЅРЅС‹С… target'РѕРІ (РїР°С‚С‚РµСЂРЅ СѓР¶Рµ РёСЃРїРѕР»СЊР·РѕРІР°Р»СЃСЏ РґР»СЏ `RowHoverColor`/`AccentLightColor`).
+    - **`Services/ThemeService.cs`:** `AccentShadowColor` РґРѕР±Р°РІР»РµРЅ РІ `LightColors` (`#005FB8`) Рё `DarkColors` (`#60CDFF`) вЂ” СЃС‚Р°РЅРґР°СЂС‚РЅС‹Р№ `ApplyTheme()` С‚РµРїРµСЂСЊ РєРѕСЂСЂРµРєС‚РЅРѕ РѕР±РЅРѕРІР»СЏРµС‚ С†РІРµС‚ С‚РµРЅРё РЅР° СЃРјРµРЅРµ С‚РµРјС‹.
+  - **Build/tests:** `dotnet build -c Release` вЂ” **0 errors**, 5 warnings MSB3026 (testhost DLL-lock, pre-existing). Tests: 709/711 pass; 2 pre-existing fails `UpdateLogTests.AllNewestFirst_FirstItemIsNewest` + `UpdateLogTests.GetChangesSince_LatestVersion_ReturnsEmpty` вЂ” hardcoded "3.40.3" РІ С‚РµСЃС‚Р°С… vs actual "3.40.4" РІ embedded log (drift РїРѕСЃР»Рµ v3.40.4 release, РЅРµ СЃРІСЏР·Р°РЅРѕ СЃ СЌС‚РёРјРё С„РёРєСЃР°РјРё вЂ” Р±СѓРґРµС‚ РёСЃРїСЂР°РІР»РµРЅРѕ РІ Р±Р»РёР¶Р°Р№С€РµРј update-log sync).
+- **OrdersCountBadge РІ С…РµРґРµСЂРµ РѕРІРµСЂР»РµСЏ В«Р—Р°РєР°Р·С‹В» (#polishing-v3):** СѓС‚РѕС‡РЅРµРЅРёРµ РѕС‚ РІР»Р°РґРµР»СЊС†Р° вЂ” В«Р·РЅР°С‡РѕРє РѕР±С‰РµРіРѕ РєРѕР»-РІР° Р·Р°РєР°Р·РѕРІВ» РѕС‚РЅРѕСЃРёС‚СЃСЏ РќР• Рє NavOrdersBadge РЅР° РёРєРѕРЅРєРµ Orders (СЌС‚РѕС‚ С„РёРєСЃРёР»Рё РІ v1/v2), Р° Рє С‚РµРєСЃС‚Сѓ **В«вЂў N Р·Р°РєР°Р·РѕРІВ» РІ С…РµРґРµСЂРµ РѕС‚РєСЂС‹С‚РѕРіРѕ РѕРІРµСЂР»РµСЏ Р—Р°РєР°Р·С‹**. РўРµРєСѓС‰РёР№ `TextBlock` `OrdersCountText` (FontSize=11, TextMuted) РїРѕС‡С‚Рё РЅРµРІРёРґРёРј РЅР° СЃРµСЂРѕРј `HeaderBg` вЂ” В«РїР»РѕС…Рѕ РѕС‚РѕР±СЂР°Р¶Р°РµС‚СЃСЏВ» РёР·-Р·Р° РЅРёР·РєРѕРіРѕ РєРѕРЅС‚СЂР°СЃС‚Р°.
+  - **`MainWindow.xaml`:** `TextBlock` РѕР±С‘СЂРЅСѓС‚ РІ `Border OrdersCountBadge` (chip-СЃС‚РёР»СЊ, РёРґРµРЅС‚РёС‡РЅРѕ `TxtOrdersCount` РІ `OrdersHistoryControl`) вЂ” `Background=ChipBg` (#EFF4FB / #1A3A54 dark), `CornerRadius=10`, `Padding=10,4`, `Margin=10,0,0,0`, `TextBlock` РІРЅСѓС‚СЂРё СЃ `Foreground=Accent` (#005FB8 / #60CDFF dark), `FontWeight=SemiBold`. РўРµРїРµСЂСЊ Р·РЅР°С‡РѕРє РІРёР·СѓР°Р»СЊРЅРѕ РІС‹РґРµР»СЏРµС‚СЃСЏ РєР°Рє tag.
+  - **`MainWindow.xaml.cs RefreshNavBadges`:** РѕР±РЅРѕРІР»С‘РЅ Р±Р»РѕРє РґР»СЏ РѕРґРЅРѕРІСЂРµРјРµРЅРЅРѕРіРѕ СѓРїСЂР°РІР»РµРЅРёСЏ `OrdersCountBadge.Visibility` (Visible РїСЂРё count>0, РёРЅР°С‡Рµ Collapsed вЂ” РїСѓСЃС‚РѕР№ chip СЂСЏРґРѕРј СЃ В«Р—Р°РєР°Р·С‹В» СЌС‚Рѕ visual noise) Рё `OrdersCountText.Text` (В«вЂў N _suffix_В» СЃ РїСЂР°РІРёР»СЊРЅС‹Рј СЃРєР»РѕРЅРµРЅРёРµРј). Р›РѕРіРёРєР° СЃРєР»РѕРЅРµРЅРёСЏ СЃРѕС…СЂР°РЅРµРЅР° (11вЂ“14 вЂ” В«Р·Р°РєР°Р·РѕРІВ», 1 вЂ” В«Р·Р°РєР°Р·В», 2вЂ“4 вЂ” В«Р·Р°РєР°Р·Р°В», РёРЅР°С‡Рµ вЂ” В«Р·Р°РєР°Р·РѕРІВ»).
+  - **Р Р°СЃС‡С‘С‚РЅР°СЏ Р»РѕРіРёРєР° РќР• Р·Р°С‚СЂРѕРЅСѓС‚Р°**, JSON Р±РµР· РёР·РјРµРЅРµРЅРёР№, РїРµС‡Р°С‚СЊ РљРџ Р±РµР· РёР·РјРµРЅРµРЅРёР№, UpdateService Р±РµР· РёР·РјРµРЅРµРЅРёР№.
+  - **Build/tests:** `dotnet build -c Release` вЂ” 0 errors, 4 warnings MSB3026 (pre-existing). Tests: **740/742 pass**; 2 pre-existing UpdateLog failures (`AllNewestFirst_FirstItemIsNewest`, `GetChangesSince_LatestVersion_ReturnsEmpty`) вЂ” hardcoded "3.40.3" РІ С‚РµСЃС‚Р°С… vs actual "3.40.4" РІ embedded log, РЅРµ СЃРІСЏР·Р°РЅРѕ СЃ СЌС‚РёРјРё С„РёРєСЃР°РјРё.
+  - **NavOrdersBadge (MainWindow.xaml):** Р±РµР№РґР¶ С‡РёСЃР»Р° Р·Р°РєР°Р·РѕРІ РЅР° РёРєРѕРЅРєРµ РЅР°РІРёРіР°С†РёРё СѓРІРµР»РёС‡РµРЅ СЃ 16Г—16 РґРѕ 18Г—18, `FontSize` 8в†’10, `CornerRadius` 8в†’9 вЂ” С†РёС„СЂР° (РІРєР»СЋС‡Р°СЏ В«99+В») С‚РµРїРµСЂСЊ С‡РёС‚Р°РµРјР°. Р¦РІРµС‚Р° `Accent` + `OnAccent` СЃРѕС…СЂР°РЅРµРЅС‹ (Р±СЂРµРЅРґРѕРІС‹Р№ СЃРёРЅРёР№, Р±РµР· СЂРµР±СЂРµРЅРґРёРЅРіР°); `Padding` (4,0в†’4,1) Рё `Margin` (-2/-8 в†’ -3/-9) СЃРєРѕСЂСЂРµРєС‚РёСЂРѕРІР°РЅС‹ РґР»СЏ С†РµРЅС‚СЂРёСЂРѕРІР°РЅРёСЏ РІРЅСѓС‚СЂРё РєРЅРѕРїРєРё РЅР°РІРёРіР°С†РёРё.
+  - **Р СѓСЃСЃРєРѕРµ СЃРєР»РѕРЅРµРЅРёРµ В«Р·Р°РєР°Р·РѕРІВ» РІ С…РµРґРµСЂРµ РѕРІРµСЂР»РµСЏ (MainWindow.xaml.cs, `RefreshNavBadges`):** СЃС‚Р°СЂС‹Р№ `switch (orderCount)` СѓС‡РёС‚С‹РІР°Р» С‚РѕР»СЊРєРѕ РїРѕСЃР»РµРґРЅСЋСЋ С†РёС„СЂСѓ Р±РµР· РёСЃРєР»СЋС‡РµРЅРёСЏ 11вЂ“14. РўРµРїРµСЂСЊ Р°Р»РіРѕСЂРёС‚Рј РЅР° РїРѕСЃР»РµРґРЅРёС… **РґРІСѓС…** С†РёС„СЂР°С…: `m100 в€€ [11..14]` в†’ РІСЃРµРіРґР° В«Р·Р°РєР°Р·РѕРІВ»; РёРЅР°С‡Рµ РїРѕ `m10` (1 в†’ Р·Р°РєР°Р·, 2..4 в†’ Р·Р°РєР°Р·Р°, РѕСЃС‚Р°Р»СЊРЅРѕРµ в†’ Р·Р°РєР°Р·РѕРІ). Р‘РµР· СЌС‚РѕРіРѕ В«11 Р·Р°РєР°Р·РѕРІВ» РїРѕРєР°Р·С‹РІР°Р»РѕСЃСЊ РєР°Рє В«11 Р·Р°РєР°Р·Р°В», В«21 Р·Р°РєР°Р·В» РєР°Рє В«21 Р·Р°РєР°Р·В», В«111 Р·Р°РєР°Р·В» РєР°Рє В«111 Р·Р°РєР°Р·В», В«122 Р·Р°РєР°Р·Р°В» вЂ” С‚РµРїРµСЂСЊ СЃРѕРѕС‚РІРµС‚СЃС‚РІРµРЅРЅРѕ В«Р·Р°РєР°Р·РѕРІВ», В«Р·Р°РєР°Р·В», В«Р·Р°РєР°Р·РѕРІВ», В«Р·Р°РєР°Р·Р°В». РџСЂРѕРІРµСЂРµРЅРѕ РґР»СЏ РґРёР°РїР°Р·РѕРЅР° 1вЂ“9999.
+  - **РљРЅРѕРїРєР° В«Р”РѕР±Р°РІРёС‚СЊВ» РІ QuickAdd (QuickAddControl.xaml):** `VerticalAlignment` Bottomв†’Top + `Margin="0,17,0,0"` (`Height=32` СЃРѕС…СЂР°РЅРµРЅР°). РљРѕСЂРµРЅСЊ Р±Р°РіР°: РІРЅСѓС‚СЂРё `StackPanel` РїРѕР»СЏ В«РўРёРїВ» СЃРїСЂСЏС‚Р°РЅ РґРёРЅР°РјРёС‡РµСЃРєРёР№ `ToggleButton РђРЅС‚РёРєРѕС€РєР°`; РїСЂРё РµРіРѕ РїРѕСЏРІР»РµРЅРёРё `StackPanel` СЂР°СЃС‚С‘С‚ РЅР° ~30 px в†’ `Grid.Row 1 Height="Auto"` СЂР°СЃС€РёСЂСЏРµС‚ РІСЃСЋ СЃС‚СЂРѕРєСѓ в†’ РєРЅРѕРїРєР° (Bottom-aligned) В«СЃРїРѕР»Р·Р°Р»Р°В» РІРЅРёР· РѕС‚РЅРѕСЃРёС‚РµР»СЊРЅРѕ РІРµСЂС…Р°/С†РµРЅС‚СЂР° СЃРѕСЃРµРґРЅРёС… `TextBox`/`ComboBox`. Top + СЏРІРЅС‹Р№ `margin 17 px` (= РІС‹СЃРѕС‚Р° `FieldLabel`) РїСЂРёР¶РёРјР°РµС‚ РІРµСЂС… РєРЅРѕРїРєРё Рє РЅРёР·Сѓ РјРµС‚РєРё в†’ bottoms РєРЅРѕРїРєРё Рё СЃРѕСЃРµРґРЅРёС… РєРѕРЅС‚СЂРѕР»РѕРІ РІСЃРµРіРґР° СЃРѕРІРїР°РґР°СЋС‚, РЅРµР·Р°РІРёСЃРёРјРѕ РѕС‚ РґРёРЅР°РјРёРєРё СЃС‚СЂРѕРєРё.
+  - **Р Р°СЃС‡С‘С‚РЅР°СЏ Р»РѕРіРёРєР° РќР• Р·Р°С‚СЂРѕРЅСѓС‚Р°:** С„РѕСЂРјСѓР»С‹ Anwis/РїР»РѕС‰Р°РґСЊ/РїРµСЂРёРјРµС‚СЂ/РјРѕРЅС‚Р°Р¶, JSON-СЃС…РµРјР° `OrderItemData`, РїРµС‡Р°С‚СЊ РљРџ, UpdateService вЂ” Р±РµР· РёР·РјРµРЅРµРЅРёР№.
+  - **Build/tests:** `dotnet build MosquitoNetCalculator.sln -c Release` вЂ” 0 errors (warnings MSB3026 вЂ” testhost DLL-lock, РЅРµ СЃРІСЏР·Р°РЅРѕ). Tests: 710/711 pass РїРѕСЃР»Рµ С„РёРєСЃР°; 1 РїСЂРµРґСЃСѓС‰РµСЃС‚РІСѓСЋС‰РёР№ fail `AppLifecycleTests.Print_Template_Has_No_Slash_Dogovor` (С‚РµСЃС‚ РёС‰РµС‚ РїСѓС‚СЊ Рє `PrintService.HtmlBuilder.cs` вЂ” Р»РѕРјР°Р»СЃСЏ РµС‰С‘ РґРѕ v3.41.x, РѕС‚РјРµС‡РµРЅ РІ release-notes РґР»СЏ СЃР»РµРґСѓСЋС‰РµРіРѕ minor).
+- **Font-family fallback РґР»СЏ РёРєРѕРЅРѕРє РЅР° Windows 10 + С„РёРєСЃ В«РєСЂСЏРєР°Р·СЏР±СЂВ» РІ NavOrdersBadge РЅР° Windows 11:**
+  - **`MainWindow.xaml`:** `NavButton` style Рё `OverlayCloseButton` style вЂ” `FontFamily` РёР·РјРµРЅС‘РЅ СЃ `Segoe Fluent Icons` РЅР° `Segoe Fluent Icons, Segoe MDL2 Assets` (fallback-С€СЂРёС„С‚ РёР· Windows 10). Inline `FontFamily` Сѓ `NavIconCalc`/`NavIconOrders`/`NavIconPrices`/`NavIconUpdates` СѓР±СЂР°РЅС‹ вЂ” С‚РµРїРµСЂСЊ РЅР°СЃР»РµРґСѓСЋС‚ РѕС‚ СЃС‚РёР»СЏ РєРЅРѕРїРєРё.
+  - **`NavOrdersBadgeText` (MainWindow.xaml):** РґРѕР±Р°РІР»РµРЅ СЏРІРЅС‹Р№ `FontFamily="Segoe UI"` вЂ” СЂР°РЅРµРµ РЅР°СЃР»РµРґРѕРІР°Р» РёРєРѕРЅРѕС‡РЅС‹Р№ С€СЂРёС„С‚ РѕС‚ `NavButton`, С‡С‚Рѕ РЅР° Windows 11 (РіРґРµ `Segoe Fluent Icons` СѓСЃС‚Р°РЅРѕРІР»РµРЅ) РїСЂРёРІРѕРґРёР»Рѕ Рє Р°СЂС‚РµС„Р°РєС‚Р°Рј СЂРµРЅРґРµСЂРёРЅРіР° С†РёС„СЂ (В«РєСЂСЏРєР°Р·СЏР±СЂРёВ»). РќР° Windows 10 Р±РµР№РґР¶ СЂР°Р±РѕС‚Р°Р», РїРѕС‚РѕРјСѓ С‡С‚Рѕ РѕС‚СЃСѓС‚СЃС‚РІСѓСЋС‰РёР№ С€СЂРёС„С‚ fallback'РёР»СЃСЏ РЅР° СЃРёСЃС‚РµРјРЅС‹Р№, РЅРѕ СЃР°РјРё Р·РЅР°С‡РєРё РЅРµ РѕС‚РѕР±СЂР°Р¶Р°Р»РёСЃСЊ.
+  - **`TitleBarControl.xaml`, `ImportDialogWindow.xaml`, `SendToFactoryWindow.xaml`:** РІСЃРµ inline `FontFamily="Segoe Fluent Icons"` Р·Р°РјРµРЅРµРЅС‹ РЅР° `FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets"` РґР»СЏ РєРѕРЅСЃРёСЃС‚РµРЅС‚РЅРѕСЃС‚Рё.
+  - **Build/tests:** `dotnet build MosquitoNetCalculator.sln -c Release` вЂ” 0 errors. Tests: **742/742 pass** (2 РїСЂРµРґСЃСѓС‰РµСЃС‚РІСѓСЋС‰РёС… fail `UpdateLogTests` СЃ hardcoded "3.40.3" РёСЃРїСЂР°РІР»РµРЅС‹ РЅР° "3.40.4").
 
-- **«Отлив» больше не выбирается автоматически в диалоге «На завод».** Отлив — это готовый подоконник/отлив (не сетка), и теперь пользователь явно включает его галочкой перед отправкой на завод. Изменён `notForProduction` set в `FactoryTextService.BuildSelectableItems` (добавлено «Отлив») и подтверждающие тесты в `FactoryTextServiceTests` / `ManualChecklistTests`. Документация в `TESTING_CHECKLIST.md` (§12.2) синхронизирована. Ранее «Отлив» попадал в категорию «Производственные товары» рядом с Anwis/Козырьком.
+### РќРѕРІРѕРµ
 
-### Новое
+- **РџРѕР»РѕС‚РЅРѕ В«РђРЅС‚РёРєРѕС€РєР°В»** вЂ” РґР»СЏ С‚СЂС‘С… С‚РёРїРѕРІ СЃРµС‚РѕРє (Anwis, РќР° РЅР°РІРµСЃР°С…, РћРєРѕРЅРЅР°СЏ РЅР° РјРµС‚Р°Р»Р» РєСЂРµРїР».) РґРѕР±Р°РІР»РµРЅР° РѕРїС†РёСЏ В«РђРЅС‚РёРєРѕС€РєР° (+2000 СЂСѓР±/РјВІ)В» РІ РїР°РЅРµР»СЊ QuickAdd.
+  - Р§РµРєР±РѕРєСЃ РІРёРґРµРЅ С‚РѕР»СЊРєРѕ РґР»СЏ РїСЂРёРјРµРЅРёРјС‹С… С‚РѕРІР°СЂРѕРІ.
+  - РљР°С‚Р°Р»РѕРіРѕРІР°СЏ С†РµРЅР° Р°РІС‚РѕРјР°С‚РёС‡РµСЃРєРё СѓРІРµР»РёС‡РёРІР°РµС‚СЃСЏ РЅР° 2000 в‚Ѕ/РјВІ РїСЂРё РІРєР»СЋС‡С‘РЅРЅРѕР№ РіР°Р»РѕС‡РєРµ.
+  - Р’ С‚Р°Р±Р»РёС†Рµ СЂР°СЃС‡С‘С‚Р°, РїРµС‡Р°С‚РЅРѕРј РљРџ Рё С‚РµРєСЃС‚Рµ В«РќР° Р·Р°РІРѕРґВ» РЅР°Р·РІР°РЅРёРµ С‚РѕРІР°СЂР° РѕС‚РѕР±СЂР°Р¶Р°РµС‚СЃСЏ СЃ СЃСѓС„С„РёРєСЃРѕРј В«(РђРЅС‚РёРєРѕС€РєР°)В».
+  - Р¤Р»Р°Рі `IsAnticat` СЃРѕС…СЂР°РЅСЏРµС‚СЃСЏ РІ JSON-Р·Р°РєР°Р·Рµ Рё РїРµСЂРµР¶РёРІР°РµС‚ undo/redo С‡РµСЂРµР· `Clone()`.
 
-- **Полотно «Антикошка»** — для трёх типов сеток (Anwis, На навесах, Оконная на металл крепл.) добавлена опция «Антикошка (+2000 руб/м²)» в панель QuickAdd.
-  - Чекбокс виден только для применимых товаров.
-  - Каталоговая цена автоматически увеличивается на 2000 ₽/м² при включённой галочке.
-  - В таблице расчёта, печатном КП и тексте «На завод» название товара отображается с суффиксом «(Антикошка)».
-  - Флаг `IsAnticat` сохраняется в JSON-заказе и переживает undo/redo через `Clone()`.
+### РЈР»СѓС‡С€РµРЅРёСЏ
 
-### Улучшения
+- **Р РµРґРёР·Р°Р№РЅ РєРЅРѕРїРєРё В«РђРЅС‚РёРєРѕС€РєР°В»:** ToggleButton РІ QuickAdd РїРµСЂРµРІРµРґС‘РЅ РЅР° СЃС‚РёР»СЊ `GhostButton` (РїР°С‚С‚РµСЂРЅ РёР· `Themes/ButtonStyles.xaml`) вЂ” РЅРµР°РєС‚РёРІРЅРѕРµ СЃРѕСЃС‚РѕСЏРЅРёРµ С‚РµРїРµСЂСЊ РёРјРµРµС‚ СЏРІРЅС‹Р№ С„РѕРЅ `Surface` Рё СЂР°РјРєСѓ `Border`, С‡С‚Рѕ СѓСЃС‚СЂР°РЅСЏРµС‚ СЃР»РёСЏРЅРёРµ СЃ С„РѕРЅРѕРј `QuickBg`. РђРєС‚РёРІРЅРѕРµ СЃРѕСЃС‚РѕСЏРЅРёРµ Рё С…РѕРІРµСЂ РѕСЃС‚Р°СЋС‚СЃСЏ Р±РµР· РёР·РјРµРЅРµРЅРёР№.
 
-- **Редизайн кнопки «Антикошка»:** ToggleButton в QuickAdd переведён на стиль `GhostButton` (паттерн из `Themes/ButtonStyles.xaml`) — неактивное состояние теперь имеет явный фон `Surface` и рамку `Border`, что устраняет слияние с фоном `QuickBg`. Активное состояние и ховер остаются без изменений.
+### РўРµС…РЅРёС‡РµСЃРєРѕРµ
 
-### Техническое
+- **Р”РµРєРѕРјРїРѕР·РёС†РёСЏ РјРѕРЅРѕР»РёС‚РЅС‹С… С„Р°Р№Р»РѕРІ (Phase 1 + Phase 2):**
+  - `MainWindow.xaml.cs` СЂР°Р·Р±РёС‚ РЅР° 6 partial-С„Р°Р№Р»РѕРІ: `MainWindow.Animations.cs`, `MainWindow.Progress.cs`, `MainWindow.GridColumns.cs`, `MainWindow.Pricing.cs`, `MainWindow.Totals.cs`, `MainWindow.Contracts.cs`
+  - `PrintService.cs` СЂР°Р·Р±РёС‚ РЅР° 3 partial-С„Р°Р№Р»Р°: `PrintService.Template.cs`, `PrintService.HtmlBuilder.cs`, `PrintService.SvgDrawer.cs`
+  - `QuickAddControl.xaml.cs` СЂР°Р·Р±РёС‚ РЅР° 4 partial-С„Р°Р№Р»Р°: `QuickAddControl.AddItem.cs`, `QuickAddControl.Preview.cs`, `QuickAddControl.Search.cs`, `QuickAddControl.AnwisMode.cs`
+  - РџСѓР±Р»РёС‡РЅС‹Р№ API РЅРµ РёР·РјРµРЅС‘РЅ; РІСЃРµ 711 С‚РµСЃС‚РѕРІ РїСЂРѕС…РѕРґСЏС‚.
+  - `AppLifecycleTests.OnThemeChanged_Does_Not_Manually_Rebind_TitleBar_Background` Р°РґР°РїС‚РёСЂРѕРІР°РЅ РїРѕРґ partial-РєР»Р°СЃСЃС‹ (РїРѕРёСЃРє РїРѕ РІСЃРµРј `MainWindow*.cs`).
+  - 742/742 С‚РµСЃС‚РѕРІ РїСЂРѕС…РѕРґСЏС‚.
 
-- **Декомпозиция монолитных файлов (Phase 1 + Phase 2):**
-  - `MainWindow.xaml.cs` разбит на 6 partial-файлов: `MainWindow.Animations.cs`, `MainWindow.Progress.cs`, `MainWindow.GridColumns.cs`, `MainWindow.Pricing.cs`, `MainWindow.Totals.cs`, `MainWindow.Contracts.cs`
-  - `PrintService.cs` разбит на 3 partial-файла: `PrintService.Template.cs`, `PrintService.HtmlBuilder.cs`, `PrintService.SvgDrawer.cs`
-  - `QuickAddControl.xaml.cs` разбит на 4 partial-файла: `QuickAddControl.AddItem.cs`, `QuickAddControl.Preview.cs`, `QuickAddControl.Search.cs`, `QuickAddControl.AnwisMode.cs`
-  - Публичный API не изменён; все 711 тестов проходят.
-  - `AppLifecycleTests.OnThemeChanged_Does_Not_Manually_Rebind_TitleBar_Background` адаптирован под partial-классы (поиск по всем `MainWindow*.cs`).
-  - 742/742 тестов проходят.
+### РўРµС…РЅРёС‡РµСЃРєРѕРµ
 
-### Техническое
+- **release.yml**: РїРµСЂРµСЂР°Р±РѕС‚Р°РЅ С€Р°Рі Update releases.json вЂ” С‚РµРїРµСЂСЊ РѕРЅ РѕР±РЅРѕРІР»СЏРµС‚ url/size/sha256/date РІ СЃСѓС‰РµСЃС‚РІСѓСЋС‰РµР№ Р·Р°РїРёСЃРё РІРµСЂСЃРёРё (РЅРµ РїРµСЂРµР·Р°РїРёСЃС‹РІР°РµС‚ type/title/changes РїР»РµР№СЃС…РѕР»РґРµСЂРѕРј). РР·РјРµРЅС‘РЅ РїРѕСЂСЏРґРѕРє С€Р°РіРѕРІ: GitHub Release СЃРѕР·РґР°С‘С‚СЃСЏ Р”Рћ РєРѕРјРјРёС‚Р° releases.json РІ main (СЃРѕР±Р»СЋРґРµРЅРёРµ safety rule РёР· RELEASE_PROCESS.md: РїРѕР»СЊР·РѕРІР°С‚РµР»Рё РЅРµ РґРѕР»Р¶РЅС‹ РІРёРґРµС‚СЊ РѕР±РЅРѕРІР»РµРЅРёРµ, РєРѕС‚РѕСЂРѕРµ РЅРµР»СЊР·СЏ СЃРєР°С‡Р°С‚СЊ).
 
-- **release.yml**: переработан шаг Update releases.json — теперь он обновляет url/size/sha256/date в существующей записи версии (не перезаписывает type/title/changes плейсхолдером). Изменён порядок шагов: GitHub Release создаётся ДО коммита releases.json в main (соблюдение safety rule из RELEASE_PROCESS.md: пользователи не должны видеть обновление, которое нельзя скачать).
+## 3.40.3 вЂ” 2026-06-29
 
-## 3.40.3 — 2026-06-29
+### РўРµС…РЅРёС‡РµСЃРєРѕРµ
 
-### Техническое
+- **`MainWindow.OnUpdateProgressChanged` РёР·РІР»РµС‡С‘РЅ РІ РѕС‚РґРµР»СЊРЅС‹Р№ С‚РµСЃС‚РёСЂСѓРµРјС‹Р№ С…РµР»РїРµСЂ `Helpers/ProgressBarUpdateAnimator.cs`:** С‚РµР»Рѕ РјРµС‚РѕРґР° СЃС‚Р°Р»Рѕ РѕРґРЅРѕСЃС‚СЂРѕС‡РЅС‹Рј РґРµР»РµРіР°С‚РѕРј `_progressAnimator?.Animate(...)`. РҐРµР»РїРµСЂ РёРЅРєР°РїСЃСѓР»РёСЂСѓРµС‚ РІСЃСЋ Р»РѕРіРёРєСѓ `TryFindResource` + Storyboard fade (fade-in 200 РјСЃ / fade-out 250 РјСЃ) + belt-and-suspenders `try/catch` СЃ СЏРІРЅС‹Рј re-throw РґР»СЏ `OutOfMemoryException` / `StackOverflowException`. РћС‚РґРµР»С‘РЅ РѕС‚ `UpdateService` С‡РµСЂРµР· `Func<double>` (С‚РµРєСѓС‰РёР№ РїСЂРѕРіСЂРµСЃСЃ) Рё `Func<bool>` (РёРґС‘С‚ Р»Рё СЃРєР°С‡РёРІР°РЅРёРµ) вЂ” СЌС‚Рѕ РїРѕР·РІРѕР»РёР»Рѕ РїРѕРєСЂС‹С‚СЊ РєРѕРЅС‚СЂР°РєС‚ В«UI РїСЂРѕРіСЂРµСЃСЃ-Р±Р°СЂ РЅРµ СЂРѕРЅСЏРµС‚ auto-update flowВ» СЋРЅРёС‚-С‚РµСЃС‚Р°РјРё РІРїРµСЂРІС‹Рµ Р·Р° РІСЃСЋ РёСЃС‚РѕСЂРёСЋ РїСЂРѕРµРєС‚Р°.
+- **`UpdateService.IsCurrentVersionBrokenForAutoUpdate(Version?)`** (internal): РїСЂРѕРІРµСЂРєР° half-open interval `[3.40.0, 3.40.2)` С‡РµСЂРµР· РїСЂСЏРјСѓСЋ int-СЃСЂР°РІРЅРєСѓ `Major`/`Minor`/`Build` (РёР·Р±РµРіР°РµС‚ footgun `Version(3,40,1,0) > Version(3,40,1)` РёР·-Р·Р° `Revision 0 > -1`). Р Р°РЅРµРµ С‚Р° Р¶Рµ РїСЂРѕРІРµСЂРєР° РґСѓР±Р»РёСЂРѕРІР°Р»Р°СЃСЊ inline-Р»РёС‚РµСЂР°Р»Р°РјРё РІ `MainWindow_Loaded`.
+- **30 РЅРѕРІС‹С… СЋРЅРёС‚-С‚РµСЃС‚РѕРІ** (711/711, Р±С‹Р»Рѕ 681):
+  - `UpdateServiceTests.cs`: 14 inline-РєРµР№СЃРѕРІ РЅР° boundary РґРёР°РїР°Р·РѕРЅР° (3-part Рё 4-part РІРµСЂСЃРёРё, before/after/different major) + null-arg + smoke test РЅР° `CurrentVersion`.
+  - `ProgressBarUpdateAnimatorTests.cs`: 10 С‚РµСЃС‚РѕРІ вЂ” no-throw РєРѕРЅС‚СЂР°РєС‚ РґР»СЏ РЅРµ-fatal РёСЃРєР»СЋС‡РµРЅРёР№ (`InvalidOperationException`, `InvalidCastException`, `ArgumentException`, `FormatException` С‡РµСЂРµР· `[Theory]`), СЏРІРЅС‹Р№ `Assert.Throws` РґР»СЏ OOM/SOF, fallback Visibility/Opacity path РїСЂРё РѕС‚СЃСѓС‚СЃС‚РІРёРё Storyboard, no-op early-return, РєРѕРЅСЃС‚СЂСѓРєС‚РѕСЂСЃРєРёРµ null-РїСЂРѕРІРµСЂРєРё.
+- **xUnit `[Collection("STA")]` СЃ `DisableParallelization`:** РёР·РѕР»РёСЂСѓРµС‚ STA-С‚РµСЃС‚С‹ РѕС‚ РїР°СЂР°Р»Р»РµР»СЊРЅРѕРіРѕ РёСЃРїРѕР»РЅРµРЅРёСЏ, С‡С‚РѕР±С‹ РёР·Р±РµР¶Р°С‚СЊ РіРѕРЅРєРё РЅР° AppDomain-wide `Application.Current`. РЎР°РјРё С‚РµСЃС‚С‹ РќР• СЃРѕР·РґР°СЋС‚ `Application` вЂ” `FrameworkElement.TryFindResource` РєРѕСЂСЂРµРєС‚РЅРѕ РѕР±СЂР°Р±Р°С‚С‹РІР°РµС‚ `Application.Current == null`, С‡С‚Рѕ РґР°С‘С‚ С€С‚Р°С‚РЅС‹Р№ fallback path РґР»СЏ С‚РµСЃС‚РёСЂРѕРІР°РЅРёСЏ Рё СѓСЃС‚СЂР°РЅСЏРµС‚ РєРѕРЅС„Р»РёРєС‚ СЃ `AppLifecycleTests`.
 
-- **`MainWindow.OnUpdateProgressChanged` извлечён в отдельный тестируемый хелпер `Helpers/ProgressBarUpdateAnimator.cs`:** тело метода стало однострочным делегатом `_progressAnimator?.Animate(...)`. Хелпер инкапсулирует всю логику `TryFindResource` + Storyboard fade (fade-in 200 мс / fade-out 250 мс) + belt-and-suspenders `try/catch` с явным re-throw для `OutOfMemoryException` / `StackOverflowException`. Отделён от `UpdateService` через `Func<double>` (текущий прогресс) и `Func<bool>` (идёт ли скачивание) — это позволило покрыть контракт «UI прогресс-бар не роняет auto-update flow» юнит-тестами впервые за всю историю проекта.
-- **`UpdateService.IsCurrentVersionBrokenForAutoUpdate(Version?)`** (internal): проверка half-open interval `[3.40.0, 3.40.2)` через прямую int-сравнку `Major`/`Minor`/`Build` (избегает footgun `Version(3,40,1,0) > Version(3,40,1)` из-за `Revision 0 > -1`). Ранее та же проверка дублировалась inline-литералами в `MainWindow_Loaded`.
-- **30 новых юнит-тестов** (711/711, было 681):
-  - `UpdateServiceTests.cs`: 14 inline-кейсов на boundary диапазона (3-part и 4-part версии, before/after/different major) + null-arg + smoke test на `CurrentVersion`.
-  - `ProgressBarUpdateAnimatorTests.cs`: 10 тестов — no-throw контракт для не-fatal исключений (`InvalidOperationException`, `InvalidCastException`, `ArgumentException`, `FormatException` через `[Theory]`), явный `Assert.Throws` для OOM/SOF, fallback Visibility/Opacity path при отсутствии Storyboard, no-op early-return, конструкторские null-проверки.
-- **xUnit `[Collection("STA")]` с `DisableParallelization`:** изолирует STA-тесты от параллельного исполнения, чтобы избежать гонки на AppDomain-wide `Application.Current`. Сами тесты НЕ создают `Application` — `FrameworkElement.TryFindResource` корректно обрабатывает `Application.Current == null`, что даёт штатный fallback path для тестирования и устраняет конфликт с `AppLifecycleTests`.
+### Р—Р°РјРµС‚РєРё
 
-### Заметки
-
-- Полностью обратно-совместимо с v3.40.0 → v3.40.2 (никаких регрессий). Production-поведение `OnUpdateProgressChanged` идентично v3.40.2.
-- v3.40.3 — первый релиз проекта, где контракт «UI ошибка не роняет auto-update» имеет **testable regression coverage** (а не только в комментариях).
-- Пользователям v3.40.0 / v3.40.1 переход на v3.40.3 безопасен, но не обязателен — видимое поведение не менялось. Рекомендуется всем, кто хочет unit-test гарантии от регрессий этого типа.
-
----
-
-## 3.40.2 — 2026-06-29
-
-### Исправления
-
-- **Belt-and-suspenders try/catch в `MainWindow.OnUpdateProgressChanged`:** тело метода обёрнуто в `try { ... } catch (Exception ex) { ... }`. При ЛЮБОМ исключении внутри (включая будущие BAML-mismatch, XAML-refactor, third-party change) метод логирует в Debug, устанавливает Visibility напрямую без анимации, и **не пробрасывает исключение выше**. Это защита от повторения v3.40.0-style бага, когда ошибка в UI прогресс-бара убивала Dispatcher.Invoke → MessageBox → разрыв auto-update-flow → невозможность получить никакой следующий релиз.
-
-### Прочее
-
-- **Стартовый баннер для известных сломанных версий:** в `MainWindow.MainWindow_Loaded` добавлена проверка `CurrentVersion >= 3.40.0 && CurrentVersion < 3.40.2`. Если условие выполнено, при запуске показывается toast-предупреждение со ссылкой на GitHub Releases (длительность 15 сек, тип Warning). Это no-op для нормальных версий — но если в будущем случится аналогичный баг, данный механизм автоматически предупредит пользователя с инструкцией.
-
-### Заметки
-
-- v3.40.0 бинарники, установленные конечными пользователями, **до сих пор не могут обновиться автоматически** — баг ронял auto-update flow, и патч для них доступен только через ручную замену EXE на v3.40.1 или v3.40.2 (`https://github.com/DdepRest/arc-frame/releases/download/v3.40.2/ARC-Frame-3.40.2-full.zip`).
-
----
-
-## 3.40.1 — 2026-06-29
-
-### Исправления
-
-- **Ручная проверка обновлений не падала с `ResourceReferenceKeyNotFoundException`:** Storyboards `UpdateBarFadeIn` / `UpdateBarFadeOut` для прогресс-бара определены в `Grid.Resources` (внутри корневого `<Grid>`), а `MainWindow.OnUpdateProgressChanged` дёргал `this.FindResource(...)`. WPF-метод `FindResource` ходит ВВЕРХ по логическому дереву — ресурсы потомков невидимы. Storyboards перенесены в `<Window.Resources>` — теперь `FindResource("UpdateBarFadeIn")` находит их.
-- **Defense-in-depth в `OnUpdateProgressChanged`:** заменён `FindResource(...).Clone()` (бросает `InvalidCastException` если ресурс не найден) на `TryFindResource(...) is Storyboard` — если ресурс когда-то «потеряется» (XAML-удаление, merge-конфликт), теперь видим debug-лог и бар показывается/скрывается без анимации, вместо краша.
-
-### Заметки
-
-- Баг существовал с v3.38.0 (когда был добавлен XAML-анимация UpdateDownloadBar); v3.40.0 его только «активировал», потому что публичный метод ручной проверки `CheckAndApplyAsync` теперь корректно прокидывал `isAutomatic` в диалог — пользователи увидели путь до краша.
-- Pubished as patch release (3.40.0 → 3.40.1), не minor — поведение в остальном не менялось.
-
----
-
-## 3.40.0 — 2026-06-29
-
-### Улучшения
-
-- **WinAPI idle detection:** `UpdateCheckScheduler` теперь использует WinAPI `GetLastInputInfo` для определения системного простоя вместо UI-событий (`PreviewMouseMove`/`PreviewKeyDown`). Это даёт более точное измерение реальной неактивности пользователя (не только в окне приложения, но и системно) и устраняет необходимость в `NotifyActivity()`.
-- **Anti-recommend text в диалоге обновления:** При автоматическом обнаружении обновления (startup-check) кнопка «Отмена» переименована в «Отложить» с текстом «Не рекомендуется откладывать обновление надолго».
-- **Minimized window guard:** Фоновая проверка `CheckInBackgroundAsync` теперь пропускает показ toast-уведомления, если главное окно свёрнуто — уведомление появится после восстановления окна.
-
-### Техническое
-
-- `UpdateCheckScheduler`: удалён `NotifyActivity()` и `_lastActivityTime`; добавлен `GetSystemIdleTime` callback (тип `Func<TimeSpan>`). Тесты переписаны на фейковый `FakeIdle` вместо `NotifyActivity`.
-- `UpdateService`: добавлен P/Invoke `GetLastInputInfo` и публичный `GetIdleTime()`; убрана вся логика `IsCellEditing`, `CanShowUpdateDialog`, retry-таймеров и `OnWindowStateChanged` — сложность не нужна при toast-based UX.
-- `MainWindow.xaml.cs`: удалены `PreviewMouseMove` и `PreviewKeyDown` вызовы `_updateCheckScheduler?.NotifyActivity()`.
-- `DialogService.ShowUpdateAvailable`: добавлен параметр `isAutomatic` с anti-recommend UI.
-- **16 тестов** в `UpdateCheckSchedulerTests.cs` обновлены/переписаны под новую модель idle-детекции.
+- РџРѕР»РЅРѕСЃС‚СЊСЋ РѕР±СЂР°С‚РЅРѕ-СЃРѕРІРјРµСЃС‚РёРјРѕ СЃ v3.40.0 в†’ v3.40.2 (РЅРёРєР°РєРёС… СЂРµРіСЂРµСЃСЃРёР№). Production-РїРѕРІРµРґРµРЅРёРµ `OnUpdateProgressChanged` РёРґРµРЅС‚РёС‡РЅРѕ v3.40.2.
+- v3.40.3 вЂ” РїРµСЂРІС‹Р№ СЂРµР»РёР· РїСЂРѕРµРєС‚Р°, РіРґРµ РєРѕРЅС‚СЂР°РєС‚ В«UI РѕС€РёР±РєР° РЅРµ СЂРѕРЅСЏРµС‚ auto-updateВ» РёРјРµРµС‚ **testable regression coverage** (Р° РЅРµ С‚РѕР»СЊРєРѕ РІ РєРѕРјРјРµРЅС‚Р°СЂРёСЏС…).
+- РџРѕР»СЊР·РѕРІР°С‚РµР»СЏРј v3.40.0 / v3.40.1 РїРµСЂРµС…РѕРґ РЅР° v3.40.3 Р±РµР·РѕРїР°СЃРµРЅ, РЅРѕ РЅРµ РѕР±СЏР·Р°С‚РµР»РµРЅ вЂ” РІРёРґРёРјРѕРµ РїРѕРІРµРґРµРЅРёРµ РЅРµ РјРµРЅСЏР»РѕСЃСЊ. Р РµРєРѕРјРµРЅРґСѓРµС‚СЃСЏ РІСЃРµРј, РєС‚Рѕ С…РѕС‡РµС‚ unit-test РіР°СЂР°РЅС‚РёРё РѕС‚ СЂРµРіСЂРµСЃСЃРёР№ СЌС‚РѕРіРѕ С‚РёРїР°.
 
 ---
 
-## 3.39.0 — 2026-06-29
+## 3.40.2 вЂ” 2026-06-29
 
-### Новинка
+### РСЃРїСЂР°РІР»РµРЅРёСЏ
 
-- **Background auto-update checks** (Variant A из спеки `update-notification-rework-spec.md`):
-  - Periodic checks каждые 30 минут от последней проверки.
-  - Idle checks после 10 минут простоя пользователя.
-  - Anti-spam throttle: минимум 2 минуты между двумя реальными проверками.
-  - Реализовано в новом `Services/UpdateCheckScheduler.cs` с pure-логикой `ShouldCheckAt(...)` для unit-тестов.
+- **Belt-and-suspenders try/catch РІ `MainWindow.OnUpdateProgressChanged`:** С‚РµР»Рѕ РјРµС‚РѕРґР° РѕР±С‘СЂРЅСѓС‚Рѕ РІ `try { ... } catch (Exception ex) { ... }`. РџСЂРё Р›Р®Р‘РћРњ РёСЃРєР»СЋС‡РµРЅРёРё РІРЅСѓС‚СЂРё (РІРєР»СЋС‡Р°СЏ Р±СѓРґСѓС‰РёРµ BAML-mismatch, XAML-refactor, third-party change) РјРµС‚РѕРґ Р»РѕРіРёСЂСѓРµС‚ РІ Debug, СѓСЃС‚Р°РЅР°РІР»РёРІР°РµС‚ Visibility РЅР°РїСЂСЏРјСѓСЋ Р±РµР· Р°РЅРёРјР°С†РёРё, Рё **РЅРµ РїСЂРѕР±СЂР°СЃС‹РІР°РµС‚ РёСЃРєР»СЋС‡РµРЅРёРµ РІС‹С€Рµ**. Р­С‚Рѕ Р·Р°С‰РёС‚Р° РѕС‚ РїРѕРІС‚РѕСЂРµРЅРёСЏ v3.40.0-style Р±Р°РіР°, РєРѕРіРґР° РѕС€РёР±РєР° РІ UI РїСЂРѕРіСЂРµСЃСЃ-Р±Р°СЂР° СѓР±РёРІР°Р»Р° Dispatcher.Invoke в†’ MessageBox в†’ СЂР°Р·СЂС‹РІ auto-update-flow в†’ РЅРµРІРѕР·РјРѕР¶РЅРѕСЃС‚СЊ РїРѕР»СѓС‡РёС‚СЊ РЅРёРєР°РєРѕР№ СЃР»РµРґСѓСЋС‰РёР№ СЂРµР»РёР·.
+
+### РџСЂРѕС‡РµРµ
+
+- **РЎС‚Р°СЂС‚РѕРІС‹Р№ Р±Р°РЅРЅРµСЂ РґР»СЏ РёР·РІРµСЃС‚РЅС‹С… СЃР»РѕРјР°РЅРЅС‹С… РІРµСЂСЃРёР№:** РІ `MainWindow.MainWindow_Loaded` РґРѕР±Р°РІР»РµРЅР° РїСЂРѕРІРµСЂРєР° `CurrentVersion >= 3.40.0 && CurrentVersion < 3.40.2`. Р•СЃР»Рё СѓСЃР»РѕРІРёРµ РІС‹РїРѕР»РЅРµРЅРѕ, РїСЂРё Р·Р°РїСѓСЃРєРµ РїРѕРєР°Р·С‹РІР°РµС‚СЃСЏ toast-РїСЂРµРґСѓРїСЂРµР¶РґРµРЅРёРµ СЃРѕ СЃСЃС‹Р»РєРѕР№ РЅР° GitHub Releases (РґР»РёС‚РµР»СЊРЅРѕСЃС‚СЊ 15 СЃРµРє, С‚РёРї Warning). Р­С‚Рѕ no-op РґР»СЏ РЅРѕСЂРјР°Р»СЊРЅС‹С… РІРµСЂСЃРёР№ вЂ” РЅРѕ РµСЃР»Рё РІ Р±СѓРґСѓС‰РµРј СЃР»СѓС‡РёС‚СЃСЏ Р°РЅР°Р»РѕРіРёС‡РЅС‹Р№ Р±Р°Рі, РґР°РЅРЅС‹Р№ РјРµС…Р°РЅРёР·Рј Р°РІС‚РѕРјР°С‚РёС‡РµСЃРєРё РїСЂРµРґСѓРїСЂРµРґРёС‚ РїРѕР»СЊР·РѕРІР°С‚РµР»СЏ СЃ РёРЅСЃС‚СЂСѓРєС†РёРµР№.
+
+### Р—Р°РјРµС‚РєРё
+
+- v3.40.0 Р±РёРЅР°СЂРЅРёРєРё, СѓСЃС‚Р°РЅРѕРІР»РµРЅРЅС‹Рµ РєРѕРЅРµС‡РЅС‹РјРё РїРѕР»СЊР·РѕРІР°С‚РµР»СЏРјРё, **РґРѕ СЃРёС… РїРѕСЂ РЅРµ РјРѕРіСѓС‚ РѕР±РЅРѕРІРёС‚СЊСЃСЏ Р°РІС‚РѕРјР°С‚РёС‡РµСЃРєРё** вЂ” Р±Р°Рі СЂРѕРЅСЏР» auto-update flow, Рё РїР°С‚С‡ РґР»СЏ РЅРёС… РґРѕСЃС‚СѓРїРµРЅ С‚РѕР»СЊРєРѕ С‡РµСЂРµР· СЂСѓС‡РЅСѓСЋ Р·Р°РјРµРЅСѓ EXE РЅР° v3.40.1 РёР»Рё v3.40.2 (`https://github.com/DdepRest/arc-frame/releases/download/v3.40.2/ARC-Frame-3.40.2-full.zip`).
+
+---
+
+## 3.40.1 вЂ” 2026-06-29
+
+### РСЃРїСЂР°РІР»РµРЅРёСЏ
+
+- **Р СѓС‡РЅР°СЏ РїСЂРѕРІРµСЂРєР° РѕР±РЅРѕРІР»РµРЅРёР№ РЅРµ РїР°РґР°Р»Р° СЃ `ResourceReferenceKeyNotFoundException`:** Storyboards `UpdateBarFadeIn` / `UpdateBarFadeOut` РґР»СЏ РїСЂРѕРіСЂРµСЃСЃ-Р±Р°СЂР° РѕРїСЂРµРґРµР»РµРЅС‹ РІ `Grid.Resources` (РІРЅСѓС‚СЂРё РєРѕСЂРЅРµРІРѕРіРѕ `<Grid>`), Р° `MainWindow.OnUpdateProgressChanged` РґС‘СЂРіР°Р» `this.FindResource(...)`. WPF-РјРµС‚РѕРґ `FindResource` С…РѕРґРёС‚ Р’Р’Р•Р РҐ РїРѕ Р»РѕРіРёС‡РµСЃРєРѕРјСѓ РґРµСЂРµРІСѓ вЂ” СЂРµСЃСѓСЂСЃС‹ РїРѕС‚РѕРјРєРѕРІ РЅРµРІРёРґРёРјС‹. Storyboards РїРµСЂРµРЅРµСЃРµРЅС‹ РІ `<Window.Resources>` вЂ” С‚РµРїРµСЂСЊ `FindResource("UpdateBarFadeIn")` РЅР°С…РѕРґРёС‚ РёС….
+- **Defense-in-depth РІ `OnUpdateProgressChanged`:** Р·Р°РјРµРЅС‘РЅ `FindResource(...).Clone()` (Р±СЂРѕСЃР°РµС‚ `InvalidCastException` РµСЃР»Рё СЂРµСЃСѓСЂСЃ РЅРµ РЅР°Р№РґРµРЅ) РЅР° `TryFindResource(...) is Storyboard` вЂ” РµСЃР»Рё СЂРµСЃСѓСЂСЃ РєРѕРіРґР°-С‚Рѕ В«РїРѕС‚РµСЂСЏРµС‚СЃСЏВ» (XAML-СѓРґР°Р»РµРЅРёРµ, merge-РєРѕРЅС„Р»РёРєС‚), С‚РµРїРµСЂСЊ РІРёРґРёРј debug-Р»РѕРі Рё Р±Р°СЂ РїРѕРєР°Р·С‹РІР°РµС‚СЃСЏ/СЃРєСЂС‹РІР°РµС‚СЃСЏ Р±РµР· Р°РЅРёРјР°С†РёРё, РІРјРµСЃС‚Рѕ РєСЂР°С€Р°.
+
+### Р—Р°РјРµС‚РєРё
+
+- Р‘Р°Рі СЃСѓС‰РµСЃС‚РІРѕРІР°Р» СЃ v3.38.0 (РєРѕРіРґР° Р±С‹Р» РґРѕР±Р°РІР»РµРЅ XAML-Р°РЅРёРјР°С†РёСЏ UpdateDownloadBar); v3.40.0 РµРіРѕ С‚РѕР»СЊРєРѕ В«Р°РєС‚РёРІРёСЂРѕРІР°Р»В», РїРѕС‚РѕРјСѓ С‡С‚Рѕ РїСѓР±Р»РёС‡РЅС‹Р№ РјРµС‚РѕРґ СЂСѓС‡РЅРѕР№ РїСЂРѕРІРµСЂРєРё `CheckAndApplyAsync` С‚РµРїРµСЂСЊ РєРѕСЂСЂРµРєС‚РЅРѕ РїСЂРѕРєРёРґС‹РІР°Р» `isAutomatic` РІ РґРёР°Р»РѕРі вЂ” РїРѕР»СЊР·РѕРІР°С‚РµР»Рё СѓРІРёРґРµР»Рё РїСѓС‚СЊ РґРѕ РєСЂР°С€Р°.
+- Pubished as patch release (3.40.0 в†’ 3.40.1), РЅРµ minor вЂ” РїРѕРІРµРґРµРЅРёРµ РІ РѕСЃС‚Р°Р»СЊРЅРѕРј РЅРµ РјРµРЅСЏР»РѕСЃСЊ.
+
+---
+
+## 3.40.0 вЂ” 2026-06-29
+
+### РЈР»СѓС‡С€РµРЅРёСЏ
+
+- **WinAPI idle detection:** `UpdateCheckScheduler` С‚РµРїРµСЂСЊ РёСЃРїРѕР»СЊР·СѓРµС‚ WinAPI `GetLastInputInfo` РґР»СЏ РѕРїСЂРµРґРµР»РµРЅРёСЏ СЃРёСЃС‚РµРјРЅРѕРіРѕ РїСЂРѕСЃС‚РѕСЏ РІРјРµСЃС‚Рѕ UI-СЃРѕР±С‹С‚РёР№ (`PreviewMouseMove`/`PreviewKeyDown`). Р­С‚Рѕ РґР°С‘С‚ Р±РѕР»РµРµ С‚РѕС‡РЅРѕРµ РёР·РјРµСЂРµРЅРёРµ СЂРµР°Р»СЊРЅРѕР№ РЅРµР°РєС‚РёРІРЅРѕСЃС‚Рё РїРѕР»СЊР·РѕРІР°С‚РµР»СЏ (РЅРµ С‚РѕР»СЊРєРѕ РІ РѕРєРЅРµ РїСЂРёР»РѕР¶РµРЅРёСЏ, РЅРѕ Рё СЃРёСЃС‚РµРјРЅРѕ) Рё СѓСЃС‚СЂР°РЅСЏРµС‚ РЅРµРѕР±С…РѕРґРёРјРѕСЃС‚СЊ РІ `NotifyActivity()`.
+- **Anti-recommend text РІ РґРёР°Р»РѕРіРµ РѕР±РЅРѕРІР»РµРЅРёСЏ:** РџСЂРё Р°РІС‚РѕРјР°С‚РёС‡РµСЃРєРѕРј РѕР±РЅР°СЂСѓР¶РµРЅРёРё РѕР±РЅРѕРІР»РµРЅРёСЏ (startup-check) РєРЅРѕРїРєР° В«РћС‚РјРµРЅР°В» РїРµСЂРµРёРјРµРЅРѕРІР°РЅР° РІ В«РћС‚Р»РѕР¶РёС‚СЊВ» СЃ С‚РµРєСЃС‚РѕРј В«РќРµ СЂРµРєРѕРјРµРЅРґСѓРµС‚СЃСЏ РѕС‚РєР»Р°РґС‹РІР°С‚СЊ РѕР±РЅРѕРІР»РµРЅРёРµ РЅР°РґРѕР»РіРѕВ».
+- **Minimized window guard:** Р¤РѕРЅРѕРІР°СЏ РїСЂРѕРІРµСЂРєР° `CheckInBackgroundAsync` С‚РµРїРµСЂСЊ РїСЂРѕРїСѓСЃРєР°РµС‚ РїРѕРєР°Р· toast-СѓРІРµРґРѕРјР»РµРЅРёСЏ, РµСЃР»Рё РіР»Р°РІРЅРѕРµ РѕРєРЅРѕ СЃРІС‘СЂРЅСѓС‚Рѕ вЂ” СѓРІРµРґРѕРјР»РµРЅРёРµ РїРѕСЏРІРёС‚СЃСЏ РїРѕСЃР»Рµ РІРѕСЃСЃС‚Р°РЅРѕРІР»РµРЅРёСЏ РѕРєРЅР°.
+
+### РўРµС…РЅРёС‡РµСЃРєРѕРµ
+
+- `UpdateCheckScheduler`: СѓРґР°Р»С‘РЅ `NotifyActivity()` Рё `_lastActivityTime`; РґРѕР±Р°РІР»РµРЅ `GetSystemIdleTime` callback (С‚РёРї `Func<TimeSpan>`). РўРµСЃС‚С‹ РїРµСЂРµРїРёСЃР°РЅС‹ РЅР° С„РµР№РєРѕРІС‹Р№ `FakeIdle` РІРјРµСЃС‚Рѕ `NotifyActivity`.
+- `UpdateService`: РґРѕР±Р°РІР»РµРЅ P/Invoke `GetLastInputInfo` Рё РїСѓР±Р»РёС‡РЅС‹Р№ `GetIdleTime()`; СѓР±СЂР°РЅР° РІСЃСЏ Р»РѕРіРёРєР° `IsCellEditing`, `CanShowUpdateDialog`, retry-С‚Р°Р№РјРµСЂРѕРІ Рё `OnWindowStateChanged` вЂ” СЃР»РѕР¶РЅРѕСЃС‚СЊ РЅРµ РЅСѓР¶РЅР° РїСЂРё toast-based UX.
+- `MainWindow.xaml.cs`: СѓРґР°Р»РµРЅС‹ `PreviewMouseMove` Рё `PreviewKeyDown` РІС‹Р·РѕРІС‹ `_updateCheckScheduler?.NotifyActivity()`.
+- `DialogService.ShowUpdateAvailable`: РґРѕР±Р°РІР»РµРЅ РїР°СЂР°РјРµС‚СЂ `isAutomatic` СЃ anti-recommend UI.
+- **16 С‚РµСЃС‚РѕРІ** РІ `UpdateCheckSchedulerTests.cs` РѕР±РЅРѕРІР»РµРЅС‹/РїРµСЂРµРїРёСЃР°РЅС‹ РїРѕРґ РЅРѕРІСѓСЋ РјРѕРґРµР»СЊ idle-РґРµС‚РµРєС†РёРё.
+
+---
+
+## 3.39.0 вЂ” 2026-06-29
+
+### РќРѕРІРёРЅРєР°
+
+- **Background auto-update checks** (Variant A РёР· СЃРїРµРєРё `update-notification-rework-spec.md`):
+  - Periodic checks РєР°Р¶РґС‹Рµ 30 РјРёРЅСѓС‚ РѕС‚ РїРѕСЃР»РµРґРЅРµР№ РїСЂРѕРІРµСЂРєРё.
+  - Idle checks РїРѕСЃР»Рµ 10 РјРёРЅСѓС‚ РїСЂРѕСЃС‚РѕСЏ РїРѕР»СЊР·РѕРІР°С‚РµР»СЏ.
+  - Anti-spam throttle: РјРёРЅРёРјСѓРј 2 РјРёРЅСѓС‚С‹ РјРµР¶РґСѓ РґРІСѓРјСЏ СЂРµР°Р»СЊРЅС‹РјРё РїСЂРѕРІРµСЂРєР°РјРё.
+  - Р РµР°Р»РёР·РѕРІР°РЅРѕ РІ РЅРѕРІРѕРј `Services/UpdateCheckScheduler.cs` СЃ pure-Р»РѕРіРёРєРѕР№ `ShouldCheckAt(...)` РґР»СЏ unit-С‚РµСЃС‚РѕРІ.
 - **Persistent update notification toast** (`ToastService.ShowUpdateNotification`):
-  - Показывается при фоновом обнаружении обновления взамен модального диалога.
-  - Action-кнопки `Обновить` / `Позже`; не исчезает сама пока пользователь не выберет.
-  - Click-обработчик корректно работает с `ToastCanvas.IsHitTestVisible="False"`: явно ставит `IsHitTestVisible = true` на toast Border (иначе кнопки молча не получают Click из-за Inheritable DP).
-- `UpdateService.CheckInBackgroundAsync` — фоновая проверка, отличается от стартап-чека тем, что открывает persistent toast вместо модального диалога (стартап — модал по прежнему).
-- Activity-tracking в `MainWindow.xaml.cs`: `PreviewMouseMove` и `PreviewKeyDown` сбрасывают idle-таймер scheduler'а.
+  - РџРѕРєР°Р·С‹РІР°РµС‚СЃСЏ РїСЂРё С„РѕРЅРѕРІРѕРј РѕР±РЅР°СЂСѓР¶РµРЅРёРё РѕР±РЅРѕРІР»РµРЅРёСЏ РІР·Р°РјРµРЅ РјРѕРґР°Р»СЊРЅРѕРіРѕ РґРёР°Р»РѕРіР°.
+  - Action-РєРЅРѕРїРєРё `РћР±РЅРѕРІРёС‚СЊ` / `РџРѕР·Р¶Рµ`; РЅРµ РёСЃС‡РµР·Р°РµС‚ СЃР°РјР° РїРѕРєР° РїРѕР»СЊР·РѕРІР°С‚РµР»СЊ РЅРµ РІС‹Р±РµСЂРµС‚.
+  - Click-РѕР±СЂР°Р±РѕС‚С‡РёРє РєРѕСЂСЂРµРєС‚РЅРѕ СЂР°Р±РѕС‚Р°РµС‚ СЃ `ToastCanvas.IsHitTestVisible="False"`: СЏРІРЅРѕ СЃС‚Р°РІРёС‚ `IsHitTestVisible = true` РЅР° toast Border (РёРЅР°С‡Рµ РєРЅРѕРїРєРё РјРѕР»С‡Р° РЅРµ РїРѕР»СѓС‡Р°СЋС‚ Click РёР·-Р·Р° Inheritable DP).
+- `UpdateService.CheckInBackgroundAsync` вЂ” С„РѕРЅРѕРІР°СЏ РїСЂРѕРІРµСЂРєР°, РѕС‚Р»РёС‡Р°РµС‚СЃСЏ РѕС‚ СЃС‚Р°СЂС‚Р°Рї-С‡РµРєР° С‚РµРј, С‡С‚Рѕ РѕС‚РєСЂС‹РІР°РµС‚ persistent toast РІРјРµСЃС‚Рѕ РјРѕРґР°Р»СЊРЅРѕРіРѕ РґРёР°Р»РѕРіР° (СЃС‚Р°СЂС‚Р°Рї вЂ” РјРѕРґР°Р» РїРѕ РїСЂРµР¶РЅРµРјСѓ).
+- Activity-tracking РІ `MainWindow.xaml.cs`: `PreviewMouseMove` Рё `PreviewKeyDown` СЃР±СЂР°СЃС‹РІР°СЋС‚ idle-С‚Р°Р№РјРµСЂ scheduler'Р°.
 
-### Техническое
+### РўРµС…РЅРёС‡РµСЃРєРѕРµ
 
-- `UpdateService`: добавлено поле `_lastNotifiedVersion` (anti-spam в сессии для notification toast), сбрасывается на успешной установке и при ручном «Обновить» в плашке.
-- `MainWindow.xaml.cs`: scheduler стартует в `Loaded`, останавливается в `Closed`.
-- **20+ новых юнит-тестов** для `UpdateCheckScheduler.ShouldCheckAt` (`UpdateCheckSchedulerTests.cs`): edge-cases `>=`/`<=` gate, throttle/idle/periodic state-machine, activity-reset, `OnCheckDue` SafeInvoke contract.
-
----
-
-## 3.38.0 — 2026-06-28
-
-### Улучшения
-
-- **UI-polish:** `CornerRadius` увеличен с 4 до 7 в `AdditionalKpsControl.xaml`; добавлен `CornerRadius` в `DataGridStyles.xaml` для ячеек и строк — более мягкий и единообразный внешний вид.
-- **XAML-анимация UpdateDownloadBar:** fade-in (200 мс, CubicEase EaseOut) и fade-out (250 мс, CubicEase EaseIn) вынесены в `Storyboard` ресурсы `MainWindow.xaml` (баг #8). `From` для fade-out задаётся динамически из текущего `Opacity` — без визуальных скачков при прерывании.
-
-### Исправления
-
-- **Zero-byte download fix:** `DownloadWithProgressAsync` теперь корректно сообщает 100% прогресс при отсутствии `Content-Length` или нулевом размере ответа — раньше полоска оставалась на 0%.
-
-### Техническое
-
-- **UpdateService тестируемость:** `FetchManifestAsync` и `DownloadWithProgressAsync` теперь принимают опциональный `HttpClient?` — возможность инъекции моков для интеграционных тестов. Паттерн `ownsClient` гарантирует, что внешний `HttpClient` не будет `Dispose`'нут. Добавлено 7 интеграционных тестов (`UpdateServiceIntegrationTests.cs`).
-- **Тесты:** 3 новых теста в `PrintServiceTests.cs` — проверка отображения расчётных размеров Anwis ББ 60 в КП, HTML-экранирование спецсимволов (`&`, `"`, `'`), и конвертация переводов строк в `<br/>` в примечаниях.
+- `UpdateService`: РґРѕР±Р°РІР»РµРЅРѕ РїРѕР»Рµ `_lastNotifiedVersion` (anti-spam РІ СЃРµСЃСЃРёРё РґР»СЏ notification toast), СЃР±СЂР°СЃС‹РІР°РµС‚СЃСЏ РЅР° СѓСЃРїРµС€РЅРѕР№ СѓСЃС‚Р°РЅРѕРІРєРµ Рё РїСЂРё СЂСѓС‡РЅРѕРј В«РћР±РЅРѕРІРёС‚СЊВ» РІ РїР»Р°С€РєРµ.
+- `MainWindow.xaml.cs`: scheduler СЃС‚Р°СЂС‚СѓРµС‚ РІ `Loaded`, РѕСЃС‚Р°РЅР°РІР»РёРІР°РµС‚СЃСЏ РІ `Closed`.
+- **20+ РЅРѕРІС‹С… СЋРЅРёС‚-С‚РµСЃС‚РѕРІ** РґР»СЏ `UpdateCheckScheduler.ShouldCheckAt` (`UpdateCheckSchedulerTests.cs`): edge-cases `>=`/`<=` gate, throttle/idle/periodic state-machine, activity-reset, `OnCheckDue` SafeInvoke contract.
 
 ---
 
-## 3.37.2 — 2026-06-27
+## 3.38.0 вЂ” 2026-06-28
 
-### Исправления
+### РЈР»СѓС‡С€РµРЅРёСЏ
 
-- **SelectAll race fix:** обработчик `SelectAll_OnFocus` теперь синхронный (`tb.SelectAll()` без `BeginInvoke`) — при клике в ячейку Ширины/Высоты текст выделяется до первого нажатия клавиши, ввод заменяет значение, а не дописывает. Деталь см. `docs/arc/GOTCHAS.md#14`.
-- **Mid-typing formula clamp fix:** Ширина и Высота переключены с `UpdateSourceTrigger=PropertyChanged` на `LostFocus` — формула Anwis (напр. `max(0, raw−30)`) больше не перехватывает значение на каждом нажатии, набор идёт свободно. Деталь см. `docs/arc/GOTCHAS.md#15`.
-- **DeleteRowButton padding fix:** `Padding="4,0"` → `Padding="5"` — кнопка удаления строки теперь 20×20px, красный hover-фон с `CornerRadius=5` выглядит пропорционально, а не сплюснуто.
+- **UI-polish:** `CornerRadius` СѓРІРµР»РёС‡РµРЅ СЃ 4 РґРѕ 7 РІ `AdditionalKpsControl.xaml`; РґРѕР±Р°РІР»РµРЅ `CornerRadius` РІ `DataGridStyles.xaml` РґР»СЏ СЏС‡РµРµРє Рё СЃС‚СЂРѕРє вЂ” Р±РѕР»РµРµ РјСЏРіРєРёР№ Рё РµРґРёРЅРѕРѕР±СЂР°Р·РЅС‹Р№ РІРЅРµС€РЅРёР№ РІРёРґ.
+- **XAML-Р°РЅРёРјР°С†РёСЏ UpdateDownloadBar:** fade-in (200 РјСЃ, CubicEase EaseOut) Рё fade-out (250 РјСЃ, CubicEase EaseIn) РІС‹РЅРµСЃРµРЅС‹ РІ `Storyboard` СЂРµСЃСѓСЂСЃС‹ `MainWindow.xaml` (Р±Р°Рі #8). `From` РґР»СЏ fade-out Р·Р°РґР°С‘С‚СЃСЏ РґРёРЅР°РјРёС‡РµСЃРєРё РёР· С‚РµРєСѓС‰РµРіРѕ `Opacity` вЂ” Р±РµР· РІРёР·СѓР°Р»СЊРЅС‹С… СЃРєР°С‡РєРѕРІ РїСЂРё РїСЂРµСЂС‹РІР°РЅРёРё.
 
-### Техническое
+### РСЃРїСЂР°РІР»РµРЅРёСЏ
 
-- **UpdateLog sort-in-code:** `AllNewestFirst()` и `GetChangesSince()` теперь сортируют записи по дате/версии в коде (`.OrderByDescending`/`.OrderBy`) — порядок записей в JSON-файле больше не имеет значения. Устраняет повторяющийся баг с ручным prepend'ом записей при релизе.
-- **`ParseVersion` диагностика:** добавлен `Debug.WriteLine` при битой строке версии в JSON — опечатка видна в отладчике сразу, а не через молчаливый fallback.
-- 2 регрессионных теста в `DataGridBindingsTests.cs` перепрофилированы: `PropertyChanged` → `LostFocus` для Ширины/Высоты.
+- **Zero-byte download fix:** `DownloadWithProgressAsync` С‚РµРїРµСЂСЊ РєРѕСЂСЂРµРєС‚РЅРѕ СЃРѕРѕР±С‰Р°РµС‚ 100% РїСЂРѕРіСЂРµСЃСЃ РїСЂРё РѕС‚СЃСѓС‚СЃС‚РІРёРё `Content-Length` РёР»Рё РЅСѓР»РµРІРѕРј СЂР°Р·РјРµСЂРµ РѕС‚РІРµС‚Р° вЂ” СЂР°РЅСЊС€Рµ РїРѕР»РѕСЃРєР° РѕСЃС‚Р°РІР°Р»Р°СЃСЊ РЅР° 0%.
 
----
+### РўРµС…РЅРёС‡РµСЃРєРѕРµ
 
-## 3.37.1 — 2026-06-27
-
-### Исправления
-
-- **Монтаж с Quantity > 1:** в режимах «Без монтажа» и «В конструкцию» deduction теперь умножается на `Quantity` (per piece), а не списывается один раз. Например: Anwis 1000×1000 × 3 шт. × режим «В конструкцию» с вычетом 500 ₽ → итоговый вычет 1500 ₽ (а не 500 ₽). Backward-compat для Q=1. Деталь см. `docs/arc/GOTCHAS.md#12` и `CALCULATION_TEST_CASES.md` Case 16.
-- **Уточнён tooltip монтажа** для режимов 1/2: теперь явно показывает `руб./шт. × Кол-во`, чтобы пользователь видел, что введённая сумма применяется за каждую штуку.
-- **Автоширина колонки «Цена» в DataGrid:** колонка «Цена» в таблице «Расчёт» (и «Цена, руб.» в tab «Цены») не успевала расширяться при наборе — `Width="Auto"` рекомпьютил ширину по старому значению `Price` (binding имел `UpdateSourceTrigger="LostFocus"`). Теперь `Price` обновляется по `PropertyChanged`, и колонка подстраивается под набор в реальном времени. Деталь см. `docs/arc/GOTCHAS.md#13`.
-
-### Техническое
-
-- `InstallationToolTip` дополнен суффиксом `руб./шт. × Кол-во` для modes 1/2.
-- `UpdateSourceTrigger` в `OrderItemsControl.xaml` (Цена) и `PricesControl.xaml` (Цена, руб.) переключён с `LostFocus` на `PropertyChanged`.
-- Добавлено 8 новых юнит-тестов на `TotalWithDeduction × Quantity` (включая linear-scaling теорию Q∈{1,2,5}, clamp-to-0 для высокого Q, regression для «В конструкцию» с Q=3).
-- Добавлен `DataGridBindingsTests.cs` (5 regression-тестов через grep XAML-binding-triggers) — guardrails на правильный `UpdateSourceTrigger` для всех редактируемых колонок с `Width="Auto"`.
+- **UpdateService С‚РµСЃС‚РёСЂСѓРµРјРѕСЃС‚СЊ:** `FetchManifestAsync` Рё `DownloadWithProgressAsync` С‚РµРїРµСЂСЊ РїСЂРёРЅРёРјР°СЋС‚ РѕРїС†РёРѕРЅР°Р»СЊРЅС‹Р№ `HttpClient?` вЂ” РІРѕР·РјРѕР¶РЅРѕСЃС‚СЊ РёРЅСЉРµРєС†РёРё РјРѕРєРѕРІ РґР»СЏ РёРЅС‚РµРіСЂР°С†РёРѕРЅРЅС‹С… С‚РµСЃС‚РѕРІ. РџР°С‚С‚РµСЂРЅ `ownsClient` РіР°СЂР°РЅС‚РёСЂСѓРµС‚, С‡С‚Рѕ РІРЅРµС€РЅРёР№ `HttpClient` РЅРµ Р±СѓРґРµС‚ `Dispose`'РЅСѓС‚. Р”РѕР±Р°РІР»РµРЅРѕ 7 РёРЅС‚РµРіСЂР°С†РёРѕРЅРЅС‹С… С‚РµСЃС‚РѕРІ (`UpdateServiceIntegrationTests.cs`).
+- **РўРµСЃС‚С‹:** 3 РЅРѕРІС‹С… С‚РµСЃС‚Р° РІ `PrintServiceTests.cs` вЂ” РїСЂРѕРІРµСЂРєР° РѕС‚РѕР±СЂР°Р¶РµРЅРёСЏ СЂР°СЃС‡С‘С‚РЅС‹С… СЂР°Р·РјРµСЂРѕРІ Anwis Р‘Р‘ 60 РІ РљРџ, HTML-СЌРєСЂР°РЅРёСЂРѕРІР°РЅРёРµ СЃРїРµС†СЃРёРјРІРѕР»РѕРІ (`&`, `"`, `'`), Рё РєРѕРЅРІРµСЂС‚Р°С†РёСЏ РїРµСЂРµРІРѕРґРѕРІ СЃС‚СЂРѕРє РІ `<br/>` РІ РїСЂРёРјРµС‡Р°РЅРёСЏС….
 
 ---
 
-## 3.37.0 — 2026-06-27
+## 3.37.2 вЂ” 2026-06-27
 
-### Для пользователей
+### РСЃРїСЂР°РІР»РµРЅРёСЏ
 
-- **Обновление уведомлений — полный rework:** диалог «Доступно обновление» теперь показывает список изменений (changelog) с момента установленной версии. TitleBar получил плавно появляющуюся/исчезающую полоску прогресса скачивания (fade-in 200 мс / fade-out 250 мс). Убран старый прогресс-панель из ActionBar.
-- **Toast-фильтрация:** при автоматической проверке обновлений при старте программы не показываются тосты «Обновлений нет» — только при ручной проверке через меню.
+- **SelectAll race fix:** РѕР±СЂР°Р±РѕС‚С‡РёРє `SelectAll_OnFocus` С‚РµРїРµСЂСЊ СЃРёРЅС…СЂРѕРЅРЅС‹Р№ (`tb.SelectAll()` Р±РµР· `BeginInvoke`) вЂ” РїСЂРё РєР»РёРєРµ РІ СЏС‡РµР№РєСѓ РЁРёСЂРёРЅС‹/Р’С‹СЃРѕС‚С‹ С‚РµРєСЃС‚ РІС‹РґРµР»СЏРµС‚СЃСЏ РґРѕ РїРµСЂРІРѕРіРѕ РЅР°Р¶Р°С‚РёСЏ РєР»Р°РІРёС€Рё, РІРІРѕРґ Р·Р°РјРµРЅСЏРµС‚ Р·РЅР°С‡РµРЅРёРµ, Р° РЅРµ РґРѕРїРёСЃС‹РІР°РµС‚. Р”РµС‚Р°Р»СЊ СЃРј. `docs/arc/GOTCHAS.md#14`.
+- **Mid-typing formula clamp fix:** РЁРёСЂРёРЅР° Рё Р’С‹СЃРѕС‚Р° РїРµСЂРµРєР»СЋС‡РµРЅС‹ СЃ `UpdateSourceTrigger=PropertyChanged` РЅР° `LostFocus` вЂ” С„РѕСЂРјСѓР»Р° Anwis (РЅР°РїСЂ. `max(0, rawв€’30)`) Р±РѕР»СЊС€Рµ РЅРµ РїРµСЂРµС…РІР°С‚С‹РІР°РµС‚ Р·РЅР°С‡РµРЅРёРµ РЅР° РєР°Р¶РґРѕРј РЅР°Р¶Р°С‚РёРё, РЅР°Р±РѕСЂ РёРґС‘С‚ СЃРІРѕР±РѕРґРЅРѕ. Р”РµС‚Р°Р»СЊ СЃРј. `docs/arc/GOTCHAS.md#15`.
+- **DeleteRowButton padding fix:** `Padding="4,0"` в†’ `Padding="5"` вЂ” РєРЅРѕРїРєР° СѓРґР°Р»РµРЅРёСЏ СЃС‚СЂРѕРєРё С‚РµРїРµСЂСЊ 20Г—20px, РєСЂР°СЃРЅС‹Р№ hover-С„РѕРЅ СЃ `CornerRadius=5` РІС‹РіР»СЏРґРёС‚ РїСЂРѕРїРѕСЂС†РёРѕРЅР°Р»СЊРЅРѕ, Р° РЅРµ СЃРїР»СЋСЃРЅСѓС‚Рѕ.
 
-### Техническое
+### РўРµС…РЅРёС‡РµСЃРєРѕРµ
 
-- **UpdateService:** логика проверки версии извлечена в чистый `internal static GetAvailableUpdate` — тестируемая без UI-зависимостей. Добавлен флаг `isAutomatic` для различения авто/ручной проверки.
-- **8 новых юнит-тестов** для `UpdateService` (6 на `GetAvailableUpdate` + 2 на `HasPendingUpdate`).
-- **A.R.C. v4** — SYMBOL_INDEX.md (60 классов, 16 модулей), INTENTS.md (routing фраз на файлы), `gensymbols.ps1`, `arc-check.ps1`.
-
----
-
-## 3.36.2 — 2026-06-25
-
-### Улучшения
-
-- **Брус, Пояс, Доставка — только сумма:** для этих товаров скрыты колонки «Кол-во», «Площ./Дл.» в таблице расчёта и отключены поля «Кол-во», «Ширина», «Высота» в панели быстрого ввода. Превью показывает только цену.
-
-### Исправления
-
-- Исправлена кодировка UTF-8 BOM в PowerShell-скриптах (`validate-docs.ps1`, `what-to-update.ps1`, `render-matrix.ps1`, `generate-update-log.ps1`) — кириллица в regex парсилась некорректно.
-- Восстановлен `update-log.json` из git (был обрезан до 3 записей); добавлена запись 3.36.1.
-- Исправлено 6 ошибок в `UpdateLogTests` и `ManualChecklistTests`.
+- **UpdateLog sort-in-code:** `AllNewestFirst()` Рё `GetChangesSince()` С‚РµРїРµСЂСЊ СЃРѕСЂС‚РёСЂСѓСЋС‚ Р·Р°РїРёСЃРё РїРѕ РґР°С‚Рµ/РІРµСЂСЃРёРё РІ РєРѕРґРµ (`.OrderByDescending`/`.OrderBy`) вЂ” РїРѕСЂСЏРґРѕРє Р·Р°РїРёСЃРµР№ РІ JSON-С„Р°Р№Р»Рµ Р±РѕР»СЊС€Рµ РЅРµ РёРјРµРµС‚ Р·РЅР°С‡РµРЅРёСЏ. РЈСЃС‚СЂР°РЅСЏРµС‚ РїРѕРІС‚РѕСЂСЏСЋС‰РёР№СЃСЏ Р±Р°Рі СЃ СЂСѓС‡РЅС‹Рј prepend'РѕРј Р·Р°РїРёСЃРµР№ РїСЂРё СЂРµР»РёР·Рµ.
+- **`ParseVersion` РґРёР°РіРЅРѕСЃС‚РёРєР°:** РґРѕР±Р°РІР»РµРЅ `Debug.WriteLine` РїСЂРё Р±РёС‚РѕР№ СЃС‚СЂРѕРєРµ РІРµСЂСЃРёРё РІ JSON вЂ” РѕРїРµС‡Р°С‚РєР° РІРёРґРЅР° РІ РѕС‚Р»Р°РґС‡РёРєРµ СЃСЂР°Р·Сѓ, Р° РЅРµ С‡РµСЂРµР· РјРѕР»С‡Р°Р»РёРІС‹Р№ fallback.
+- 2 СЂРµРіСЂРµСЃСЃРёРѕРЅРЅС‹С… С‚РµСЃС‚Р° РІ `DataGridBindingsTests.cs` РїРµСЂРµРїСЂРѕС„РёР»РёСЂРѕРІР°РЅС‹: `PropertyChanged` в†’ `LostFocus` РґР»СЏ РЁРёСЂРёРЅС‹/Р’С‹СЃРѕС‚С‹.
 
 ---
 
-## 3.36.1 — 2026-06-24
+## 3.37.1 вЂ” 2026-06-27
 
-### Техническое
+### РСЃРїСЂР°РІР»РµРЅРёСЏ
 
-- **A.R.C. upgrade v3** — полная автоматизация документирования (0 ручных операций для агента):
-  - `docs/arc/documentation-matrix.json` — машиночитаемый источник матрицы «файл → документы».
-  - `what-to-update.ps1` — скрипт: принимает `git diff --name-only`, выводит список docs/arc файлов к обновлению. Фаза Document стала 100% механической.
-  - `generate-update-log.ps1` — автогенерация `update-log.json` из `CHANGELOG.md`. Убирает ручную синхронизацию при релизе.
-  - `render-matrix.ps1` — генерация `DOCUMENTATION_MATRIX.md` из JSON.
-  - `validate-docs.ps1` расширен до 8 проверок: git-based Last verified (check 7), staleness detection (check 8).
-  - `PROMPTS.md` — добавлен Prompt 7 (self-check после изменений: git diff → what-to-update → validate-docs).
-  - `AGENTS.md` — добавлен inline routing (таблица в самом wrapper'е — агент может не читать CHEATSHEET для routing).
-  - `CHEATSHEET.md` — добавлено правило #17 (what-to-update → validate-docs) и секция «Инструменты автоматизации».
+- **РњРѕРЅС‚Р°Р¶ СЃ Quantity > 1:** РІ СЂРµР¶РёРјР°С… В«Р‘РµР· РјРѕРЅС‚Р°Р¶Р°В» Рё В«Р’ РєРѕРЅСЃС‚СЂСѓРєС†РёСЋВ» deduction С‚РµРїРµСЂСЊ СѓРјРЅРѕР¶Р°РµС‚СЃСЏ РЅР° `Quantity` (per piece), Р° РЅРµ СЃРїРёСЃС‹РІР°РµС‚СЃСЏ РѕРґРёРЅ СЂР°Р·. РќР°РїСЂРёРјРµСЂ: Anwis 1000Г—1000 Г— 3 С€С‚. Г— СЂРµР¶РёРј В«Р’ РєРѕРЅСЃС‚СЂСѓРєС†РёСЋВ» СЃ РІС‹С‡РµС‚РѕРј 500 в‚Ѕ в†’ РёС‚РѕРіРѕРІС‹Р№ РІС‹С‡РµС‚ 1500 в‚Ѕ (Р° РЅРµ 500 в‚Ѕ). Backward-compat РґР»СЏ Q=1. Р”РµС‚Р°Р»СЊ СЃРј. `docs/arc/GOTCHAS.md#12` Рё `CALCULATION_TEST_CASES.md` Case 16.
+- **РЈС‚РѕС‡РЅС‘РЅ tooltip РјРѕРЅС‚Р°Р¶Р°** РґР»СЏ СЂРµР¶РёРјРѕРІ 1/2: С‚РµРїРµСЂСЊ СЏРІРЅРѕ РїРѕРєР°Р·С‹РІР°РµС‚ `СЂСѓР±./С€С‚. Г— РљРѕР»-РІРѕ`, С‡С‚РѕР±С‹ РїРѕР»СЊР·РѕРІР°С‚РµР»СЊ РІРёРґРµР», С‡С‚Рѕ РІРІРµРґС‘РЅРЅР°СЏ СЃСѓРјРјР° РїСЂРёРјРµРЅСЏРµС‚СЃСЏ Р·Р° РєР°Р¶РґСѓСЋ С€С‚СѓРєСѓ.
+- **РђРІС‚РѕС€РёСЂРёРЅР° РєРѕР»РѕРЅРєРё В«Р¦РµРЅР°В» РІ DataGrid:** РєРѕР»РѕРЅРєР° В«Р¦РµРЅР°В» РІ С‚Р°Р±Р»РёС†Рµ В«Р Р°СЃС‡С‘С‚В» (Рё В«Р¦РµРЅР°, СЂСѓР±.В» РІ tab В«Р¦РµРЅС‹В») РЅРµ СѓСЃРїРµРІР°Р»Р° СЂР°СЃС€РёСЂСЏС‚СЊСЃСЏ РїСЂРё РЅР°Р±РѕСЂРµ вЂ” `Width="Auto"` СЂРµРєРѕРјРїСЊСЋС‚РёР» С€РёСЂРёРЅСѓ РїРѕ СЃС‚Р°СЂРѕРјСѓ Р·РЅР°С‡РµРЅРёСЋ `Price` (binding РёРјРµР» `UpdateSourceTrigger="LostFocus"`). РўРµРїРµСЂСЊ `Price` РѕР±РЅРѕРІР»СЏРµС‚СЃСЏ РїРѕ `PropertyChanged`, Рё РєРѕР»РѕРЅРєР° РїРѕРґСЃС‚СЂР°РёРІР°РµС‚СЃСЏ РїРѕРґ РЅР°Р±РѕСЂ РІ СЂРµР°Р»СЊРЅРѕРј РІСЂРµРјРµРЅРё. Р”РµС‚Р°Р»СЊ СЃРј. `docs/arc/GOTCHAS.md#13`.
 
-- **A.R.C. upgrade v2** — CHEATSHEET.md, DOCUMENTATION_MATRIX.md, PROMPTS.md, гранулярный routing, validate-docs.ps1.
+### РўРµС…РЅРёС‡РµСЃРєРѕРµ
+
+- `InstallationToolTip` РґРѕРїРѕР»РЅРµРЅ СЃСѓС„С„РёРєСЃРѕРј `СЂСѓР±./С€С‚. Г— РљРѕР»-РІРѕ` РґР»СЏ modes 1/2.
+- `UpdateSourceTrigger` РІ `OrderItemsControl.xaml` (Р¦РµРЅР°) Рё `PricesControl.xaml` (Р¦РµРЅР°, СЂСѓР±.) РїРµСЂРµРєР»СЋС‡С‘РЅ СЃ `LostFocus` РЅР° `PropertyChanged`.
+- Р”РѕР±Р°РІР»РµРЅРѕ 8 РЅРѕРІС‹С… СЋРЅРёС‚-С‚РµСЃС‚РѕРІ РЅР° `TotalWithDeduction Г— Quantity` (РІРєР»СЋС‡Р°СЏ linear-scaling С‚РµРѕСЂРёСЋ Qв€€{1,2,5}, clamp-to-0 РґР»СЏ РІС‹СЃРѕРєРѕРіРѕ Q, regression РґР»СЏ В«Р’ РєРѕРЅСЃС‚СЂСѓРєС†РёСЋВ» СЃ Q=3).
+- Р”РѕР±Р°РІР»РµРЅ `DataGridBindingsTests.cs` (5 regression-С‚РµСЃС‚РѕРІ С‡РµСЂРµР· grep XAML-binding-triggers) вЂ” guardrails РЅР° РїСЂР°РІРёР»СЊРЅС‹Р№ `UpdateSourceTrigger` РґР»СЏ РІСЃРµС… СЂРµРґР°РєС‚РёСЂСѓРµРјС‹С… РєРѕР»РѕРЅРѕРє СЃ `Width="Auto"`.
 
 ---
 
-## 3.36.0 — 2026-06-24
+## 3.37.0 вЂ” 2026-06-27
 
-### Для пользователей
+### Р”Р»СЏ РїРѕР»СЊР·РѕРІР°С‚РµР»РµР№
 
-- **Копирование заказов:** добавлен пункт «Копировать» в контекстном меню списка «Заказы». Создаёт полную копию заказа с новым номером (например, «2-8» → «2-8.1»), статусом «Новый» и актуальной датой.
+- **РћР±РЅРѕРІР»РµРЅРёРµ СѓРІРµРґРѕРјР»РµРЅРёР№ вЂ” РїРѕР»РЅС‹Р№ rework:** РґРёР°Р»РѕРі В«Р”РѕСЃС‚СѓРїРЅРѕ РѕР±РЅРѕРІР»РµРЅРёРµВ» С‚РµРїРµСЂСЊ РїРѕРєР°Р·С‹РІР°РµС‚ СЃРїРёСЃРѕРє РёР·РјРµРЅРµРЅРёР№ (changelog) СЃ РјРѕРјРµРЅС‚Р° СѓСЃС‚Р°РЅРѕРІР»РµРЅРЅРѕР№ РІРµСЂСЃРёРё. TitleBar РїРѕР»СѓС‡РёР» РїР»Р°РІРЅРѕ РїРѕСЏРІР»СЏСЋС‰СѓСЋСЃСЏ/РёСЃС‡РµР·Р°СЋС‰СѓСЋ РїРѕР»РѕСЃРєСѓ РїСЂРѕРіСЂРµСЃСЃР° СЃРєР°С‡РёРІР°РЅРёСЏ (fade-in 200 РјСЃ / fade-out 250 РјСЃ). РЈР±СЂР°РЅ СЃС‚Р°СЂС‹Р№ РїСЂРѕРіСЂРµСЃСЃ-РїР°РЅРµР»СЊ РёР· ActionBar.
+- **Toast-С„РёР»СЊС‚СЂР°С†РёСЏ:** РїСЂРё Р°РІС‚РѕРјР°С‚РёС‡РµСЃРєРѕР№ РїСЂРѕРІРµСЂРєРµ РѕР±РЅРѕРІР»РµРЅРёР№ РїСЂРё СЃС‚Р°СЂС‚Рµ РїСЂРѕРіСЂР°РјРјС‹ РЅРµ РїРѕРєР°Р·С‹РІР°СЋС‚СЃСЏ С‚РѕСЃС‚С‹ В«РћР±РЅРѕРІР»РµРЅРёР№ РЅРµС‚В» вЂ” С‚РѕР»СЊРєРѕ РїСЂРё СЂСѓС‡РЅРѕР№ РїСЂРѕРІРµСЂРєРµ С‡РµСЂРµР· РјРµРЅСЋ.
 
-### Исправления
+### РўРµС…РЅРёС‡РµСЃРєРѕРµ
 
-- Исправлен XML-комментарий `InstallationSurcharge` в `OrderItem.Installation.cs`: `Default 0 ₽` → `Default 500 ₽` (соответствует коду).
-- Исправлен pre-existing дрифт версии в тесте `UpdateLogTests.AllNewestFirst_FirstItemIsNewest` (ожидал 3.34.5, теперь 3.35.0).
+- **UpdateService:** Р»РѕРіРёРєР° РїСЂРѕРІРµСЂРєРё РІРµСЂСЃРёРё РёР·РІР»РµС‡РµРЅР° РІ С‡РёСЃС‚С‹Р№ `internal static GetAvailableUpdate` вЂ” С‚РµСЃС‚РёСЂСѓРµРјР°СЏ Р±РµР· UI-Р·Р°РІРёСЃРёРјРѕСЃС‚РµР№. Р”РѕР±Р°РІР»РµРЅ С„Р»Р°Рі `isAutomatic` РґР»СЏ СЂР°Р·Р»РёС‡РµРЅРёСЏ Р°РІС‚Рѕ/СЂСѓС‡РЅРѕР№ РїСЂРѕРІРµСЂРєРё.
+- **8 РЅРѕРІС‹С… СЋРЅРёС‚-С‚РµСЃС‚РѕРІ** РґР»СЏ `UpdateService` (6 РЅР° `GetAvailableUpdate` + 2 РЅР° `HasPendingUpdate`).
+- **A.R.C. v4** вЂ” SYMBOL_INDEX.md (60 РєР»Р°СЃСЃРѕРІ, 16 РјРѕРґСѓР»РµР№), INTENTS.md (routing С„СЂР°Р· РЅР° С„Р°Р№Р»С‹), `gensymbols.ps1`, `arc-check.ps1`.
 
-### Техническое
+---
 
-- **GenerateCopyContractNumber** перенесён из `MainWindow.Orders.cs` в `OrderStorageService.cs`.
-- Добавлено **11 тестов**.
-- Инициализирована система A.R.C.
+## 3.36.2 вЂ” 2026-06-25
+
+### РЈР»СѓС‡С€РµРЅРёСЏ
+
+- **Р‘СЂСѓСЃ, РџРѕСЏСЃ, Р”РѕСЃС‚Р°РІРєР° вЂ” С‚РѕР»СЊРєРѕ СЃСѓРјРјР°:** РґР»СЏ СЌС‚РёС… С‚РѕРІР°СЂРѕРІ СЃРєСЂС‹С‚С‹ РєРѕР»РѕРЅРєРё В«РљРѕР»-РІРѕВ», В«РџР»РѕС‰./Р”Р».В» РІ С‚Р°Р±Р»РёС†Рµ СЂР°СЃС‡С‘С‚Р° Рё РѕС‚РєР»СЋС‡РµРЅС‹ РїРѕР»СЏ В«РљРѕР»-РІРѕВ», В«РЁРёСЂРёРЅР°В», В«Р’С‹СЃРѕС‚Р°В» РІ РїР°РЅРµР»Рё Р±С‹СЃС‚СЂРѕРіРѕ РІРІРѕРґР°. РџСЂРµРІСЊСЋ РїРѕРєР°Р·С‹РІР°РµС‚ С‚РѕР»СЊРєРѕ С†РµРЅСѓ.
+
+### РСЃРїСЂР°РІР»РµРЅРёСЏ
+
+- РСЃРїСЂР°РІР»РµРЅР° РєРѕРґРёСЂРѕРІРєР° UTF-8 BOM РІ PowerShell-СЃРєСЂРёРїС‚Р°С… (`validate-docs.ps1`, `what-to-update.ps1`, `render-matrix.ps1`, `generate-update-log.ps1`) вЂ” РєРёСЂРёР»Р»РёС†Р° РІ regex РїР°СЂСЃРёР»Р°СЃСЊ РЅРµРєРѕСЂСЂРµРєС‚РЅРѕ.
+- Р’РѕСЃСЃС‚Р°РЅРѕРІР»РµРЅ `update-log.json` РёР· git (Р±С‹Р» РѕР±СЂРµР·Р°РЅ РґРѕ 3 Р·Р°РїРёСЃРµР№); РґРѕР±Р°РІР»РµРЅР° Р·Р°РїРёСЃСЊ 3.36.1.
+- РСЃРїСЂР°РІР»РµРЅРѕ 6 РѕС€РёР±РѕРє РІ `UpdateLogTests` Рё `ManualChecklistTests`.
+
+---
+
+## 3.36.1 вЂ” 2026-06-24
+
+### РўРµС…РЅРёС‡РµСЃРєРѕРµ
+
+- **A.R.C. upgrade v3** вЂ” РїРѕР»РЅР°СЏ Р°РІС‚РѕРјР°С‚РёР·Р°С†РёСЏ РґРѕРєСѓРјРµРЅС‚РёСЂРѕРІР°РЅРёСЏ (0 СЂСѓС‡РЅС‹С… РѕРїРµСЂР°С†РёР№ РґР»СЏ Р°РіРµРЅС‚Р°):
+  - `docs/arc/documentation-matrix.json` вЂ” РјР°С€РёРЅРѕС‡РёС‚Р°РµРјС‹Р№ РёСЃС‚РѕС‡РЅРёРє РјР°С‚СЂРёС†С‹ В«С„Р°Р№Р» в†’ РґРѕРєСѓРјРµРЅС‚С‹В».
+  - `what-to-update.ps1` вЂ” СЃРєСЂРёРїС‚: РїСЂРёРЅРёРјР°РµС‚ `git diff --name-only`, РІС‹РІРѕРґРёС‚ СЃРїРёСЃРѕРє docs/arc С„Р°Р№Р»РѕРІ Рє РѕР±РЅРѕРІР»РµРЅРёСЋ. Р¤Р°Р·Р° Document СЃС‚Р°Р»Р° 100% РјРµС…Р°РЅРёС‡РµСЃРєРѕР№.
+  - `generate-update-log.ps1` вЂ” Р°РІС‚РѕРіРµРЅРµСЂР°С†РёСЏ `update-log.json` РёР· `CHANGELOG.md`. РЈР±РёСЂР°РµС‚ СЂСѓС‡РЅСѓСЋ СЃРёРЅС…СЂРѕРЅРёР·Р°С†РёСЋ РїСЂРё СЂРµР»РёР·Рµ.
+  - `render-matrix.ps1` вЂ” РіРµРЅРµСЂР°С†РёСЏ `DOCUMENTATION_MATRIX.md` РёР· JSON.
+  - `validate-docs.ps1` СЂР°СЃС€РёСЂРµРЅ РґРѕ 8 РїСЂРѕРІРµСЂРѕРє: git-based Last verified (check 7), staleness detection (check 8).
+  - `PROMPTS.md` вЂ” РґРѕР±Р°РІР»РµРЅ Prompt 7 (self-check РїРѕСЃР»Рµ РёР·РјРµРЅРµРЅРёР№: git diff в†’ what-to-update в†’ validate-docs).
+  - `AGENTS.md` вЂ” РґРѕР±Р°РІР»РµРЅ inline routing (С‚Р°Р±Р»РёС†Р° РІ СЃР°РјРѕРј wrapper'Рµ вЂ” Р°РіРµРЅС‚ РјРѕР¶РµС‚ РЅРµ С‡РёС‚Р°С‚СЊ CHEATSHEET РґР»СЏ routing).
+  - `CHEATSHEET.md` вЂ” РґРѕР±Р°РІР»РµРЅРѕ РїСЂР°РІРёР»Рѕ #17 (what-to-update в†’ validate-docs) Рё СЃРµРєС†РёСЏ В«РРЅСЃС‚СЂСѓРјРµРЅС‚С‹ Р°РІС‚РѕРјР°С‚РёР·Р°С†РёРёВ».
+
+- **A.R.C. upgrade v2** вЂ” CHEATSHEET.md, DOCUMENTATION_MATRIX.md, PROMPTS.md, РіСЂР°РЅСѓР»СЏСЂРЅС‹Р№ routing, validate-docs.ps1.
+
+---
+
+## 3.36.0 вЂ” 2026-06-24
+
+### Р”Р»СЏ РїРѕР»СЊР·РѕРІР°С‚РµР»РµР№
+
+- **РљРѕРїРёСЂРѕРІР°РЅРёРµ Р·Р°РєР°Р·РѕРІ:** РґРѕР±Р°РІР»РµРЅ РїСѓРЅРєС‚ В«РљРѕРїРёСЂРѕРІР°С‚СЊВ» РІ РєРѕРЅС‚РµРєСЃС‚РЅРѕРј РјРµРЅСЋ СЃРїРёСЃРєР° В«Р—Р°РєР°Р·С‹В». РЎРѕР·РґР°С‘С‚ РїРѕР»РЅСѓСЋ РєРѕРїРёСЋ Р·Р°РєР°Р·Р° СЃ РЅРѕРІС‹Рј РЅРѕРјРµСЂРѕРј (РЅР°РїСЂРёРјРµСЂ, В«2-8В» в†’ В«2-8.1В»), СЃС‚Р°С‚СѓСЃРѕРј В«РќРѕРІС‹Р№В» Рё Р°РєС‚СѓР°Р»СЊРЅРѕР№ РґР°С‚РѕР№.
+
+### РСЃРїСЂР°РІР»РµРЅРёСЏ
+
+- РСЃРїСЂР°РІР»РµРЅ XML-РєРѕРјРјРµРЅС‚Р°СЂРёР№ `InstallationSurcharge` РІ `OrderItem.Installation.cs`: `Default 0 в‚Ѕ` в†’ `Default 500 в‚Ѕ` (СЃРѕРѕС‚РІРµС‚СЃС‚РІСѓРµС‚ РєРѕРґСѓ).
+- РСЃРїСЂР°РІР»РµРЅ pre-existing РґСЂРёС„С‚ РІРµСЂСЃРёРё РІ С‚РµСЃС‚Рµ `UpdateLogTests.AllNewestFirst_FirstItemIsNewest` (РѕР¶РёРґР°Р» 3.34.5, С‚РµРїРµСЂСЊ 3.35.0).
+
+### РўРµС…РЅРёС‡РµСЃРєРѕРµ
+
+- **GenerateCopyContractNumber** РїРµСЂРµРЅРµСЃС‘РЅ РёР· `MainWindow.Orders.cs` РІ `OrderStorageService.cs`.
+- Р”РѕР±Р°РІР»РµРЅРѕ **11 С‚РµСЃС‚РѕРІ**.
+- РРЅРёС†РёР°Р»РёР·РёСЂРѕРІР°РЅР° СЃРёСЃС‚РµРјР° A.R.C.
 - **Multi-agent control: portability migration.**
 
 ---
 
-## 3.35.0 — 2026-06-23
+## 3.35.0 вЂ” 2026-06-23
 
-### Исправления
+### РСЃРїСЂР°РІР»РµРЅРёСЏ
 
-- Полный фикс утечки формул Anwis на не-Anwis товары.
+- РџРѕР»РЅС‹Р№ С„РёРєСЃ СѓС‚РµС‡РєРё С„РѕСЂРјСѓР» Anwis РЅР° РЅРµ-Anwis С‚РѕРІР°СЂС‹.
 
 ---
 
-*Полная история релизов доступна в `releases.json` и `MosquitoNetCalculator/Resources/update-log.json`.*
+*РџРѕР»РЅР°СЏ РёСЃС‚РѕСЂРёСЏ СЂРµР»РёР·РѕРІ РґРѕСЃС‚СѓРїРЅР° РІ `releases.json` Рё `MosquitoNetCalculator/Resources/update-log.json`.*
+

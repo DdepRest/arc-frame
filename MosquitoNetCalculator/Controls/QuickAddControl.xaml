@@ -27,11 +27,13 @@
             BorderBrush="{DynamicResource Border}" BorderThickness="1"
             Style="{DynamicResource Card}" Opacity="0">
         <StackPanel>
-            <TextBlock Text="Добавить позицию"
-                       FontSize="12" FontWeight="SemiBold"
-                       Foreground="{DynamicResource TextPrimary}" Margin="0,0,0,8" Opacity="0.85"/>
+            <!-- Header: title + keyboard hints -->
+            <Grid Margin="0,0,0,8">
+                <TextBlock Grid.Column="0" Text="Добавить позицию" FontSize="12" FontWeight="SemiBold"
+                           Foreground="{DynamicResource TextPrimary}" VerticalAlignment="Center" Opacity="0.85"/>
+            </Grid>
 
-            <!-- Search row with autocomplete dropdown -->
+            <!-- Search row -->
             <Grid Margin="0,0,0,10">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="Auto"/>
@@ -40,35 +42,21 @@
                 <TextBlock Grid.Column="0" Text="Поиск" VerticalAlignment="Center"
                            FontSize="10.5" Foreground="{DynamicResource TextSecondary}" Margin="0,0,6,0"/>
                 <Grid Grid.Column="1">
-                    <TextBox x:Name="TxtQuickSearch"
-                             Style="{DynamicResource QuickInput}"
+                    <TextBox x:Name="TxtQuickSearch" Style="{DynamicResource QuickInput}"
                              VerticalContentAlignment="Center"
                              TextChanged="TxtQuickSearch_TextChanged"
                              KeyDown="TxtQuickSearch_KeyDown"
                              GotFocus="SelectAll_OnFocus"
                              LostFocus="TxtQuickSearch_LostFocus"/>
-                    <Popup x:Name="SearchPopup"
-                           AllowsTransparency="True"
-                           IsOpen="False"
-                           Placement="Bottom"
-                           PlacementTarget="{Binding ElementName=TxtQuickSearch}"
-                           PopupAnimation="Slide"
-                           StaysOpen="True">
-                        <Border Background="{DynamicResource Surface}"
-                                BorderBrush="{DynamicResource Border}"
-                                BorderThickness="1"
-                                CornerRadius="6"
-                                Margin="0,2,0,0"
-                                Padding="4,4"
-                                SnapsToDevicePixels="True"
-                                MinWidth="220"
-                                MaxHeight="260">
-                            <ListBox x:Name="SearchSuggestions"
-                                     BorderThickness="0"
-                                     Background="Transparent"
+                    <Popup x:Name="SearchPopup" AllowsTransparency="True" IsOpen="False"
+                           Placement="Bottom" PlacementTarget="{Binding ElementName=TxtQuickSearch}"
+                           PopupAnimation="Slide" StaysOpen="True">
+                        <Border Background="{DynamicResource Surface}" BorderBrush="{DynamicResource Border}"
+                                BorderThickness="1" CornerRadius="6" Margin="0,2,0,0" Padding="4,4"
+                                SnapsToDevicePixels="True" MinWidth="220" MaxHeight="260">
+                            <ListBox x:Name="SearchSuggestions" BorderThickness="0" Background="Transparent"
                                      SelectionChanged="SearchSuggestions_SelectionChanged"
-                                     PreviewMouseDown="SearchSuggestions_PreviewMouseDown"
-                                     FontSize="12">
+                                     PreviewMouseDown="SearchSuggestions_PreviewMouseDown" FontSize="12">
                                 <ListBox.ItemContainerStyle>
                                     <Style TargetType="ListBoxItem">
                                         <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
@@ -78,36 +66,26 @@
                                         <Setter Property="Template">
                                             <Setter.Value>
                                                 <ControlTemplate TargetType="ListBoxItem">
-                                                    <Border x:Name="Bd"
-                                                            Background="{TemplateBinding Background}"
-                                                            BorderThickness="0"
-                                                            CornerRadius="4"
-                                                            Padding="{TemplateBinding Padding}"
-                                                            SnapsToDevicePixels="True">
-                                                        <ContentPresenter HorizontalAlignment="Stretch"
-                                                                          VerticalAlignment="Center"
-                                                                          SnapsToDevicePixels="True"/>
+                                                    <Border x:Name="Bd" Background="{TemplateBinding Background}"
+                                                            BorderThickness="0" CornerRadius="4"
+                                                            Padding="{TemplateBinding Padding}" SnapsToDevicePixels="True">
+                                                        <ContentPresenter HorizontalAlignment="Stretch" VerticalAlignment="Center" SnapsToDevicePixels="True"/>
                                                     </Border>
                                                     <ControlTemplate.Triggers>
                                                         <Trigger Property="IsSelected" Value="True">
-                                                            <Setter TargetName="Bd" Property="Background"
-                                                                    Value="{DynamicResource Accent}"/>
-                                                            <Setter Property="Foreground"
-                                                                    Value="{DynamicResource OnAccent}"/>
+                                                            <Setter TargetName="Bd" Property="Background" Value="{DynamicResource Accent}"/>
+                                                            <Setter Property="Foreground" Value="{DynamicResource OnAccent}"/>
                                                         </Trigger>
                                                         <MultiTrigger>
                                                             <MultiTrigger.Conditions>
                                                                 <Condition Property="IsSelected" Value="True"/>
                                                                 <Condition Property="Selector.IsSelectionActive" Value="False"/>
                                                             </MultiTrigger.Conditions>
-                                                            <Setter TargetName="Bd" Property="Background"
-                                                                    Value="{DynamicResource AccentLight}"/>
-                                                            <Setter Property="Foreground"
-                                                                    Value="{DynamicResource TextPrimary}"/>
+                                                            <Setter TargetName="Bd" Property="Background" Value="{DynamicResource AccentLight}"/>
+                                                            <Setter Property="Foreground" Value="{DynamicResource TextPrimary}"/>
                                                         </MultiTrigger>
                                                         <Trigger Property="IsMouseOver" Value="True">
-                                                            <Setter TargetName="Bd" Property="Background"
-                                                                    Value="{DynamicResource AccentLight}"/>
+                                                            <Setter TargetName="Bd" Property="Background" Value="{DynamicResource AccentLight}"/>
                                                         </Trigger>
                                                     </ControlTemplate.Triggers>
                                                 </ControlTemplate>
@@ -121,25 +99,32 @@
                 </Grid>
             </Grid>
 
-            <!-- All fields in one uniform row -->
+            <!-- Fields with group labels -->
             <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                </Grid.RowDefinitions>
                 <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="1*"/>
-                    <ColumnDefinition Width="8"/>
-                    <ColumnDefinition Width="1*"/>
-                    <ColumnDefinition Width="8"/>
-                    <ColumnDefinition Width="1*"/>
-                    <ColumnDefinition Width="8"/>
-                    <ColumnDefinition Width="1*"/>
-                    <ColumnDefinition Width="8"/>
-                    <ColumnDefinition Width="0.5*"/>
-                    <ColumnDefinition Width="8"/>
-                    <ColumnDefinition Width="0.7*"/>
-                    <ColumnDefinition Width="12"/>
+                    <ColumnDefinition Width="1*"/> <ColumnDefinition Width="6"/>
+                    <ColumnDefinition Width="1*"/> <ColumnDefinition Width="6"/>
+                    <ColumnDefinition Width="1*"/> <ColumnDefinition Width="6"/>
+                    <ColumnDefinition Width="1*"/> <ColumnDefinition Width="6"/>
+                    <ColumnDefinition Width="0.5*"/> <ColumnDefinition Width="6"/>
+                    <ColumnDefinition Width="0.7*"/> <ColumnDefinition Width="12"/>
                     <ColumnDefinition Width="Auto"/>
                 </Grid.ColumnDefinitions>
 
-                <StackPanel Grid.Column="0">
+                <!-- Group labels -->
+                <TextBlock Grid.Row="0" Grid.Column="0" Grid.ColumnSpan="3" Text="Товар"
+                           FontSize="8" FontWeight="SemiBold" Foreground="{DynamicResource TextMuted}" Margin="0,0,0,2"/>
+                <TextBlock Grid.Row="0" Grid.Column="4" Grid.ColumnSpan="3" Text="Размеры"
+                           FontSize="8" FontWeight="SemiBold" Foreground="{DynamicResource TextMuted}" Margin="0,0,0,2"/>
+                <TextBlock Grid.Row="0" Grid.Column="8" Grid.ColumnSpan="3" Text="Кол-во и цена"
+                           FontSize="8" FontWeight="SemiBold" Foreground="{DynamicResource TextMuted}" Margin="0,0,0,2"/>
+
+                <!-- Field row -->
+                <StackPanel Grid.Row="1" Grid.Column="0">
                     <TextBlock Text="Тип" Style="{DynamicResource FieldLabel}"/>
                     <ComboBox x:Name="CmbQuickType" Style="{DynamicResource QuickCombo}"
                               SelectionChanged="CmbQuickType_SelectionChanged"/>
@@ -202,12 +187,12 @@
                         </ToggleButton.Style>
                     </ToggleButton>
                 </StackPanel>
-                <StackPanel Grid.Column="2">
+                <StackPanel Grid.Row="1" Grid.Column="2">
                     <TextBlock Text="Цвет" Style="{DynamicResource FieldLabel}"/>
                     <ComboBox x:Name="CmbQuickColor" Style="{DynamicResource QuickCombo}"
                               SelectionChanged="CmbQuickColor_SelectionChanged"/>
                 </StackPanel>
-                <StackPanel Grid.Column="4">
+                <StackPanel Grid.Row="1" Grid.Column="4">
                     <TextBlock Text="Ширина, мм" Style="{DynamicResource FieldLabel}"/>
                     <TextBox x:Name="TxtQuickWidth" Style="{DynamicResource QuickInput}"
                              TextChanged="QuickField_TextChanged"
@@ -215,7 +200,7 @@
                              GotFocus="QuickField_GotFocus"
                              HorizontalContentAlignment="Right"/>
                 </StackPanel>
-                <StackPanel Grid.Column="6">
+                <StackPanel Grid.Row="1" Grid.Column="6">
                     <TextBlock Text="Высота, мм" Style="{DynamicResource FieldLabel}"/>
                     <TextBox x:Name="TxtQuickHeight" Style="{DynamicResource QuickInput}"
                              TextChanged="QuickField_TextChanged"
@@ -223,22 +208,27 @@
                              GotFocus="QuickField_GotFocus"
                              HorizontalContentAlignment="Right"/>
                 </StackPanel>
-                <StackPanel Grid.Column="8">
+                <StackPanel Grid.Row="1" Grid.Column="8">
                     <TextBlock Text="Кол-во" Style="{DynamicResource FieldLabel}"/>
                     <TextBox x:Name="TxtQuickQty" Text="1" Style="{DynamicResource QuickInput}"
                              GotFocus="SelectAll_OnFocus"
                              HorizontalContentAlignment="Right"/>
                 </StackPanel>
-                <StackPanel Grid.Column="10">
+                <StackPanel Grid.Row="1" Grid.Column="10">
                     <TextBlock Text="Цена, руб." Style="{DynamicResource FieldLabel}"/>
                     <TextBox x:Name="TxtQuickPrice" Style="{DynamicResource QuickInput}"
                              LostFocus="TxtQuickPrice_LostFocus"
                              GotFocus="SelectAll_OnFocus"
                              HorizontalContentAlignment="Right"/>
                 </StackPanel>
-                <Button Grid.Column="12" Style="{DynamicResource CompactAddButton}"
+                <!-- Pinned to Top + 17px margin so it aligns with the top of the
+                     adjacent TextBox/ComboBox controls (after the FieldLabel takes
+                     ~17px of vertical space). Previous Bottom anchoring shifted
+                     down whenever the Антикошка ToggleButton appeared and grew
+                     the row height. -->
+                <Button Grid.Row="1" Grid.Column="12" Style="{DynamicResource CompactAddButton}"
                         Click="BtnQuickAdd_Click" ToolTip="Добавить (Enter)"
-                        VerticalAlignment="Bottom" Height="32">
+                        VerticalAlignment="Top" Margin="0,17,0,0" Height="32">
                     <StackPanel Orientation="Horizontal">
                         <TextBlock Style="{DynamicResource FluentIconButton}" Text="&#xE710;"/>
                         <TextBlock Text="Добавить"/>

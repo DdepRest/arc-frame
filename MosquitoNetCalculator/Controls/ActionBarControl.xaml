@@ -6,86 +6,48 @@
             BorderBrush="{DynamicResource Border}" BorderThickness="1"
             Style="{DynamicResource Card}" Opacity="0">
         <Grid>
+            <!-- Cluster 1+2: Primary + Secondary (left) -->
             <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                <!-- Cluster 1: Primary -->
                 <Button Style="{DynamicResource PrimaryButton}"
-                        Click="BtnPrintKp_Click" Margin="0,0,8,0">
+                        Click="BtnPrintKp_Click" Margin="0,0,6,0">
                     <StackPanel Orientation="Horizontal">
                         <TextBlock Style="{DynamicResource FluentIconButton}" Text="&#xE2F6;"/>
                         <TextBlock Text="Печать КП"/>
                     </StackPanel>
                 </Button>
                 <Button Style="{DynamicResource SuccessButton}"
-                        Click="BtnSaveOrder_Click" Margin="0,0,8,0"
+                        Click="BtnSaveOrder_Click" Margin="0,0,6,0"
                         ToolTip="Сохранить заказ (Ctrl+S)">
                     <StackPanel Orientation="Horizontal">
                         <TextBlock Style="{DynamicResource FluentIconButton}" Text="&#xE74E;"/>
                         <TextBlock Text="Сохранить"/>
                     </StackPanel>
                 </Button>
+
+                <!-- Separator -->
+                <Rectangle Width="1" Height="20" Fill="{DynamicResource Border}" Margin="8,0"/>
+
+                <!-- Cluster 2: Secondary -->
                 <Button Style="{DynamicResource GhostButton}"
-                        Click="BtnNewOrder_Click" Margin="0,0,8,0">
+                        Click="BtnNewOrder_Click" Margin="0,0,6,0">
                     <StackPanel Orientation="Horizontal">
                         <TextBlock Style="{DynamicResource FluentIconButton}" Text="&#xE710;"/>
                         <TextBlock Text="Новый заказ"/>
                     </StackPanel>
                 </Button>
                 <Button Style="{DynamicResource GhostButton}"
-                        Click="BtnSendToFactory_Click" Margin="0,0,8,0"
+                        Click="BtnSendToFactory_Click" Margin="0,0,6,0"
                         ToolTip="Сформировать текст для отправки на завод / копирования">
                     <StackPanel Orientation="Horizontal">
                         <TextBlock Style="{DynamicResource FluentIconButton}" Text="&#xE7B3;"/>
                         <TextBlock Text="На завод"/>
                     </StackPanel>
                 </Button>
-                <TextBlock VerticalAlignment="Center" FontSize="11" Foreground="{DynamicResource TextMuted}" Margin="8,0,0,0">
-                    <Run x:Name="RunCurrentOrderInfo" Text="Новый заказ"/>
-                </TextBlock>
-                <Border x:Name="DirtyIndicator" Visibility="Collapsed" Background="{DynamicResource BadgeWarningBg}" CornerRadius="8" Padding="10,4" Margin="10,0,0,0" VerticalAlignment="Center" ToolTip="В текущем расчёте есть несохранённые изменения. Нажмите «Сохранить» (Ctrl+S).">
-                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                        <Ellipse x:Name="DirtyDot" Width="7" Height="7" Fill="{DynamicResource BadgeWarningFg}" VerticalAlignment="Center" Margin="0,0,7,0"/>
-                        <TextBlock Text="Есть изменения" FontSize="11" FontWeight="SemiBold" Foreground="{DynamicResource BadgeWarningFg}" VerticalAlignment="Center"/>
-                    </StackPanel>
-                </Border>
             </StackPanel>
+
+            <!-- Cluster 3: Danger/Tertiary (right) -->
             <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center">
-                <Button x:Name="BtnSettings"
-                        Style="{DynamicResource GhostButton}"
-                        Margin="0,0,8,0"
-                        Click="BtnSettings_Click"
-                        ToolTip="Настройки программы (тема, точка установки)">
-                    <!-- Update badge: red dot when new version is available -->
-                    <Grid>
-                    <StackPanel Orientation="Horizontal">
-                        <TextBlock Style="{DynamicResource FluentIconButton}" Text="&#xE713;"/>
-                        <TextBlock Text="Настройки"/>
-                    </StackPanel>
-                    <Ellipse x:Name="UpdateBadge"
-                             Width="9" Height="9"
-                             Fill="#E81123"
-                             HorizontalAlignment="Right" VerticalAlignment="Top"
-                             Margin="0,-2,-4,0"
-                             Visibility="Collapsed"
-                             ToolTip="Доступна новая версия!"/>
-                    </Grid>
-                    <Button.ContextMenu>
-                        <ContextMenu x:Name="SettingsMenu">
-                            <MenuItem x:Name="MenuThemeLight"
-                                      Header="Светлая тема"
-                                      IsCheckable="True"
-                                      Click="MenuThemeLight_Click"/>
-                            <MenuItem x:Name="MenuThemeDark"
-                                      Header="Тёмная тема"
-                                      IsCheckable="True"
-                                      Click="MenuThemeDark_Click"/>
-                            <Separator/>
-                            <MenuItem Header="Сменить точку установки…"
-                                      Click="MenuChangeLocation_Click"/>
-                            <Separator/>
-                            <MenuItem Header="Проверить обновления"
-                                      Click="MenuCheckUpdates_Click"/>
-                        </ContextMenu>
-                    </Button.ContextMenu>
-                </Button>
                 <Button Style="{DynamicResource DangerGhostButton}"
                         Click="BtnClearAll_Click">
                     <StackPanel Orientation="Horizontal">

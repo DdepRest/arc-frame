@@ -63,6 +63,9 @@ namespace MosquitoNetCalculator
         private string _cachedTitleLocation = string.Empty;
 
         private System.Windows.Threading.DispatcherTimer? _updateTotalDebounceTimer;
+        private System.Windows.Threading.DispatcherTimer? _navBadgeTimer;
+        private Action? _onNavToCalc;
+        private string _activeNavTag = "Calc";
 
         // ─── Idle/periodic update check scheduler ───────────────────────────
         // Запускается в Loaded после startup-проверки. Триггерит CheckInBackgroundAsync
@@ -116,6 +119,7 @@ namespace MosquitoNetCalculator
             FixTitleBarButton(TitleBarControl.BtnMin, "\uE738", 12);
             FixTitleBarButton(TitleBarControl.BtnMax, WindowState == WindowState.Maximized ? "\uE923" : "\uE739", 12);
             FixTitleBarButton(TitleBarControl.BtnCls, "\uE8BB", 12);
+            TitleBarControl.BtnSettingsGear.Width = TitleBarControl.BtnSettingsGear.Height = 32;
 
             DataContext = this;
 
@@ -153,18 +157,17 @@ namespace MosquitoNetCalculator
                 else if (Keyboard.Modifiers == ModifierKeys.Control && args.Key == Key.Y) { Redo(); args.Handled = true; }
             };
 
-            MainTabControl.SelectionChanged += (_, _) =>
+            // NavigationView: focus QuickAdd when switching back to Calc view
+            void OnNavToCalc()
             {
                 if (!_initialLoadDone) return;
-                if (MainTabControl.SelectedIndex == 0)
+                Dispatcher.BeginInvoke(() =>
                 {
-                    Dispatcher.BeginInvoke(() =>
-                    {
-                        if (QuickAddControl.CmbType != null && QuickAddControl.CmbType.IsEnabled)
-                            QuickAddControl.CmbType.Focus();
-                    });
-                }
-            };
+                    if (QuickAddControl.CmbType != null && QuickAddControl.CmbType.IsEnabled)
+                        QuickAddControl.CmbType.Focus();
+                });
+            }
+            _onNavToCalc = OnNavToCalc;
 
             OrderItemsControl.Grid.BeginningEdit += (_, e) =>
             {
@@ -260,6 +263,7 @@ namespace MosquitoNetCalculator
             {
                 UpdateService.ProgressChanged -= OnUpdateProgressChanged;
                 _updateCheckScheduler?.Stop();
+                _navBadgeTimer?.Stop();
             };
 
             StateChanged += (s, e) =>
@@ -267,6 +271,9 @@ namespace MosquitoNetCalculator
                 if (TitleBarControl.MaxIcon != null)
                     TitleBarControl.MaxIcon.Text = WindowState == WindowState.Maximized ? "\uE923" : "\uE739";
             };
+
+            // NavigationView badge refresh timer
+            StartNavBadgeTimer();
         }
 
         private void MainWindow_Loaded(object sender, RoutedEventArgs e)
@@ -313,12 +320,261 @@ namespace MosquitoNetCalculator
             // startup. Schedule it, don't run it inline.
             Dispatcher.BeginInvoke(new Action(AnimateCardsOnLoad),
                 System.Windows.Threading.DispatcherPriority.Loaded);
+
+            // Refresh nav badges after orders are loaded
+            RefreshNavBadges();
+
+            // Set initial active nav button (templates are now applied)
+            SetActiveNavButton("Calc");
         }
 
         internal void UpdateEmptyState()
         {
             if (OrderItemsControl?.Empty == null || OrderItemsControl?.Grid == null) return;
             OrderItemsControl.Empty.Visibility = OrderItems.Count == 0 ? Visibility.Visible : Visibility.Collapsed;
+        }
+
+        // ═══════════════════════════════════════════════════════════════
+        // NAVIGATION VIEW
+        // ═══════════════════════════════════════════════════════════════
+
+        internal void NavigateToCalculation()
+        {
+            CloseAllOverlays();
+            SetActiveNavButton("Calc");
+            _onNavToCalc?.Invoke();
+        }
+
+        private void NavButton_Click(object sender, RoutedEventArgs e)
+        {
+            if (sender is not Button btn || btn.Tag is not string tag) return;
+
+            switch (tag)
+            {
+                case "Calc":
+                    CloseAllOverlays();
+                    SetActiveNavButton("Calc");
+                    _onNavToCalc?.Invoke();
+                    break;
+                case "Orders":
+                    if (OrdersOverlay.Visibility == Visibility.Visible)
+                        CloseAllOverlays();
+                    else
+                        ShowOverlay(OrdersOverlay, OrdersPanel, OrdersBackdrop, OrdersSlideTransform);
+                    break;
+                case "Prices":
+                    if (PricesOverlay.Visibility == Visibility.Visible)
+                        CloseAllOverlays();
+                    else
+                        ShowOverlay(PricesOverlay, PricesPanel, PricesBackdrop, PricesSlideTransform);
+                    break;
+                case "Updates":
+                    if (UpdatesOverlay.Visibility == Visibility.Visible)
+                        CloseAllOverlays();
+                    else
+                        ShowOverlay(UpdatesOverlay, UpdatesPanel, UpdatesBackdrop, UpdatesSlideTransform);
+                    break;
+            }
+        }
+
+        // Keyboard shortcut handlers (Ctrl+1..4)
+        private void NavCalculation_Click(object s, ExecutedRoutedEventArgs e) { NavigateToCalculation(); }
+        private void NavOrders_Click(object s, ExecutedRoutedEventArgs e)     { NavButton_Click(NavBtnOrders, new RoutedEventArgs()); }
+        private void NavPrices_Click(object s, ExecutedRoutedEventArgs e)     { NavButton_Click(NavBtnPrices, new RoutedEventArgs()); }
+        private void NavUpdates_Click(object s, ExecutedRoutedEventArgs e)    { NavButton_Click(NavBtnUpdates, new RoutedEventArgs()); }
+
+        private void SetActiveNavButton(string tag)
+        {
+            _activeNavTag = tag;
+            var allButtons = new[] { NavBtnCalc, NavBtnOrders, NavBtnPrices, NavBtnUpdates };
+            var allIcons = new[] { NavIconCalc, NavIconOrders, NavIconPrices, NavIconUpdates };
+
+            for (int i = 0; i < allButtons.Length; i++)
+            {
+                bool isActive = allButtons[i].Tag?.ToString() == tag;
+
+                // Find ActivePill through template (same pattern as TitleBar UpdateBadge)
+                var pill = allButtons[i].Template?.FindName("ActivePill", allButtons[i]) as Border;
+                if (pill != null)
+                    pill.Opacity = isActive ? 1 : 0;
+
+                allIcons[i].Foreground = isActive
+                    ? (Brush)(TryFindResource("Accent") ?? Brushes.Black)
+                    : (Brush)(TryFindResource("TextMuted") ?? Brushes.Gray);
+            }
+        }
+
+        // ═══════════════════════════════════════════════════════════════
+        // OVERLAY PANELS
+        // ═══════════════════════════════════════════════════════════════
+
+        private void ShowOverlay(Grid overlay, Border panel, Border backdrop, TranslateTransform slideTransform)
+        {
+            // Close any other open overlay first
+            foreach (var ov in new[] { OrdersOverlay, PricesOverlay, UpdatesOverlay })
+            {
+                if (ov != overlay && ov.Visibility == Visibility.Visible)
+                    HideOverlayInstant(ov);
+            }
+
+            overlay.Visibility = Visibility.Visible;
+
+            // Reset backdrop for clean fade-in from 0
+            backdrop.Opacity = 0;
+
+            // Force measure to get correct ActualWidth on first open
+            panel.Measure(new System.Windows.Size(double.PositiveInfinity, double.PositiveInfinity));
+            double panelWidth = panel.ActualWidth > 0 ? panel.ActualWidth : 800;
+            slideTransform.X = panelWidth;
+
+            var slideAnim = new DoubleAnimation(0, TimeSpan.FromMilliseconds(280))
+            {
+                EasingFunction = new CubicEase { EasingMode = EasingMode.EaseOut }
+            };
+            slideTransform.BeginAnimation(TranslateTransform.XProperty, slideAnim);
+
+            // Fade in backdrop
+            var fadeIn = new DoubleAnimation(1, TimeSpan.FromMilliseconds(200))
+            {
+                EasingFunction = new CubicEase { EasingMode = EasingMode.EaseOut }
+            };
+            backdrop.BeginAnimation(OpacityProperty, fadeIn);
+
+            // Set active nav button
+            if (overlay == OrdersOverlay) SetActiveNavButton("Orders");
+            else if (overlay == PricesOverlay) SetActiveNavButton("Prices");
+            else if (overlay == UpdatesOverlay) SetActiveNavButton("Updates");
+        }
+
+        private void CloseOverlay_Click(object sender, RoutedEventArgs e)
+        {
+            CloseAllOverlays();
+        }
+
+        private void Backdrop_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
+        {
+            CloseAllOverlays();
+        }
+
+        private void CloseAllOverlays()
+        {
+            var overlays = new[]
+            {
+                (Grid: OrdersOverlay, Panel: OrdersPanel, Backdrop: OrdersBackdrop, Slide: OrdersSlideTransform),
+                (Grid: PricesOverlay, Panel: PricesPanel, Backdrop: PricesBackdrop, Slide: PricesSlideTransform),
+                (Grid: UpdatesOverlay, Panel: UpdatesPanel, Backdrop: UpdatesBackdrop, Slide: UpdatesSlideTransform),
+            };
+
+            foreach (var (grid, panel, backdrop, slide) in overlays)
+            {
+                if (grid.Visibility != Visibility.Visible) continue;
+
+                // Cancel any running animations before starting close
+                slide.BeginAnimation(TranslateTransform.XProperty, null);
+                backdrop.BeginAnimation(OpacityProperty, null);
+
+                // Animate slide-out to right
+                double panelWidth = panel.ActualWidth > 0 ? panel.ActualWidth : 800;
+                var slideOut = new DoubleAnimation(panelWidth, TimeSpan.FromMilliseconds(220))
+                {
+                    EasingFunction = new CubicEase { EasingMode = EasingMode.EaseIn }
+                };
+                slideOut.Completed += (_, _) =>
+                {
+                    grid.Visibility = Visibility.Collapsed;
+                };
+                slide.BeginAnimation(TranslateTransform.XProperty, slideOut);
+
+                // Fade out backdrop
+                var fadeOut = new DoubleAnimation(0, TimeSpan.FromMilliseconds(180))
+                {
+                    EasingFunction = new CubicEase { EasingMode = EasingMode.EaseOut }
+                };
+                backdrop.BeginAnimation(OpacityProperty, fadeOut);
+            }
+
+            SetActiveNavButton("Calc");
+        }
+
+        private static void HideOverlayInstant(Grid overlay)
+        {
+            overlay.Visibility = Visibility.Collapsed;
+            // Cancel any running animations so they don't interfere with re-open
+            foreach (var child in overlay.Children)
+            {
+                if (child is Border border)
+                {
+                    border.BeginAnimation(OpacityProperty, null);
+                    if (border.RenderTransform is TranslateTransform t)
+                        t.BeginAnimation(TranslateTransform.XProperty, null);
+                }
+            }
+        }
+
+        // ═══════════════════════════════════════════════════════════════
+        // NAV BADGE REFRESH
+        // ═══════════════════════════════════════════════════════════════
+
+        internal void RefreshNavBadges()
+        {
+            // Orders count badge on nav button
+            int orderCount = OrdersHistoryControl?.OrdersGrid?.Items?.Count ?? 0;
+            if (NavOrdersBadge != null)
+            {
+                NavOrdersBadge.Visibility = orderCount > 0 ? Visibility.Visible : Visibility.Collapsed;
+                NavOrdersBadgeText.Text = orderCount > 99 ? "99+" : orderCount.ToString();
+            }
+
+            // Orders count chip in overlay header (Russian pluralization + chip visibility).
+            // Russian rule: last-two-digits drive the form. 11–14 are ALWAYS
+            // "заказов" (special case). Otherwise the last digit decides:
+            // 1 → заказ, 2..4 → заказа, 0/5..9 → заказов.
+            // Without the 11–14 carve-out, "11 заказов" / "21 заказ" were wrong.
+            // Hide the entire chip when count==0 — an empty chip floating next to
+            // «Заказы» title is visual noise.
+            if (OrdersCountBadge != null && OrdersCountText != null)
+            {
+                int m100 = orderCount % 100;
+                int m10 = orderCount % 10;
+                string suffix = (m100 >= 11 && m100 <= 14)
+                    ? "заказов"
+                    : m10 == 1
+                        ? "заказ"
+                        : (m10 >= 2 && m10 <= 4)
+                            ? "заказа"
+                            : "заказов";
+                if (orderCount > 0)
+                {
+                    OrdersCountText.Text = $"• {orderCount} {suffix}";
+                    OrdersCountBadge.Visibility = Visibility.Visible;
+                }
+                else
+                {
+                    OrdersCountText.Text = "";
+                    OrdersCountBadge.Visibility = Visibility.Collapsed;
+                }
+            }
+
+            // Updates dot
+            if (NavUpdatesDot != null)
+                NavUpdatesDot.Visibility = UpdateService.HasPendingUpdate() ? Visibility.Visible : Visibility.Collapsed;
+        }
+
+        private void StartNavBadgeTimer()
+        {
+            // 1.5s fallback timer (was 4s). RefreshNavBadges is called explicitly
+            // from RefreshOrdersList/save/delete paths, so this timer is only a
+            // safety net for cases that bypass RefreshOrdersList (e.g. file-system
+            // changes from sync). 1.5s reduces the window during which the badge
+            // shows a stale count after an out-of-band operation.
+            _navBadgeTimer = new System.Windows.Threading.DispatcherTimer { Interval = TimeSpan.FromSeconds(1.5) };
+            _navBadgeTimer.Tick += (s, e) =>
+            {
+                _navBadgeTimer.Stop();
+                RefreshNavBadges();
+                _navBadgeTimer.Start();
+            };
+            _navBadgeTimer.Start();
         }
     }
 }

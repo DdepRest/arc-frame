@@ -30,18 +30,22 @@
     <Window.InputBindings>
         <!-- Ctrl+S — сохранить заказ -->
         <KeyBinding Key="S" Modifiers="Control" Command="ApplicationCommands.Save"/>
+        <!-- Ctrl+1..4 — навигация -->
+        <KeyBinding Key="D1" Modifiers="Control" Command="NavigationCommands.BrowseBack"/>
+        <KeyBinding Key="D2" Modifiers="Control" Command="NavigationCommands.BrowseForward"/>
+        <KeyBinding Key="D3" Modifiers="Control" Command="NavigationCommands.Search"/>
+        <KeyBinding Key="D4" Modifiers="Control" Command="NavigationCommands.Favorites"/>
     </Window.InputBindings>
     <Window.CommandBindings>
         <CommandBinding Command="ApplicationCommands.Save" Executed="BtnSaveOrder_Click"/>
+        <CommandBinding Command="NavigationCommands.BrowseBack"  Executed="NavCalculation_Click"/>
+        <CommandBinding Command="NavigationCommands.BrowseForward" Executed="NavOrders_Click"/>
+        <CommandBinding Command="NavigationCommands.Search"      Executed="NavPrices_Click"/>
+        <CommandBinding Command="NavigationCommands.Favorites"   Executed="NavUpdates_Click"/>
     </Window.CommandBindings>
 
     <Window.Resources>
-        <!-- Fade-in / fade-out storyboards for UpdateDownloadBar.
-             Triggered from code-behind (OnUpdateProgressChanged) because
-             they react to UpdateService.IsDownloading state changes.
-             MUST live in Window.Resources (not inside any child Grid)
-             because this.FindResource(...) walks UP the logical tree
-             and cannot see resources declared in descendants. -->
+        <!-- Fade-in / fade-out storyboards for UpdateDownloadBar -->
         <Storyboard x:Key="UpdateBarFadeIn">
             <DoubleAnimation Storyboard.TargetName="UpdateDownloadBar"
                              Storyboard.TargetProperty="Opacity"
@@ -62,6 +66,77 @@
                 </DoubleAnimation.EasingFunction>
             </DoubleAnimation>
         </Storyboard>
+
+        <!-- NavigationView button style -->
+        <Style x:Key="NavButton" TargetType="Button">
+            <Setter Property="Width" Value="40"/>
+            <Setter Property="Height" Value="40"/>
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Foreground" Value="{DynamicResource TextMuted}"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="FontSize" Value="18"/>
+            <Setter Property="FontFamily" Value="Segoe Fluent Icons, Segoe MDL2 Assets"/>
+            <Setter Property="HorizontalContentAlignment" Value="Center"/>
+            <Setter Property="VerticalContentAlignment" Value="Center"/>
+            <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border Background="{TemplateBinding Background}"
+                                CornerRadius="8" BorderThickness="0"
+                                Width="40" Height="40">
+                            <Grid>
+                                <!-- Active indicator pill (left edge) -->
+                                <Border x:Name="ActivePill" Width="3" Height="16"
+                                        Background="{DynamicResource Accent}"
+                                        CornerRadius="1.5"
+                                        HorizontalAlignment="Left" VerticalAlignment="Center"
+                                        Margin="0,0,0,0" Opacity="0"/>
+                                <ContentPresenter HorizontalAlignment="Center"
+                                                  VerticalAlignment="Center"/>
+                            </Grid>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter Property="Background" Value="{DynamicResource AccentLight}"/>
+                                <Setter Property="Foreground" Value="{DynamicResource Accent}"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- Overlay close button style -->
+        <Style x:Key="OverlayCloseButton" TargetType="Button">
+            <Setter Property="Width" Value="32"/>
+            <Setter Property="Height" Value="32"/>
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Foreground" Value="{DynamicResource TextSecondary}"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="FontFamily" Value="Segoe Fluent Icons, Segoe MDL2 Assets"/>
+            <Setter Property="FontSize" Value="12"/>
+            <Setter Property="Content" Value="&#xE8BB;"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="Bd" Background="{TemplateBinding Background}"
+                                CornerRadius="6" BorderThickness="0"
+                                Width="32" Height="32">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="Bd" Property="Background" Value="{DynamicResource AccentLight}"/>
+                                <Setter Property="Foreground" Value="{DynamicResource TextPrimary}"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
     </Window.Resources>
 
     <Grid Background="{DynamicResource AppBg}">
@@ -79,17 +154,6 @@
         <!-- ═══════════════════════════════════════════════════════ -->
         <!-- UPDATE DOWNLOAD PROGRESS BAR                             -->
         <!-- ═══════════════════════════════════════════════════════ -->
-        <!-- Thin bar under title bar (ref: VS Code, Chrome).         -->
-        <!-- ANIMATION NOTE: fade-in / fade-out is driven in code-    -->
-        <!-- behind (MainWindow.OnUpdateProgressChanged) because it   -->
-        <!-- must react to UpdateService.IsDownloading / progress     -->
-        <!-- events.  The XAML Storyboard/Trigger system cannot       -->
-        <!-- directly bind to those service-level state changes.      -->
-        <!--                                                          -->
-        <!--  • Fade in  : 200 ms, CubicEase EaseOut                  -->
-        <!--  • Fade out : 250 ms, CubicEase EaseIn                   -->
-        <!--  • Collapse : after fade-out completes (Completed event) -->
-        <!-- ═══════════════════════════════════════════════════════ -->
         <ProgressBar x:Name="UpdateDownloadBar"
                      Grid.Row="1"
                      Height="3"
@@ -102,19 +166,87 @@
                      Foreground="{DynamicResource Accent}"
                      VerticalAlignment="Top"/>
 
-        <TabControl x:Name="MainTabControl" Grid.Row="2" Margin="0">
+        <!-- ═══════════════════════════════════════════════════════ -->
+        <!-- MAIN LAYOUT: NAVIGATION VIEW + CONTENT                 -->
+        <!-- ═══════════════════════════════════════════════════════ -->
+        <Grid Grid.Row="2">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="52"/>
+                <ColumnDefinition Width="*"/>
+            </Grid.ColumnDefinitions>
 
-            <!-- ═══════════════════════════════════════════════════════ -->
-            <!-- TAB: РАСЧЁТ                                            -->
-            <!-- ═══════════════════════════════════════════════════════ -->
-            <TabItem>
-                <TabItem.Header>
-                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                        <TextBlock Style="{DynamicResource FluentIconTab}" Text="&#xE1D0;"/>
-                        <TextBlock Text="Расчёт" VerticalAlignment="Center"/>
-                    </StackPanel>
-                </TabItem.Header>
-                <Grid Background="{DynamicResource AppBg}">
+            <!-- ── NavigationView (left icon bar, 52px) ── -->
+            <Border Grid.Column="0" Background="{DynamicResource Surface}"
+                    BorderBrush="{DynamicResource Border}" BorderThickness="0,0,1,0"
+                    WindowChrome.IsHitTestVisibleInChrome="True">
+                <StackPanel VerticalAlignment="Top" Margin="6,8,6,0">
+                    <!-- Расчёт -->
+                    <Button x:Name="NavBtnCalc" Style="{StaticResource NavButton}"
+                            ToolTip="Расчёт (Ctrl+1)" Click="NavButton_Click" Tag="Calc">
+                        <TextBlock x:Name="NavIconCalc" Text="&#xE1D0;"
+                                   FontSize="20"/>
+                    </Button>
+                    <!-- Заказы -->
+                    <Button x:Name="NavBtnOrders" Style="{StaticResource NavButton}"
+                            ToolTip="Заказы (Ctrl+2)" Click="NavButton_Click" Tag="Orders" Margin="0,4,0,0">
+                        <Grid>
+                            <TextBlock x:Name="NavIconOrders" Text="&#xE71D;"
+                                       FontSize="20"/>
+                            <Border x:Name="NavOrdersBadge" Visibility="Collapsed"
+                                    Background="{DynamicResource Accent}" CornerRadius="9"
+                                    MinWidth="20" Height="20" Padding="6,1"
+                                    HorizontalAlignment="Right" VerticalAlignment="Top"
+                                    Margin="0,-5,-6,0">
+                                <Border.Effect>
+                                    <!-- Drop-shadow отделяет значок от иконки Orders даже
+                                         при смене темы. Цвет берётся из явного Color-ресурса
+                                         AccentShadowColor (зеркальная пара к кисти Accent),
+                                         который ThemeService обновляет в lockstep на смене темы.
+                                         Brush→Color implicit conversion в WPF не работает
+                                         (Color — это struct), поэтому прямой bind на Accent brush
+                                         не сработал бы. -->
+                                    <DropShadowEffect BlurRadius="6" ShadowDepth="0"
+                                                      Opacity="0.45"
+                                                      Color="{DynamicResource AccentShadowColor}"/>
+                                </Border.Effect>
+                                <TextBlock x:Name="NavOrdersBadgeText" Text="0"
+                                           FontFamily="Segoe UI"
+                                           FontSize="11" FontWeight="SemiBold"
+                                           Foreground="{DynamicResource OnAccent}"
+                                           HorizontalAlignment="Center"
+                                           VerticalAlignment="Center"
+                                           LineStackingStrategy="BlockLineHeight"
+                                           LineHeight="14"/>
+                            </Border>
+                        </Grid>
+                    </Button>
+                    <!-- Цены -->
+                    <Button x:Name="NavBtnPrices" Style="{StaticResource NavButton}"
+                            ToolTip="Цены (Ctrl+3)" Click="NavButton_Click" Tag="Prices" Margin="0,4,0,0">
+                        <TextBlock x:Name="NavIconPrices" Text="&#xE8C7;"
+                                   FontSize="20"/>
+                    </Button>
+                    <!-- Обновления -->
+                    <Button x:Name="NavBtnUpdates" Style="{StaticResource NavButton}"
+                            ToolTip="Обновления (Ctrl+4)" Click="NavButton_Click" Tag="Updates" Margin="0,4,0,0">
+                        <Grid>
+                            <TextBlock x:Name="NavIconUpdates" Text="&#xE81C;"
+                                       FontSize="20"/>
+                            <Ellipse x:Name="NavUpdatesDot" Width="8" Height="8" Fill="#E81123"
+                                     HorizontalAlignment="Right" VerticalAlignment="Top"
+                                     Margin="0,2,-4,0" Visibility="Collapsed"
+                                     ToolTip="Доступна новая версия!"/>
+                        </Grid>
+                    </Button>
+                </StackPanel>
+            </Border>
+
+            <!-- ── Content area (Расчёт + overlays) ── -->
+            <Grid Grid.Column="1" ClipToBounds="True">
+                <!-- ═══════════════════════════════════════ -->
+                <!-- PRIMARY: РАСЧЁТ view                    -->
+                <!-- ═══════════════════════════════════════ -->
+                <Grid x:Name="CalculationView" Background="{DynamicResource AppBg}">
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="250"/>
                         <ColumnDefinition Width="*"/>
@@ -130,6 +262,7 @@
                             <RowDefinition Height="Auto"/>  <!-- Quick-Add -->
                             <RowDefinition Height="*"/>     <!-- Table -->
                             <RowDefinition Height="Auto"/>  <!-- ИТОГО -->
+                            <RowDefinition Height="Auto"/>  <!-- Status bar -->
                         </Grid.RowDefinitions>
 
                         <!-- ACTION BAR -->
@@ -143,49 +276,159 @@
 
                         <!-- ИТОГО -->
                         <controls:TotalCardControl x:Name="TotalCardControl" Grid.Row="3"/>
+
+                        <!-- Status bar: compact order info + dirty indicator -->
+                        <Border Grid.Row="4" Margin="0,6,0,0" Padding="6,3"
+                                HorizontalAlignment="Stretch" Background="Transparent">
+                            <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                <TextBlock x:Name="StatusOrderInfo" Text="Новый заказ"
+                                           FontSize="10" Foreground="{DynamicResource TextMuted}"
+                                           VerticalAlignment="Center"/>
+                                <Border x:Name="StatusDirtyIndicator" Visibility="Collapsed"
+                                        Background="{DynamicResource BadgeWarningBg}"
+                                        CornerRadius="7" Padding="7,3" Margin="10,0,0,0"
+                                        ToolTip="Несохранённые изменения (Ctrl+S)">
+                                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                        <Ellipse Width="6" Height="6" Fill="{DynamicResource BadgeWarningFg}"
+                                                 VerticalAlignment="Center" Margin="0,0,5,0"/>
+                                        <TextBlock Text="Есть изменения" FontSize="10" FontWeight="SemiBold"
+                                                   Foreground="{DynamicResource BadgeWarningFg}"/>
+                                    </StackPanel>
+                                </Border>
+                            </StackPanel>
+                        </Border>
                     </Grid>
                 </Grid>
-            </TabItem>
 
-            <!-- ═══════════════════════════════════════════════════════ -->
-            <!-- TAB: ЦЕНЫ                                               -->
-            <!-- ═══════════════════════════════════════════════════════ -->
-            <TabItem>
-                <TabItem.Header>
-                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                        <TextBlock Style="{DynamicResource FluentIconTab}" Text="&#xE8C7;"/>
-                        <TextBlock Text="Цены" VerticalAlignment="Center"/>
-                    </StackPanel>
-                </TabItem.Header>
-                <controls:PricesControl x:Name="PricesControl"/>
-            </TabItem>
+                <!-- ═══════════════════════════════════════ -->
+                <!-- OVERLAY: ЗАКАЗЫ                         -->
+                <!-- ═══════════════════════════════════════ -->
+                <Grid x:Name="OrdersOverlay" Visibility="Collapsed">
+                    <!-- Backdrop -->
+                    <Border x:Name="OrdersBackdrop" Background="#80000000" Opacity="0"
+                            MouseLeftButtonDown="Backdrop_MouseLeftButtonDown" Cursor="Hand"/>
+                    <!-- Content panel (slides from right) -->
+                    <Border x:Name="OrdersPanel"
+                            Background="{DynamicResource Surface}"
+                            HorizontalAlignment="Right" Width="800"
+                            BorderBrush="{DynamicResource Border}" BorderThickness="1,0,0,0">
+                        <Border.RenderTransform>
+                            <TranslateTransform x:Name="OrdersSlideTransform" X="0"/>
+                        </Border.RenderTransform>
+                        <Grid>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="*"/>
+                            </Grid.RowDefinitions>
+                            <!-- Header -->
+                            <Border Grid.Row="0" Background="{DynamicResource HeaderBg}"
+                                    Padding="16,10" BorderBrush="{DynamicResource Border}" BorderThickness="0,0,0,1">
+                                <Grid>
+                                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                        <TextBlock Text="&#xE71D;" FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets" FontSize="16"
+                                                   Foreground="{DynamicResource Accent}" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                                        <TextBlock Text="Заказы" FontSize="14" FontWeight="SemiBold"
+                                                   Foreground="{DynamicResource TextPrimary}" VerticalAlignment="Center"/>
+                                        <!-- Orders-count badge: chip-style tag next to «Заказы» title.
+                                             Previously a flat gray TextBlock on gray header background —
+                                             near-invisible ("плохо отображается"). Now an actual chip with
+                                             ChipBg (light blue) + Accent bold text + CornerRadius 10, so
+                                             the count stands out visually, exactly as the user expects. -->
+                                        <Border x:Name="OrdersCountBadge"
+                                                Background="{DynamicResource ChipBg}" CornerRadius="10"
+                                                Padding="10,4" Margin="10,0,0,0"
+                                                VerticalAlignment="Center"
+                                                Visibility="Collapsed">
+                                            <TextBlock x:Name="OrdersCountText" Text=""
+                                                       FontSize="11" FontWeight="SemiBold"
+                                                       Foreground="{DynamicResource Accent}"
+                                                       VerticalAlignment="Center"/>
+                                        </Border>
+                                    </StackPanel>
+                                    <Button Style="{StaticResource OverlayCloseButton}"
+                                            HorizontalAlignment="Right" Click="CloseOverlay_Click"/>
+                                </Grid>
+                            </Border>
+                            <!-- Content -->
+                            <controls:OrdersHistoryControl x:Name="OrdersHistoryControl" Grid.Row="1"/>
+                        </Grid>
+                    </Border>
+                </Grid>
 
-            <!-- ═══════════════════════════════════════════════════════ -->
-            <!-- TAB: ЗАКАЗЫ                                              -->
-            <!-- ═══════════════════════════════════════════════════════ -->
-            <TabItem>
-                <TabItem.Header>
-                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                        <TextBlock Style="{DynamicResource FluentIconTab}" Text="&#xE71D;"/>
-                        <TextBlock Text="Заказы" VerticalAlignment="Center"/>
-                    </StackPanel>
-                </TabItem.Header>
-                <controls:OrdersHistoryControl x:Name="OrdersHistoryControl"/>
-            </TabItem>
+                <!-- ═══════════════════════════════════════ -->
+                <!-- OVERLAY: ЦЕНЫ                           -->
+                <!-- ═══════════════════════════════════════ -->
+                <Grid x:Name="PricesOverlay" Visibility="Collapsed">
+                    <Border x:Name="PricesBackdrop" Background="#80000000" Opacity="0"
+                            MouseLeftButtonDown="Backdrop_MouseLeftButtonDown" Cursor="Hand"/>
+                    <Border x:Name="PricesPanel"
+                            Background="{DynamicResource Surface}"
+                            HorizontalAlignment="Right" Width="800"
+                            BorderBrush="{DynamicResource Border}" BorderThickness="1,0,0,0">
+                        <Border.RenderTransform>
+                            <TranslateTransform x:Name="PricesSlideTransform" X="0"/>
+                        </Border.RenderTransform>
+                        <Grid>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="*"/>
+                            </Grid.RowDefinitions>
+                            <Border Grid.Row="0" Background="{DynamicResource HeaderBg}"
+                                    Padding="16,10" BorderBrush="{DynamicResource Border}" BorderThickness="0,0,0,1">
+                                <Grid>
+                                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                        <TextBlock Text="&#xE8C7;" FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets" FontSize="16"
+                                                   Foreground="{DynamicResource Accent}" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                                        <TextBlock Text="Цены" FontSize="14" FontWeight="SemiBold"
+                                                   Foreground="{DynamicResource TextPrimary}" VerticalAlignment="Center"/>
+                                    </StackPanel>
+                                    <Button Style="{StaticResource OverlayCloseButton}"
+                                            HorizontalAlignment="Right" Click="CloseOverlay_Click"/>
+                                </Grid>
+                            </Border>
+                            <controls:PricesControl x:Name="PricesControl" Grid.Row="1"/>
+                        </Grid>
+                    </Border>
+                </Grid>
 
-            <!-- ═══════════════════════════════════════════════════════ -->
-            <!-- TAB: ОБНОВЛЕНИЯ                                        -->
-            <TabItem>
-                <TabItem.Header>
-                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                        <TextBlock Style="{DynamicResource FluentIconTab}" Text="&#xE81C;"/>
-                        <TextBlock Text="Обновления" VerticalAlignment="Center"/>
-                    </StackPanel>
-                </TabItem.Header>
-                <controls:UpdatesTabControl/>
-            </TabItem>
+                <!-- ═══════════════════════════════════════ -->
+                <!-- OVERLAY: ОБНОВЛЕНИЯ                     -->
+                <!-- ═══════════════════════════════════════ -->
+                <Grid x:Name="UpdatesOverlay" Visibility="Collapsed">
+                    <Border x:Name="UpdatesBackdrop" Background="#80000000" Opacity="0"
+                            MouseLeftButtonDown="Backdrop_MouseLeftButtonDown" Cursor="Hand"/>
+                    <Border x:Name="UpdatesPanel"
+                            Background="{DynamicResource Surface}"
+                            HorizontalAlignment="Right" Width="800"
+                            BorderBrush="{DynamicResource Border}" BorderThickness="1,0,0,0">
+                        <Border.RenderTransform>
+                            <TranslateTransform x:Name="UpdatesSlideTransform" X="0"/>
+                        </Border.RenderTransform>
+                        <Grid>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="*"/>
+                            </Grid.RowDefinitions>
+                            <Border Grid.Row="0" Background="{DynamicResource HeaderBg}"
+                                    Padding="16,10" BorderBrush="{DynamicResource Border}" BorderThickness="0,0,0,1">
+                                <Grid>
+                                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                        <TextBlock Text="&#xE81C;" FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets" FontSize="16"
+                                                   Foreground="{DynamicResource Accent}" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                                        <TextBlock Text="Обновления" FontSize="14" FontWeight="SemiBold"
+                                                   Foreground="{DynamicResource TextPrimary}" VerticalAlignment="Center"/>
+                                    </StackPanel>
+                                    <Button Style="{StaticResource OverlayCloseButton}"
+                                            HorizontalAlignment="Right" Click="CloseOverlay_Click"/>
+                                </Grid>
+                            </Border>
+                            <controls:UpdatesTabControl Grid.Row="1"/>
+                        </Grid>
+                    </Border>
+                </Grid>
 
-        </TabControl>
+            </Grid>
+        </Grid>
 
         <!-- Toast notification container — overlays on top of everything -->
         <Grid x:Name="ToastCanvas" Grid.Row="2" IsHitTestVisible="False"
