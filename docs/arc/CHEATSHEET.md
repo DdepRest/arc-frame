@@ -13,7 +13,7 @@
  8. Версия — только в .csproj (<Version>X.Y.Z</Version>)                    → RELEASE_PROCESS
  9. Все данные в %AppData%, не рядом с .exe                                 → GOTCHAS#9
 10. EscapeHtml для всех строковых полей в КП                                → GOTCHAS#6
-11. releases.json пушить ПОСЛЕ GitHub Release + ZIP                         → RELEASE_PROCESS
+11. releases.json пушить ПОСЛЕ GitHub Release + ZIP (полный pipeline: RELEASE_PROCESS • CDN-диагностика: AUTO_UPDATE) → RELEASE_PROCESS
 12. При добавлении товара → DefaultPrices + ApplyMigrations                 → GOTCHAS#4
 13. Обновить CHANGELOG.md + CURRENT_STATE.md после изменений                → CONTROL#8
 14. Статус «Подтверждено владельцем» — только после явного подтверждения    → CONTROL#4

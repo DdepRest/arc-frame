@@ -21,7 +21,7 @@ Before any non-trivial task:
 Задача про →            Читай (кроме CHEATSHEET + CURRENT_STATE)
 ──────────────────────────────────────────────────────────────────
 Расчёты, формулы, Anwis  CALCULATION_LOGIC + TEST_CASES + GOTCHAS
-Релиз, автообновление   RELEASE_PROCESS + AUTO_UPDATE
+Релиз, автообновление   RELEASE_PROCESS + AUTO_UPDATE (читать ОБЯЗАТЕЛЬНО обе для каждого релиза)
 UI, темы, стили          GOTCHAS#7 + DECISIONS#10
 Печать КП                GOTCHAS#6 + CALCULATION_LOGIC#КП
 Сохранение/загрузка      GOTCHAS#2,#3,#9 + DECISIONS#3

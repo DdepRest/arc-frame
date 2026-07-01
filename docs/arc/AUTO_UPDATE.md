@@ -100,7 +100,11 @@
 
 ## GitHub URL/API
 
-**Манифест:** `https://raw.githubusercontent.com/DdepRest/arc-frame/main/releases.json`
+**Манифест (используется программой в runtime):** `https://raw.githubusercontent.com/DdepRest/arc-frame/main/releases.json`
+
+> ⚠️ Этот URL кэшируется на GitHub CDN. После `git push` файла в `main` обновление видно на этом URL через **5-30 минут**. Если нужна нулевая задержка диагностики — используйте `https://api.github.com/repos/DdepRest/arc-frame/contents/releases.json` (НЕ кэшируется, но требует авторизации для частых запросов).
+
+**Диагностический endpoint (НЕ кэшируется):** `https://api.github.com/repos/DdepRest/arc-frame/contents/releases.json`
 
 Это публичный raw-URL к `releases.json` в репозитории.
 
@@ -403,4 +407,4 @@ Watchdog .bat запускает обновлённый `MosquitoNetCalculator.e
 
 ## Last verified
 
-2026-06-28 (HttpClient DI + zero-byte fix + XAML animation + integration tests)
+2026-07-01 (v3.41.0 release run: CDN-cache diagnostic + api.github.com endpoint documented for «не видит обновление» support)

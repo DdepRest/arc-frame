@@ -179,18 +179,42 @@ docs/arc/DOCUMENTATION_MATRIX.md
 
 ---
 
-## 7. Release / Auto-update safety
+## 7. Release / Auto-update safety (КРИТИЧНО)
 
-`releases.json` — это рубильник автообновления. Файл читается напрямую с `raw.githubusercontent.com`.
+`releases.json` — это **рубильник автообновления**: как только файл с новой версией попадает в `main`, ВСЕ старые копии программы (десятки/сотни у пользователей) в течение следующего фонового tick'а (до 30 мин) обнаруживают обновление. Это **не обратимо** — пользователи увидят «Доступна новая версия», и если в этот момент GitHub Release ещё не создан или ZIP-asset не загружен, программа выдаст ошибку скачивания.
 
-**Безопасный порядок:**
+Подробный канонический pipeline и git push sequence: **`docs/arc/RELEASE_PROCESS.md`**.
+Подробная диагностика «не видит обновление» и CDN-кэш: **`docs/arc/AUTO_UPDATE.md`**.
 
-1. Собрать ZIP.
-2. Посчитать SHA-256.
-3. Создать GitHub Release и загрузить ZIP-asset.
-4. **Только после этого** опубликовать/запушить обновлённый `releases.json` в `main`.
+**Безопасный порядок (КРАТКО — ПОЛНЫЙ в RELEASE_PROCESS.md):**
 
-Запрещено пушить `releases.json` раньше GitHub Release — пользователи увидят обновление, которое нельзя скачать.
+1. Собрать ZIP и вычислить SHA-256.
+2. Создать GitHub Release `vX.Y.Z` и загрузить ZIP-asset (`gh release create`).
+3. Подтвердить, что release создан и не draft (`gh release view vX.Y.Z`).
+4. **ТОЛЬКО ПОСЛЕ ЭТОГО** закоммитить и запушить `releases.json` в `main`.
+
+**Запрещено:**
+
+- Пуш `releases.json` в `main` раньше создания GitHub Release — пользователи увидят обновление, которое нельзя скачать.
+- Пуш `releases.json` без SHA-256 в записи — watchdog.bat откатится на .exe.bak и пользователь останется на старой версии.
+- Использовать `AllNewestFirst_FirstItemIsNewest` в UpdateLogTests с hardcoded версией — brittle (выходит из синхрона при каждом релизе).
+
+**Git push рекомендации (RELEASE_PROCESS.md раздел «Git push sequence»):**
+
+```bash
+git stash                         # сохранить uncommitted (например, releases.json)
+git pull --rebase origin main     # подтянуть remote
+git push origin main              # запушить коммит кода
+git stash pop                     # восстановить uncommitted
+```
+
+Если `stash pop` вызывает merge-конфликт в `releases.json` — ВСЕГДА делай `git checkout --theirs releases.json` (сташь содержит новую правильную версию). `git checkout --ours` оставит старую.
+
+**Если пользователь жалуется «программа не детектит новую версию»:**
+
+1. Диагностика — см. AUTO_UPDATE.md раздел «Диагностика «не видит обновление»».
+2. Проверить remote `api.github.com` (НЕ кэшируется) vs `raw.githubusercontent.com` (кэшируется 5-30 мин).
+3. Если оба показывают новую версию — проблема в HttpClient-кэше программы пользователя, попросить перезапустить.
 
 ---
 
@@ -309,4 +333,4 @@ docs/arc/MULTI_AGENT_ARC_CALC_CONTROL.md
 
 ## Last verified
 
-2026-06-30 (sync с CURRENT_STATE — A.R.C. cleanup: «Отлив» opt-in в «На завод», docs/arc синхронизированы)
+2026-07-01 (v3.41.0 release run: §7 release-safety rule expanded with explicit git push sequence + CDN-cache gotcha; cross-refs to RELEASE_PROCESS.md и AUTO_UPDATE.md для деталей)
