@@ -120,11 +120,12 @@ update-releases-json.ps1
 
 > **⚠️ Правило безопасности:** `releases.json` в ветке `main` является **триггером автообновления**. Как только новая запись попадает в `main`, старые программы могут увидеть обновление. Поэтому `releases.json` нельзя публиковать в `main` раньше, чем GitHub Release создан и ZIP-asset загружен. Иначе пользователи увидят «Доступно обновление», но скачать не смогут.
 
----
-
-## Канонический Pipeline релиза (выучить один раз)
-
 Единственная причина, по которой этот pipeline нарушается — попытки «пропустить шаги ради скорости». Не пропускай. Один релиз в неделю — это нормально, два сломанных CDN-кэша за день — нет.
+
+**Запрещено — дополнительные директивы** (главное правило порядка публикации — выше в ⚠️, здесь только проектные):
+
+- Пуш `releases.json` без SHA-256 в записи — watchdog.bat откатится на `.exe.bak` и пользователь останется на старой версии.
+- Использовать `AllNewestFirst_FirstItemIsNewest` в `UpdateLogTests` с hardcoded версией — brittle (выходит из синхрона при каждом релизе).
 
 ### Этап 1 — Подготовка (автоматизируемо)
 
@@ -246,17 +247,6 @@ git commit -m "release: update releases.json for vX.Y.Z"
    curl -s "https://api.github.com/repos/DdepRest/arc-frame/contents/releases.json" | python -c "import json,sys,base64; print(json.loads(base64.b64decode(json.load(sys.stdin)['content']))['latest'])"
    ```
    Если `raw` отдаёт старую версию, а `api` — новую: **CDN-кэш**. Подождать 5-15 мин.
-
----
-
-## Что делать, если автообновление не видит новую версию
-
-1. Проверить, что `releases.json` закоммичен в `main`.
-2. Проверить, что URL в `releases.json` правильный и файл доступен.
-3. Проверить, что `latest` в `releases.json` совпадает с версией в `.csproj`.
-4. Проверить, что SHA-256 в `releases.json` совпадает с реальным хешем ZIP.
-5. Проверить, что GitHub Release не draft и не prerelease.
-6. Проверить `UpdateService.CurrentVersion` через Debug-лог.
 
 ---
 

@@ -102,7 +102,7 @@
 
 **Манифест (используется программой в runtime):** `https://raw.githubusercontent.com/DdepRest/arc-frame/main/releases.json`
 
-> ⚠️ Этот URL кэшируется на GitHub CDN. После `git push` файла в `main` обновление видно на этом URL через **5-30 минут**. Если нужна нулевая задержка диагностики — используйте `https://api.github.com/repos/DdepRest/arc-frame/contents/releases.json` (НЕ кэшируется, но требует авторизации для частых запросов).
+> ⚠️ Этот URL кэшируется на GitHub CDN. После `git push` файла в `main` обновление видно на этом URL через **5-15 минут** (диапазон совпадает с `docs/arc/RELEASE_PROCESS.md`). Если нужна нулевая задержка диагностики — используйте `https://api.github.com/repos/DdepRest/arc-frame/contents/releases.json` (НЕ кэшируется, но требует авторизации для частых запросов).
 
 **Диагностический endpoint (НЕ кэшируется):** `https://api.github.com/repos/DdepRest/arc-frame/contents/releases.json`
 
@@ -147,22 +147,10 @@
 
 ## ⚠️ `releases.json` — это рубильник автообновления
 
-Файл `releases.json` живёт в ветке `main` и читается напрямую с `raw.githubusercontent.com`.
+Файл `releases.json` живёт в ветке `main` и читается напрямую с `raw.githubusercontent.com`. Публикация новой версии в нём **необратимо** запускает обновление у всех пользователей. Если в `releases.json` указана версия, а соответствующий ZIP ещё не загружен в GitHub Release — пользователи получат ошибку скачивания.
 
-Это значит:
-
-- Как только `releases.json` опубликован в `main` с новой версией — **все старые программы видят обновление**.
-- Если в `releases.json` указана версия, а соответствующий ZIP ещё не загружен в GitHub Release — пользователи получат ошибку скачивания.
-- Поэтому `releases.json` и GitHub Release **должны публиковаться синхронно** (или GitHub Release строго раньше).
-
-**Безопасный порядок публикации:**
-
-1. Собрать ZIP.
-2. Посчитать SHA-256.
-3. Создать GitHub Release и загрузить ZIP-asset.
-4. **Только после этого** опубликовать/запушить обновлённый `releases.json` в `main`.
-
-Подробнее — в `docs/arc/RELEASE_PROCESS.md`, раздел «Безопасный порядок публикации».
+> ⚠️ **Канонический дом:** полный release pipeline, ⚠️ правило безопасности, 4 этапа (ZIP → GitHub Release → push `releases.json`) и git push sequence — в `docs/arc/RELEASE_PROCESS.md` (раздел «Канонический Pipeline релиза»).
+> Этот файл описывает только **runtime-поведение манифеста** (как программа его получает, поведение CDN-кэша, диагностику «не видит обновление») — НЕ процедуру релиза.
 
 ---
 
@@ -323,10 +311,6 @@ Watchdog .bat запускает обновлённый `MosquitoNetCalculator.e
 - `releases.json`
 - `build.bat`
 - `MosquitoNetCalculator.Tests/Services/UpdateServiceIntegrationTests.cs`
-
-## Last verified
-
-2026-06-29 (idle/periodic background checks via UpdateCheckScheduler + ShowUpdateNotification toast + CheckInBackgroundAsync)
 
 ---
 
