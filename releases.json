@@ -8,7 +8,7 @@
                          "title":  "Hotfix: автообновление при установке в Program Files",
                          "changes":  [
                                          "Исправлена ошибка E_ACCESSDENIED при автообновлении на системах, где приложение установлено в Program Files.",
-                                         "Watchdog-файлы (.bat, .zip, .bak) теперь создаются в %AppData%\MosquitoNetCalculator вместо BaseDirectory.",
+                                         "Watchdog-файлы (.bat, .zip, .bak) теперь создаются в %AppData%\\MosquitoNetCalculator вместо BaseDirectory.",
                                          "Runtime-проверка зависимостей (WebView2, VC++ Redist) с toast-уведомлением при старте."
                                      ],
                          "url":  "https://github.com/DdepRest/arc-frame/releases/download/v3.42.1/ARC-Frame-3.42.1-full.zip",
