@@ -75,4 +75,4 @@ arc-check.ps1                                 # Проверка docs перед
 
 ## Last verified
 
-2026-06-29 (v3.39.0 — background auto-update checks via UpdateCheckScheduler: periodic 30 мин + idle 10 мин + persistent notification toast с кнопками [Обновить]/[Позже])
+2026-07-02 (v3.42.0 — slide-out навигация, sidebar без chevrons, ПСУЛ/Уплотнение упрощённый ввод, Антикошка toggle в отдельной строке, WebView2 fix + DependencyChecker)
