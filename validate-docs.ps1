@@ -316,6 +316,79 @@ if (-not $lastReleaseTag) {
 
 Write-Host ""
 
+# 9. releases.json JSON validity and schema
+Write-Host "[9] releases.json validity" -ForegroundColor Yellow
+
+$releasesJsonPath = Join-Path $projectRoot "releases.json"
+if (-not (Test-Path $releasesJsonPath)) {
+    Write-Host "  FAIL: releases.json not found" -ForegroundColor Red
+    $issues++
+} else {
+    try {
+        $releasesContent = Get-Content $releasesJsonPath -Raw -Encoding UTF8
+        $releasesData = $releasesContent | ConvertFrom-Json -ErrorAction Stop
+        Write-Host "  PASS: Valid JSON" -ForegroundColor Green
+
+        # Check required top-level fields
+        $schemaIssues = 0
+        if ([string]::IsNullOrWhiteSpace($releasesData.latest)) {
+            Write-Host "  FAIL: Missing or empty 'latest' field" -ForegroundColor Red
+            $schemaIssues++
+        }
+        if (-not $releasesData.releases -or $releasesData.releases.Count -eq 0) {
+            Write-Host "  FAIL: Missing or empty 'releases' array" -ForegroundColor Red
+            $schemaIssues++
+        }
+
+        # Check each release has required fields
+        $releaseIndex = 0
+        foreach ($rel in $releasesData.releases) {
+            $requiredFields = @('version', 'date', 'type', 'title', 'changes', 'url', 'size', 'sha256')
+            foreach ($field in $requiredFields) {
+                if (-not (Get-Member -InputObject $rel -Name $field -MemberType Properties)) {
+                    Write-Host "  FAIL: Release[$releaseIndex] missing field '$field'" -ForegroundColor Red
+                    $schemaIssues++
+                }
+            }
+            if ($rel.changes -and -not ($rel.changes -is [array])) {
+                Write-Host "  FAIL: Release[$releaseIndex] ($($rel.version)) 'changes' is not an array" -ForegroundColor Red
+                $schemaIssues++
+            }
+            # Validate sha256 is non-empty for non-placeholder entries
+            # (placeholder entries like v3.40.4 have size=0 and sha256="")
+            if ($rel.size -gt 0 -and [string]::IsNullOrWhiteSpace($rel.sha256)) {
+                Write-Host "  FAIL: Release[$releaseIndex] ($($rel.version)) has size>0 but empty sha256" -ForegroundColor Red
+                $schemaIssues++
+            }
+            $releaseIndex++
+        }
+
+        # Check latest matches first release version (newest-first ordering)
+        if ($releasesData.releases -and $releasesData.releases.Count -gt 0) {
+            $firstVersion = $releasesData.releases[0].version
+            if ($releasesData.latest -ne $firstVersion) {
+                Write-Host "  FAIL: 'latest' ($($releasesData.latest)) != first release version ($firstVersion)" -ForegroundColor Red
+                $schemaIssues++
+            } else {
+                Write-Host "  PASS: 'latest' matches first release version" -ForegroundColor Green
+            }
+        }
+
+        $releaseCount = if ($releasesData.releases) { $releasesData.releases.Count } else { 0 }
+        if ($schemaIssues -eq 0) {
+            Write-Host "  PASS: Schema valid ($releaseCount releases)" -ForegroundColor Green
+        } else {
+            Write-Host "  FAIL: $schemaIssues schema issue(s)" -ForegroundColor Red
+            $issues += $schemaIssues
+        }
+    } catch {
+        Write-Host "  FAIL: Invalid JSON — $($_.Exception.Message)" -ForegroundColor Red
+        $issues++
+    }
+}
+
+Write-Host ""
+
 # Summary
 Write-Host "====================================" -ForegroundColor Cyan
 if ($issues -eq 0 -and $warnings -eq 0) {
