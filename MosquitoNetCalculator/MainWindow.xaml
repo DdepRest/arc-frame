@@ -67,9 +67,8 @@
             </DoubleAnimation>
         </Storyboard>
 
-        <!-- NavigationView button style -->
+        <!-- NavigationView button style (slide-out labels) -->
         <Style x:Key="NavButton" TargetType="Button">
-            <Setter Property="Width" Value="40"/>
             <Setter Property="Height" Value="40"/>
             <Setter Property="Background" Value="Transparent"/>
             <Setter Property="BorderThickness" Value="0"/>
@@ -77,7 +76,7 @@
             <Setter Property="Cursor" Value="Hand"/>
             <Setter Property="FontSize" Value="18"/>
             <Setter Property="FontFamily" Value="Segoe Fluent Icons, Segoe MDL2 Assets"/>
-            <Setter Property="HorizontalContentAlignment" Value="Center"/>
+            <Setter Property="HorizontalContentAlignment" Value="Left"/>
             <Setter Property="VerticalContentAlignment" Value="Center"/>
             <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
             <Setter Property="Template">
@@ -85,7 +84,7 @@
                     <ControlTemplate TargetType="Button">
                         <Border Background="{TemplateBinding Background}"
                                 CornerRadius="8" BorderThickness="0"
-                                Width="40" Height="40">
+                                Height="40">
                             <Grid>
                                 <!-- Active indicator pill (left edge) -->
                                 <Border x:Name="ActivePill" Width="3" Height="16"
@@ -93,8 +92,9 @@
                                         CornerRadius="1.5"
                                         HorizontalAlignment="Left" VerticalAlignment="Center"
                                         Margin="0,0,0,0" Opacity="0"/>
-                                <ContentPresenter HorizontalAlignment="Center"
-                                                  VerticalAlignment="Center"/>
+                                <ContentPresenter HorizontalAlignment="Left"
+                                                  VerticalAlignment="Center"
+                                                  Margin="10,0,0,0"/>
                             </Grid>
                         </Border>
                         <ControlTemplate.Triggers>
@@ -170,83 +170,12 @@
         <!-- MAIN LAYOUT: NAVIGATION VIEW + CONTENT                 -->
         <!-- ═══════════════════════════════════════════════════════ -->
         <Grid Grid.Row="2">
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="52"/>
-                <ColumnDefinition Width="*"/>
-            </Grid.ColumnDefinitions>
-
-            <!-- ── NavigationView (left icon bar, 52px) ── -->
-            <Border Grid.Column="0" Background="{DynamicResource Surface}"
-                    BorderBrush="{DynamicResource Border}" BorderThickness="0,0,1,0"
-                    WindowChrome.IsHitTestVisibleInChrome="True">
-                <StackPanel VerticalAlignment="Top" Margin="6,8,6,0">
-                    <!-- Расчёт -->
-                    <Button x:Name="NavBtnCalc" Style="{StaticResource NavButton}"
-                            ToolTip="Расчёт (Ctrl+1)" Click="NavButton_Click" Tag="Calc">
-                        <TextBlock x:Name="NavIconCalc" Text="&#xE1D0;"
-                                   FontSize="20"/>
-                    </Button>
-                    <!-- Заказы -->
-                    <Button x:Name="NavBtnOrders" Style="{StaticResource NavButton}"
-                            ToolTip="Заказы (Ctrl+2)" Click="NavButton_Click" Tag="Orders" Margin="0,4,0,0">
-                        <Grid>
-                            <TextBlock x:Name="NavIconOrders" Text="&#xE71D;"
-                                       FontSize="20"/>
-                            <Border x:Name="NavOrdersBadge" Visibility="Collapsed"
-                                    Background="{DynamicResource Accent}" CornerRadius="9"
-                                    MinWidth="20" Height="20" Padding="6,1"
-                                    HorizontalAlignment="Right" VerticalAlignment="Top"
-                                    Margin="0,-5,-6,0">
-                                <Border.Effect>
-                                    <!-- Drop-shadow отделяет значок от иконки Orders даже
-                                         при смене темы. Цвет берётся из явного Color-ресурса
-                                         AccentShadowColor (зеркальная пара к кисти Accent),
-                                         который ThemeService обновляет в lockstep на смене темы.
-                                         Brush→Color implicit conversion в WPF не работает
-                                         (Color — это struct), поэтому прямой bind на Accent brush
-                                         не сработал бы. -->
-                                    <DropShadowEffect BlurRadius="6" ShadowDepth="0"
-                                                      Opacity="0.45"
-                                                      Color="{DynamicResource AccentShadowColor}"/>
-                                </Border.Effect>
-                                <TextBlock x:Name="NavOrdersBadgeText" Text="0"
-                                           FontFamily="Segoe UI"
-                                           FontSize="11" FontWeight="SemiBold"
-                                           Foreground="{DynamicResource OnAccent}"
-                                           HorizontalAlignment="Center"
-                                           VerticalAlignment="Center"
-                                           LineStackingStrategy="BlockLineHeight"
-                                           LineHeight="14"/>
-                            </Border>
-                        </Grid>
-                    </Button>
-                    <!-- Цены -->
-                    <Button x:Name="NavBtnPrices" Style="{StaticResource NavButton}"
-                            ToolTip="Цены (Ctrl+3)" Click="NavButton_Click" Tag="Prices" Margin="0,4,0,0">
-                        <TextBlock x:Name="NavIconPrices" Text="&#xE8C7;"
-                                   FontSize="20"/>
-                    </Button>
-                    <!-- Обновления -->
-                    <Button x:Name="NavBtnUpdates" Style="{StaticResource NavButton}"
-                            ToolTip="Обновления (Ctrl+4)" Click="NavButton_Click" Tag="Updates" Margin="0,4,0,0">
-                        <Grid>
-                            <TextBlock x:Name="NavIconUpdates" Text="&#xE81C;"
-                                       FontSize="20"/>
-                            <Ellipse x:Name="NavUpdatesDot" Width="8" Height="8" Fill="#E81123"
-                                     HorizontalAlignment="Right" VerticalAlignment="Top"
-                                     Margin="0,2,-4,0" Visibility="Collapsed"
-                                     ToolTip="Доступна новая версия!"/>
-                        </Grid>
-                    </Button>
-                </StackPanel>
-            </Border>
-
             <!-- ── Content area (Расчёт + overlays) ── -->
-            <Grid Grid.Column="1" ClipToBounds="True">
+            <Grid>
                 <!-- ═══════════════════════════════════════ -->
                 <!-- PRIMARY: РАСЧЁТ view                    -->
                 <!-- ═══════════════════════════════════════ -->
-                <Grid x:Name="CalculationView" Background="{DynamicResource AppBg}">
+                <Grid x:Name="CalculationView" Background="{DynamicResource AppBg}" Margin="52,0,0,0">
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="250"/>
                         <ColumnDefinition Width="*"/>
@@ -303,7 +232,7 @@
                 <!-- ═══════════════════════════════════════ -->
                 <!-- OVERLAY: ЗАКАЗЫ                         -->
                 <!-- ═══════════════════════════════════════ -->
-                <Grid x:Name="OrdersOverlay" Visibility="Collapsed">
+                <Grid x:Name="OrdersOverlay" Visibility="Collapsed" Panel.ZIndex="15">
                     <!-- Backdrop -->
                     <Border x:Name="OrdersBackdrop" Background="#80000000" Opacity="0"
                             MouseLeftButtonDown="Backdrop_MouseLeftButtonDown" Cursor="Hand"/>
@@ -358,7 +287,7 @@
                 <!-- ═══════════════════════════════════════ -->
                 <!-- OVERLAY: ЦЕНЫ                           -->
                 <!-- ═══════════════════════════════════════ -->
-                <Grid x:Name="PricesOverlay" Visibility="Collapsed">
+                <Grid x:Name="PricesOverlay" Visibility="Collapsed" Panel.ZIndex="15">
                     <Border x:Name="PricesBackdrop" Background="#80000000" Opacity="0"
                             MouseLeftButtonDown="Backdrop_MouseLeftButtonDown" Cursor="Hand"/>
                     <Border x:Name="PricesPanel"
@@ -394,7 +323,7 @@
                 <!-- ═══════════════════════════════════════ -->
                 <!-- OVERLAY: ОБНОВЛЕНИЯ                     -->
                 <!-- ═══════════════════════════════════════ -->
-                <Grid x:Name="UpdatesOverlay" Visibility="Collapsed">
+                <Grid x:Name="UpdatesOverlay" Visibility="Collapsed" Panel.ZIndex="15">
                     <Border x:Name="UpdatesBackdrop" Background="#80000000" Opacity="0"
                             MouseLeftButtonDown="Backdrop_MouseLeftButtonDown" Cursor="Hand"/>
                     <Border x:Name="UpdatesPanel"
@@ -427,11 +356,95 @@
                     </Border>
                 </Grid>
 
+                <!-- ── NavigationView (slide-out overlay, 52→160px) ── -->
+                <Border x:Name="NavPanel"
+                        HorizontalAlignment="Left" Width="52"
+                        Panel.ZIndex="10"
+                        Background="{DynamicResource Surface}"
+                        BorderBrush="{DynamicResource Border}" BorderThickness="0,0,1,0"
+                        ClipToBounds="True"
+                        WindowChrome.IsHitTestVisibleInChrome="True">
+                    <StackPanel VerticalAlignment="Top" Margin="6,8,6,0">
+                        <!-- Расчёт -->
+                        <Button x:Name="NavBtnCalc" Style="{StaticResource NavButton}" Width="148"
+                                ToolTip="Расчёт (Ctrl+1)" Click="NavButton_Click" Tag="Calc">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+                                <Grid Grid.Column="0" Width="30" Height="28">
+                                    <TextBlock x:Name="NavIconCalc" Text="&#xE1D0;"
+                                               FontSize="20" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                </Grid>
+                                <TextBlock x:Name="NavLabelCalc" Grid.Column="1" Text="Расчёт" Opacity="0"
+                                           Margin="10,0,0,0" FontSize="12" VerticalAlignment="Center"
+                                           FontFamily="Segoe UI"/>
+                            </Grid>
+                        </Button>
+                        <!-- Заказы -->
+                        <Button x:Name="NavBtnOrders" Style="{StaticResource NavButton}" Width="148"
+                                ToolTip="Заказы (Ctrl+2)" Click="NavButton_Click" Tag="Orders" Margin="0,4,0,0">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+                                <Grid Grid.Column="0" Width="30" Height="28">
+                                    <TextBlock x:Name="NavIconOrders" Text="&#xE71D;"
+                                               FontSize="20" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+
+                                </Grid>
+                                <TextBlock x:Name="NavLabelOrders" Grid.Column="1" Text="Заказы" Opacity="0"
+                                           Margin="10,0,0,0" FontSize="12" VerticalAlignment="Center"
+                                           FontFamily="Segoe UI"/>
+                            </Grid>
+                        </Button>
+                        <!-- Цены -->
+                        <Button x:Name="NavBtnPrices" Style="{StaticResource NavButton}" Width="148"
+                                ToolTip="Цены (Ctrl+3)" Click="NavButton_Click" Tag="Prices" Margin="0,4,0,0">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+                                <Grid Grid.Column="0" Width="30" Height="28">
+                                    <TextBlock x:Name="NavIconPrices" Text="&#xE8C7;"
+                                               FontSize="20" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                </Grid>
+                                <TextBlock x:Name="NavLabelPrices" Grid.Column="1" Text="Цены" Opacity="0"
+                                           Margin="10,0,0,0" FontSize="12" VerticalAlignment="Center"
+                                           FontFamily="Segoe UI"/>
+                            </Grid>
+                        </Button>
+                        <!-- Обновления -->
+                        <Button x:Name="NavBtnUpdates" Style="{StaticResource NavButton}" Width="148"
+                                ToolTip="Обновления (Ctrl+4)" Click="NavButton_Click" Tag="Updates" Margin="0,4,0,0">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+                                <Grid Grid.Column="0" Width="30" Height="28">
+                                    <TextBlock x:Name="NavIconUpdates" Text="&#xE81C;"
+                                               FontSize="20" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                    <Ellipse x:Name="NavUpdatesDot" Width="8" Height="8" Fill="#E81123"
+                                             HorizontalAlignment="Right" VerticalAlignment="Top"
+                                             Margin="0,2,-4,0" Visibility="Collapsed"
+                                             ToolTip="Доступна новая версия!"/>
+                                </Grid>
+                                <TextBlock x:Name="NavLabelUpdates" Grid.Column="1" Text="Обновления" Opacity="0"
+                                           Margin="10,0,0,0" FontSize="12" VerticalAlignment="Center"
+                                           FontFamily="Segoe UI"/>
+                            </Grid>
+                        </Button>
+                    </StackPanel>
+                </Border>
             </Grid>
         </Grid>
 
         <!-- Toast notification container — overlays on top of everything -->
-        <Grid x:Name="ToastCanvas" Grid.Row="2" IsHitTestVisible="False"
+        <Grid x:Name="ToastCanvas" Grid.Row="2" Panel.ZIndex="20" IsHitTestVisible="False"
               HorizontalAlignment="Stretch" VerticalAlignment="Stretch"
               ClipToBounds="True"/>
     </Grid>

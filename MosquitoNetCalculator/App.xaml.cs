@@ -182,6 +182,9 @@ namespace MosquitoNetCalculator
                 window.Closed += (_, _) => Shutdown();
                 window.Show();
 
+                // ── Runtime dependency check (non-blocking toast if WebView2 missing) ──
+                _ = DependencyCheckerService.CheckAndNotifyAsync();
+
                 // ── Background update check (silent, non-blocking) ──
                 // Fire-and-forget after the main window is visible so
                 // toast notifications have a valid owner.

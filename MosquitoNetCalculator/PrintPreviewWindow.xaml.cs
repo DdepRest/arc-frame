@@ -4,6 +4,7 @@ using System.IO;
 using System.Windows;
 using System.Windows.Media;
 using Microsoft.Web.WebView2.Core;
+using MosquitoNetCalculator.Services;
 
 namespace MosquitoNetCalculator
 {
@@ -27,8 +28,17 @@ namespace MosquitoNetCalculator
         {
             try
             {
-                // Initialize the WebView2 environment (uses Evergreen runtime)
-                await WebView.EnsureCoreWebView2Async(null);
+                // Initialize the WebView2 environment with a user-data folder
+                // inside %AppData% to avoid E_ACCESSDENIED when the app is
+                // installed under Program Files.
+                string userDataFolder = Path.Combine(
+                    Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
+                    "MosquitoNetCalculator",
+                    "WebView2");
+                Directory.CreateDirectory(userDataFolder);
+
+                var env = await CoreWebView2Environment.CreateAsync(null, userDataFolder);
+                await WebView.EnsureCoreWebView2Async(env);
 
                 // Write HTML to a temp file and navigate to it
                 string tempPath = Path.Combine(
@@ -59,13 +69,31 @@ namespace MosquitoNetCalculator
             }
             catch (WebView2RuntimeNotFoundException)
             {
-                MessageBox.Show(
-                    "Для предпросмотра КП необходим WebView2 Runtime.\n" +
-                    "Скачайте его с сайта Microsoft или используйте печать через браузер.",
+                var result = MessageBox.Show(
+                    "Для предпросмотра КП необходим WebView2 Runtime.\n\n" +
+                    "Нажмите «Да», чтобы открыть страницу загрузки Microsoft.\n" +
+                    "Нажмите «Нет», чтобы открыть КП в браузере.",
                     "WebView2 не найден",
-                    MessageBoxButton.OK, MessageBoxImage.Warning);
+                    MessageBoxButton.YesNo,
+                    MessageBoxImage.Warning);
 
-                // Fallback: open in default browser
+                if (result == MessageBoxResult.Yes)
+                {
+                    try
+                    {
+                        System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo
+                        {
+                            FileName = DependencyCheckerService.WebView2DownloadUrl,
+                            UseShellExecute = true
+                        });
+                    }
+                    catch
+                    {
+                        // Best-effort: if the browser can't be launched, the user still
+                        // gets the KP opened via FallbackOpenInBrowser below.
+                    }
+                }
+
                 FallbackOpenInBrowser();
                 Close();
             }

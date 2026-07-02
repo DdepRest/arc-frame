@@ -10,17 +10,14 @@
                       HorizontalScrollBarVisibility="Disabled"
                       Padding="0">
             <StackPanel Margin="10,10,10,10">
-                <!-- ЗАКАЗЧИК Card (collapsible) -->
+                <!-- ЗАКАЗЧИК Card -->
                 <Border x:Name="CardClient" Background="{DynamicResource SectionBg}" CornerRadius="8" Padding="12" Margin="0,0,0,8" Opacity="0">
                     <StackPanel>
-                        <StackPanel Orientation="Horizontal" Margin="0,0,0,8" Cursor="Hand"
-                                    PreviewMouseLeftButtonDown="CardClient_HeaderClick">
-                            <TextBlock x:Name="ChevronClient" Text="▼" FontSize="9" FontWeight="Bold"
-                                       Foreground="{DynamicResource TextMuted}" VerticalAlignment="Center" Margin="0,0,6,0"/>
+                        <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
                             <TextBlock Style="{DynamicResource FluentIconSection}" Text="&#xE77B;"/>
                             <TextBlock Text="ЗАКАЗЧИК" Style="{DynamicResource SectionLabel}" Margin="0"/>
                         </StackPanel>
-                        <StackPanel x:Name="ContentClient">
+                        <StackPanel x:Name="ContentClient" Visibility="Visible">
                             <TextBlock Text="Имя" Style="{DynamicResource FieldLabel}"/>
                             <TextBox x:Name="TxtClientName" Margin="0,0,0,10"
                                      Text="{Binding ClientInfo.ClientName, UpdateSourceTrigger=PropertyChanged}"
@@ -38,17 +35,14 @@
                     </StackPanel>
                 </Border>
 
-                <!-- ДОГОВОР Card (collapsible) -->
+                <!-- ДОГОВОР Card -->
                 <Border x:Name="CardContract" Background="{DynamicResource SectionBg}" CornerRadius="8" Padding="12" Margin="0,0,0,8" Opacity="0">
                     <StackPanel>
-                        <StackPanel Orientation="Horizontal" Margin="0,0,0,8" Cursor="Hand"
-                                    PreviewMouseLeftButtonDown="CardContract_HeaderClick">
-                            <TextBlock x:Name="ChevronContract" Text="▼" FontSize="9" FontWeight="Bold"
-                                       Foreground="{DynamicResource TextMuted}" VerticalAlignment="Center" Margin="0,0,6,0"/>
+                        <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
                             <TextBlock Style="{DynamicResource FluentIconSection}" Text="&#xE8A5;"/>
                             <TextBlock Text="ДОГОВОР" Style="{DynamicResource SectionLabel}" Margin="0"/>
                         </StackPanel>
-                        <StackPanel x:Name="ContentContract">
+                        <StackPanel x:Name="ContentContract" Visibility="Visible">
                         <TextBlock Text="Номер" Style="{DynamicResource FieldLabel}"/>
                         <Grid Margin="0,0,0,10">
                             <Grid.ColumnDefinitions>
@@ -77,17 +71,14 @@
                 </StackPanel>
                 </Border>
 
-                <!-- ПРИМЕЧАНИЯ Card (collapsible) -->
+                <!-- ПРИМЕЧАНИЯ Card -->
                 <Border x:Name="CardNotes" Background="{DynamicResource SectionBg}" CornerRadius="8" Padding="12" Margin="0,0,0,8" Opacity="0">
                     <StackPanel>
-                        <StackPanel Orientation="Horizontal" Margin="0,0,0,8" Cursor="Hand"
-                                    PreviewMouseLeftButtonDown="CardNotes_HeaderClick">
-                            <TextBlock x:Name="ChevronNotes" Text="▼" FontSize="9" FontWeight="Bold"
-                                       Foreground="{DynamicResource TextMuted}" VerticalAlignment="Center" Margin="0,0,6,0"/>
+                        <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
                             <TextBlock Style="{DynamicResource FluentIconSection}" Text="&#xE70B;"/>
                             <TextBlock Text="ПРИМЕЧАНИЯ" Style="{DynamicResource SectionLabel}" Margin="0"/>
                         </StackPanel>
-                        <StackPanel x:Name="ContentNotes">
+                        <StackPanel x:Name="ContentNotes" Visibility="Visible">
                         <TextBox x:Name="TxtNotes" Margin="0,0,0,0"
                                  Text="{Binding ClientInfo.Notes, UpdateSourceTrigger=PropertyChanged}"
                                  AcceptsReturn="True" Height="60"

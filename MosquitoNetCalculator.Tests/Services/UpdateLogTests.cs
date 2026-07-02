@@ -25,7 +25,7 @@ namespace MosquitoNetCalculator.Tests.Services
             // The latest version in the JSON is 3.40.4 (update this when bumping).
             // AllNewestFirst_VersionsInDescendingOrder below already proves ordering
             // is correct, but this lock-in catches accidental version-string typos.
-            Assert.Equal("3.40.4", items[0].Version);
+            Assert.Equal("3.42.0", items[0].Version);
         }
 
         [Fact]
@@ -87,7 +87,7 @@ namespace MosquitoNetCalculator.Tests.Services
             Assert.NotNull(v3343);
             Assert.Equal("Улучшение", v3343!.Type);
             Assert.Contains("Сегментированный", v3343.Title, System.StringComparison.Ordinal);
-            Assert.Contains(v3343.Changes, c => c.Contains("segmented"));
+            Assert.Contains(v3343.Changes, c => c.Contains("сегмент"));
         }
 
         [Fact]
@@ -108,7 +108,7 @@ namespace MosquitoNetCalculator.Tests.Services
         [Fact]
         public void GetChangesSince_LatestVersion_ReturnsEmpty()
         {
-            var changes = UpdateLog.GetChangesSince(new Version(3, 40, 4));
+            var changes = UpdateLog.GetChangesSince(new Version(3, 42, 0));
 
             Assert.NotNull(changes);
             Assert.Empty(changes);

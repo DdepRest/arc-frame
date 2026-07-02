@@ -92,6 +92,16 @@ Filename: "{cmd}"; Parameters: "/c if exist ""{userappdata}\MosquitoNetCalculato
 
 [Code]
 // =====================================================================
+// Идентификация задачи "Создать ярлык на рабочем столе"
+// Используется CurPageChanged ниже для принудительной отметки галочки.
+// ВАЖНО: Эта подстрока КОУПЛИТСЯ с [Tasks] Description выше. Если кто-то
+// изменит русскую формулировку задачи в [Tasks], обновите эту константу
+// одновременно. Поиск идёт по ItemCaption[I] (NOT GroupDescription) —
+// ищется по Description задачи, а не по group header.
+// =====================================================================
+const DesktopTaskCaptionMatch = 'рабочем столе';
+
+// =====================================================================
 // Импорт функции URLDownloadToFile из urlmon.dll для скачивания файлов
 // =====================================================================
 function URLDownloadToFile(
@@ -671,6 +681,43 @@ begin
       StatusLine := StatusLine + #13#10 + 'Все необходимые компоненты уже были установлены в системе.';
     end;
     MsgBox(StatusLine, mbInformation, MB_OK);
+  end;
+end;
+
+/// Принудительно отмечает галочку «Создать ярлык на рабочем столе», когда
+/// показывается страница с задачами. Inno Setup флаг `checkedonce` запоминает
+/// выбор пользователя и при повторной установке может показать галочку как
+/// unchecked, если в прошлый раз её сняли. Для удобства массовой установки мы
+/// ЯВНО требуем эту галочку checked каждый раз.
+///
+/// Поведение: каждый раз при входе на wpSelectTasks (включая Back → Next
+/// навигацию) галочка принудительно отмечается. Это и есть желаемое поведение:
+/// «галочка активна автоматически» независимо от предыдущих установок.
+///
+/// Поиск по каптину (Pos) робастнее, чем по индексу: если [Tasks] будет
+/// расширен, коду не нужно править индекс. Константа DesktopTaskCaptionMatch
+/// должна оставаться синхронизированной с [Tasks] Description (см. комментарий
+/// выше константы).
+procedure CurPageChanged(CurPageID: Integer);
+var
+  I: Integer;
+begin
+  if CurPageID <> wpSelectTasks then
+    Exit;
+
+  if WizardForm.TasksList = nil then
+    Exit;
+
+  // Если по какой-то причине Caption задачи изменился и не матчит
+  // DesktopTaskCaptionMatch (например, был переименован русский текст),
+  // мы НЕ ставим «тихий sanity fallback» (тихие fallback'ы опасны —
+  // могут сделать check на КАКОЙ-ТО другой задаче, маскируя баг).
+  // Просто ничего не делаем — пользователь увидит unchecked, и
+  // проблема будет очевидна при первом запуске.
+  for I := 0 to WizardForm.TasksList.Items.Count - 1 do
+  begin
+    if Pos(DesktopTaskCaptionMatch, WizardForm.TasksList.ItemCaption[I]) > 0 then
+      WizardForm.TasksList.Checked[I] := True;
   end;
 end;
 

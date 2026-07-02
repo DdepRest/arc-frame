@@ -104,6 +104,7 @@
                 <Grid.RowDefinitions>
                     <RowDefinition Height="Auto"/>
                     <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
                 </Grid.RowDefinitions>
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="1*"/> <ColumnDefinition Width="6"/>
@@ -128,64 +129,6 @@
                     <TextBlock Text="Тип" Style="{DynamicResource FieldLabel}"/>
                     <ComboBox x:Name="CmbQuickType" Style="{DynamicResource QuickCombo}"
                               SelectionChanged="CmbQuickType_SelectionChanged"/>
-                    <ToggleButton x:Name="TbtnAnticat"
-                                  Content="Антикошка  +2000 ₽/м²"
-                                  FontSize="11" FontWeight="SemiBold"
-                                  Margin="0,4,0,0" Padding="8,3"
-                                  Visibility="Collapsed"
-                                  Click="TbtnAnticat_Click">
-                        <ToggleButton.Style>
-                            <Style TargetType="ToggleButton">
-                                <Setter Property="Background" Value="{DynamicResource Surface}"/>
-                                <Setter Property="Foreground" Value="{DynamicResource TextPrimary}"/>
-                                <Setter Property="BorderBrush" Value="{DynamicResource Border}"/>
-                                <Setter Property="BorderThickness" Value="1"/>
-                                <Setter Property="Cursor" Value="Hand"/>
-                                <Setter Property="Template">
-                                    <Setter.Value>
-                                        <ControlTemplate TargetType="ToggleButton">
-                                            <Border x:Name="Bd"
-                                                    Background="{TemplateBinding Background}"
-                                                    BorderBrush="{TemplateBinding BorderBrush}"
-                                                    BorderThickness="{TemplateBinding BorderThickness}"
-                                                    CornerRadius="6"
-                                                    Padding="{TemplateBinding Padding}"
-                                                    SnapsToDevicePixels="True">
-                                                <ContentPresenter HorizontalAlignment="Center"
-                                                                  VerticalAlignment="Center"/>
-                                            </Border>
-                                            <ControlTemplate.Triggers>
-                                                <Trigger Property="IsChecked" Value="True">
-                                                    <Setter TargetName="Bd" Property="Background"
-                                                            Value="{DynamicResource Accent}"/>
-                                                    <Setter TargetName="Bd" Property="BorderBrush"
-                                                            Value="{DynamicResource Accent}"/>
-                                                    <Setter Property="Foreground"
-                                                            Value="{DynamicResource OnAccent}"/>
-                                                </Trigger>
-                                                <Trigger Property="IsMouseOver" Value="True">
-                                                    <Setter TargetName="Bd" Property="Background"
-                                                            Value="{DynamicResource AccentLight}"/>
-                                                    <Setter TargetName="Bd" Property="BorderBrush"
-                                                            Value="{DynamicResource Accent}"/>
-                                                    <Setter Property="Foreground"
-                                                            Value="{DynamicResource Accent}"/>
-                                                </Trigger>
-                                                <MultiTrigger>
-                                                    <MultiTrigger.Conditions>
-                                                        <Condition Property="IsMouseOver" Value="True"/>
-                                                        <Condition Property="IsChecked" Value="True"/>
-                                                    </MultiTrigger.Conditions>
-                                                    <Setter TargetName="Bd" Property="Background"
-                                                            Value="{DynamicResource AccentHover}"/>
-                                                </MultiTrigger>
-                                            </ControlTemplate.Triggers>
-                                        </ControlTemplate>
-                                    </Setter.Value>
-                                </Setter>
-                            </Style>
-                        </ToggleButton.Style>
-                    </ToggleButton>
                 </StackPanel>
                 <StackPanel Grid.Row="1" Grid.Column="2">
                     <TextBlock Text="Цвет" Style="{DynamicResource FieldLabel}"/>
@@ -221,6 +164,68 @@
                              GotFocus="SelectAll_OnFocus"
                              HorizontalContentAlignment="Right"/>
                 </StackPanel>
+                <!-- Антикошка toggle — отдельная строка на всю ширину «Товар» -->
+                <ToggleButton x:Name="TbtnAnticat"
+                              Grid.Row="2" Grid.Column="0" Grid.ColumnSpan="3"
+                              Content="Антикошка  +2000 ₽/м²"
+                              FontSize="11" FontWeight="SemiBold"
+                              HorizontalAlignment="Left"
+                              Margin="0,4,0,0" Padding="10,5"
+                              Visibility="Collapsed"
+                              Click="TbtnAnticat_Click">
+                    <ToggleButton.Style>
+                        <Style TargetType="ToggleButton">
+                            <Setter Property="Background" Value="{DynamicResource Surface}"/>
+                            <Setter Property="Foreground" Value="{DynamicResource TextPrimary}"/>
+                            <Setter Property="BorderBrush" Value="{DynamicResource Border}"/>
+                            <Setter Property="BorderThickness" Value="1"/>
+                            <Setter Property="Cursor" Value="Hand"/>
+                            <Setter Property="Template">
+                                <Setter.Value>
+                                    <ControlTemplate TargetType="ToggleButton">
+                                        <Border x:Name="Bd"
+                                                Background="{TemplateBinding Background}"
+                                                BorderBrush="{TemplateBinding BorderBrush}"
+                                                BorderThickness="{TemplateBinding BorderThickness}"
+                                                CornerRadius="6"
+                                                Padding="{TemplateBinding Padding}"
+                                                SnapsToDevicePixels="True">
+                                            <ContentPresenter HorizontalAlignment="Center"
+                                                              VerticalAlignment="Center"/>
+                                        </Border>
+                                        <ControlTemplate.Triggers>
+                                            <Trigger Property="IsChecked" Value="True">
+                                                <Setter TargetName="Bd" Property="Background"
+                                                        Value="{DynamicResource Accent}"/>
+                                                <Setter TargetName="Bd" Property="BorderBrush"
+                                                        Value="{DynamicResource Accent}"/>
+                                                <Setter Property="Foreground"
+                                                        Value="{DynamicResource OnAccent}"/>
+                                            </Trigger>
+                                            <Trigger Property="IsMouseOver" Value="True">
+                                                <Setter TargetName="Bd" Property="Background"
+                                                        Value="{DynamicResource AccentLight}"/>
+                                                <Setter TargetName="Bd" Property="BorderBrush"
+                                                        Value="{DynamicResource Accent}"/>
+                                                <Setter Property="Foreground"
+                                                        Value="{DynamicResource Accent}"/>
+                                            </Trigger>
+                                            <MultiTrigger>
+                                                <MultiTrigger.Conditions>
+                                                    <Condition Property="IsMouseOver" Value="True"/>
+                                                    <Condition Property="IsChecked" Value="True"/>
+                                                </MultiTrigger.Conditions>
+                                                <Setter TargetName="Bd" Property="Background"
+                                                        Value="{DynamicResource AccentHover}"/>
+                                            </MultiTrigger>
+                                        </ControlTemplate.Triggers>
+                                    </ControlTemplate>
+                                </Setter.Value>
+                            </Setter>
+                        </Style>
+                    </ToggleButton.Style>
+                </ToggleButton>
+
                 <!-- Pinned to Top + 17px margin so it aligns with the top of the
                      adjacent TextBox/ComboBox controls (after the FieldLabel takes
                      ~17px of vertical space). Previous Bottom anchoring shifted

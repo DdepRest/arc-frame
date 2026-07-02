@@ -3,7 +3,6 @@ using System.Diagnostics.CodeAnalysis;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
-using System.Windows.Media.Animation;
 using MosquitoNetCalculator.Services;
 
 namespace MosquitoNetCalculator.Controls
@@ -20,50 +19,6 @@ namespace MosquitoNetCalculator.Controls
         public SidebarControl()
         {
             InitializeComponent();
-        }
-
-        private static void ToggleSection(TextBlock chevron, StackPanel content)
-        {
-            content.BeginAnimation(OpacityProperty, null);
-            if (content.Visibility == Visibility.Visible)
-            {
-                var fadeOut = new DoubleAnimation(0, TimeSpan.FromMilliseconds(180))
-                {
-                    EasingFunction = new CubicEase { EasingMode = EasingMode.EaseOut }
-                };
-                fadeOut.Completed += (_, _) => content.Visibility = Visibility.Collapsed;
-                content.BeginAnimation(OpacityProperty, fadeOut);
-                chevron.Text = "\u25B6";
-            }
-            else
-            {
-                content.Visibility = Visibility.Visible;
-                content.Opacity = 0;
-                var fadeIn = new DoubleAnimation(1, TimeSpan.FromMilliseconds(200))
-                {
-                    EasingFunction = new CubicEase { EasingMode = EasingMode.EaseOut }
-                };
-                content.BeginAnimation(OpacityProperty, fadeIn);
-                chevron.Text = "\u25BC";
-            }
-        }
-
-        private void CardClient_HeaderClick(object sender, MouseButtonEventArgs e)
-        {
-            ToggleSection(ChevronClient, ContentClient);
-            e.Handled = true;
-        }
-
-        private void CardContract_HeaderClick(object sender, MouseButtonEventArgs e)
-        {
-            ToggleSection(ChevronContract, ContentContract);
-            e.Handled = true;
-        }
-
-        private void CardNotes_HeaderClick(object sender, MouseButtonEventArgs e)
-        {
-            ToggleSection(ChevronNotes, ContentNotes);
-            e.Handled = true;
         }
 
         /// <summary>

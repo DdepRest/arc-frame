@@ -140,8 +140,8 @@ namespace MosquitoNetCalculator.Controls
 
             if (!OrderItem.ManualPieceProducts.Contains(type))
             {
-                if (width <= 0) { ToastService.ShowToast("Укажите ширину.", ToastType.Info); TxtQuickWidth.Focus(); return; }
-                if (height <= 0 && type != "Откос материал") { ToastService.ShowToast("Укажите высоту.", ToastType.Info); TxtQuickHeight.Focus(); return; }
+                if (width <= 0 && type != "ПСУЛ" && type != "Уплотнение") { ToastService.ShowToast("Укажите ширину.", ToastType.Info); TxtQuickWidth.Focus(); return; }
+                if (height <= 0 && type != "Откос материал" && type != "ПСУЛ" && type != "Уплотнение") { ToastService.ShowToast("Укажите высоту.", ToastType.Info); TxtQuickHeight.Focus(); return; }
             }
 
             var item = mw.CalcVM.AddItem(type, color ?? string.Empty, width, height, qty, price, SelectedAnwisMode);

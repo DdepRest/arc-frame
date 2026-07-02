@@ -60,13 +60,35 @@ namespace MosquitoNetCalculator.Models
 
         private void Recalculate()
         {
+            bool totalOverridden = false;
+
             if (Name == "ПСУЛ")
             {
-                CalculatedValue = Math.Round((Width + Height) * 2 / 1000.0, 3);
+                if (Width == 0 && Height == 0)
+                {
+                    // Quantity-based: each unit = 100 ₽
+                    CalculatedValue = 0;
+                    _total = Math.Round(Quantity * 100.0, 2);
+                    totalOverridden = true;
+                }
+                else
+                {
+                    CalculatedValue = Math.Round((Width + Height) * 2 / 1000.0, 3);
+                }
             }
             else if (Name == "Уплотнение")
             {
-                CalculatedValue = Math.Round((Width + Height) * 2 / 1000.0, 3);
+                if (Width == 0 && Height == 0)
+                {
+                    // Quantity-based: Total = Quantity × Price
+                    CalculatedValue = 0;
+                    _total = Math.Round(Quantity * Price, 2);
+                    totalOverridden = true;
+                }
+                else
+                {
+                    CalculatedValue = Math.Round((Width + Height) * 2 / 1000.0, 3);
+                }
             }
             else if (Name is "Откос материал" or "Работа" or "Брус" or "Пояс" or "Доставка")
             {
@@ -81,7 +103,8 @@ namespace MosquitoNetCalculator.Models
                 CalculatedValue = 0;
             }
 
-            _total = Math.Round(CalculatedValue * Price * Quantity, 2);
+            if (!totalOverridden)
+                _total = Math.Round(CalculatedValue * Price * Quantity, 2);
 
             OnPropertyChanged(nameof(Unit));
             OnPropertyChanged(nameof(ШиринаВвод));

@@ -67,6 +67,10 @@ namespace MosquitoNetCalculator
         private Action? _onNavToCalc;
         private string _activeNavTag = "Calc";
 
+        // ─── Slide-out navigation panel ─────────────────────────────────────
+        private System.Windows.Threading.DispatcherTimer? _navCollapseTimer;
+        private readonly TextBlock[] _navLabels = new TextBlock[4];
+
         // ─── Idle/periodic update check scheduler ───────────────────────────
         // Запускается в Loaded после startup-проверки. Триггерит CheckInBackgroundAsync
         // каждые CheckInterval (30 мин) или после IdleThreshold (10 мин) простоя.
@@ -264,6 +268,7 @@ namespace MosquitoNetCalculator
                 UpdateService.ProgressChanged -= OnUpdateProgressChanged;
                 _updateCheckScheduler?.Stop();
                 _navBadgeTimer?.Stop();
+                _navCollapseTimer?.Stop();
             };
 
             StateChanged += (s, e) =>
@@ -274,6 +279,32 @@ namespace MosquitoNetCalculator
 
             // NavigationView badge refresh timer
             StartNavBadgeTimer();
+
+            // ── Slide-out navigation panel hover logic ──────────────────
+            _navLabels[0] = NavLabelCalc;
+            _navLabels[1] = NavLabelOrders;
+            _navLabels[2] = NavLabelPrices;
+            _navLabels[3] = NavLabelUpdates;
+
+            _navCollapseTimer = new System.Windows.Threading.DispatcherTimer
+            {
+                Interval = TimeSpan.FromMilliseconds(500)
+            };
+            _navCollapseTimer.Tick += (_, _) =>
+            {
+                _navCollapseTimer.Stop();
+                CollapseNavPanel();
+            };
+
+            NavPanel.MouseEnter += (_, _) =>
+            {
+                _navCollapseTimer?.Stop();
+                ExpandNavPanel();
+            };
+            NavPanel.MouseLeave += (_, _) =>
+            {
+                _navCollapseTimer?.Start();
+            };
         }
 
         private void MainWindow_Loaded(object sender, RoutedEventArgs e)
@@ -398,9 +429,65 @@ namespace MosquitoNetCalculator
                 if (pill != null)
                     pill.Opacity = isActive ? 1 : 0;
 
-                allIcons[i].Foreground = isActive
+                var iconBrush = isActive
                     ? (Brush)(TryFindResource("Accent") ?? Brushes.Black)
                     : (Brush)(TryFindResource("TextMuted") ?? Brushes.Gray);
+                allIcons[i].Foreground = iconBrush;
+
+                if (_navLabels[i] != null)
+                {
+                    _navLabels[i].Foreground = iconBrush;
+                    _navLabels[i].FontWeight = isActive ? FontWeights.SemiBold : FontWeights.Regular;
+                }
+            }
+        }
+
+        // ═══════════════════════════════════════════════════════════════
+        // SLIDE-OUT NAVIGATION PANEL
+        // ═══════════════════════════════════════════════════════════════
+
+        private void ExpandNavPanel()
+        {
+            if (NavPanel == null) return;
+
+            var widthAnim = new DoubleAnimation(160, TimeSpan.FromMilliseconds(250))
+            {
+                EasingFunction = new CubicEase { EasingMode = EasingMode.EaseOut }
+            };
+            NavPanel.BeginAnimation(WidthProperty, widthAnim);
+
+            // Fade in labels
+            foreach (var label in _navLabels)
+            {
+                if (label == null) continue;
+                var fadeIn = new DoubleAnimation(1, TimeSpan.FromMilliseconds(150))
+                {
+                    EasingFunction = new CubicEase { EasingMode = EasingMode.EaseOut }
+                };
+                label.BeginAnimation(OpacityProperty, fadeIn);
+            }
+        }
+
+        private void CollapseNavPanel()
+        {
+            if (NavPanel == null) return;
+            if (NavPanel.IsMouseOver) return;
+
+            var widthAnim = new DoubleAnimation(52, TimeSpan.FromMilliseconds(200))
+            {
+                EasingFunction = new CubicEase { EasingMode = EasingMode.EaseIn }
+            };
+            NavPanel.BeginAnimation(WidthProperty, widthAnim);
+
+            // Fade out labels
+            foreach (var label in _navLabels)
+            {
+                if (label == null) continue;
+                var fadeOut = new DoubleAnimation(0, TimeSpan.FromMilliseconds(120))
+                {
+                    EasingFunction = new CubicEase { EasingMode = EasingMode.EaseIn }
+                };
+                label.BeginAnimation(OpacityProperty, fadeOut);
             }
         }
 
@@ -517,13 +604,7 @@ namespace MosquitoNetCalculator
 
         internal void RefreshNavBadges()
         {
-            // Orders count badge on nav button
             int orderCount = OrdersHistoryControl?.OrdersGrid?.Items?.Count ?? 0;
-            if (NavOrdersBadge != null)
-            {
-                NavOrdersBadge.Visibility = orderCount > 0 ? Visibility.Visible : Visibility.Collapsed;
-                NavOrdersBadgeText.Text = orderCount > 99 ? "99+" : orderCount.ToString();
-            }
 
             // Orders count chip in overlay header (Russian pluralization + chip visibility).
             // Russian rule: last-two-digits drive the form. 11–14 are ALWAYS

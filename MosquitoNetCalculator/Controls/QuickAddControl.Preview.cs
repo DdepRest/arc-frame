@@ -43,7 +43,12 @@ namespace MosquitoNetCalculator.Controls
                 area = (previewW * previewH) / 1_000_000.0;
                 total = area * price * qty;
             }
-            else if (type == "ПСУЛ" || type == "Уплотнение") { area = (width + height) * 2 / 1000.0; total = area * price * qty; }
+            else if (type == "ПСУЛ")
+            {
+                if (width == 0 && height == 0) { area = 0; total = qty * 100; }
+                else { area = (width + height) * 2 / 1000.0; total = area * price * qty; }
+            }
+            else if (type == "Уплотнение") { if (width == 0 && height == 0) { area = 0; total = qty * price; } else { area = (width + height) * 2 / 1000.0; total = area * price * qty; } }
             // Unknown product — fall through to area-based to match OrderItem.Recalculate
             else { area = (width * height) / 1_000_000.0; total = area * price * qty; }
 
