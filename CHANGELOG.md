@@ -1,5 +1,14 @@
 # Changelog
 
+## 3.42.1 — 2026-07-02
+
+### Исправления
+
+- **WatchdogService: Access Denied при обновлении в Program Files:**
+  - Файлы обновления (`arc-update-watchdog.bat`, `arc-update.zip`, `.exe.bak`) теперь создаются в `%AppData%\MosquitoNetCalculator\` вместо `AppContext.BaseDirectory` (Program Files).
+  - Устранена ошибка `Access to the path ... is denied` при попытке записи .bat в защищённую папку.
+  - Watchdog .bat получает путь к `.exe` через параметр `exeBaseDirectory`; ZIP и бэкап читает из своей папки (`%~dp0`), а новую версию копирует в `BaseDirectory`.
+
 ## 3.42.0 — 2026-07-02
 
 ### Улучшения

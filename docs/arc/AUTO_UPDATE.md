@@ -243,9 +243,9 @@ if (release == null)
 1. `UpdateService.CheckAndApplyAsync` скачивает ZIP во временную папку (`%TEMP%\arc-update-{version}-{guid}.zip`).
 2. Проверяет SHA-256.
 3. Вызывает `WatchdogService.StageUpdate(tempZipPath)`:
-   - Пишет `arc-update-watchdog.bat` рядом с .exe.
-   - Копирует ZIP как `arc-update.zip`.
-   - Делает бэкап текущего `.exe` → `.exe.bak`.
+   - Пишет `arc-update-watchdog.bat` в `%AppData%\MosquitoNetCalculator\`.
+   - Копирует ZIP как `arc-update.zip` в `%AppData%\MosquitoNetCalculator\`.
+   - Делает бэкап текущего `.exe` → `.exe.bak` в `%AppData%\MosquitoNetCalculator\`.
 4. Запускает `watchdog.bat` с `UseShellExecute = true`.
 5. Вызывает `Application.Current.Shutdown()`.
 
@@ -254,20 +254,20 @@ if (release == null)
 2. Распаковывает ZIP во временную папку через PowerShell `Expand-Archive`.
 3. Запускает новый .exe с `--self-test`.
 4. Если self-test прошёл (exit code 0):
-   - Копирует новые файлы в BaseDirectory.
-   - Удаляет ZIP, .bak, .bat.
+   - Копирует новые файлы из `%AppData%\MosquitoNetCalculator\` в `BaseDirectory` (Program Files).
+   - Удаляет ZIP, .bak, .bat из `%AppData%\MosquitoNetCalculator\`.
    - Запускает обновлённое приложение.
 5. Если self-test НЕ прошёл:
-   - Удаляет ZIP.
+   - Удаляет ZIP из `%AppData%\MosquitoNetCalculator\`.
    - Запускает старый .exe (из .bak или текущий).
 
 ---
 
 ## Как программа перезапускается после обновления
 
-Watchdog .bat запускает обновлённый `MosquitoNetCalculator.exe` через `start "" "%HERE%%EXE%"`.
+Watchdog .bat запускает обновлённый `MosquitoNetCalculator.exe` через `start "" "%HERE%\%EXE%"` (путь к .exe в BaseDirectory).
 
-При следующем запуске `App.OnStartup` → `WatchdogService.HandleStartup` удаляет оставшийся `watchdog.bat` (если предыдущий update крашнулся).
+При следующем запуске `App.OnStartup` → `WatchdogService.HandleStartup` удаляет оставшийся `watchdog.bat` из `%AppData%\MosquitoNetCalculator\` (если предыдущий update крашнулся).
 
 ---
 
@@ -278,7 +278,7 @@ Watchdog .bat запускает обновлённый `MosquitoNetCalculator.e
 | GitHub недоступен | Не скачается releases.json | Тост-уведомление, повторная проверка вручную |
 | ZIP повреждён | SHA-256 не совпадёт | Проверка хеша перед установкой |
 | Новый .exe не запускается | Self-test провалится | Откат к `.exe.bak`, запуск старой версии |
-| Watchdog не удалился | `.bat` остался после краша | Очистка при следующем запуске |
+| Watchdog не удалился | `.bat` остался после краша | Очистка при следующем запуске (в `%AppData%`) |
 | Версия в .csproj ≠ releases.json | Обновление не увидят | Всегда синхронизировать оба файла |
 | Single-file publish + версия | `GetName().Version` = null | Многослойный fallback (v3.34.5) |
 
@@ -391,4 +391,4 @@ Watchdog .bat запускает обновлённый `MosquitoNetCalculator.e
 
 ## Last verified
 
-2026-07-01 (v3.41.0 release run: CDN-cache diagnostic + api.github.com endpoint documented for «не видит обновление» support)
+2026-07-02 (v3.42.1 hotfix: watchdog files moved from BaseDirectory to %AppData% to fix E_ACCESSDENIED when app is installed under Program Files)

@@ -25,11 +25,13 @@ namespace MosquitoNetCalculator.Services
     ///      from a previous crashed attempt is still here, we delete it so it
     ///      doesn't fire spuriously.
     ///
-    /// ─── File convention (all in AppContext.BaseDirectory) ─────────────────
-    ///   arc-update-watchdog.bat   (deleted after successful run)
-    ///   arc-update.zip            (deleted after successful run)
-    ///   MosquitoNetCalculator.exe (current running — locked while running)
-    ///   MosquitoNetCalculator.exe.bak (most recent valid backup)
+    /// ─── File convention ───────────────────────────────────────────────────
+    ///   Update artifacts (writable, in %AppData%\MosquitoNetCalculator\):
+    ///     arc-update-watchdog.bat   (deleted after successful run)
+    ///     arc-update.zip            (deleted after successful run)
+    ///     MosquitoNetCalculator.exe.bak (most recent valid backup)
+    ///   BaseDirectory (e.g. Program Files — read-only for normal users):
+    ///     MosquitoNetCalculator.exe (current running — locked while running)
     /// </summary>
     public static class WatchdogService
     {
@@ -40,12 +42,17 @@ namespace MosquitoNetCalculator.Services
         public const string UpdateZipName = "arc-update.zip";
         public const string WatchdogBatName = "arc-update-watchdog.bat";
 
-        // Computed paths — every one lives next to the running .exe.
+        // Computed paths — update artifacts live in %AppData% (writable),
+        // the running .exe stays in BaseDirectory (e.g. Program Files).
         public static string BasePath => AppContext.BaseDirectory;
+        public static string UpdateDataDir => Path.Combine(
+            Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
+            "MosquitoNetCalculator");
+
         public static string ExePath => Path.Combine(BasePath, ExeFileName);
-        public static string ExeBakPath => ExePath + BackupSuffix;
-        public static string UpdateZipPath => Path.Combine(BasePath, UpdateZipName);
-        public static string WatchdogPath => Path.Combine(BasePath, WatchdogBatName);
+        public static string ExeBakPath => Path.Combine(UpdateDataDir, ExeFileName + BackupSuffix);
+        public static string UpdateZipPath => Path.Combine(UpdateDataDir, UpdateZipName);
+        public static string WatchdogPath => Path.Combine(UpdateDataDir, WatchdogBatName);
 
         /// <summary>
         /// Called from App.OnStartup as the very first thing (before
@@ -128,10 +135,10 @@ namespace MosquitoNetCalculator.Services
             if (!File.Exists(downloadedZipPath))
                 throw new FileNotFoundException("Update ZIP not found", downloadedZipPath);
 
-            Directory.CreateDirectory(BasePath);
+            Directory.CreateDirectory(UpdateDataDir);
 
             // 1. Commit the watchdog .bat FIRST.
-            File.WriteAllText(WatchdogPath, BuildWatchdogBat());
+            File.WriteAllText(WatchdogPath, BuildWatchdogBat(BasePath));
 
             // 2. Commit the ZIP.
             File.Copy(downloadedZipPath, UpdateZipPath, overwrite: true);
@@ -145,9 +152,18 @@ namespace MosquitoNetCalculator.Services
         /// The .bat script that performs the actual .exe swap after app exit.
         /// Pure ASCII — .bat files use OEM (cp866) by default and Cyrillic
         /// can corrupt parsing.
+        ///
+        /// Arguments:
+        ///   <paramref name="exeBaseDirectory"/> — the folder where the running
+        ///   .exe lives (e.g. C:\Program Files\MosquitoNetCalculator\).
+        ///   The .bat itself is written to %AppData%\MosquitoNetCalculator\,
+        ///   so %~dp0 points there. ZIP and BAK live next to the .bat;
+        ///   the .exe is copied into <paramref name="exeBaseDirectory"/>.
         /// </summary>
-        private static string BuildWatchdogBat()
+        private static string BuildWatchdogBat(string exeBaseDirectory)
         {
+            // Trim trailing slash so we can safely append "\" in the batch file.
+            string here = exeBaseDirectory.TrimEnd('\\', '/');
             return
 "@echo off\r\n" +
 "setlocal EnableExtensions\r\n" +
@@ -158,7 +174,7 @@ namespace MosquitoNetCalculator.Services
 "set BAK=%EXE%.bak\r\n" +
 "set ZIP=arc-update.zip\r\n" +
 "set WRK=%TEMP%\\arc-update-work~\r\n" +
-"set HERE=%~dp0\r\n" +
+"set \"HERE=" + here + "\"\r\n" +
 "set _copyfail=0\r\n" +
 "\r\n" +
 "REM --- 1. Wait up to 120 seconds for the running app to exit ---\r\n" +
@@ -175,7 +191,7 @@ namespace MosquitoNetCalculator.Services
 "tasklist /fi \"imagename eq %EXE%\" 2> nul | find /i \"%EXE%\" > nul\r\n" +
 "if not errorlevel 1 (\r\n" +
 "    echo ARC-Frame update ABORTED: app still running after 120s.\r\n" +
-"    del \"%HERE%%ZIP%\" 2> nul\r\n" +
+"    del \"%~dp0%ZIP%\" 2> nul\r\n" +
 "    del \"%~f0\" 2> nul\r\n" +
 "    exit /b 1\r\n" +
 ")\r\n" +
@@ -183,7 +199,7 @@ namespace MosquitoNetCalculator.Services
 "REM --- 2. Extract downloaded ZIP into a clean working dir ---\r\n" +
 "if exist \"%WRK%\" rd /s /q \"%WRK%\"\r\n" +
 "mkdir \"%WRK%\" 2> nul\r\n" +
-"powershell -NoProfile -ExecutionPolicy Bypass -Command \"Expand-Archive -Force -Path '%HERE%%ZIP%' -DestinationPath '%WRK%'\" 1> nul 2> nul\r\n" +
+"powershell -NoProfile -ExecutionPolicy Bypass -Command \"Expand-Archive -Force -Path '%~dp0%ZIP%' -DestinationPath '%WRK%'\" 1> nul 2> nul\r\n" +
 "if not exist \"%WRK%\\%EXE%\" goto :rollback\r\n" +
 "\r\n" +
 "REM --- 3. Self-test the new .exe ---\r\n" +
@@ -192,27 +208,27 @@ namespace MosquitoNetCalculator.Services
 "if not \"%_rc%\"==\"0\" goto :rollback\r\n" +
 "\r\n" +
 "REM --- 4. Update successful - copy new files into BaseDirectory ---\r\n" +
-"copy /y \"%WRK%\\%EXE%\" \"%HERE%%EXE%\" > nul\r\n" +
+"copy /y \"%WRK%\\%EXE%\" \"%HERE%\\%EXE%\" > nul\r\n" +
 "if not \"%ERRORLEVEL%\"==\"0\" goto :rollback_after_copy\r\n" +
-"xcopy /y /e /q /r \"%WRK%\\*\" \"%HERE%\" > nul 2>&1\r\n" +
+"xcopy /y /e /q /r \"%WRK%\\*\" \"%HERE%\\\" > nul 2>&1\r\n" +
 "if not \"%ERRORLEVEL%\"==\"0\" goto :rollback_after_copy\r\n" +
 "if exist \"%WRK%\" rd /s /q \"%WRK%\"\r\n" +
-"del \"%HERE%%ZIP%\" 2> nul\r\n" +
-"if exist \"%HERE%%BAK%\" del \"%HERE%%BAK%\"\r\n" +
+"del \"%~dp0%ZIP%\" 2> nul\r\n" +
+"if exist \"%~dp0%BA K%\" del \"%~dp0%BA K%\"\r\n" +
 "goto :start\r\n" +
 "\r\n" +
 ":rollback_after_copy\r\n" +
 "set _copyfail=1\r\n" +
-"if exist \"%HERE%%BAK%\" copy /y \"%HERE%%BAK%\" \"%HERE%%EXE%\" > nul\r\n" +
+"if exist \"%~dp0%BA K%\" copy /y \"%~dp0%BA K%\" \"%HERE%\\%EXE%\" > nul\r\n" +
 "goto :start\r\n" +
 "\r\n" +
 ":rollback\r\n" +
 "if exist \"%WRK%\" rd /s /q \"%WRK%\"\r\n" +
-"del \"%HERE%%ZIP%\" 2> nul\r\n" +
+"del \"%~dp0%ZIP%\" 2> nul\r\n" +
 "echo ARC-Frame update ROLLBACK: New version failed self-test.\r\n" +
 "\r\n" +
 ":start\r\n" +
-"start \"\" \"%HERE%%EXE%\"\r\n" +
+"start \"\" \"%HERE%\\%EXE%\"\r\n" +
 "\r\n" +
 ":end\r\n" +
 "del \"%~f0\" 2> nul\r\n" +

@@ -8,8 +8,8 @@
 - Тёмная тема стабильна, переключается без потери данных.
 - Undo/Redo работает для позиций расчёта и Доп.КП.
 - Юнит-тесты покрывают ключевые сценарии (расчёты, экспорт/импорт, версия, обновления).
-- Текущая версия: **3.42.0** (публикуется).
-- Последние изменения: UpdateService DI для тестирования, zero-byte download fix, XAML-анимация UpdateDownloadBar, UI-polish (CornerRadius), новые интеграционные и unit-тесты, исправления документации.
+- Текущая версия: **3.42.1** (публикуется).
+- Последние изменения: Hotfix — watchdog-файлы обновления (.bat, .zip, .bak) перенесены из BaseDirectory (Program Files, read-only) в `%AppData%\MosquitoNetCalculator` (writable). Устраняет `E_ACCESSDENIED` при автообновлении на системах с ограниченными правами.
 - Система A.R.C. прошла 3 итерации улучшений:
   - **v1:** инициализация, аудит, эталонные кейсы.
   - **v2:** CHEATSHEET, DOCUMENTATION_MATRIX, PROMPTS, гранулярный routing, validate-docs.
@@ -169,7 +169,7 @@ AGENT.md / AGENTS.md / CLAUDE.md / GEMINI.md
 
 ## Source files
 
-- `MosquitoNetCalculator/MosquitoNetCalculator.csproj` — версия 3.42.0.
+- `MosquitoNetCalculator/MosquitoNetCalculator.csproj` — версия 3.42.1.
 - `releases.json` — история релизов.
 - `MosquitoNetCalculator/Resources/update-log.json` — история для UI.
 - `docs/arc/*.md` — вся проектная документация.
@@ -183,3 +183,5 @@ AGENT.md / AGENTS.md / CLAUDE.md / GEMINI.md
 
 2026-07-02 (v3.42.0 — релиз):
   - Выпущен релиз v3.42.0: slide-out панель навигации, sidebar без chevrons, ПСУЛ/Уплотнение — ввод только кол-вом, Антикошка toggle в отдельной строке. 742/742 tests pass.
+2026-07-02 (v3.42.1 — hotfix):
+  - Исправлено: автообновление не работало при установке в Program Files из-за `E_ACCESSDENIED` при создании `arc-update-watchdog.bat`. Watchdog-файлы (.bat, .zip, .bak) теперь создаются в `%AppData%\MosquitoNetCalculator`. 742/742 tests pass.
