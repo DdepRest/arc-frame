@@ -41,9 +41,9 @@
 
 | Пользователь хочет | Смотреть файлы |
 |---|---|
-| Изменить шаблон КП | `Resources/print_template.html`, `PrintService.cs`, `GOTCHAS.md#6` |
-| Добавить поле в КП | `PrintService.cs` (FillTemplate), `print_template.html`, `OrderItem.cs` (свойства) |
-| Проблема с HTML в КП (кракозябры) | `GOTCHAS.md#6` (EscapeHtml), `PrintService.cs` |
+| Изменить шаблон КП | `Services/FlowDocumentBuilder.cs`, `Services/DrawingService.cs`, `Services/PrintService.cs` (facade), `GOTCHAS.md#6` |
+| Добавить поле в КП | `Services/FlowDocumentBuilder.cs`, `Models/OrderItem.cs` (свойства) |
+| Проблема с HTML/FlowDocument в КП (кракозябры, наложение) | `GOTCHAS.md#6`, `Services/FlowDocumentBuilder.cs`, `Services/DrawingService.cs` |
 
 ## Завод
 
@@ -113,5 +113,7 @@ Intake phase: user describes intent
 - `docs/arc/INTENTS.md` — this file
 
 ## Last verified
+
+2026-07-12 — документ перепроверен в рамках Фазы 3 рефакторинга; routing-таблица и mapping намерений на файлы актуальны. Учтена декомпозиция `PrintService` на `FlowDocumentBuilder`/`DrawingService`/`FixedDocumentBuilder`/`PrintQueueManager`/`PdfExportService` и bugfix экономии Старт/F-планка в откосах.
 
 2026-06-27 (создан)

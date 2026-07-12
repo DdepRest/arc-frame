@@ -41,7 +41,7 @@
 | Файл | За что отвечает | Что нельзя менять без осторожности |
 |------|----------------|-----------------------------------|
 | `PriceService.cs` | Загрузка/сохранение цен из prices.json, поиск цены по Name+Color. | DefaultPrices (стартовый каталог), ApplyMigrations — влияет на цены всех пользователей. |
-| `PrintService.cs` | Генерация HTML для КП из шаблона, SVG-чертежи для каждого товара. | HTML-шаблон, формулы заполнения, EscapeHtml — это лицо программы для клиента. |
+| `PrintService.cs` | Тонкий фасад; делегирует печать/экспорт в `FlowDocumentBuilder`, `DrawingService`, `FixedDocumentBuilder`, `PrintQueueManager`, `PdfExportService`. | HTML-шаблон заменён на `FlowDocument`; формулы заполнения, чертежи и форматирование — это лицо программы для клиента. |
 | `FactoryTextService.cs` | Формирование текста "На завод" с группировкой по типам товаров. | Группировка, формат размеров — производство работает по этому тексту. |
 | `UpdateService.cs` | Проверка обновлений, скачивание ZIP, верификация SHA-256, запуск watchdog. | ManifestUrl, логика сравнения версий, имена файлов — влияет на автообновление. |
 | `WatchdogService.cs` | .bat-скрипт для замены .exe после выхода приложения. | BuildWatchdogBat — ошибка = сломанное обновление. |
@@ -103,7 +103,7 @@
 | `OrderItemTests.cs` | Формулы расчёта, Anwis-режимы, монтаж. |
 | `AnwisSizeTests.cs` | Формулы коррекции размеров Anwis. |
 | `AnwisContextMenuBuilderTests.cs` | UI-меню Anwis. |
-| `PrintServiceTests.cs` | Генерация HTML КП. |
+| `PrintServiceTests.cs` | Генерация FlowDocument КП, чертежи, PDF-экспорт. |
 | `FactoryTextServiceTests.cs` | Текст "На завод". |
 | `UpdateServiceTests.cs` | Парсинг версий, fallback'ы. |
 | `UpdateLogTests.cs` | Загрузка истории обновлений. |
@@ -117,5 +117,7 @@
 - Вся структура `MosquitoNetCalculator/` и `MosquitoNetCalculator.Tests/`.
 
 ## Last verified
+
+2026-07-12 — документ перепроверен в рамках Фазы 3 рефакторинга; карта модулей актуальна (учтены новые сервисы Фаз 1–3: NavigationService, OverlayManager, SlopeOverlayCoordinator, SlopesProUpsellGate, VersionResolver, IdleDetector, UpdateVerifier, UpdateManifestClient, UpdateDownloader, DrawingService, FlowDocumentBuilder, FixedDocumentBuilder, PrintQueueManager, PdfExportService). Дополнительно учтён bugfix экономии Старт/F-планка в откосах (`SlopeCalculatorService.cs`, `SlopePanelControl.xaml.cs`).
 
 2026-06-27

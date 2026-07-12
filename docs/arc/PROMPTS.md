@@ -223,4 +223,6 @@ powershell -ExecutionPolicy Bypass -File validate-docs.ps1
 
 ## Last verified
 
+2026-07-12 — документ перепроверен в рамках Фазы 3 рефакторинга; prompt-шаблоны актуальны. Учтены новые сервисы печати (`FlowDocumentBuilder`, `DrawingService`, `FixedDocumentBuilder`, `PrintQueueManager`, `PdfExportService`) и bugfix экономии Старт/F-планка в откосах.
+
 2026-06-27 (A.R.C. v4 — обновлён)

@@ -1,7 +1,8 @@
 # Update Notification System Rework — Spec
 
 > **Статус:** Draft  
-> **Дата:** 2026-06-26  
+> **Дата:** 2026-06-26
+> **Last verified:** 2026-07-12 — документ перепроверен в рамках Фазы 3 рефакторинга; спецификация остаётся в статусе Draft, технические изменения не начаты. Статус Draft и затронутые модули актуальны.  
 > **Затронутые модули:** `UpdateService`, `ActionBarControl`, `TitleBarControl`, `DialogService`, `UpdateLog`, `ToastService`, `UpdatesTabControl`
 
 ---
