@@ -1,5 +1,382 @@
 # Changelog
 
+## Unreleased
+
+### Техническое — Фаза 3 системного рефакторинга (REFACTORING_PLAN.md §5)
+
+- **`PrintService.cs` → 6 компонентов:** монолитный `PrintService` (632 строки + partial-файлы) разделён на 6 специализированных компонентов с сохранением всего public API как тонких прокси-делегатов.
+  - **`Models/PageMode.cs`** (5 строк) — enum `PageMode` (`All`, `Range`, `Single`).
+  - **`Models/PrintSettings.cs`** (36 строк) — настройки печати: принтер, диапазон страниц, количество копий, колляция.
+  - **`Models/PrintResult.cs`** (32 строки) — результат операции печати (`PrintResultType`, `IsRetryable`, `UserMessage`).
+  - **`Services/DrawingService.cs`** (456 строк) — SVG- и WPF-DrawingImage чертежей (`GetDrawingSvg`, `GetDrawingImage`, `CreateDrawingImageElement`, `WrapForCentering`).
+  - **`Services/FlowDocumentBuilder.cs`** (698 строк) — построение `FlowDocument` для КП (заголовок, таблица позиций, итоги, подписи).
+  - **`Services/FixedDocumentBuilder.cs`** (268 строк) — преобразование `FlowDocument` → `FixedDocument` с учётом диапазона страниц, копий и колляции.
+  - **`Services/PrintQueueManager.cs`** (183 строки) — работа с очередью печати: поиск принтеров, разрешение `PrintQueue`, отправка `DocumentPaginator` с `PrintTicket`.
+  - **`Services/PdfExportService.cs`** (305 строк) — экспорт КП в PDF через QuestPDF.
+  - **`Services/PrintService.cs`** уменьшен до 81 строки (−87%), сохранив все public/internal методы как прокси.
+  - Удалены устаревшие partial-файлы: `PrintService.Drawings.cs`, `PrintService.FlowDocument.cs`, `PrintService.Pdf.cs`.
+  - Внешние caller'ы (`PrintPreviewControl`, `PrintPreviewWindow`, `MainWindow`) переведены с `PrintService.PrintSettings`/`PrintResult`/`PageMode` на `Models.*`.
+  - +~40 тестов: `DrawingServiceTests` (22), `FlowDocumentBuilderTests` (5), `FixedDocumentBuilderTests` (5), `PrintQueueManagerTests` (6), `PdfExportServiceTests` (2). Существующие `PrintServiceTests` — без изменений, проходят через прокси.
+  - **Тесты:** 1038/1038 pass.
+
+### Техническое — Фаза 2 системного рефакторинга (REFACTORING_PLAN.md §4)
+
+- **`UpdateService.cs` → 5 компонентов:** монолитный статический `UpdateService` (910 строк) разделён на 5 специализированных классов с сохранением всего public/internal API как тонких прокси-делегатов.
+  - **`Services/VersionResolver.cs`** (171 строк) — парсинг версий, сравнение, `ParseSafe`, `StripVersionSuffix`, `ResolveVersion`, `IsBrokenForAutoUpdate`, `GetAvailableUpdate`.
+  - **`Services/IdleDetector.cs`** (43 строк) — WinAPI `GetLastInputInfo` P/Invoke.
+  - **`Services/UpdateVerifier.cs`** (42 строк) — SHA-256 проверка (`ComputeSha256`, `VerifyHash`).
+  - **`Services/UpdateManifestClient.cs`** (84 строк) — загрузка `releases.json`, cache-busting, TLS-конфигурация `HttpClient`.
+  - **`Services/UpdateDownloader.cs`** (108 строк) — скачивание с прогрессом, retry-логика, `TryDelete`.
+  - **`UpdateService.cs`** уменьшен до 608 строк (−33%), сохранив все public/internal методы как прокси.
+  - `RunUpdateFlowAsync` теперь использует `UpdateVerifier.VerifyHash` вместо `ComputeSha256` + ручного `string.Equals`.
+  - Удалены dead-code: `ManifestUrl` (дубликат в `UpdateManifestClient`), `CacheBustUrl`/`CreateConfiguredHttpClient` прокси (не вызываются после делегирования), `ComputeSha256` прокси.
+  - +67 тестов: `VersionResolverTests` (20+), `UpdateVerifierTests` (7), `IdleDetectorTests` (3), `UpdateManifestClientTests` (8), `UpdateDownloaderTests` (13). Существующие `UpdateServiceTests`/`UpdateServiceIntegrationTests` — без изменений, проходят через прокси.
+  - **Тесты:** 999/999 pass.
+
+### Техническое — Фаза 1 системного рефакторинга (REFACTORING_PLAN.md §3)
+
+- **MainWindow.xaml.cs → 4 выделенных сервиса:** God-class (1051 строк) разбит на делегирующие тонкие wrapper'ы (760 строк, −28%). Бизнес-логика не затронута.
+  - **`Services/NavigationService.cs`** — управление активной кнопкой навигации, slide-out expand/collapse, hover-логика. Ресурсный lookup через FrameworkElement (Window), не Application.Current. MouseEnter/MouseLeave хранятся как поля для отписки в `Shutdown()`.
+  - **`Services/OverlayManager.cs`** — открытие/закрытие оверлеев с анимацией, `Toggle`, `CloseAll`, `HideInstant`, `HideAllExcept`. `OverlayEntry` record (Grid, Panel, Backdrop, SlideTransform). `CloseSingle` с параметром `fallbackWidth`.
+  - **`Services/SlopeOverlayCoordinator.cs`** — `Show`, `Edit`, `Close` для панели откосов. Загрузка цен из PriceService вынесена в `LoadSlopePrices` (устранено дублирование между Show и Edit). `FindPairedLaborItem` — internal static для тестирования.
+  - **`Services/SlopesProUpsellGate.cs`** — изоляция Easter-egg «PRO подписка» для лёгкого удаления в будущем. Чеклист удаления в XML-doc.
+  - **`MainWindow.xaml.cs`** — `InitializeServices()` создаёт сервисы после `InitializeComponent`. Все `internal` методы сохранены как тонкие delegates для внешних caller'ов (`ActionBarControl`, `SlopePanelControl`, `OrdersHistoryControl`, `OrderItemsControl`, `MainWindow.Orders.cs`). `ShowPrintOverlay` оставлен в MainWindow (custom panel width + PrintPreviewControl init — будет рефакторинг в Фазе 3).
+- **Тесты:** +26 (10 NavigationService, 10 OverlayManager, 6 SlopeOverlayCoordinator). **932/932 pass.**
+- **Backward-compat:** все `internal` API сохранены. Внешние контролы не требуют изменений. Easter egg работает как раньше.
+
+### Новое
+
+- **Ламинат в откосах:**
+  - Добавлена возможность учитывать ламинат в панели откосов: материал «Ламинат» (500 ₽/шт.) и работа «Работа за ламинат» (500 ₽/шт.).
+  - В таблице материалов откоса добавлена строка «Ламинат» с редактируемым количеством и ценой.
+  - Под строкой «Работа» добавлена строка «Работа за ламинат».
+  - В футере панели откосов добавлена кнопка «Порог (Ламинат)», которая увеличивает количество ламината и работы за него на 1 и выставляет `IsQuantityOverridden = true`.
+  - Ламинат участвует в общей сумме откоса как материал (`TotalMaterials`), работа за него — как труд (`TotalLabor`).
+  - В печатном КП не выводится отдельной строкой; сумма входит в итоговые суммы откоса.
+  - Покрыто тестами: `SlopeCalculatorServiceTests` (+7 тестов на инициализацию, агрегаты, override, сериализацию, OrderItem.Total).
+
+- **Новый товар «Материал»:**
+  - Добавлен в выпадающий список «Тип» в QuickAdd и в каталог цен (`prices.json` / `PriceService.DefaultPrices`).
+  - Без цвета (входит в `NoColorProducts`), цена и количество задаются вручную.
+  - Ширина/высота не функциональны — поля отключены в QuickAdd и не редактируются в DataGrid.
+  - Количество опционально: если пользователь не указал количество (оставил 1 по умолчанию), в таблице отображается только сумма; при количестве > 1 показываются и количество, и сумма.
+  - Без указания суммы товар не может быть добавлен в список просчёта — поле «Цена» подсвечивается красной обводкой как обязательное.
+  - Расчёт: `Total = Price × Quantity`, единица измерения — «шт.».
+  - Покрыто тестами: `OrderItemTests` (категории `OptionalQuantityProducts`, `ManualPieceProducts`, `NoColorProducts`; отображение `QuantityDisplay`/`CalculatedValueDisplay`; формула Total).
+
+### Исправления
+
+- **Распределение общих материалов откоса (герметик/скотч) — устранена двойная оплата.**
+  - `SlopeCalculatorService.RecalculateSealantAndTape` теперь считает общее количество герметика/скотча по всему заказу и распределяет стоимость пропорционально `WindowCount` между строками «Откос» через новое свойство `SlopeCalculation.DistributedSharedSum`.
+  - `OrderItem.Calculations.cs` для «Откос» теперь использует `DistributedSharedSum` вместо `Sealant.Sum + Tape.Sum`, исключая умножение общей стоимости на количество строк.
+  - Защитная инициализация `DistributedSharedSum` в `SlopeCalculatorService._ApplyDefaults` для одиночного откоса/изолированного использования.
+  - Тест `SlopeDataChildMaterialQuantityChange_CascadeRefreshesOrderItemTotal` обновлён — вызывает `RecalculateSealantAndTape` перед проверкой каскада.
+
+- **Экономия Старт/F-планка в откосах — устранено двойное учитывание и смешение участников.**
+  - **Bug:** когда галочка «Применить экономию» была снята, `StartProfile`/`FProfile` количества выставлялись как общие для всех окон заказа, но `OrderItem.Total` умножал per-window материалы на `Quantity` (=WindowCount) → стоимость профилей учитывалась дважды.
+  - **Fix:** при `IsProfileEconomyApplied=false` `RecalculateSealantAndTape` теперь оставляет per-window (3-сторонние) количества профилей; `OrderItem.Total` корректно умножает их на количество окон.
+  - **Mixed economy:** глобальная оптимизация профилей теперь применяется только к откосам с `IsProfileEconomyApplied=true`; общая стоимость Старт/F-планка распределяется только между участниками экономии, а герметик/скотч — по-прежнему между всеми активными откосами.
+  - `SlopePanelControl` синхронизирован: при снятии экономии количества профилей возвращаются к per-window значениям.
+  - +3 regression-теста в `SlopeCalculatorServiceTests.cs`: `ProfileEconomyDisabled_StartProfileIsPerWindow`, `ProfileEconomyDisabled_OrderItemTotal_NoDoubleCount`, `MixedEconomy_OnlyAppliesToOptedInSlopes`.
+
+- **Печатное КП — устранены утечки событий и UI-регрессии.**
+  - `PrintPreviewControl.OnUnloaded` теперь корректно отписывается от `PageFromControl`/`PageToControl`/`SinglePageControl`/`CopiesControl` и удаляет `_pageNumberDescriptor` handler, предотвращая утечку памяти при повторных открытиях.
+  - `MainWindow.xaml.cs`: исправлена отписка от `ThemeService.ThemeChanged` — теперь отписывается `OnThemeChanged` вместо несовпадающего `ApplyMicaTitleBar`.
+  - `MainWindow.EditSlopeItem`: поиск парной строки «Работа за откос» теперь устойчив к удалению/сортировке строк (ищет по имени + порядковому номеру, а не строго по `idx + 1`).
+  - `PrintService.FlowDocument.cs` и `PrintService.Pdf.cs`: колонка «Площ./Дл.» для «Материал» теперь пустая при `Quantity <= 1`, как в DataGrid.
+  - `SlopeCalculation.IsQuantityOverridden`: уведомляет только об изменении самого флага; агрегаты `TotalMaterials`/`TotalLabor`/`GrandTotal` обновляются через `OnChildMaterialChanged`.
+  - `UpdateService.GetAvailableUpdate`: добавлен guard против `CurrentVersion == 0.0.0.0`, чтобы не предлагать обновление при неопределённой текущей версии.
+  - `PrintService.cs`: фон `FlowDocument` восстанавливается в `finally` после печати.
+  - `MainWindow.OnPrintPreviewClosed`: настройки печати сохраняются перед отпиской от `Closed`.
+
+- **Оптимизация раскроя `OptimizeStrips` для кусков > 3000 мм.**
+  - Новый двухфазный алгоритм: куски ≥ 3000 мм разбиваются на полные полосы + остатки, остатки собираются в общий пул и упаковываются по алгоритму Best Fit Decreasing.
+  - Улучшает использование материала, например `[3500, 3500]` теперь требует 3 полос вместо 4.
+
+### Техническое
+
+- `Models/OrderItem.cs`: добавлен `OptionalQuantityProducts` HashSet, в `ManualPieceProducts` и `NoColorProducts` добавлен «Материал», добавлено свойство `IsQuantityOptional`.
+- `Models/OrderItem.Calculations.cs`: `GetUnit` возвращает «шт.» для «Материал»; `CalculatedValueDisplay` и `QuantityDisplay` скрывают значение при `IsQuantityOptional && Quantity <= 1`; `Recalculate` устанавливает `CalculatedValue = 1` для «Материал»; для «Откос» используется `DistributedSharedSum`.
+- `Models/SlopeCalculation.cs`: добавлено свойство `DistributedSharedSum`.
+- `Services/SlopeCalculatorService.cs`: `RecalculateSealantAndTape` распределяет общую стоимость герметика/скотча; `_ApplyDefaults` инициализирует `DistributedSharedSum` для одиночного откоса; `OptimizeStrips` улучшен для кусков > 3000 мм.
+- `Controls/PrintPreviewControl.xaml.cs`: `OnUnloaded` отписывается от всех подписок `OnLoaded`.
+- `Controls/QuickAddControl.AddItem.cs`: валидация — для `OptionalQuantityProducts` цена обязательна (> 0); ширина/высота не проверяются.
+- `Controls/QuickAddControl.xaml.cs`: правила красной обводки обязательных полей учитывают `OptionalQuantityProducts` — цена обязательна, количество опционально.
+- `Controls/OrderItemsControl.xaml`: колонки «Кол-во» и «Площ./Дл.» скрываются через `DataTrigger` для `IsQuantityOptional` при Quantity <= 1.
+- `MainWindow.xaml.cs`: в `BeginningEdit` разрешено редактирование количества для «Материал», но заблокированы цвет/ширина/высота; исправлена отписка `ThemeService.ThemeChanged`; `EditSlopeItem` ищет «Работа за откос» робастно; сохранение настроек печати перед закрытием overlay.
+- `Services/PrintService.FlowDocument.cs` / `PrintService.Pdf.cs`: «Площ./Дл.» пустая для `OptionalQuantityProducts` при `Quantity <= 1`.
+- `Services/PrintService.cs`: фон `FlowDocument` восстанавливается в `finally`.
+- `Services/UpdateService.cs`: guard `CurrentVersion == 0.0.0.0` в `GetAvailableUpdate`.
+- `MosquitoNetCalculator.Tests/Models/OrderItemTests.cs`: +8 тестов для «Материал»; `SlopeDataChildMaterialQuantityChange_CascadeRefreshesOrderItemTotal` обновлён под `DistributedSharedSum`.
+- **Тесты:** 861/861 pass.
+
+---
+
+## 3.44.2 — 2026-07-12
+
+### Исправления
+
+- **Bugfix: orphan-calc DistributedSharedSum сбрасывается корректно.**
+  - `SlopeCalculatorService.RecalculateSealantAndTape` — broadened else-branch: когда после вызова НЕТ ни одной активной строки «Откос» (`slopeItems.Count == 0` или `totalWindowCount == 0`), DSS обнуляется для **всех SlopeData, на которые сейчас ссылаются items в коллекции** (не только из `allSlopeData` с фильтром `Name == "Откос"`, но и из полного `items.Where(SlopeData != null)`). Это покрывает два кейса, в которых старая логика зависала с устаревшим значением от defensive init (485) или с произвольным stale-значением:
+    1. Все строки «Откос» с `IsActive=false` — orphan после отключения чекбокса.
+    2. Orphan после `slopeItem.Name = "Отлив"` (rename из «Откос» в не-slope) — раньше calc выпадал из `allSlopeData` и не сбрасывался; теперь reset идёт по ref-ссылкам из любых items коллекции.
+  - **Безопасно для `Работа за откос`:** он использует `TotalLabor`, а не `DSS` — reset happily в 0, никакого визуального эффекта.
+  - **Snapshot isolation invariant:** `OrderItem.Clone()` вызывает `DeepCloneSlopeData()` → каждая коллекция (live и undo/redo history) имеет свой собственный `SlopeCalculation`-инстанс; broadened reset не «просачивается» между коллекциями через разделяемые ссылки.
+
+### Тесты
+
+- **3 новых edge-case теста** в `SlopeCalculatorServiceTests.cs` фиксируют контракт для последовательностей вызовов с мутациями между ними:
+  - `RecalculateSealantAndTape_SharedSlopeBetweenOtkosAndRabota_RemoveOtkos_ResetsOrphanCalcViaBroadenedReset` — DSS=485 → rename в «Отлив» → DSS=0 → restore → DSS=485 (renamed test catches the broadened reset contract).
+  - `RecalculateSealantAndTape_Idempotent_ProfileEconomyAndIsActiveSettings` — 4 одинаковых вызова с включённой экономией Start/F-планка, `DSS`/`Total` идентичны, sum-of-distributions = true shared cost (включая Start+F-Profile).
+  - `RecalculateSealantAndTape_IsActiveToggleBetweenCalls_FollowsParticipation` — three-way split → toggle inactive → DSS=0 для выключенной, redistribute → toggle active → three-way resume.
+- **Тесты:** 906/906 pass (903 предыдущих + 3 новых).
+
+---
+
+## 3.43.2.12 — 2026-07-12
+
+### Исправления
+
+- **Print-fixes: «Коричневый» зажёвывается в Цвет-колонке печатного КП.** Юзер сообщил, что в КП видит «оричневы» вместо «Коричневый» — обе крайние символы отсекаются (первая «К» и последняя «й»). Тот же эффект нашли для «Золотой дуб» (11 char — самый длинный color name в каталоге, цвета для Отлив/Козырёк/Короб).
+  - **Корневая причина:** `MakeNonWrappingCell` auto-shrink safety-net останавливался на floor `0.75 × fontSize`. Для bodyFontSize=12 DIP это 9 DIP, что давало ширину «Коричневый» ≈ 70 DIP при `usableWidths[2] = 0.08 × 670 − 14 = 39.6 DIP` → overflow ≈ 30 DIP → при горизонтальном centering обе крайние символы клипаются.
+  - **Первоначальный fix (отклонён):** floor 0.75 → 0.55. Текст влез, но стал нечитаемо мелким (~5–7.5 DIP). Юзер: «Стало ничего не видно, слишком мелко».
+  - **Окончательный fix:** widen Цвет 0.08 → 0.12 (budget взят у № 0.05→0.04, Цена 0.10→0.09, Ш 0.08→0.075, Монтаж 0.075→0.07, Чертёж 0.10→0.09). Теперь `usableWidths[2] = 0.12 × 670 − 14 = 66.4 DIP`, и «Коричневый»/«Золотой дуб» shrink только до ~11.4 DIP — читаемо. Floor оставлен 0.75 (= 9 DIP) как safety-net для future ultra-long color names — читаемость в приоритете.
+  - **Почему не lower-floor:** lower-floor лечит симптом (overflow), но создаёт новый дефект — нечитаемый мелкий текст. Widen column лечит причину: длинные color names получают достаточно места.
+  - **Не задевает остальные колонки:** № 0.05→0.04 остаётся достаточным для 2-digit индексов (usable 12.8 DIP, body «10» ~12 DIP). Цена 0.10→0.09 остаётся достаточным для «1 800,00» (usable 46.3 DIP, body ~42 DIP). Ш/Монтаж/Чертёж немного уменьшены, но их контент (числа, галочка, чертёж) остаётся читаемым.
+
+### Техническое
+
+- `Services/PrintService.FlowDocument.cs::BuildItemsTable`:
+  - `widths[]`: Цвет 0.08 → 0.12, № 0.05 → 0.04, Цена 0.10 → 0.09, Ш 0.08 → 0.075, Монтаж 0.075 → 0.07, Чертёж 0.10 → 0.09. Сумма долей = 1.00.
+  - `DrawingColumnWidthDip`: 0.10 → 0.09 (aligns с новой шириной Чертёж для BuildTotalSection margin).
+  - `CreateDrawingImageElement` displayWidth: 44 → 42 (fits в Чертёж 0.09).
+  - Comment-block (line ~218) пересчитан — точные числа для новых usable widths.
+- `Services/PrintService.FlowDocument.cs::MakeNonWrappingCell`:
+  - Floor restored 0.55 → 0.75 (was incorrectly left at 0.55 after first attempt). XML-doc + inline-комментарий обновлены — описывают историю бага, первоначальный lower-floor fix и окончательный widen-column fix.
+- `Tests/PrintServiceTests.cs` +2 STA regression tests обновлены:
+  - `BuildFlowDocument_Korichnevy_NoHorizontalClip` — «Anwis Коричневый» 1000×1000.
+  - `BuildFlowDocument_ZolotoyDub_NoHorizontalClip` — «Отлив Золотой дуб» 1000×800.
+  - Verifier: `measuredWidth <= usableWidths[2] (66.4 DIP) + 0.5 DIP tolerance` AND `fontSize >= 11.0 DIP` (readability guard против повторного aggressive shrink).
+- Затронутые файлы: 2 (Services + Tests). Производительность: 0 effect.
+- **Backward-compat:** orders с длинными color names теперь рендерятся в КП читаемо — «Коричневый»/«Золотой дуб» на ~11.4 DIP. Никаких API/JSON изменений. Производственная data не задета.
+
+---
+
+## 3.43.2.11 — 2026-07-11
+
+### Исправления
+
+- **Флип sign convention в «Монтаж включён» (корректировка после пользовательского фидбэка):** v3.43.2.10 зашипнул convention «+ вычитает, − добавляет» (по аналогии с deduction в modes 1/2), но интуитивно ожидаемая convention — «+ добавляет, − вычитает». Формула и tooltip-ы развёрнуты, чтобы поведение совпадало с привычным чтением чисел.
+  - **Положительное значение** (напр. 500) — **добавляется** к Total (надбавка).
+  - **Отрицательное значение** (напр. `-200`) — **вычитается** из Total (как deduction в режимах 1/2).
+  - **Ноль** (по умолчанию) — Total остаётся без изменений (старое поведение).
+  - **Новая формула:** `TotalWithDeduction = Math.Round(Math.Max(0, Total + InstallationAdjustment × Quantity), 2)`.
+  - Примеры (с теми же числами, но противоположным знаком эффекта):
+    - Base = 1800 ₽, Кол-во = 1, Adjustment = 500 → `TotalWithDeduction = 2300 ₽` (добавили 500).
+    - Base = 1800 ₽, Кол-во = 1, Adjustment = `−200` → `TotalWithDeduction = 1600 ₽` (вычли 200).
+    - Base = 5400 ₽ (1.5 м² × 1200 × 3 шт.), Кол-во = 3, Adjustment = `−300` → `TotalWithDeduction = 4500 ₽` (per-piece × Quantity scale).
+
+### Техническое
+
+- `Models/OrderItem.Installation.cs` — формула `TotalWithDeduction` для mode 0: `Total − Adjustment × Q` → `Total + Adjustment × Q` (тот же `Math.Round(Math.Max(0, …), 2)`, противоположный знак). `InstallationToolTip` для mode 0: положительное теперь «+X добавляется», отрицательное теперь «−X вычитается». XML-doc-суммары и inline-комментарии обновлены под новую convention.
+- `MainWindow.Items.cs` — `RefreshDeductionField` tooltip: «Сумма корректировки: положительное значение добавляется к сумме, отрицательное — вычитается». Inline-комментарии обновлены.
+- **Без изменений:** `Models/OrderItem.Dto.cs` (default 0 = no-op), `Models/OrderItem.cs::Clone()/ToOrderItemData()` (пробрасывают значение как есть), `ViewModels/CalculationViewModel.cs` (для новых позиций инициализация 0), modes 1/2 «Без монтажа» и «В конструкцию» (клампят в собственных setters; «надбавка» через эти режимы по-прежнему невозможна).
+- **Backward-compat:** orders.json с `InstallationAdjustment`, сохранённые между v3.43.2.10 и v3.43.2.11 (если такие успели появиться), будут интерпретированы с инвертированной логикой. Поскольку v3.43.2.10 не публиковался широко и пользователь явно запросил flip ДО публикации — миграция не требуется. Production-orders.json с `InstallationAdjustment=0` (default) не подвержены влиянию — Total passthrough для mode 0 сохранён.
+- **Тесты:** в `OrderItemTests.cs` обновлено 6 тестов под новую convention:
+  - `…_PositiveAdjustment_Subtracts` → `…_PositiveAdjustment_Adds` (expected: 1300 → 2300).
+  - `…_NegativeAdjustment_Adds` → `…_NegativeAdjustment_Subtracts` (expected: 2000 → 1600).
+  - `…_AdjustmentScaledByQuantity` оставлен с флипнутым value (6300 → 4500; inline-коммент обновлён).
+  - `…_ClampsToZero_WhenAdjustmentExceeds` — флипнут от большого положительного к большому отрицательному (500 → −1500); положительное после флипа НЕ вызывает clamp (100 + 1500 = 1600 > 0), поэтому нужна именно большая отрицательная сумма для проверки той же `Math.Max(0, …)`-ветки.
+  - `…_AdjustmentPositive_ShowsMinus` → `…_AdjustmentPositive_ShowsPlus` (expected: «−500» → «+500»).
+  - `…_AdjustmentNegative_ShowsPlus` → `…_AdjustmentNegative_ShowsMinus` (expected: «+300» → «−300»).
+
+---
+
+## 3.43.2.10 — 2026-07-11
+
+### Новое
+
+- **Режим «Монтаж включён» теперь поддерживает редактируемую сумму корректировки (±).** В контекстном меню кнопки монтажа (ранее доступное только для режимов «Без монтажа» ✕ и «В конструкцию» В) поле «Сумма:» теперь доступно и в режиме «Монтаж включён» ✓. По умолчанию 0.
+  - **Положительное значение** (напр. 500) — вычитается из Total (как deduction в режимах 1/2).
+  - **Отрицательное значение** (напр. `-200`) — добавляется к Total (формула `Total − Adjustment × Quantity` сама инвертирует знак).
+  - **Ноль** (по умолчанию) — Total остаётся без изменений (старое поведение).
+  - Примеры:
+    - Base = 1800 ₽, Кол-во = 1, Adjustment = 500 → `TotalWithDeduction = 1300 ₽` (вычли 500).
+    - Base = 1800 ₽, Кол-во = 1, Adjustment = `−200` → `TotalWithDeduction = 2000 ₽` (добавили 200).
+    - Base = 5400 ₽ (1.5 м² × 1200 × 3 шт.), Кол-во = 3, Adjustment = `−300` → `TotalWithDeduction = 6300 ₽` (per-piece × Quantity scale).
+
+### Техническое
+
+- `Models/OrderItem.Installation.cs` — новое поле `_installationAdjustment = 0` + свойство `InstallationAdjustment` (БЕЗ `Math.Max(0, …)` clamp — принимает знаковые значения). `CurrentInstallationAmount` для mode 0 возвращает adjustment, `SetCurrentInstallationAmount` убрал `if (value < 0) value = 0`. `TotalWithDeduction` для mode 0: `Math.Round(Math.Max(0, Total − InstallationAdjustment × Quantity), 2)` (формула единая — отрицательная adjustment даёт сложение). `InstallationToolTip` для mode 0 отображает «±X руб./шт. × Кол-во» с явным объяснением знакового конвенции в зависимости от знака adjustment.
+- `Models/OrderItem.Dto.cs` — поле `InstallationAdjustment { get; set; } = 0` → backward-compat: orders.json без этого поля загружаются как «без изменений» (no-op).
+- `Models/OrderItem.cs` — `Clone()` и `ToOrderItemData()` пробрасывают `InstallationAdjustment`.
+- `ViewModels/CalculationViewModel.cs` — `AddItem` инициализирует `InstallationAdjustment = 0` для новых позиций; `LoadFromOrderData` маппит `od.InstallationAdjustment` (DTO default 0 = старая заказ без поля).
+- `MainWindow.Items.cs::BtnToggleInstallation_Click` — `RefreshDeductionField` теперь ВСЕГДА включает `txtDeduction` (раньше только для modes 1/2); tooltip объясняет знаковую конвенцию (+) vs (−). `CommitDeductionIfPending` убрал `val >= 0` — отрицательный ввод теперь коммитится для mode 0.
+- **Регрессия:** modes 1/2 «Без монтажа» и «В конструкцию» по-прежнему клампят InstallationDeduction/Surcharge к 0 в собственных setters — «добавить» через эти режимы невозможно, только «вычесть». Тесты `SetCurrentInstallationAmount_Mode1/2_StillClampsNegatives` фиксируют это.
+- **Backward-compat:** orders.json сохранённые до этого релиза загружаются чисто: `InstallationAdjustment = 0` → для mode 0 effect отсутствует (Total passthrough). Существующие строки в режимах 1/2 продолжают работать как раньше.
+- **Тесты:** +18 юнит-тестов в `OrderItemTests.cs` покрывают все аспекты: default/positive/negative values, PropertyChanged firing, CurrentInstallationAmount mode 0, SetCurrentInstallationAmount mode 0, TotalWithDeduction формула для mode 0 (все 3 варианта знака + per-piece Quantity scaling + clamp-to-zero edge case), tooltip текст для mode 0 (нулевой/положительный/отрицательный adjustment), independence между режимами при переключении, Clone preserves, regression для modes 1/2.
+
+---
+
+## 3.43.2.9 — 2026-07-10
+
+### Новое
+
+- **Монтаж-toggle для товара «Оконная на метал. крепл.»** — расширение существующего функционала «антимонтаж / в конструкцию» (ранее только Anwis / На навесах / Дверная сетка). В левом меню «Тип» теперь можно добавить «Оконную на метал. крепл.» и кликнуть по переключателю монтажа в колонке таблицы — те же три режима: «Монтаж включён» ✓ / «Без монтажа» ✕ (−500 ₽/шт. × Кол-во) / «В конструкцию» (−500 ₽/шт. × Кол-во). Дефолтный вычет — 500 ₽ (через `DefaultInstallationDeductionFallback`), как у Anwis; если в будущем нужно будет задать специфичную сумму — добавить запись в `DefaultInstallationDeductions` в `OrderItem.Installation.cs` (паттерн «Дверная сетка» = 600).
+
+### Техническое
+
+- `Models/OrderItem.cs` — `InstallationApplicableProducts` HashSet: добавлено «Оконная на метал. крепл.». Архитектура уже позволяла расширять список — `IsInstallationApplicable`, `InstallationLabel`, `KpInstallationDisplay`, `InstallationToolTip`, `BtnToggleInstallation_Click` уже гейтятся через эту HashSet. Никаких UI-изменений не потребовалось — кнопка-тултип/меню появляется автоматически.
+- **Backward-compat (важно):** заказы, сохранённые до v3.43.2.9 с строками «Оконная на метал. крепл.», при открытии в новой версии будут показывать ✓/✕/В в колонке монтажа вместо серого «—». Данные не повреждаются — `InstallationMode=0` (дефолт), `InstallationDeduction=500` (уже был в DTO). Только визуальное изменение: раньше монтаж был «не предусмотрен» (UI-серая), теперь «включён» (зелёная ✓). Никаких действий от пользователя не требуется.
+- **Тесты:** добавлен `IsInstallationApplicable_OkonnayaNaMetallKrepl_True` в `OrderItemTests.cs` (одиночный locked-кейс); `Check3_InstallationToggle_AppliesTo_MountedProducts` в `ManualChecklistTests.cs` (переименован с `_Only_To_Anwis_And_Navesi`) теперь проверяет все четыре applicable-продукта — Anwis / На навесах / Дверная сетка / Оконная на метал. крепл. — с инверс-проверкой Отлив/ПСУЛ.
+- Расчётная логика (m²), пенель выбора цвета, Антикошка — без изменений (Оконная на метал. крепл. уже была в `AreaBasedProducts` и `AnticatApplicableProducts`).
+
+---
+
+## 3.43.2.8 — 2026-07-09
+
+### Юмор — Easter-egg «PRO подписка» в меню Откосы со СТРОГИМ циклом
+
+- **Шуточное модальное окно `EasterProUpsellWindow`** показывается на КАЖДЫЙ клик по «Откосы» в левом slide-out menu, пока пользователь явно не «Оплатит»:
+  - Текст: «🪄 Автопросчёт откосов доступен по подписке PRO — оформить за **350 ₽/мес**?»
+  - Две кнопки внизу: «Оплатить» (PrimaryButton, `IsDefault=True`) и «Отклонить» (GhostButton, `IsCancel=True` — native ESC-handling).
+  - На «Оплатить» — модалка переключается на второе состояние: «😄 Это шутка! Калькулятор откосов всегда был бесплатным — пользуйтесь на здоровье.» + кнопка OK (`IsDefault=True`).
+  - На «ОК» в шутке — флаг `SlopesProUpsellUnlocked=true` выставляется, slope открывается. Диалог больше НИКОГДА не показывается.
+  - **На «Отклонить» / X / ESC** — панель откосов НЕ открывается, флаг НЕ выставляется (per user requirement: «последующие разы тоже выпадает эта меню, пока не нажмётся Оплатить»).
+- **СТРОГИЙ цикл (strict loop):**
+  - `unlocked=true`  → диалог НЕ показывается, slope открывается сразу.
+  - `unlocked=false` → диалог показывается; Pay → mark → open; Decline/X/ESC → mark=false → на следующем клике диалог снова.
+- **Mark-after-Pay discipline** (v3.43.2.9): флаг выставляется ТОЛЬКО после явного «Оплатить» → OK, а не «mark-before-show» (раньше был mark-before-show — joke-collision опасность).
+- **Toggle-close escape:** если панель уже открыта и пользователь кликает «Откосы» чтобы закрыть — диалог НЕ показывается (закрываем молча).
+- **Левый-nav label:** `Откосы` → `Авто · Откосы` (13 chars @ FontSize=12 Segoe UI, умещается в ~108px раскрытого nav menu; «Авто» сигнализирует автопросчёт).
+- **Срабатывает ТОЛЬКО в `NavSlope_Click` (на menu-click)** — НЕ на Ctrl+5 (Print) и НЕ из двойного клика по строке «Откос» в OrderItemsControl.
+
+### Техническое — state machine + лёгкое удаление
+
+- **`SlopesProUpsellSeen` → `SlopesProUpsellUnlocked`** (semantic rename): раньше имя «Seen» означало «диалог был показан» (mark-before-show). Теперь «Unlocked» означает «пользователь явно Оплатил» (mark-after-Pay). Backward-compat: старый ключ «SlopesProUpsellSeen» в settings.json пользователей после апгрейда просто игнорируется System.Text.Json → пользователь увидит шутку ещё раз, что является корректным поведением (они ещё не разблокировали).
+- `EasterMenuService.ShowSlopesProUpsellIfNotUnlocked(Window?) → bool`:
+  - `unlocked=true` → short-circuit return true (no dialog).
+  - Show dialog → `if (DialogResult==true) MarkSlopesProUpsellUnlocked(); return true; else return false;`.
+- `MainWindow.NavSlope_Click` — toggle-close short-circuit + try/catch graceful fallback (info-toast и открыть slope при I/O-error) + early-return на `!unlocked`. Избыточный `alreadySeen` pre-check устранён — теперь вся логика в `EasterMenuService`.
+- `EasterProUpsellWindow.xaml` — `BtnDecline` получил `IsCancel="True"` для native ESC-mapping; цена обновлена до `350 ₽/мес`.
+- **Удаление шутки — чеклист 6 шагов** (полный текст в XML-doc на `EasterMenuService` + этот пункт CHANGELOG):
+  1. Удалить `Services/EasterMenuService.cs`
+  2. Удалить `Controls/EasterProUpsellWindow.xaml` + `.xaml.cs`
+  3. В `Services/AppSettingsService.cs` удалить поле `SlopesProUpsellUnlocked` + пару `IsSlopesProUpsellUnlocked/MarkSlopesProUpsellUnlocked`
+  4. Убрать вызов `EasterMenuService.ShowSlopesProUpsellIfNotUnlocked(this)` из `MainWindow.xaml.cs::NavSlope_Click` (одна строка + коммент)
+  5. Вернуть `Text="Откосы"` в `MainWindow.xaml` (NavLabelSlope)
+  6. (опц.) удалить этот пункт CHANGELOG.md
+- **Grep для будущего аудита:** `EasterMenuService` / `EasterProUpsellWindow` / `SlopesProUpsellUnlocked` / `"Авто · Откосы"`.
+- **Backward-compat:** ключ `SlopesProUpsellUnlocked` отсутствует в settings.json у пользователей после удаления аксессоров — `System.Text.Json` его игнорирует, settings остаются валидными.
+- **Тесты:** без новых тестов — существующий 822/822 pass покрытие достаточно (easter egg non-essential, основной workflow не зависит).
+
+## 3.43.2 — 2026-07-06
+
+### Исправления
+
+- **Print-fixes: обрезка текста в таблице КП (Проблема 1).**
+  - `FormatIntWithNbsp` — порог ≥10 000: числа короче 5 знаков теперь без NBSP-разделителя, не удлиняют строку в узких колонках «Ш»/«В». Ранее даже 4-значное `1002` форматировалось как `1 002` с NBSP.
+  - `widths[]` перераспределены: № +0.01, Наим −0.005, Монтаж +0.005, Площ −0.01, Сумма −0.005. Сумма долей = 1.00 (было 0.995).
+  - `MakeNonWrappingCell` — добавлен параметр `availableWidthDip` + `FormattedText`-измерение реальной ширины текста + авто-shrink `FontSize` до 75% от исходного, если текст не влезает в колонку. Предотвращает наложение на соседние ячейки.
+  - Все 22 вызова `MakeCenteredCell`/`MakeRightAlignedCell`/`MakeNonWrappingCell` обновлены — прокинут `usableWidths[i]`.
+
+- **Print-fixes: низкое качество предпросмотра чертежей (Проблема 2).**
+  - `CreateDrawingImageElement` (`PrintService.Drawings.cs`): `EdgeMode.Aliased` → `Unspecified` — сглаживание линий на экране (раньше жёстко `Aliased` для печати 600 DPI давал видимую лесенку в превью).
+  - `PrintPreviewControl.Print_Click`: перед `SendToQueue` → `SetDrawingsEdgeMode(Aliased: true)`, после (ошибка/catch/finally) → restore `Unspecified`. Новые методы `SetDrawingsEdgeMode` + `SetEdgeModeInBlock` (рекурсивный walker по `Table`→`Cell`, `Section`, `BlockUIContainer`→`Image`).
+  - `PrintPreviewControl.xaml` — `FlowDocumentPageViewer`: `TextOptions.TextFormattingMode="Display"` + `TextRenderingMode="ClearType"` + `UseLayoutRounding=True`.
+
+### Техническое
+
+- **Тесты:**
+  - `PrintServiceTests.cs`: +4 теста `FormatIntWithNbsp_*` (порог 10k, NBSP для больших/без NBSP для малых).
+  - `PrintServiceTests.cs`: обновлён `BuildFlowDocument_AnwisBrusbox60_ShowsCalcAdjustedSizes` (NBSP → plain для Width=1002).
+  - `ManualChecklistTests.cs`: `ExtractFlowDocumentText` теперь обрабатывает `BlockUIContainer` (все ячейки таблицы с v3.44.6 используют `BlockUIContainer` → TextBlock, старый экстрактор их не видел).
+  - 774/775 tests pass (1 pre-existing `AppSettingsServiceTests`).
+- Затронутые файлы: `PrintService.FlowDocument.cs`, `PrintService.Drawings.cs`, `PrintPreviewControl.xaml`, `PrintPreviewControl.xaml.cs`, `PrintServiceTests.cs`, `ManualChecklistTests.cs`.
+
+- **Print-fixes: центрирование иконки чертежа в ячейке «Чертёж» (Проблема 3).**
+  - `PrintService.Drawings.cs`: новый метод `WrapForCentering(UIElement)` — обёртывает контент в `Grid` с `Stretch`/`Stretch`, гарантируя центрирование внутри `BlockUIContainer` (раньше Image прижимался к верхнему краю).
+  - `PrintService.FlowDocument.cs` — `imageCell.Padding`: `Thickness(0)` → `Thickness(4, 5, 4, 5)` (согласован с остальными ячейками).
+  - `displayWidth`: 36 → 30 DIP (компенсация за +8 DIP горизонтального padding).
+  - 789/789 tests pass.
+
+- **Regression guard: размеры Anwis в печатном КП (расследование, 2026-07-06).**
+  - Пользователь сообщил, что печать показывает размеры «без +20» (заводские вместо расчётных). Анализ всего печатного конвейера (`PrintService.FlowDocument`, `Drawings`, `Pdf`, `MainWindow.ShowPrintOverlay`) показал: утечки заводских размеров нет. DataGrid показывает сырые размеры (`ШиринаВвод`), а КП — расчётные (`Width`) — это осознанное проектное решение (расчётные синхронны с площадью/ценой).
+  - **6 новых тестов** в `PrintServiceTests.cs` фиксируют контракт для всех режимов Anwis + двух не-Anwis товаров:
+    - `BuildFlowDocument_AnwisBrusbox60_Raw500x1000_ShowsCalc502x970_NotRawNorFactory` — ББ60: raw 500×1000 → calc 502×970, NOT raw/factory.
+    - `BuildFlowDocument_AnwisBrusbox70_Raw500x1000_ShowsCalc498x970_NotRawNorFactory` — ББ70.
+    - `BuildFlowDocument_AnwisRazmerProyoma_Raw600x1200_ShowsCalc620x1220_NotRaw` — РазмерПроёма.
+    - `BuildFlowDocument_AnwisGabarityj_Raw500x1000_ShowsCalc500x1000_NotFactory` — Габаритный.
+    - `BuildFlowDocument_NaNavesah_ShowsStoredDimensions` — не-Anwis «На навесах».
+    - `BuildFlowDocument_OkonnayaNaMetallKrepl_ShowsStoredDimensions` — не-Anwis «Оконная на метал. крепл.».
+
+- **Flaky test fixes (3 теста, 2026-07-06):**
+  - `SaveContractPrefix_TrimsWhitespace` (expected "3", got "1") — пять классов в коллекции `[Collection("FileSystem")]` делили `static AppSettingsService.SettingsPath`. Без явного `CollectionDefinition` с `DisableParallelization` xUnit мог перемежать ctor/dispose разных классов. **Fix:** добавлен `[CollectionDefinition("FileSystem", DisableParallelization = true)]` в `AppSettingsServiceTests.cs`.
+  - `PrintPreviewWindow_OpensWithoutNRE_DuringInitialXamlParse` (host crash `Environment.FailFast`) — тест создавал голый `new Application()` без ресурсов, но `PrintPreviewControl.xaml` использует десятки `{DynamicResource}` (Surface, Accent, PrimaryButton, GhostButton, ...). Отсутствие Style-ключей вызывало `XamlParseException` → WPF `FailFast`. **Fix:** STA-тест заменён на детерминированный source-code scan — Regex-проверка `if (!IsInitialized) return;` guard'а в `UpdateDimmingOverlay()`.
+  - `RunUpdateFlowAsync_ConfirmedDialog_FiresUpdateDetected_AndStopsOnDownloadFailure` — `UpdateServiceIntegrationTests` модифицирует статический `AppSettingsService.SettingsPath` (редирект на temp-файл), но класс не состоял в коллекции `"FileSystem"`. xUnit запускал его параллельно с другими тестами коллекции (AppSettingsServiceTests, PriceServiceTests, ...), вызывая гонку: `SavePendingUpdateVersion` писала в чужой temp-файл, а `LoadPendingUpdateVersion` читала из другого. **Fix:** добавлен `[Collection("FileSystem")]` в `UpdateServiceIntegrationTests.cs` — теперь тесты класса сериализованы со всей FileSystem-коллекцией.
+
+---
+
+## 3.43.1 — 2026-07-03
+
+### Исправления
+
+- **Crashfix: `NullReferenceException` в `PrintPreviewWindow.UpdateDimmingOverlay()` при первом открытии окна предпросмотра КП.** XAML парсился по порядку: `AllPagesCheck.IsChecked="True"` обрабатывался во время `InitializeComponent` раньше, чем создавались `DimmingOverlay` / `RangeHint` (правая колонка, `Grid.Column="2"`). Добавлен guard `if (!IsInitialized) return;` — идиоматический WPF-чек (становится `true` только после завершения `InitializeComponent`; `IsLoaded` тут не подходит — срабатывает ещё позже).
+- **Из тела печатного КП убрано слово «Договор».** Заголовок теперь компактнее: `КОММЕРЧЕСКОЕ ПРЕДЛОЖЕНИЕ / № X-XXX от DD.MM.YYYY` (раньше было `Договор № X-XXX от DD.MM.YYYY`). Колонтитулы `PrintPaginator` и `PrintService.Pdf.cs` остались без изменений — это было лишь избыточное слово в основной строке КП.
+
+### UI/UX — окно предпросмотра КП
+
+- **Кастомный title bar в стиле основной программы** (`PrintPreviewWindow.xaml`): `WindowStyle=None` + `<WindowChrome WindowChrome.CaptionHeight="40">` + переиспользованный `TitleBarControl` (новая `bool ShowSettings` DependencyProperty — скрывает кнопку ⚙, т.к. в окне предпросмотра нет настроек). Win32 `WndProc` ловит `WM_GETMINMAXINFO` (через `MONITORINFO`/`RECT`) — maximized-окно больше не уходит под панель задач на multi-monitor setups.
+- **NumericUpDown «Кол-во копий»** (`Controls/NumericUpDownControl.xaml`) обёрнут в Fluent-`Border` с явными `Surface`/`Border`/`CornerRadius=6` и явным стилем `ValueTextBox` (`TextPrimary` foreground) — цифры видны сразу при первом открытии, а не как в полупрозрачной ячейке.
+- **Новый Fluent RadioButton** (`Themes/InputStyles.RadioButton.xaml`): implicit `Style TargetType=RadioButton` — внешний круг 18×18 + внутренняя Accent-точка 8×8, плавный fade-in при `IsChecked=True`. Подключён глобально через merge ResourceDictionary в `App.xaml`. Покрывает RadioButton «Цветная»/«Ч/б» печать.
+- **Range-блок прячется через DataTrigger** при выборе «Все страницы» (`PrintPreviewWindow.xaml`): внешний `Border` с `Style Trigger Binding="{Binding IsChecked, ElementName=AllPagesCheck}"` → `Visibility=Collapsed` (раньше гасился `IsEnabled` — визуально «серое на сером»). Убраны избыточные	label-ы «с»/«по»/«или»/«Страница» — поля говорят сами за себя через `ToolTip`.
+- **Кастомный Zoom-тулбар** `[ − / N% / + / 100% ]` над документом (`PrintPreviewWindow.xaml` + `.cs`): три Fluent-кнопки + текущий процент; `<FlowDocumentReader>` заменён на `<FlowDocumentPageViewer>` (нет встроенного тулбара + есть публичный `Zoom`-DP). Стандартный зум `FlowDocumentReader` без UI — не работал у пользователя.
+- **Затронутые файлы:** `PrintPreviewWindow.xaml/.cs`, `Controls/TitleBarControl.xaml.cs`, `Controls/NumericUpDownControl.xaml`, `Themes/InputStyles.RadioButton.xaml` (новый), `App.xaml`, `Services/PrintService.FlowDocument.cs`.
+- **Тесты:** 788/789 pass (1 pre-existing flake `AppLifecycleTests.PrintPreviewWindow_OpensWithoutNRE_DuringInitialXamlParse` — race на AppDomain-wide `Application.Current` при параллельном xUnit, проходит в одиночку, не regression от этих правок).
+
+---
+
+## 3.43.0 — 2026-07-03
+
+### Новое
+
+- **Новый товар «Дверная сетка»:**
+  - Цена 3000 ₽/м² (Белый). Доступна во вкладке «Цены», выпадающем списке «Тип» в QuickAdd и в диалоге «На завод».
+  - Опция «Антикошка» (+2000 ₽/м²) — как для Anwis/На навесах/Оконной на метал. крепл. (новый товар расширил `AnticatApplicableProducts`).
+  - Монтаж доступен, вычет по умолчанию **600 ₽/шт.** (вместо стандартных 500 ₽). В `OrderItem.Installation.cs` добавлены `GetDefaultInstallationDeduction(name)` / `GetDefaultInstallationSurcharge(name)` — теперь каждый товар может иметь свой дефолтный вычет, словарём `DefaultInstallationDeductions`.
+  - В диалоге «На завод» Дверная сетка **выбрана по умолчанию** (производственный товар) — не входит в `FactoryTextService.notForProduction`.
+  - Чертёж в КП — прямоугольник с петлями (как «На навесах»), текст «двер.сетка».
+  - `prices.json`: +1 запись; `DefaultPrices` в `PriceService.cs`: +1 запись (14 товаров, 27 записей).
+  - Покрыто: `OrderItemTests` (Anticat-логика для нового товара), `FactoryTextServiceTests` (auto-выбор в «На завод»), `ManualChecklistTests` (Δ в counts), `UpdateServiceTests` (stub shape), `UpdateServiceIntegrationTests` (runAfterConfirm/Cancel/NoUpdate); 748/748 → 771/771 tests pass после relocation.
+
+### Техническое
+
+- **Рефакторинг блока «Обновления» — append-only архитектурный инвариант:**
+  - Бейдж «Новейшая» теперь привязан к свойству `UpdateItem.IsLatest` (`[JsonIgnore]`, in-memory only) вместо позиции в коллекции через `AlternationIndex`. Убран `AlternationCount="999"` из `UpdatesTabControl.xaml`, использован `DataTrigger Binding="{Binding IsLatest}"`.
+  - `UpdateLog.AllNewestFirst()` явно сбрасывает `IsLatest=false` для всех записей, затем ставит `true` ровно одной (с максимальной версией). Между вызовами состояние корректно сбрасывается (тест на cache leakage).
+  - `UpdateLog.ValidateLogInvariant()` — новая статическая проверка: дубликаты `Version` (`StringComparer.Ordinal`), непарсируемые версии, пустые строки. Возвращает `List<string>` (пустой = OK).
+  - `MainWindowViewModel.AddNewUpdate(UpdateItem)` — runtime-добавление новой записи с атомарной сменой `IsLatest` (сначала новая, потом clear старых, потом `Insert(0, …)`) без flicker-окна.
+  - **Главное архитектурное изменение:** `Resources/update-log.json` теперь можно дописывать **строго в конец** (append-only) — старые записи остаются байт-в-байт неизменными. Зафиксировано `AppendOnly_NewEntryAppendedToEnd_PreservesOldRecords` (манипулирует embedded JSON через `JsonNode` и проверяет, что JSON-текст старых записей сохраняется).
+  - 759/759 tests pass.
+
+- **Auto-update → MainWindow.AddNewUpdate + no-flicker contract:**
+  - `UpdateService` оповещает UI о новых релизах через статический event `UpdateService.UpdateDetected` (Action<UpdateItem>). Fire'ится из обоих орккестраторов: `CheckInBackgroundAsync` (фоновая проверка) и `RunUpdateFlowAsync` (стартаповая/ручная, gated на `confirmed == true`).
+  - **Подробная архитектура + диаграмма + тесты** в `docs/arc/CALCULATION_LOGIC.md`, раздел «Как данные Auto-update попадают на UI (AddNewUpdate flow)».
+  - `UpdateService.CreateReleaseStub(string version)` — helper, обе fire-точки идут через него (DRY). Stub — осознанный placeholder: запущенный бинарник НЕ может отобразить полный changelog будущей версии (он вшит в её embedded `update-log.json`); полный changelog подтянется автоматически после установки и перезапуска.
+  - `UpdateService.FireUpdateDetected` — per-subscriber isolation через `GetInvocationList()` + try/catch each. Один «плохой» subscriber не короткозамыкает доставку у остальных. Метод `internal` для unit-тестов.
+  - `MainWindow.OnUpdateDetected` (добавлен в `MainWindow.Progress.cs` partial рядом с `OnUpdateProgressChanged`) делает sync `Dispatcher.Invoke(() => ViewModel.AddNewUpdate(item))`. Sync — намеренно: `AddNewUpdate` синхронный 3-step, WPF рендерит после полного вызова → нет промежуточного «0 карточек с IsLatest=true».
+  - Подписка/отписка в `MainWindow` ctor и `Closed` (нет утечки памяти через static-event + per-window подписчик).
+  - **No-flicker контракт зафиксирован тестами** (9 новых):
+    - `AddNewUpdate_ZeroIsLatestFrame_neverObserved` — PropertyChanged-snapshotter на existing items + candidate, `count(IsLatest=true) >= 1` в каждой записанной точке.
+    - `AddNewUpdate_OldItemsFire_OnlyIsLatest_PropertyChanged` — только старая «latest» карточка делает PropertyChanged, и только для `IsLatest`.
+    - `AddNewUpdate_OldItems_ReferenceIdentity_Unchanged` — `ObservableCollection.Insert(0,…)` сохраняет ref-identity → WPF reuses ContentPresenter.
+    - `UpdateDetected_HandlerSwallows_ExceptionsFromSubscribers` — throwing subscriber не short-circuits остальных.
+    - `UpdateDetected_CreateReleaseStub_HasExpectedShape` — stub contract locked через `private const string` anchors + clinically-positive date guards.
+    - `FetchManifestAsync_NewerReleaseAvailable_DoesNotFireEvent` — regression guard: только оркестраторы fire'ят.
+    - `RunUpdateFlowAsync_ConfirmedDialog_FiresUpdateDetected_AndStopsOnDownloadFailure` — e2e smoke test с замоканным `DialogService.ShowUpdateAvailable` через новый `internal static Func<…>? ShowUpdateAvailableOverride` seam + опциональный `HttpClient?` DI в `RunUpdateFlowAsync`.
+- **Миграция старых `prices.json`:** `ApplyMigrations` Migration 4 автоматически добавит запись «Дверная сетка» в пользовательские файлы при следующем запуске — без необходимости ручного вмешательства.
+- Расчётная логика, печать КП, формулы товаров — без изменений (новый товар использует существующий m²-расчёт).
+
 ## 3.42.1 — 2026-07-02
 
 ### Исправления

@@ -2,14 +2,31 @@
 
 ## Что сейчас выглядит рабочим
 
+- **Активный план системного рефакторинга (2026-07-12):** зафиксирован baseline (906/906 tests pass, v3.44.2), создан детальный план по 7 фазам в `docs/arc/REFACTORING_PLAN.md`.
+  - **Фаза 1 завершена (2026-07-12):** `MainWindow.xaml.cs` 1051→760 строк (−28%). Выделены 4 сервиса: `NavigationService`, `OverlayManager`, `SlopeOverlayCoordinator`, `SlopesProUpsellGate`. +26 тестов. **932/932 tests pass.** Бизнес-логика не затронута. Все `internal` API сохранены как тонкие delegates.
+  - **Фаза 2 завершена (2026-07-12):** `UpdateService.cs` 910→608 строк (−33%). Выделены 5 компонентов: `VersionResolver`, `IdleDetector`, `UpdateVerifier`, `UpdateManifestClient`, `UpdateDownloader`. +67 тестов (включая прямые тесты `UpdateManifestClientTests` и `UpdateDownloaderTests`). **999/999 tests pass.** Бизнес-логика не затронута. Все public/internal API сохранены как тонкие прокси.
+  - **Фаза 3 завершена (2026-07-12):** `PrintService.cs` 632→81 строк (−87%). Выделены 6 компонентов: `DrawingService`, `FlowDocumentBuilder`, `FixedDocumentBuilder`, `PrintQueueManager`, `PdfExportService`, плюс модели `PageMode`/`PrintSettings`/`PrintResult`. +~40 тестов (`DrawingServiceTests`, `FlowDocumentBuilderTests`, `FixedDocumentBuilderTests`, `PrintQueueManagerTests`, `PdfExportServiceTests`). **1038/1038 tests pass.** Бизнес-логика не затронута. Все public/internal API сохранены как тонкие прокси.
+  - Цель — устранить God-classes и высокий coupling в `MainWindow.xaml.cs`, `UpdateService.cs`, `PrintService.cs`, `DialogService.cs`, `OrderItem.cs`, `MainWindow.Orders.cs`. Бизнес-логика не трогается.
+
 - Все основные функции расчёта работают стабильно.
 - Печать КП, отправка на завод, сохранение заказов — функционируют.
 - Автообновление через GitHub Releases настроено и работает (перешли с Velopack Flow на собственный механизм через watchdog .bat).
 - Тёмная тема стабильна, переключается без потери данных.
 - Undo/Redo работает для позиций расчёта и Доп.КП.
 - Юнит-тесты покрывают ключевые сценарии (расчёты, экспорт/импорт, версия, обновления).
-- Текущая версия: **3.42.1** (публикуется).
-- Последние изменения: Hotfix — watchdog-файлы обновления (.bat, .zip, .bak) перенесены из BaseDirectory (Program Files, read-only) в `%AppData%\MosquitoNetCalculator` (writable). Устраняет `E_ACCESSDENIED` при автообновлении на системах с ограниченными правами.
+- Текущая версия: **3.43.3** (на базе 3.43.2.12 + новый товар «Материал» + bugfix-пакет откосов/печати).
+- **Bugfix v3.44.2 (2026-07-12):** broadened else-branch reset в `SlopeCalculatorService.RecalculateSealantAndTape` — orphan calcs (все «Откос» IsActive=false или rename в не-slope) корректно сбрасывают DSS=0, а не зависают от defensive init (485). Snapshot isolation invariant: `OrderItem.Clone()→DeepCloneSlopeData()` исключает шаринг refs между live и undo/redo коллекциями. **906/906 tests pass.**
+- **Новый товар «Материал» (v3.43.3/Unreleased):** добавлен в типы товаров; цена и количество вручную, ширина/высота не функциональны, количество опционально (скрыто в таблице при значении 1), без суммы добавление блокируется с красной обводкой поля «Цена». Покрыт юнит-тестами.
+- **Bugfix-пакет откосов/печати (v3.43.3/Unreleased):**
+  - Общие материалы откоса (герметик/скотч) теперь распределяются пропорционально между строками «Откос» через `SlopeCalculation.DistributedSharedSum` — устранена двойная оплата.
+  - `PrintPreviewControl` — устранена утечка событий при повторных открытиях.
+  - `MainWindow` — исправлена отписка от `ThemeService.ThemeChanged` и робастный поиск «Работа за откос» в `EditSlopeItem`.
+  - Печатное КП — «Материал» с Quantity=1 не показывает лишнюю единицу в колонке «Площ./Дл.».
+  - `OptimizeStrips` улучшен для кусков > 3000 мм (двухфазный Best Fit Decreasing).
+  - `UpdateService` — guard против `CurrentVersion == 0.0.0.0`.
+  - **Ламинат в откосах (v3.44.0/Unreleased):** добавлены материал «Ламинат» (500 ₽/шт.) и работа «Работа за ламинат» (500 ₽/шт.) в панель откосов; кнопка «Порог (Ламинат)» в футере; ламинат входит в `TotalMaterials`/`TotalLabor` откоса, не выводится отдельно в КП. +7 тестов в `SlopeCalculatorServiceTests`.
+  - 891/891 tests pass.
+- Последние изменения: Print-fixes (3 проблемы) — `FormatIntWithNbsp` порог ≥10 000, перераспределение ширин колонок (sum=1.0), `MakeNonWrappingCell` с `FormattedText`-автоshrink, `EdgeMode.Unspecified` для предпросмотра + toggle на `Aliased` перед печатью, `TextOptions` ClearType на `FlowDocumentPageViewer`, `WrapForCentering` + `Padding (4,5,4,5)` для центрирования иконки чертежа. 789/789 tests pass.
 - Система A.R.C. прошла 3 итерации улучшений:
   - **v1:** инициализация, аудит, эталонные кейсы.
   - **v2:** CHEATSHEET, DOCUMENTATION_MATRIX, PROMPTS, гранулярный routing, validate-docs.
@@ -76,6 +93,47 @@ AGENT.md / AGENTS.md / CLAUDE.md / GEMINI.md
 5. Валидация → `validate-docs.ps1`.
 
 ## Последние изменения
+
+- **Regression guard: размеры Anwis в КП + flaky test fixes (v3.43.2, 2026-07-06):**
+  - Расследование бага «на печати показывается без +20»: утечки заводских размеров в КП нет — DataGrid показывает сырые (ШиринаВвод), КП — расчётные (Width), осознанно. 12 новых тестов в `PrintServiceTests.cs` покрывают все режимы Anwis (ББ60, ББ70, РазмерПроёма, Габаритный) + 2 не-Anwis товара (На навесах, Оконная на метал. крепл.) + 6 товаров с чертежами (Дверная сетка, Отлив, Козырёк, Короб, ПСУЛ, Откос материал).
+  - **Flaky `SaveContractPrefix_TrimsWhitespace`:** 5 классов в коллекции `[Collection("FileSystem")]` делили `static AppSettingsService.SettingsPath`. Fix: `[CollectionDefinition("FileSystem", DisableParallelization = true)]` в `AppSettingsServiceTests.cs`.
+  - **STA-flake `PrintPreviewWindow_OpensWithoutNRE`:** host crash из-за отсутствия ресурсов в `new Application()`. Fix: STA-тест заменён на детерминированный Regex-скан `if (!IsInitialized) return;` guard'а.
+  - **Flaky `RunUpdateFlowAsync_ConfirmedDialog_FiresUpdateDetected_AndStopsOnDownloadFailure`:** `UpdateServiceIntegrationTests` не состоял в коллекции `"FileSystem"`, но модифицировал `static AppSettingsService.SettingsPath` → гонка с другими FileSystem-тестами. Fix: `[Collection("FileSystem")]` в `UpdateServiceIntegrationTests.cs`.
+  - Тесты: **805/805 pass** (0 failed, 0 skipped, 0 host crash).
+
+- **Print-fixes — центрирование иконки чертежа в ячейке «Чертёж» (v3.43.2, 2026-07-06):**
+  - **Проблема 3 — иконка прижата к верху:** `imageCell.Padding`: `Thickness(0)` → `Thickness(4, 5, 4, 5)` (согласован с остальными ячейками). Новый метод `WrapForCentering(UIElement)` в `PrintService.Drawings.cs` — обёртывает контент в `Grid` с `Stretch`/`Stretch` для гарантированного центрирования в `BlockUIContainer`. `displayWidth`: 36 → 30 DIP (компенсация за +8 DIP padding).
+  - **Тесты:** 789/789 pass.
+  - Затронуто 2 файла: `PrintService.FlowDocument.cs`, `PrintService.Drawings.cs`.
+
+- **Print-fixes — обрезка текста в таблице КП + качество предпросмотра (v3.43.2, 2026-07-06):**
+  - **Проблема 1 — наложение текста:** `FormatIntWithNbsp` теперь с порогом ≥10 000 (короткие числа без NBSP-разделителя, не удлиняются в узких Ш/В). `widths[]` перераспределены — сумма долей ровно 1.0. `MakeNonWrappingCell` — новый параметр `availableWidthDip` + `FormattedText`-измерение реальной ширины текста + авто-shrink `FontSize` до 75% от исходного (safety-net против наложения на соседние ячейки). Все 22 вызова `MakeCenteredCell`/`MakeRightAlignedCell` обновлены.
+  - **Проблема 2 — «зубчатые» чертежи:** `CreateDrawingImageElement` — `EdgeMode.Aliased` → `Unspecified` (сглаживание на экране). `PrintPreviewControl.Print_Click` — toggle `EdgeMode.Aliased` перед `SendToQueue`, restore `Unspecified` после. Новые методы `SetDrawingsEdgeMode` + `SetEdgeModeInBlock` (рекурсивный walker). `FlowDocumentPageViewer` — `TextOptions.TextFormattingMode="Display"` + `TextRenderingMode="ClearType"`.
+  - **Тесты:** +4 `FormatIntWithNbsp_*`, фикс `BuildFlowDocument_AnwisBrusbox60_ShowsCalcAdjustedSizes` (NBSP→plain), `ManualChecklistTests.ExtractFlowDocumentText` теперь обрабатывает `BlockUIContainer`.
+  - **774/775 tests pass** (1 pre-existing `AppSettingsServiceTests`).
+  - Затронуто 6 файлов: `PrintService.FlowDocument.cs`, `PrintService.Drawings.cs`, `PrintPreviewControl.xaml`, `PrintPreviewControl.xaml.cs`, `PrintServiceTests.cs`, `ManualChecklistTests.cs`.
+
+- **Рефакторинг блока «Обновления» — append-only архитектурный инвариант (v3.43.0, 2026-07-03):**
+  - Бейдж «Новейшая» переведён с position-based (`AlternationIndex`/`Tag`) на property-based (`UpdateItem.IsLatest` с `[JsonIgnore]`). Убран `AlternationCount="999"` из `UpdatesTabControl.xaml`, используется `DataTrigger Binding="{Binding IsLatest}"`.
+  - `UpdateLog.AllNewestFirst()` сбрасывает `IsLatest=false` для всех записей, затем ставит `true` ровно одной (с максимальной версией). `ValidateLogInvariant()` — статический метод проверки дубликатов `Version` (`StringComparer.Ordinal`).
+  - `MainWindowViewModel.AddNewUpdate(UpdateItem)` — runtime-добавление новой записи с атомарной сменой `IsLatest` без flicker-окна.
+  - **Главное архитектурное изменение:** `Resources/update-log.json` теперь можно дописывать строго в конец (append-only) — старые записи остаются байт-в-байт неизменными при добавлении нового блока. Зафиксировано `AppendOnly_NewEntryAppendedToEnd_PreservesOldRecords` (манипулирует JSON через `JsonNode`, верифицирует «byte-for-byte» неизменность старых записей).
+  - **Раньше** (AI-ручной workflow): при добавлении нового блока требовалось вклинивать запись в начало JSON-массива, физически сдвигая индексы всех старых записей. **Теперь** порядок в JSON не имеет значения — `AllNewestFirst()` сортирует в коде, а `IsLatest` — runtime-only вычисление. Старые блоки при добавлении нового вообще не меняются ни в данных, ни в визуальных триггерах.
+  - 759/759 tests pass (7 новых тестов на `IsLatest`-инвариант, валидацию и append-only контракт).
+
+- **Новый товар «Дверная сетка» (v3.43.0, 2026-07-03):**
+  - Цена 3000 ₽/м² (Белый), доступна опция «Антикошка» (+2000 ₽/м²).
+  - Монтаж: вычет по умолчанию 600 ₽/шт. (через `GetDefaultInstallationDeduction`).
+  - В «На завод» — выбрана по умолчанию (вне `notForProduction` HashSet).
+  - Входит в `OrderItem.AreaBasedProducts` / `InstallationApplicableProducts` / `AnticatApplicableProducts`.
+  - Чертёж в КП — прямоугольник с петлями (как «На навесах»), текст «двер.сетка».
+  - 748/748 → 771/771 tests pass (после relocation).
+
+- **AddNewUpdate no-flicker контракт → MainWindow (v3.43.0, 2026-07-03):**
+  - `UpdateService.UpdateDetected` static event + `internal static FireUpdateDetected` (per-subscriber isolation через `GetInvocationList`) + `CreateReleaseStub` helper.
+  - `MainWindow.OnUpdateDetected` (sync `Dispatcher.Invoke`) → `MainWindowViewModel.AddNewUpdate(...)` — 3-step atomic `IsLatest` swap.
+  - 9 новых тестов: `AddNewUpdate_ZeroIsLatestFrame_neverObserved`, `_OldItemsFire_OnlyIsLatest_*`, `_OldItems_ReferenceIdentity_*`, `UpdateDetected_*`, `FetchManifestAsync_*` regression guards, e2e `RunUpdateFlowAsync_*` через `ShowUpdateAvailableOverride` seam + опциональный `HttpClient?` DI.
+  - Полная архитектура + ASCII-диаграмма задокументированы в `docs/arc/CALCULATION_LOGIC.md`, раздел «Как данные Auto-update попадают на UI (AddNewUpdate flow)».
 
 - **Slide-out левая панель навигации + ПСУЛ/Уплотнение (v3.42.0):**
   - Левая панель навигации (52px → 160px hover-expand) реализована как overlay поверх основного контента, аналогично правой панели Заказов.
@@ -169,8 +227,8 @@ AGENT.md / AGENTS.md / CLAUDE.md / GEMINI.md
 
 ## Source files
 
-- `MosquitoNetCalculator/MosquitoNetCalculator.csproj` — версия 3.42.1.
-- `releases.json` — история релизов.
+- `MosquitoNetCalculator/MosquitoNetCalculator.csproj` — версия 3.43.2.
+- `releases.json` — история релизов (latest заполняется после GitHub Release + ZIP).
 - `MosquitoNetCalculator/Resources/update-log.json` — история для UI.
 - `docs/arc/*.md` — вся проектная документация.
 - `docs/arc/documentation-matrix.json` — машиночитаемый источник матрицы.
@@ -181,7 +239,45 @@ AGENT.md / AGENTS.md / CLAUDE.md / GEMINI.md
 
 ## Last verified
 
-2026-07-02 (v3.42.0 — релиз):
-  - Выпущен релиз v3.42.0: slide-out панель навигации, sidebar без chevrons, ПСУЛ/Уплотнение — ввод только кол-вом, Антикошка toggle в отдельной строке. 742/742 tests pass.
+2026-07-12 — **Фаза 3 рефакторинга завершена.** `PrintService.cs` 632→81 строк (−87%). 6 компонентов: `DrawingService`, `FlowDocumentBuilder`, `FixedDocumentBuilder`, `PrintQueueManager`, `PdfExportService`, плюс модели `PageMode`/`PrintSettings`/`PrintResult`. +~40 тестов. **1038/1038 tests pass.** Бизнес-логика не затронута.
+
+2026-07-12 — **Фаза 2 рефакторинга завершена.** `UpdateService.cs` 910→608 строк (−33%). 5 компонентов: `VersionResolver`, `IdleDetector`, `UpdateVerifier`, `UpdateManifestClient`, `UpdateDownloader`. +67 тестов (включая прямые тесты `UpdateManifestClientTests` и `UpdateDownloaderTests`). **999/999 tests pass.** Бизнес-логика не затронута.
+
+2026-07-12 (v3.44.3 — bugfix: slope profile economy double-counting + mixed-economy isolation, **1041/1041 tests pass**):
+  - **Bug:** когда экономия Старт/F-планка была выключена (`IsProfileEconomyApplied=false`), `RecalculateSealantAndTape` выставляла общие (оптимизированные по всем окнам) количества профилей, но `OrderItem.Total` умножал per-window материалы на `Quantity` (=WindowCount) → двойное учитывание профилей.
+  - **Fix:** при `IsProfileEconomyApplied=false` профили остаются per-window (3-сторонние); при `true` глобальная оптимизация применяется только к участникам экономии, а общая стоимость профилей распределяется только между ними. Герметик/скотч — по-прежнему общие для всех активных откосов.
+  - **Mixed economy:** откосы без экономии не платят за чужие профили; откосы с экономией оптимизируются и делят профильную стоимость только между собой.
+  - `SlopePanelControl.xaml.cs` синхронизирован: при снятии экономии количества профилей возвращаются к per-window значениям.
+  - +3 regression-теста в `SlopeCalculatorServiceTests.cs`: `ProfileEconomyDisabled_StartProfileIsPerWindow`, `ProfileEconomyDisabled_OrderItemTotal_NoDoubleCount`, `MixedEconomy_OnlyAppliesToOptedInSlopes`.
+  - Затронутые файлы: `SlopeCalculatorService.cs`, `SlopePanelControl.xaml.cs`, `SlopeCalculatorServiceTests.cs`.
+
+2026-07-12 (v3.44.2 — bugfix: orphan-calc DistributedSharedSum reset, **906/906 tests pass**):
+  - **Broadened else-branch reset** в `SlopeCalculatorService.RecalculateSealantAndTape`: orphan calcs (все «Откос» с `IsActive=false` или rename в не-slope имя) теперь корректно сбрасывают DSS=0, а не зависают от defensive init (485) или произвольного stale-значения. `Работа за откос` calcs тоже сбрасываются — безопасно (используют `TotalLabor`).
+  - **Snapshot isolation invariant:** `OrderItem.Clone()` всегда вызывает `DeepCloneSlopeData()` → live и undo/redo history коллекции никогда не шаринг `SlopeCalculation` refs. Broadened reset безопасен даже на снимках — orphan-DSS в одной коллекции не сбрасывает DSS в другой.
+  - **3 новых edge-case теста** в `SlopeCalculatorServiceTests.cs` фиксируют контракт для последовательностей вызовов с мутациями между ними: `SharedSlopeBetweenOtkosAndRabota_RemoveOtkos_ResetsOrphanCalcViaBroadenedReset`, `Idempotent_ProfileEconomyAndIsActiveSettings`, `IsActiveToggleBetweenCalls_FollowsParticipation`. Test name суффикс `ViaBroadenedReset` явно фиксирует контракт broadened reset — будущий рефакторинг не «откатит» fix как «too eager».
+  - Затронутые файлы: `SlopeCalculatorService.cs` (broadened else-branch + 3-строчный trimmed-комментарий вместо 11-строчного), `SlopeCalculatorServiceTests.cs` (3 теста + 1 rename).
+
+2026-07-11 (v3.44.0 — ламинат в откосах, **891/891 tests pass**):
+  - **Ламинат в откосах:** добавлены `SlopeCalculation.Laminatina`/`LaminatinaLabor` (500 ₽/шт. каждый), UI-строки в `SlopePanelControl`, кнопка «Порог (Ламинат)» в футере, `IsQuantityOverridden` сохраняется при `UpdateInPlace`, ламинат входит в `TotalMaterials`/`TotalLabor`, не выводится отдельно в КП. +7 тестов в `SlopeCalculatorServiceTests`.
+
+2026-07-10 (v3.43.3 — новый товар «Материал» на базе v3.43.2.12, **861/861 tests pass**):
+  - **Новый товар «Материал»:** добавлен в `PriceService.DefaultPrices`/`prices.json`, `OrderItem.ManualPieceProducts`/`NoColorProducts`/`OptionalQuantityProducts`; UI-гейтинг в `QuickAddControl`/`OrderItemsControl`/`MainWindow`; валидация цены; опциональное отображение количества. +8 тестов в `OrderItemTests.cs`.
+
+2026-07-06 (v3.43.2 — print-fixes + regression guard + flaky fixes, **805/805 tests pass**):
+  - **Проблема 1:** `FormatIntWithNbsp` порог ≥10 000, `widths[]` sum=1.0, `MakeNonWrappingCell` + `availableWidthDip` + `FormattedText` авто-shrink до 75%.
+  - **Проблема 2:** `EdgeMode.Unspecified` в превью + toggle `Aliased` перед печатью (`SetDrawingsEdgeMode`/`SetEdgeModeInBlock`), `TextOptions` ClearType на `FlowDocumentPageViewer`.
+  - **Проблема 3:** `WrapForCentering` (Grid Stretch/Stretch обёртка), `imageCell.Padding` 0 → (4,5,4,5), `displayWidth` 36 → 30.
+  - **Тесты:** +4 `FormatIntWithNbsp`, фикс Anwis-теста (NBSP→plain), `ManualChecklistTests.ExtractFlowDocumentText` +`BlockUIContainer`.
+
+  - **Flaky fixes (3 теста):** `SaveContractPrefix_TrimsWhitespace` (CollectionDefinition FileSystem DisableParallelization), `PrintPreviewWindow_OpensWithoutNRE` (STA→Regex source-scan), `RunUpdateFlowAsync_ConfirmedDialog_...` (UpdateServiceIntegrationTests → Collection("FileSystem")).
+  - **Тесты:** 6 Anwis-режим + 2 не-Anwis + 6 Build*-чертежей (Дверная сетка, Отлив, Козырёк, Короб, ПСУЛ, Откос) regression guards в `PrintServiceTests`.
+
+2026-07-03 (v3.43.0 — Дверная сетка + Updates block + AddNewUpdate no-flicker, **771/771 tests pass**):
+  - **Дверная сетка:** +1 в `prices.json`, +1 в `PriceService.DefaultPrices`, добавлена в `OrderItem.AreaBasedProducts` / `InstallationApplicableProducts` / `AnticatApplicableProducts`, 600 ₽/шт. в `OrderItem.Installation.DefaultInstallationDeductions`. Новый `GetDefaultInstallationDeduction(name)` API.
+  - **Append-only Updates block:** `UpdateItem.IsLatest` (`[JsonIgnore]` property-based) вместо position-based (`AlternationIndex`/`Tag`); `UpdateLog.AllNewestFirst()` сбрасывает `IsLatest` для всех и ставит ровно одной; `UpdateLog.ValidateLogInvariant()` для дубликатов; `MainWindowViewModel.AddNewUpdate(...)` — runtime-добавление с 3-step atomic `IsLatest` swap (no-flicker); 7 новых тестов (IsLatest, валидация, append-only контракт через `JsonNode`).
+  - **AddNewUpdate → MainWindow:** static `UpdateDetected` event в `UpdateService` (`internal static FireUpdateDetected` + `CreateReleaseStub` helper, per-subscriber isolation через `GetInvocationList`), `MainWindow.OnUpdateDetected` (sync `Dispatcher.Invoke`), e2e `RunUpdateFlowAsync_*` тесты через `ShowUpdateAvailableOverride` seam + `HttpClient?` DI.
+
 2026-07-02 (v3.42.1 — hotfix):
   - Исправлено: автообновление не работало при установке в Program Files из-за `E_ACCESSDENIED` при создании `arc-update-watchdog.bat`. Watchdog-файлы (.bat, .zip, .bak) теперь создаются в `%AppData%\MosquitoNetCalculator`. 742/742 tests pass.
+2026-07-02 (v3.42.0 — релиз):
+  - Выпущен релиз v3.42.0: slide-out панель навигации, sidebar без chevrons, ПСУЛ/Уплотнение — ввод только кол-вом, Антикошка toggle в отдельной строке. 742/742 tests pass.

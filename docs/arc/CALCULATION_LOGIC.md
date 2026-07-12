@@ -40,6 +40,8 @@
 "Пояс"          → "шт."    // 1 шт.
 "Доставка"      → "шт."    // 1 шт.
 остальные       → "м²"     // площадь: W*H / 1_000_000
+                              // (Anwis, Отлив, Козырёк, Короб, На навесах,
+                              //  Оконная на метал. крепл., Дверная сетка)
 ```
 
 ---
@@ -53,7 +55,7 @@ CalculatedValue = Math.Round((Width + Height) * 2 / 1000.0, 3)
 // Откос материал, Работа, Брус, Пояс, Доставка — фиксированно 1 шт.
 CalculatedValue = 1
 
-// Всё остальное (Anwis, Отлив, Козырёк, Короб, На навесах) — площадь в м²
+// Всё остальное (Anwis, Отлив, Козырёк, Короб, На навесах, Дверная сетка, Оконная на метал. крепл.) — площадь в м²
 CalculatedValue = Math.Round(Width * Height / 1_000_000.0, 3)
 ```
 
@@ -145,7 +147,10 @@ int    totalPieces = validItems.Where(i => i.Unit == "шт.").Sum(i => i.Quantit
 
 ## Монтаж (вычеты из стоимости)
 
-Только для `Anwis` и `На навесах`:
+Только для `Anwis`, `На навесах` и `Дверная сетка`:
+
+Вычет по умолчанию — **500 ₽/шт.** для Anwis и На навесах, **600 ₽/шт.** для Дверной сетки.
+Значение задаётся через `OrderItem.GetDefaultInstallationDeduction(name)`.
 
 | Режим | Эффект |
 |-------|--------|
@@ -175,7 +180,7 @@ TotalWithDeduction = _installationMode switch
 
 ## Антикошка (надбавка +2000 ₽/м²)
 
-Для трёх площадных полотен доступна опция «Антикошка» — усиленная сетка с фиксированной надбавкой к базовой цене каталога.
+Для четырёх площадных полотен доступна опция «Антикошка» — усиленная сетка с фиксированной надбавкой к базовой цене каталога.
 
 ### Применимость
 
@@ -183,7 +188,8 @@ TotalWithDeduction = _installationMode switch
 |-------|----------------------|-------------------|
 | Anwis | 1800 ₽/м² | 3800 ₽/м² |
 | На навесах | 2900 ₽/м² | 4900 ₽/м² |
-| Оконная на металл крепл. | 2900 ₽/м² | 4900 ₽/м² |
+| Оконная на металл крепл. | 3200 ₽/м² | 5200 ₽/м² |
+| Дверная сетка | 3000 ₽/м² | 5000 ₽/м² |
 
 ### Механика
 
@@ -209,7 +215,7 @@ Total = CalculatedValue * Price * Quantity
 
 ## Откуда берутся цены
 
-1. **Стартовый каталог** — зашит в `PriceService.DefaultPrices` (26 записей, 13 товаров).
+1. **Стартовый каталог** — зашит в `PriceService.DefaultPrices` (27 записей, 14 товаров).
 2. **Пользовательские цены** — сохраняются в `%AppData%\MosquitoNetCalculator\prices.json`.
 3. При первом запуске копируются дефолтные цены в AppData.
 4. Пользователь может редактировать цены во вкладке "Цены".
@@ -241,7 +247,7 @@ Total = CalculatedValue * Price * Quantity
 
 | Категория | Товары | По умолчанию |
 |-----------|-------|--------------|
-| Сетки (производство) | Anwis, На навесах, Оконная на метал. крепл., Козырёк | ✅ включён |
+| Сетки (производство) | Anwis, На навесах, Оконная на метал. крепл., Козырёк, Дверная сетка | ✅ включён |
 | Готовые элементы (НЕ производство) | **Отлив**, Короб, Уплотнение, Откос материал | ❌ выключен |
 | Услуги / штучные | ПСУЛ, Работа, Доставка, Брус, Пояс | ❌ выключен |
 
@@ -250,6 +256,353 @@ Total = CalculatedValue * Price * Quantity
 а не сетчатое полотно, поэтому пользователь явно включает его галочкой перед отправкой партии.
 Покрыто `FactoryTextServiceTests.BuildSelectableItems_NonProduction_IsNotSelected("Отлив")` и
 `ManualChecklistTests.Check12_BuildSelectableItems_Production_On_NonProduction_Off`.
+
+---
+
+## Как данные Auto-update попадают на UI (AddNewUpdate flow)
+
+Когда фоновая или стартаповая проверка находит новый релиз, пользователь видит новый блок в шапке «Обновления» (бейдж «Доступно обновление vX.Y.Z») — **без перезапуска**. Ключевое свойство flow: старая карточка «Новейшая» НЕ «мигает» при появлении новой.
+
+### Главные файлы потока
+
+| Файл | Роль |
+|---|---|
+| `MosquitoNetCalculator/Services/UpdateService.cs` | `FireUpdateDetected` (per-subscriber isolation через `GetInvocationList()`) + `CreateReleaseStub(version)` helper |
+| `MosquitoNetCalculator/MainWindow.Progress.cs` (partial) | `OnUpdateDetected` — sync `Dispatcher.Invoke(() => ViewModel.AddNewUpdate(item))` |
+| `MosquitoNetCalculator/ViewModels/MainWindowViewModel.cs` | `AddNewUpdate(newItem)` — атомарный 3-step: set new → clear old → `Insert(0, …)` |
+| `MosquitoNetCalculator/Controls/UpdatesTabControl.xaml` | DataTrigger `Binding={Binding IsLatest}` для бейджа «Новейшая» |
+| `MosquitoNetCalculator/Services/UpdateCheckScheduler.cs` | Триггер каждые 30 мин / после 10 мин idle |
+
+### Архитектурная диаграмма
+
+```
+┌──────────────────────────────────────────────────────────────────────┐
+│  UpdateCheckScheduler (timer)                                        │
+│      │  every 30 min  OR  after 10 min idle                          │
+│      ▼                                                               │
+│  UpdateService.CheckInBackgroundAsync  (background thread)           │
+│      │  FetchManifestAsync(HttpClient)            → releases.json     │
+│      │  GetAvailableUpdate(manifest, CurrentVersion)                 │
+│      ▼                                                               │
+│  if (release.Version > CurrentVersion)                               │
+│      │  FireUpdateDetected(CreateReleaseStub(release.Version))       │
+│      │      ↳ безопасный per-subscriber iteration + try/catch each   │
+│      │      ↳ stub UpdateItem: Version, Type="Доступно",             │
+│      │                       Title="Доступно обновление v…",          │
+│      │                       Changes=["stub"]  ← см. «stub» ниже      │
+│      ▼                                                               │
+│  ToastService.ShowUpdateNotification (persistent, кнопки «Обновить»/«Позже») │
+│      ▲                                                               │
+│      │  то же самое происходит из RunUpdateFlowAsync →               │
+│      │  DialogService.ShowUpdateAvailable (confirmed=true) → fire   │
+└──────────────────────────────────────────────────────────────────────┘
+                              │ UpdateDetected event
+                              ▼
+┌──────────────────────────────────────────────────────────────────────┐
+│  MainWindow.OnUpdateDetected  (MainWindow.Progress.cs, partial)      │
+│      │  Dispatcher.Invoke (sync, НЕ BeginInvoke)                     │
+│      │   ↳ sync нужен: AddNewUpdate — синхронный 3-step,             │
+│      │     WPF рендер происходит ПОСЛЕ полного вызова →              │
+│      │     нет промежуточного состояния «0 карточек IsLatest».        │
+│      ▼                                                               │
+│  ViewModel.AddNewUpdate(newItem):                                    │
+│      │  1) newItem.IsLatest = true                                   │
+│      │  2) для всех existing в Updates: IsLatest = false             │
+│      │  3) Updates.Insert(0, newItem)                                │
+│      ▼                                                               │
+│  Updates[0]   = newItem    (IsLatest=true)  ← бейдж «Новейшая»        │
+│  Updates[1..N] = old items  (ref-identity preserved,                 │
+│                              only the old-latest fires IsLatest=false)│
+└──────────────────────────────────────────────────────────────────────┘
+```
+
+### Что гарантирует архитектура
+
+1. **Один «Новейшая» в любой момент времени.** Новый stub всегда
+   `IsLatest=true`; `AddNewUpdate` явно сбрасывает старые.
+   Тест: `AddNewUpdate_ExactlyOneItemIsLatest`.
+
+2. **Никакого «мигания» старой карточки.** Синхронный `Dispatcher.Invoke`
+   + синхронный `AddNewUpdate` = все `PropertyChanged` накапливаются до
+   WPF-рендера. Ни один момент времени не показывает «все бейджи сняты».
+   Тест: `AddNewUpdate_ZeroIsLatestFrame_neverObserved` —
+   `PropertyChanged`-snapshotter на каждый элемент, `count IsLatest >= 1`
+   во ВСЕХ записанных моментах.
+
+3. **Минимальная PropertyChanged нагрузка на старые карточки.** Только
+   карточка, которая раньше имела `IsLatest=true` (ровно одна), fire'ит
+   PropertyChanged — и только с `PropertyName="IsLatest"`. Никаких других
+   полей → WPF не пересчитывает binding'и на старых.
+   Тест: `AddNewUpdate_OldItemsFire_OnlyIsLatest_PropertyChanged`.
+
+4. **Reference identity сохранена.** `ObservableCollection.Insert(0,…)` —
+   это index re-shuffle, не re-mount. WPF `ItemsControl` переиспользует тот
+   же `ContentPresenter` для каждой старой карточки (=> ноль layout-overhead).
+   Тест: `AddNewUpdate_OldItems_ReferenceIdentity_Unchanged`.
+
+5. **Подписка чистая, нет утечки памяти.** `MainWindow` подписывается
+   `UpdateDetected += OnUpdateDetected` в ctor и отписывается в `Closed`.
+   Static-event + per-window подписчик не утекает, потому что обе стороны
+   живут синхронно.
+
+6. **Stub placeholder — осознанный compromise.** Запущенный бинарник НЕ
+   может отобразить полный changelog будущей версии (он вшит в её
+   embedded `update-log.json`). Stub говорит «обновите, чтобы увидеть
+   подробности». Полный changelog подтягивается автоматически ПОСЛЕ
+   установки и перезапуска через
+   `MainWindowViewModel.ctor` → `UpdateLog.AllNewestFirst()`.
+
+7. **Per-subscriber isolation в `FireUpdateDetected`.** Один «плохой»
+   подписчик, бросающий исключение, не убивает доставку для остальных
+   (используется `GetInvocationList()` + try/catch each).
+   Тест: `UpdateDetected_HandlerSwallows_ExceptionsFromSubscribers`.
+
+### Тестовое покрытие Auto-update → UI flow
+
+| Тест | Что локает |
+|---|---|
+| `AddNewUpdate_ZeroIsLatestFrame_neverObserved` | ≥1 карточка с `IsLatest=true` во ВСЕХ моментах наблюдения |
+| `AddNewUpdate_OldItemsFire_OnlyIsLatest_PropertyChanged` | только old-latest карточка fire'ит PropertyChanged, только для `IsLatest` |
+| `AddNewUpdate_OldItems_ReferenceIdentity_Unchanged` | `ObservableCollection.Insert(0,…)` сохраняет ref-identity старых |
+| `AddNewUpdate_NullInput_NoOp` | null guard на `newItem` |
+| `AddNewUpdate_CalledTwice_SecondCall_DemotesFirst` | property-based logic composes через серию релизов |
+| `UpdateDetected_FireUpdateDetected_…` | handlers receive probe через canonical fire path |
+| `UpdateDetected_HandlerSwallows_ExceptionsFromSubscribers` | throwing subscriber не short-circuits остальных |
+| `UpdateDetected_CreateReleaseStub_HasExpectedShape` | stub contract locked: anchors via `private const string` для grep-during-refactor |
+| `FetchManifestAsync_NewerReleaseAvailable_DoesNotFireEvent` | regression: только оркестраторы fire'ят, НЕ сам `FetchManifest` |
+
+### Когда срабатывает
+
+- **Фоновая проверка** (каждые 30 мин или после 10 мин idle, тихо,
+  persistent toast в шапке) — `CheckInBackgroundAsync`.
+- **Стартаповая проверка** (после `Loaded`, один раз за сессию, модальный
+  диалог «Доступно обновление» при подтверждении) — `CheckOnStartupAsync`
+  → `RunUpdateFlowAsync`.
+- **Ручная проверка** (через шестерёнку → «Проверить обновления»,
+  dialog как стартап) — `CheckAndApplyAsync(isAutomatic: false)`.
+
+Все три пути сходятся в одном `FireUpdateDetected(CreateReleaseStub(...))`.
+
+---
+
+## API-контракт `DistributedSharedSum` (общие материалы откоса)
+
+> **Версия:** v3.43.5 (2026-07-06)  
+> **Затронутые файлы:** `SlopeCalculatorService.cs`, `OrderItem.Calculations.cs`, `SlopeCalculation.cs`
+
+### Проблема
+
+В заказе может быть несколько строк «Откос» (и/или одна строка с `Quantity > 1`).
+Герметик и скотч — **общие материалы** на весь заказ: один тюбик герметика
+хватает на 4 окна, один моток скотча — на 3 окна. Если просто умножить
+стоимость герметика/скотча на `Quantity` каждой строки, общая сумма по заказу
+завысится (общий материал будет учтён несколько раз).
+
+### Решение
+
+Стоимость герметика и скотча рассчитывается **глобально** по всем откосам
+заказа, а затем **распределяется пропорционально `WindowCount`** между строками
+«Откос» через свойство `SlopeCalculation.DistributedSharedSum`.
+
+### Кто вычисляет
+
+```csharp
+SlopeCalculatorService.RecalculateSealantAndTape(IEnumerable<OrderItem> items)
+```
+
+**Когда вызывать:**
+- После добавления/удаления/изменения строк «Откос» в заказе.
+- После изменения `WindowCount` в существующем откосе.
+- Перед финальным пересчётом итогов и печатью КП.
+
+**Контракт:**
+1. Метод учитывает **только** строки с `Name == "Откос"` и ненулевым
+   `SlopeData`.
+2. Строки «Работа за откос» игнорируются — они не влияют на расход
+   герметика/скотча.
+3. Если несколько `OrderItem` ссылаются на один и тот же `SlopeCalculation`
+   (shared instance), он учитывается **один раз** (`Distinct()` по ссылке).
+4. Общее количество окон (`totalWindowCount`) — сумма `WindowCount` всех
+   уникальных `SlopeCalculation`.
+5. Количество герметика: `Math.Ceiling(totalWindowCount / 4.0)` тюбиков.  
+   Количество скотча: `Math.Ceiling(totalWindowCount / 3.0)` мотков.
+6. Общая стоимость (`Sealant.Sum + Tape.Sum`) распределяется между откосами
+   пропорционально `WindowCount`. Последний откос забирает остаток, чтобы
+   сумма по заказу совпадала с точностью до копейки.
+
+### Кто использует
+
+```csharp
+// OrderItem.Recalculate() для Name == "Откос"
+double perWindowSum = SlopeData.Sandwich.Sum + SlopeData.Foam.Sum
+                      + SlopeData.StartProfile.Sum + SlopeData.FProfile.Sum
+                      + SlopeData.Penoplex.Sum;
+double sharedSum = SlopeData.DistributedSharedSum;
+_total = Math.Round(perWindowSum * Quantity + sharedSum, 2);
+```
+
+`DistributedSharedSum` — это **доля** общих материалов, отнесённая к данному
+`OrderItem`. Она прибавляется к per-window сумме, умноженной на `Quantity`.
+
+> **Важно:** `DistributedSharedSum` — вычисляемое in-memory значение. Оно
+> **не сериализуется** в `SlopeCalculationData` и не сохраняется в JSON.
+> После загрузки заказа из файла необходимо заново вызвать
+> `RecalculateSealantAndTape`, чтобы восстановить корректное распределение.
+
+### Защитная инициализация
+
+В `_ApplyDefaults` (вызывается из `Calculate` и `UpdateInPlace`) добавлена
+защитная инициализация для изолированного использования:
+
+```csharp
+if (windowCount > 0 && windowCount == totalWindowCount)
+{
+    calc.DistributedSharedSum = calc.Sealant.Sum + calc.Tape.Sum;
+}
+```
+
+Это гарантирует, что для **одиночного откоса** (unit-тесты, первичный расчёт,
+заказ с одной строкой «Откос») `DistributedSharedSum` сразу равен полной сумме
+герметика/скотча, и `OrderItem.Total` корректен даже без явного вызова
+`RecalculateSealantAndTape`.
+
+В **многопозиционном заказе** значение перезаписывается в
+`RecalculateSealantAndTape`.
+
+### Пример распределения
+
+Три откоса: `WindowCount = [1, 1, 1]` (итого 3 окна).
+
+```
+Sealant.Quantity = ceil(3 / 4) = 1 тюбик
+Tape.Quantity    = ceil(3 / 3) = 1 моток
+Sealant.Sum      = 1 × 350 = 350 ₽
+Tape.Sum         = 1 × 135 = 135 ₽
+totalSharedSum   = 485 ₽
+```
+
+Распределение:
+
+| Откос | WindowCount | DistributedSharedSum |
+|-------|-------------|----------------------|
+| 1     | 1           | round(485 × 1/3) = 161.67 ₽ |
+| 2     | 1           | round(485 × 1/3) = 161.67 ₽ |
+| 3     | 1           | 485 − 161.67 − 161.67 = 161.66 ₽ (остаток) |
+
+Сумма по всем откосам: `161.67 + 161.67 + 161.66 = 485.00 ₽` — совпадает с
+глобальной стоимостью общих материалов.
+
+### Что будет, если нарушить контракт
+
+- **Не вызвать `RecalculateSealantAndTape` для многопозиционного заказа:**
+  `DistributedSharedSum` останется равным защитной инициализации (или 0 при
+  `totalWindowCount > windowCount`). Итоговая сумма по строкам «Откос» будет
+  занижена — общие материалы не попадут в Total.
+
+- **Вызвать `RecalculateSealantAndTape` только для части строк:**
+  распределение будет считать только переданные строки, что приведёт к
+  некорректному `totalWindowCount` и неверной доле.
+
+- **Передать строки «Работа за откос» вместо «Откос»:**
+  метод отфильтрует их (`Where(i => i.Name == "Откос")`), и распределение не
+  произойдёт.
+
+### Тестовое покрытие контракта
+
+| Тест | Что проверяет |
+|---|---|
+| `RecalculateSealantAndTape_ThreeWindows_DistributesSharedCost` | Корректное распределение между 3 окнами |
+| `RecalculateSealantAndTape_UnevenWindowCount_LastTakesRemainder` | Остаток копейки забирает последний откос |
+| `RecalculateSealantAndTape_SharedSlopeData_DoesNotDoubleCount` | Shared `SlopeData` учитывается один раз |
+| `RecalculateSealantAndTape_LaborItemsIgnored` | «Работа за откос» не влияет на распределение |
+| `RecalculateSealantAndTape_OrderItemTotal_UsesDistributedSharedSum` | `OrderItem.Total` использует `DistributedSharedSum` |
+| `RecalculateSealantAndTape_SingleItem_GetsFullSharedSum` | Одиночный откос получает полную сумму |
+| `RecalculateSealantAndTape_EmptyInput_DoesNotThrow` | Пустая коллекция не вызывает исключение |
+| `RecalculateSealantAndTape_PreservesUserOverrides` | Ручные правки `Quantity` сохраняются |
+
+---
+
+## Ламинат в откосах
+
+> **Версия:** v3.44.0 (2026-07-11)  
+> **Затронутые файлы:** `SlopeCalculation.cs`, `SlopeCalculatorService.cs`, `SlopePanelControl.xaml/.xaml.cs`, `OrderItem.Calculations.cs`, `OrderItem.cs`
+
+### Описание
+
+В панели откосов добавлена возможность учитывать **ламинатину** — дополнительный материал и работу за его установку.
+
+- **Материал «Ламинат»**: цена по умолчанию **500 ₽/шт.**
+- **Работа «Работа за ламинатину»**: цена по умолчанию **500 ₽/шт.**
+- Количество задаётся пользователем вручную (через поле в таблице материалов) или по нажатию кнопки **«Добавить ламинатину»** в футере панели.
+- Ламинат участвует в общей сумме откоса как материал, работа за него — как труд.
+- В печатном КП не выводится отдельной строкой; сумма входит в `TotalMaterials` / `TotalLabor` откоса.
+
+### Модель
+
+В `SlopeCalculation` добавлены два дополнительных `SlopeMaterial`:
+
+```csharp
+public SlopeMaterial Laminatina { get; } = new();       // Ламинат (шт × ₽)
+public SlopeMaterial LaminatinaLabor { get; } = new();    // Работа за ламинатину (шт × ₽)
+```
+
+Агрегаты обновлены:
+
+```csharp
+public double TotalMaterials =>
+    Sandwich.Sum + Foam.Sum + Sealant.Sum + Tape.Sum +
+    StartProfile.Sum + FProfile.Sum + Penoplex.Sum + Laminatina.Sum;
+
+public double TotalLabor => Labor.Sum + LaminatinaLabor.Sum;
+```
+
+### Инициализация
+
+В `SlopeCalculatorService._ApplyDefaults`:
+
+```csharp
+// Ламинат: по умолчанию 0 шт, цена 500 ₽.
+if (!calc.Laminatina.IsQuantityOverridden)
+{
+    calc.Laminatina.Quantity = 0;
+    calc.Laminatina.Price = laminatinaPrice; // 500
+}
+calc.Laminatina.Unit = "шт."; calc.Laminatina.Name = "Ламинат";
+
+// Работа за ламинатину: по умолчанию 0 шт, цена 500 ₽.
+if (!calc.LaminatinaLabor.IsQuantityOverridden)
+{
+    calc.LaminatinaLabor.Quantity = 0;
+    calc.LaminatinaLabor.Price = laminatinaLaborPrice; // 500
+}
+calc.LaminatinaLabor.Unit = "шт."; calc.LaminatinaLabor.Name = "Работа за ламинатину";
+```
+
+### UI
+
+- В таблице материалов откоса добавлена строка **«Ламинат»** с редактируемым количеством и ценой.
+- Под строкой «Работа» добавлена строка **«Работа за ламинат»**.
+- В футере панели добавлена кнопка **«Порог (Ламинат)»**, которая увеличивает количество ламината и работы за него на 1 и выставляет `IsQuantityOverridden = true`, чтобы авто-пересчёт не сбросил значение при изменении размеров.
+
+### Влияние на итоги
+
+В `OrderItem.Calculations.cs` ламинатина включена в per-window сумму материалов:
+
+```csharp
+double perWindowSum = SlopeData.Sandwich.Sum + SlopeData.Foam.Sum
+                       + SlopeData.StartProfile.Sum + SlopeData.FProfile.Sum
+                       + SlopeData.Penoplex.Sum + SlopeData.Laminatina.Sum;
+```
+
+### Тестовое покрытие
+
+| Тест | Что проверяет |
+|---|---|
+| `Calculate_Laminatina_InitializedToZeroWithDefaultPrice` | Ламинат и работа инициализируются с Quantity=0, Price=500 |
+| `Laminatina_Added_IncreasesTotalMaterialsAndTotalLabor` | Увеличение количества ламинатины растет в TotalMaterials и TotalLabor |
+| `Laminatina_IsIncludedInTotalMaterials` | Ламинат входит в TotalMaterials |
+| `UpdateInPlace_PreservesLaminatinaOverride` | Ручное количество сохраняется при UpdateInPlace |
+| `LaminatinaLabor_DefaultPrice_500` | Цена работы за ламинатину по умолчанию 500 ₽ |
 
 ---
 
@@ -291,4 +644,10 @@ Total = CalculatedValue * Price * Quantity
 
 ## Last verified
 
-2026-06-30 («Отлив» opt-in в «На завод», `Last verified` обновлены во всех `docs/arc/*.md`, 742/742 tests pass, контракт auto-selection задокументирован в #завод)
+2026-07-12 (1038/1038 tests pass) — документ перепроверен в рамках завершения Фазы 3 рефакторинга; разделы «API-контракт `DistributedSharedSum`» и «Ламинат в откосах» актуальны.
+
+2026-07-06 (878/878 tests pass) — добавлена секция «API-контракт `DistributedSharedSum` (общие материалы откоса)»: описание контракта `SlopeCalculatorService.RecalculateSealantAndTape`, защитная инициализация в `_ApplyDefaults`, формула распределения пропорционально `WindowCount`, последний откос забирает остаток, тестовое покрытие в `SlopeCalculatorServiceTests.cs`.
+
+2026-07-03 (768/768 tests pass) — Auto-update → MainWindow.AddNewUpdate: новая архитектурная секция «Как данные Auto-update попадают на UI» в этом документе, `UpdateService.UpdateDetected` event, `MainWindow.OnUpdateDetected` (sync `Dispatcher.Invoke`), `MainWindowViewModel.AddNewUpdate` контракт locked тестом `AddNewUpdate_ZeroIsLatestFrame_neverObserved` (≥1 карточка с `IsLatest=true` во всех наблюдаемых моментах).
+2026-07-03 (759/759 tests pass) — рефакторинг блока «Обновления»: бейдж «Новейшая» property-based (`UpdateItem.IsLatest`, `[JsonIgnore]`); `UpdateLog.AllNewestFirst()` сбрасывает `IsLatest` для всех и ставит ровно одной; `ValidateLogInvariant()` для дублей версий; **append-only архитектурный инвариант** для `Resources/update-log.json` (дописывается строго в конец, старые записи байт-в-байт неизменны).
+2026-07-03 (добавлен товар «Дверная сетка» — 3000 ₽/м², Антикошка, монтаж 600 ₽/шт., 748/748 tests pass)
