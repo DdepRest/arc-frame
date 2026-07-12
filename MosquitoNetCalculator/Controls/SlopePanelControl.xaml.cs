@@ -783,15 +783,25 @@ namespace MosquitoNetCalculator.Controls
         /// </summary>
         private void _BuildMaterialSummary()
         {
-            var calc = _currentCalculation;
-            if (calc == null)
+            if (_currentCalculation == null)
             {
                 SummaryCard.Visibility = Visibility.Collapsed;
                 return;
             }
 
+            var rows = BuildMaterialSummaryRows(_currentCalculation);
+            SummaryItems.ItemsSource = rows;
+            SummaryCard.Visibility = Visibility.Visible;
+        }
+
+        /// <summary>
+        /// v3.44.4: чистая функция построения сводки материалов.
+        /// Вынесена из <see cref="_BuildMaterialSummary"/> для юнит-тестирования
+        /// без необходимости создавать WPF-контрол и STA-поток.
+        /// </summary>
+        internal static List<MaterialSummaryRow> BuildMaterialSummaryRows(SlopeCalculation calc)
+        {
             int n = calc.WindowCount;
-            int totalWc = TotalWindowCountInOrder + n;
             var rows = new List<MaterialSummaryRow>();
 
             // Сэндвич
@@ -921,8 +931,7 @@ namespace MosquitoNetCalculator.Controls
                 });
             }
 
-            SummaryItems.ItemsSource = rows;
-            SummaryCard.Visibility = Visibility.Visible;
+            return rows;
         }
 
         /// <summary>
