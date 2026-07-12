@@ -842,36 +842,42 @@ namespace MosquitoNetCalculator.Controls
             // Старт (с экономией по раскрою на все окна — 3 стороны)
             // v3.44.2 (bugfix): StartProfile.Quantity — per-window (3 стороны) всегда.
             // TotalDisplay показывает общее количество для n окон.
-            double startQtyPerWindow = calc.StartProfile.Quantity;
+            // v3.44.4 (bugfix): PerDetail должен показывать per-window количество,
+            // а TotalDisplay — фактическое общее количество (с учётом экономии).
             int startNoEcon = SlopeCalculatorService.OptimizeStripsForMultipleWindows3Sides(
                 (int)calc.WidthMm, (int)calc.HeightMm, n);
+            double startQtyPerWindow = calc.IsProfileEconomyApplied
+                ? SlopeCalculatorService.OptimizeStrips((int)calc.WidthMm, (int)calc.HeightMm)
+                : calc.StartProfile.Quantity;
             int startQtyTotal = calc.IsProfileEconomyApplied
-                ? (int)startQtyPerWindow // global total when economy is on
+                ? (int)calc.StartProfile.Quantity // global total when economy is on
                 : (int)startQtyPerWindow * n;
             int startSaved = Math.Max(0, startNoEcon - startQtyTotal);
             rows.Add(new MaterialSummaryRow
             {
                 Name = "Старт",
                 PerDetail = $"{startQtyPerWindow:F0} пол. ×{n}",
-                TotalDisplay = $"{startNoEcon:F0} полос{(startNoEcon == 1 ? "" : " 3м")}",
+                TotalDisplay = $"{startQtyTotal:F0} полос{(startQtyTotal == 1 ? "" : " 3м")}",
                 Note = startSaved > 0
                     ? $"экон. {startSaved} × {calc.StartProfile.Price:N0} = -{startSaved * calc.StartProfile.Price:N0}₽"
                     : "",
             });
 
             // F-планка (с экономией по раскрою на все окна — 3 стороны +100 мм)
-            double fQtyPerWindow = calc.FProfile.Quantity;
             int fNoEcon = SlopeCalculatorService.OptimizeStripsForMultipleWindows3Sides(
                 (int)calc.WidthMm + 100, (int)calc.HeightMm + 100, n);
+            double fQtyPerWindow = calc.IsProfileEconomyApplied
+                ? SlopeCalculatorService.OptimizeStrips((int)calc.WidthMm + 100, (int)calc.HeightMm + 100)
+                : calc.FProfile.Quantity;
             int fQtyTotal = calc.IsProfileEconomyApplied
-                ? (int)fQtyPerWindow // global total when economy is on
+                ? (int)calc.FProfile.Quantity // global total when economy is on
                 : (int)fQtyPerWindow * n;
             int fSaved = Math.Max(0, fNoEcon - fQtyTotal);
             rows.Add(new MaterialSummaryRow
             {
                 Name = "F-планка",
                 PerDetail = $"{fQtyPerWindow:F0} пол. ×{n}",
-                TotalDisplay = $"{fNoEcon:F0} полос{(fNoEcon == 1 ? "" : " 3м")}",
+                TotalDisplay = $"{fQtyTotal:F0} полос{(fQtyTotal == 1 ? "" : " 3м")}",
                 Note = fSaved > 0
                     ? $"экон. {fSaved} × {calc.FProfile.Price:N0} = -{fSaved * calc.FProfile.Price:N0}₽"
                     : "",
