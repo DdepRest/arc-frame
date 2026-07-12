@@ -553,7 +553,7 @@ totalSharedSum   = 485 ₽
 
 Два откоса одного размера, по 1 окну каждый (числа приблизительные, зависят от `OptimizeStrips`):
 
-| Режим | StartProfile.Quantity на откос | FProfile.Quantity на откос | DistributedSharedSum |
+| Режим | StartProfile.Quantity (на откос / окно) | FProfile.Quantity (на откос / окно) | DistributedSharedSum |
 |-------|--------------------------------|---------------------------|----------------------|
 | Экономия OFF | `Sw` (per-window) | `Fw` (per-window) | только герметик+скотч |
 | Экономия ON (оба) | `Sg` (глобальное суммарное) | `Fg` (глобальное суммарное) | герметик+скотч+профили |
