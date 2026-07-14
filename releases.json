@@ -1,383 +1,384 @@
 {
-    "latest":  "3.43.0",
-    "minRequired":  "",        "releases":  [
-                     {
-                         "version":  "3.44.0",
-                         "date":  "2026-07-14",
-                         "type":  "Новая функция",
-                         "title":  "Автоподсчёт откосов — новая система",
-                         "changes":  [
-                                         "Автоподсчёт откосов: автоматический расчёт сэндвича, пены, герметика/скотча, Старт/F-планки, пеноплекса и работы по ширине, высоте, глубине и количеству откосов.",
-                                         "Экономия материалов: режим «Применить экономию» объединяет расход герметика/скотча и оптимизирует раскрой Старт/F-планки; кнопка «Детали экономии» показывает расшифровку с tooltip.",
-                                         "Нативный движок печати КП: мгновенный предпросмотр, идеальное совпадение экрана и бумаги, встроенный экспорт в PDF, кастомный зум-тулбар, работа со всеми принтерами Windows.",
-                                         "Новый товар «Материал»: цена и количество задаются вручную, расчёт Total = Price × Quantity.",
-                                         "Ламинат в откосах: материал (500 ₽/шт.) и работа (500 ₽/шт.), кнопка «Порог (Ламинат)» в футере.",
-                                         "Устранена двойная оплата герметика/скотча и двойное учитывание Старт/F-планки; mixed-economy корректно работает.",
-                                         "Оптимизация раскроя для кусков > 3000 мм: двухфазный алгоритм (Best Fit Decreasing).",
-                                         "Исправлен сброс цен к значениям по умолчанию (AppData вместо папки установки)."
-                                     ],
-                         "url":  "https://github.com/DdepRest/arc-frame/releases/download/v3.44.0/ARC-Frame-3.44.0-full.zip",
-                         "size":  0,
-                         "sha256":  ""
-                     },
-                     {
-                         "version":  "3.43.0",
-                         "date":  "2026-07-03",
-                         "type":  "Новинка",
-                         "title":  "Новый товар «Дверная сетка» + переработан блок «Обновления»",
-                         "changes":  [
-                                         "Добавлен новый товар «Дверная сетка» — 3000 ₽/м², Белый. Доступен в QuickAdd, в диалоге «На завод» выбирается автоматически.",
-                                         "Для Дверной сетки доступна опция «Антикошка» (+2000 ₽/м²).",
-                                         "Монтаж для Дверной сетки: 600 ₽/шт. (по умолчанию, можно изменить).",
-                                         "Блок «Обновления» переработан: добавление новой версии больше не «мигает» — старая карточка «Новейшая» плавно сменяется новой.",
-                                         "Бейдж «Новейшая» определяется по свойству карточки, а не по позиции в списке — порядок записей в журнале больше не важен."
-                                     ],
-                         "url":  "https://github.com/DdepRest/arc-frame/releases/download/v3.43.0/ARC-Frame-3.43.0-full.zip",
-                         "size":  66666623,
-                         "sha256":  "8b2d16af652d5c966b41e827d8bfff321391213aacb4bf753da6d5ea0bb680ba"
-                     },
-                     {
-                         "version":  "3.42.1",
-                         "date":  "2026-07-02",
-                         "type":  "Исправление",
-                         "title":  "Hotfix: автообновление при установке в Program Files",
-                         "changes":  [
-                                         "Исправлена ошибка E_ACCESSDENIED при автообновлении на системах, где приложение установлено в Program Files.",
-                                         "Watchdog-файлы (.bat, .zip, .bak) теперь создаются в %AppData%\\MosquitoNetCalculator вместо BaseDirectory.",
-                                         "Runtime-проверка зависимостей (WebView2, VC++ Redist) с toast-уведомлением при старте."
-                                     ],
-                         "url":  "https://github.com/DdepRest/arc-frame/releases/download/v3.42.1/ARC-Frame-3.42.1-full.zip",
-                         "size":  66664448,
-                         "sha256":  "cb17f8f76cb362e3859711db30bbd387d3058fe5bb453b65dd991b210004dedb"
-                     },
-                     {
-                         "version":  "3.42.0",
-                         "date":  "2026-07-02",
-                         "type":  "Улучшение",
-                         "title":  "Slide-out панель навигации + упрощённый ввод ПСУЛ/Уплотнения",
-                         "changes":  [
-                                         "Левая панель навигации — slide-out overlay: 52px свёрнуто, 160px при наведении, бейджи всегда видны.",
-                                         "Карточки Sidebar (ЗАКАЗЧИК, ДОГОВОР, ПРИМЕЧАНИЯ) всегда развёрнуты — убраны chevrons.",
-                                         "ПСУЛ и Уплотнение: теперь можно указать только количество (без ширины и высоты).",
-                                         "ПСУЛ — 100 руб/шт. при вводе только количества.",
-                                         "Уплотнение — цена × количество при вводе только количества.",
-                                         "Антикошка toggle вынесен в отдельную строку QuickAdd — устранено смещение кнопки «Добавить»."
-                                     ],
-                         "url":  "https://github.com/DdepRest/arc-frame/releases/download/v3.42.0/ARC-Frame-3.42.0-full.zip",
-                         "size":  66663589,
-                         "sha256":  "77765695fc88dfc3047f174043577cdb8c32364692c44a00cfa7178051665465"
-                     },
-                     {
-                         "version":  "3.41.0",
-                         "date":  "2026-07-01",
-                         "type":  "Улучшение",
-                         "title":  "Полный UX-рефакторинг + иконки на Win10 + «Антикошка»",
-                         "changes":  [
-                                         "Полный UX-рефакторинг: новый ActionBar, TitleBar с настройками, QuickAdd с метками, табы с бейджами, схлопываемый Sidebar, статус-бар.",
-                                         "«Отлив» больше не выбирается автоматически в диалоге «На завод» — пользователь явно включает его галочкой.",
-                                         "«Антикошка» — надбавка +2000 руб/м² для трёх типов сеток (Anwis, На навесах, Оконная на метал. крепл.).",
-                                         "Исправлено отображение иконок левого меню на Windows 10 (добавлен шрифт Segoe MDL2 Assets).",
-                                         "Исправлено отображение счётчика заказов на Windows 11.",
-                                         "Исправлено выравнивание кнопки «Настройки» в заголовке окна."
-                                     ],
-                         "url":  "https://github.com/DdepRest/arc-frame/releases/download/v3.41.0/ARC-Frame-3.41.0-full.zip",
-                         "size":  66661673,
-                         "sha256":  "2b21d4e5e8a4703cdf1e75fee1fe117dc90ff03b8562bd6c9cb95e103e9825b7"
-                     },
-                     {
-                         "version":  "3.40.4",
-                         "date":  "2026-06-30",
-                         "type":  "Улучшение",
-                         "title":  "«Отлив» opt-in в «На завод» + «Антикошка»",
-                         "changes":  [
-                                         "«Отлив» больше не выбирается автоматически в диалоге «На завод» — пользователь явно включает его галочкой.",
-                                         "«Антикошка» — надбавка +2000 руб/м² для трёх типов сеток (Anwis, На навесах, Оконная на метал. крепл.)."
-                                     ],
-                         "url":  "https://github.com/DdepRest/arc-frame/releases/download/v3.40.4/ARC-Frame-3.40.4-full.zip",
-                         "size":  0,
-                         "sha256":  ""
-                     },
-                     {
-                         "version":  "3.40.3",
-                         "date":  "2026-06-29",
-                         "type":  "Исправление",
-                         "title":  "Testability refactor: ProgressBarUpdateAnimator + IsCurrentVersionBrokenForAutoUpdate",
-                         "changes":  [
-                                         "MainWindow.OnUpdateProgressChanged body извлечён в Helpers/ProgressBarUpdateAnimator.cs — тестируемый в изоляции от WPF Application, отделён от UpdateService через Func<double> / Func<bool> коллбэки.",
-                                         "UpdateService.IsCurrentVersionBrokenForAutoUpdate(Version?) — internal-метод для startup-баннера, прямое int-сравнение Major/Minor/Build (избегает Version.Revision footgun).",
-                                         "UpdateServiceTests: 14 inline-кейсов покрывают boundary диапазона [3.40.0, 3.40.2) — 3-part и 4-part версии, before/after/different major.",
-                                         "ProgressBarUpdateAnimatorTests: 10 тестов на no-throw контракт (InvalidOperationException, InvalidCastException, ArgumentException, FormatException), явный re-throw для OOM/SOF, fallback Visibility/Opacity, no-op early-return, конструкторские null-проверки. STA tests с [Collection(\"STA\")] для изоляции.",
-                                         "711/711 тестов проходят."
-                                     ],
-                         "url":  "https://github.com/DdepRest/arc-frame/releases/download/v3.40.3/ARC-Frame-3.40.3-full.zip",
-                         "size":  66751587,
-                         "sha256":  "440e6015233654bb18b75df489ecec0b1db9f297ab2f3089f43f0da034e1764a"
-                     },
-                                          {
-                         "version":  "3.40.2",
-                         "date":  "2026-06-29",
-                         "type":  "Исправление",
-                         "title":  "Belt-and-suspenders try/catch для прогресс-бара + стартовый баннер",
-                         "changes":  [
-                                         "OnUpdateProgressChanged обёрнут в try/catch: ЛЮБОЕ исключение внутри (включая future-регрессии в XAML/BAML) логируется в Debug и НЕ пробрасывается в Dispatcher.Invoke.",
-                                         "MainWindow_Loaded: проверка CurrentVersion в [3.40.0, 3.40.2) — на сломанных версиях показывает toast со ссылкой на GitHub Releases (15 сек, Warning).",
-                                         "Hardening от повторения v3.40.0-стиля бага: auto-update больше не может быть разорван исключением из UI прогресс-бара.",
-                                         "Пользователям v3.40.0 вручную заменить exe на v3.40.1 или v3.40.2 — ссылка будет в плашке при апдейте."
-                                     ],
-                         "url":  "https://github.com/DdepRest/arc-frame/releases/download/v3.40.2/ARC-Frame-3.40.2-full.zip",
-                         "size":  66750908,
-                         "sha256":  "19990b7e610d24f48f1b503eda4321fd2aec7a00d4b539ff420bf717afaf0369"
-                     },
-                                          {
-                         "version":  "3.40.1",
-                         "date":  "2026-06-29",
-                         "type":  "Исправление",
-                         "title":  "Ручная проверка обновлений: fix ResourceReferenceKeyNotFoundException",
-                         "changes":  [
-                                         "MainWindow.xaml: Storyboards UpdateBarFadeIn / UpdateBarFadeOut перенесены из <Grid.Resources> в <Window.Resources> — WPF FindResource ходит ВВЕРХ по логическому дереву, ресурсы потомков были невидимы из this.FindResource('UpdateBarFadeIn').",
-                                         "MainWindow.OnUpdateProgressChanged: FindResource(...).Clone() заменён на TryFindResource(...) is Storyboard — если ресурс когда-то потеряется, бар показывается/скрывается без анимации вместо краша.",
-                                         "Bug существовал с v3.38.0; v3.40.0 его активировал, потому что CheckAndApplyAsync стал активно прогонять пользователей через ручной путь «Check updates».",
-                                         "Tests: 681/681 passes (без изменений в test-count). Добавлены 2 hardcoded-versions assertions в UpdateLogTests под v3.40.1."
-                                     ],
-                         "url":  "https://github.com/DdepRest/arc-frame/releases/download/v3.40.1/ARC-Frame-3.40.1-full.zip",
-                         "size":  66652176,
-                         "sha256":  "fba37dc323788a111f38df1d4d583ddccc8788d7f478c322508e4391a4f03831"
-                     },
-                                          {
-                         "version":  "3.40.0",
-                         "date":  "2026-06-29",
-                         "type":  "Улучшение",
-                         "title":  "WinAPI idle detection, anti-recommend text, minimized guard",
-                         "changes":  [
-                                         "UpdateCheckScheduler теперь использует WinAPI GetLastInputInfo для системного idle-детекции вместо UI-событий (PreviewMouseMove/PreviewKeyDown).",
-                                         "Anti-recommend text в диалоге обновления: при автоматическом обнаружении кнопка «Отмена» переименована в «Отложить» с предупреждающим текстом.",
-                                         "Minimized window guard: фоновая проверка пропускает toast, если окно свёрнуто — уведомление появится после восстановления.",
-                                         "UpdateCheckScheduler: удалён NotifyActivity и _lastActivityTime; добавлен GetSystemIdleTime callback (Func<TimeSpan>).",
-                                         "UpdateService: добавлен P/Invoke GetLastInputInfo и публичный GetIdleTime(); убрана логика IsCellEditing / CanShowUpdateDialog / retry-таймеры.",
-                                         "MainWindow.xaml.cs: удалены вызовы NotifyActivity из PreviewMouseMove и PreviewKeyDown.",
-                                         "DialogService.ShowUpdateAvailable: добавлен параметр isAutomatic с anti-recommend UI.",
-                                         "16 тестов UpdateCheckSchedulerTests обновлены под новую модель idle-детекции."
-                                     ],
-                         "url":  "https://github.com/DdepRest/arc-frame/releases/download/v3.40.0/ARC-Frame-3.40.0-full.zip",
-                         "size":  66651830,
-                         "sha256":  "036e7336516fbceb4a39f363bd34e558a871b551b320602dc228c6ec5de72ec6"
-                     },
-                     {
-                         "version":  "3.39.0",
-                         "date":  "2026-06-29",
-                         "type":  "Улучшение",
-                         "title":  "Background auto-update checks: 30 мин periodic + 10 мин idle, persistent notification toast",
-                         "changes":  [
-                                         "Background auto-update checks: каждые 30 минут от последней проверки и после 10 минут непрерывного простоя пользователя.",
-                                         "Anti-spam throttle: минимум 2 минуты между двумя реальными проверками.",
-                                         "Реализован Services/UpdateCheckScheduler.cs с pure-логикой ShouldCheckAt(...) для unit-тестов.",
-                                         "Persistent update notification toast (ToastService.ShowUpdateNotification) с action-кнопками «Обновить» / «Позже» — не исчезает сама, пока пользователь не выберет.",
-                                         "Click-обработчик корректно работает с ToastCanvas.IsHitTestVisible=False: явно ставит IsHitTestVisible=true на toast Border.",
-                                         "UpdateService.CheckInBackgroundAsync — фоновая проверка, открывает toast вместо модального диалога (стартап — модал по-прежнему).",
-                                         "UpdateService._lastNotifiedVersion — anti-spam в сессии для notification toast (сбрасывается на успешной установке и при ручном «Обновить» в плашке).",
-                                         "Activity-tracking в MainWindow.xaml.cs: PreviewMouseMove и PreviewKeyDown сбрасывают idle-таймер scheduler'а. Scheduler стартует в Loaded, останавливается в Closed.",
-                                         "20+ новых юнит-тестов для UpdateCheckScheduler.ShouldCheckAt (UpdateCheckSchedulerTests.cs): edge-cases границ (>= / <=), throttle/idle/periodic state-machine, activity-reset, OnCheckDue SafeInvoke контракт."
-                                     ],
-                         "url":  "https://github.com/DdepRest/arc-frame/releases/download/v3.39.0/ARC-Frame-3.39.0-full.zip",
-                         "size":  66661009,
-                         "sha256":  "0bb556d7318cbf495b01990f215b0a759b51a92e2b4813924f28a3021c99c95e"
-                     },
-                     {
-                         "version":  "3.38.0",
-                         "date":  "2026-06-28",
-                         "type":  "Улучшение",
-                         "title":  "XAML-анимация прогресса, UI-polish, zero-byte fix, интеграционные тесты",
-                         "changes":  [
-                                         "UI-polish: CornerRadius увеличен с 4 до 7 в AdditionalKpsControl и DataGridStyles — более мягкий внешний вид.",
-                                         "XAML-анимация UpdateDownloadBar: fade-in/fade-out через Storyboard ресурсы в MainWindow.xaml, динамический From для fade-out.",
-                                         "Zero-byte download fix: корректный 100% прогресс при отсутствии Content-Length или нулевом размере ответа.",
-                                         "UpdateService тестируемость: FetchManifestAsync и DownloadWithProgressAsync принимают опциональный HttpClient для моков.",
-                                         "7 интеграционных тестов UpdateService + 3 новых теста PrintService."
-                                     ],
-                         "url":  "https://github.com/DdepRest/arc-frame/releases/download/v3.38.0/ARC-Frame-3.38.0-full.zip",
-                         "size":  70007768,
-                         "sha256":  "66815d41e967410442f4fa0e1340448d3a3cfe1136610e8b277ca205da68bb43"
-                     },
-                     {
-                         "version":  "3.37.2",
-                         "date":  "2026-06-27",
-                         "type":  "Исправление",
-                         "title":  "SelectAll race fix + Mid-typing formula clamp fix + DeleteRowButton padding, UpdateLog sort-in-code",
-                         "changes":  [
-                                         "SelectAll_OnFocus теперь синхронный (без BeginInvoke) — ввод заменяет значение, а не дописывает к старому (GOTCHAS#14).",
-                                         "Ширина и Высота: UpdateSourceTrigger=LostFocus вместо PropertyChanged — формула Anwis больше не перехватывает значение на каждом нажатии, набор идёт свободно (GOTCHAS#15).",
-                                         "Кнопка удаления строки: Padding=\"5\" вместо \"4,0\" — красный hover-фон с CornerRadius=5 выглядит пропорционально, а не сплюснуто.",
-                                         "UpdateLog.AllNewestFirst() и GetChangesSince() сортируют записи по дате/версии в коде — порядок в JSON больше не важен, баг с prepend'ом при релизе устранён.",
-                                         "ParseVersion: Debug.WriteLine при битой строке версии в JSON — диагностика вместо молчаливого fallback'а.",
-                                         "2 регрессионных теста в DataGridBindingsTests.cs перепрофилированы: PropertyChanged → LostFocus для Ширины/Высоты."
-                                     ],
-                         "url":  "https://github.com/DdepRest/arc-frame/releases/download/v3.37.2/ARC-Frame-3.37.2-full.zip",
-                         "size":  66648529,
-                         "sha256":  "5b8ace32a3a86872788fafdf4f7d8e892be3216ec2e889ab0fd074bfa1ff84da"
-                     },
-                     {
-                         "version":  "3.37.1",
-                         "date":  "2026-06-27",
-                         "type":  "Исправление",
-                         "title":  "Цена — автоширина колонки + Монтаж × Quantity, 13 новых тестов",
-                         "changes":  [
-                                         "Монтаж с Quantity > 1: в режимах «Без монтажа» и «В конструкцию» deduction теперь умножается на Quantity (per piece), а не списывается один раз. Например: Anwis 1000×1000 × 3 шт. × режим «В конструкцию» с вычетом 500 ₽ → итоговый вычет 1500 ₽ (а не 500 ₽). Backward-compat для Q=1.",
-                                         "Уточнён tooltip монтажа для режимов 1/2: теперь явно показывает «руб./шт. × Кол-во», чтобы пользователь видел, что введённая сумма применяется за каждую штуку.",
-                                         "Автоширина колонки «Цена» в DataGrid: колонка «Цена» в таблице «Расчёт» (и «Цена, руб.» в tab «Цены») не успевала расширяться при наборе — Width=\"Auto\" рекомпьютил ширину по старому значению Price (binding имел UpdateSourceTrigger=\"LostFocus\"). Теперь Price обновляется по PropertyChanged, и колонка подстраивается под набор в реальном времени.",
-                                         "InstallationToolTip дополнен суффиксом «руб./шт. × Кол-во» для modes 1/2.",
-                                         "UpdateSourceTrigger в OrderItemsControl.xaml (Цена) и PricesControl.xaml (Цена, руб.) переключён с LostFocus на PropertyChanged.",
-                                         "Добавлено 8 новых юнит-тестов на TotalWithDeduction × Quantity (включая linear-scaling Q∈{1,2,5}, clamp-to-0 для высокого Q, regression для «В конструкцию» с Q=3).",
-                                         "Добавлен DataGridBindingsTests.cs (5 regression-тестов через grep XAML-binding-triggers) — guardrails на правильный UpdateSourceTrigger для всех редактируемых колонок с Width=\"Auto\"."
-                                     ],
-                         "url":  "https://github.com/DdepRest/arc-frame/releases/download/v3.37.1/ARC-Frame-3.37.1-full.zip",
-                         "size":  66656385,
-                         "sha256":  "e389217c6062e38560a32a61fa01d74622ef86d9a40cab7558b2d0caa8d29657"
-                     },
-                     {
-                         "version":  "3.37.0",
-                         "date":  "2026-06-27",
-                         "type":  "Новинка",
-                         "title":  "Обновление уведомлений — полный rework: changelog-диалог, TitleBar-прогресс, анимации",
-                         "changes":  [
-                                         "Диалог «Доступно обновление» теперь показывает список изменений с момента установленной версии",
-                                         "TitleBar: плавно появляющаяся/исчезающая полоска прогресса скачивания (fade-in 200 мс / fade-out 250 мс)",
-                                         "Toast-фильтрация: при автоматической проверке при старте не показываются тосты «Обновлений нет»",
-                                         "UpdateService: логика проверки версии извлечена в чистый GetAvailableUpdate (тестируемый)",
-                                         "8 новых юнит-тестов для UpdateService",
-                                         "A.R.C. v4 — SYMBOL_INDEX, INTENTS, gensymbols, arc-check"
-                                     ],
-                         "url":  "https://github.com/DdepRest/arc-frame/releases/download/v3.37.0/ARC-Frame-3.37.0-full.zip",
-                         "size":  66656199,
-                         "sha256":  "a22b53846c178b3901314bad1c7490e4aaccdc7656e236fab3b3e4c82ad1069b"
-                     },
-                     {
-                         "version":  "3.36.2",
-                         "date":  "2026-06-25",
-                         "type":  "Улучшение",
-                         "title":  "Брус, Пояс, Доставка — только сумма, исправления",
-                         "changes":  [
-                                         "Для Брус, Пояс, Доставка скрыты колонки Кол-во и Площ./Дл. в таблице расчёта",
-                                         "В панели быстрого ввода отключены поля Кол-во, Ширина, Высота для этих товаров",
-                                         "Превью показывает только цену вместо формулы",
-                                         "Исправлена кодировка UTF-8 BOM в PowerShell-скриптах",
-                                         "Восстановлен журнал обновлений (update-log.json)"
-                                     ],
-                         "url":  "https://github.com/DdepRest/arc-frame/releases/download/v3.36.2/ARC-Frame-3.36.2-full.zip",
-                         "size":  66921869,
-                         "sha256":  "ee5a0e393f131015f5771481de2fd3e090e2ff5bf38791990618f9eda6637d4a"
-                     },
-                     {
-                         "version":  "3.36.1",
-                         "date":  "2026-06-24",
-                         "type":  "Улучшение",
-                         "title":  "A.R.C. v2+v3: полная автоматизация AI-документирования",
-                         "changes":  [
-                                         "CHEATSHEET.md — быстрый вход (40 строк критических правил + routing-таблица)",
-                                         "DOCUMENTATION_MATRIX.md + documentation-matrix.json — механическая карта «файл → документы»",
-                                         "PROMPTS.md — готовые prompt-шаблоны (включая self-check)",
-                                         "what-to-update.ps1 — git diff → список docs к обновлению (фаза Document = 100% авто)",
-                                         "generate-update-log.ps1 — автогенерация update-log.json из CHANGELOG.md",
-                                         "validate-docs.ps1 — 8 автоматических проверок консистентности",
-                                         "MULTI_AGENT_ARC_CALC_CONTROL.md — гранулярный routing (12 категорий), убрано дублирование",
-                                         "AGENTS.md — inline routing, automation tools"
-                                     ],
-                         "url":  "https://github.com/DdepRest/arc-frame/releases/download/v3.36.1/ARC-Frame-3.36.1-full.zip",
-                         "size":  66959357,
-                         "sha256":  "ae008656a166d63cfa0bb11a3ab37efa96e6717978a3e55b4ec3d56849cacef5"
-                     },
-                     {
-                         "version":  "3.36.0",
-                         "date":  "2026-06-24",
-                         "type":  "Новинка",
-                         "title":  "Копирование заказов через ПКМ, миграция метода нумерации в сервис, 11 новых тестов",
-                         "changes":  [
-                                         "Добавлено копирование заказов через ПКМ: полная копия с новым номером (2-8 → 2-8.1), статусом «Новый» и актуальной датой",
-                                         "Нумерация копий всегда от базового номера: 2-8.1 → копия → 2-8.2 (суффикс копии стрипается)",
-                                         "GenerateCopyContractNumber перенесён из MainWindow в OrderStorageService",
-                                         "Исправлен XML-комментарий InstallationSurcharge: 0 ₽ → 500 ₽",
-                                         "Добавлено 11 тестов: 10 unit + 1 integration",
-                                         "Исправлен pre-existing дрифт версии в UpdateLogTests.AllNewestFirst"
-                                     ],
-                         "url":  "https://github.com/DdepRest/arc-frame/releases/download/v3.36.0/ARC-Frame-3.36.0-full.zip",
-                         "size":  66659973,
-                         "sha256":  "a13004171582413f5aa23d04ccf6701182710bf7eb551479c2c24c6dd5b0ed33"
-                     },
-                     {
-                         "version":  "3.35.0",
-                         "date":  "2026-06-23",
-                         "type":  "Исправление",
-                         "title":  "Полный фикс утечки формул Anwis на не-Anwis товары",
-                         "changes":  [
-                                         "Исправлено: Откос материал, Работа, Пояс больше не показывают высоту 30 мм (ReverseCalcHeight ББ60 утекала через Размеры)",
-                                         "Исправлено: редактирование ширины для Откос материал больше не добавляет +2 мм (ШиринаВвод setter теперь Identity для не-Anwis)",
-                                         "Исправлено: смена режима AnwisSizeMode для не-Anwis товаров больше не портит размеры",
-                                         "ВысотаВвод setter для не-Anwis теперь сохраняет сырое значение вместо H−30",
-                                         "Добавлены юнит-тесты на все 4 точки утечки + AddItem для всех не-Anwis товаров"
-                                     ],
-                         "url":  "https://github.com/DdepRest/arc-frame/releases/download/v3.35.0/ARC-Frame-3.35.0-full.zip",
-                         "size":  66659897,
-                         "sha256":  "21720f0c30f9448adb1b04f7523eb1dc7638377b63a1ed3ef78f3fd9b4bafc80"
-                     },
-                     {
-                         "version":  "3.34.5",
-                         "date":  "2026-06-23",
-                         "type":  "Исправление",
-                         "title":  "Версия в заголовке: многослойный fallback с логированием",
-                         "changes":  [
-                                         "UpdateService.CurrentVersion теперь читается из AssemblyInformationalVersionAttribute с автоматическим отсечением git-source-link суффикса («3.34.4+abc123» → «3.34.4»)",
-                                         "Добавлен многослойный fallback: InformationalVersion → FileVersion → GetName().Version — гарантирует корректную версию даже в single-file publish",
-                                         "Добавлено подробное Debug-логирование в TryResolveCurrentVersion — если fallback сработает, в Debug-выводе будет видно, какая попытка провалилась",
-                                         "Версия для релиза поднята до 3.34.5 — у пользователей со сломанной предыдущей сборкой auto-update предложит обновление"
-                                     ],
-                         "url":  "https://github.com/DdepRest/arc-frame/releases/download/v3.34.5/ARC-Frame-3.34.5-full.zip",
-                         "size":  66659921,
-                         "sha256":  "1e1dfa98f476f0dfdeaeb554abfccf141aa86167a53290b89a07db0f0bc305de"
-                     },
-                     {
-                         "version":  "3.34.4",
-                         "date":  "2026-06-23",
-                         "type":  "Улучшение",
-                         "title":  "Рефакторинг: разбиение больших файлов на partial-классы и модульные стили",
-                         "changes":  [
-                                         "MainWindow.xaml.cs разбит на 5 partial-файлов: Items, Orders, TitleDirty, WindowChrome, DataGrid — каждый отвечает за свою область",
-                                         "OrderItem.cs разбит на partial-файлы: OrderItem.Calculations.cs (расчёты) и OrderItem.Installation.cs (монтаж)",
-                                         "InputStyles.xaml разделён на отдельные файлы по типу контрола: TextBox, ComboBox, CheckBox, DatePicker",
-                                         "Services/DialogService.cs и UpdateLog.cs реорганизованы — код стал чище и прозрачнее",
-                                         "Удалены мёртвые строки и неиспользуемые импорты, общий объём кода сокращён более чем на 2000 строк"
-                                     ],
-                         "url":  "https://github.com/DdepRest/arc-frame/releases/download/v3.34.4/ARC-Frame-3.34.4-full.zip",
-                         "size":  66659538,
-                         "sha256":  "77c0a3f86a0ca4fdcfa1bcdf592f05224f22c26236ae4a5098d45b0fc1c12e34"
-                     },
-                     {
-                         "version":  "3.34.3",
-                         "date":  "2026-06-22",
-                         "type":  "Улучшение",
-                         "title":  "Anwis: Сегментированный контрол режима",
-                         "changes":  [
-                                         "Anwis QuickAdd переработан в стиле segmented control — пять режимов в одной группе: ББ 60 / ББ 70 / ПП / Проём / Габарит",
-                                         "Под segmented control теперь видна подсказка, объясняющая что вводится для выбранного режима (напр., \"Ввод: размеры, которые показывает программа\")",
-                                         "На каждый сегмент добавлен всплывающий ToolTip с короткой формулой режима (напр., \"W+2 / H-30. Копия: -20 мм\")",
-                                         "Inline-пилюля режима Anwis в колонке \"Наименование\" таблицы расчёта стала более спокойной (светло-голубой фон + синий текст) и подсвечивается синим при наведении"
-                                     ],
-                         "url":  "https://github.com/DdepRest/arc-frame/releases/download/v3.34.3/ARC-Frame-3.34.3-full.zip",
-                         "size":  66940145,
-                         "sha256":  "2b7c47d46223c64695ce48a62ebf7cd49e019eb0736900732d2ea8013849acc2"
-                     },
-                     {
-                         "version":  "3.34.1",
-                         "date":  "2026-06-22",
-                         "type":  "Новинка",
-                         "title":  "Мульти-выделение в «Заказах» и подсветка выбранных строк",
-                         "changes":  [
-                                         "Множественное выделение заказов: Ctrl+Click / Shift+Click — можно удалить или экспортировать только выбранные",
-                                         "Контекстное меню обновляется динамически: «Удалить заказы (3)», «Экспорт заказов (3)»",
-                                         "Кнопка «Экспорт» в панели: если есть выделенные заказы — экспортирует только их, иначе — все",
-                                         "Выделенные строки подсвечиваются цветом AccentLight (светло-синий в светлой теме / тёмно-синий в тёмной)"
-                                     ],
-                         "url":  "https://github.com/DdepRest/arc-frame/releases/download/v3.34.1/ARC-Frame-3.34.1-full.zip",
-                         "size":  66841283,
-                         "sha256":  "0ccb3c3b686d764aa8fc2e526ecb7d14d77b40d4f12ac973de265779f0009782"
-                     }
-                 ]
+  "latest": "3.44.0",
+  "minRequired": "",
+  "releases": [
+    {
+      "version": "3.44.0",
+      "date": "2026-07-14",
+      "type": "Новая функция",
+      "title": "Автоподсчёт откосов — новая система",
+      "changes": [
+        "Автоподсчёт откосов: автоматический расчёт сэндвича, пены, герметика/скотча, Старт/F-планки, пеноплекса и работы по ширине, высоте, глубине и количеству откосов.",
+        "Экономия материалов: режим «Применить экономию» объединяет расход герметика/скотча и оптимизирует раскрой Старт/F-планки; кнопка «Детали экономии» показывает расшифровку с tooltip.",
+        "Нативный движок печати КП: мгновенный предпросмотр, идеальное совпадение экрана и бумаги, встроенный экспорт в PDF, кастомный зум-тулбар, работа со всеми принтерами Windows.",
+        "Новый товар «Материал»: цена и количество задаются вручную, расчёт Total = Price × Quantity.",
+        "Ламинат в откосах: материал (500 ₽/шт.) и работа (500 ₽/шт.), кнопка «Порог (Ламинат)» в футере.",
+        "Устранена двойная оплата герметика/скотча и двойное учитывание Старт/F-планки; mixed-economy корректно работает.",
+        "Оптимизация раскроя для кусков > 3000 мм: двухфазный алгоритм (Best Fit Decreasing).",
+        "Исправлен сброс цен к значениям по умолчанию (AppData вместо папки установки)."
+      ],
+      "url": "https://github.com/DdepRest/arc-frame/releases/download/v3.44.0/ARC-Frame-3.44.0-full.zip",
+      "size": 70043959,
+      "sha256": "77e43b6d54db5ad4e5809635ee506d65338fec507cf530a8e608d62c38f58302"
+    },
+    {
+      "version": "3.43.0",
+      "date": "2026-07-03",
+      "type": "Новинка",
+      "title": "Новый товар «Дверная сетка» + переработан блок «Обновления»",
+      "changes": [
+        "Добавлен новый товар «Дверная сетка» — 3000 ₽/м², Белый. Доступен в QuickAdd, в диалоге «На завод» выбирается автоматически.",
+        "Для Дверной сетки доступна опция «Антикошка» (+2000 ₽/м²).",
+        "Монтаж для Дверной сетки: 600 ₽/шт. (по умолчанию, можно изменить).",
+        "Блок «Обновления» переработан: добавление новой версии больше не «мигает» — старая карточка «Новейшая» плавно сменяется новой.",
+        "Бейдж «Новейшая» определяется по свойству карточки, а не по позиции в списке — порядок записей в журнале больше не важен."
+      ],
+      "url": "https://github.com/DdepRest/arc-frame/releases/download/v3.43.0/ARC-Frame-3.43.0-full.zip",
+      "size": 66666623,
+      "sha256": "8b2d16af652d5c966b41e827d8bfff321391213aacb4bf753da6d5ea0bb680ba"
+    },
+    {
+      "version": "3.42.1",
+      "date": "2026-07-02",
+      "type": "Исправление",
+      "title": "Hotfix: автообновление при установке в Program Files",
+      "changes": [
+        "Исправлена ошибка E_ACCESSDENIED при автообновлении на системах, где приложение установлено в Program Files.",
+        "Watchdog-файлы (.bat, .zip, .bak) теперь создаются в %AppData%\\MosquitoNetCalculator вместо BaseDirectory.",
+        "Runtime-проверка зависимостей (WebView2, VC++ Redist) с toast-уведомлением при старте."
+      ],
+      "url": "https://github.com/DdepRest/arc-frame/releases/download/v3.42.1/ARC-Frame-3.42.1-full.zip",
+      "size": 66664448,
+      "sha256": "cb17f8f76cb362e3859711db30bbd387d3058fe5bb453b65dd991b210004dedb"
+    },
+    {
+      "version": "3.42.0",
+      "date": "2026-07-02",
+      "type": "Улучшение",
+      "title": "Slide-out панель навигации + упрощённый ввод ПСУЛ/Уплотнения",
+      "changes": [
+        "Левая панель навигации — slide-out overlay: 52px свёрнуто, 160px при наведении, бейджи всегда видны.",
+        "Карточки Sidebar (ЗАКАЗЧИК, ДОГОВОР, ПРИМЕЧАНИЯ) всегда развёрнуты — убраны chevrons.",
+        "ПСУЛ и Уплотнение: теперь можно указать только количество (без ширины и высоты).",
+        "ПСУЛ — 100 руб/шт. при вводе только количества.",
+        "Уплотнение — цена × количество при вводе только количества.",
+        "Антикошка toggle вынесен в отдельную строку QuickAdd — устранено смещение кнопки «Добавить»."
+      ],
+      "url": "https://github.com/DdepRest/arc-frame/releases/download/v3.42.0/ARC-Frame-3.42.0-full.zip",
+      "size": 66663589,
+      "sha256": "77765695fc88dfc3047f174043577cdb8c32364692c44a00cfa7178051665465"
+    },
+    {
+      "version": "3.41.0",
+      "date": "2026-07-01",
+      "type": "Улучшение",
+      "title": "Полный UX-рефакторинг + иконки на Win10 + «Антикошка»",
+      "changes": [
+        "Полный UX-рефакторинг: новый ActionBar, TitleBar с настройками, QuickAdd с метками, табы с бейджами, схлопываемый Sidebar, статус-бар.",
+        "«Отлив» больше не выбирается автоматически в диалоге «На завод» — пользователь явно включает его галочкой.",
+        "«Антикошка» — надбавка +2000 руб/м² для трёх типов сеток (Anwis, На навесах, Оконная на метал. крепл.).",
+        "Исправлено отображение иконок левого меню на Windows 10 (добавлен шрифт Segoe MDL2 Assets).",
+        "Исправлено отображение счётчика заказов на Windows 11.",
+        "Исправлено выравнивание кнопки «Настройки» в заголовке окна."
+      ],
+      "url": "https://github.com/DdepRest/arc-frame/releases/download/v3.41.0/ARC-Frame-3.41.0-full.zip",
+      "size": 66661673,
+      "sha256": "2b21d4e5e8a4703cdf1e75fee1fe117dc90ff03b8562bd6c9cb95e103e9825b7"
+    },
+    {
+      "version": "3.40.4",
+      "date": "2026-06-30",
+      "type": "Улучшение",
+      "title": "«Отлив» opt-in в «На завод» + «Антикошка»",
+      "changes": [
+        "«Отлив» больше не выбирается автоматически в диалоге «На завод» — пользователь явно включает его галочкой.",
+        "«Антикошка» — надбавка +2000 руб/м² для трёх типов сеток (Anwis, На навесах, Оконная на метал. крепл.)."
+      ],
+      "url": "https://github.com/DdepRest/arc-frame/releases/download/v3.40.4/ARC-Frame-3.40.4-full.zip",
+      "size": 0,
+      "sha256": ""
+    },
+    {
+      "version": "3.40.3",
+      "date": "2026-06-29",
+      "type": "Исправление",
+      "title": "Testability refactor: ProgressBarUpdateAnimator + IsCurrentVersionBrokenForAutoUpdate",
+      "changes": [
+        "MainWindow.OnUpdateProgressChanged body извлечён в Helpers/ProgressBarUpdateAnimator.cs — тестируемый в изоляции от WPF Application, отделён от UpdateService через Func<double> / Func<bool> коллбэки.",
+        "UpdateService.IsCurrentVersionBrokenForAutoUpdate(Version?) — internal-метод для startup-баннера, прямое int-сравнение Major/Minor/Build (избегает Version.Revision footgun).",
+        "UpdateServiceTests: 14 inline-кейсов покрывают boundary диапазона [3.40.0, 3.40.2) — 3-part и 4-part версии, before/after/different major.",
+        "ProgressBarUpdateAnimatorTests: 10 тестов на no-throw контракт (InvalidOperationException, InvalidCastException, ArgumentException, FormatException), явный re-throw для OOM/SOF, fallback Visibility/Opacity, no-op early-return, конструкторские null-проверки. STA tests с [Collection(\"STA\")] для изоляции.",
+        "711/711 тестов проходят."
+      ],
+      "url": "https://github.com/DdepRest/arc-frame/releases/download/v3.40.3/ARC-Frame-3.40.3-full.zip",
+      "size": 66751587,
+      "sha256": "440e6015233654bb18b75df489ecec0b1db9f297ab2f3089f43f0da034e1764a"
+    },
+    {
+      "version": "3.40.2",
+      "date": "2026-06-29",
+      "type": "Исправление",
+      "title": "Belt-and-suspenders try/catch для прогресс-бара + стартовый баннер",
+      "changes": [
+        "OnUpdateProgressChanged обёрнут в try/catch: ЛЮБОЕ исключение внутри (включая future-регрессии в XAML/BAML) логируется в Debug и НЕ пробрасывается в Dispatcher.Invoke.",
+        "MainWindow_Loaded: проверка CurrentVersion в [3.40.0, 3.40.2) — на сломанных версиях показывает toast со ссылкой на GitHub Releases (15 сек, Warning).",
+        "Hardening от повторения v3.40.0-стиля бага: auto-update больше не может быть разорван исключением из UI прогресс-бара.",
+        "Пользователям v3.40.0 вручную заменить exe на v3.40.1 или v3.40.2 — ссылка будет в плашке при апдейте."
+      ],
+      "url": "https://github.com/DdepRest/arc-frame/releases/download/v3.40.2/ARC-Frame-3.40.2-full.zip",
+      "size": 66750908,
+      "sha256": "19990b7e610d24f48f1b503eda4321fd2aec7a00d4b539ff420bf717afaf0369"
+    },
+    {
+      "version": "3.40.1",
+      "date": "2026-06-29",
+      "type": "Исправление",
+      "title": "Ручная проверка обновлений: fix ResourceReferenceKeyNotFoundException",
+      "changes": [
+        "MainWindow.xaml: Storyboards UpdateBarFadeIn / UpdateBarFadeOut перенесены из <Grid.Resources> в <Window.Resources> — WPF FindResource ходит ВВЕРХ по логическому дереву, ресурсы потомков были невидимы из this.FindResource('UpdateBarFadeIn').",
+        "MainWindow.OnUpdateProgressChanged: FindResource(...).Clone() заменён на TryFindResource(...) is Storyboard — если ресурс когда-то потеряется, бар показывается/скрывается без анимации вместо краша.",
+        "Bug существовал с v3.38.0; v3.40.0 его активировал, потому что CheckAndApplyAsync стал активно прогонять пользователей через ручной путь «Check updates».",
+        "Tests: 681/681 passes (без изменений в test-count). Добавлены 2 hardcoded-versions assertions в UpdateLogTests под v3.40.1."
+      ],
+      "url": "https://github.com/DdepRest/arc-frame/releases/download/v3.40.1/ARC-Frame-3.40.1-full.zip",
+      "size": 66652176,
+      "sha256": "fba37dc323788a111f38df1d4d583ddccc8788d7f478c322508e4391a4f03831"
+    },
+    {
+      "version": "3.40.0",
+      "date": "2026-06-29",
+      "type": "Улучшение",
+      "title": "WinAPI idle detection, anti-recommend text, minimized guard",
+      "changes": [
+        "UpdateCheckScheduler теперь использует WinAPI GetLastInputInfo для системного idle-детекции вместо UI-событий (PreviewMouseMove/PreviewKeyDown).",
+        "Anti-recommend text в диалоге обновления: при автоматическом обнаружении кнопка «Отмена» переименована в «Отложить» с предупреждающим текстом.",
+        "Minimized window guard: фоновая проверка пропускает toast, если окно свёрнуто — уведомление появится после восстановления.",
+        "UpdateCheckScheduler: удалён NotifyActivity и _lastActivityTime; добавлен GetSystemIdleTime callback (Func<TimeSpan>).",
+        "UpdateService: добавлен P/Invoke GetLastInputInfo и публичный GetIdleTime(); убрана логика IsCellEditing / CanShowUpdateDialog / retry-таймеры.",
+        "MainWindow.xaml.cs: удалены вызовы NotifyActivity из PreviewMouseMove и PreviewKeyDown.",
+        "DialogService.ShowUpdateAvailable: добавлен параметр isAutomatic с anti-recommend UI.",
+        "16 тестов UpdateCheckSchedulerTests обновлены под новую модель idle-детекции."
+      ],
+      "url": "https://github.com/DdepRest/arc-frame/releases/download/v3.40.0/ARC-Frame-3.40.0-full.zip",
+      "size": 66651830,
+      "sha256": "036e7336516fbceb4a39f363bd34e558a871b551b320602dc228c6ec5de72ec6"
+    },
+    {
+      "version": "3.39.0",
+      "date": "2026-06-29",
+      "type": "Улучшение",
+      "title": "Background auto-update checks: 30 мин periodic + 10 мин idle, persistent notification toast",
+      "changes": [
+        "Background auto-update checks: каждые 30 минут от последней проверки и после 10 минут непрерывного простоя пользователя.",
+        "Anti-spam throttle: минимум 2 минуты между двумя реальными проверками.",
+        "Реализован Services/UpdateCheckScheduler.cs с pure-логикой ShouldCheckAt(...) для unit-тестов.",
+        "Persistent update notification toast (ToastService.ShowUpdateNotification) с action-кнопками «Обновить» / «Позже» — не исчезает сама, пока пользователь не выберет.",
+        "Click-обработчик корректно работает с ToastCanvas.IsHitTestVisible=False: явно ставит IsHitTestVisible=true на toast Border.",
+        "UpdateService.CheckInBackgroundAsync — фоновая проверка, открывает toast вместо модального диалога (стартап — модал по-прежнему).",
+        "UpdateService._lastNotifiedVersion — anti-spam в сессии для notification toast (сбрасывается на успешной установке и при ручном «Обновить» в плашке).",
+        "Activity-tracking в MainWindow.xaml.cs: PreviewMouseMove и PreviewKeyDown сбрасывают idle-таймер scheduler'а. Scheduler стартует в Loaded, останавливается в Closed.",
+        "20+ новых юнит-тестов для UpdateCheckScheduler.ShouldCheckAt (UpdateCheckSchedulerTests.cs): edge-cases границ (>= / <=), throttle/idle/periodic state-machine, activity-reset, OnCheckDue SafeInvoke контракт."
+      ],
+      "url": "https://github.com/DdepRest/arc-frame/releases/download/v3.39.0/ARC-Frame-3.39.0-full.zip",
+      "size": 66661009,
+      "sha256": "0bb556d7318cbf495b01990f215b0a759b51a92e2b4813924f28a3021c99c95e"
+    },
+    {
+      "version": "3.38.0",
+      "date": "2026-06-28",
+      "type": "Улучшение",
+      "title": "XAML-анимация прогресса, UI-polish, zero-byte fix, интеграционные тесты",
+      "changes": [
+        "UI-polish: CornerRadius увеличен с 4 до 7 в AdditionalKpsControl и DataGridStyles — более мягкий внешний вид.",
+        "XAML-анимация UpdateDownloadBar: fade-in/fade-out через Storyboard ресурсы в MainWindow.xaml, динамический From для fade-out.",
+        "Zero-byte download fix: корректный 100% прогресс при отсутствии Content-Length или нулевом размере ответа.",
+        "UpdateService тестируемость: FetchManifestAsync и DownloadWithProgressAsync принимают опциональный HttpClient для моков.",
+        "7 интеграционных тестов UpdateService + 3 новых теста PrintService."
+      ],
+      "url": "https://github.com/DdepRest/arc-frame/releases/download/v3.38.0/ARC-Frame-3.38.0-full.zip",
+      "size": 70007768,
+      "sha256": "66815d41e967410442f4fa0e1340448d3a3cfe1136610e8b277ca205da68bb43"
+    },
+    {
+      "version": "3.37.2",
+      "date": "2026-06-27",
+      "type": "Исправление",
+      "title": "SelectAll race fix + Mid-typing formula clamp fix + DeleteRowButton padding, UpdateLog sort-in-code",
+      "changes": [
+        "SelectAll_OnFocus теперь синхронный (без BeginInvoke) — ввод заменяет значение, а не дописывает к старому (GOTCHAS#14).",
+        "Ширина и Высота: UpdateSourceTrigger=LostFocus вместо PropertyChanged — формула Anwis больше не перехватывает значение на каждом нажатии, набор идёт свободно (GOTCHAS#15).",
+        "Кнопка удаления строки: Padding=\"5\" вместо \"4,0\" — красный hover-фон с CornerRadius=5 выглядит пропорционально, а не сплюснуто.",
+        "UpdateLog.AllNewestFirst() и GetChangesSince() сортируют записи по дате/версии в коде — порядок в JSON больше не важен, баг с prepend'ом при релизе устранён.",
+        "ParseVersion: Debug.WriteLine при битой строке версии в JSON — диагностика вместо молчаливого fallback'а.",
+        "2 регрессионных теста в DataGridBindingsTests.cs перепрофилированы: PropertyChanged → LostFocus для Ширины/Высоты."
+      ],
+      "url": "https://github.com/DdepRest/arc-frame/releases/download/v3.37.2/ARC-Frame-3.37.2-full.zip",
+      "size": 66648529,
+      "sha256": "5b8ace32a3a86872788fafdf4f7d8e892be3216ec2e889ab0fd074bfa1ff84da"
+    },
+    {
+      "version": "3.37.1",
+      "date": "2026-06-27",
+      "type": "Исправление",
+      "title": "Цена — автоширина колонки + Монтаж × Quantity, 13 новых тестов",
+      "changes": [
+        "Монтаж с Quantity > 1: в режимах «Без монтажа» и «В конструкцию» deduction теперь умножается на Quantity (per piece), а не списывается один раз. Например: Anwis 1000×1000 × 3 шт. × режим «В конструкцию» с вычетом 500 ₽ → итоговый вычет 1500 ₽ (а не 500 ₽). Backward-compat для Q=1.",
+        "Уточнён tooltip монтажа для режимов 1/2: теперь явно показывает «руб./шт. × Кол-во», чтобы пользователь видел, что введённая сумма применяется за каждую штуку.",
+        "Автоширина колонки «Цена» в DataGrid: колонка «Цена» в таблице «Расчёт» (и «Цена, руб.» в tab «Цены») не успевала расширяться при наборе — Width=\"Auto\" рекомпьютил ширину по старому значению Price (binding имел UpdateSourceTrigger=\"LostFocus\"). Теперь Price обновляется по PropertyChanged, и колонка подстраивается под набор в реальном времени.",
+        "InstallationToolTip дополнен суффиксом «руб./шт. × Кол-во» для modes 1/2.",
+        "UpdateSourceTrigger в OrderItemsControl.xaml (Цена) и PricesControl.xaml (Цена, руб.) переключён с LostFocus на PropertyChanged.",
+        "Добавлено 8 новых юнит-тестов на TotalWithDeduction × Quantity (включая linear-scaling Q∈{1,2,5}, clamp-to-0 для высокого Q, regression для «В конструкцию» с Q=3).",
+        "Добавлен DataGridBindingsTests.cs (5 regression-тестов через grep XAML-binding-triggers) — guardrails на правильный UpdateSourceTrigger для всех редактируемых колонок с Width=\"Auto\"."
+      ],
+      "url": "https://github.com/DdepRest/arc-frame/releases/download/v3.37.1/ARC-Frame-3.37.1-full.zip",
+      "size": 66656385,
+      "sha256": "e389217c6062e38560a32a61fa01d74622ef86d9a40cab7558b2d0caa8d29657"
+    },
+    {
+      "version": "3.37.0",
+      "date": "2026-06-27",
+      "type": "Новинка",
+      "title": "Обновление уведомлений — полный rework: changelog-диалог, TitleBar-прогресс, анимации",
+      "changes": [
+        "Диалог «Доступно обновление» теперь показывает список изменений с момента установленной версии",
+        "TitleBar: плавно появляющаяся/исчезающая полоска прогресса скачивания (fade-in 200 мс / fade-out 250 мс)",
+        "Toast-фильтрация: при автоматической проверке при старте не показываются тосты «Обновлений нет»",
+        "UpdateService: логика проверки версии извлечена в чистый GetAvailableUpdate (тестируемый)",
+        "8 новых юнит-тестов для UpdateService",
+        "A.R.C. v4 — SYMBOL_INDEX, INTENTS, gensymbols, arc-check"
+      ],
+      "url": "https://github.com/DdepRest/arc-frame/releases/download/v3.37.0/ARC-Frame-3.37.0-full.zip",
+      "size": 66656199,
+      "sha256": "a22b53846c178b3901314bad1c7490e4aaccdc7656e236fab3b3e4c82ad1069b"
+    },
+    {
+      "version": "3.36.2",
+      "date": "2026-06-25",
+      "type": "Улучшение",
+      "title": "Брус, Пояс, Доставка — только сумма, исправления",
+      "changes": [
+        "Для Брус, Пояс, Доставка скрыты колонки Кол-во и Площ./Дл. в таблице расчёта",
+        "В панели быстрого ввода отключены поля Кол-во, Ширина, Высота для этих товаров",
+        "Превью показывает только цену вместо формулы",
+        "Исправлена кодировка UTF-8 BOM в PowerShell-скриптах",
+        "Восстановлен журнал обновлений (update-log.json)"
+      ],
+      "url": "https://github.com/DdepRest/arc-frame/releases/download/v3.36.2/ARC-Frame-3.36.2-full.zip",
+      "size": 66921869,
+      "sha256": "ee5a0e393f131015f5771481de2fd3e090e2ff5bf38791990618f9eda6637d4a"
+    },
+    {
+      "version": "3.36.1",
+      "date": "2026-06-24",
+      "type": "Улучшение",
+      "title": "A.R.C. v2+v3: полная автоматизация AI-документирования",
+      "changes": [
+        "CHEATSHEET.md — быстрый вход (40 строк критических правил + routing-таблица)",
+        "DOCUMENTATION_MATRIX.md + documentation-matrix.json — механическая карта «файл → документы»",
+        "PROMPTS.md — готовые prompt-шаблоны (включая self-check)",
+        "what-to-update.ps1 — git diff → список docs к обновлению (фаза Document = 100% авто)",
+        "generate-update-log.ps1 — автогенерация update-log.json из CHANGELOG.md",
+        "validate-docs.ps1 — 8 автоматических проверок консистентности",
+        "MULTI_AGENT_ARC_CALC_CONTROL.md — гранулярный routing (12 категорий), убрано дублирование",
+        "AGENTS.md — inline routing, automation tools"
+      ],
+      "url": "https://github.com/DdepRest/arc-frame/releases/download/v3.36.1/ARC-Frame-3.36.1-full.zip",
+      "size": 66959357,
+      "sha256": "ae008656a166d63cfa0bb11a3ab37efa96e6717978a3e55b4ec3d56849cacef5"
+    },
+    {
+      "version": "3.36.0",
+      "date": "2026-06-24",
+      "type": "Новинка",
+      "title": "Копирование заказов через ПКМ, миграция метода нумерации в сервис, 11 новых тестов",
+      "changes": [
+        "Добавлено копирование заказов через ПКМ: полная копия с новым номером (2-8 → 2-8.1), статусом «Новый» и актуальной датой",
+        "Нумерация копий всегда от базового номера: 2-8.1 → копия → 2-8.2 (суффикс копии стрипается)",
+        "GenerateCopyContractNumber перенесён из MainWindow в OrderStorageService",
+        "Исправлен XML-комментарий InstallationSurcharge: 0 ₽ → 500 ₽",
+        "Добавлено 11 тестов: 10 unit + 1 integration",
+        "Исправлен pre-existing дрифт версии в UpdateLogTests.AllNewestFirst"
+      ],
+      "url": "https://github.com/DdepRest/arc-frame/releases/download/v3.36.0/ARC-Frame-3.36.0-full.zip",
+      "size": 66659973,
+      "sha256": "a13004171582413f5aa23d04ccf6701182710bf7eb551479c2c24c6dd5b0ed33"
+    },
+    {
+      "version": "3.35.0",
+      "date": "2026-06-23",
+      "type": "Исправление",
+      "title": "Полный фикс утечки формул Anwis на не-Anwis товары",
+      "changes": [
+        "Исправлено: Откос материал, Работа, Пояс больше не показывают высоту 30 мм (ReverseCalcHeight ББ60 утекала через Размеры)",
+        "Исправлено: редактирование ширины для Откос материал больше не добавляет +2 мм (ШиринаВвод setter теперь Identity для не-Anwis)",
+        "Исправлено: смена режима AnwisSizeMode для не-Anwis товаров больше не портит размеры",
+        "ВысотаВвод setter для не-Anwis теперь сохраняет сырое значение вместо H−30",
+        "Добавлены юнит-тесты на все 4 точки утечки + AddItem для всех не-Anwis товаров"
+      ],
+      "url": "https://github.com/DdepRest/arc-frame/releases/download/v3.35.0/ARC-Frame-3.35.0-full.zip",
+      "size": 66659897,
+      "sha256": "21720f0c30f9448adb1b04f7523eb1dc7638377b63a1ed3ef78f3fd9b4bafc80"
+    },
+    {
+      "version": "3.34.5",
+      "date": "2026-06-23",
+      "type": "Исправление",
+      "title": "Версия в заголовке: многослойный fallback с логированием",
+      "changes": [
+        "UpdateService.CurrentVersion теперь читается из AssemblyInformationalVersionAttribute с автоматическим отсечением git-source-link суффикса («3.34.4+abc123» → «3.34.4»)",
+        "Добавлен многослойный fallback: InformationalVersion → FileVersion → GetName().Version — гарантирует корректную версию даже в single-file publish",
+        "Добавлено подробное Debug-логирование в TryResolveCurrentVersion — если fallback сработает, в Debug-выводе будет видно, какая попытка провалилась",
+        "Версия для релиза поднята до 3.34.5 — у пользователей со сломанной предыдущей сборкой auto-update предложит обновление"
+      ],
+      "url": "https://github.com/DdepRest/arc-frame/releases/download/v3.34.5/ARC-Frame-3.34.5-full.zip",
+      "size": 66659921,
+      "sha256": "1e1dfa98f476f0dfdeaeb554abfccf141aa86167a53290b89a07db0f0bc305de"
+    },
+    {
+      "version": "3.34.4",
+      "date": "2026-06-23",
+      "type": "Улучшение",
+      "title": "Рефакторинг: разбиение больших файлов на partial-классы и модульные стили",
+      "changes": [
+        "MainWindow.xaml.cs разбит на 5 partial-файлов: Items, Orders, TitleDirty, WindowChrome, DataGrid — каждый отвечает за свою область",
+        "OrderItem.cs разбит на partial-файлы: OrderItem.Calculations.cs (расчёты) и OrderItem.Installation.cs (монтаж)",
+        "InputStyles.xaml разделён на отдельные файлы по типу контрола: TextBox, ComboBox, CheckBox, DatePicker",
+        "Services/DialogService.cs и UpdateLog.cs реорганизованы — код стал чище и прозрачнее",
+        "Удалены мёртвые строки и неиспользуемые импорты, общий объём кода сокращён более чем на 2000 строк"
+      ],
+      "url": "https://github.com/DdepRest/arc-frame/releases/download/v3.34.4/ARC-Frame-3.34.4-full.zip",
+      "size": 66659538,
+      "sha256": "77c0a3f86a0ca4fdcfa1bcdf592f05224f22c26236ae4a5098d45b0fc1c12e34"
+    },
+    {
+      "version": "3.34.3",
+      "date": "2026-06-22",
+      "type": "Улучшение",
+      "title": "Anwis: Сегментированный контрол режима",
+      "changes": [
+        "Anwis QuickAdd переработан в стиле segmented control — пять режимов в одной группе: ББ 60 / ББ 70 / ПП / Проём / Габарит",
+        "Под segmented control теперь видна подсказка, объясняющая что вводится для выбранного режима (напр., \"Ввод: размеры, которые показывает программа\")",
+        "На каждый сегмент добавлен всплывающий ToolTip с короткой формулой режима (напр., \"W+2 / H-30. Копия: -20 мм\")",
+        "Inline-пилюля режима Anwis в колонке \"Наименование\" таблицы расчёта стала более спокойной (светло-голубой фон + синий текст) и подсвечивается синим при наведении"
+      ],
+      "url": "https://github.com/DdepRest/arc-frame/releases/download/v3.34.3/ARC-Frame-3.34.3-full.zip",
+      "size": 66940145,
+      "sha256": "2b7c47d46223c64695ce48a62ebf7cd49e019eb0736900732d2ea8013849acc2"
+    },
+    {
+      "version": "3.34.1",
+      "date": "2026-06-22",
+      "type": "Новинка",
+      "title": "Мульти-выделение в «Заказах» и подсветка выбранных строк",
+      "changes": [
+        "Множественное выделение заказов: Ctrl+Click / Shift+Click — можно удалить или экспортировать только выбранные",
+        "Контекстное меню обновляется динамически: «Удалить заказы (3)», «Экспорт заказов (3)»",
+        "Кнопка «Экспорт» в панели: если есть выделенные заказы — экспортирует только их, иначе — все",
+        "Выделенные строки подсвечиваются цветом AccentLight (светло-синий в светлой теме / тёмно-синий в тёмной)"
+      ],
+      "url": "https://github.com/DdepRest/arc-frame/releases/download/v3.34.1/ARC-Frame-3.34.1-full.zip",
+      "size": 66841283,
+      "sha256": "0ccb3c3b686d764aa8fc2e526ecb7d14d77b40d4f12ac973de265779f0009782"
+    }
+  ]
 }
