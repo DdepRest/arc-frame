@@ -1,4 +1,5 @@
 using System;
+using MosquitoNetCalculator.Services;
 
 namespace MosquitoNetCalculator.Models
 {
@@ -14,6 +15,9 @@ namespace MosquitoNetCalculator.Models
     ///   size.ШиринаОтображение  // 1000 (сырое)
     ///   size.ШиринаРасчёт       // 1002 (W+2)
     ///   size.ШиринаЗавод        // 982  (расчёт − 20)
+    ///
+    /// v3.45.0 (Phase 5 refactoring): pure calculation functions moved to
+    /// <see cref="AnwisSizeCalculator"/>; this struct remains a thin value object.
     /// </summary>
     public readonly struct AnwisSize
     {
@@ -65,8 +69,8 @@ namespace MosquitoNetCalculator.Models
         /// </summary>
         public static AnwisSize ОтВвода(double rawW, double rawH, AnwisSizeMode mode)
         {
-            double calcW = ApplyCalcWidth(rawW, mode);
-            double calcH = ApplyCalcHeight(rawH, mode);
+            double calcW = AnwisSizeCalculator.ApplyCalcWidth(rawW, mode);
+            double calcH = AnwisSizeCalculator.ApplyCalcHeight(rawH, mode);
             return new AnwisSize(rawW, rawH, calcW, calcH, mode);
         }
 
@@ -77,8 +81,8 @@ namespace MosquitoNetCalculator.Models
         /// </summary>
         public static AnwisSize ОтХранимого(double calcW, double calcH, AnwisSizeMode mode)
         {
-            double rawW = ReverseCalcWidth(calcW, mode);
-            double rawH = ReverseCalcHeight(calcH, mode);
+            double rawW = AnwisSizeCalculator.ReverseCalcWidth(calcW, mode);
+            double rawH = AnwisSizeCalculator.ReverseCalcHeight(calcH, mode);
             return new AnwisSize(rawW, rawH, calcW, calcH, mode);
         }
 
@@ -95,39 +99,5 @@ namespace MosquitoNetCalculator.Models
         /// </summary>
         public static AnwisSize Identity(double w, double h)
             => new AnwisSize(w, h, w, h, AnwisSizeMode.Габаритный);
-
-        // ─── Формулы расчётных корректировок ──────────────────────────
-
-        private static double ApplyCalcWidth(double rawW, AnwisSizeMode mode) => mode switch
-        {
-            AnwisSizeMode.Брусбокс60 => rawW + 2,
-            AnwisSizeMode.Брусбокс70 => Math.Max(0, rawW - 2),
-            AnwisSizeMode.РазмерПроёма => rawW + 20,
-            _ => rawW // Профипласт, Габаритный, не-Anwis — identity
-        };
-
-        private static double ApplyCalcHeight(double rawH, AnwisSizeMode mode) => mode switch
-        {
-            AnwisSizeMode.Брусбокс60 => Math.Max(0, rawH - 30),
-            AnwisSizeMode.Брусбокс70 => Math.Max(0, rawH - 30),
-            AnwisSizeMode.РазмерПроёма => rawH + 20,
-            _ => rawH // Профипласт, Габаритный, не-Anwis — identity
-        };
-
-        private static double ReverseCalcWidth(double calcW, AnwisSizeMode mode) => mode switch
-        {
-            AnwisSizeMode.Брусбокс60 => calcW - 2,
-            AnwisSizeMode.Брусбокс70 => calcW + 2,
-            AnwisSizeMode.РазмерПроёма => calcW - 20,
-            _ => calcW // Профипласт, Габаритный, не-Anwis — identity
-        };
-
-        private static double ReverseCalcHeight(double calcH, AnwisSizeMode mode) => mode switch
-        {
-            AnwisSizeMode.Брусбокс60 => calcH + 30,
-            AnwisSizeMode.Брусбокс70 => calcH + 30,
-            AnwisSizeMode.РазмерПроёма => calcH - 20,
-            _ => calcH // Профипласт, Габаритный, не-Anwis — identity
-        };
     }
 }

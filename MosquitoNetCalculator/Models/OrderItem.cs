@@ -9,116 +9,77 @@ namespace MosquitoNetCalculator.Models
 {
     public partial class OrderItem : INotifyPropertyChanged
     {
-        // Products eligible for the installation toggle
-        private static readonly HashSet<string> InstallationApplicableProducts = new()
-        {
-            "Anwis", "На навесах"
-        };
+        // v3.45.0 (Phase 5 refactoring): product category HashSets moved to
+        // <see cref="ProductCatalog"/>. The static fields below are kept as
+        // thin proxies for backward compatibility with existing callers/tests.
+        // Each HashSet is a separate read-only snapshot so accidental mutation
+        // of an OrderItem proxy cannot corrupt the global catalog.
+
+        /// <summary>
+        /// Products eligible for the installation toggle.
+        /// </summary>
+        public static readonly HashSet<string> InstallationApplicableProducts = new(ProductCatalog.InstallationApplicableProducts);
 
         /// <summary>
         /// Products measured by square meters: CalculatedValue = W * H / 1_000_000.
-        /// Source of truth for the Quick-Add preview in MainWindow.xaml.cs.
-        /// Add a new m²-based product here so the preview shows "X.XX м² × price × qty"
-        /// instead of falling through to the per-piece default.
         /// </summary>
-        public static readonly HashSet<string> AreaBasedProducts = new()
-        {
-            "Anwis",
-            "На навесах",
-            "Оконная на метал. крепл.",
-            "Отлив",
-            "Козырёк",
-            "Короб"
-        };
+        public static readonly HashSet<string> AreaBasedProducts = new(ProductCatalog.AreaBasedProducts);
 
         /// <summary>
         /// Products that need only Quantity + Price (manual sum).
-        /// Color, Width, Height columns are hidden for these products.
         /// </summary>
-        public static readonly HashSet<string> ManualPieceProducts = new()
-        {
-            "Работа",
-            "Откос материал",
-            "Брус",
-            "Пояс",
-            "Доставка"
-        };
+        public static readonly HashSet<string> ManualPieceProducts = new(ProductCatalog.ManualPieceProducts);
 
         /// <summary>
-        /// Manual-piece products that display ONLY the sum (сумма) —
-        /// no quantity, no width, no height, no area/length.
-        /// Subset of ManualPieceProducts. In the Quick-Add panel the
-        /// Qty, Width and Height fields are disabled; in the DataGrid
-        /// the Qty and Площ./Дл. columns show empty content.
+        /// Manual-piece products that display ONLY the sum.
         /// </summary>
-        public static readonly HashSet<string> AmountOnlyProducts = new()
-        {
-            "Брус",
-            "Пояс",
-            "Доставка"
-        };
+        public static readonly HashSet<string> AmountOnlyProducts = new(ProductCatalog.AmountOnlyProducts);
 
         /// <summary>
-        /// Manual-piece products that ALSO record Width as a per-row spec —
-        /// Width is captured (e.g. slope material 250 mm) but does NOT enter
-        /// the Total formula because CalculatedValue = 1 шт. for these products.
-        /// UI gate sites (QuickAddControl, MainWindow.xaml.cs) use this set to
-        /// allow Width editing while still blocking Color/Height, on top of
-        /// the standard ManualPiece rules.
-        /// Kept as a SEPARATE set rather than a flag on ManualPieceProducts so
-        /// that the semantics of "ManualPiece" remain a simple yes/no
-        /// (no width, no height, no color) and WidthOnly can grow independently.
+        /// Manual-piece products where quantity is optional.
         /// </summary>
-        public static readonly HashSet<string> WidthOnlyProducts = new()
-        {
-            "Откос материал",
-        };
+        public static readonly HashSet<string> OptionalQuantityProducts = new(ProductCatalog.OptionalQuantityProducts);
+
+        /// <summary>
+        /// Manual-piece products that ALSO record Width as a per-row spec.
+        /// </summary>
+        public static readonly HashSet<string> WidthOnlyProducts = new(ProductCatalog.WidthOnlyProducts);
 
         /// <summary>
         /// Products that support the anti-cat fabric surcharge.
-        /// A fixed +2000 ₽/m² is added to the catalog price when the user checks
-        /// the "Антикошка" option in QuickAdd.
         /// </summary>
-        public static readonly HashSet<string> AnticatApplicableProducts = new()
-        {
-            "Anwis",
-            "На навесах",
-            "Оконная на метал. крепл."
-        };
+        public static readonly HashSet<string> AnticatApplicableProducts = new(ProductCatalog.AnticatApplicableProducts);
 
         /// <summary>Fixed surcharge for anti-cat fabric (₽ per m²).</summary>
         public const double AnticatSurcharge = 2000;
 
         /// <summary>
         /// Products that do not have color variants.
-        /// Color dropdown is disabled for these products in QuickAdd.
-        /// ПСУЛ is included because it ships without a color choice (perimeter-based).
         /// </summary>
-        public static readonly HashSet<string> NoColorProducts = new()
-        {
-            "Работа",
-            "Откос материал",
-            "Брус",
-            "Пояс",
-            "Доставка",
-            "ПСУЛ"
-        };
+        public static readonly HashSet<string> NoColorProducts = new(ProductCatalog.NoColorProducts);
 
         /// <summary>True when Color/Width/Height columns should be hidden.</summary>
-        public bool IsManualPiece => ManualPieceProducts.Contains(Name);
+        public bool IsManualPiece => ProductCatalog.IsManualPiece(Name);
 
         /// <summary>True when only the sum should be displayed — Qty, Width, Height, Area are hidden.</summary>
-        public bool IsAmountOnly => AmountOnlyProducts.Contains(Name);
+        public bool IsAmountOnly => ProductCatalog.IsAmountOnly(Name);
+
+        /// <summary>
+        /// True for products where quantity is optional and hidden in the grid
+        /// when it equals the default value (1). Only the sum is shown by default;
+        /// if quantity is explicitly increased, both quantity and sum are displayed.
+        /// </summary>
+        public bool IsQuantityOptional => ProductCatalog.IsQuantityOptional(Name);
 
         /// <summary>
         /// True for ManualPiece products that additionally record Width as
         /// a per-row spec. UI gates allow Width editing for these rows while
         /// still blocking Color/Height (and Total remains 1 шт. × Price × Qty).
         /// </summary>
-        public bool IsWidthOnly => WidthOnlyProducts.Contains(Name);
+        public bool IsWidthOnly => ProductCatalog.IsWidthOnly(Name);
 
         /// <summary>True for products that support the installation toggle (Anwis, На навесах).</summary>
-        public bool IsInstallationApplicable => InstallationApplicableProducts.Contains(Name);
+        public bool IsInstallationApplicable => ProductCatalog.IsInstallationApplicable(Name);
 
         /// <summary>
         /// Returns a themed brush from application resources so it updates automatically when the theme changes.
@@ -140,6 +101,7 @@ namespace MosquitoNetCalculator.Models
         private bool _isActive = true;
         private AnwisSizeMode _anwisSizeMode = AnwisSizeMode.Брусбокс60;
         private bool _isAnticat;
+        private SlopeCalculation? _slopeData;
         private double _defaultPrice = -1;             // -1 = не зафиксирована (первая установка через SetDefaultPrice)
 
         public int RowNumber
@@ -468,9 +430,17 @@ namespace MosquitoNetCalculator.Models
                 InstallationMode = InstallationMode,
                 InstallationDeduction = InstallationDeduction,
                 InstallationSurcharge = InstallationSurcharge,
+                InstallationAdjustment = InstallationAdjustment,
                 IsAnticat = IsAnticat,
-                _defaultPrice = _defaultPrice
+                _defaultPrice = _defaultPrice,
             };
+            // v3.43.3 (review fix #1): SlopeData идёт через property setter, чтобы
+            // подписаться на PropertyChanged каскад (иначе клон не будет реагировать
+            // на ручные правки Количества/Цены в панели откоса). Кроме того,
+            // раньше клон ШАРИЛ тот же SlopeData instance с оригиналом — любая правка
+            // материала затрагивала ОБА, что очень неочевидно. Теперь setter вызывается,
+            // а engine сделает deep-clone через SlopeCalculationData.
+            copy.SlopeData = _slopeData != null ? _slopeData.DeepClone() : null;
             // SetAnwisModeQuiet — Width/Height above are already stored for this
             // instance's AnwisSizeMode. The public setter would reverse-apply
             // through the default ББ 60 and shift the clone's dimensions.
@@ -485,8 +455,78 @@ namespace MosquitoNetCalculator.Models
             OnPropertyChanged(nameof(IsPriceOverridden));
         }
 
+        /// <summary>
+        /// Данные расчёта откоса (null для обычных товаров).
+        /// </summary>
+        public SlopeCalculation? SlopeData
+        {
+            get => _slopeData;
+            set
+            {
+                // v3.43.3: при смене SlopeData отписываемся от старого и подписываемся на новый.
+                // Cascade — когда SlopeCalculation.TotalMaterials/TotalLabor меняются
+                // (пользователь руками правит Кол-во/Цену в панели откоса), мы
+                // обязаны пересчитать собственный Total, иначе DataGrid и КП
+                // покажут устаревшие суммы.
+                if (_slopeData != null)
+                    _slopeData.PropertyChanged -= OnSlopeDataPropertyChanged;
+                _slopeData = value;
+                if (_slopeData != null)
+                    _slopeData.PropertyChanged += OnSlopeDataPropertyChanged;
+                OnPropertyChanged();
+                Recalculate();
+            }
+        }
+
+        /// <summary>
+        /// v3.43.3: каскадный обработчик PropertyChanged от SlopeData.
+        /// Форсирует Recalculate() при изменениях агрегированных сумм, чтобы
+        /// Total актуально отражал ручные правки в панели откоса.
+        /// </summary>
+        private void OnSlopeDataPropertyChanged(object? sender, PropertyChangedEventArgs e)
+        {
+            if (e.PropertyName == nameof(SlopeCalculation.GrandTotal)
+                || e.PropertyName == nameof(SlopeCalculation.TotalMaterials)
+                || e.PropertyName == nameof(SlopeCalculation.TotalLabor)
+                || e.PropertyName == nameof(SlopeCalculation.DistributedSharedSum))
+            {
+                Recalculate();
+            }
+        }
+
+        /// <summary>True, если товар является откосом (имеет SlopeData).</summary>
+        public bool IsSlope => SlopeData != null;
+
         /// <summary>True when the current Price differs from the price-list default for this Name+Color.</summary>
         public bool IsPriceOverridden => _defaultPrice >= 0 && Math.Abs(Price - _defaultPrice) > 0.01;
+
+        /// <summary>
+        /// Converts this OrderItem to a serializable OrderItemData,
+        /// including SlopeData when present.
+        /// </summary>
+        public OrderItemData ToOrderItemData()
+        {
+            var data = new OrderItemData
+            {
+                Name = Name,
+                Color = Color,
+                Width = Width,
+                Height = Height,
+                Quantity = Quantity,
+                Price = Price,
+                InstallationMode = InstallationMode,
+                HasInstallation = InstallationMode == 0,
+                InstallationDeduction = InstallationDeduction,
+                InstallationSurcharge = InstallationSurcharge,
+                InstallationAdjustment = InstallationAdjustment,
+                IsActive = IsActive,
+                AnwisSizeMode = (int)AnwisSizeMode,
+                IsAnticat = IsAnticat
+            };
+            if (SlopeData != null)
+                data.SlopeData = SlopeCalculationData.FromSlopeCalculation(SlopeData);
+            return data;
+        }
 
         public event PropertyChangedEventHandler? PropertyChanged;
         public event Action? RecalculateRequested;

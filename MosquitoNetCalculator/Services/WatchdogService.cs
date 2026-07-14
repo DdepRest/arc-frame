@@ -1,5 +1,6 @@
 using System;
 using System.IO;
+using System.IO.Compression;
 using System.Reflection;
 
 namespace MosquitoNetCalculator.Services
@@ -39,7 +40,7 @@ namespace MosquitoNetCalculator.Services
 
         public const string ExeFileName = "MosquitoNetCalculator.exe";
         public const string BackupSuffix = ".bak";
-        public const string UpdateZipName = "arc-update.zip";
+        public const string StageDirName = "arc-update-stage";
         public const string WatchdogBatName = "arc-update-watchdog.bat";
 
         // Computed paths — update artifacts live in %AppData% (writable),
@@ -51,7 +52,7 @@ namespace MosquitoNetCalculator.Services
 
         public static string ExePath => Path.Combine(BasePath, ExeFileName);
         public static string ExeBakPath => Path.Combine(UpdateDataDir, ExeFileName + BackupSuffix);
-        public static string UpdateZipPath => Path.Combine(UpdateDataDir, UpdateZipName);
+        public static string StageDir => Path.Combine(UpdateDataDir, StageDirName);
         public static string WatchdogPath => Path.Combine(UpdateDataDir, WatchdogBatName);
 
         /// <summary>
@@ -78,10 +79,14 @@ namespace MosquitoNetCalculator.Services
                     return false; // unreachable
                 }
 
-                // Wipe any leftover watchdog.bat from a previous crashed attempt.
+                // Wipe any leftover update artifacts from a previous crashed attempt.
                 if (File.Exists(WatchdogPath))
                 {
                     try { File.Delete(WatchdogPath); } catch { /* swallow */ }
+                }
+                if (Directory.Exists(StageDir))
+                {
+                    try { Directory.Delete(StageDir, recursive: true); } catch { }
                 }
 
                 return true;
@@ -127,7 +132,12 @@ namespace MosquitoNetCalculator.Services
         /// Stage an update for the next run. Called by UpdateService just
         /// before shutdown.
         /// 
-        /// Order matters: .bat first, ZIP second, .exe.bak third.
+        /// Extracts the ZIP via C# <see cref="ZipFile.ExtractToDirectory"/>
+        /// (not PowerShell Expand-Archive, which triggers antivirus) into a
+        /// staging directory. The watchdog .bat then copies pre-extracted
+        /// files — no PowerShell dependency.
+        /// 
+        /// Order matters: .bat first, extraction second, .exe.bak third.
         /// Throws if staging fails.
         /// </summary>
         public static void StageUpdate(string downloadedZipPath)
@@ -137,11 +147,21 @@ namespace MosquitoNetCalculator.Services
 
             Directory.CreateDirectory(UpdateDataDir);
 
-            // 1. Commit the watchdog .bat FIRST.
-            File.WriteAllText(WatchdogPath, BuildWatchdogBat(BasePath));
+            // 1. Commit the watchdog .bat FIRST (references StageDir).
+            File.WriteAllText(WatchdogPath, BuildWatchdogBat(BasePath, StageDir));
 
-            // 2. Commit the ZIP.
-            File.Copy(downloadedZipPath, UpdateZipPath, overwrite: true);
+            // 2. Extract ZIP via C# (no PowerShell) into a fresh temp dir,
+            // then atomically rename to StageDir. This avoids the race where
+            // a locked old StageDir causes ExtractToDirectory to throw.
+            var tmpDir = Path.Combine(UpdateDataDir,
+                $"arc-stage-{Guid.NewGuid():N}");
+            ZipFile.ExtractToDirectory(downloadedZipPath, tmpDir);
+            if (Directory.Exists(StageDir))
+            {
+                try { Directory.Delete(StageDir, recursive: true); }
+                catch (IOException) { /* locked by AV — old dir orphaned, harmless */ }
+            }
+            Directory.Move(tmpDir, StageDir);
 
             // 3. Commit the backup copy of the current .exe.
             if (File.Exists(ExePath))
@@ -160,20 +180,21 @@ namespace MosquitoNetCalculator.Services
         ///   so %~dp0 points there. ZIP and BAK live next to the .bat;
         ///   the .exe is copied into <paramref name="exeBaseDirectory"/>.
         /// </summary>
-        private static string BuildWatchdogBat(string exeBaseDirectory)
+        private static string BuildWatchdogBat(string exeBaseDirectory, string stageDir)
         {
             // Trim trailing slash so we can safely append "\" in the batch file.
             string here = exeBaseDirectory.TrimEnd('\\', '/');
+            string wrk = stageDir.TrimEnd('\\', '/');
             return
 "@echo off\r\n" +
 "setlocal EnableExtensions\r\n" +
 "REM ===== ARC-Frame auto-update watchdog (auto-generated) =====\r\n" +
 "REM Pure ASCII only - cp866/OEM compatible.\r\n" +
+"REM ZIP already extracted by C# ZipFile.ExtractToDirectory — no PowerShell.\r\n" +
 "\r\n" +
 "set EXE=MosquitoNetCalculator.exe\r\n" +
 "set BAK=%EXE%.bak\r\n" +
-"set ZIP=arc-update.zip\r\n" +
-"set WRK=%TEMP%\\arc-update-work~\r\n" +
+"set \"WRK=" + wrk + "\"\r\n" +
 "set \"HERE=" + here + "\"\r\n" +
 "set _copyfail=0\r\n" +
 "\r\n" +
@@ -190,16 +211,12 @@ namespace MosquitoNetCalculator.Services
 "REM Final check - if app is STILL alive, abort\r\n" +
 "tasklist /fi \"imagename eq %EXE%\" 2> nul | find /i \"%EXE%\" > nul\r\n" +
 "if not errorlevel 1 (\r\n" +
-"    echo ARC-Frame update ABORTED: app still running after 120s.\r\n" +
-"    del \"%~dp0%ZIP%\" 2> nul\r\n" +
+"    echo ARC-Frame update ABORTED: app still running after 120s. >> \"%~dp0watchdog.log\"\r\n" +
 "    del \"%~f0\" 2> nul\r\n" +
 "    exit /b 1\r\n" +
 ")\r\n" +
 "\r\n" +
-"REM --- 2. Extract downloaded ZIP into a clean working dir ---\r\n" +
-"if exist \"%WRK%\" rd /s /q \"%WRK%\"\r\n" +
-"mkdir \"%WRK%\" 2> nul\r\n" +
-"powershell -NoProfile -ExecutionPolicy Bypass -Command \"Expand-Archive -Force -Path '%~dp0%ZIP%' -DestinationPath '%WRK%'\" 1> nul 2> nul\r\n" +
+"REM --- 2. Verify extracted files exist (already done by C# ZipFile) ---\r\n" +
 "if not exist \"%WRK%\\%EXE%\" goto :rollback\r\n" +
 "\r\n" +
 "REM --- 3. Self-test the new .exe ---\r\n" +
@@ -207,25 +224,35 @@ namespace MosquitoNetCalculator.Services
 "set _rc=%ERRORLEVEL%\r\n" +
 "if not \"%_rc%\"==\"0\" goto :rollback\r\n" +
 "\r\n" +
-"REM --- 4. Update successful - copy new files into BaseDirectory ---\r\n" +
-"copy /y \"%WRK%\\%EXE%\" \"%HERE%\\%EXE%\" > nul\r\n" +
-"if not \"%ERRORLEVEL%\"==\"0\" goto :rollback_after_copy\r\n" +
+"REM --- 4. Update successful - copy new files with retry on file lock ---\r\n" +
+"set _copyfail=0\r\n" +
+"set /a _retry=0\r\n" +
+":copy_retry\r\n" +
+"copy /y \"%WRK%\\%EXE%\" \"%HERE%\\%EXE%\" > nul 2>&1\r\n" +
+"if \"%ERRORLEVEL%\"==\"0\" goto :copy_ok\r\n" +
+"set /a _retry+=1\r\n" +
+"if %_retry% lss 5 (\r\n" +
+"    echo [WATCHDOG] Copy retry %_retry%/5: file may be locked... >> \"%~dp0watchdog.log\"\r\n" +
+"    timeout /t 2 /nobreak > nul\r\n" +
+"    goto copy_retry\r\n" +
+")\r\n" +
+"goto :rollback_after_copy\r\n" +
+":copy_ok\r\n" +
 "xcopy /y /e /q /r \"%WRK%\\*\" \"%HERE%\\\" > nul 2>&1\r\n" +
 "if not \"%ERRORLEVEL%\"==\"0\" goto :rollback_after_copy\r\n" +
 "if exist \"%WRK%\" rd /s /q \"%WRK%\"\r\n" +
-"del \"%~dp0%ZIP%\" 2> nul\r\n" +
-"if exist \"%~dp0%BA K%\" del \"%~dp0%BA K%\"\r\n" +
+"if exist \"%~dp0%BAK%\" del \"%~dp0%BAK%\"\r\n" +
+"echo [WATCHDOG] Update completed successfully. >> \"%~dp0watchdog.log\"\r\n" +
 "goto :start\r\n" +
 "\r\n" +
 ":rollback_after_copy\r\n" +
 "set _copyfail=1\r\n" +
-"if exist \"%~dp0%BA K%\" copy /y \"%~dp0%BA K%\" \"%HERE%\\%EXE%\" > nul\r\n" +
+"if exist \"%~dp0%BAK%\" copy /y \"%~dp0%BAK%\" \"%HERE%\\%EXE%\" > nul\r\n" +
 "goto :start\r\n" +
 "\r\n" +
 ":rollback\r\n" +
 "if exist \"%WRK%\" rd /s /q \"%WRK%\"\r\n" +
-"del \"%~dp0%ZIP%\" 2> nul\r\n" +
-"echo ARC-Frame update ROLLBACK: New version failed self-test.\r\n" +
+"echo [WATCHDOG] Update ROLLBACK: new version failed self-test. >> \"%~dp0watchdog.log\"\r\n" +
 "\r\n" +
 ":start\r\n" +
 "start \"\" \"%HERE%\\%EXE%\"\r\n" +

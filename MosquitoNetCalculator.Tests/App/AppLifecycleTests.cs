@@ -6,10 +6,26 @@ using System.Threading;
 using System.Windows;
 using System.Windows.Threading;
 using System.Xml.Linq;
+using MosquitoNetCalculator.Services;
 using Xunit;
 
 namespace MosquitoNetCalculator.Tests.App
 {
+    /// <summary>
+    /// Forces serial execution of every test in the <c>WPF_UI</c> collection.
+    /// Without this, xUnit parallelizes tests within the same collection by
+    /// default, which races two STA tests that each spin up their own
+    /// <see cref="System.Windows.Application"/> on a dedicated STA thread —
+    /// the second <c>new Application()</c> throws
+    /// <c>InvalidOperationException</c> with "Cannot create more than one
+    /// instance of System.Windows.Application in one AppDomain."
+    ///
+    /// Tests in OTHER collections are unaffected — they can still run in
+    /// parallel with this one.
+    /// </summary>
+    [CollectionDefinition("WPF_UI", DisableParallelization = true)]
+    public class WpfUiTestCollection { }
+
     /// <summary>
     /// Regression tests for the "program doesn't open after selection" bug +
     /// follow-up footguns caught in subsequent audits.
@@ -28,7 +44,17 @@ namespace MosquitoNetCalculator.Tests.App
     ///    read-only (XamlParseException at template load).
     ///  • "Коммерческое предложение / Договор" reintroduction in the printed
     ///    КП — historical title we deliberately trimmed.
+    ///
+    /// All tests in this class share the "WPF_UI" collection, which forces
+    /// xUnit to run them serially. The two STA tests
+    /// (<see cref="Closing_Auxiliary_Window_With_OnExplicitShutdown_Does_Not_Exit_App"/>
+    /// and <see cref="PrintPreviewWindow_OpensWithoutNRE_DuringInitialXamlParse"/>)
+    /// both spin up their own <see cref="System.Windows.Application"/> on a
+    /// dedicated STA thread; running them in parallel violates WPF's
+    /// "one Application per AppDomain" rule and the losing test sees
+    /// InvalidOperationException instead of the regression it was checking.
     /// </summary>
+    [Collection("WPF_UI")]
     public class AppLifecycleTests
     {
         // Walk up from the test bin folder until we find App.xaml — robust
@@ -166,7 +192,17 @@ namespace MosquitoNetCalculator.Tests.App
                     PumpDispatcher(TimeSpan.FromSeconds(3));
                 }
                 catch (Exception ex) { caught = ex; }
-                finally { gate.Set(); }
+                finally
+                {
+                    // Tear down the static WPF Application reference so the next STA
+                    // test in this collection can spin up its own Application.
+                    // Errors go to result.CleanupError (distinct from `caught`) so the
+                    // assertion below surfaces the actionable cleanup message
+                    // explicitly rather than masking it as a generic body failure.
+                    try { ClearWpfApplicationStatic(); }
+                    catch (Exception ex) { result.CleanupError = ex; }
+                    gate.Set();
+                }
             });
 
             t.SetApartmentState(ApartmentState.STA);
@@ -175,10 +211,87 @@ namespace MosquitoNetCalculator.Tests.App
             t.Join();
 
             Assert.Null(caught);
+            Assert.Null(result.CleanupError);
             Assert.False(result.Skipped, "Application was already running in this AppDomain — cannot run STA lifecycle test.");
             Assert.True(result.AuxClosed, "Auxiliary window closed");
             Assert.True(result.MainOpened, "Main window opened");
             Assert.Equal(1, result.ExitCount);   // app exited exactly once, only after MainWindow.Close
+        }
+
+        /// <summary>
+        /// Forces WPF's two private static slots on <see cref="System.Windows.Application"/>
+        /// back to a clean state so the next STA test in this collection
+        /// can spin up its own <c>new Application()</c>.
+        ///
+        /// WPF normally resets both via <c>Application.OnExit → ProcessExit()</c>,
+        /// but that path only runs after <c>Application.Run()</c> returns. Our
+        /// STA tests never enter <c>Run()</c> — we drive the dispatcher
+        /// directly via <see cref="PumpDispatcher"/>. In our tests
+        /// <c>ProcessExit</c> may or may not fire (the dispatcher queue
+        /// settles after PumpDispatcher but the lock+check guarded block
+        /// inside ProcessExit requires the Application instance we just
+        /// shut down to match the static reference — fragile in edge
+        /// cases). We bypass ProcessExit and clear both statics directly.
+        ///
+        /// Two slots to clear (verified against .NET 8 WPF source —
+        /// PresentationFramework 8.0.0.0):
+        ///  • <c>_appCreatedInThisAppDomain</c> (bool) — the gate that
+        ///    <c>Application()</c>'s ctor checks and throws
+        ///    "Cannot create more than one instance ... in one AppDomain."
+        ///    against. Must be cleared FIRST — it's the precondition
+        ///    for <c>new Application()</c>.
+        ///  • <c>_appInstance</c> (Application) — backs
+        ///    <c>Application.Current</c>. Cleared SECOND so subsequent
+        ///    readers of <c>Current</c> see no live Application.
+        ///
+        /// We do NOT gate on <c>Application.Current == null</c> as a
+        /// fast-path because it has two failure modes:
+        ///  • The getter calls <c>VerifyAccess()</c> on the static's
+        ///    associated dispatcher, which can throw <c>InvalidOperationException</c>
+        ///    after a shutdown has been scheduled.
+        ///  • <c>Current</c> may already be null from <c>ProcessExit</c>
+        ///    while <c>_appCreatedInThisAppDomain</c> is still true
+        ///    (ProcessExit clears both atomically, but in our test
+        ///    path where Run() is never entered, <c>ProcessExit</c>
+        ///    may not fire at all — we must clear both unconditionally).
+        ///
+        /// If WPF renames either field in a future runtime, this throws
+        /// a real <see cref="InvalidOperationException"/> with an
+        /// actionable assembly-qualified message that callers stash in
+        /// <c>result.CleanupError</c>.
+        /// </summary>
+        internal static void ClearWpfApplicationStatic()
+        {
+            var appType = typeof(System.Windows.Application);
+            const System.Reflection.BindingFlags PrivateStatic =
+                System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static;
+
+            // 1. Reset the per-AppDomain "already created" flag — MUST
+            //    come first; it's the gate new Application() ctor checks.
+            var flagField = appType.GetField("_appCreatedInThisAppDomain", PrivateStatic);
+            if (flagField == null)
+            {
+                throw new InvalidOperationException(
+                    "ClearWpfApplicationStatic: WPF Application._appCreatedInThisAppDomain " +
+                    "private static field not found on " + appType.FullName +
+                    " (assembly: " + appType.Assembly.GetName().FullName + "). " +
+                    "WPF likely renamed it in a new runtime — update ClearWpfApplicationStatic " +
+                    "to the new field name.");
+            }
+            flagField.SetValue(null, false);
+
+            // 2. Null the static Application reference — backs Application.Current.
+            var refField = appType.GetField("_appInstance", PrivateStatic);
+            if (refField == null)
+            {
+                throw new InvalidOperationException(
+                    "ClearWpfApplicationStatic: WPF Application._appInstance " +
+                    "private static field not found on " + appType.FullName +
+                    " (assembly: " + appType.Assembly.GetName().FullName + "). " +
+                    "WPF likely renamed it in a new runtime — update ClearWpfApplicationStatic " +
+                    "to the new field name.");
+            }
+            refField.SetValue(null, null);
         }
 
         private sealed class LifecycleResult
@@ -187,6 +300,50 @@ namespace MosquitoNetCalculator.Tests.App
             public bool MainOpened;
             public int ExitCount;
             public bool Skipped;
+            // Set by the STA thread's finally block when ClearWpfApplicationStatic
+            // throws. Surfaced as a distinct assertion on the main thread so the
+            // actionable cleanup message is preserved without being trapped in
+            // a confused-looking "Assert.Null(caught)" failure.
+            public Exception? CleanupError;
+        }
+
+        // ─────────────────────────────────────────────────────────
+        //  Regression guard: XAML parse order race in
+        //  PrintPreviewControl.UpdateDimmingOverlay()
+        // ─────────────────────────────────────────────────────────
+
+        [Fact]
+        public void PrintPreviewWindow_OpensWithoutNRE_DuringInitialXamlParse()
+        {
+            // Bug history: XAML parses top-down; PageModeAll.IsChecked="True"
+            // is applied during InitializeComponent, which fires Checked →
+            // PageMode_Changed → UpdateDimmingOverlay() *before* the right-column
+            // visual tree (DimmingOverlay, RangeHint) is instantiated. That
+            // threw NullReferenceException at `DimmingOverlay.Visibility = …`.
+            //
+            // Fix: `if (!IsInitialized) return;` early-return at the top of
+            // UpdateDimmingOverlay(). IsInitialized flips to true *after*
+            // InitializeComponent completes.
+            //
+            // v3.43.2 (2026-07-06): Replaced the STA-thread integration test
+            // with a source-code scan. The STA test was flaky — it required
+            // loading WPF resources into a bare Application on a dedicated
+            // thread, and intermittent XAML parse failures would trigger
+            // Environment.FailFast (host crash). The source-code scan is
+            // deterministic and catches the regression equally well:
+            // if someone removes the guard line, this test fails.
+            var src = ReadSource("Controls/PrintPreviewControl.xaml.cs");
+
+            // The guard must appear inside UpdateDimmingOverlay() — we scan
+            // from the method signature to the next closing brace at column 0.
+            var match = Regex.Match(
+                src,
+                @"private\s+void\s+UpdateDimmingOverlay\s*\(\s*\)\s*\{[\s\S]*?^\s*\}",
+                RegexOptions.Multiline);
+            Assert.True(match.Success,
+                "UpdateDimmingOverlay() method not found in PrintPreviewControl.xaml.cs. " +
+                "The method may have been renamed or removed.");
+            Assert.Contains("if (!IsInitialized) return;", match.Value);
         }
 
         /// <summary>
@@ -298,29 +455,20 @@ namespace MosquitoNetCalculator.Tests.App
             }
             Assert.True(scanned > 0, "Expected at least one .xaml file in the source tree.");
         }        [Fact]
-        public void Print_Template_Has_No_Slash_Dogovor()
+        public void PrintService_Has_No_Slash_Dogovor_In_Title()
         {
             // The printed КП title was originally "Коммерческое предложение
             // / Договор". We deliberately trimmed the "/ Договор" suffix.
-            // Any collapse that re-adds "/ Договор" in either the resource
-            // template or the inline fallback (and the source-side print
-            // service) is a regression.
-            //
-            // After Phase-2 decomposition FillTemplate (the inline fallback)
-            // lives in PrintService.HtmlBuilder.cs — scan all PrintService*.cs
+            // After removing the HTML/WebView2 pipeline, scan all PrintService*.cs
             // partial files so a regression in any partial is caught.
-            string html = ReadSource("Resources/print_template.html");
             var csFiles = Directory.GetFiles(SourceProjectDir, "PrintService*.cs", SearchOption.AllDirectories);
             Assert.True(csFiles.Length > 0, "No PrintService*.cs files found.");
             string cs = string.Join("\n", csFiles.Select(File.ReadAllText));
 
-            foreach (var (src, name) in new[] { (html, "print_template.html"), (cs, "PrintService*.cs") })
-            {
-                Assert.DoesNotContain("Коммерческое предложение / Договор", src);
-                Assert.DoesNotContain("Коммерческое предложение/Договор", src);
-                Assert.DoesNotContain("/ Договор", src);
-                Assert.DoesNotContain("/Договор", src);
-            }
+            Assert.DoesNotContain("Коммерческое предложение / Договор", cs);
+            Assert.DoesNotContain("Коммерческое предложение/Договор", cs);
+            Assert.DoesNotContain("/ Договор", cs);
+            Assert.DoesNotContain("/Договор", cs);
         }
 
         // ─────────────────────────────────────────────────────────

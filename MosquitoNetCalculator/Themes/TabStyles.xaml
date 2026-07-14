@@ -17,7 +17,7 @@
             <Setter Property="BorderThickness" Value="0"/>
             <!-- Remove WPF's default focus rectangle: it's blue, thin, and inset from the
                  tab text, which looks like a glitchy outline on hover. -->
-            <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
+            <Setter Property="FocusVisualStyle" Value="{StaticResource FluentFocusVisual}"/>
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="TabItem">

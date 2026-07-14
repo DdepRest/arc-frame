@@ -10,7 +10,16 @@ namespace MosquitoNetCalculator.Controls
     {
         private void TxtQuickSearch_TextChanged(object sender, TextChangedEventArgs e)
         {
+            BtnClearQuickSearch.Visibility = string.IsNullOrEmpty(TxtQuickSearch.Text)
+                ? Visibility.Collapsed : Visibility.Visible;
             UpdateSearchSuggestions();
+        }
+
+        private void BtnClearQuickSearch_Click(object sender, RoutedEventArgs e)
+        {
+            TxtQuickSearch.Text = string.Empty;
+            SearchPopup.IsOpen = false;
+            TxtQuickSearch.Focus();
         }
 
         private void TxtQuickSearch_KeyDown(object sender, KeyEventArgs e)

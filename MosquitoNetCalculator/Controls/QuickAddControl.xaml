@@ -42,7 +42,11 @@
                 <TextBlock Grid.Column="0" Text="Поиск" VerticalAlignment="Center"
                            FontSize="10.5" Foreground="{DynamicResource TextSecondary}" Margin="0,0,6,0"/>
                 <Grid Grid.Column="1">
-                    <TextBox x:Name="TxtQuickSearch" Style="{DynamicResource QuickInput}"
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+                    <TextBox x:Name="TxtQuickSearch" Grid.Column="0" Style="{DynamicResource QuickInput}"
                              VerticalContentAlignment="Center"
                              TextChanged="TxtQuickSearch_TextChanged"
                              KeyDown="TxtQuickSearch_KeyDown"
@@ -59,7 +63,7 @@
                                      PreviewMouseDown="SearchSuggestions_PreviewMouseDown" FontSize="12">
                                 <ListBox.ItemContainerStyle>
                                     <Style TargetType="ListBoxItem">
-                                        <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
+                                        <Setter Property="FocusVisualStyle" Value="{StaticResource FluentFocusVisual}"/>
                                         <Setter Property="Background" Value="Transparent"/>
                                         <Setter Property="Foreground" Value="{DynamicResource TextPrimary}"/>
                                         <Setter Property="Padding" Value="6,4"/>
@@ -96,6 +100,13 @@
                             </ListBox>
                         </Border>
                     </Popup>
+                    <Button x:Name="BtnClearQuickSearch" Grid.Column="1"
+                            Style="{DynamicResource GhostButton}"
+                            Content="&#xE711;" FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets"
+                            FontSize="10" Padding="4,2" Margin="4,0,0,0" Cursor="Hand"
+                            Visibility="Collapsed"
+                            Click="BtnClearQuickSearch_Click"
+                            ToolTip="Очистить поиск"/>
                 </Grid>
             </Grid>
 
@@ -141,6 +152,7 @@
                              TextChanged="QuickField_TextChanged"
                              KeyDown="QuickField_KeyDown"
                              GotFocus="QuickField_GotFocus"
+                             LostFocus="QuickField_LostFocus"
                              HorizontalContentAlignment="Right"/>
                 </StackPanel>
                 <StackPanel Grid.Row="1" Grid.Column="6">
@@ -149,17 +161,21 @@
                              TextChanged="QuickField_TextChanged"
                              KeyDown="QuickField_KeyDown"
                              GotFocus="QuickField_GotFocus"
+                             LostFocus="QuickField_LostFocus"
                              HorizontalContentAlignment="Right"/>
                 </StackPanel>
                 <StackPanel Grid.Row="1" Grid.Column="8">
                     <TextBlock Text="Кол-во" Style="{DynamicResource FieldLabel}"/>
                     <TextBox x:Name="TxtQuickQty" Text="1" Style="{DynamicResource QuickInput}"
+                             TextChanged="QuickField_TextChanged"
                              GotFocus="SelectAll_OnFocus"
+                             LostFocus="QuickField_LostFocus"
                              HorizontalContentAlignment="Right"/>
                 </StackPanel>
                 <StackPanel Grid.Row="1" Grid.Column="10">
                     <TextBlock Text="Цена, руб." Style="{DynamicResource FieldLabel}"/>
                     <TextBox x:Name="TxtQuickPrice" Style="{DynamicResource QuickInput}"
+                             TextChanged="QuickField_TextChanged"
                              LostFocus="TxtQuickPrice_LostFocus"
                              GotFocus="SelectAll_OnFocus"
                              HorizontalContentAlignment="Right"/>
@@ -231,7 +247,7 @@
                      ~17px of vertical space). Previous Bottom anchoring shifted
                      down whenever the Антикошка ToggleButton appeared and grew
                      the row height. -->
-                <Button Grid.Row="1" Grid.Column="12" Style="{DynamicResource CompactAddButton}"
+                <Button x:Name="BtnAdd" Grid.Row="1" Grid.Column="12" Style="{DynamicResource CompactAddButton}"
                         Click="BtnQuickAdd_Click" ToolTip="Добавить (Enter)"
                         VerticalAlignment="Top" Margin="0,17,0,0" Height="32">
                     <StackPanel Orientation="Horizontal">

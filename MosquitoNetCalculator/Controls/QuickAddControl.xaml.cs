@@ -82,7 +82,12 @@ namespace MosquitoNetCalculator.Controls
             return false;
         }
 
-        private void QuickField_TextChanged(object sender, TextChangedEventArgs e) => UpdateQuickPreview();
+        private void QuickField_TextChanged(object sender, TextChangedEventArgs e)
+        {
+            UpdateQuickPreview();
+            // UX#2: Clear required-field highlight when user starts typing
+            if (sender is TextBox tb) ClearRequiredHighlight(tb);
+        }
 
         private void QuickField_KeyDown(object sender, KeyEventArgs e)
         {
@@ -93,6 +98,83 @@ namespace MosquitoNetCalculator.Controls
         {
             if (sender is TextBox tb)
                 tb.Dispatcher.BeginInvoke(() => tb.SelectAll());
+        }
+
+        // UX#2: Re-apply required-field highlight when user leaves empty field
+        private void QuickField_LostFocus(object sender, RoutedEventArgs e)
+        {
+            if (sender is TextBox tb)
+                SetRequiredHighlight(tb);
+        }
+
+        // UX#2: Required field highlighting — per product type
+        /// <summary>
+        /// Highlights important empty fields with a red accent border so the user
+        /// immediately sees what to fill. Which fields are highlighted depends on
+        /// the selected product type:
+        /// 
+        ///  Regular (Anwis, На навесах, etc.):  Width + Height
+        ///  ПСУЛ / Уплотнение:                  Price
+        ///  ManualPiece (Работа, Работа за откос): Price + Qty
+        ///  AmountOnly (Брус, Пояс, Доставка):  Price
+        ///  WidthOnly (Откос):                  Width + Price
+        /// </summary>
+        internal void HighlightRequiredIfEmpty()
+        {
+            if (CmbQuickType.SelectedItem is not string type || string.IsNullOrWhiteSpace(type)) return;
+
+            bool isManualPiece = OrderItem.ManualPieceProducts.Contains(type);
+            bool isAmountOnly = OrderItem.AmountOnlyProducts.Contains(type);
+            bool isQuantityOptional = OrderItem.OptionalQuantityProducts.Contains(type);
+            bool isWidthOnly = OrderItem.WidthOnlyProducts.Contains(type);
+            bool isNoDimException = type == "ПСУЛ" || type == "Уплотнение";
+
+            if (isWidthOnly)
+            {
+                // Откос: Ширина + Цена
+                SetRequiredHighlight(TxtQuickWidth);
+                SetRequiredHighlight(TxtQuickPrice);
+            }
+            else if (isAmountOnly)
+            {
+                // Брус, Пояс, Доставка: только Цена
+                SetRequiredHighlight(TxtQuickPrice);
+            }
+            else if (isQuantityOptional)
+            {
+                // Материал: Цена обязательна, Кол-во опционально (по умолчанию 1)
+                SetRequiredHighlight(TxtQuickPrice);
+            }
+            else if (isManualPiece)
+            {
+                // Работа, Работа за откос: Цена + Кол-во
+                SetRequiredHighlight(TxtQuickPrice);
+                SetRequiredHighlight(TxtQuickQty);
+            }
+            else if (isNoDimException)
+            {
+                // ПСУЛ, Уплотнение: Цена
+                SetRequiredHighlight(TxtQuickPrice);
+            }
+            else
+            {
+                // Regular products: Width + Height
+                SetRequiredHighlight(TxtQuickWidth);
+                SetRequiredHighlight(TxtQuickHeight);
+            }
+        }
+
+        private void SetRequiredHighlight(TextBox tb)
+        {
+            if (!tb.IsEnabled || !string.IsNullOrWhiteSpace(tb.Text)) return;
+            var danger = Application.Current?.TryFindResource("Danger") as SolidColorBrush;
+            if (danger != null) tb.BorderBrush = danger;
+        }
+
+        private void ClearRequiredHighlight(TextBox tb)
+        {
+            var border = Application.Current?.TryFindResource("Border") as SolidColorBrush;
+            if (border != null) tb.BorderBrush = border;
         }
     }
 }

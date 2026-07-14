@@ -8,6 +8,33 @@ namespace MosquitoNetCalculator
 {
     public partial class MainWindow
     {
+        // v3.44.8 (bugfix): guard against re-entrant RecalculateRequested cascades
+        // when SlopeCalculatorService.RecalculateSealantAndTape mutates
+        // DistributedSharedSum, which fires PropertyChanged → OrderItem.Recalculate()
+        // → RecalculateRequested → RecalculateAndUpdateTotal() again.
+        private bool _isRecalculatingAndUpdatingTotal;
+
+        /// <summary>
+        /// v3.44.1: пересчитывает общие материалы откосов и обновляет итоги.
+        /// Используется как единый callback для RecalculateRequested.
+        /// v3.44.8 (bugfix): reentrancy guard prevents StackOverflowException when
+        /// slope shared-material recalculation triggers cascading PropertyChanged events.
+        /// </summary>
+        internal void RecalculateAndUpdateTotal()
+        {
+            if (_isRecalculatingAndUpdatingTotal) return;
+            _isRecalculatingAndUpdatingTotal = true;
+            try
+            {
+                CalcVM.RecalculateAllSlopes();
+                UpdateTotal();
+            }
+            finally
+            {
+                _isRecalculatingAndUpdatingTotal = false;
+            }
+        }
+
         internal void UpdateTotal()
         {
             // Debounce: reset timer on every call so rapid property changes batch into one update

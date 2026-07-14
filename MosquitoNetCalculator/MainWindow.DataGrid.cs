@@ -53,20 +53,14 @@ namespace MosquitoNetCalculator
                 });
         }
 
-        internal void Grid_PreviewMouseLeftButtonDown(object sender, MouseButtonEventArgs e)
-        {
-            var hit = e.OriginalSource as DependencyObject;
-            while (hit != null && hit is not CheckBox)
-            {
-                hit = VisualTreeHelper.GetParent(hit);
-            }
-
-            if (hit is CheckBox cb && cb.DataContext is OrderItem item)
-            {
-                item.IsActive = !item.IsActive;
-                MarkDirty();
-                e.Handled = true;
-            }
-        }
+        // v3.43.3: УДАЛЁН Grid_PreviewMouseLeftButtonDown — он ломал видимый
+        // тогл чекбокса:
+        //   1. Событие срабатывало ДО Toggle, сразу вызывало item.IsActive = !item.IsActive
+        //      и ставило e.Handled=true → WPF НЕ переключал CheckBox.IsChecked визуально.
+        //   2. Юзер кликал → CheckBox визуально оставался в прежнем состоянии →
+        //      казалось, что «тумблер не работает», хотя IsActive в модели реально менялся.
+        // Естественный two-way binding IsChecked="{Binding IsActive, UpdateSourceTrigger=PropertyChanged}"
+        // (см. OrderItemsControl.xaml) сам корректно: клик → IsChecked flip → binding Push → IsActive setter
+        // → RecalculateRequested → UpdateTotal. Никаких ручных toggle-ов больше не нужно.
     }
 }

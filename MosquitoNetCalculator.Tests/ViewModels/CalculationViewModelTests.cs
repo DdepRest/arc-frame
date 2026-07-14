@@ -488,7 +488,8 @@ namespace MosquitoNetCalculator.Tests.ViewModels
         // ─── v3.35.0: non-Anwis AddItem regression tests ─────────
 
         [Theory]
-        [InlineData("Откос материал")]
+        [InlineData("Откос")]
+        [InlineData("Работа за откос")]
         [InlineData("Работа")]
         [InlineData("Пояс")]
         [InlineData("Брус")]
@@ -518,7 +519,7 @@ namespace MosquitoNetCalculator.Tests.ViewModels
         {
             // Even with a non-default Anwis mode (ББ70), non-Anwis
             // products must store dimensions as-is.
-            var item = _vm.AddItem("Откос материал", "", 250, 100, 1, 500,
+            var item = _vm.AddItem("Откос", "", 250, 100, 1, 500,
                 anwisMode: AnwisSizeMode.Брусбокс70)!;
 
             Assert.Equal(250, item.Width);
@@ -527,7 +528,8 @@ namespace MosquitoNetCalculator.Tests.ViewModels
         }
 
         [Theory]
-        [InlineData("Откос материал")]
+        [InlineData("Откос")]
+        [InlineData("Работа за откос")]
         [InlineData("Работа")]
         [InlineData("Пояс")]
         public void AddItem_NonAnwis_ZeroHeight_StaysZero(string productName)

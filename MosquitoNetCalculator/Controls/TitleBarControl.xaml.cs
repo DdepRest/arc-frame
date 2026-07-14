@@ -15,19 +15,46 @@ namespace MosquitoNetCalculator.Controls
         public Button BtnCls => BtnClose;
         public TextBlock MaxIcon => TxtMaximizeIcon;
 
+        // ── ShowSettings: скрывает кнопку ⚙ (для модальных/прочих окон вроде PrintPreview).
+        // Значение по умолчанию — true (полная функциональность для MainWindow).
+        // Окна вроде PrintPreviewWindow выставляют ShowSettings="False" в XAML.
+        public static readonly DependencyProperty ShowSettingsProperty =
+            DependencyProperty.Register(
+                nameof(ShowSettings),
+                typeof(bool),
+                typeof(TitleBarControl),
+                new FrameworkPropertyMetadata(true, OnShowSettingsChanged));
+
+        public bool ShowSettings
+        {
+            get => (bool)GetValue(ShowSettingsProperty);
+            set => SetValue(ShowSettingsProperty, value);
+        }
+
+        private static void OnShowSettingsChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
+        {
+            if (d is TitleBarControl tc && tc.BtnSettingsGear != null)
+                tc.BtnSettingsGear.Visibility = (bool)e.NewValue ? Visibility.Visible : Visibility.Collapsed;
+        }
+
         private Action _themeChangedHandler = null!;
 
         public TitleBarControl()
         {
             InitializeComponent();
-            UpdateSettingsMenu();
-            _themeChangedHandler = UpdateSettingsMenu;
-            ThemeService.ThemeChanged += _themeChangedHandler;
-            Unloaded += (_, _) => ThemeService.ThemeChanged -= _themeChangedHandler;
+            // Apply ShowSettings at apply-time (covers InitialiseComponent-time defaults).
+            BtnSettingsGear.Visibility = ShowSettings ? Visibility.Visible : Visibility.Collapsed;
+            if (ShowSettings)
+            {
+                UpdateSettingsMenu();
+                _themeChangedHandler = UpdateSettingsMenu;
+                ThemeService.ThemeChanged += _themeChangedHandler;
+                Unloaded += (_, _) => ThemeService.ThemeChanged -= _themeChangedHandler;
 
-            var badgeTimer = new System.Windows.Threading.DispatcherTimer { Interval = TimeSpan.FromSeconds(4) };
-            badgeTimer.Tick += (s, e) => { badgeTimer.Stop(); RefreshUpdateBadge(); };
-            badgeTimer.Start();
+                var badgeTimer = new System.Windows.Threading.DispatcherTimer { Interval = TimeSpan.FromSeconds(4) };
+                badgeTimer.Tick += (s, e) => { badgeTimer.Stop(); RefreshUpdateBadge(); };
+                badgeTimer.Start();
+            }
         }
 
         public void UpdateSettingsMenu()

@@ -15,16 +15,18 @@
                     <StackPanel>
                         <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
                             <TextBlock Style="{DynamicResource FluentIconSection}" Text="&#xE77B;"/>
-                            <TextBlock Text="ЗАКАЗЧИК" Style="{DynamicResource SectionLabel}" Margin="0"/>
+                            <TextBlock Text="Заказчик" Style="{DynamicResource SectionLabel}" Margin="0"/>
                         </StackPanel>
                         <StackPanel x:Name="ContentClient" Visibility="Visible">
                             <TextBlock Text="Имя" Style="{DynamicResource FieldLabel}"/>
                             <TextBox x:Name="TxtClientName" Margin="0,0,0,10"
                                      Text="{Binding ClientInfo.ClientName, UpdateSourceTrigger=PropertyChanged}"
+                                     AcceptsReturn="False"
                                      GotFocus="SelectAll_OnFocus"/>
                             <TextBlock Text="Телефон" Style="{DynamicResource FieldLabel}"/>
                             <TextBox x:Name="TxtClientPhone" Margin="0,0,0,10"
                                      Text="{Binding ClientInfo.ClientPhone, UpdateSourceTrigger=PropertyChanged}"
+                                     AcceptsReturn="False"
                                      GotFocus="SelectAll_OnFocus"/>
                             <TextBlock Text="Адрес" Style="{DynamicResource FieldLabel}"/>
                             <TextBox x:Name="TxtClientAddress" Margin="0,0,0,0"
@@ -40,7 +42,7 @@
                     <StackPanel>
                         <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
                             <TextBlock Style="{DynamicResource FluentIconSection}" Text="&#xE8A5;"/>
-                            <TextBlock Text="ДОГОВОР" Style="{DynamicResource SectionLabel}" Margin="0"/>
+                            <TextBlock Text="Договор" Style="{DynamicResource SectionLabel}" Margin="0"/>
                         </StackPanel>
                         <StackPanel x:Name="ContentContract" Visibility="Visible">
                         <TextBlock Text="Номер" Style="{DynamicResource FieldLabel}"/>
@@ -76,7 +78,7 @@
                     <StackPanel>
                         <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
                             <TextBlock Style="{DynamicResource FluentIconSection}" Text="&#xE70B;"/>
-                            <TextBlock Text="ПРИМЕЧАНИЯ" Style="{DynamicResource SectionLabel}" Margin="0"/>
+                            <TextBlock Text="Примечания" Style="{DynamicResource SectionLabel}" Margin="0"/>
                         </StackPanel>
                         <StackPanel x:Name="ContentNotes" Visibility="Visible">
                         <TextBox x:Name="TxtNotes" Margin="0,0,0,0"

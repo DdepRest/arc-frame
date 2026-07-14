@@ -1,6 +1,9 @@
+using System;
 using System.Linq;
+using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Media;
 using MosquitoNetCalculator.Models;
 using MosquitoNetCalculator.Services;
 
@@ -8,6 +11,8 @@ namespace MosquitoNetCalculator.Controls
 {
     public partial class QuickAddControl
     {
+        // UX#3: Show guidance toast after first successful item addition
+        private bool _firstItemAdded;
         private void CmbQuickType_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
             if (_updatingQuickCombo) return;
@@ -38,17 +43,30 @@ namespace MosquitoNetCalculator.Controls
 
                 bool isManualPiece = OrderItem.ManualPieceProducts.Contains(type);
                 bool isAmountOnly = OrderItem.AmountOnlyProducts.Contains(type);
+                bool isQuantityOptional = OrderItem.OptionalQuantityProducts.Contains(type);
                 bool widthEnabled = !isManualPiece || OrderItem.WidthOnlyProducts.Contains(type);
                 bool heightEnabled = !isManualPiece;
                 TxtQuickWidth.IsEnabled = widthEnabled;
                 TxtQuickHeight.IsEnabled = heightEnabled;
                 TxtQuickQty.IsEnabled = !isAmountOnly;
                 if (!widthEnabled)
+                {
                     TxtQuickWidth.Text = string.Empty;
+                    ClearRequiredHighlight(TxtQuickWidth);
+                }
                 if (!heightEnabled)
+                {
                     TxtQuickHeight.Text = string.Empty;
+                    ClearRequiredHighlight(TxtQuickHeight);
+                }
                 if (isAmountOnly)
                     TxtQuickQty.Text = "1";
+                else if (isQuantityOptional && TxtQuickQty.Text == "1")
+                {
+                    // For optional-quantity products, default quantity is 1 and the user
+                    // may leave it unchanged; the grid will hide it when it equals 1.
+                    TxtQuickQty.Text = "1";
+                }
 
                 // v3.35.0: show/hide Anwis mode pill panel with animation.
                 ToggleAnwisModePanel(AnwisSizeService.IsApplicable(type));
@@ -60,6 +78,7 @@ namespace MosquitoNetCalculator.Controls
                 UpdateAnwisModeToolTip();
             }
             finally { _updatingQuickCombo = false; }
+            HighlightRequiredIfEmpty();
             UpdateQuickPreview();
         }
 
@@ -116,6 +135,8 @@ namespace MosquitoNetCalculator.Controls
         {
             if (double.TryParse(TxtQuickPrice.Text, out double price))
                 TxtQuickPrice.Text = MoneyFormatService.Format(price);
+            // Also re-apply required-field highlight on Price
+            SetRequiredHighlight(TxtQuickPrice);
         }
 
         private void BtnQuickAdd_Click(object sender, RoutedEventArgs e) => QuickAddItem();
@@ -141,7 +162,17 @@ namespace MosquitoNetCalculator.Controls
             if (!OrderItem.ManualPieceProducts.Contains(type))
             {
                 if (width <= 0 && type != "ПСУЛ" && type != "Уплотнение") { ToastService.ShowToast("Укажите ширину.", ToastType.Info); TxtQuickWidth.Focus(); return; }
-                if (height <= 0 && type != "Откос материал" && type != "ПСУЛ" && type != "Уплотнение") { ToastService.ShowToast("Укажите высоту.", ToastType.Info); TxtQuickHeight.Focus(); return; }
+                if (height <= 0 && type != "ПСУЛ" && type != "Уплотнение") { ToastService.ShowToast("Укажите высоту.", ToastType.Info); TxtQuickHeight.Focus(); return; }
+            }
+
+            // Price (sum) is mandatory for manual-piece products where the user
+            // explicitly enters the total. Without it the row has no meaning.
+            if (OrderItem.OptionalQuantityProducts.Contains(type) && price <= 0)
+            {
+                ToastService.ShowToast("Укажите сумму.", ToastType.Info);
+                TxtQuickPrice.Focus();
+                SetRequiredHighlight(TxtQuickPrice);
+                return;
             }
 
             var item = mw.CalcVM.AddItem(type, color ?? string.Empty, width, height, qty, price, SelectedAnwisMode);
@@ -157,8 +188,8 @@ namespace MosquitoNetCalculator.Controls
                     defaultPrice += OrderItem.AnticatSurcharge;
                 item.SetDefaultPrice(defaultPrice);
 
-                item.RecalculateRequested += mw.UpdateTotal;
-                mw.UpdateTotal();
+                item.RecalculateRequested += mw.RecalculateAndUpdateTotal;
+                mw.RecalculateAndUpdateTotal();
                 mw.MarkDirty();
             }
 
@@ -174,6 +205,48 @@ namespace MosquitoNetCalculator.Controls
             }
             CmbQuickType.Focus();
             UpdateQuickPreview();
+
+            // UX#3: First-time guidance toast
+            if (!_firstItemAdded && mw.OrderItems.Count >= 1)
+            {
+                _firstItemAdded = true;
+                ToastService.ShowToast("\u2705  Отлично! Заполните данные заказчика (кнопка \u00ABЗаказчик\u00BB) и нажмите Сохранить (Ctrl+S)", ToastType.Success, durationMs: 5000);
+            }
+
+            // Fluent success micro-interaction: briefly flash the Add button green
+            // for peripheral confirmation — the user doesn't need to glance at the grid.
+            _ = AnimateAddSuccess();
+        }
+
+        /// <summary>
+        /// Fluent micro-interaction: swaps the Add button to SuccessButton style for ~700 ms
+        /// after a successful item addition, then reverts. Best-effort — never throws.
+        /// </summary>
+        private async Task AnimateAddSuccess()
+        {
+            try
+            {
+                var btn = BtnAdd;
+                if (btn == null || Application.Current == null) return;
+
+                var originalStyle = btn.Style;
+                var originalContent = btn.Content;
+
+                btn.Style = (Style)Application.Current.FindResource("SuccessButton");
+                btn.Content = new TextBlock
+                {
+                    Text = "✔  Добавлено",
+                    FontSize = 12,
+                    FontWeight = FontWeights.SemiBold,
+                    Foreground = (Brush)Application.Current.FindResource("OnSuccess")
+                };
+
+                await Task.Delay(700);
+
+                btn.Style = originalStyle;
+                btn.Content = originalContent;
+            }
+            catch { /* best-effort cosmetic animation, never throw */ }
         }
     }
 }

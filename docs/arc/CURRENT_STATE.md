@@ -6,7 +6,26 @@
   - **Фаза 1 завершена (2026-07-12):** `MainWindow.xaml.cs` 1051→760 строк (−28%). Выделены 4 сервиса: `NavigationService`, `OverlayManager`, `SlopeOverlayCoordinator`, `SlopesProUpsellGate`. +26 тестов. **932/932 tests pass.** Бизнес-логика не затронута. Все `internal` API сохранены как тонкие delegates.
   - **Фаза 2 завершена (2026-07-12):** `UpdateService.cs` 910→608 строк (−33%). Выделены 5 компонентов: `VersionResolver`, `IdleDetector`, `UpdateVerifier`, `UpdateManifestClient`, `UpdateDownloader`. +67 тестов (включая прямые тесты `UpdateManifestClientTests` и `UpdateDownloaderTests`). **999/999 tests pass.** Бизнес-логика не затронута. Все public/internal API сохранены как тонкие прокси.
   - **Фаза 3 завершена (2026-07-12):** `PrintService.cs` 632→81 строк (−87%). Выделены 6 компонентов: `DrawingService`, `FlowDocumentBuilder`, `FixedDocumentBuilder`, `PrintQueueManager`, `PdfExportService`, плюс модели `PageMode`/`PrintSettings`/`PrintResult`. +~40 тестов (`DrawingServiceTests`, `FlowDocumentBuilderTests`, `FixedDocumentBuilderTests`, `PrintQueueManagerTests`, `PdfExportServiceTests`). **1038/1038 tests pass.** Бизнес-логика не затронута. Все public/internal API сохранены как тонкие прокси.
+  - **Фаза 4 завершена (2026-07-12):** `DialogService.cs` 641→~250 строк (−61%). Созданы XAML-шаблоны диалогов и fluent-builder:
+    - `Services/DialogBuilder.cs` — generic fluent API `DialogBuilder<T>` с методами `.Title()`, `.Message()`, `.WithButton()`, `.ShowDialog()`.
+    - `Controls/MessageDialogWindow.xaml` + `.xaml.cs` — универсальный chromeless диалог с ItemsControl для кнопок, анимированной кнопкой закрытия и поддержкой Escape.
+    - `Controls/UpdateAvailableWindow.xaml` + `.xaml.cs` — dedicated диалог «Доступно обновление» с бейджем версии, changelog и anti-recommend hint.
+    - `Services/DialogService.cs` — сохранён как тонкий фасад: `ShowConfirm`, `ShowSaveDiscardCancel`, `ShowUpdateAvailable`, `CreateFluentCloseButton` делегируют в новые XAML-окна / `DialogBuilder<T>`.
+    - +10 тестов: `DialogBuilderTests` (5), `MessageDialogWindowTests` (10 STA). **1071/1071 tests pass.** Бизнес-логика и public API не затронуты.
+  - **Фаза 5 завершена (2026-07-13):** `OrderItem.cs` 651→~520 строк (−20%). Выделены 3 компонента:
+    - `Models/ProductCatalog.cs` — единый источник истины для категорий товаров (`AreaBasedProducts`, `ManualPieceProducts`, `AmountOnlyProducts`, `OptionalQuantityProducts`, `NoColorProducts`, `InstallationApplicableProducts`, `AnticatApplicableProducts`) с helper-методами `Is*`.
+    - `Services/AnwisSizeCalculator.cs` — pure-функции расчёта Anwis-размеров для всех режимов (ББ60, ББ70, РазмерПроёма, Габаритный).
+    - `Models/SlopeCalculationExtensions.cs` — методы-расширения для `SlopeCalculation`, включая `DeepClone()`.
+    - `Models/OrderItem.cs` сохранил все public/internal API как тонкие прокси; `Models/AnwisSize.cs` делегирует в `AnwisSizeCalculator`; `SlopePanelControl.xaml.cs` использует `SlopeCalculation.DeepClone()`.
+    - Новые тесты в рамках фазы: +21 (`ProductCatalogTests` 7, `AnwisSizeCalculatorTests` 10, `SlopeCalculationExtensionsTests` 4). Общий счётчик тестов: **1133/1133 pass** (остальные +41 теста — параллельные изменения в рабочей ветке, не связанные с Фазой 5). Бизнес-логика и public API не затронуты.
   - Цель — устранить God-classes и высокий coupling в `MainWindow.xaml.cs`, `UpdateService.cs`, `PrintService.cs`, `DialogService.cs`, `OrderItem.cs`, `MainWindow.Orders.cs`. Бизнес-логика не трогается.
+
+### Ручная проверка после Фазы 5
+
+- **QuickAdd / DataGrid — категории товаров:** `Anwis`, `На навесах`, `Дверная сетка`, `Оконная на метал. крепл.` должны быть площадными; `Брус`, `Пояс`, `Доставка` — только сумма; `Материал` — опциональное количество; `Работа`, `Откос`, `Работа за откос` — ручные позиции.
+- **Anwis — расчётные размеры:** проверить 4 режима (ББ60, ББ70, РазмерПроёма, Габаритный) в таблице и в печатном КП.
+- **Откосы — клонирование и undo/redo:** добавить откос, изменить материалы, отменить/повторить — `SlopeCalculation` клонируется без shared refs, итоги пересчитываются корректно.
+- **Сериализация / backward-compat:** открыть заказы, сохранённые в предыдущих версиях — категории товаров, Anwis-размеры и данные откосов должны загружаться без изменений.
 
 - Все основные функции расчёта работают стабильно.
 - Печать КП, отправка на завод, сохранение заказов — функционируют.
@@ -14,7 +33,7 @@
 - Тёмная тема стабильна, переключается без потери данных.
 - Undo/Redo работает для позиций расчёта и Доп.КП.
 - Юнит-тесты покрывают ключевые сценарии (расчёты, экспорт/импорт, версия, обновления).
-- Текущая версия: **3.43.3** (на базе 3.43.2.12 + новый товар «Материал» + bugfix-пакет откосов/печати).
+- Текущая версия: **3.44.0** (релиз 2026-07-14: новая система «Автопросчёт откосов» — автоматический расчёт материалов; завершён переход на нативную печать КП — мгновенный предпросмотр, идеальное совпадение экрана и бумаги, встроенный PDF; добавлен товар «Материал» + bugfix-пакет откосов/печати).
 - **Bugfix v3.44.2 (2026-07-12):** broadened else-branch reset в `SlopeCalculatorService.RecalculateSealantAndTape` — orphan calcs (все «Откос» IsActive=false или rename в не-slope) корректно сбрасывают DSS=0, а не зависают от defensive init (485). Snapshot isolation invariant: `OrderItem.Clone()→DeepCloneSlopeData()` исключает шаринг refs между live и undo/redo коллекциями. **906/906 tests pass.**
 - **Новый товар «Материал» (v3.43.3/Unreleased):** добавлен в типы товаров; цена и количество вручную, ширина/высота не функциональны, количество опционально (скрыто в таблице при значении 1), без суммы добавление блокируется с красной обводкой поля «Цена». Покрыт юнит-тестами.
 - **Bugfix-пакет откосов/печати (v3.43.3/Unreleased):**

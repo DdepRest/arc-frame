@@ -2,8 +2,10 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Windows.Documents;
 using MosquitoNetCalculator.Models;
 using MosquitoNetCalculator.Services;
+using MosquitoNetCalculator.Tests.Helpers;
 using MosquitoNetCalculator.ViewModels;
 using Xunit;
 
@@ -209,11 +211,18 @@ namespace MosquitoNetCalculator.Tests.App
         }
 
         [Fact]
-        public void Check3_Applies_Only_To_Anwis_And_Navesi()
+        public void Check3_InstallationToggle_AppliesTo_MountedProducts()
         {
             // §3.3 + §3.4.
+            // v3.43.0 extended Дверная сетка, v3.43.2.9 extended
+            // Оконная на метал. крепл. — user-requested parity with Anwis.
+            // Single source of truth is `InstallationApplicableProducts`
+            // HashSet in Models/OrderItem.cs. If a new product joins, add
+            // it there AND extend this test.
             Assert.True(new OrderItem { Name = "Anwis" }.IsInstallationApplicable);
             Assert.True(new OrderItem { Name = "На навесах" }.IsInstallationApplicable);
+            Assert.True(new OrderItem { Name = "Дверная сетка" }.IsInstallationApplicable);
+            Assert.True(new OrderItem { Name = "Оконная на метал. крепл." }.IsInstallationApplicable);
             // Отлив и ПСУЛ — переключатель неактивен.
             Assert.False(new OrderItem { Name = "Отлив" }.IsInstallationApplicable);
             Assert.False(new OrderItem { Name = "ПСУЛ" }.IsInstallationApplicable);
@@ -407,44 +416,55 @@ namespace MosquitoNetCalculator.Tests.App
             ContractDate = new DateTime(2026, 6, 17)
         };
 
+        // Helper: build document on STA thread and extract text
+        private static string BuildAndExtract(List<OrderItem> items, ClientInfo client, double total, string words)
+        {
+            return WpfTestHelper.RunOnSta(() =>
+            {
+                var ps = new PrintService();
+                var doc = ps.BuildFlowDocument(items, client, total, words);
+                return doc != null ? ExtractFlowDocumentText(doc) : "";
+            });
+        }
+
         [Fact]
         public void Check7_Print_Includes_ClientName_Phone_Address_ContractNumber_Date()
         {
-            var ps = new PrintService();
-            var html = ps.GenerateKpHtml(SampleItems(), SampleClient(), 1800, "Одна тысяча восемьсот рублей");
-            Assert.Contains("Иванов", html);
-            Assert.Contains("+7 999 000 00 00", html);
-            Assert.Contains("ул. Ленина, 15", html);
-            Assert.Contains("1-1", html);
-            Assert.Contains("17.06.2026", html);
+            // §7 — structural checks on the native FlowDocument pipeline.
+            var text = BuildAndExtract(SampleItems(), SampleClient(), 1800, "Одна тысяча восемьсот рублей");
+            Assert.Contains("Иванов", text);
+            Assert.Contains("+7 999 000 00 00", text);
+            Assert.Contains("ул. Ленина, 15", text);
+            Assert.Contains("1-1", text);
+            Assert.Contains("17.06.2026", text);
         }
 
         [Fact]
         public void Check7_Print_Includes_AmountInWords()
         {
             // §7.4 — итоговая сумма прописью.
-            var ps = new PrintService();
-            var html = ps.GenerateKpHtml(SampleItems(), SampleClient(), 1800, "Одна тысяча восемьсот рублей");
-            Assert.Contains("Одна тысяча восемьсот рублей", html);
+            var text = BuildAndExtract(SampleItems(), SampleClient(), 1800, "Одна тысяча восемьсот рублей");
+            Assert.Contains("Одна тысяча восемьсот рублей", text);
         }
 
         [Fact]
         public void Check7_Print_Renders_Table_Row_For_Each_Item()
         {
-            // §7.3 — все позиции в таблице с размерами. Pin the table
-            // cells (name-cell class) so we catch a regression that drops
-            // items from the КП even when other table elements survive.
+            // §7.3 — все позиции в таблице с размерами.
             var items = new List<OrderItem>
             {
                 new() { Name = "Anwis", Color = "Белый", Width = 1000, Height = 1000, Quantity = 1, Price = 1800 },
                 new() { Name = "ПСУЛ", Width = 1000, Height = 2000, Quantity = 1, Price = 100 }
             };
-            var ps = new PrintService();
-            var html = ps.GenerateKpHtml(items, SampleClient(), 2400, "Две тысячи четыреста рублей");
-            Assert.Contains("<td class='name-cell'>Anwis</td>", html);
-            Assert.Contains("<td class='name-cell'>ПСУЛ</td>", html);
-            // Размеры выводятся в колонках Ш и В.
-            Assert.Contains("<td class='center'>1000</td>", html);
+            var text = BuildAndExtract(items, SampleClient(), 2400, "Две тысячи четыреста рублей");
+            Assert.Contains("Anwis", text);
+            Assert.Contains("ПСУЛ", text);
+            // With print-fixes (v3.44.12): FormatIntWithNbsp threshold ≥10_000,
+            // so ПСУЛ Width=1000 (<10000) renders as plain "1000" without NBSP.
+            Assert.Contains("1000", text);
+            // Note: Anwis Width≠1000 in table body due to ББ60 correction (+2 mm);
+            // detailed Anwis calc-size assertions live in PrintServiceTests.
+            Assert.Contains("1 800,00", text);   // money-formatted price from cell
         }
 
         [Fact]
@@ -455,29 +475,78 @@ namespace MosquitoNetCalculator.Tests.App
             c.HasAdditionalKp = true;
             c.AdditionalKps[0].Number = "2-1";
             c.AdditionalKps[0].Amount = 500;
-            var ps = new PrintService();
-            var html = ps.GenerateKpHtml(SampleItems(), c, 1800, "Одна тысяча восемьсот рублей");
-            Assert.Contains("2-1", html);
-            Assert.Contains("500,00", html);
-            // Заголовок блока ДОПОЛНИТЕЛЬНОЕ КП (рус. uppercase).
-            Assert.Contains("ДОПОЛНИТЕЛЬНОЕ", html.ToUpper());
+            var text = BuildAndExtract(SampleItems(), c, 1800, "Одна тысяча восемьсот рублей");
+            Assert.Contains("2-1", text);
+            Assert.Contains("500", text);
+            Assert.Contains("ДОПОЛНИТЕЛЬНОЕ", text.ToUpper());
         }
 
         [Fact]
         public void Check7_Print_Renders_V_Konstr_Glyph_For_Mode2()
         {
             // §7.6 — для «Anwis» в режиме «В» показывается «В констр.» в таблице печати.
-            // В таблице есть <span class='install-mark' title='...'>В</span>.
-            // PrintService uses single quotes for HTML attributes throughout the
-            // template, so the title attribute uses title='...' not title="...".
             var items = new List<OrderItem>
             {
                 new() { Name = "Anwis", Color = "Белый", Width = 1000, Height = 1000, Quantity = 1, Price = 1800, InstallationMode = 2 }
             };
-            var ps = new PrintService();
-            var html = ps.GenerateKpHtml(items, SampleClient(), 1300, "Одна тысяча триста рублей");
-            Assert.Contains("title='В конструкцию'", html);
-            Assert.Contains(">В</span>", html);
+            var text = BuildAndExtract(items, SampleClient(), 1300, "Одна тысяча триста рублей");
+            // FlowDocument table uses KpInstallationDisplay (short print glyph "В"),
+            // not InstallationLabel ("В конструкцию"). "В" is the mode-2 glyph.
+            Assert.Contains(" В ", text);  // standalone token, not substring of another word
+        }
+
+        // ─── Helper: extract text from FlowDocument ─────────────────
+
+        private static string ExtractFlowDocumentText(System.Windows.Documents.FlowDocument doc)
+        {
+            var sb = new System.Text.StringBuilder();
+            ExtractTextFromBlocks(doc.Blocks, sb);
+            return sb.ToString();
+        }
+
+        private static void ExtractTextFromBlocks(System.Collections.IEnumerable blocks, System.Text.StringBuilder sb)
+        {
+            foreach (var block in blocks)
+            {
+                switch (block)
+                {
+                    case System.Windows.Documents.Paragraph p:
+                        foreach (var inline in p.Inlines)
+                            ExtractTextFromInline(inline, sb);
+                        sb.Append(' ');
+                        break;
+                    case System.Windows.Documents.Table t:
+                        foreach (var rowGroup in t.RowGroups)
+                            foreach (var row in rowGroup.Rows)
+                                foreach (var cell in row.Cells)
+                                    ExtractTextFromBlocks(cell.Blocks, sb);
+                        break;
+                    case System.Windows.Documents.Section s:
+                        ExtractTextFromBlocks(s.Blocks, sb);
+                        break;
+                    case System.Windows.Documents.BlockUIContainer buc:
+                        if (buc.Child is System.Windows.Controls.TextBlock tb2)
+                        {
+                            sb.Append(tb2.Text);
+                            sb.Append(' ');
+                        }
+                        break;
+                }
+            }
+        }
+
+        private static void ExtractTextFromInline(System.Windows.Documents.Inline inline, System.Text.StringBuilder sb)
+        {
+            switch (inline)
+            {
+                case System.Windows.Documents.Run r:
+                    sb.Append(r.Text);
+                    break;
+                case System.Windows.Documents.Span s:
+                    foreach (var child in s.Inlines)
+                        ExtractTextFromInline(child, sb);
+                    break;
+            }
         }
 
         // ═══════════════════════════════════════════════════════════════════

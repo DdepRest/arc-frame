@@ -3,6 +3,7 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:controls="clr-namespace:MosquitoNetCalculator.Controls"
         Title="A.R.C. Frame"
+        Icon="pack://application:,,,/Resources/app_icon.ico"
         Width="1200" Height="760"
         MinWidth="1000" MinHeight="600"
         WindowStartupLocation="CenterScreen"
@@ -11,7 +12,6 @@
         ResizeMode="CanResize"
         Background="Transparent"
         Foreground="{DynamicResource TextPrimary}"
-        Icon="pack://application:,,,/Resources/app_icon.ico"
         UseLayoutRounding="True"
         TextOptions.TextFormattingMode="Display"
         SnapsToDevicePixels="True">
@@ -30,11 +30,12 @@
     <Window.InputBindings>
         <!-- Ctrl+S — сохранить заказ -->
         <KeyBinding Key="S" Modifiers="Control" Command="ApplicationCommands.Save"/>
-        <!-- Ctrl+1..4 — навигация -->
+        <!-- Ctrl+1..5 — навигация -->
         <KeyBinding Key="D1" Modifiers="Control" Command="NavigationCommands.BrowseBack"/>
         <KeyBinding Key="D2" Modifiers="Control" Command="NavigationCommands.BrowseForward"/>
         <KeyBinding Key="D3" Modifiers="Control" Command="NavigationCommands.Search"/>
         <KeyBinding Key="D4" Modifiers="Control" Command="NavigationCommands.Favorites"/>
+        <KeyBinding Key="D5" Modifiers="Control" Command="NavigationCommands.GoToPage"/>
     </Window.InputBindings>
     <Window.CommandBindings>
         <CommandBinding Command="ApplicationCommands.Save" Executed="BtnSaveOrder_Click"/>
@@ -42,6 +43,7 @@
         <CommandBinding Command="NavigationCommands.BrowseForward" Executed="NavOrders_Click"/>
         <CommandBinding Command="NavigationCommands.Search"      Executed="NavPrices_Click"/>
         <CommandBinding Command="NavigationCommands.Favorites"   Executed="NavUpdates_Click"/>
+        <CommandBinding Command="NavigationCommands.GoToPage"    Executed="NavPrint_Click"/>
     </Window.CommandBindings>
 
     <Window.Resources>
@@ -72,13 +74,13 @@
             <Setter Property="Height" Value="40"/>
             <Setter Property="Background" Value="Transparent"/>
             <Setter Property="BorderThickness" Value="0"/>
-            <Setter Property="Foreground" Value="{DynamicResource TextMuted}"/>
+            <Setter Property="Foreground" Value="{DynamicResource TextSecondary}"/>
             <Setter Property="Cursor" Value="Hand"/>
             <Setter Property="FontSize" Value="18"/>
             <Setter Property="FontFamily" Value="Segoe Fluent Icons, Segoe MDL2 Assets"/>
             <Setter Property="HorizontalContentAlignment" Value="Left"/>
             <Setter Property="VerticalContentAlignment" Value="Center"/>
-            <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
+            <Setter Property="FocusVisualStyle" Value="{StaticResource FluentFocusVisual}"/>
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="Button">
@@ -119,6 +121,9 @@
             <Setter Property="FontFamily" Value="Segoe Fluent Icons, Segoe MDL2 Assets"/>
             <Setter Property="FontSize" Value="12"/>
             <Setter Property="Content" Value="&#xE8BB;"/>
+            <Setter Property="ToolTip" Value="Закрыть"/>
+            <Setter Property="AutomationProperties.Name" Value="Закрыть"/>
+            <Setter Property="FocusVisualStyle" Value="{StaticResource FluentFocusVisual}"/>
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="Button">
@@ -176,16 +181,7 @@
                 <!-- PRIMARY: РАСЧЁТ view                    -->
                 <!-- ═══════════════════════════════════════ -->
                 <Grid x:Name="CalculationView" Background="{DynamicResource AppBg}" Margin="52,0,0,0">
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="250"/>
-                        <ColumnDefinition Width="*"/>
-                    </Grid.ColumnDefinitions>
-
-                    <!-- LEFT SIDEBAR -->
-                    <controls:SidebarControl x:Name="SidebarControl" Grid.Column="0"/>
-
-                    <!-- RIGHT PANEL -->
-                    <Grid Grid.Column="1" Margin="8,8,8,8">
+                    <Grid Margin="8,8,8,8">
                         <Grid.RowDefinitions>
                             <RowDefinition Height="Auto"/>  <!-- Action bar -->
                             <RowDefinition Height="Auto"/>  <!-- Quick-Add -->
@@ -211,7 +207,7 @@
                                 HorizontalAlignment="Stretch" Background="Transparent">
                             <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
                                 <TextBlock x:Name="StatusOrderInfo" Text="Новый заказ"
-                                           FontSize="10" Foreground="{DynamicResource TextMuted}"
+                                           FontSize="11" Foreground="{DynamicResource TextSecondary}"
                                            VerticalAlignment="Center"/>
                                 <Border x:Name="StatusDirtyIndicator" Visibility="Collapsed"
                                         Background="{DynamicResource BadgeWarningBg}"
@@ -224,6 +220,11 @@
                                                    Foreground="{DynamicResource BadgeWarningFg}"/>
                                     </StackPanel>
                                 </Border>
+                                <!-- Undo/Redo hint -->
+                                <TextBlock x:Name="UndoRedoHint" Visibility="Collapsed"
+                                           FontSize="10" Foreground="{DynamicResource TextMuted}"
+                                           VerticalAlignment="Center" Margin="14,0,0,0"
+                                           ToolTip="Ctrl+Z — отменить последнее действие, Ctrl+Y — повторить"/>
                             </StackPanel>
                         </Border>
                     </Grid>
@@ -356,10 +357,122 @@
                     </Border>
                 </Grid>
 
+                <!-- ═══════════════════════════════════════ -->
+                <!-- OVERLAY: ОТКОСЫ                        -->
+                <!-- ═══════════════════════════════════════ -->
+                <Grid x:Name="SlopeOverlay" Visibility="Collapsed" Panel.ZIndex="15">
+                    <Border x:Name="SlopeBackdrop" Background="#80000000" Opacity="0"
+                            MouseLeftButtonDown="BackdropSlope_MouseLeftButtonDown" Cursor="Hand"/>
+                    <Border x:Name="SlopePanel"
+                            Background="{DynamicResource Surface}"
+                            HorizontalAlignment="Right" Width="480"
+                            BorderBrush="{DynamicResource Border}" BorderThickness="1,0,0,0">
+                        <Border.RenderTransform>
+                            <TranslateTransform x:Name="SlopeSlideTransform" X="0"/>
+                        </Border.RenderTransform>
+                        <Grid>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="*"/>
+                            </Grid.RowDefinitions>
+                            <!-- Header -->
+                            <Border Grid.Row="0" Background="{DynamicResource HeaderBg}"
+                                    Padding="16,10" BorderBrush="{DynamicResource Border}" BorderThickness="0,0,0,1">
+                                <Grid>
+                                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                        <TextBlock Text="&#xE83D;" FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets" FontSize="16"
+                                                   Foreground="{DynamicResource Accent}" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                                        <TextBlock Text="Откосы из сэндвича" FontSize="14" FontWeight="SemiBold"
+                                                   Foreground="{DynamicResource TextPrimary}" VerticalAlignment="Center"/>
+                                    </StackPanel>
+                                    <Button Style="{StaticResource OverlayCloseButton}"
+                                            HorizontalAlignment="Right" Click="CloseOverlay_Click"/>
+                                </Grid>
+                            </Border>
+                            <!-- Content -->
+                            <controls:SlopePanelControl x:Name="SlopePanelControl" Grid.Row="1"/>
+                        </Grid>
+                    </Border>
+                </Grid>
+
+                <!-- ═══════════════════════════════════════ -->
+                <!-- OVERLAY: ДАННЫЕ ЗАКАЗА (sidebar)        -->
+                <!-- ═══════════════════════════════════════ -->
+                <Grid x:Name="SidebarOverlay" Visibility="Collapsed" Panel.ZIndex="15">
+                    <Border x:Name="SidebarBackdrop" Background="#80000000" Opacity="0"
+                            MouseLeftButtonDown="Backdrop_MouseLeftButtonDown" Cursor="Hand"/>
+                    <Border x:Name="SidebarPanel"
+                            Background="{DynamicResource Surface}"
+                            HorizontalAlignment="Right" Width="340"
+                            BorderBrush="{DynamicResource Border}" BorderThickness="1,0,0,0">
+                        <Border.RenderTransform>
+                            <TranslateTransform x:Name="SidebarSlideTransform" X="0"/>
+                        </Border.RenderTransform>
+                        <Grid>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="*"/>
+                            </Grid.RowDefinitions>
+                            <Border Grid.Row="0" Background="{DynamicResource HeaderBg}"
+                                    Padding="16,10" BorderBrush="{DynamicResource Border}" BorderThickness="0,0,0,1">
+                                <Grid>
+                                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                        <TextBlock Text="&#xE77B;" FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets" FontSize="16"
+                                                   Foreground="{DynamicResource Accent}" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                                        <TextBlock Text="Заказчик" FontSize="14" FontWeight="SemiBold"
+                                                   Foreground="{DynamicResource TextPrimary}" VerticalAlignment="Center"/>
+                                    </StackPanel>
+                                    <Button Style="{StaticResource OverlayCloseButton}"
+                                            HorizontalAlignment="Right" Click="CloseOverlay_Click"/>
+                                </Grid>
+                            </Border>
+                            <controls:SidebarControl x:Name="SidebarControl" Grid.Row="1"/>
+                        </Grid>
+                    </Border>
+                </Grid>
+
+                <!-- ═══════════════════════════════════════ -->
+                <!-- OVERLAY: ПЕЧАТЬ                        -->
+                <!-- ═══════════════════════════════════════ -->
+                <Grid x:Name="PrintOverlay" Visibility="Collapsed" Panel.ZIndex="15">
+                    <Border x:Name="PrintBackdrop" Background="#80000000" Opacity="0"
+                            MouseLeftButtonDown="Backdrop_MouseLeftButtonDown" Cursor="Hand"/>
+                    <Border x:Name="PrintPanel"
+                            Background="{DynamicResource Surface}"
+                            HorizontalAlignment="Right"
+                            BorderBrush="{DynamicResource Border}" BorderThickness="1,0,0,0">
+                        <Border.RenderTransform>
+                            <TranslateTransform x:Name="PrintSlideTransform" X="0"/>
+                        </Border.RenderTransform>
+                        <Grid>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="*"/>
+                            </Grid.RowDefinitions>
+                            <!-- Header -->
+                            <Border Grid.Row="0" Background="{DynamicResource HeaderBg}"
+                                    Padding="16,10" BorderBrush="{DynamicResource Border}" BorderThickness="0,0,0,1">
+                                <Grid>
+                                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                        <TextBlock Text="&#xE7B3;" FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets" FontSize="16"
+                                                   Foreground="{DynamicResource Accent}" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                                        <TextBlock Text="Печать КП" FontSize="14" FontWeight="SemiBold"
+                                                   Foreground="{DynamicResource TextPrimary}" VerticalAlignment="Center"/>
+                                    </StackPanel>
+                                    <Button Style="{StaticResource OverlayCloseButton}"
+                                            HorizontalAlignment="Right" Click="CloseOverlay_Click"/>
+                                </Grid>
+                            </Border>
+                            <!-- Content: PrintPreviewControl -->
+                            <controls:PrintPreviewControl x:Name="PrintPreviewControl" Grid.Row="1"/>
+                        </Grid>
+                    </Border>
+                </Grid>
+
                 <!-- ── NavigationView (slide-out overlay, 52→160px) ── -->
                 <Border x:Name="NavPanel"
                         HorizontalAlignment="Left" Width="52"
-                        Panel.ZIndex="10"
+                        Panel.ZIndex="16"
                         Background="{DynamicResource Surface}"
                         BorderBrush="{DynamicResource Border}" BorderThickness="0,0,1,0"
                         ClipToBounds="True"
@@ -434,6 +547,40 @@
                                              ToolTip="Доступна новая версия!"/>
                                 </Grid>
                                 <TextBlock x:Name="NavLabelUpdates" Grid.Column="1" Text="Обновления" Opacity="0"
+                                           Margin="10,0,0,0" FontSize="12" VerticalAlignment="Center"
+                                           FontFamily="Segoe UI"/>
+                            </Grid>
+                        </Button>
+                        <!-- Откосы -->
+                        <Button x:Name="NavBtnSlope" Style="{StaticResource NavButton}" Width="148"
+                                ToolTip="Откосы из сэндвича — калькулятор" Click="NavSlope_Click" Tag="Slope" Margin="0,4,0,0">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+                                <Grid Grid.Column="0" Width="30" Height="28">
+                                    <TextBlock x:Name="NavIconSlope" Text="&#xE790;"
+                                               FontSize="20" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                </Grid>
+                                <TextBlock x:Name="NavLabelSlope" Grid.Column="1" Text="Авто-Откосы" Opacity="0"
+                                           Margin="10,0,0,0" FontSize="12" VerticalAlignment="Center"
+                                           FontFamily="Segoe UI"/>
+                            </Grid>
+                        </Button>
+                        <!-- Печать -->
+                        <Button x:Name="NavBtnPrint" Style="{StaticResource NavButton}" Width="148"
+                                ToolTip="Печать (Ctrl+5)" Click="NavButton_Click" Tag="Print" Margin="0,4,0,0">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+                                <Grid Grid.Column="0" Width="30" Height="28">
+                                    <TextBlock x:Name="NavIconPrint" Text="&#xE7B3;"
+                                               FontSize="20" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                </Grid>
+                                <TextBlock x:Name="NavLabelPrint" Grid.Column="1" Text="Печать" Opacity="0"
                                            Margin="10,0,0,0" FontSize="12" VerticalAlignment="Center"
                                            FontFamily="Segoe UI"/>
                             </Grid>

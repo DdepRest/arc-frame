@@ -11,6 +11,7 @@
             </Border.Clip>
             <DataGrid x:Name="OrderGrid"
                       ItemsSource="{Binding OrderItems}"
+                      MouseDoubleClick="OrderGrid_MouseDoubleClick"
                       Margin="0"
                       Background="Transparent"
                       RowBackground="Transparent"
@@ -39,12 +40,19 @@
 
                 <DataGrid.Columns>
                     <!-- Вкл. -->
-                    <DataGridTemplateColumn Header="" Width="54">
+                    <!-- v3.43.4 (bugfix): IsReadOnly=True ОБЯЗАТЕЛЬНО — без него клик
+                         по CheckBox уводит DataGrid в режим редактирования ячейки,
+                         что вызывает BeginningEdit → PushUndo() и ломает штатный
+                         two-way binding IsChecked↔IsActive (визуально checkbox не
+                         переключается или проскакивает мимо). С IsReadOnly=True
+                         DataGrid пропускает edit-lifecycle, и CheckBox сам
+                         обрабатывает клик через свою штатную логику. -->
+                    <DataGridTemplateColumn Header="" Width="54" IsReadOnly="True">
                         <DataGridTemplateColumn.CellStyle>
                             <Style TargetType="DataGridCell" BasedOn="{StaticResource {x:Type DataGridCell}}">
                                 <Setter Property="Padding" Value="0"/>
                                 <Setter Property="BorderThickness" Value="0"/>
-                                <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
+                                <Setter Property="FocusVisualStyle" Value="{StaticResource FluentFocusVisual}"/>
                                 <Setter Property="Template">
                                     <Setter.Value>
                                         <ControlTemplate TargetType="DataGridCell">
@@ -207,8 +215,12 @@
                         </DataGridTextColumn.Binding>
                         <DataGridTextColumn.ElementStyle>
                             <Style TargetType="TextBlock" BasedOn="{StaticResource CenterCell}">
+                                <Setter Property="Typography.NumeralAlignment" Value="Tabular"/>
                                 <Style.Triggers>
                                     <DataTrigger Binding="{Binding IsAmountOnly}" Value="True">
+                                        <Setter Property="Visibility" Value="Collapsed"/>
+                                    </DataTrigger>
+                                    <DataTrigger Binding="{Binding IsQuantityOptional}" Value="True">
                                         <Setter Property="Visibility" Value="Collapsed"/>
                                     </DataTrigger>
                                 </Style.Triggers>
@@ -234,8 +246,12 @@
                                                             IsReadOnly="True">
                         <DataGridTextColumn.ElementStyle>
                             <Style TargetType="TextBlock" BasedOn="{StaticResource RightCell}">
+                                <Setter Property="Typography.NumeralAlignment" Value="Tabular"/>
                                 <Style.Triggers>
                                     <DataTrigger Binding="{Binding IsAmountOnly}" Value="True">
+                                        <Setter Property="Visibility" Value="Collapsed"/>
+                                    </DataTrigger>
+                                    <DataTrigger Binding="{Binding IsQuantityOptional}" Value="True">
                                         <Setter Property="Visibility" Value="Collapsed"/>
                                     </DataTrigger>
                                 </Style.Triggers>
@@ -253,6 +269,7 @@
                         <DataGridTextColumn.ElementStyle>
                             <Style TargetType="TextBlock" BasedOn="{StaticResource RightCell}">
                                 <Setter Property="Margin" Value="6,0"/>
+                                <Setter Property="Typography.NumeralAlignment" Value="Tabular"/>
                             </Style>
                         </DataGridTextColumn.ElementStyle>
                         <DataGridTextColumn.EditingElementStyle>
@@ -278,6 +295,7 @@
                                 <Setter Property="Foreground" Value="{DynamicResource TextPrimary}"/>
                                 <Setter Property="FontWeight" Value="Medium"/>
                                 <Setter Property="Margin" Value="6,0"/>
+                                <Setter Property="Typography.NumeralAlignment" Value="Tabular"/>
                             </Style>
                         </DataGridTextColumn.ElementStyle>
                     </DataGridTextColumn>
@@ -300,7 +318,7 @@
             </DataGrid>
         </Border>
 
-        <!-- Empty state -->
+        <!-- Empty state — Fluent illustration with clear action guidance -->
         <Border x:Name="EmptyState" Background="{DynamicResource Surface}" CornerRadius="10"
                 HorizontalAlignment="Stretch" VerticalAlignment="Stretch"
                 BorderBrush="{DynamicResource Border}" BorderThickness="1"
@@ -326,18 +344,73 @@
                     </Style.Triggers>
                 </Style>
             </Border.Style>
-            <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center" Margin="0,0,0,40">
-                <Path Data="M8,1 A7,7 0 1,0 8,15 A7,7 0 1,0 8,1 Z M5,8 L11,8 M8,5 L8,11" 
-                      Width="34" Height="34" Stretch="Uniform"
+            <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center" Margin="20,0,20,30" MaxWidth="700">
+                <!-- Header icon + title -->
+                <Path Data="M2,2 L14,2 L14,14 L2,14 Z M2,7 L14,7 M7,2 L7,14"
+                      Width="40" Height="40" Stretch="Uniform"
                       Stroke="{DynamicResource Border}" StrokeThickness="1.2" Fill="Transparent"
                       StrokeLineJoin="Round" StrokeStartLineCap="Round" StrokeEndLineCap="Round"
-                      HorizontalAlignment="Center" Margin="0,0,0,8"/>
-                <TextBlock Text="Позиций пока нет" FontSize="14"
-                           FontWeight="Medium" Foreground="{DynamicResource TextMuted}"
-                           HorizontalAlignment="Center" Margin="0,0,0,4"/>
-                <TextBlock Text="Выберите тип, укажите размеры и нажмите &quot;Добавить&quot;"
-                           FontSize="11" Foreground="{DynamicResource TextMuted}"
-                           HorizontalAlignment="Center"/>
+                      HorizontalAlignment="Center" Margin="0,0,0,10"
+                      Opacity="0.6"/>
+                <TextBlock Text="Выберите товар" FontSize="15"
+                           FontWeight="SemiBold" Foreground="{DynamicResource TextPrimary}"
+                           HorizontalAlignment="Center" Margin="0,0,0,4" Opacity="0.85"/>
+                <TextBlock FontSize="11" Foreground="{DynamicResource TextSecondary}" Opacity="0.85"
+                           HorizontalAlignment="Center" Margin="0,0,0,14" TextAlignment="Center">
+                    <Run Text="Кликните товар ниже — он подставится в поле"/>
+                    <Run Text=" «Тип»" Foreground="{DynamicResource Accent}" FontWeight="SemiBold"/>
+                    <Run Text=". Затем нажмите"/>
+                    <Run Text=" «Добавить»" Foreground="{DynamicResource Accent}" FontWeight="SemiBold"/>
+                    <Run Text=" (Enter)."/>
+                </TextBlock>
+
+                <!-- Product chips grid — populated from code-behind -->
+                <ItemsControl x:Name="ProductChipsList" Margin="0,0,0,0" IsTabStop="False">
+                    <ItemsControl.ItemsPanel>
+                        <ItemsPanelTemplate>
+                            <WrapPanel HorizontalAlignment="Center"/>
+                        </ItemsPanelTemplate>
+                    </ItemsControl.ItemsPanel>
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate>
+                            <Border Background="{DynamicResource Surface}" CornerRadius="8"
+                                    BorderBrush="{DynamicResource Border}" BorderThickness="1"
+                                    Padding="14,8" Margin="4,4" Cursor="Hand"
+                                    SnapsToDevicePixels="True">
+                                <Border.Style>
+                                    <Style TargetType="Border">
+                                        <Style.Triggers>
+                                            <Trigger Property="IsMouseOver" Value="True">
+                                                <Setter Property="Background" Value="{DynamicResource AccentLight}"/>
+                                                <Setter Property="BorderBrush" Value="{DynamicResource Accent}"/>
+                                            </Trigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </Border.Style>
+                                <TextBlock Text="{Binding}" FontSize="12.5" FontWeight="Medium"
+                                           Foreground="{DynamicResource TextPrimary}">
+                                    <TextBlock.Style>
+                                        <Style TargetType="TextBlock">
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding IsMouseOver, RelativeSource={RelativeSource AncestorType=Border}}" Value="True">
+                                                    <Setter Property="Foreground" Value="{DynamicResource Accent}"/>
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </TextBlock.Style>
+                                </TextBlock>
+                            </Border>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+
+                <!-- Subtle hint at bottom -->
+                <TextBlock FontSize="10" Foreground="{DynamicResource TextPrimary}" Opacity="0.7"
+                           HorizontalAlignment="Center" Margin="0,12,0,0">
+                    <Run Text="или используйте"/>
+                    <Run Text=" поиск" Foreground="{DynamicResource Accent}"/>
+                    <Run Text=" выше"/>
+                </TextBlock>
             </StackPanel>
         </Border>
     </Grid>

@@ -6,15 +6,15 @@
         <!-- ScrollBar area; everything fades in/out smoothly.       -->
         <!-- ═══════════════════════════════════════════════════════ -->
         <Style TargetType="ScrollBar">
-            <Setter Property="Width" Value="4"/>
+            <Setter Property="Width" Value="6"/>
             <Setter Property="Background" Value="Transparent"/>
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="ScrollBar">
                         <Border x:Name="TrackBg"
                                 Background="{DynamicResource TrackBg}"
-                                Opacity="0" CornerRadius="2"
-                                HorizontalAlignment="Center" Width="4">
+                                Opacity="0" CornerRadius="3"
+                                HorizontalAlignment="Center" Width="6">
                             <Track x:Name="PART_Track" IsDirectionReversed="True">
                                 <Track.DecreaseRepeatButton>
                                     <RepeatButton Command="ScrollBar.PageUpCommand"
@@ -23,11 +23,13 @@
                                 </Track.DecreaseRepeatButton>
                                 <Track.Thumb>
                                     <Thumb x:Name="ThumbBd"
-                                           Opacity="0">
+                                           Opacity="0"
+                                           Margin="0,1">
                                         <Thumb.Template>
                                             <ControlTemplate TargetType="Thumb">
                                                 <Border Background="{DynamicResource ScrollBarThumb}"
-                                                        CornerRadius="2"/>
+                                                        CornerRadius="3"
+                                                        MinHeight="24"/>
                                             </ControlTemplate>
                                         </Thumb.Template>
                                     </Thumb>
@@ -47,7 +49,7 @@
                                             <!-- Track fades in -->
                                             <DoubleAnimation Storyboard.TargetName="TrackBg"
                                                              Storyboard.TargetProperty="Opacity"
-                                                             To="0.35" Duration="0:0:0.2">
+                                                             To="0.25" Duration="0:0:0.2">
                                                 <DoubleAnimation.EasingFunction>
                                                     <CubicEase EasingMode="EaseOut"/>
                                                 </DoubleAnimation.EasingFunction>
@@ -55,7 +57,7 @@
                                             <!-- Thumb fades in -->
                                             <DoubleAnimation Storyboard.TargetName="ThumbBd"
                                                              Storyboard.TargetProperty="Opacity"
-                                                             To="0.9" Duration="0:0:0.2">
+                                                             To="0.85" Duration="0:0:0.2">
                                                 <DoubleAnimation.EasingFunction>
                                                     <CubicEase EasingMode="EaseOut"/>
                                                 </DoubleAnimation.EasingFunction>

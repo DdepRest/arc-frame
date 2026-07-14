@@ -3,10 +3,12 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
+using System.IO;
 using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
+using System.Windows.Media.Animation;
 using MosquitoNetCalculator.Models;
 using MosquitoNetCalculator.Services;
 
@@ -14,6 +16,7 @@ namespace MosquitoNetCalculator.Controls
 {
     /// <summary>
     /// v3.43.5: строка сводки расхода материалов (отображается в Card 3).
+    /// v3.44.5: добавлен подробный tooltip для экономии.
     /// </summary>
     public class MaterialSummaryRow
     {
@@ -22,9 +25,12 @@ namespace MosquitoNetCalculator.Controls
         public string PerDetail { get; set; } = "";
         /// <summary>Итоговое количество: "4.635 м²"</summary>
         public string TotalDisplay { get; set; } = "";
-        /// <summary>Зелёный чип экономии: "экон. 2 = -700"</summary>
+        /// <summary>Зелёный чип экономии: "экон. −1 050 ₽"</summary>
         public string Note { get; set; } = "";
         public bool HasNote => !string.IsNullOrEmpty(Note);
+        /// <summary>Подробный tooltip с расчётом экономии.</summary>
+        public string? EconomyTooltip { get; set; }
+        public bool HasEconomyTooltip => !string.IsNullOrEmpty(EconomyTooltip);
     }
     public partial class SlopePanelControl : UserControl, INotifyPropertyChanged
     {
@@ -59,40 +65,6 @@ namespace MosquitoNetCalculator.Controls
             : "Итого";
 
         /// <summary>
-        /// v3.43.6: подпись экономии — герметик и скотч (shared-материалы).
-        /// v3.44.1: добавлены Старт/F-планка, если включена IsProfileEconomyApplied.
-        /// </summary>
-        public string EconomyLabel
-        {
-            get
-            {
-                if (_currentCalculation == null) return "Экономия:";
-                var parts = new List<string>();
-                double sealantSavings = _currentCalculation.WindowCount * _currentCalculation.Sealant.Price
-                                        - _currentCalculation.Sealant.Quantity * _currentCalculation.Sealant.Price;
-                if (sealantSavings > 0) parts.Add("герметик");
-                double tapeSavings = _currentCalculation.WindowCount * _currentCalculation.Tape.Price
-                                     - _currentCalculation.Tape.Quantity * _currentCalculation.Tape.Price;
-                if (tapeSavings > 0) parts.Add("скотч");
-
-                if (_currentCalculation.IsProfileEconomyApplied)
-                {
-                    int startNoEcon = SlopeCalculatorService.OptimizeStripsForMultipleWindows3Sides(
-                        (int)_currentCalculation.WidthMm, (int)_currentCalculation.HeightMm, _currentCalculation.WindowCount);
-                    int fNoEcon = SlopeCalculatorService.OptimizeStripsForMultipleWindows3Sides(
-                        (int)_currentCalculation.WidthMm + 100, (int)_currentCalculation.HeightMm + 100, _currentCalculation.WindowCount);
-                    double startSavings = Math.Max(0, (startNoEcon - _currentCalculation.StartProfile.Quantity) * _currentCalculation.StartProfile.Price);
-                    double fSavings = Math.Max(0, (fNoEcon - _currentCalculation.FProfile.Quantity) * _currentCalculation.FProfile.Price);
-                    if (startSavings > 0) parts.Add("старт");
-                    if (fSavings > 0) parts.Add("F-планка");
-                }
-
-                if (parts.Count == 0) return "Экономия:";
-                return "Экономия: " + string.Join(", ", parts);
-            }
-        }
-
-        /// <summary>
         /// v3.43.3 (review fix): возвращает НЕ пустой мусорный SlopeMaterial(),
         /// а сам _currentCalculation.Labor (или null, если расчёта ещё нет).
         /// Binding на TextBoxes Труда через RelativeSource={AncestorType=UserControl}
@@ -123,6 +95,11 @@ namespace MosquitoNetCalculator.Controls
         {
             InitializeComponent();
             UpdateAddButtonState();
+
+            // BETA banner: hide if the user previously dismissed it.
+            BetaBanner.Visibility = AppSettingsService.IsSlopeBetaBannerHidden()
+                ? Visibility.Collapsed
+                : Visibility.Visible;
         }
 
         private void NumWindowCount_ValueChanged(object sender, RoutedPropertyChangedEventArgs<int> e)
@@ -133,6 +110,16 @@ namespace MosquitoNetCalculator.Controls
             // на изменение через routed event — чище, чем парсить Text каждый раз.
             if (!IsInitialized) return;
             UpdateCalculation();
+        }
+
+        /// <summary>
+        /// Закрывает BETA-предупреждение и сохраняет флаг, чтобы оно больше
+        /// не показывалось при следующих открытиях панели откосов.
+        /// </summary>
+        private void BtnCloseBetaBanner_Click(object sender, RoutedEventArgs e)
+        {
+            BetaBanner.Visibility = Visibility.Collapsed;
+            AppSettingsService.HideSlopeBetaBanner();
         }
 
         /// <summary>
@@ -163,7 +150,7 @@ namespace MosquitoNetCalculator.Controls
             }
 
             // Клонируем — правки в панели не трогают оригинал до сохранения
-            _currentCalculation = OrderItem.DeepCloneSlopeData(sd);
+            _currentCalculation = sd.DeepClone();
 
             TxtWidth.Text = sd.WidthMm.ToString();
             TxtHeight.Text = sd.HeightMm.ToString();
@@ -319,12 +306,8 @@ namespace MosquitoNetCalculator.Controls
             if (height <= 0 || width <= 0 || depthM <= 0)
             {
                 _currentCalculation = null;
-                TxtTotalMaterials.Text = "0.00";
                 TxtLaborSumRow.Text = "0.00";
-                TxtLaborSumTotals.Text = "0.00";
-                TxtGrandTotal.Text = "0.00";
                 TxtAvgWithEconomy.Visibility = Visibility.Collapsed;
-                EconomyRow.Visibility = Visibility.Collapsed;
                 WithoutEconomyRow.Visibility = Visibility.Collapsed;
                 TotalAllRow.Visibility = Visibility.Collapsed;
                 SummaryCard.Visibility = Visibility.Collapsed;
@@ -384,56 +367,31 @@ namespace MosquitoNetCalculator.Controls
                 _currentCalculation.IsProfileEconomyApplied = ChkApplyEconomy.IsChecked.GetValueOrDefault(true);
             }
 
-            // Ставим Note для герметика/скотча — показываем оригинальное количество без экономии
-            _currentCalculation.Sealant.Note = _currentCalculation.Sealant.Quantity < windowCount
-                ? $"было {windowCount}"
-                : "";
-            _currentCalculation.Tape.Note = _currentCalculation.Tape.Quantity < windowCount
-                ? $"было {windowCount}"
-                : "";
+            // v3.44.6 (bugfix): в панели предпросмотра RecalculateSealantAndTape
+            // ещё не вызывался, поэтому Start/F-profile оставались per-window.
+            // Для корректного отображения сводки с экономией применяем
+            // глобальный раскрой сразу (без IsQuantityOverridden, чтобы позже
+            // RecalculateSealantAndTape мог пересчитать с учётом других откосов).
+            if (_currentCalculation.IsProfileEconomyApplied)
+            {
+                if (!_currentCalculation.StartProfile.IsQuantityOverridden)
+                    _currentCalculation.StartProfile.Quantity = SlopeCalculatorService.OptimizeStripsForMultipleWindows3Sides(
+                        (int)_currentCalculation.WidthMm, (int)_currentCalculation.HeightMm, _currentCalculation.WindowCount);
+                if (!_currentCalculation.FProfile.IsQuantityOverridden)
+                    _currentCalculation.FProfile.Quantity = SlopeCalculatorService.OptimizeStripsForMultipleWindows3Sides(
+                        (int)_currentCalculation.WidthMm + 100, (int)_currentCalculation.HeightMm + 100, _currentCalculation.WindowCount);
+            }
 
-            TxtTotalMaterials.Text = _currentCalculation.TotalMaterials.ToString("N2");
             TxtLaborSumRow.Text = _currentCalculation.TotalLabor.ToString("N2");
-            TxtLaborSumTotals.Text = _currentCalculation.TotalLabor.ToString("N2");
             TxtLaminatinaLaborSumRow.Text = _currentCalculation.LaminatinaLabor.Sum.ToString("N2");
 
-            // ─── ВСЕГО за откос (per-window, без shared-материалов) ───
-            // v3.43.7 (bugfix): GrandTotal включал SHARED sealant/tape суммы
-            // (1 тюбик + 2 мотка на ВСЕ N окон), из-за чего per-window стоимость
-            // странно росла при увеличении N (9524 → 9659). Теперь считаем
-            // честную per-window стоимость: каждый откос получает свой тюбик
-            // герметика и моток скотча (без учёта экономии).
             var calc = _currentCalculation;
-            double perWindowSum = calc.Sandwich.Sum + calc.Foam.Sum + calc.Penoplex.Sum + calc.Laminatina.Sum;
-            if (!calc.IsProfileEconomyApplied)
-            {
-                perWindowSum += calc.StartProfile.Sum + calc.FProfile.Sum;
-            }
-            double perWindowGrandTotal = perWindowSum + calc.Sealant.Price + calc.Tape.Price + calc.TotalLabor;
-            TxtGrandTotal.Text = perWindowGrandTotal.ToString("N2");
-
-            // ─── Экономия (комбинированная: герметик + скотч) ───
-            double totalSavings = _ComputeCombinedEconomy(calc);
-            bool hasEconomy = totalSavings > 0;
-            if (hasEconomy)
-            {
-                TxtEconomySavings.Text = $"-{totalSavings:N2}";
-                EconomyRow.Visibility = Visibility.Visible;
-            }
-            else
-            {
-                EconomyRow.Visibility = Visibility.Collapsed;
-            }
 
             // Чекбокс виден всегда, когда экономия ВОЗМОЖНА (N > 1),
-            // а не только когда она активна (hasEconomy). Иначе при
-            // выключении галки hasEconomy=0 → чекбокс скрывается навсегда.
+            // а не только когда она активна. Иначе при выключении галки
+            // чекбокс скрывается навсегда.
             bool potentialEconomy = (TotalWindowCountInOrder + windowCount) > 1;
             ChkApplyEconomy.Visibility = potentialEconomy ? Visibility.Visible : Visibility.Collapsed;
-
-            // Если чекбокс выключен — скрываем EconomyRow (TotalAllRow гейтится ниже)
-            if (!ChkApplyEconomy.IsChecked.GetValueOrDefault(true))
-                EconomyRow.Visibility = Visibility.Collapsed;
 
             // ─── ВСЕГО за все откосы ───
             int n = calc.WindowCount;
@@ -443,7 +401,7 @@ namespace MosquitoNetCalculator.Controls
             // `calc.GrandTotal * n` умножала shared-материалы на N, «отменяя» экономию
             // и показывая завышенную сумму. Теперь считаем 1-в-1 как OrderItem.Calculations.cs:
             // per-window материалы × N + shared (герметик/скотч) + работа × N.
-            perWindowSum = calc.Sandwich.Sum + calc.Foam.Sum + calc.Penoplex.Sum + calc.Laminatina.Sum;
+            double perWindowSum = calc.Sandwich.Sum + calc.Foam.Sum + calc.Penoplex.Sum + calc.Laminatina.Sum;
             if (!calc.IsProfileEconomyApplied)
             {
                 perWindowSum += calc.StartProfile.Sum + calc.FProfile.Sum;
@@ -466,37 +424,53 @@ namespace MosquitoNetCalculator.Controls
                 fullTotal += (startNoEconQty * calc.StartProfile.Price) + (fNoEconQty * calc.FProfile.Price);
             }
 
-            // Итог, который пойдёт в заказ (с учётом чекбокса экономии)
-            double orderTotal = ChkApplyEconomy.IsChecked.GetValueOrDefault(true) ? realOrderTotal : fullTotal;
+            bool apply = ChkApplyEconomy.IsChecked.GetValueOrDefault(true);
+            double orderTotal = apply ? realOrderTotal : fullTotal;
+            double totalSavings = Math.Max(0, fullTotal - realOrderTotal);
 
+            // v3.44.7: показываем общую сумму экономии (или возможную экономию,
+            // если галка снята). Раньше этот блок был потерян — _ComputeCombinedEconomy
+            // существовал, но никогда не вызывался в UpdateCalculation.
             if (n > 1)
             {
-                TxtWithoutEconomyLabel.Text = $"Итого за {n} откос{GetRussianPlural(n)} (без экономии):";
+                TxtWithoutEconomyLabel.Text = "Без экономии:";
                 TxtWithoutEconomy.Text = fullTotal.ToString("N2");
                 WithoutEconomyRow.Visibility = Visibility.Visible;
 
-                TxtTotalAllLabel.Text = $"Итого с экономией за {n} откос{GetRussianPlural(n)}:";
-                TxtTotalAll.Text = realOrderTotal.ToString("N2");
-                TotalAllRow.Visibility = ChkApplyEconomy.IsChecked.GetValueOrDefault(true)
-                    ? Visibility.Visible
-                    : Visibility.Collapsed;
+                TxtTotalAllLabel.Text = apply ? "Итого с экономией:" : "Итого:";
+                TxtTotalAll.Text = (apply ? realOrderTotal : fullTotal).ToString("N2");
+                TotalAllRow.Visibility = Visibility.Visible;
 
-                // Средняя стоимость откоса с экономией
-                if (ChkApplyEconomy.IsChecked.GetValueOrDefault(true))
-                {
-                    TxtAvgWithEconomy.Text = $"≈ {(realOrderTotal / n):N0} ₽/откос с экономией";
-                    TxtAvgWithEconomy.Visibility = Visibility.Visible;
-                }
-                else
-                {
-                    TxtAvgWithEconomy.Visibility = Visibility.Collapsed;
-                }
+                double avgTotal = apply ? realOrderTotal : fullTotal;
+                TxtAvgWithEconomy.Text = $"≈ {(avgTotal / n):N0} ₽/откос";
+                TxtAvgWithEconomy.Visibility = Visibility.Visible;
+
+                // Общая экономия. Показываем строку всегда при N > 1,
+                // чтобы пользователь видел, что функция работает, даже если
+                // для этих размеров экономия = 0.
+                bool wasSavingsRowVisible = TotalSavingsRow.Visibility == Visibility.Visible;
+                TxtTotalSavingsLabel.Text = apply ? "Экономия:" : "Возможная экономия:";
+                TxtTotalSavings.Text = totalSavings > 0 ? $"−{totalSavings:N0} ₽" : "0 ₽";
+                Brush savingsBrush = apply && totalSavings > 0
+                    ? (TryFindResource("EconomyGreen") as Brush) ?? Brushes.Green
+                    : (TryFindResource("TextMuted") as Brush) ?? Brushes.Gray;
+                TxtTotalSavings.Foreground = savingsBrush;
+                SavingsStarIcon.Foreground = savingsBrush;
+                // Предотвращаем однофреймовый всплеск перед анимацией
+                if (!wasSavingsRowVisible)
+                    TotalSavingsRow.Opacity = 0;
+                TotalSavingsRow.Visibility = Visibility.Visible;
+                if (!wasSavingsRowVisible)
+                    AnimateSavingsRowAppearance();
             }
             else
             {
+                TxtTotalAllLabel.Text = "Итого:";
+                TxtTotalAll.Text = fullTotal.ToString("N2");
+                TotalAllRow.Visibility = Visibility.Visible;
                 WithoutEconomyRow.Visibility = Visibility.Collapsed;
-                TotalAllRow.Visibility = Visibility.Collapsed;
                 TxtAvgWithEconomy.Visibility = Visibility.Collapsed;
+                TotalSavingsRow.Visibility = Visibility.Collapsed;
             }
 
             // Обновляем текст кнопки с суммой
@@ -511,7 +485,7 @@ namespace MosquitoNetCalculator.Controls
             OnPropertyChanged(nameof(HasCalculation));
             OnPropertyChanged(nameof(Prices));
             OnPropertyChanged(nameof(SummaryTitle));
-            OnPropertyChanged(nameof(EconomyLabel));
+
 
             UpdateAddButtonState();
         }
@@ -538,6 +512,7 @@ namespace MosquitoNetCalculator.Controls
         /// материалов (герметик/скотч показывают per-window или shared количество),
         /// прячет/показывает строки экономии и обновляет сумму на кнопке.
         /// v3.44.1: чекбокс теперь управляет IsProfileEconomyApplied (Старт/F-планка).
+        /// v3.44.5: делегирует пересчёт футера/сводки в UpdateCalculation.
         /// </summary>
         private void ChkApplyEconomy_Changed(object sender, RoutedEventArgs e)
         {
@@ -553,21 +528,10 @@ namespace MosquitoNetCalculator.Controls
                 calc.Tape.IsQuantityOverridden = false;
                 calc.StartProfile.IsQuantityOverridden = false;
                 calc.FProfile.IsQuantityOverridden = false;
-                int totalWc = TotalWindowCountInOrder + calc.WindowCount;
-                SlopeCalculatorService.UpdateInPlace(calc,
-                    (int)calc.WidthMm, (int)calc.HeightMm, calc.DepthM,
-                    calc.WindowCount, totalWc,
-                    Prices.Sandwich, Prices.Foam, Prices.Sealant, Prices.Tape,
-                    Prices.Start, Prices.FProfile, Prices.Penoplex, Prices.Labor);
-                // Обновляем чипы «было N»
-                calc.Sealant.Note = calc.Sealant.Quantity < calc.WindowCount
-                    ? $"было {calc.WindowCount}" : "";
-                calc.Tape.Note = calc.Tape.Quantity < calc.WindowCount
-                    ? $"было {calc.WindowCount}" : "";
             }
             else
             {
-                // Выключаем экономию: sealant/tape и профили = per-window (×WindowCount)
+                // Выключаем экономию: sealant/tape и профили = per-window
                 calc.Sealant.Quantity = calc.WindowCount;
                 calc.Sealant.IsQuantityOverridden = true;
                 calc.Sealant.Note = "";
@@ -583,62 +547,38 @@ namespace MosquitoNetCalculator.Controls
                 calc.FProfile.IsQuantityOverridden = true;
             }
 
-            // Обновляем итоги в футере
-            TxtTotalMaterials.Text = calc.TotalMaterials.ToString("N2");
-            double perWinSum = calc.Sandwich.Sum + calc.Foam.Sum + calc.Penoplex.Sum + calc.Laminatina.Sum;
-            if (!calc.IsProfileEconomyApplied)
-            {
-                perWinSum += calc.StartProfile.Sum + calc.FProfile.Sum;
-            }
-            TxtGrandTotal.Text = (perWinSum + calc.Sealant.Price + calc.Tape.Price + calc.TotalLabor).ToString("N2");
-            TxtLaborSumRow.Text = calc.TotalLabor.ToString("N2");
-            TxtLaborSumTotals.Text = calc.TotalLabor.ToString("N2");
-            TxtLaminatinaLaborSumRow.Text = calc.LaminatinaLabor.Sum.ToString("N2");
+            // Пересчитываем всё через UpdateCalculation — она обновит футер, сводку и кнопку.
+            UpdateCalculation();
+        }
 
-            EconomyRow.Visibility = _ComputeCombinedEconomy(calc) > 0
-                ? Visibility.Visible : Visibility.Collapsed;
-            if (calc.WindowCount > 1 && apply)
-                TotalAllRow.Visibility = Visibility.Visible;
-            else
-                TotalAllRow.Visibility = Visibility.Collapsed;
+        /// <summary>
+        /// v3.44.9: открывает окно «Детали экономии» с расчётом экономии
+        /// по всем активным откосам в текущем заказе.
+        /// </summary>
+        private void BtnEconomyDetails_Click(object sender, RoutedEventArgs e)
+        {
+            if (!TryGetMainWindow(out var mw)) return;
 
-            // Пересчитываем сумму на кнопке
-            int n = calc.WindowCount;
-            double perWindowSum = calc.Sandwich.Sum + calc.Foam.Sum + calc.Penoplex.Sum + calc.Laminatina.Sum;
-            if (!calc.IsProfileEconomyApplied)
-            {
-                perWindowSum += calc.StartProfile.Sum + calc.FProfile.Sum;
-            }
-            double sharedSum = calc.Sealant.Sum + calc.Tape.Sum;
-            if (calc.IsProfileEconomyApplied)
-            {
-                sharedSum += calc.StartProfile.Sum + calc.FProfile.Sum;
-            }
-            double fullTotal = perWindowSum * n + (calc.Sealant.Price * n) + (calc.Tape.Price * n) + (calc.TotalLabor * n);
-            if (calc.IsProfileEconomyApplied)
-            {
-                int startNoEconQty = SlopeCalculatorService.OptimizeStripsForMultipleWindows3Sides((int)calc.WidthMm, (int)calc.HeightMm, n);
-                int fNoEconQty = SlopeCalculatorService.OptimizeStripsForMultipleWindows3Sides((int)calc.WidthMm + 100, (int)calc.HeightMm + 100, n);
-                fullTotal += (startNoEconQty * calc.StartProfile.Price) + (fNoEconQty * calc.FProfile.Price);
-            }
-            double realOrderTotal = (perWindowSum * n) + sharedSum + (calc.TotalLabor * n);
-            double orderTotal = apply ? realOrderTotal : fullTotal;
-            UpdateButtonLabel(orderTotal);
+            // Собираем все активные откосы из заказа.
+            var activeSlopes = mw.CalcVM.OrderItems
+                .Where(i => i.Name == "Откос" && i.IsActive && i.SlopeData != null)
+                .Select(i => i.SlopeData!)
+                .Distinct()
+                .ToList();
 
-            // Средняя стоимость откоса с экономией
-            if (n > 1 && apply)
+            // Если мы в режиме добавления нового откоса и он ещё не в заказе —
+            // включаем его в расчёт, чтобы пользователь видел экономию ДО добавления.
+            if (!_isEditMode && _currentCalculation != null)
             {
-                TxtAvgWithEconomy.Text = $"≈ {(realOrderTotal / n):N0} ₽/откос с экономией";
-                TxtAvgWithEconomy.Visibility = Visibility.Visible;
-            }
-            else
-            {
-                TxtAvgWithEconomy.Visibility = Visibility.Collapsed;
+                activeSlopes.Add(_currentCalculation);
             }
 
-            // Обновляем сводку
-            _BuildMaterialSummary();
-            OnPropertyChanged(nameof(EconomyLabel));
+            var window = new SlopeEconomyDetailsWindow
+            {
+                Owner = Window.GetWindow(this)
+            };
+            window.LoadData(activeSlopes);
+            window.ShowDialog();
         }
 
         /// <summary>
@@ -657,6 +597,35 @@ namespace MosquitoNetCalculator.Controls
         }
 
         private void BtnAddToKp_Click(object sender, RoutedEventArgs e)
+        {
+            // v3.44.8 (bugfix): wrap the whole add-to-order flow in try/catch so
+            // any unexpected exception is surfaced instead of silently crashing.
+            try
+            {
+                _BtnAddToKp_ClickCore(sender, e);
+            }
+            catch (Exception ex)
+            {
+                // Log to a file in AppData for diagnostics, then rethrow so the
+                // global App.xaml.cs handler shows the error dialog.
+                try
+                {
+                    string logDir = Path.Combine(
+                        Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
+                        "MosquitoNetCalculator", "logs");
+                    Directory.CreateDirectory(logDir);
+                    string logPath = Path.Combine(logDir, "slope_add_error.log");
+                    File.AppendAllText(logPath,
+                        $"[{DateTime.Now:yyyy-MM-dd HH:mm:ss}] BtnAddToKp_Click exception:\n" +
+                        $"{ex}\n" +
+                        "============================================================\n");
+                }
+                catch { /* best effort */ }
+                throw;
+            }
+        }
+
+        private void _BtnAddToKp_ClickCore(object sender, RoutedEventArgs e)
         {
             var calc = _currentCalculation;
             if (calc == null) return;
@@ -729,7 +698,7 @@ namespace MosquitoNetCalculator.Controls
         /// </summary>
         private static SlopeCalculation MakeWithoutEconomy(SlopeCalculation src)
         {
-            var clone = OrderItem.DeepCloneSlopeData(src);
+            var clone = src.DeepClone();
             // Ставим per-window количества и флаг IsQuantityOverridden,
             // чтобы RecalculateSealantAndTape() (внутри AddSlope) не перезаписал
             // их обратно на shared ceil(N/4), ceil(N/3).
@@ -750,32 +719,11 @@ namespace MosquitoNetCalculator.Controls
         }
 
         /// <summary>
-        /// v3.43.6: вычисляет экономию по герметику и скотчу (shared-материалы,
-        /// количество которых считается по N_total, а не per-window).
-        /// v3.44.1: добавлена экономия по Старт/F-планке, если включена
-        /// IsProfileEconomyApplied. Без экономии профили считаются per-window.
+        /// v3.44.7: чистая функция для расчёта общей экономии.
+        /// Используется в юнит-тестах и может быть использована для tooltip'ов.
         /// </summary>
-        private double _ComputeCombinedEconomy(SlopeCalculation calc)
-        {
-            double sealantSavings = Math.Max(0,
-                calc.WindowCount * calc.Sealant.Price - calc.Sealant.Quantity * calc.Sealant.Price);
-            double tapeSavings = Math.Max(0,
-                calc.WindowCount * calc.Tape.Price - calc.Tape.Quantity * calc.Tape.Price);
-
-            double startSavings = 0;
-            double fSavings = 0;
-            if (calc.IsProfileEconomyApplied)
-            {
-                int startNoEconQty = SlopeCalculatorService.OptimizeStripsForMultipleWindows3Sides(
-                    (int)calc.WidthMm, (int)calc.HeightMm, calc.WindowCount);
-                int fNoEconQty = SlopeCalculatorService.OptimizeStripsForMultipleWindows3Sides(
-                    (int)calc.WidthMm + 100, (int)calc.HeightMm + 100, calc.WindowCount);
-                startSavings = Math.Max(0, (startNoEconQty - calc.StartProfile.Quantity) * calc.StartProfile.Price);
-                fSavings = Math.Max(0, (fNoEconQty - calc.FProfile.Quantity) * calc.FProfile.Price);
-            }
-
-            return sealantSavings + tapeSavings + startSavings + fSavings;
-        }
+        internal static double ComputeTotalSavings(double fullTotal, double realOrderTotal)
+            => Math.Max(0, fullTotal - realOrderTotal);
 
         /// <summary>
         /// v3.43.5: строит сводку расхода материалов на все откосы.
@@ -791,6 +739,18 @@ namespace MosquitoNetCalculator.Controls
 
             var rows = BuildMaterialSummaryRows(_currentCalculation);
             SummaryItems.ItemsSource = rows;
+
+            // v3.44.6: если экономия включена, но для этих размеров раскрой
+            // не даёт сбережений, показываем поясняющую подсказку.
+            bool economyEnabled = _currentCalculation.IsProfileEconomyApplied;
+            bool hasAnySavings = rows.Any(r => r.HasNote);
+            if (TxtNoSavingsHint != null)
+            {
+                TxtNoSavingsHint.Visibility = economyEnabled && !hasAnySavings
+                    ? Visibility.Visible
+                    : Visibility.Collapsed;
+            }
+
             SummaryCard.Visibility = Visibility.Visible;
         }
 
@@ -823,74 +783,96 @@ namespace MosquitoNetCalculator.Controls
 
             // Герметик (с экономией)
             double sealantQty = calc.Sealant.Quantity;
-            double sealantWithout = 1.0 * n;
-            int sealantSaved = (int)(sealantWithout - sealantQty);
+            double sealantWas = 1.0 * n;
+            int sealantSaved = (int)(sealantWas - sealantQty);
+            double sealantSavings = sealantSaved * calc.Sealant.Price;
+            string sealantNote = sealantSaved > 0 ? $"экон. {sealantWas:F0} → {sealantQty:F0} тюб. = −{sealantSavings:N0} ₽" : "";
+            string? sealantTooltip = sealantSaved > 0
+                ? $"Экономия за счёт общего расхода герметика на все окна.\n"
+                  + $"Было: {sealantWas:F0} тюб. × {calc.Sealant.Price:N0} ₽ = {sealantWas * calc.Sealant.Price:N0} ₽\n"
+                  + $"Стало: {sealantQty:F0} тюб. × {calc.Sealant.Price:N0} ₽ = {sealantQty * calc.Sealant.Price:N0} ₽\n"
+                  + $"Экономия: {sealantSaved} тюб. × {calc.Sealant.Price:N0} ₽ = −{sealantSavings:N0} ₽"
+                : null;
             rows.Add(new MaterialSummaryRow
             {
                 Name = "Герметик",
                 PerDetail = $"{sealantQty:F0} тюбик{(sealantQty == 1 ? "" : "а")}",
                 TotalDisplay = $"{sealantQty:F0} тюбик{(sealantQty == 1 ? "" : "а")}",
-                Note = sealantSaved > 0
-                    ? $"экон. {sealantSaved} × {calc.Sealant.Price:N0} = -{sealantSaved * calc.Sealant.Price:N0}₽"
-                    : "",
+                Note = sealantNote,
+                EconomyTooltip = sealantTooltip,
             });
 
             // Скотч (с экономией)
             double tapeQty = calc.Tape.Quantity;
-            double tapeWithout = 1.0 * n;
-            int tapeSaved = (int)(tapeWithout - tapeQty);
+            double tapeWas = 1.0 * n;
+            int tapeSaved = (int)(tapeWas - tapeQty);
+            double tapeSavings = tapeSaved * calc.Tape.Price;
+            string tapeNote = tapeSaved > 0 ? $"экон. {tapeWas:F0} → {tapeQty:F0} мот. = −{tapeSavings:N0} ₽" : "";
+            string? tapeTooltip = tapeSaved > 0
+                ? $"Экономия за счёт общего расхода скотча на все окна.\n"
+                  + $"Было: {tapeWas:F0} мот. × {calc.Tape.Price:N0} ₽ = {tapeWas * calc.Tape.Price:N0} ₽\n"
+                  + $"Стало: {tapeQty:F0} мот. × {calc.Tape.Price:N0} ₽ = {tapeQty * calc.Tape.Price:N0} ₽\n"
+                  + $"Экономия: {tapeSaved} мот. × {calc.Tape.Price:N0} ₽ = −{tapeSavings:N0} ₽"
+                : null;
             rows.Add(new MaterialSummaryRow
             {
                 Name = "Скотч",
                 PerDetail = $"{tapeQty:F0} моток",
                 TotalDisplay = $"{tapeQty:F0} моток",
-                Note = tapeSaved > 0
-                    ? $"экон. {tapeSaved} × {calc.Tape.Price:N0} = -{tapeSaved * calc.Tape.Price:N0}₽"
-                    : "",
+                Note = tapeNote,
+                EconomyTooltip = tapeTooltip,
             });
 
             // Старт (с экономией по раскрою на все окна — 3 стороны)
-            // v3.44.2 (bugfix): StartProfile.Quantity — per-window (3 стороны) всегда.
-            // TotalDisplay показывает общее количество для n окон.
-            // v3.44.4 (bugfix): PerDetail должен показывать per-window количество,
-            // а TotalDisplay — фактическое общее количество (с учётом экономии).
+            // v3.44.9: PerDetail и TotalDisplay теперь показывают фактическое
+            // общее количество полос, как у герметика/скотча.
             int startNoEcon = SlopeCalculatorService.OptimizeStripsForMultipleWindows3Sides(
                 (int)calc.WidthMm, (int)calc.HeightMm, n);
-            double startQtyPerWindow = calc.IsProfileEconomyApplied
-                ? SlopeCalculatorService.OptimizeStrips((int)calc.WidthMm, (int)calc.HeightMm)
-                : calc.StartProfile.Quantity;
             int startQtyTotal = calc.IsProfileEconomyApplied
                 ? (int)calc.StartProfile.Quantity // global total when economy is on
-                : (int)startQtyPerWindow * n;
+                : (int)calc.StartProfile.Quantity * n;
             int startSaved = Math.Max(0, startNoEcon - startQtyTotal);
+            double startSavings = startSaved * calc.StartProfile.Price;
+            string startNote = startSaved > 0 ? $"экон. {startNoEcon:F0} → {startQtyTotal:F0} пол. = −{startSavings:N0} ₽" : "";
+            string? startTooltip = startSaved > 0
+                ? $"Экономия за счёт общего раскроя профилей на все окна.\n"
+                  + $"Было: {startNoEcon:F0} пол. × {calc.StartProfile.Price:N0} ₽ = {startNoEcon * calc.StartProfile.Price:N0} ₽\n"
+                  + $"Стало: {startQtyTotal:F0} пол. × {calc.StartProfile.Price:N0} ₽ = {startQtyTotal * calc.StartProfile.Price:N0} ₽\n"
+                  + $"Экономия: {startSaved} пол. × {calc.StartProfile.Price:N0} ₽ = −{startSavings:N0} ₽"
+                : null;
             rows.Add(new MaterialSummaryRow
             {
                 Name = "Старт",
-                PerDetail = $"{startQtyPerWindow:F0} пол. ×{n}",
-                TotalDisplay = $"{startQtyTotal:F0} полос{(startQtyTotal == 1 ? "" : " 3м")}",
-                Note = startSaved > 0
-                    ? $"экон. {startSaved} × {calc.StartProfile.Price:N0} = -{startSaved * calc.StartProfile.Price:N0}₽"
-                    : "",
+                PerDetail = $"{startQtyTotal:F0} пол.",
+                TotalDisplay = $"{startQtyTotal:F0} пол. (3 м)",
+                Note = startNote,
+                EconomyTooltip = startTooltip,
             });
 
             // F-планка (с экономией по раскрою на все окна — 3 стороны +100 мм)
+            // v3.44.9: PerDetail и TotalDisplay теперь показывают фактическое
+            // общее количество полос, как у герметика/скотча.
             int fNoEcon = SlopeCalculatorService.OptimizeStripsForMultipleWindows3Sides(
                 (int)calc.WidthMm + 100, (int)calc.HeightMm + 100, n);
-            double fQtyPerWindow = calc.IsProfileEconomyApplied
-                ? SlopeCalculatorService.OptimizeStrips((int)calc.WidthMm + 100, (int)calc.HeightMm + 100)
-                : calc.FProfile.Quantity;
             int fQtyTotal = calc.IsProfileEconomyApplied
                 ? (int)calc.FProfile.Quantity // global total when economy is on
-                : (int)fQtyPerWindow * n;
+                : (int)calc.FProfile.Quantity * n;
             int fSaved = Math.Max(0, fNoEcon - fQtyTotal);
+            double fSavings = fSaved * calc.FProfile.Price;
+            string fNote = fSaved > 0 ? $"экон. {fNoEcon:F0} → {fQtyTotal:F0} пол. = −{fSavings:N0} ₽" : "";
+            string? fTooltip = fSaved > 0
+                ? $"Экономия за счёт общего раскроя профилей на все окна.\n"
+                  + $"Было: {fNoEcon:F0} пол. × {calc.FProfile.Price:N0} ₽ = {fNoEcon * calc.FProfile.Price:N0} ₽\n"
+                  + $"Стало: {fQtyTotal:F0} пол. × {calc.FProfile.Price:N0} ₽ = {fQtyTotal * calc.FProfile.Price:N0} ₽\n"
+                  + $"Экономия: {fSaved} пол. × {calc.FProfile.Price:N0} ₽ = −{fSavings:N0} ₽"
+                : null;
             rows.Add(new MaterialSummaryRow
             {
                 Name = "F-планка",
-                PerDetail = $"{fQtyPerWindow:F0} пол. ×{n}",
-                TotalDisplay = $"{fQtyTotal:F0} полос{(fQtyTotal == 1 ? "" : " 3м")}",
-                Note = fSaved > 0
-                    ? $"экон. {fSaved} × {calc.FProfile.Price:N0} = -{fSaved * calc.FProfile.Price:N0}₽"
-                    : "",
+                PerDetail = $"{fQtyTotal:F0} пол.",
+                TotalDisplay = $"{fQtyTotal:F0} пол. (3 м)",
+                Note = fNote,
+                EconomyTooltip = fTooltip,
             });
 
             // Пеноплекс
@@ -949,6 +931,23 @@ namespace MosquitoNetCalculator.Controls
         {
             mw = Window.GetWindow(this) as MainWindow;
             return mw != null;
+        }
+
+        /// <summary>
+        /// v3.44.8: анимация появления строки общей экономии.
+        /// Срабатывает только при переходе из Collapsed в Visible.
+        /// </summary>
+        private void AnimateSavingsRowAppearance()
+        {
+            if (TotalSavingsRow.Resources["SavingsRowAppearStoryboard"] is not Storyboard storyboard)
+                return;
+
+            // Сбрасываем начальное состояние для повторного проигрывания
+            if (TotalSavingsRow.RenderTransform is TranslateTransform transform)
+                transform.Y = 8;
+            TotalSavingsRow.Opacity = 0;
+
+            storyboard.Begin(TotalSavingsRow);
         }
 
 

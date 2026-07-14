@@ -1,0 +1,720 @@
+<UserControl x:Class="MosquitoNetCalculator.Controls.SlopePanelControl"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:controls="clr-namespace:MosquitoNetCalculator.Controls">
+    <Grid Margin="16,0,16,16">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <!-- ═══════════════════════════════════════════════════════ -->
+        <!-- SCROLLABLE BODY                                         -->
+        <!-- ═══════════════════════════════════════════════════════ -->
+        <ScrollViewer Grid.Row="0"
+                      VerticalScrollBarVisibility="Auto"
+                      HorizontalScrollBarVisibility="Disabled"
+                      Padding="0,0,0,12">
+            <StackPanel>
+
+                <!-- BETA warning banner -->
+                <Border x:Name="BetaBanner"
+                        Background="{DynamicResource BadgeWarningBg}"
+                        BorderBrush="{DynamicResource BadgeWarningFg}"
+                        BorderThickness="1"
+                        CornerRadius="8"
+                        Margin="0,12,0,12"
+                        Padding="12,10"
+                        SnapsToDevicePixels="True">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+                        <TextBlock Grid.Column="0"
+                                   Text="&#xE7BA;"
+                                   FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets"
+                                   FontSize="18"
+                                   Foreground="{DynamicResource BadgeWarningFg}"
+                                   VerticalAlignment="Top"
+                                   Margin="0,0,10,0"/>
+                        <StackPanel Grid.Column="1">
+                            <TextBlock Text="BETA — Автопросчёт откосов"
+                                       FontSize="12"
+                                       FontWeight="SemiBold"
+                                       Foreground="{DynamicResource BadgeWarningFg}"/>
+                            <TextBlock Text="Функция находится в стадии тестирования. Перепроверьте расчёт откоса вручную перед передачей заказа."
+                                       FontSize="11"
+                                       Foreground="{DynamicResource TextPrimary}"
+                                       TextWrapping="Wrap"
+                                       Margin="0,4,0,0"/>
+                        </StackPanel>
+                        <Button Grid.Column="2"
+                                x:Name="BtnCloseBetaBanner"
+                                Click="BtnCloseBetaBanner_Click"
+                                Style="{DynamicResource GhostButton}"
+                                Width="24" Height="24"
+                                Padding="0"
+                                VerticalAlignment="Top"
+                                ToolTip="Скрыть предупреждение">
+                            <TextBlock Text="&#xE8BB;"
+                                       FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets"
+                                       FontSize="11"
+                                       Foreground="{DynamicResource BadgeWarningFg}"/>
+                        </Button>
+                    </Grid>
+                </Border>
+
+                <!-- CARD 1: РАЗМЕРЫ ОКНА -->
+                <Border Background="{DynamicResource Surface}"
+                        BorderBrush="{DynamicResource Border}"
+                        BorderThickness="1"
+                        CornerRadius="8"
+                        Margin="0,12,0,12"
+                        SnapsToDevicePixels="True">
+                    <Grid>
+                        <!-- Brand accent strip on left edge -->
+                        <Border Width="4" HorizontalAlignment="Left"
+                                Background="{DynamicResource Accent}"
+                                CornerRadius="8,0,0,8"/>
+                        <StackPanel Margin="16,14,16,14">
+                            <!-- Header -->
+                            <StackPanel Orientation="Horizontal" Margin="0,0,0,14">
+                                <TextBlock Text="&#xE7C5;"
+                                           Style="{DynamicResource FluentIconSection}"
+                                           FontSize="14"
+                                           VerticalAlignment="Center"/>
+                                <TextBlock Text="Размеры окна"
+                                           FontSize="13"
+                                           FontWeight="SemiBold"
+                                           Foreground="{DynamicResource TextPrimary}"
+                                           VerticalAlignment="Center"/>
+                            </StackPanel>
+
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="8"/>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="8"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+
+                                <StackPanel Grid.Column="0">
+                                    <TextBlock Text="Высота, мм" Style="{DynamicResource FieldLabel}"/>
+                                    <TextBox x:Name="TxtHeight" Style="{DynamicResource QuickInput}"
+                                             TextChanged="Input_TextChanged"
+                                             HorizontalContentAlignment="Right"/>
+                                    <TextBlock x:Name="TxtHeightHint" FontSize="9"
+                                               Foreground="{DynamicResource TextMuted}"
+                                               Margin="0,3,0,0"/>
+                                </StackPanel>
+
+                                <StackPanel Grid.Column="2">
+                                    <TextBlock Text="Ширина, мм" Style="{DynamicResource FieldLabel}"/>
+                                    <TextBox x:Name="TxtWidth" Style="{DynamicResource QuickInput}"
+                                             TextChanged="Input_TextChanged"
+                                             HorizontalContentAlignment="Right"/>
+                                    <TextBlock x:Name="TxtWidthHint" FontSize="9"
+                                               Foreground="{DynamicResource TextMuted}"
+                                               Margin="0,3,0,0"/>
+                                </StackPanel>
+
+                                <StackPanel Grid.Column="4">
+                                    <TextBlock Text="Глубина" Style="{DynamicResource FieldLabel}"/>
+                                    <TextBox x:Name="TxtDepth" Style="{DynamicResource QuickInput}"
+                                             TextChanged="Input_TextChanged"
+                                             HorizontalContentAlignment="Right"/>
+                                    <TextBlock x:Name="TxtDepthHint" FontSize="9"
+                                               Foreground="{DynamicResource TextMuted}"
+                                               Margin="0,3,0,0"/>
+                                </StackPanel>
+                            </Grid>
+
+                            <Grid Margin="0,16,0,0">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+                                <TextBlock Grid.Column="0" Text="Кол-во откосов:"
+                                           VerticalAlignment="Center"
+                                           FontSize="11"
+                                           Foreground="{DynamicResource TextSecondary}"
+                                           Margin="0,0,10,0"/>
+                                <controls:NumericUpDownControl x:Name="NumWindowCount"
+                                                               Grid.Column="1"
+                                                               Value="1"
+                                                               ValueChanged="NumWindowCount_ValueChanged"
+                                                               Width="110"
+                                                               HorizontalAlignment="Left"/>
+                            </Grid>
+                        </StackPanel>
+                    </Grid>
+                </Border>
+
+                <!-- CARD 2: МАТЕРИАЛЫ -->
+                <Border Background="{DynamicResource Surface}"
+                        BorderBrush="{DynamicResource Border}"
+                        BorderThickness="1"
+                        CornerRadius="8"
+                        Margin="0,0,0,12"
+                        SnapsToDevicePixels="True">
+                    <Grid>
+                        <Border Width="4" HorizontalAlignment="Left"
+                                Background="{DynamicResource Accent}"
+                                CornerRadius="8,0,0,8"/>
+                        <StackPanel Margin="16,14,16,14">
+
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+                                <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                    <TextBlock Text="&#xE82D;"
+                                               Style="{DynamicResource FluentIconSection}"
+                                               FontSize="14"
+                                               VerticalAlignment="Center"/>
+                                    <TextBlock Text="Материалы"
+                                               FontSize="13"
+                                               FontWeight="SemiBold"
+                                               Foreground="{DynamicResource TextPrimary}"
+                                               VerticalAlignment="Center"/>
+                                </StackPanel>
+                                <!-- v3.43.3: «Сбросить» снимает IsQuantityOverridden
+                                     со всех материалов и возвращает авто-формулы. -->
+                                <Button Grid.Column="1" x:Name="BtnRecalculate"
+                                        Style="{DynamicResource GhostButton}"
+                                        Click="BtnRecalculate_Click"
+                                        ToolTip="Сбросить ручные правки и вернуть авто-формулы"
+                                        Padding="10,5" Height="28">
+                                    <StackPanel Orientation="Horizontal">
+                                        <TextBlock Text="&#xE72C;"
+                                                   Style="{DynamicResource FluentIconButton}"
+                                                   FontSize="13"
+                                                   VerticalAlignment="Center"/>
+                                        <TextBlock Text="Сбросить"
+                                                   FontSize="11"
+                                                   VerticalAlignment="Center"/>
+                                    </StackPanel>
+                                </Button>
+                            </Grid>
+
+                            <!-- Table header -->
+                            <Grid Margin="0,14,0,6">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="55"/>
+                                    <ColumnDefinition Width="75"/>
+                                    <ColumnDefinition Width="85"/>
+                                </Grid.ColumnDefinitions>
+                                <TextBlock Grid.Column="0" Text="Позиция"
+                                           Style="{DynamicResource SectionLabel}"
+                                           Margin="0"/>
+                                <TextBlock Grid.Column="1" Text="Кол-во"
+                                           Style="{DynamicResource SectionLabel}"
+                                           HorizontalAlignment="Right" Margin="0"/>
+                                <TextBlock Grid.Column="2" Text="Цена"
+                                           Style="{DynamicResource SectionLabel}"
+                                           HorizontalAlignment="Right" Margin="0"/>
+                                <TextBlock Grid.Column="3" Text="Сумма"
+                                           Style="{DynamicResource SectionLabel}"
+                                           HorizontalAlignment="Right" Margin="0"/>
+                            </Grid>
+
+                            <!-- v3.43.3 + v3.43.4: Кол-во/Цена редактируемые, чип "ручн." под названием строки
+                                 при IsQuantityOverridden=true (виден через DataTrigger в ItemTemplate). -->
+                            <ItemsControl x:Name="MaterialItems" Margin="0,0,0,4">
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate>
+                                        <Grid Margin="0,5,0,5">
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="*"/>
+                                                <ColumnDefinition Width="55"/>
+                                                <ColumnDefinition Width="75"/>
+                                                <ColumnDefinition Width="85"/>
+                                            </Grid.ColumnDefinitions>
+
+                                            <StackPanel Grid.Column="0" VerticalAlignment="Center">
+                                                <TextBlock Text="{Binding Name}"
+                                                           FontSize="11"
+                                                           Foreground="{DynamicResource TextPrimary}"
+                                                           TextTrimming="CharacterEllipsis"/>
+                                                <!-- «ручн.» chip — auto-shows when user edited Qty/Price. -->
+                                                <Border CornerRadius="4"
+                                                        Background="{DynamicResource ChipBg}"
+                                                        HorizontalAlignment="Left"
+                                                        Padding="6,1"
+                                                        Margin="0,3,0,0"
+                                                        ToolTip="Пользователь изменил вручную — авто-пересчёт не перезапишет">
+                                                    <Border.Style>
+                                                        <Style TargetType="Border">
+                                                            <Setter Property="Visibility" Value="Collapsed"/>
+                                                            <Style.Triggers>
+                                                                <DataTrigger Binding="{Binding IsQuantityOverridden}" Value="True">
+                                                                    <Setter Property="Visibility" Value="Visible"/>
+                                                                </DataTrigger>
+                                                            </Style.Triggers>
+                                                        </Style>
+                                                    </Border.Style>
+                                                    <TextBlock Text="ручн."
+                                                               FontSize="9"
+                                                               FontWeight="SemiBold"
+                                                               Foreground="{DynamicResource Accent}"/>
+                                                </Border>
+                                            </StackPanel>
+
+                                            <TextBox Grid.Column="1"
+                                                     Tag="Quantity"
+                                                     Style="{DynamicResource QuickInput}"
+                                                     Text="{Binding Quantity, StringFormat=F2, UpdateSourceTrigger=LostFocus}"
+                                                     LostFocus="MaterialField_LostFocus"
+                                                     HorizontalContentAlignment="Right"
+                                                     VerticalContentAlignment="Center"
+                                                     FontSize="11"
+                                                     Margin="0,0,4,0"/>
+                                            <TextBox Grid.Column="2"
+                                                     Tag="Price"
+                                                     Style="{DynamicResource QuickInput}"
+                                                     Text="{Binding Price, StringFormat=N2, UpdateSourceTrigger=LostFocus}"
+                                                     LostFocus="MaterialField_LostFocus"
+                                                     HorizontalContentAlignment="Right"
+                                                     VerticalContentAlignment="Center"
+                                                     FontSize="11"
+                                                     Margin="4,0,4,0"/>
+                                            <TextBlock Grid.Column="3"
+                                                       Text="{Binding Sum, StringFormat=N2}"
+                                                       FontSize="11"
+                                                       FontWeight="SemiBold"
+                                                       Foreground="{DynamicResource TextPrimary}"
+                                                       HorizontalAlignment="Right"
+                                                       VerticalAlignment="Center"/>
+                                        </Grid>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+
+                            <Separator Opacity="0.3" Margin="0,6,0,6"/>
+
+                            <!-- Labor (special row — outside ItemsControl, bound via RelativeSource) -->
+                            <Grid Margin="0,2,0,2">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="55"/>
+                                    <ColumnDefinition Width="75"/>
+                                    <ColumnDefinition Width="85"/>
+                                </Grid.ColumnDefinitions>
+                                <StackPanel Grid.Column="0" VerticalAlignment="Center">
+                                    <TextBlock Text="Работа"
+                                               FontSize="11"
+                                               Foreground="{DynamicResource TextPrimary}"/>
+                                    <Border CornerRadius="4"
+                                            Background="{DynamicResource ChipBg}"
+                                            HorizontalAlignment="Left"
+                                            Padding="6,1"
+                                            Margin="0,3,0,0">
+                                        <Border.Style>
+                                            <Style TargetType="Border">
+                                                <Setter Property="Visibility" Value="Collapsed"/>
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding Labor.IsQuantityOverridden, RelativeSource={RelativeSource AncestorType=UserControl}}" Value="True">
+                                                        <Setter Property="Visibility" Value="Visible"/>
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </Border.Style>
+                                        <TextBlock Text="ручн."
+                                                   FontSize="9"
+                                                   FontWeight="SemiBold"
+                                                   Foreground="{DynamicResource Accent}"/>
+                                    </Border>
+                                </StackPanel>
+                                <TextBox Grid.Column="1"
+                                         x:Name="TxtLaborQuantity"
+                                         Tag="LaborQuantity"
+                                         Style="{DynamicResource QuickInput}"
+                                         Text="{Binding Labor.Quantity, RelativeSource={RelativeSource AncestorType=UserControl}, StringFormat=F2, UpdateSourceTrigger=LostFocus, TargetNullValue=''}"
+                                         LostFocus="MaterialField_LostFocus"
+                                         IsEnabled="{Binding HasCalculation, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                         HorizontalContentAlignment="Right"
+                                         VerticalContentAlignment="Center"
+                                         FontSize="11"
+                                         Margin="0,0,4,0"/>
+                                <TextBox Grid.Column="2"
+                                         x:Name="TxtLaborPrice"
+                                         Tag="LaborPrice"
+                                         Style="{DynamicResource QuickInput}"
+                                         Text="{Binding Labor.Price, RelativeSource={RelativeSource AncestorType=UserControl}, StringFormat=N2, UpdateSourceTrigger=LostFocus, TargetNullValue=''}"
+                                         LostFocus="MaterialField_LostFocus"
+                                         IsEnabled="{Binding HasCalculation, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                         HorizontalContentAlignment="Right"
+                                         VerticalContentAlignment="Center"
+                                         FontSize="11"
+                                         Margin="4,0,4,0"/>
+                                <TextBlock Grid.Column="3"
+                                           x:Name="TxtLaborSumRow"
+                                           Text="0.00"
+                                           FontSize="11"
+                                           FontWeight="SemiBold"
+                                           Foreground="{DynamicResource TextPrimary}"
+                                           HorizontalAlignment="Right"
+                                           VerticalAlignment="Center"/>
+                            </Grid>
+
+                            <!-- Laminatina labor (special row — outside ItemsControl, bound via RelativeSource) -->
+                            <Grid Margin="0,2,0,2">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="55"/>
+                                    <ColumnDefinition Width="75"/>
+                                    <ColumnDefinition Width="85"/>
+                                </Grid.ColumnDefinitions>
+                                <StackPanel Grid.Column="0" VerticalAlignment="Center">
+                                    <TextBlock Text="Работа за ламинатину"
+                                               FontSize="11"
+                                               Foreground="{DynamicResource TextPrimary}"/>
+                                    <Border CornerRadius="4"
+                                            Background="{DynamicResource ChipBg}"
+                                            HorizontalAlignment="Left"
+                                            Padding="6,1"
+                                            Margin="0,3,0,0">
+                                        <Border.Style>
+                                            <Style TargetType="Border">
+                                                <Setter Property="Visibility" Value="Collapsed"/>
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding LaminatinaLabor.IsQuantityOverridden, RelativeSource={RelativeSource AncestorType=UserControl}}" Value="True">
+                                                        <Setter Property="Visibility" Value="Visible"/>
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </Border.Style>
+                                        <TextBlock Text="ручн."
+                                                   FontSize="9"
+                                                   FontWeight="SemiBold"
+                                                   Foreground="{DynamicResource Accent}"/>
+                                    </Border>
+                                </StackPanel>
+                                <TextBox Grid.Column="1"
+                                         x:Name="TxtLaminatinaLaborQuantity"
+                                         Tag="LaminatinaLaborQuantity"
+                                         Style="{DynamicResource QuickInput}"
+                                         Text="{Binding LaminatinaLabor.Quantity, RelativeSource={RelativeSource AncestorType=UserControl}, StringFormat=F2, UpdateSourceTrigger=LostFocus, TargetNullValue=''}"
+                                         LostFocus="MaterialField_LostFocus"
+                                         IsEnabled="{Binding HasCalculation, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                         HorizontalContentAlignment="Right"
+                                         VerticalContentAlignment="Center"
+                                         FontSize="11"
+                                         Margin="0,0,4,0"/>
+                                <TextBox Grid.Column="2"
+                                         x:Name="TxtLaminatinaLaborPrice"
+                                         Tag="LaminatinaLaborPrice"
+                                         Style="{DynamicResource QuickInput}"
+                                         Text="{Binding LaminatinaLabor.Price, RelativeSource={RelativeSource AncestorType=UserControl}, StringFormat=N2, UpdateSourceTrigger=LostFocus, TargetNullValue=''}"
+                                         LostFocus="MaterialField_LostFocus"
+                                         IsEnabled="{Binding HasCalculation, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                         HorizontalContentAlignment="Right"
+                                         VerticalContentAlignment="Center"
+                                         FontSize="11"
+                                         Margin="4,0,4,0"/>
+                                <TextBlock Grid.Column="3"
+                                           x:Name="TxtLaminatinaLaborSumRow"
+                                           Text="0.00"
+                                           FontSize="11"
+                                           FontWeight="SemiBold"
+                                           Foreground="{DynamicResource TextPrimary}"
+                                           HorizontalAlignment="Right"
+                                           VerticalAlignment="Center"/>
+                            </Grid>
+                        </StackPanel>
+                    </Grid>
+                </Border>
+
+                <!-- CARD 3: ИТОГО МАТЕРИАЛОВ (на все откосы) -->
+                <!-- v3.43.5: сводка общего расхода с экономией по каждому материалу. -->
+                <Border x:Name="SummaryCard"
+                        Background="{DynamicResource Surface}"
+                        BorderBrush="{DynamicResource Border}"
+                        BorderThickness="1"
+                        CornerRadius="8"
+                        Margin="0,0,0,12"
+                        SnapsToDevicePixels="True"
+                        Visibility="Collapsed">
+                    <Grid>
+                        <Border Width="4" HorizontalAlignment="Left"
+                                Background="{DynamicResource Accent}"
+                                CornerRadius="8,0,0,8"/>
+                        <StackPanel Margin="16,14,16,14">
+                            <!-- Header -->
+                            <StackPanel Orientation="Horizontal" Margin="0,0,0,12">
+                                <TextBlock Text="&#xE7B5;"
+                                           Style="{DynamicResource FluentIconSection}"
+                                           FontSize="14"
+                                           VerticalAlignment="Center"/>
+                                <TextBlock Text="{Binding SummaryTitle, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                           FontSize="13"
+                                           FontWeight="SemiBold"
+                                           Foreground="{DynamicResource TextPrimary}"
+                                           VerticalAlignment="Center"/>
+                            </StackPanel>
+
+                            <!-- Summary rows -->
+                            <ItemsControl x:Name="SummaryItems" Margin="0,0,0,4">
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate>
+                                        <Grid Margin="0,3,0,3">
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="*"/>
+                                                <ColumnDefinition Width="Auto"/>
+                                                <ColumnDefinition Width="Auto" MinWidth="75"/>
+                                            </Grid.ColumnDefinitions>
+
+                                            <TextBlock Grid.Column="0"
+                                                       Text="{Binding Name}"
+                                                       FontSize="11"
+                                                       Foreground="{DynamicResource TextPrimary}"
+                                                       VerticalAlignment="Center"
+                                                       TextTrimming="CharacterEllipsis"/>
+
+                                            <StackPanel Grid.Column="1" Orientation="Horizontal" Margin="10,0,0,0" VerticalAlignment="Center">
+                                                <TextBlock Text="{Binding PerDetail}"
+                                                           FontSize="10"
+                                                           Foreground="{DynamicResource TextSecondary}"
+                                                           VerticalAlignment="Center"/>
+                                                <Border CornerRadius="4"
+                                                        Background="{DynamicResource ChipBg}"
+                                                        Padding="5,1"
+                                                        Margin="6,0,0,0"
+                                                        Visibility="{Binding HasNote, Converter={StaticResource BoolToVis}}">
+                                                    <ToolTipService.ToolTip>
+                                                        <TextBlock Text="{Binding EconomyTooltip}"
+                                                                   TextWrapping="Wrap"
+                                                                   MaxWidth="280"/>
+                                                    </ToolTipService.ToolTip>
+                                                    <TextBlock Text="{Binding Note}"
+                                                               FontSize="9"
+                                                               FontWeight="SemiBold"
+                                                               Foreground="{DynamicResource EconomyGreen}"
+                                                               VerticalAlignment="Center"/>
+                                                </Border>
+                                            </StackPanel>
+
+                                            <TextBlock Grid.Column="2"
+                                                       Text="{Binding TotalDisplay}"
+                                                       FontSize="11"
+                                                       FontWeight="SemiBold"
+                                                       Foreground="{DynamicResource TextPrimary}"
+                                                       HorizontalAlignment="Right"
+                                                       VerticalAlignment="Center"
+                                                       TextTrimming="CharacterEllipsis"/>
+                                        </Grid>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+
+                            <!-- Hint when economy is enabled but nothing saved for these dimensions -->
+                            <TextBlock x:Name="TxtNoSavingsHint"
+                                       FontSize="10"
+                                       FontStyle="Italic"
+                                       Foreground="{DynamicResource TextMuted}"
+                                       TextWrapping="Wrap"
+                                       Margin="0,6,0,0"
+                                       Visibility="Collapsed"
+                                       Text="Для этих размеров общий раскрой не даёт дополнительной экономии материалов."/>
+                        </StackPanel>
+                    </Grid>
+                </Border>
+            </StackPanel>
+        </ScrollViewer>
+
+        <!-- ═══════════════════════════════════════════════════════ -->
+        <!-- STICKY FOOTER — totals card + CTA                       -->
+        <!-- ═══════════════════════════════════════════════════════ -->
+        <!-- v3.43.4 (review fix #2): НЕ используем Style="{DynamicResource Card}" —
+             иначе егО IsMouseOver-триггер усиливает тень при любом движении мыши
+             над низом панели → "дышащий" zitter у нижнего края, когда курсор
+             идёт к кнопке «Добавить в КП». Inline-статическая тень без триггеров
+             даёт нужную elevation без hover-эффекта. -->
+        <Border Grid.Row="1"
+                Background="{DynamicResource Surface}"
+                BorderBrush="{DynamicResource Border}"
+                BorderThickness="1,1,1,0"
+                CornerRadius="8,8,0,0"
+                Margin="0,0,0,0"
+                SnapsToDevicePixels="True">
+            <Border.Effect>
+                <DropShadowEffect BlurRadius="16" ShadowDepth="2" Opacity="0.08" Direction="270" Color="#1A1A1A"/>
+            </Border.Effect>
+            <StackPanel Margin="16,14,16,12">
+                <!-- Без экономии -->
+                <Grid x:Name="WithoutEconomyRow" Visibility="Collapsed" Margin="0,0,0,4">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+                    <TextBlock x:Name="TxtWithoutEconomyLabel"
+                               Grid.Column="0"
+                               Text="Без экономии:"
+                               FontSize="12"
+                               Foreground="{DynamicResource TextSecondary}"
+                               VerticalAlignment="Center"/>
+                    <TextBlock x:Name="TxtWithoutEconomy"
+                               Grid.Column="1"
+                               Text="0.00"
+                               FontSize="12"
+                               FontWeight="SemiBold"
+                               Foreground="{DynamicResource TextSecondary}"
+                               VerticalAlignment="Center"
+                               TextTrimming="CharacterEllipsis"
+                               TextAlignment="Right"
+                               MaxWidth="220"/>
+                </Grid>
+                <!-- Общая экономия -->
+                <Grid x:Name="TotalSavingsRow" Visibility="Collapsed" Margin="0,0,0,6">
+                    <Grid.Resources>
+                        <Storyboard x:Key="SavingsRowAppearStoryboard">
+                            <DoubleAnimationUsingKeyFrames Storyboard.TargetProperty="(UIElement.Opacity)">
+                                <EasingDoubleKeyFrame KeyTime="0:0:0" Value="0"/>
+                                <EasingDoubleKeyFrame KeyTime="0:0:0.25" Value="1">
+                                    <EasingDoubleKeyFrame.EasingFunction>
+                                        <CubicEase EasingMode="EaseOut"/>
+                                    </EasingDoubleKeyFrame.EasingFunction>
+                                </EasingDoubleKeyFrame>
+                            </DoubleAnimationUsingKeyFrames>
+                            <DoubleAnimationUsingKeyFrames Storyboard.TargetProperty="(UIElement.RenderTransform).(TranslateTransform.Y)">
+                                <EasingDoubleKeyFrame KeyTime="0:0:0" Value="8"/>
+                                <EasingDoubleKeyFrame KeyTime="0:0:0.25" Value="0">
+                                    <EasingDoubleKeyFrame.EasingFunction>
+                                        <CubicEase EasingMode="EaseOut"/>
+                                    </EasingDoubleKeyFrame.EasingFunction>
+                                </EasingDoubleKeyFrame>
+                            </DoubleAnimationUsingKeyFrames>
+                        </Storyboard>
+                    </Grid.Resources>
+                    <Grid.RenderTransform>
+                        <TranslateTransform Y="0"/>
+                    </Grid.RenderTransform>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+                    <TextBlock x:Name="TxtTotalSavingsLabel"
+                               Grid.Column="0"
+                               Text="Экономия:"
+                               FontSize="12"
+                               Foreground="{DynamicResource TextSecondary}"
+                               VerticalAlignment="Center"/>
+                    <StackPanel Grid.Column="1" Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center">
+                        <TextBlock x:Name="SavingsStarIcon"
+                                   Text="&#xE1CF;"
+                                   Style="{DynamicResource FluentIconButton}"
+                                   FontSize="11"
+                                   Foreground="{DynamicResource EconomyGreen}"
+                                   VerticalAlignment="Center"
+                                   Margin="0,0,6,0"/>
+                        <TextBlock x:Name="TxtTotalSavings"
+                                   Text="0.00"
+                                   FontSize="12"
+                                   FontWeight="SemiBold"
+                                   Foreground="{DynamicResource EconomyGreen}"
+                                   VerticalAlignment="Center"
+                                   TextTrimming="CharacterEllipsis"
+                                   TextAlignment="Right"
+                                   MaxWidth="220"/>
+                    </StackPanel>
+                </Grid>
+                <!-- Итого с экономией -->
+                <Border x:Name="TotalAllRow" Visibility="Collapsed"
+                        Background="{DynamicResource EconomyGreenLight}"
+                        CornerRadius="6"
+                        Padding="8,6"
+                        Margin="0,0,0,8">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+                        <TextBlock x:Name="TxtTotalAllLabel"
+                                   Grid.Column="0"
+                                   Text=""
+                                   FontSize="12"
+                                   FontWeight="SemiBold"
+                                   Foreground="{DynamicResource EconomyGreen}"
+                                   VerticalAlignment="Center"/>
+                        <TextBlock x:Name="TxtTotalAll"
+                                   Grid.Column="1"
+                                   Text="0.00"
+                                   FontSize="14"
+                                   FontWeight="Bold"
+                                   Foreground="{DynamicResource EconomyGreen}"
+                                   VerticalAlignment="Center"
+                                   TextTrimming="CharacterEllipsis"
+                                   TextAlignment="Right"
+                                   MaxWidth="220"/>
+                    </Grid>
+                </Border>
+                <!-- Средняя сумма за откос -->
+                <TextBlock x:Name="TxtAvgWithEconomy"
+                           Visibility="Collapsed"
+                           FontSize="10"
+                           Foreground="{DynamicResource EconomyGreen}"
+                           Margin="0,0,0,8"
+                           TextAlignment="Right"/>
+                <StackPanel Orientation="Horizontal" Margin="0,0,0,6">
+                    <CheckBox x:Name="ChkApplyEconomy"
+                              IsChecked="True"
+                              Content="Применить экономию"
+                              FontSize="11"
+                              Foreground="{DynamicResource TextSecondary}"
+                              VerticalAlignment="Center"
+                              Checked="ChkApplyEconomy_Changed"
+                              Unchecked="ChkApplyEconomy_Changed"/>
+                    <Button x:Name="BtnEconomyDetails"
+                            Style="{DynamicResource GhostButton}"
+                            Click="BtnEconomyDetails_Click"
+                            Margin="10,0,0,0"
+                            Padding="6,3"
+                            VerticalAlignment="Center"
+                            ToolTip="Подробный расчёт экономии по всем откосам в заказе">
+                        <TextBlock Text="Детали экономии"
+                                   FontSize="10"
+                                   Foreground="{DynamicResource Accent}"/>
+                    </Button>
+                </StackPanel>
+                <Button x:Name="BtnAddLaminatina"
+                        Style="{DynamicResource GhostButton}"
+                        Click="BtnAddLaminatina_Click"
+                        IsEnabled="False"
+                        Height="32"
+                        Margin="0,0,0,8">
+                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                        <TextBlock Text="&#xE710;"
+                                   Style="{DynamicResource FluentIconButton}"
+                                   FontSize="14"
+                                   VerticalAlignment="Center"
+                                   Margin="0,0,6,0"/>
+                        <TextBlock Text="Порог (Ламинат)"
+                                   FontWeight="SemiBold"
+                                   VerticalAlignment="Center"/>
+                    </StackPanel>
+                </Button>
+                <Button x:Name="BtnAddToKp"
+                        Style="{DynamicResource PrimaryButton}"
+                        Click="BtnAddToKp_Click"
+                        IsEnabled="False"
+                        Height="38">
+                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                        <TextBlock x:Name="BtnIcon" Text="&#xE710;"
+                                   Style="{DynamicResource FluentIconButton}"
+                                   FontSize="14"
+                                   VerticalAlignment="Center"
+                                   Margin="0,0,6,0"/>
+                        <TextBlock x:Name="BtnText" Text="Добавить в КП"
+                                   FontWeight="SemiBold"
+                                   VerticalAlignment="Center"/>
+                    </StackPanel>
+                </Button>
+            </StackPanel>
+        </Border>
+    </Grid>
+</UserControl>

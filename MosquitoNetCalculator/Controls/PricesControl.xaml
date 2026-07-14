@@ -3,12 +3,39 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
     <Grid Background="{DynamicResource AppBg}" Margin="0">
         <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
             <RowDefinition Height="*"/>
             <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
 
-        <Border Grid.Row="0" Background="{DynamicResource Surface}" CornerRadius="10"
-                BorderBrush="{DynamicResource Border}" BorderThickness="1" Margin="8,8,8,6"
+        <!-- Search bar -->
+        <Border Grid.Row="0" Margin="8,8,8,4">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+                <TextBlock Grid.Column="0" Text="&#xE721;"
+                           FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets"
+                           FontSize="14" Foreground="{DynamicResource TextMuted}"
+                           VerticalAlignment="Center" Margin="0,0,8,0"/>
+                <TextBox x:Name="TxtSearchPrices" Grid.Column="1"
+                         Style="{DynamicResource QuickInput}"
+                         TextChanged="TxtSearchPrices_TextChanged"
+                         ToolTip="Фильтр по наименованию или цвету"/>
+                <Button x:Name="BtnClearPricesSearch" Grid.Column="2"
+                        Style="{DynamicResource GhostButton}"
+                        Content="&#xE711;" FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets"
+                        FontSize="10" Padding="4,2" Margin="4,0,0,0" Cursor="Hand"
+                        Visibility="Collapsed"
+                        Click="BtnClearPricesSearch_Click"
+                        ToolTip="Очистить поиск"/>
+            </Grid>
+        </Border>
+
+        <Border Grid.Row="1" Background="{DynamicResource Surface}" CornerRadius="10"
+                BorderBrush="{DynamicResource Border}" BorderThickness="1" Margin="8,0,8,6"
                 Style="{DynamicResource Card}">
             <Grid>
                 <DataGrid x:Name="PriceGrid"
@@ -55,7 +82,7 @@
             </Grid>
         </Border>
 
-        <StackPanel Grid.Row="1" Orientation="Horizontal" Margin="8,0,8,8">
+        <StackPanel Grid.Row="2" Orientation="Horizontal" Margin="8,0,8,8">
             <Button Style="{DynamicResource SuccessButton}"
                     Click="BtnSavePrices_Click" Margin="0,0,8,0">
                 <StackPanel Orientation="Horizontal">

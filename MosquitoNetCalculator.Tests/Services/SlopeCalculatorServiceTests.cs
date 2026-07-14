@@ -666,6 +666,29 @@ namespace MosquitoNetCalculator.Tests.Services
             Assert.Equal(sealantTapeShared / 2, calc2.DistributedSharedSum, 2);
         }
         [Fact]
+        public void RecalculateSealantAndTape_ProfileEconomy_2150x1500x3_NoSavings()
+        {
+            // User report: W=2150, H=1500, 3 windows, economy ON.
+            // Physically there should be no economy for Start/F-profile.
+            var calc = SlopeCalculatorService.Calculate(2150, 1500, 0.30, 3, 3);
+            calc.IsProfileEconomyApplied = true;
+
+            var item = new OrderItem { Name = "Откос", SlopeData = calc, Quantity = 3, IsActive = true };
+
+            SlopeCalculatorService.RecalculateSealantAndTape(new[] { item });
+
+            // Per-window (3 sides): Start = OptimizeStrips(2150,1500,1500) = 2 strips.
+            // Without economy: 2 * 3 = 6 strips.
+            // With economy across 3 windows: still 6 strips (no packing saving).
+            Assert.Equal(6, calc.StartProfile.Quantity);
+
+            // Per-window (3 sides + 100): F = OptimizeStrips(2250,1600,1600) = 3 strips.
+            // Without economy: 3 * 3 = 9 strips.
+            // With economy across 3 windows: still 9 strips (no packing saving).
+            Assert.Equal(9, calc.FProfile.Quantity);
+        }
+
+        [Fact]
         public void RecalculateSealantAndTape_ProfileEconomy_OptimizesAcrossWindows()
         {
             // Two identical windows 1000×1000. Without cross-window optimization

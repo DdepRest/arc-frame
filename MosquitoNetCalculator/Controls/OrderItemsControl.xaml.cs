@@ -1,7 +1,10 @@
 using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Input;
+using System.Windows.Media;
 using MosquitoNetCalculator.Models;
 
 namespace MosquitoNetCalculator.Controls
@@ -15,6 +18,30 @@ namespace MosquitoNetCalculator.Controls
         public OrderItemsControl()
         {
             InitializeComponent();
+        }
+
+        /// <summary>
+        /// Populates the EmptyState product chips with the given product names.
+        /// Each chip is a clickable Border that triggers
+        /// <see cref="MainWindow.SelectProductFromChip"/> when clicked.
+        /// </summary>
+        internal void PopulateProductChips(List<string> productNames)
+        {
+            ProductChipsList.ItemsSource = productNames;
+            ProductChipsList.PreviewMouseLeftButtonDown -= ProductChip_Click;
+            ProductChipsList.PreviewMouseLeftButtonDown += ProductChip_Click;
+        }
+
+        private void ProductChip_Click(object sender, MouseButtonEventArgs e)
+        {
+            // Find the ContentPresenter ancestor — its Content is the product name string
+            // (ItemsSource is List<string>, so ContentPresenter.Content = string).
+            // More robust than walking to a TextBlock, which breaks if template changes.
+            var source = e.OriginalSource as DependencyObject;
+            while (source != null && source is not ContentPresenter)
+                source = VisualTreeHelper.GetParent(source);
+            if (source is ContentPresenter cp && cp.Content is string productName)
+                TryForwardToMain(nameof(ProductChip_Click), mw => mw.SelectProductFromChip(productName));
         }
 
         /// <summary>
@@ -45,6 +72,21 @@ namespace MosquitoNetCalculator.Controls
 
         private void AnwisModePill_PreviewRightClick(object sender, System.Windows.Input.MouseButtonEventArgs e) =>
             TryForwardToMain(nameof(AnwisModePill_PreviewRightClick), mw => mw.AnwisModePillRightClick(sender, e));
+
+        /// <summary>
+        /// v3.43.5: двойной клик по строке «Откос» открывает панель редактирования откоса.
+        /// </summary>
+        private void OrderGrid_MouseDoubleClick(object sender, System.Windows.Input.MouseButtonEventArgs e)
+        {
+            var source = e.OriginalSource as DependencyObject;
+            while (source != null && source is not DataGridRow)
+                source = VisualTreeHelper.GetParent(source);
+
+            if (source is DataGridRow row && row.DataContext is OrderItem item && item.IsSlope)
+            {
+                TryForwardToMain(nameof(OrderGrid_MouseDoubleClick), mw => mw.EditSlopeItem(item));
+            }
+        }
 
         /// <summary>
         /// Selects the entire content of a DataGrid editing TextBox when it gains focus.

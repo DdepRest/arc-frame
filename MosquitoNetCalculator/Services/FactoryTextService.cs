@@ -43,7 +43,7 @@ namespace MosquitoNetCalculator.Services
             // factory batch.
             var notForProduction = new HashSet<string>
             {
-                "Работа", "ПСУЛ", "Отлив", "Доставка", "Брус", "Пояс", "Откос материал", "Уплотнение", "Короб"
+                "Работа", "ПСУЛ", "Отлив", "Доставка", "Брус", "Пояс", "Откос", "Работа за откос", "Уплотнение", "Короб"
             };
 
             var result = new List<SelectableItem>();

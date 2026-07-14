@@ -149,6 +149,7 @@ namespace MosquitoNetCalculator.Tests.Services
             Assert.Contains(prices, p => p.Name == "ПСУЛ");
             Assert.Contains(prices, p => p.Name == "Отлив");
             Assert.Contains(prices, p => p.Name == "Уплотнение");
+            Assert.Contains(prices, p => p.Name == "Дверная сетка");
         }
 
         [Fact]
@@ -317,6 +318,7 @@ namespace MosquitoNetCalculator.Tests.Services
             Assert.Contains(prices, p => p.Name == "Уплотнение");
             Assert.Contains(prices, p => p.Name == "Козырёк");
             Assert.Contains(prices, p => p.Name == "Короб");
+            Assert.Contains(prices, p => p.Name == "Дверная сетка");
         }
     }
 }

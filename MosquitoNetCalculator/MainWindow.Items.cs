@@ -7,6 +7,8 @@ using System.Windows.Media;
 using MosquitoNetCalculator.Models;
 using MosquitoNetCalculator.Services;
 
+using PrintSettings = MosquitoNetCalculator.Models.PrintSettings;
+
 namespace MosquitoNetCalculator
 {
     public partial class MainWindow
@@ -31,6 +33,9 @@ namespace MosquitoNetCalculator
 
                 QuickAddControl.ResetAnwisMode();
 
+                // Reset print settings for the new order (in-memory only, not serialized)
+                LastPrintSettings = new PrintSettings();
+
                 ViewModel.CalcVM.UnsubscribeAll(UpdateTotal);
                 ViewModel.CalcVM.ClearAll();
 
@@ -39,6 +44,7 @@ namespace MosquitoNetCalculator
             });
             MarkClean();
             ViewModel.UndoRedo.Clear();
+            UpdateUndoRedoHint();
         }
 
         internal void BtnSaveOrder_Click(object sender, RoutedEventArgs e)
@@ -115,17 +121,30 @@ namespace MosquitoNetCalculator
             void RefreshDeductionField()
             {
                 bool adjust = item.InstallationMode == 1 || item.InstallationMode == 2;
-                txtDeduction.IsEnabled = adjust;
-                txtDeduction.Text = adjust ? item.CurrentInstallationAmount.ToString("F0") : "0";
-                txtDeduction.ToolTip = adjust
-                    ? "Сумма корректировки: вычитается в ✕ и в В"
-                    : "Не применяется в этом режиме";
+                // v3.43.2.11: поле «Сумма:» теперь доступно во всех трёх режимах.
+                // Mode 0 «Монтаж включён» — signed adjustment (±), ИНТУИТИВНАЯ конвенция:
+                //   положительное значение добавляется к сумме (надбавка);
+                //   отрицательное значение вычитается из суммы.
+                // Modes 1/2 — только положительные (вычитаются).
+                bool applicable = item.IsInstallationApplicable;
+                txtDeduction.IsEnabled = applicable;
+                txtDeduction.Text = applicable ? item.CurrentInstallationAmount.ToString("F0") : "0";
+                txtDeduction.ToolTip = !applicable
+                    ? "Не применяется в этом режиме"
+                    : item.InstallationMode == 0
+                        ? "Сумма корректировки: положительное значение добавляется к сумме, отрицательное — вычитается. По умолчанию 0."
+                        : "Сумма корректировки: всегда вычитается из суммы (только положительные значения).";
             }
 
             void CommitDeductionIfPending()
             {
                 if (!txtDeduction.IsEnabled) return;
-                if (double.TryParse(txtDeduction.Text, out double val) && val >= 0)
+                // v3.43.2.11: убрано `val >= 0` — mode 0 (Монтаж включён) принимает
+                // отрицательные значения для вычитания из суммы. Modes 1/2
+                // клампят в собственных property setters (Math.Max(0, ...),
+                // см. InstallationDeduction / InstallationSurcharge в
+                // OrderItem.Installation.cs).
+                if (double.TryParse(txtDeduction.Text, out double val))
                 {
                     if (Math.Abs(item.CurrentInstallationAmount - val) > 0.01)
                     {

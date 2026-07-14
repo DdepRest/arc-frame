@@ -51,6 +51,25 @@ namespace MosquitoNetCalculator.Services
         public static TimeSpan TransitionDuration { get; set; } = TimeSpan.FromMilliseconds(280);
 
         /// <summary>
+        /// Returns the TARGET Surface color for the current theme.
+        ///
+        /// This is used by callers (e.g. ApplyMicaTitleBar) that need to
+        /// create a semi-transparent copy of the Surface colour. Those
+        /// callers must NOT read FindResource("Surface") during a
+        /// ThemeChanged callback — the brush may be mid-animation (still
+        /// showing the OLD theme's colour), so FindResource would return
+        /// the stale colour and the copy would be stuck on the wrong theme.
+        ///
+        /// This method reads the definitive target colour directly from
+        /// the colour dictionary (Light/Dark), bypassing the animated brush.
+        /// </summary>
+        public static Color GetCurrentSurfaceColor()
+        {
+            var colors = IsDarkTheme ? DarkColors : LightColors;
+            return ParseColor(colors["Surface"]);
+        }
+
+        /// <summary>
         /// Applies the current theme to the application resource dictionary.
         ///
         /// For SolidColorBrush resources that are still mutable (not frozen
@@ -325,7 +344,7 @@ namespace MosquitoNetCalculator.Services
             // Text
             ["TextPrimary"]   = "#FFFFFF",
             ["TextSecondary"] = "#C5C5C5",
-            ["TextMuted"]     = "#8A8A8A",
+            ["TextMuted"]     = "#A0A0A0",
             // Borders
             ["Border"]        = "#4A4A4A",
             ["BorderHover"]   = "#5F5F5F",

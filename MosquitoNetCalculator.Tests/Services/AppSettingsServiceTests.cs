@@ -6,6 +6,17 @@ using Xunit;
 namespace MosquitoNetCalculator.Tests.Services
 {
     /// <summary>
+    /// Forces ALL tests in the "FileSystem" collection to run strictly
+    /// serial. Five test classes share <see cref="AppSettingsService.SettingsPath"/>
+    /// (a mutable <c>static</c> property) — without this definition, xUnit
+    /// can interleave their ctors/dispose across classes, causing flaky
+    /// failures like <c>SaveContractPrefix_TrimsWhitespace</c> seeing a
+    /// stale SettingsPath from a different class.
+    /// </summary>
+    [CollectionDefinition("FileSystem", DisableParallelization = true)]
+    public class FileSystemTestCollection { }
+
+    /// <summary>
     /// File-IO isolation: AppSettingsService.SettingsPath is redirected
     /// to a unique temp directory per test instance (the same pattern
     /// used by ManualChecklistTests). The production settings.json in

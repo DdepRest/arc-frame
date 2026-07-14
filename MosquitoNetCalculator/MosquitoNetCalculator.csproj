@@ -7,7 +7,7 @@
     <UseWPF>true</UseWPF>
     <EnableWindowsTargeting>true</EnableWindowsTargeting>
     <ApplicationIcon>Resources\app_icon.ico</ApplicationIcon>
-    <Version>3.42.1</Version>
+    <Version>3.44.0</Version>
     <RuntimeIdentifiers>win-x64</RuntimeIdentifiers>
     <!-- Treat every compiler / NuGet warning as an error so the build fails
          closed if any future change reintroduces a warning. The current
@@ -19,20 +19,18 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Microsoft.Web.WebView2" Version="1.0.2210.55" />
+    <!-- QuestPDF — native PDF generation for КП export. -->
+    <PackageReference Include="QuestPDF" Version="2024.7.0" />
   </ItemGroup>
 
   <!-- Expose `internal` members to the test project so regression tests
-       can verify private implementation details (InternalsVisibleTo).
-       The inline template GetInlineTemplate() was removed in v3.34.3;
-       print_template.html is now the single source of truth. -->
+       can verify private implementation details (InternalsVisibleTo). -->
   <ItemGroup>
     <InternalsVisibleTo Include="MosquitoNetCalculator.Tests" />
   </ItemGroup>
 
   <ItemGroup>
     <Content Include="prices.json" CopyToOutputDirectory="PreserveNewest" />
-    <EmbeddedResource Include="Resources\print_template.html" />
     <EmbeddedResource Include="Resources\update-log.json" />
     <Resource Include="Resources\app_icon.ico" />
   </ItemGroup>

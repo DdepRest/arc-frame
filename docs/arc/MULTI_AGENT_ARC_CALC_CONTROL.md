@@ -292,6 +292,45 @@ docs/arc/MULTI_AGENT_ARC_CALC_CONTROL.md
 
 ---
 
+## 12. План системного рефакторинга
+
+Проект находится в активной фазе устранения архитектурного долга (God-classes, high coupling). Детальный план по фазам, компонентам, тестам и критериям успеха зафиксирован в:
+
+```text
+docs/arc/REFACTORING_PLAN.md
+```
+
+### Ключевые направления
+
+| Фаза | Цель | Выделяемые компоненты |
+|------|------|------------------------|
+| 1 | `MainWindow.xaml.cs` — God-class | `NavigationService`, `OverlayManager`, `SlopeOverlayCoordinator` |
+| 2 | `UpdateService.cs` — смешение ответственностей | `UpdateManifestClient`, `VersionResolver`, `UpdateDownloader`, `UpdateVerifier`, `UpdatePresenter` |
+| 3 | `PrintService.cs` — рендеринг + очередь | `PrintQueueResolver`, `FixedDocumentBuilder`, `PrintOrchestrator` |
+| 4 | `DialogService.cs` — UI в коде | XAML-шаблоны, `DialogBuilder` |
+| 5 | `OrderItem.cs` — домен + каталог | `ProductCatalog`, `AnwisSizeCalculator`, `SlopeCalculationExtensions` |
+| 6 | `MainWindow.Orders.cs` — UI + сериализация | `OrderImportExportService`, `OrderDialogService`, `OrderGridPresenter` |
+| 7 | Валидация и документация | `dotnet test`, `validate-docs.ps1`, `gensymbols.ps1` |
+
+### Правила рефакторинга для агентов
+
+- **Baseline до фазы:** `dotnet build MosquitoNetCalculator.sln -c Release` + `dotnet test`.
+- **Бизнес-логика не трогается** — формулы Anwis, цены, монтаж, итоги, печать КП, автообновление, сериализация.
+- **После каждой фазы:** `code-reviewer-kimi` + `validate-docs.ps1`.
+- **Документы к обновлению:** `CURRENT_STATE.md`, `CHANGELOG.md`, `SYMBOL_INDEX.md`, `DOCUMENTATION_MATRIX.md`, `MODULES.md`, `DECISIONS.md`.
+
+### Routing при задачах рефакторинга
+
+Если задача касается рефакторинга — агент обязан:
+
+1. Прочитать `docs/arc/REFACTORING_PLAN.md`.
+2. Определить, к какой фазе относится изменение.
+3. Зафиксировать baseline.
+4. Выполнить фазу согласно плану.
+5. Обновить документацию по `DOCUMENTATION_MATRIX.md`.
+
+---
+
 ## Source files
 
 - `docs/arc/CHEATSHEET.md` — быстрый вход

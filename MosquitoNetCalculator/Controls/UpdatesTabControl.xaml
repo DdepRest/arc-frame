@@ -123,19 +123,17 @@
                       HorizontalScrollBarVisibility="Disabled"
                       Padding="20,0,20,16">
             <ItemsControl x:Name="UpdatesList"
-                          ItemsSource="{Binding Updates}"
-                          AlternationCount="999">
+                          ItemsSource="{Binding Updates}">
                 <ItemsControl.ItemTemplate>
                     <DataTemplate>
                         <!--
-                          Tag привязывается к AlternationIndex родительского
-                          ContentPresenter — WPF кладёт attached-property на
-                          контейнер, а не на содержимое DataTemplate, поэтому
-                          прямой Trigger на Border не сработал бы.
+                          По рефакторингу блока «Обновления»: бейдж «Новейшая»
+                          привязан к свойству IsLatest (вычисляется runtime в
+                          UpdateLog.AllNewestFirst), а не к позиции
+                          (AlternationIndex). Это позволяет добавлять новые
+                          версии без сдвига UI-привязок старых карточек.
                         -->
-                        <Border Style="{StaticResource UpdateCardStyle}"
-                                Tag="{Binding (ItemsControl.AlternationIndex),
-                                              RelativeSource={RelativeSource AncestorType=ContentPresenter}}">
+                        <Border Style="{StaticResource UpdateCardStyle}">
                             <StackPanel Margin="16,12,16,14">
 
                                     <!-- ─── Шапка карточки ─── -->
@@ -166,7 +164,7 @@
                                             </StackPanel>
                                         </Border>
 
-                                        <!-- Бейдж «Новейшая» — только для самого свежего (Tag=0) -->
+                                        <!-- Бейдж «Новейшая» — property-based, через IsLatest -->
                                         <Border Grid.Column="1"
                                                 Margin="10,0,0,0"
                                                 CornerRadius="7"
@@ -178,7 +176,7 @@
                                             <Border.Style>
                                                 <Style TargetType="Border">
                                                     <Style.Triggers>
-                                                        <DataTrigger Binding="{Binding Tag, RelativeSource={RelativeSource AncestorType=Border, AncestorLevel=1}}" Value="0">
+                                                        <DataTrigger Binding="{Binding IsLatest}" Value="True">
                                                             <Setter Property="Visibility" Value="Visible"/>
                                                         </DataTrigger>
                                                     </Style.Triggers>

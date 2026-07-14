@@ -1,12 +1,9 @@
 using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Net.Http;
 using System.Reflection;
-using System.Runtime.InteropServices;
-using System.Security.Cryptography;
-using System.Text.Json;
-using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
 using MosquitoNetCalculator.Models;
@@ -32,42 +29,22 @@ namespace MosquitoNetCalculator.Services
     ///
     /// Настройка:
     ///   • Ничего не нужно — URL манифеста захардкожен.
-    ///   • Для переключения на свой форк — измените ManifestUrl.
+    ///   • Для переключения на свой форк — измените ManifestUrl в UpdateManifestClient.
     /// ────────────────────────────────────────────────────────────────────────
     /// </summary>
     public static class UpdateService
     {
-        private const string ManifestUrl =
-            "https://raw.githubusercontent.com/DdepRest/arc-frame/main/releases.json";
 
-        // ─── Idle detection (WinAPI) ─────────────────────────────────
 
-        [DllImport("user32.dll")]
-        private static extern bool GetLastInputInfo(ref LASTINPUTINFO plii);
 
-        [StructLayout(LayoutKind.Sequential)]
-        private struct LASTINPUTINFO
-        {
-            public uint cbSize;
-            public uint dwTime;
-        }
+        // ─── Idle detection — delegated to IdleDetector (Phase 2) ──────
 
         /// <summary>
         /// Returns the time span since the last user input (mouse or keyboard)
         /// across the entire system, using WinAPI <c>GetLastInputInfo</c>.
-        /// Used by <see cref="UpdateCheckScheduler.GetSystemIdleTime"/>.
+        /// Delegates to <see cref="IdleDetector.GetIdleTime"/>.
         /// </summary>
-        public static TimeSpan GetIdleTime()
-        {
-            var plii = new LASTINPUTINFO();
-            plii.cbSize = (uint)Marshal.SizeOf(plii);
-            if (GetLastInputInfo(ref plii))
-            {
-                uint idleTicks = unchecked((uint)Environment.TickCount - plii.dwTime);
-                return TimeSpan.FromMilliseconds(idleTicks);
-            }
-            return TimeSpan.Zero;
-        }
+        public static TimeSpan GetIdleTime() => IdleDetector.GetIdleTime();
 
         /// <summary>
         /// Текущая версия приложения. Автоматически читается из
@@ -79,6 +56,8 @@ namespace MosquitoNetCalculator.Services
         /// </summary>
         internal static readonly Version CurrentVersion =
             TryResolveCurrentVersion() ?? new Version(0, 0, 0);
+
+        // ─── Phase 2: version logic delegated to VersionResolver ──────
 
         private static bool _isChecking;
         private static double _downloadProgress;
@@ -141,6 +120,87 @@ namespace MosquitoNetCalculator.Services
         public static event EventHandler? ProgressChanged;
 
         /// <summary>
+        /// Fires when a background check discovers a release newer than the
+        /// running <see cref="CurrentVersion"/>. The payload is a stub
+        /// <see cref="UpdateItem"/> with only <c>Version</c> known — the
+        /// running binary can't show the future release's full changelog
+        /// (that's encoded in the next version's embedded
+        /// <c>update-log.json</c>). Subscribe in <c>MainWindow</c> and forward
+        /// to <see cref="ViewModels.MainWindowViewModel.AddNewUpdate"/> on the
+        /// UI dispatcher to surface a "Доступно обновление vX.Y.Z" card in
+        /// the Updates tab without restarting.
+        ///
+        /// Subscribers MUST unsubscribe from <see cref="MainWindow.Closed"/>
+        /// — a static source on a per-window subscriber creates a strong
+        /// root that otherwise outlives the window.
+        /// </summary>
+        public static event Action<UpdateItem>? UpdateDetected;
+
+        /// <summary>
+        /// Test seam <c>internal</c>: optional override that replaces the
+        /// <see cref="DialogService.ShowUpdateAvailable"/> call from
+        /// <see cref="RunUpdateFlowAsync"/>. Production code path uses the
+        /// <c>??</c> fallback when this is null, so behavior is unchanged.
+        /// <para>
+        /// Signature returns <c>bool</c> only (not the full tuple) because
+        /// tests don't need to vary the dialog's display chrome — they only
+        /// need the user's "confirm/cancel" decision. Owner and
+        /// isAutomatic flags are intentionally NOT injectable so the
+        /// dialog code path remains the single source of truth for those.
+        /// </para>
+        /// </summary>
+        internal static Func<string, IEnumerable<UpdateItem>, bool>? ShowUpdateAvailableOverride;
+
+
+        /// <summary>
+        /// Invokes <see cref="UpdateDetected"/> with **per-subscriber**
+        /// isolation: a single throwing handler aborts its own run but
+        /// never blocks subsequent subscribers in the same call.
+        /// This is required because the static event is multicast — a
+        /// naive <c>try { handler(item); } catch { ... }</c> would short-
+        /// circuit the whole invocation list on the first throw, hiding
+        /// the bug in one subscriber from any later subscriber that
+        /// shares the same dispatch.
+        ///
+        /// Logged to Debug; subscribers should NOT treat this as a
+        /// delivery guarantee. Marked <c>internal</c> (not <c>private</c>)
+        /// so <c>MosquitoNetCalculator.Tests</c> (already granted
+        /// <c>InternalsVisibleTo</c>) can assert per-subscriber isolation
+        /// without reflection on backing delegates.
+        /// </summary>
+        internal static void FireUpdateDetected(UpdateItem item)
+        {
+            var handler = UpdateDetected;
+            if (handler == null) return;
+            foreach (var d in handler.GetInvocationList())
+            {
+                try { ((Action<UpdateItem>)d)(item); }
+                catch (Exception ex) { Debug.WriteLine($"[UpdateService] UpdateDetected subscriber threw: {ex.Message}"); }
+            }
+        }
+
+        /// <summary>
+        /// Builds the stub <see cref="UpdateItem"/> shown in the Updates tab
+        /// when the auto-update flow detects a newer release. Running binary
+        /// can't show the next version's full changelog (encoded in its own
+        /// embedded update-log.json), so we ship a placeholder. The full
+        /// changelog surfaces automatically after the user installs and
+        /// restarts — <c>MainWindowViewModel.ctor</c> re-reads
+        /// <c>UpdateLog.AllNewestFirst()</c> on cold start.
+        /// </summary>
+        internal static UpdateItem CreateReleaseStub(string version) => new UpdateItem
+        {
+            Version = version,
+            Date = DateTime.UtcNow,
+            Type = "Доступно",
+            Title = $"Доступно обновление v{version}",
+            Changes = new System.Collections.Generic.List<string>
+            {
+                "Установите обновление, чтобы увидеть подробности изменений в этой версии."
+            }
+        };
+
+        /// <summary>
         /// Returns true if a previous startup check found a pending update.
         /// Used to show a visual indicator (e.g., badge on the Settings button).
         /// </summary>
@@ -150,72 +210,13 @@ namespace MosquitoNetCalculator.Services
             return !string.IsNullOrEmpty(pending);
         }
 
-        // ──────────────────────────────────────────────────────────────────
-        //  Broken-version detection (startup banner)
-        // ──────────────────────────────────────────────────────────────────
-        //
-        // Versions in the half-open interval [BrokenVersionStart, BrokenVersionEnd)
-        // ship with a known-broken auto-update flow. MainWindow_Loaded shows
-        // a Warning toast with a manual-install URL for users in this range.
-        //
-        // Maintenance: bump BrokenVersionEnd every time a fix is published.
-        // Each publication effectively retires the previous broken range —
-        // keeping the range narrow ensures only the actually-affected users
-        // see the banner.
-        //
-        // History:
-        //   • v3.40.0 — Original broken release (ResourceReferenceKeyNotFound
-        //                Exception in OnUpdateProgressChanged aborts the
-        //                auto-update flow).
-        //   • v3.40.1 — First patch (FindResource → TryFindResource;
-        //                moved Storyboards to Window.Resources).
-        //   • v3.40.2 — Belt-and-suspenders try/catch + this banner.
-        //                Bump BrokenVersionEnd to (3,40,3) on the NEXT
-        //                release so any future regression here retires
-        //                automatically.
-        //
-        // Why tuples and not System.Version? `Version(3,40,1,0) > Version(3,40,1)`
-        // is true because Revision 0 > -1, even though both represent the
-        // same release (InformationalVersion vs. FileVersion parsing paths).
-        // Comparing on (Major, Minor, Build) only avoids the footgun and
-        // produces the expected equal-or-greater result for both 3-part and
-        // 4-part Version objects.
-        // Constants are private — only IsCurrentVersionBrokenForAutoUpdate uses
-        // them. External API surface is the method itself.
-        private const int BrokenVersionMajor = 3;
-        private const int BrokenVersionMinor = 40;
-        private const int BrokenVersionStartBuild = 0;
-        private const int BrokenVersionEndBuild   = 2;
-
         /// <summary>
         /// Returns <c>true</c> if <paramref name="version"/> falls into the
-        /// known-broken-for-auto-update half-open interval
-        /// <c>[3.40.<paramref name="BrokenVersionStartBuild"/>, 3.40.<paramref name="BrokenVersionEndBuild"/>)</c>.
-        ///
-        /// Comparison ignores <c>Revision</c> on purpose — we look only at
-        /// <c>(Major, Minor, Build)</c>. This avoids the <see cref="Version"/>
-        /// comparison footgun where <c>Version(3,40,1,0) &gt; Version(3,40,1)</c>
-        /// because Revision <c>0 &gt; -1</c>, even though both represent the
-        /// same release (InformationalVersion vs. FileVersion parsing paths).
-        ///
-        /// Visibility is <c>internal</c> rather than <c>public</c> — only
-        /// <c>MainWindow_Loaded</c> calls it. Tests access via the existing
-        /// <c>InternalsVisibleTo("MosquitoNetCalculator.Tests")</c> in the
-        /// main .csproj.
+        /// known-broken-for-auto-update half-open interval.
+        /// Delegates to <see cref="VersionResolver.IsBrokenForAutoUpdate"/>.
         /// </summary>
         internal static bool IsCurrentVersionBrokenForAutoUpdate(Version? version)
-        {
-            if (version == null) return false;
-
-            // Major and Minor are fixed inside the broken range — keep the
-            // comparison explicit so the contract is obvious at the call site.
-            // Avoids both System.Version overload surprises AND tuple
-            // comparison operator syntax (which varies by LangVer).
-            return version.Major == BrokenVersionMajor
-                && version.Minor == BrokenVersionMinor
-                && version.Build >= BrokenVersionStartBuild
-                && version.Build < BrokenVersionEndBuild;
-        }
+            => VersionResolver.IsBrokenForAutoUpdate(version);
 
         /// <summary>
         /// Версия, для которой уже была показана фоновая плашка в текущей
@@ -301,6 +302,14 @@ namespace MosquitoNetCalculator.Services
                     changelogCount: changelog.Length,
                     onUpdate: onUpdate,
                     onLater: onLater);
+
+                // Поверхностное уведомление для вкладки «Обновления».
+                // Запущенный бинарник не может показать полный changelog
+                // будущей версии (он вшит в её embedded update-log.json),
+                // поэтому отправляем stub с одной строкой. Полный changelog
+                // подтянется автоматически ПОСЛЕ установки обновления и
+                // перезапуска — MainWindow.ctor перечитает UpdateLog.AllNewestFirst().
+                FireUpdateDetected(CreateReleaseStub(release.Version));
             }
             catch (Exception ex)
             {
@@ -341,30 +350,17 @@ namespace MosquitoNetCalculator.Services
 
         /// <summary>
         /// Analyzes an update manifest against a reference version and returns
-        /// the newest <see cref="ReleaseInfo"/> if an update is available,
-        /// or <c>null</c> if the app is up-to-date or the manifest is invalid.
-        /// Exposed as <c>internal</c> for unit testing.
+        /// the newest <see cref="ReleaseInfo"/> if an update is available.
+        /// Delegates to <see cref="VersionResolver.GetAvailableUpdate"/>.
         /// </summary>
         internal static ReleaseInfo? GetAvailableUpdate(UpdateManifest? manifest, Version currentVersion)
-        {
-            if (manifest == null || manifest.Releases.Count == 0)
-                return null;
-
-            Version? latestVersion = ParseSafe(manifest.Latest);
-            if (latestVersion == null)
-                return null;
-
-            if (latestVersion <= currentVersion)
-                return null;
-
-            return manifest.Releases[0]; // newest first
-        }
+            => VersionResolver.GetAvailableUpdate(manifest, currentVersion);
 
         /// <summary>
         /// Shared update flow: fetch manifest → show changelog dialog → download →
         /// verify → restart. Used by both startup auto-check and manual check.
         /// </summary>
-        private static async Task RunUpdateFlowAsync(Window? owner, bool isAutomatic)
+        internal static async Task RunUpdateFlowAsync(Window? owner, bool isAutomatic, HttpClient? httpClient = null)
         {
             if (IsChecking)
             {
@@ -379,7 +375,7 @@ namespace MosquitoNetCalculator.Services
                 if (!isAutomatic)
                     ToastService.ShowToast("Проверка наличия обновлений...", ToastType.Info);
 
-                var manifest = await FetchManifestAsync().ConfigureAwait(true);
+                var manifest = await FetchManifestAsync(httpClient).ConfigureAwait(true);
                 var release = GetAvailableUpdate(manifest, CurrentVersion);
 
                 if (release == null)
@@ -399,9 +395,27 @@ namespace MosquitoNetCalculator.Services
 
                 // Phase 2: Confirm download with changelog
                 var changelog = UpdateLog.GetChangesSince(CurrentVersion);
-                bool confirmed = DialogService.ShowUpdateAvailable(manifest!.Latest, changelog, owner, isAutomatic);
-                if (!confirmed)
+                // ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░
+                // Dialog mock seam: tests inject ShowUpdateAvailableOverride to bypass
+                // WPF modal. Production path is unchanged when override is null.
+                // ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░
+                bool confirmed = ShowUpdateAvailableOverride?.Invoke(manifest!.Latest, changelog)
+                    ?? DialogService.ShowUpdateAvailable(manifest!.Latest, changelog, owner, isAutomatic);
+
+                // Fire UpdateDetected as soon as the user ACCEPTS the dialog
+                // (gated by `confirmed` so cancel-and-defer doesn't spam the
+                // Updates tab). The mock used here mirrors CheckInBackgroundAsync:
+                // running binary can't see the next version's full changelog
+                // (encoded in its own embedded update-log.json), so we ship a
+                // stub. The Modal flow + the Background flow now agree on the
+                // same payload shape and same fire contract.
+                if (confirmed)
                 {
+                    FireUpdateDetected(CreateReleaseStub(manifest.Latest));
+                }
+                else
+                {
+                    // User deferred — still save pending for next session.
                     AppSettingsService.SavePendingUpdateVersion(manifest.Latest);
                     return;
                 }
@@ -416,7 +430,8 @@ namespace MosquitoNetCalculator.Services
                 try
                 {
                     await DownloadWithProgressAsync(release.Url, tempZip,
-                        new Progress<int>(p => DownloadProgress = p)).ConfigureAwait(true);
+                        new Progress<int>(p => DownloadProgress = p),
+                        httpClient).ConfigureAwait(true);
                 }
                 catch (Exception ex)
                 {
@@ -440,29 +455,36 @@ namespace MosquitoNetCalculator.Services
                 IsDownloading = false;
                 DownloadProgress = 100;
 
-                // Phase 4: Verify SHA-256
+                // Phase 4: Verify SHA-256 (MANDATORY — skip releases without hash is unsafe)
                 ToastService.ShowToast("Проверка целостности архива...", ToastType.Info);
 
-                if (!string.IsNullOrEmpty(release.Sha256))
+                if (string.IsNullOrEmpty(release.Sha256))
                 {
-                    string actualHash = ComputeSha256(tempZip);
-                    if (!string.Equals(actualHash, release.Sha256, StringComparison.OrdinalIgnoreCase))
+                    TryDelete(tempZip);
+                    var msg = "В манифесте отсутствует SHA-256 хеш для этой версии. Обновление отменено.";
+                    if (isAutomatic)
+                        ToastService.ShowToast(msg, ToastType.Error);
+                    else
+                        MessageBox.Show(msg, "Ошибка проверки", MessageBoxButton.OK, MessageBoxImage.Error);
+                    return;
+                }
+
+                if (!UpdateVerifier.VerifyHash(tempZip, release.Sha256))
+                {
+                    TryDelete(tempZip);
+                    if (isAutomatic)
                     {
-                        TryDelete(tempZip);
-                        if (isAutomatic)
-                        {
-                            ToastService.ShowToast("Хеш-сумма архива не совпадает. Возможно, файл повреждён.", ToastType.Error);
-                        }
-                        else
-                        {
-                            MessageBox.Show(
-                                "Хеш-сумма архива не совпадает. Возможно, файл повреждён при скачивании.",
-                                "Ошибка проверки",
-                                MessageBoxButton.OK,
-                                MessageBoxImage.Error);
-                        }
-                        return;
+                        ToastService.ShowToast("Хеш-сумма архива не совпадает. Возможно, файл повреждён.", ToastType.Error);
                     }
+                    else
+                    {
+                        MessageBox.Show(
+                            "Хеш-сумма архива не совпадает. Возможно, файл повреждён при скачивании.",
+                            "Ошибка проверки",
+                            MessageBoxButton.OK,
+                            MessageBoxImage.Error);
+                    }
+                    return;
                 }
 
                 // Phase 5: Stage update and restart
@@ -474,18 +496,37 @@ namespace MosquitoNetCalculator.Services
 
                 WatchdogService.StageUpdate(tempZip);
 
-                // Launch watchdog .bat — it will wait for us to exit, then swap the exe
+                // Launch watchdog .bat with UAC elevation to ensure write access
+                // to protected directories (e.g. Program Files).
+                // .bat files are registered with 'cmdfile' in the registry, so
+                // Verb='runas' on the .bat path itself works directly — no
+                // `cmd.exe /c` wrapper needed (and the wrapper breaks on
+                // AppLocker-restricted systems where cmd.exe is blocked).
                 try
                 {
                     Process.Start(new ProcessStartInfo(WatchdogService.WatchdogPath)
                     {
                         UseShellExecute = true,
+                        Verb = "runas", // triggers UAC prompt if needed
                         WindowStyle = ProcessWindowStyle.Hidden
                     });
                 }
                 catch (Exception ex)
                 {
-                    Debug.WriteLine($"[UpdateService] Failed to launch watchdog: {ex.Message}");
+                    Debug.WriteLine($"[UpdateService] Failed to launch watchdog elevated: {ex.Message}");
+                    // Fallback: try without elevation (user may have write access)
+                    try
+                    {
+                        Process.Start(new ProcessStartInfo(WatchdogService.WatchdogPath)
+                        {
+                            UseShellExecute = true,
+                            WindowStyle = ProcessWindowStyle.Hidden
+                        });
+                    }
+                    catch (Exception ex2)
+                    {
+                        Debug.WriteLine($"[UpdateService] Fallback watchdog launch also failed: {ex2}");
+                    }
                 }
 
                 Application.Current.Shutdown();
@@ -514,215 +555,54 @@ namespace MosquitoNetCalculator.Services
             }
         }
 
-        // ─── Private helpers ──────────────────────────────────────────
+        // ─── Private helpers — delegated to extracted components (Phase 2) ──
 
         /// <summary>
         /// Fetches and deserializes the releases.json manifest from GitHub.
-        /// Returns null on any failure (network, parse, etc.).
-        /// <paramref name="httpClient"/> allows injection of a mock for testing.
+        /// Delegates to <see cref="UpdateManifestClient.FetchManifestAsync"/>.
         /// </summary>
-        internal static async Task<UpdateManifest?> FetchManifestAsync(HttpClient? httpClient = null)
-        {
-            try
-            {
-                var ownsClient = httpClient == null;
-                var http = httpClient ?? new HttpClient();
-                if (ownsClient)
-                {
-                    http.Timeout = TimeSpan.FromSeconds(15);
-                    http.DefaultRequestHeaders.UserAgent.ParseAdd("MosquitoNetCalculator/3.0");
-                }
-                try
-                {
-                    var response = await http.GetAsync(ManifestUrl,
-                        HttpCompletionOption.ResponseHeadersRead).ConfigureAwait(false);
-
-                    if (!response.IsSuccessStatusCode)
-                        return null;
-
-                    var json = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
-                    return JsonSerializer.Deserialize<UpdateManifest>(json);
-                }
-                finally
-                {
-                    if (ownsClient) http.Dispose();
-                }
-            }
-            catch (Exception ex)
-            {
-                Debug.WriteLine($"[UpdateService] FetchManifest failed: {ex.Message}");
-                return null;
-            }
-        }
+        internal static Task<UpdateManifest?> FetchManifestAsync(HttpClient? httpClient = null)
+            => UpdateManifestClient.FetchManifestAsync(httpClient);
 
         /// <summary>
-        /// Downloads a file from <paramref name="url"/> to <paramref name="destinationPath"/>,
-        /// reporting progress 0–100 via <paramref name="progress"/>.
-        /// <paramref name="httpClient"/> allows injection of a mock for testing.
+        /// Downloads a file with progress reporting and retry logic.
+        /// Delegates to <see cref="UpdateDownloader.DownloadWithProgressAsync"/>.
         /// </summary>
-        internal static async Task DownloadWithProgressAsync(
+        internal static Task DownloadWithProgressAsync(
             string url, string destinationPath, IProgress<int> progress, HttpClient? httpClient = null)
-        {
-            var ownsClient = httpClient == null;
-            var http = httpClient ?? new HttpClient();
-            if (ownsClient)
-            {
-                http.Timeout = TimeSpan.FromMinutes(10);
-                http.DefaultRequestHeaders.UserAgent.ParseAdd("MosquitoNetCalculator/3.0");
-            }
-            try
-            {
-                using var response = await http.GetAsync(url,
-                    HttpCompletionOption.ResponseHeadersRead).ConfigureAwait(false);
+            => UpdateDownloader.DownloadWithProgressAsync(url, destinationPath, progress, httpClient);
 
-                response.EnsureSuccessStatusCode();
-
-                long? totalBytes = response.Content.Headers.ContentLength;
-
-                using var contentStream = await response.Content.ReadAsStreamAsync().ConfigureAwait(false);
-                using var fileStream = new FileStream(destinationPath, FileMode.Create,
-                    FileAccess.Write, FileShare.None, 8192, useAsync: true);
-
-                var buffer = new byte[8192];
-                long totalRead = 0;
-                int bytesRead;
-                int lastPercent = -1;
-
-                while ((bytesRead = await contentStream.ReadAsync(
-                    buffer, 0, buffer.Length).ConfigureAwait(false)) > 0)
-                {
-                    await fileStream.WriteAsync(buffer, 0, bytesRead).ConfigureAwait(false);
-                    totalRead += bytesRead;
-
-                    if (totalBytes.HasValue && totalBytes.Value > 0)
-                    {
-                        int percent = (int)(totalRead * 100 / totalBytes.Value);
-                        if (percent != lastPercent)
-                        {
-                            lastPercent = percent;
-                            progress.Report(percent);
-                        }
-                    }
-                }
-
-            // Report 100% when download is complete — covers both missing
-            // Content-Length and zero-byte responses (Content-Length = 0).
-            if (!totalBytes.HasValue || totalBytes.Value == 0)
-                progress.Report(100);
-            }
-            finally
-            {
-                if (ownsClient) http.Dispose();
-            }
-        }
+        // ─── Version helpers — delegated to VersionResolver (Phase 2) ──
 
         /// <summary>
-        /// Computes the SHA-256 hash of a file as a lowercase hex string.
+        /// Safely parses a version string, returning null on failure.
+        /// Delegates to <see cref="VersionResolver.ParseSafe"/>.
         /// </summary>
-        private static string ComputeSha256(string filePath)
-        {
-            using var stream = File.OpenRead(filePath);
-            byte[] hash = SHA256.HashData(stream);
-            return Convert.ToHexString(hash).ToLowerInvariant();
-        }
+        internal static Version? ParseSafe(string? version) => VersionResolver.ParseSafe(version);
 
         /// <summary>
-        /// Safely parses a version string, returning null on failure
-        /// (null input, empty whitespace, or malformed value).
-        /// Exposed as <c>internal</c> for direct unit testing.
+        /// Strips git hash / pre-release suffix from a version string.
+        /// Delegates to <see cref="VersionResolver.StripVersionSuffix"/>.
         /// </summary>
-        internal static Version? ParseSafe(string? version)
-        {
-            if (string.IsNullOrWhiteSpace(version))
-                return null;
-            try { return new Version(version); }
-            catch { return null; }
-        }
+        internal static string? StripVersionSuffix(string? version) => VersionResolver.StripVersionSuffix(version);
 
         /// <summary>
-        /// Strips the git commit hash suffix (e.g., "3.34.4+abc123" → "3.34.4")
-        /// that .NET SDK automatically appends to
-        /// <c>AssemblyInformationalVersionAttribute</c> when source control
-        /// info is available. Also strips any pre-release suffix after '-'.
-        /// Exposed as <c>internal</c> for direct unit testing.
+        /// Resolves version from an assembly's attributes.
+        /// Delegates to <see cref="VersionResolver.ResolveVersion"/>.
         /// </summary>
-        internal static string? StripVersionSuffix(string? version)
-        {
-            if (string.IsNullOrEmpty(version))
-                return version;
-            int plusIdx = version.IndexOf('+');
-            if (plusIdx >= 0)
-                version = version.Substring(0, plusIdx);
-            int dashIdx = version.IndexOf('-');
-            if (dashIdx >= 0)
-                version = version.Substring(0, dashIdx);
-            return version;
-        }
+        internal static Version? ResolveVersion(Assembly? assembly) => VersionResolver.ResolveVersion(assembly);
 
         /// <summary>
-        /// Резолвит версию из произвольной сборки (тестируется с динамическими сборками).
-        /// Приоритет источников (от качественного к фоллбэку):
-        /// 1. <c>AssemblyInformationalVersionAttribute</c> — содержит «3.34.4+gitHash»
-        ///    при наличии source control, отсекаем суффикс → чистый 3-part («v3.34.4» в заголовке).
-        /// 2. <c>AssemblyFileVersionAttribute</c> — без git hash, но содержит 4-ю часть («3.34.4.0»).
-        /// 3. <c>Assembly.GetName().Version</c> — legacy fallback (в single-file обычно null).
-        /// При ошибке — null (caller подставит 0.0.0 + запишет в Debug).
-        /// </summary>
-        internal static Version? ResolveVersion(Assembly? assembly)
-        {
-            try
-            {
-                if (assembly == null) return null;
-
-                // 1. InformationalVersion (3.34.4+gitHash) — лучший display-источник.
-                var infoAttr = assembly.GetCustomAttribute<AssemblyInformationalVersionAttribute>();
-                var vInfo = ParseSafe(StripVersionSuffix(infoAttr?.InformationalVersion));
-                if (vInfo != null)
-                {
-                    Debug.WriteLine($"[UpdateService] Resolved via InformationalVersion='{infoAttr?.InformationalVersion}' -> {vInfo}");
-                    return vInfo;
-                }
-
-                // 2. FileVersion (3.34.4.0) — fallback, даст «v3.34.4.0».
-                var fileAttr = assembly.GetCustomAttribute<AssemblyFileVersionAttribute>();
-                var vFile = ParseSafe(fileAttr?.Version);
-                if (vFile != null)
-                {
-                    Debug.WriteLine($"[UpdateService] Resolved via FileVersion='{fileAttr?.Version}' -> {vFile}");
-                    return vFile;
-                }
-
-                // 3. GetName().Version — legacy fallback.
-                var nameVer = assembly.GetName().Version;
-                if (nameVer != null)
-                {
-                    Debug.WriteLine($"[UpdateService] Resolved via GetName().Version -> {nameVer}");
-                    return nameVer;
-                }
-
-                Debug.WriteLine("[UpdateService] All version sources failed");
-            }
-            catch (Exception ex)
-            {
-                Debug.WriteLine($"[UpdateService] Version resolve exception: {ex}");
-            }
-            return null;
-        }
-
-        /// <summary>
-        /// Резолвит текущую версию приложения (из сборки UpdateService).
-        /// Production-call site для <see cref="CurrentVersion"/>.
+        /// Resolves the current application version.
+        /// Delegates to <see cref="VersionResolver.ResolveVersion"/>.
         /// </summary>
         internal static Version? TryResolveCurrentVersion()
-            => ResolveVersion(typeof(UpdateService).Assembly);
+            => VersionResolver.ResolveVersion(typeof(UpdateService).Assembly);
 
         /// <summary>
         /// Tries to delete a file, swallowing any exceptions.
+        /// Delegates to <see cref="UpdateDownloader.TryDelete"/>.
         /// </summary>
-        private static void TryDelete(string path)
-        {
-            try { if (File.Exists(path)) File.Delete(path); }
-            catch { /* best effort */ }
-        }
+        private static void TryDelete(string path) => UpdateDownloader.TryDelete(path);
     }
 }

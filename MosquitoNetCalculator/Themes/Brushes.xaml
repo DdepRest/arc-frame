@@ -27,6 +27,8 @@
     <SolidColorBrush x:Key="RowAltHover"   Color="#F0F0F0"/>
     <SolidColorBrush x:Key="RowAltSelected" Color="#EBF3FD"/>
     <SolidColorBrush x:Key="Success"       Color="#0F7B3F"/>
+    <SolidColorBrush x:Key="EconomyGreen"  Color="#4CAF50"/>
+    <SolidColorBrush x:Key="EconomyGreenLight" Color="#0D4CAF50"/>
     <SolidColorBrush x:Key="SuccessHover"  Color="#0A6333"/>
     <SolidColorBrush x:Key="Danger"        Color="#C42B1C"/>
     <SolidColorBrush x:Key="DangerHover"   Color="#A61B10"/>

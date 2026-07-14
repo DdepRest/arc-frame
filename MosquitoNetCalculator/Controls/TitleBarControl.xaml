@@ -8,25 +8,42 @@
             WindowChrome.IsHitTestVisibleInChrome="True">
         <Grid>
             <Grid.ColumnDefinitions>
+                <!-- Левая колонка (*): для иконки и заголовка, обрезается TextTrimming. -->
                 <ColumnDefinition Width="*"/>
-                <ColumnDefinition Width="Auto"/>
+                <!-- Правая колонка (160): ЖЁСТКО фиксированная ширина под 4 кнопки (40×4 = ⚙/Min/Max/Close).
+                     TitleBarControl переиспользуется в MainWindow И PrintPreviewWindow — фикс покрывает
+                     ОБА случая. В PrintPreview кнопка ⚙ скрыта через ShowSettings="False" → справа остаётся
+                     40px «воздуха», это приемлемо при WindowStyle=None.
+                     Раньше было Auto — в edge-case (длинный title, DPI>100%) текст заголовка вытеснял
+                     кнопки в Auto-колонке. Фиксированная ширина даёт жёсткий резерв. -->
+                <ColumnDefinition Width="160"/>
             </Grid.ColumnDefinitions>
 
-            <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center" HorizontalAlignment="Left" Margin="12,0,0,0">
+            <!-- Grid вместо StackPanel: жёстко ограничивает ширину TextBlock →
+                 TextTrimming работает корректно и заголовок не наезжает на кнопки. -->
+            <Grid Grid.Column="0" VerticalAlignment="Center" Margin="12,0,0,0">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="*"/>
+                </Grid.ColumnDefinitions>
                 <Image Source="{Binding Icon, RelativeSource={RelativeSource AncestorType=Window}}"
                        Width="16" Height="16" VerticalAlignment="Center"/>
-                <TextBlock Text="{Binding Title, RelativeSource={RelativeSource AncestorType=Window}}"
-                           VerticalAlignment="Center" Margin="8,0,0,0"
-                           Foreground="{DynamicResource TextPrimary}" FontSize="12"/>
-            </StackPanel>
+                <TextBlock Grid.Column="1" Text="{Binding Title, RelativeSource={RelativeSource AncestorType=Window}}"
+                           VerticalAlignment="Center" Margin="8,0,8,0"
+                           Foreground="{DynamicResource TextPrimary}" FontSize="12"
+                           TextTrimming="CharacterEllipsis"
+                           HorizontalAlignment="Stretch"/>
+            </Grid>
 
-            <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
+            <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center" HorizontalAlignment="Right">
                 <!-- Settings gear button -->
                 <Button x:Name="BtnSettingsGear"
                         Click="BtnSettingsGear_Click"
                         Width="40" Height="40" Background="Transparent" BorderThickness="0"
                         Foreground="{DynamicResource TextPrimary}"
                         ToolTip="Настройки"
+                        FocusVisualStyle="{StaticResource FluentFocusVisual}"
+                        AutomationProperties.Name="Настройки"
                         WindowChrome.IsHitTestVisibleInChrome="True">
                     <Button.Template>
                         <ControlTemplate TargetType="Button">
@@ -70,12 +87,12 @@
                     <TextBlock Text="&#xE713;" FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets" FontSize="14"/>
                     <Button.ContextMenu>
                         <ContextMenu x:Name="SettingsMenu">
-                            <MenuItem x:Name="MenuThemeLight" Header="☀  Светлая тема" IsCheckable="True" Click="MenuThemeLight_Click"/>
-                            <MenuItem x:Name="MenuThemeDark" Header="🌙  Тёмная тема" IsCheckable="True" Click="MenuThemeDark_Click"/>
+                            <MenuItem x:Name="MenuThemeLight" Header="Светлая тема" IsCheckable="True" Click="MenuThemeLight_Click"/>
+                            <MenuItem x:Name="MenuThemeDark" Header="Тёмная тема" IsCheckable="True" Click="MenuThemeDark_Click"/>
                             <Separator/>
-                            <MenuItem Header="📍 Сменить точку установки…" Click="MenuChangeLocation_Click"/>
+                            <MenuItem Header="Сменить точку установки…" Click="MenuChangeLocation_Click"/>
                             <Separator/>
-                            <MenuItem Header="🔄 Проверить обновления" Click="MenuCheckUpdates_Click"/>
+                            <MenuItem Header="Проверить обновления" Click="MenuCheckUpdates_Click"/>
                         </ContextMenu>
                     </Button.ContextMenu>
                 </Button>
@@ -83,6 +100,9 @@
                 <Button x:Name="BtnMinimize" Click="BtnMinimize_Click"
                         Width="40" Height="40" Background="Transparent" BorderThickness="0"
                         Foreground="{DynamicResource TextPrimary}"
+                        FocusVisualStyle="{StaticResource FluentFocusVisual}"
+                        ToolTip="Свернуть"
+                        AutomationProperties.Name="Свернуть"
                         WindowChrome.IsHitTestVisibleInChrome="True">
                     <Button.Template>
                         <ControlTemplate TargetType="Button">
@@ -122,6 +142,9 @@
                 <Button x:Name="BtnMaximize" Click="BtnMaximize_Click"
                         Width="40" Height="40" Background="Transparent" BorderThickness="0"
                         Foreground="{DynamicResource TextPrimary}"
+                        FocusVisualStyle="{StaticResource FluentFocusVisual}"
+                        ToolTip="Развернуть"
+                        AutomationProperties.Name="Развернуть"
                         WindowChrome.IsHitTestVisibleInChrome="True">
                     <Button.Template>
                         <ControlTemplate TargetType="Button">
@@ -161,6 +184,9 @@
                 <Button x:Name="BtnClose" Click="BtnClose_Click"
                         Width="40" Height="40" Background="Transparent" BorderThickness="0"
                         Foreground="{DynamicResource TextPrimary}"
+                        FocusVisualStyle="{StaticResource FluentFocusVisual}"
+                        ToolTip="Закрыть"
+                        AutomationProperties.Name="Закрыть"
                         WindowChrome.IsHitTestVisibleInChrome="True">
                     <Button.Template>
                         <ControlTemplate TargetType="Button">

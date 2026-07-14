@@ -1,193 +1,136 @@
 using System;
-using System.Collections.Generic;
-using System.IO;
+using System.ComponentModel;
+using System.Diagnostics;
+using System.Runtime.InteropServices;
 using System.Windows;
-using System.Windows.Media;
-using Microsoft.Web.WebView2.Core;
+using System.Windows.Interop;
+using System.Windows.Media.Imaging;
+using MosquitoNetCalculator.Controls;
+using MosquitoNetCalculator.Models;
 using MosquitoNetCalculator.Services;
 
 namespace MosquitoNetCalculator
 {
+    /// <summary>
+    /// Отдельное окно предпросмотра КП — тонкая обёртка над PrintPreviewControl.
+    /// Содержит только Window chrome (title bar, иконка, WndProc для maximized).
+    /// Вся логика предпросмотра и печати — в PrintPreviewControl.
+    /// </summary>
     public partial class PrintPreviewWindow : Window
     {
-        private readonly string _htmlContent;
-        private readonly List<string> _tempFiles = new();
+        private readonly PrintPreviewControl _previewControl;
 
-        public PrintPreviewWindow(string htmlContent)
+        // ── Win32 for maximized/cover taskbar ──
+        private const int WM_GETMINMAXINFO = 0x0024;
+        private const uint MONITOR_DEFAULTTONEAREST = 2;
+
+        [StructLayout(LayoutKind.Sequential)]
+        private struct POINT { public int X, Y; }
+
+        [StructLayout(LayoutKind.Sequential)]
+        private struct MINMAXINFO
+        {
+            public POINT ptReserved;
+            public POINT ptMaxSize;
+            public POINT ptMaxPosition;
+            public POINT ptMaxTrackSize;
+            public POINT ptMinTrackSize;
+        }
+
+        [StructLayout(LayoutKind.Sequential)]
+        private struct MONITORINFO
+        {
+            public int cbSize;
+            public RECT rcMonitor;
+            public RECT rcWork;
+            public uint dwFlags;
+        }
+
+        [StructLayout(LayoutKind.Sequential)]
+        private struct RECT { public int Left, Top, Right, Bottom; }
+
+        [DllImport("user32.dll")]
+        private static extern IntPtr MonitorFromWindow(IntPtr hwnd, uint dwFlags);
+
+        [DllImport("user32.dll", CharSet = CharSet.Auto)]
+        private static extern bool GetMonitorInfo(IntPtr hMonitor, ref MONITORINFO lpmi);
+
+        public PrintPreviewWindow(
+            System.Windows.Documents.FlowDocument document,
+            PrintService printService,
+            string contractNumber,
+            PrintSettings? savedSettings)
         {
             InitializeComponent();
-            _htmlContent = htmlContent;
 
-            // Print preview is always light-themed regardless of app theme
-            WebView.DefaultBackgroundColor = System.Drawing.Color.White;
-
-            Loaded += PrintPreviewWindow_Loaded;
-        }
-
-        private async void PrintPreviewWindow_Loaded(object sender, RoutedEventArgs e)
-        {
+            // Icon loading
             try
             {
-                // Initialize the WebView2 environment with a user-data folder
-                // inside %AppData% to avoid E_ACCESSDENIED when the app is
-                // installed under Program Files.
-                string userDataFolder = Path.Combine(
-                    Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
-                    "MosquitoNetCalculator",
-                    "WebView2");
-                Directory.CreateDirectory(userDataFolder);
-
-                var env = await CoreWebView2Environment.CreateAsync(null, userDataFolder);
-                await WebView.EnsureCoreWebView2Async(env);
-
-                // Write HTML to a temp file and navigate to it
-                string tempPath = Path.Combine(
-                    Path.GetTempPath(),
-                    $"KP_preview_{DateTime.Now:yyyyMMdd_HHmmss}.html");
-                _tempFiles.Add(tempPath);
-
-                File.WriteAllText(tempPath, _htmlContent, System.Text.Encoding.UTF8);
-
-                // Auto-open the browser print dialog once the page finishes loading.
-                // Skipping the intermediate «Печать / Сохранить PDF» button click —
-                // user goes straight from «Печать КП» to the print settings dialog.
-                WebView.CoreWebView2.NavigationCompleted += async (s, args) =>
-                {
-                    // Small delay to let the page fully lay out before triggering print
-                    await System.Threading.Tasks.Task.Delay(400);
-                    try
-                    {
-                        await WebView.CoreWebView2.ExecuteScriptAsync("window.print();");
-                    }
-                    catch (Exception ex)
-                    {
-                        System.Diagnostics.Trace.WriteLine($"[PrintPreviewWindow] Auto-print failed: {ex.Message}");
-                    }
-                };
-
-                WebView.CoreWebView2.Navigate(tempPath);
-            }
-            catch (WebView2RuntimeNotFoundException)
-            {
-                var result = MessageBox.Show(
-                    "Для предпросмотра КП необходим WebView2 Runtime.\n\n" +
-                    "Нажмите «Да», чтобы открыть страницу загрузки Microsoft.\n" +
-                    "Нажмите «Нет», чтобы открыть КП в браузере.",
-                    "WebView2 не найден",
-                    MessageBoxButton.YesNo,
-                    MessageBoxImage.Warning);
-
-                if (result == MessageBoxResult.Yes)
-                {
-                    try
-                    {
-                        System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo
-                        {
-                            FileName = DependencyCheckerService.WebView2DownloadUrl,
-                            UseShellExecute = true
-                        });
-                    }
-                    catch
-                    {
-                        // Best-effort: if the browser can't be launched, the user still
-                        // gets the KP opened via FallbackOpenInBrowser below.
-                    }
-                }
-
-                FallbackOpenInBrowser();
-                Close();
+                Icon = new BitmapImage(new Uri(
+                    "pack://application:,,,/MosquitoNetCalculator;component/Resources/app_icon.png",
+                    UriKind.Absolute));
             }
             catch (Exception ex)
             {
-                MessageBox.Show(
-                    $"Ошибка загрузки предпросмотра:\n{ex.Message}\n\nКП будет открыто в браузере.",
-                    "Предпросмотр",
-                    MessageBoxButton.OK, MessageBoxImage.Warning);
-
-                FallbackOpenInBrowser();
-                Close();
+                Debug.WriteLine($"[PrintPreviewWindow] Failed to load icon: {ex.Message}");
             }
+
+            _previewControl = PreviewControl;
+            _previewControl.Initialize(document, printService, contractNumber, savedSettings);
+            _previewControl.Closed += (_, _) => Close();
+
+            // Adaptive initial size
+            var workArea = SystemParameters.WorkArea;
+            const double desiredW = 1150.0;
+            const double desiredH = 1300.0;
+            double scaleX = workArea.Width * 0.95 / desiredW;
+            double scaleY = workArea.Height * 0.95 / desiredH;
+            double scale = Math.Min(1.0, Math.Min(scaleX, scaleY));
+            this.Width = Math.Max(MinWidth, desiredW * scale);
+            this.Height = Math.Max(MinHeight, desiredH * scale);
+
+            SourceInitialized += OnSourceInitialized;
         }
 
-        private void FallbackOpenInBrowser()
+        /// <summary>Возвращает текущие настройки печати.</summary>
+        public PrintSettings GetSettings() => _previewControl.GetSettings();
+
+        private void OnSourceInitialized(object? sender, EventArgs e)
         {
-            try
-            {
-                string tempPath = Path.Combine(
-                    Path.GetTempPath(),
-                    $"KP_{DateTime.Now:yyyyMMdd_HHmmss}.html");
-                _tempFiles.Add(tempPath);
-
-                File.WriteAllText(tempPath, _htmlContent, System.Text.Encoding.UTF8);
-
-                System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo
-                {
-                    FileName = tempPath,
-                    UseShellExecute = true
-                });
-            }
-            catch (Exception)
-            {
-                // Browser failed — save to Desktop as last resort
-                try
-                {
-                    string desktopPath = Path.Combine(
-                        Environment.GetFolderPath(Environment.SpecialFolder.Desktop),
-                        $"KP_{DateTime.Now:yyyyMMdd_HHmmss}.html");
-
-                    File.WriteAllText(desktopPath, _htmlContent, System.Text.Encoding.UTF8);
-
-                    MessageBox.Show(
-                        $"Не удалось открыть браузер.\n\nКП сохранено на рабочем столе:\n{desktopPath}\n\nОткройте файл вручную.",
-                        "Печать КП",
-                        MessageBoxButton.OK, MessageBoxImage.Information);
-                }
-                catch (Exception)
-                {
-                    MessageBox.Show(
-                        "Не удалось открыть браузер и сохранить файл КП.\nПроверьте права доступа к папкам Temp и Desktop.",
-                        "Ошибка печати",
-                        MessageBoxButton.OK, MessageBoxImage.Error);
-                }
-            }
+            var handle = new WindowInteropHelper(this).Handle;
+            if (handle != IntPtr.Zero)
+                HwndSource.FromHwnd(handle)?.AddHook(WndProc);
         }
 
-        private async void BtnPrint_Click(object sender, RoutedEventArgs e)
+        private IntPtr WndProc(IntPtr hwnd, int msg, IntPtr wParam, IntPtr lParam, ref bool handled)
         {
-            try
+            if (msg == WM_GETMINMAXINFO)
             {
-                if (WebView.CoreWebView2 != null)
+                var hMonitor = MonitorFromWindow(hwnd, MONITOR_DEFAULTTONEAREST);
+                var mi = new MONITORINFO { cbSize = Marshal.SizeOf<MONITORINFO>() };
+                if (GetMonitorInfo(hMonitor, ref mi))
                 {
-                    await WebView.CoreWebView2.ExecuteScriptAsync("window.print();");
+                    var mmi = Marshal.PtrToStructure<MINMAXINFO>(lParam);
+                    mmi.ptMaxPosition.X = mi.rcWork.Left;
+                    mmi.ptMaxPosition.Y = mi.rcWork.Top;
+                    mmi.ptMaxSize.X = mi.rcWork.Right - mi.rcWork.Left;
+                    mmi.ptMaxSize.Y = mi.rcWork.Bottom - mi.rcWork.Top;
+                    Marshal.StructureToPtr(mmi, lParam, true);
                 }
+                handled = true;
             }
-            catch (Exception ex)
-            {
-                MessageBox.Show($"Ошибка печати: {ex.Message}", "Ошибка",
-                    MessageBoxButton.OK, MessageBoxImage.Error);
-            }
-        }
-
-        private void CleanupTempFiles()
-        {
-            foreach (var path in _tempFiles)
-            {
-                try { if (File.Exists(path)) File.Delete(path); }
-                catch { /* best-effort cleanup */ }
-            }
-            _tempFiles.Clear();
+            return IntPtr.Zero;
         }
 
         protected override void OnClosed(EventArgs e)
         {
-            CleanupTempFiles();
+            try
+            {
+                var hwndSource = HwndSource.FromHwnd(new WindowInteropHelper(this).Handle);
+                hwndSource?.RemoveHook(WndProc);
+            }
+            catch { /* best-effort */ }
             base.OnClosed(e);
-        }
-
-        private void BtnClose_Click(object sender, RoutedEventArgs e)
-        {
-            CleanupTempFiles();
-            Close();
         }
     }
 }

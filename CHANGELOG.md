@@ -1,70 +1,63 @@
 # Changelog
 
-## Unreleased
+## 3.44.0 — 2026-07-14
 
-### Техническое — Фаза 3 системного рефакторинга (REFACTORING_PLAN.md §5)
+### Автопросчёт откосов — новая система
 
-- **`PrintService.cs` → 6 компонентов:** монолитный `PrintService` (632 строки + partial-файлы) разделён на 6 специализированных компонентов с сохранением всего public API как тонких прокси-делегатов.
-  - **`Models/PageMode.cs`** (5 строк) — enum `PageMode` (`All`, `Range`, `Single`).
-  - **`Models/PrintSettings.cs`** (36 строк) — настройки печати: принтер, диапазон страниц, количество копий, колляция.
-  - **`Models/PrintResult.cs`** (32 строки) — результат операции печати (`PrintResultType`, `IsRetryable`, `UserMessage`).
-  - **`Services/DrawingService.cs`** (456 строк) — SVG- и WPF-DrawingImage чертежей (`GetDrawingSvg`, `GetDrawingImage`, `CreateDrawingImageElement`, `WrapForCentering`).
-  - **`Services/FlowDocumentBuilder.cs`** (698 строк) — построение `FlowDocument` для КП (заголовок, таблица позиций, итоги, подписи).
-  - **`Services/FixedDocumentBuilder.cs`** (268 строк) — преобразование `FlowDocument` → `FixedDocument` с учётом диапазона страниц, копий и колляции.
-  - **`Services/PrintQueueManager.cs`** (183 строки) — работа с очередью печати: поиск принтеров, разрешение `PrintQueue`, отправка `DocumentPaginator` с `PrintTicket`.
-  - **`Services/PdfExportService.cs`** (305 строк) — экспорт КП в PDF через QuestPDF.
-  - **`Services/PrintService.cs`** уменьшен до 81 строки (−87%), сохранив все public/internal методы как прокси.
-  - Удалены устаревшие partial-файлы: `PrintService.Drawings.cs`, `PrintService.FlowDocument.cs`, `PrintService.Pdf.cs`.
-  - Внешние caller'ы (`PrintPreviewControl`, `PrintPreviewWindow`, `MainWindow`) переведены с `PrintService.PrintSettings`/`PrintResult`/`PageMode` на `Models.*`.
-  - +~40 тестов: `DrawingServiceTests` (22), `FlowDocumentBuilderTests` (5), `FixedDocumentBuilderTests` (5), `PrintQueueManagerTests` (6), `PdfExportServiceTests` (2). Существующие `PrintServiceTests` — без изменений, проходят через прокси.
-  - **Тесты:** 1038/1038 pass.
+Новая панель откосов автоматически рассчитывает все материалы по размерам окна:
 
-### Техническое — Фаза 2 системного рефакторинга (REFACTORING_PLAN.md §4)
+- Автоматически рассчитывает по ширине, высоте, глубине и количеству откосов: сэндвич (м²), пена (баллоны), герметик/скотч (общие на весь заказ), Старт/F-планка (полосы 3 м), пеноплекс (листы), работа (м.п.).
+- **Экономия материалов:** при нескольких откосах программа объединяет расход герметика/скотча и оптимизирует раскрой Старт/F-планки по всем окнам, что снижает итоговую сумму.
+- **Режим экономии переключаемый:** галочка «Применить экономию» позволяет сравнить сумму с экономией и без неё прямо в панели.
+- **Ручные правки:** количество и цена любого материала можно изменить вручную — авто-пересчёт не перезапишет ручные значения (чип «ручн.»).
+- **Детали экономии:** отдельное окно с расшифровкой, сколько и на каком материале сэкономлено, с tooltip'ами для каждой строки.
+  - Новая кнопка «Детали экономии» в панели откосов открывает окно с расшифровкой экономии по каждому материалу.
+  - Показывает общую экономию по всем откосам и экономию на 1 откос.
+  - Для каждой строки (герметик, скотч, Старт, F-планка) отображается количество с экономией и без, а также итоговая сумма.
+  - При наведении на строку появляется tooltip с подробным расчётом: сколько тюбиков/полос нужно без экономии, сколько с экономией и сколько сэкономлено.
+  - Корректно работает при смешанных размерах откосов — экономия считается по всем окнам суммарно, а не по первому размеру.
+- **BETA-плашка:** в панели откосов показывается предупреждение, что функция в стадии тестирования; плашку можно закрыть и больше не видеть.
+  - Жёлтая плашка BETA с предупреждением: функция в стадии тестирования, рекомендуется перепроверить расчёт вручную.
+  - Плашка закрываемая: кнопка × сохраняет состояние «скрыто» в настройках пользователя.
+- **Ламинат в откосах:** материал и работа добавляются кнопкой «Порог (Ламинат)».
+  - В панели откосов добавлен материал «Ламинат» (500 ₽/шт.) и работа «Работа за ламинат» (500 ₽/шт.).
+  - В таблице материалов откоса добавлена строка «Ламинат» с редактируемым количеством и ценой.
+  - Под строкой «Работа» добавлена строка «Работа за ламинат».
+  - В футере панели откосов добавлена кнопка «Порог (Ламинат)» — увеличивает количество ламината и работы за него на 1.
+  - Ламинат входит в общую сумму откоса как материал (`TotalMaterials`), работа за него — как труд (`TotalLabor`).
+  - В печатном КП не выводится отдельной строкой; сумма входит в итоговые суммы откоса.
 
-- **`UpdateService.cs` → 5 компонентов:** монолитный статический `UpdateService` (910 строк) разделён на 5 специализированных классов с сохранением всего public/internal API как тонких прокси-делегатов.
-  - **`Services/VersionResolver.cs`** (171 строк) — парсинг версий, сравнение, `ParseSafe`, `StripVersionSuffix`, `ResolveVersion`, `IsBrokenForAutoUpdate`, `GetAvailableUpdate`.
-  - **`Services/IdleDetector.cs`** (43 строк) — WinAPI `GetLastInputInfo` P/Invoke.
-  - **`Services/UpdateVerifier.cs`** (42 строк) — SHA-256 проверка (`ComputeSha256`, `VerifyHash`).
-  - **`Services/UpdateManifestClient.cs`** (84 строк) — загрузка `releases.json`, cache-busting, TLS-конфигурация `HttpClient`.
-  - **`Services/UpdateDownloader.cs`** (108 строк) — скачивание с прогрессом, retry-логика, `TryDelete`.
-  - **`UpdateService.cs`** уменьшен до 608 строк (−33%), сохранив все public/internal методы как прокси.
-  - `RunUpdateFlowAsync` теперь использует `UpdateVerifier.VerifyHash` вместо `ComputeSha256` + ручного `string.Equals`.
-  - Удалены dead-code: `ManifestUrl` (дубликат в `UpdateManifestClient`), `CacheBustUrl`/`CreateConfiguredHttpClient` прокси (не вызываются после делегирования), `ComputeSha256` прокси.
-  - +67 тестов: `VersionResolverTests` (20+), `UpdateVerifierTests` (7), `IdleDetectorTests` (3), `UpdateManifestClientTests` (8), `UpdateDownloaderTests` (13). Существующие `UpdateServiceTests`/`UpdateServiceIntegrationTests` — без изменений, проходят через прокси.
-  - **Тесты:** 999/999 pass.
+### Нативный движок печати КП
 
-### Техническое — Фаза 1 системного рефакторинга (REFACTORING_PLAN.md §3)
+Новый нативный движок печати КП полностью заменяет старую браузерную эмуляцию:
 
-- **MainWindow.xaml.cs → 4 выделенных сервиса:** God-class (1051 строк) разбит на делегирующие тонкие wrapper'ы (760 строк, −28%). Бизнес-логика не затронута.
-  - **`Services/NavigationService.cs`** — управление активной кнопкой навигации, slide-out expand/collapse, hover-логика. Ресурсный lookup через FrameworkElement (Window), не Application.Current. MouseEnter/MouseLeave хранятся как поля для отписки в `Shutdown()`.
-  - **`Services/OverlayManager.cs`** — открытие/закрытие оверлеев с анимацией, `Toggle`, `CloseAll`, `HideInstant`, `HideAllExcept`. `OverlayEntry` record (Grid, Panel, Backdrop, SlideTransform). `CloseSingle` с параметром `fallbackWidth`.
-  - **`Services/SlopeOverlayCoordinator.cs`** — `Show`, `Edit`, `Close` для панели откосов. Загрузка цен из PriceService вынесена в `LoadSlopePrices` (устранено дублирование между Show и Edit). `FindPairedLaborItem` — internal static для тестирования.
-  - **`Services/SlopesProUpsellGate.cs`** — изоляция Easter-egg «PRO подписка» для лёгкого удаления в будущем. Чеклист удаления в XML-doc.
-  - **`MainWindow.xaml.cs`** — `InitializeServices()` создаёт сервисы после `InitializeComponent`. Все `internal` методы сохранены как тонкие delegates для внешних caller'ов (`ActionBarControl`, `SlopePanelControl`, `OrdersHistoryControl`, `OrderItemsControl`, `MainWindow.Orders.cs`). `ShowPrintOverlay` оставлен в MainWindow (custom panel width + PrintPreviewControl init — будет рефакторинг в Фазе 3).
-- **Тесты:** +26 (10 NavigationService, 10 OverlayManager, 6 SlopeOverlayCoordinator). **932/932 pass.**
-- **Backward-compat:** все `internal` API сохранены. Внешние контролы не требуют изменений. Easter egg работает как раньше.
+- **Никаких задержек при открытии предпросмотра:** больше не нужно ждать загрузки браузерного движка — окно появляется мгновенно.
+- **Идеальное совпадение экрана и бумаги:** всё, что вы видите в предпросмотре, выходит на принтере один в один — без расхождений и неожиданных переносов.
+- **Встроенный экспорт в PDF:** сохранение коммерческого предложения в PDF работает напрямую, без зависимостей от сторонних программ.
+- **Удобная панель масштабирования:** новый тулбар `[ − / N% / + / 100% ]` для точного зума документа.
+- **Заметный счётчик копий:** поле «Кол-во копий» в Fluent-стиле — цифры видно сразу при открытии.
+- **Единый дизайн:** окно печати получило такую же шапку, как в основной программе; убран лишний визуальный шум старого браузера.
+- **Полная работа с принтерами Windows:** вы видите весь список установленных принтеров и можете выбрать принтер по умолчанию прямо из окна печати.
 
 ### Новое
 
-- **Ламинат в откосах:**
-  - Добавлена возможность учитывать ламинат в панели откосов: материал «Ламинат» (500 ₽/шт.) и работа «Работа за ламинат» (500 ₽/шт.).
-  - В таблице материалов откоса добавлена строка «Ламинат» с редактируемым количеством и ценой.
-  - Под строкой «Работа» добавлена строка «Работа за ламинат».
-  - В футере панели откосов добавлена кнопка «Порог (Ламинат)», которая увеличивает количество ламината и работы за него на 1 и выставляет `IsQuantityOverridden = true`.
-  - Ламинат участвует в общей сумме откоса как материал (`TotalMaterials`), работа за него — как труд (`TotalLabor`).
-  - В печатном КП не выводится отдельной строкой; сумма входит в итоговые суммы откоса.
-  - Покрыто тестами: `SlopeCalculatorServiceTests` (+7 тестов на инициализацию, агрегаты, override, сериализацию, OrderItem.Total).
-
-- **Новый товар «Материал»:**
+- **Новый товар «Материал»:
   - Добавлен в выпадающий список «Тип» в QuickAdd и в каталог цен (`prices.json` / `PriceService.DefaultPrices`).
-  - Без цвета (входит в `NoColorProducts`), цена и количество задаются вручную.
+  - Без цвета, цена и количество задаются вручную.
   - Ширина/высота не функциональны — поля отключены в QuickAdd и не редактируются в DataGrid.
-  - Количество опционально: если пользователь не указал количество (оставил 1 по умолчанию), в таблице отображается только сумма; при количестве > 1 показываются и количество, и сумма.
+  - Количество опционально: при `Quantity = 1` в таблице отображается только сумма; при количестве > 1 показываются и количество, и сумма.
   - Без указания суммы товар не может быть добавлен в список просчёта — поле «Цена» подсвечивается красной обводкой как обязательное.
   - Расчёт: `Total = Price × Quantity`, единица измерения — «шт.».
-  - Покрыто тестами: `OrderItemTests` (категории `OptionalQuantityProducts`, `ManualPieceProducts`, `NoColorProducts`; отображение `QuantityDisplay`/`CalculatedValueDisplay`; формула Total).
 
 ### Исправления
+
+- **Сброс цен к значениям по умолчанию не работал.**
+  - **Корневая причина:** `PricesViewModel.ResetPrices()` удалял `prices.json` из `AppDomain.CurrentDomain.BaseDirectory` (папка установки), тогда как `PriceService` читает/пишет `%AppData%\MosquitoNetCalculator\prices.json` (архитектурное требование: цены переживают авто-обновление, которое заменяет install-папку). Delete в BaseDirectory молча не находил файл, после чего `LoadPrices()` читал старые цены из AppData — UI выглядел неизменённым. Точно такой же класс багов уже был в `WatchdogService` в v3.42.1.
+  - Fix: `ResetPrices()` теперь использует `PriceService.PricesPath` (AppData). Удалён избыточный `SavePrices()` после `ResetPrices()` (`PriceService.LoadPrices()` уже сохраняет defaults при отсутствии файла).
+  - Убраны `IsCancel`/`IsDefault` bindings в `MessageDialogWindow.xaml` — WPF автоматически выставлял `DialogResult` для этих кнопок до выполнения кастомного `Click`-обработчика, и `SelectedResult` мог не записаться. Enter/Escape теперь обрабатываются вручную в `Window_KeyDown`.
+  - Добавлен toast «Цены сброшены к значениям по умолчанию».
+  - +3 регрессионных теста в новом файле `MosquitoNetCalculator.Tests/ViewModels/PricesViewModelResetTests.cs` (sentinel reset, BaseDirectory guard, recreated file).
+  - Затронутые файлы: `ViewModels/PricesViewModel.cs`, `Controls/PricesControl.xaml.cs`, `Controls/MessageDialogWindow.xaml`, `Controls/MessageDialogWindow.xaml.cs`.
 
 - **Распределение общих материалов откоса (герметик/скотч) — устранена двойная оплата.**
   - `SlopeCalculatorService.RecalculateSealantAndTape` теперь считает общее количество герметика/скотча по всему заказу и распределяет стоимость пропорционально `WindowCount` между строками «Откос» через новое свойство `SlopeCalculation.DistributedSharedSum`.
@@ -89,28 +82,14 @@
   - `PrintService.cs`: фон `FlowDocument` восстанавливается в `finally` после печати.
   - `MainWindow.OnPrintPreviewClosed`: настройки печати сохраняются перед отпиской от `Closed`.
 
+- **Orphan-calc DistributedSharedSum сбрасывается корректно.**
+  - Когда после вызова `RecalculateSealantAndTape` не остаётся активных строк «Откос» (все отключены или переименованы), `DistributedSharedSum` обнуляется для всех связанных `SlopeCalculation`.
+  - Snapshot isolation invariant: `OrderItem.Clone()` вызывает `DeepCloneSlopeData()` → каждая коллекция (live и undo/redo history) имеет свой собственный `SlopeCalculation`-инстанс.
+
 - **Оптимизация раскроя `OptimizeStrips` для кусков > 3000 мм.**
   - Новый двухфазный алгоритм: куски ≥ 3000 мм разбиваются на полные полосы + остатки, остатки собираются в общий пул и упаковываются по алгоритму Best Fit Decreasing.
   - Улучшает использование материала, например `[3500, 3500]` теперь требует 3 полос вместо 4.
 
-### Техническое
-
-- `Models/OrderItem.cs`: добавлен `OptionalQuantityProducts` HashSet, в `ManualPieceProducts` и `NoColorProducts` добавлен «Материал», добавлено свойство `IsQuantityOptional`.
-- `Models/OrderItem.Calculations.cs`: `GetUnit` возвращает «шт.» для «Материал»; `CalculatedValueDisplay` и `QuantityDisplay` скрывают значение при `IsQuantityOptional && Quantity <= 1`; `Recalculate` устанавливает `CalculatedValue = 1` для «Материал»; для «Откос» используется `DistributedSharedSum`.
-- `Models/SlopeCalculation.cs`: добавлено свойство `DistributedSharedSum`.
-- `Services/SlopeCalculatorService.cs`: `RecalculateSealantAndTape` распределяет общую стоимость герметика/скотча; `_ApplyDefaults` инициализирует `DistributedSharedSum` для одиночного откоса; `OptimizeStrips` улучшен для кусков > 3000 мм.
-- `Controls/PrintPreviewControl.xaml.cs`: `OnUnloaded` отписывается от всех подписок `OnLoaded`.
-- `Controls/QuickAddControl.AddItem.cs`: валидация — для `OptionalQuantityProducts` цена обязательна (> 0); ширина/высота не проверяются.
-- `Controls/QuickAddControl.xaml.cs`: правила красной обводки обязательных полей учитывают `OptionalQuantityProducts` — цена обязательна, количество опционально.
-- `Controls/OrderItemsControl.xaml`: колонки «Кол-во» и «Площ./Дл.» скрываются через `DataTrigger` для `IsQuantityOptional` при Quantity <= 1.
-- `MainWindow.xaml.cs`: в `BeginningEdit` разрешено редактирование количества для «Материал», но заблокированы цвет/ширина/высота; исправлена отписка `ThemeService.ThemeChanged`; `EditSlopeItem` ищет «Работа за откос» робастно; сохранение настроек печати перед закрытием overlay.
-- `Services/PrintService.FlowDocument.cs` / `PrintService.Pdf.cs`: «Площ./Дл.» пустая для `OptionalQuantityProducts` при `Quantity <= 1`.
-- `Services/PrintService.cs`: фон `FlowDocument` восстанавливается в `finally`.
-- `Services/UpdateService.cs`: guard `CurrentVersion == 0.0.0.0` в `GetAvailableUpdate`.
-- `MosquitoNetCalculator.Tests/Models/OrderItemTests.cs`: +8 тестов для «Материал»; `SlopeDataChildMaterialQuantityChange_CascadeRefreshesOrderItemTotal` обновлён под `DistributedSharedSum`.
-- **Тесты:** 861/861 pass.
-
----
 
 ## 3.44.2 — 2026-07-12
 

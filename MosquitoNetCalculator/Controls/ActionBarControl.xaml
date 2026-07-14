@@ -10,7 +10,8 @@
             <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
                 <!-- Cluster 1: Primary -->
                 <Button Style="{DynamicResource PrimaryButton}"
-                        Click="BtnPrintKp_Click" Margin="0,0,6,0">
+                        Click="BtnPrintKp_Click" Margin="0,0,6,0"
+                        ToolTip="Печать коммерческого предложения">
                     <StackPanel Orientation="Horizontal">
                         <TextBlock Style="{DynamicResource FluentIconButton}" Text="&#xE2F6;"/>
                         <TextBlock Text="Печать КП"/>
@@ -24,13 +25,22 @@
                         <TextBlock Text="Сохранить"/>
                     </StackPanel>
                 </Button>
+                <Button Style="{DynamicResource PrimaryButton}"
+                        Click="BtnOrderInfo_Click" Margin="0,0,6,0"
+                        ToolTip="Заполните: имя, телефон, адрес, номер договора, примечания">
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock Style="{DynamicResource FluentIconButton}" Text="&#xE77B;"/>
+                        <TextBlock Text="Заказчик"/>
+                    </StackPanel>
+                </Button>
 
                 <!-- Separator -->
                 <Rectangle Width="1" Height="20" Fill="{DynamicResource Border}" Margin="8,0"/>
 
                 <!-- Cluster 2: Secondary -->
                 <Button Style="{DynamicResource GhostButton}"
-                        Click="BtnNewOrder_Click" Margin="0,0,6,0">
+                        Click="BtnNewOrder_Click" Margin="0,0,6,0"
+                        ToolTip="Создать новый заказ (сначала сохраните текущий)">
                     <StackPanel Orientation="Horizontal">
                         <TextBlock Style="{DynamicResource FluentIconButton}" Text="&#xE710;"/>
                         <TextBlock Text="Новый заказ"/>
@@ -49,7 +59,8 @@
             <!-- Cluster 3: Danger/Tertiary (right) -->
             <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center">
                 <Button Style="{DynamicResource DangerGhostButton}"
-                        Click="BtnClearAll_Click">
+                        Click="BtnClearAll_Click"
+                        ToolTip="Очистить все позиции из текущего расчёта">
                     <StackPanel Orientation="Horizontal">
                         <TextBlock Style="{DynamicResource FluentIconButton}" Text="&#xE75C;"/>
                         <TextBlock Text="Очистить всё"/>

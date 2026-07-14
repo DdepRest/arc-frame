@@ -255,7 +255,7 @@ namespace MosquitoNetCalculator
                     QuickAddControl.ResetAnwisMode();
 
                     ViewModel.CalcVM.UnsubscribeAll(UpdateTotal);
-                    ViewModel.CalcVM.LoadFromOrderData(order, UpdateTotal);
+                    ViewModel.CalcVM.LoadFromOrderData(order, RecalculateAndUpdateTotal);
 
                     UpdateTotal();
                     UpdateCurrentOrderInfo();
@@ -263,6 +263,7 @@ namespace MosquitoNetCalculator
                 });
                 MarkClean();
                 ViewModel.UndoRedo.Clear();
+                UpdateUndoRedoHint();
 
                 NavigateToCalculation();
             }

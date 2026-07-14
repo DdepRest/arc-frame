@@ -402,6 +402,199 @@ namespace MosquitoNetCalculator.Tests.Services
             Assert.True(loaded.Items[0].IsAnticat);
         }
 
+        // ──── Backward-compat: новый товар «Дверная сетка» ──────────
+
+        [Fact]
+        public void SaveAndLoad_DvernayaSetka_PreservesInstallationDeduction600()
+        {
+            var order = new OrderData
+            {
+                Id = Guid.NewGuid().ToString(),
+                ClientName = "Тест Дверная сетка",
+                Items = new List<OrderItemData>
+                {
+                    new()
+                    {
+                        Name = "Дверная сетка", Color = "Белый",
+                        Width = 1000, Height = 2000, Quantity = 2,
+                        Price = 3000,
+                        InstallationMode = 0,
+                        InstallationDeduction = 600,  // специфичный для Дверной сетки
+                        InstallationSurcharge = 600,
+                        IsActive = true
+                    },
+                    new()
+                    {
+                        Name = "Anwis", Color = "Белый",
+                        Width = 1000, Height = 1000, Quantity = 1,
+                        Price = 1800,
+                        InstallationMode = 1,
+                        InstallationDeduction = 500,  // стандартный для Anwis
+                        InstallationSurcharge = 500,
+                        IsActive = true
+                    }
+                }
+            };
+            _service.SaveOrder(order);
+
+            // Load via fresh instance (bypass cache)
+            var loaded = new OrderStorageService().LoadOrder(order.Id);
+            Assert.NotNull(loaded);
+            Assert.Equal(2, loaded!.Items.Count);
+
+            var dvernaya = loaded.Items[0];
+            Assert.Equal("Дверная сетка", dvernaya.Name);
+            Assert.Equal("Белый", dvernaya.Color);
+            Assert.Equal(1000, dvernaya.Width);
+            Assert.Equal(2000, dvernaya.Height);
+            Assert.Equal(2, dvernaya.Quantity);
+            Assert.Equal(3000, dvernaya.Price);
+            Assert.Equal(600, dvernaya.InstallationDeduction);
+            Assert.Equal(600, dvernaya.InstallationSurcharge);
+            Assert.True(dvernaya.IsActive);
+
+            var anwis = loaded.Items[1];
+            Assert.Equal("Anwis", anwis.Name);
+            Assert.Equal(500, anwis.InstallationDeduction);
+            Assert.Equal(500, anwis.InstallationSurcharge);
+        }
+
+        [Fact]
+        public void SaveAndLoad_DvernayaSetka_WithAnticat_Roundtrip()
+        {
+            var order = new OrderData
+            {
+                Id = Guid.NewGuid().ToString(),
+                Items = new List<OrderItemData>
+                {
+                    new()
+                    {
+                        Name = "Дверная сетка", Color = "Белый",
+                        Width = 800, Height = 2000, Quantity = 1,
+                        Price = 5000, // 3000 + 2000 Антикошка
+                        IsAnticat = true,
+                        InstallationDeduction = 600,
+                        InstallationSurcharge = 600
+                    }
+                }
+            };
+            _service.SaveOrder(order);
+
+            var loaded = new OrderStorageService().LoadOrder(order.Id);
+            Assert.NotNull(loaded);
+            Assert.Single(loaded!.Items);
+            Assert.Equal("Дверная сетка", loaded.Items[0].Name);
+            Assert.True(loaded.Items[0].IsAnticat);
+            Assert.Equal(5000, loaded.Items[0].Price);
+            Assert.Equal(600, loaded.Items[0].InstallationDeduction);
+            Assert.Equal(600, loaded.Items[0].InstallationSurcharge);
+        }
+
+        [Fact]
+        public void LoadFromRawJson_OldOrder_AnwisDeduction500_NotAffectedByNewDefault()
+        {
+            // Simulate an order saved before "Дверная сетка" was introduced.
+            // The JSON has InstallationDeduction=500 (old default) for Anwis —
+            // loading must NOT upgrade it to 600 (the new Дверная сетка default).
+            string oldJson = @"{
+  ""Id"": ""old-order-anwis"",
+  ""ClientName"": ""Старый заказ"",
+  ""ContractNumber"": ""1-100"",
+  ""Status"": ""Подтверждён"",
+  ""Items"": [
+    {
+      ""Name"": ""Anwis"",
+      ""Color"": ""Белый"",
+      ""Width"": 1000,
+      ""Height"": 1000,
+      ""Quantity"": 3,
+      ""Price"": 1800,
+      ""InstallationMode"": 1,
+      ""InstallationDeduction"": 500,
+      ""InstallationSurcharge"": 500,
+      ""IsActive"": true
+    },
+    {
+      ""Name"": ""На навесах"",
+      ""Color"": ""Коричневый"",
+      ""Width"": 1200,
+      ""Height"": 1500,
+      ""Quantity"": 1,
+      ""Price"": 3000,
+      ""InstallationMode"": 0,
+      ""InstallationDeduction"": 500,
+      ""InstallationSurcharge"": 500,
+      ""IsActive"": true
+    }
+  ]
+}";
+            // Write the raw JSON directly to bypass SaveOrder's update of UpdatedAt etc.
+            string filePath = System.IO.Path.Combine(
+                OrderStorageService.OrdersDir, "old-order-anwis.json");
+            System.IO.File.WriteAllText(filePath, oldJson, System.Text.Encoding.UTF8);
+
+            // Load via fresh instance to bypass cache
+            var loaded = new OrderStorageService().LoadOrder("old-order-anwis");
+            Assert.NotNull(loaded);
+            Assert.Equal(2, loaded!.Items.Count);
+
+            var anwis = loaded.Items[0];
+            Assert.Equal("Anwis", anwis.Name);
+            Assert.Equal(500, anwis.InstallationDeduction, 0);
+            Assert.Equal(500, anwis.InstallationSurcharge, 0);
+
+            var navesy = loaded.Items[1];
+            Assert.Equal("На навесах", navesy.Name);
+            Assert.Equal(500, navesy.InstallationDeduction, 0);
+            Assert.Equal(500, navesy.InstallationSurcharge, 0);
+
+            // Cleanup
+            System.IO.File.Delete(filePath);
+        }
+
+        [Fact]
+        public void LoadFromRawJson_MissingDeductionFields_FallsBackToDtoDefault500()
+        {
+            // Simulate a very old order where InstallationDeduction / InstallationSurcharge
+            // fields are completely absent from the JSON. DTO defaults to 500 —
+            // loading must NOT apply the new 600 default for Дверная сетка or any
+            // other product-specific default. Missing fields → DTO default (500).
+            string oldJson = @"{
+  ""Id"": ""old-order-missing-fields"",
+  ""ClientName"": ""Древний заказ"",
+  ""ContractNumber"": ""1-50"",
+  ""Items"": [
+    {
+      ""Name"": ""Anwis"",
+      ""Color"": ""Белый"",
+      ""Width"": 1000,
+      ""Height"": 1000,
+      ""Quantity"": 2,
+      ""Price"": 1800,
+      ""InstallationMode"": 1,
+      ""IsActive"": true
+    }
+  ]
+}";
+            string filePath = System.IO.Path.Combine(
+                OrderStorageService.OrdersDir, "old-order-missing-fields.json");
+            System.IO.File.WriteAllText(filePath, oldJson, System.Text.Encoding.UTF8);
+
+            var loaded = new OrderStorageService().LoadOrder("old-order-missing-fields");
+            Assert.NotNull(loaded);
+            Assert.Single(loaded!.Items);
+
+            var anwis = loaded.Items[0];
+            Assert.Equal("Anwis", anwis.Name);
+            // Fields absent → DTO default (500), NOT 600 or any product-specific default
+            Assert.Equal(500, anwis.InstallationDeduction, 0);
+            Assert.Equal(500, anwis.InstallationSurcharge, 0);
+            Assert.Equal(0, anwis.AnwisSizeMode);   // int default
+            Assert.False(anwis.IsAnticat);           // bool default
+
+            System.IO.File.Delete(filePath);
+        }
+
         // ──── CopyOrder integration test ───────────────────────────
 
         [Fact]

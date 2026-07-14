@@ -104,6 +104,14 @@ namespace MosquitoNetCalculator
 
             base.OnStartup(e);
 
+            // ── QuestPDF Community License (v2.2 Native Print migration) ──
+            // MUST be configured BEFORE any Document.Create(...) call,
+            // otherwise ExportPdf throws QuestPDF.Infrastructure.LicenseException
+            // immediately. License is per-AppDomain; one call per process suffices.
+            // See docs/arc/DECISIONS.md decision #11 (license obligation pinned).
+            QuestPDF.Settings.License = QuestPDF.Infrastructure.LicenseType.Community;
+            QuestPDF.Settings.EnableDebugging = false;
+
             // Enable dark mode support for the entire process BEFORE any window is created.
             // This tells Windows to honour DWMWA_USE_IMMERSIVE_DARK_MODE on the title bar.
             // The value here is a placeholder — ThemeService.LoadTheme() will update it
@@ -181,9 +189,6 @@ namespace MosquitoNetCalculator
                 // close the main window → end the application.
                 window.Closed += (_, _) => Shutdown();
                 window.Show();
-
-                // ── Runtime dependency check (non-blocking toast if WebView2 missing) ──
-                _ = DependencyCheckerService.CheckAndNotifyAsync();
 
                 // ── Background update check (silent, non-blocking) ──
                 // Fire-and-forget after the main window is visible so

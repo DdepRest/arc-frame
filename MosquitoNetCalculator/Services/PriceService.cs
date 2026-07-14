@@ -20,17 +20,27 @@ namespace MosquitoNetCalculator.Services
         public static string PricesPath { get; set; } = Path.Combine(AppDataDir, "prices.json");
 
         /// <summary>
-        /// Default price catalog (13 products, 26 entries):
-        /// - Anwis: Белый 1800 / Коричневый 1900 (no Антрацит, no Золотой дуб)
-        /// - На навесах: Белый 2900 / Коричневый 3000 (no Антрацит, no Золотой дуб)
-        /// - Оконная на метал. крепл.: Белый 3200 / Коричневый 3300 (no Антрацит, no Золотой дуб)
-        /// - Отлив: Белый/Коричневый/Антрацит 2150, Золотой дуб 2650
-        /// - Козырёк: Белый/Коричневый/Антрацит 2150, Золотой дуб 2650
-        /// - Короб: Белый/Коричневый/Антрацит 2150, Золотой дуб 2650
+        /// Default price catalog (19 products, 33 entries):
+        /// - Anwis: Белый 1800 / Коричневый 1900
+        /// - На навесах: Белый 2900 / Коричневый 3000
+        /// - Оконная на метал. крепл.: Белый 3200 / Коричневый 3300
+        /// - Дверная сетка: Белый 3000
+        /// - Отлив: все 4 цвета, 2150/2650
+        /// - Козырёк: все 4 цвета, 2150/2650
+        /// - Короб: все 4 цвета, 2150/2650
         /// - ПСУЛ: без цвета, 100 руб/м.п.
-        /// - Откос материал: без цвета, цена вручную (0)
         /// - Работа/Брус/Пояс/Доставка: без цвета, цена вручную (0)
         /// - Уплотнение: Серый/Чёрный 250 руб
+        /// - Откос (calc): без цвета, цена вручную (0)
+        /// - Работа за откос (calc): без цвета, цена вручную (0)
+        /// - Сэндвич: без цвета, 1200 руб/м² (для откосов)
+        /// - Пена (откос): без цвета, 750 руб/баллон
+        /// - Герметик (откос): без цвета, 350 руб/тюбик
+        /// - Скотч (откос): без цвета, 135 руб/моток
+        /// - Старт (откос): без цвета, 135 руб/полоса 3 м
+        /// - F-планка (откос): без цвета, 250 руб/полоса 3 м
+        /// - Пеноплекс (откос): без цвета, 450 руб/лист
+        /// - Работа за откос (цена за м.п.): без цвета, 600 руб/м.п.
         /// </summary>
         private static readonly List<PriceItem> DefaultPrices = new()
         {
@@ -45,6 +55,9 @@ namespace MosquitoNetCalculator.Services
             // Оконная на метал. крепл. — 2 цвета (без Антрацит, без Золотой дуб)
             new PriceItem { Name = "Оконная на метал. крепл.", Color = "Белый", Price = 3200 },
             new PriceItem { Name = "Оконная на метал. крепл.", Color = "Коричневый", Price = 3300 },
+
+            // Дверная сетка — 1 цвет (только Белый)
+            new PriceItem { Name = "Дверная сетка", Color = "Белый", Price = 3000 },
 
             // Отлив — все 4 цвета
             new PriceItem { Name = "Отлив", Color = "Белый", Price = 2150 },
@@ -67,9 +80,6 @@ namespace MosquitoNetCalculator.Services
             // ПСУЛ — без цвета, цена за м.п.
             new PriceItem { Name = "ПСУЛ", Color = "", Price = 100 },
 
-            // Откос материал — без цвета, цена вручную
-            new PriceItem { Name = "Откос материал", Color = "", Price = 0 },
-
             // Работа — без цвета, цена вручную
             new PriceItem { Name = "Работа", Color = "", Price = 0 },
 
@@ -82,9 +92,28 @@ namespace MosquitoNetCalculator.Services
             // Доставка — без цвета, цена вручную
             new PriceItem { Name = "Доставка", Color = "", Price = 0 },
 
+            // Материал — без цвета, цена и количество вручную (количество опционально)
+            new PriceItem { Name = "Материал", Color = "", Price = 0 },
+
             // Уплотнение — 2 цвета, 250 руб/м.п.
             new PriceItem { Name = "Уплотнение", Color = "Серый", Price = 250 },
             new PriceItem { Name = "Уплотнение", Color = "Чёрный", Price = 250 },
+
+            // Откос (расчётный) — без цвета, цена вручную
+            new PriceItem { Name = "Откос", Color = "", Price = 0 },
+
+            // Работа за откос (расчётная) — без цвета, цена вручную
+            new PriceItem { Name = "Работа за откос", Color = "", Price = 0 },
+
+            // Материалы для расчёта откосов
+            new PriceItem { Name = "Сэндвич", Color = "", Price = 1200 },
+            new PriceItem { Name = "Пена (откос)", Color = "", Price = 750 },
+            new PriceItem { Name = "Герметик (откос)", Color = "", Price = 350 },
+            new PriceItem { Name = "Скотч (откос)", Color = "", Price = 135 },
+            new PriceItem { Name = "Старт (откос)", Color = "", Price = 135 },
+            new PriceItem { Name = "F-планка (откос)", Color = "", Price = 250 },
+            new PriceItem { Name = "Пеноплекс (откос)", Color = "", Price = 450 },
+            new PriceItem { Name = "Работа за откос", Color = "", Price = 600 },
         };
 
         public List<PriceItem> LoadPrices()
@@ -238,6 +267,12 @@ namespace MosquitoNetCalculator.Services
                 }
                 changed = true;
             }
+
+            // ── Migration 5: remove deprecated «Откос материал» ──────────
+            // Replaced by the new Slope Calculator (v3.43.2+).
+            int removedOtkos = prices.RemoveAll(p => p.Name == "Откос материал");
+            if (removedOtkos > 0)
+                changed = true;
 
             return changed;
         }

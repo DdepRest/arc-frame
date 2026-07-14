@@ -18,12 +18,35 @@
             </StackPanel>
 
             <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
-                <TextBlock FontSize="22" FontWeight="SemiBold" Foreground="{DynamicResource TotalText}" Margin="0,0,8,0">
+                <TextBlock FontSize="22" FontWeight="SemiBold" Foreground="{DynamicResource TotalText}" Margin="0,0,8,0"
+                           Typography.NumeralAlignment="Tabular">
                     <Run x:Name="RunTotalAmount" Text="0.00"/>
                 </TextBlock>
-                <TextBlock FontSize="12" Foreground="{DynamicResource TotalTextMuted}" VerticalAlignment="Center" Margin="0,4,0,0">
+                <TextBlock FontSize="12" Foreground="{DynamicResource TotalTextMuted}" VerticalAlignment="Center" Margin="0,4,6,0">
                     <Run Text="руб."/>
                 </TextBlock>
+                <!-- Copy total to clipboard button -->
+                <Button x:Name="BtnCopyTotal" Width="28" Height="28"
+                        Background="Transparent" BorderThickness="0" Cursor="Hand"
+                        Foreground="{DynamicResource TotalTextMuted}"
+                        Click="BtnCopyTotal_Click"
+                        ToolTip="Копировать сумму в буфер обмена">
+                    <Button.Template>
+                        <ControlTemplate TargetType="Button">
+                            <Border x:Name="Bd" Background="{TemplateBinding Background}"
+                                    CornerRadius="5" BorderThickness="0">
+                                <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                            </Border>
+                            <ControlTemplate.Triggers>
+                                <Trigger Property="IsMouseOver" Value="True">
+                                    <Setter TargetName="Bd" Property="Background" Value="#33FFFFFF"/>
+                                    <Setter Property="Foreground" Value="{DynamicResource TotalText}"/>
+                                </Trigger>
+                            </ControlTemplate.Triggers>
+                        </ControlTemplate>
+                    </Button.Template>
+                    <TextBlock Text="&#xE8C8;" FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets" FontSize="12"/>
+                </Button>
             </StackPanel>
 
             <TextBlock Grid.Column="3" VerticalAlignment="Center"

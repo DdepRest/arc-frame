@@ -12,6 +12,7 @@ using System.Windows.Input;
 using System.Windows.Interop;
 using System.Windows.Media;
 using System.Windows.Media.Animation;
+using System.Windows.Media.Imaging;
 using System.Windows.Shell;
 using MosquitoNetCalculator.Controls;
 using MosquitoNetCalculator.Models;
@@ -39,6 +40,12 @@ namespace MosquitoNetCalculator
 
         public List<string> ProductNames => ViewModel.ProductNames;
 
+        /// <summary>
+        /// Настройки печати, сохраняемые в памяти на время жизни заказа.
+        /// НЕ сериализуются. Сбрасываются в StartNewOrder.
+        /// </summary>
+        public PrintSettings LastPrintSettings { get; set; } = new();
+
         public string CurrentOrderId { get => ViewModel.CurrentOrderId; set => ViewModel.CurrentOrderId = value; }
         public bool IsNewOrder { get => ViewModel.IsNewOrder; set => ViewModel.IsNewOrder = value; }
         public bool SuppressPrefixSave { get => ViewModel.SuppressPrefixSave; set => ViewModel.SuppressPrefixSave = value; }
@@ -65,11 +72,19 @@ namespace MosquitoNetCalculator
         private System.Windows.Threading.DispatcherTimer? _updateTotalDebounceTimer;
         private System.Windows.Threading.DispatcherTimer? _navBadgeTimer;
         private Action? _onNavToCalc;
-        private string _activeNavTag = "Calc";
 
-        // ─── Slide-out navigation panel ─────────────────────────────────────
-        private System.Windows.Threading.DispatcherTimer? _navCollapseTimer;
-        private readonly TextBlock[] _navLabels = new TextBlock[4];
+        // ─── Phase 1 refactoring: extracted services ───────────────────────
+        private NavigationService? _navService;
+        private OverlayManager? _overlayManager;
+        private SlopeOverlayCoordinator? _slopeCoordinator;
+        private SlopesProUpsellGate _slopesProUpsellGate = new();
+
+        // Cached overlay entries for direct access in NavButton_Click / ShowPrintOverlay
+        private OverlayManager.OverlayEntry? _ordersEntry;
+        private OverlayManager.OverlayEntry? _pricesEntry;
+        private OverlayManager.OverlayEntry? _updatesEntry;
+        private OverlayManager.OverlayEntry? _sidebarEntry;
+        private OverlayManager.OverlayEntry? _printEntry;
 
         // ─── Idle/periodic update check scheduler ───────────────────────────
         // Запускается в Loaded после startup-проверки. Триггерит CheckInBackgroundAsync
@@ -80,6 +95,30 @@ namespace MosquitoNetCalculator
         public MainWindow()
         {
             InitializeComponent();
+
+            // v3.44 bug-fix: Icon загружается в code-behind (а не в XAML),
+            // потому что XAML-парсер резолвит pack:// URI через
+            // Application.GetResourcePackage, который падает в тестовом
+            // контексте (testhost.exe ≠ MosquitoNetCalculator.exe).
+            // Assembly-qualified URI работает в обоих контекстах — явно
+            // указываем сборку MosquitoNetCalculator, где лежит app_icon.ico.
+            //
+            // v3.44 bug-fix #2: BitmapImage с .ico загружает только первый
+            // кадр (16×16) → иконка в панели задач микроскопическая.
+            // Решение: используем PNG-версию (256×256) — BitmapImage грузит
+            // полное разрешение, Windows отмасштабирует для taskbar.
+            // BitmapDecoder.Create НЕ подходит — крашит процесс в тестовом
+            // STA-контексте (требует полной WPF-инфраструктуры).
+            try
+            {
+                Icon = new BitmapImage(new Uri(
+                    "pack://application:,,,/MosquitoNetCalculator;component/Resources/app_icon.png",
+                    UriKind.Absolute));
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"[MainWindow] Failed to load icon: {ex.Message}");
+            }
 
             // ── Progress bar animator (v3.40.3 testability refactor) ──
             // Extracted the body of OnUpdateProgressChanged into a helper so
@@ -96,6 +135,7 @@ namespace MosquitoNetCalculator
             ViewModel.UndoRedo.SetDirtyCallback(UpdateDirtyIndicator);
 
             UpdateService.ProgressChanged += OnUpdateProgressChanged;
+            UpdateService.UpdateDetected += OnUpdateDetected;
 
             _appVersion = UpdateService.CurrentVersion;
             UpdateBaseTitle();
@@ -161,6 +201,18 @@ namespace MosquitoNetCalculator
                 else if (Keyboard.Modifiers == ModifierKeys.Control && args.Key == Key.Y) { Redo(); args.Handled = true; }
             };
 
+            // Global Escape — closes any open overlay panel. Backdrop click already
+            // covers the mouse path; this covers the keyboard path for speed.
+            // XAML also has PreviewKeyDown="MainWindow_PreviewKeyDown" for a named handler.
+            KeyDown += (_, args) =>
+            {
+                if (args.Key == Key.Escape)
+                {
+                    args.Handled = true;
+                    CloseAllOverlays();
+                }
+            };
+
             // NavigationView: focus QuickAdd when switching back to Calc view
             void OnNavToCalc()
             {
@@ -191,6 +243,15 @@ namespace MosquitoNetCalculator
                             return;
                         }
                     }
+                    else if (item.IsQuantityOptional)
+                    {
+                        // Материал: ширина/высота/цвет не редактируются, количество редактируется
+                        if (header is "Цвет" or "Ширина" or "Высота")
+                        {
+                            e.Cancel = true;
+                            return;
+                        }
+                    }
                     else if (item.IsWidthOnly)
                     {
                         if (header is "Цвет" or "Высота")
@@ -211,7 +272,8 @@ namespace MosquitoNetCalculator
                 PushUndo();
             };
 
-            OrderItemsControl.Grid.PreviewMouseLeftButtonDown += Grid_PreviewMouseLeftButtonDown;
+            // v3.43.3: Grid.PreviewMouseLeftButtonDown handler удалён — тогл чекбокса «Вкл.»
+            // теперь идёт через естественный two-way binding IsChecked={Binding IsActive}.
             OrderItemsControl.Grid.LoadingRow += (_, e) => AttachRowHover(e.Row, true);
             OrderItemsControl.Grid.UnloadingRow += (_, e) => AttachRowHover(e.Row, false);
             OrdersHistoryControl.OrdersGrid.LoadingRow += (_, e) => AttachRowHover(e.Row, true);
@@ -222,6 +284,7 @@ namespace MosquitoNetCalculator
             Loaded += MainWindow_Loaded;
             SourceInitialized += (_, _) =>
             {
+                EnableMicaBackdrop();
                 var source = HwndSource.FromHwnd(new WindowInteropHelper(this).Handle);
                 source?.AddHook(WndProc);
             };
@@ -266,9 +329,12 @@ namespace MosquitoNetCalculator
             Closed += (_, _) =>
             {
                 UpdateService.ProgressChanged -= OnUpdateProgressChanged;
+                UpdateService.UpdateDetected -= OnUpdateDetected;
+                ThemeService.ThemeChanged -= OnThemeChanged;
+                ThemeService.ThemeChanged -= ApplyMicaTitleBar;
                 _updateCheckScheduler?.Stop();
                 _navBadgeTimer?.Stop();
-                _navCollapseTimer?.Stop();
+                _navService?.Shutdown();
             };
 
             StateChanged += (s, e) =>
@@ -280,31 +346,66 @@ namespace MosquitoNetCalculator
             // NavigationView badge refresh timer
             StartNavBadgeTimer();
 
-            // ── Slide-out navigation panel hover logic ──────────────────
-            _navLabels[0] = NavLabelCalc;
-            _navLabels[1] = NavLabelOrders;
-            _navLabels[2] = NavLabelPrices;
-            _navLabels[3] = NavLabelUpdates;
+            // ── Phase 1: initialize extracted services ──────────────────
+            InitializeServices();
+        }
 
-            _navCollapseTimer = new System.Windows.Threading.DispatcherTimer
-            {
-                Interval = TimeSpan.FromMilliseconds(500)
-            };
-            _navCollapseTimer.Tick += (_, _) =>
-            {
-                _navCollapseTimer.Stop();
-                CollapseNavPanel();
-            };
+        // ═══════════════════════════════════════════════════════════════
+        // PHASE 1 — SERVICE INITIALIZATION
+        // ═══════════════════════════════════════════════════════════════
 
-            NavPanel.MouseEnter += (_, _) =>
+        /// <summary>
+        /// Creates and wires NavigationService, OverlayManager, SlopeOverlayCoordinator.
+        /// Called after InitializeComponent so XAML elements are available.
+        /// The slope OverlayEntry is created once and shared between
+        /// OverlayManager and SlopeOverlayCoordinator to ensure a single
+        /// consistent reference (avoids stale Entry bugs).
+        /// </summary>
+        private void InitializeServices()
+        {
+            // ── NavigationService ──
+            var navButtons = new[] { NavBtnCalc, NavBtnOrders, NavBtnPrices, NavBtnUpdates, NavBtnSlope, NavBtnPrint };
+            var navIcons = new[] { NavIconCalc, NavIconOrders, NavIconPrices, NavIconUpdates, NavIconSlope, NavIconPrint };
+            var navLabels = new[] { NavLabelCalc, NavLabelOrders, NavLabelPrices, NavLabelUpdates, NavLabelSlope, NavLabelPrint };
+
+            _navService = new NavigationService(navButtons, navIcons, navLabels, NavPanel, this);
+
+            // ── Overlay entries (shared between OverlayManager and coordinators) ──
+            _ordersEntry   = new OverlayManager.OverlayEntry(OrdersOverlay,   OrdersPanel,   OrdersBackdrop,   OrdersSlideTransform);
+            _pricesEntry   = new OverlayManager.OverlayEntry(PricesOverlay,   PricesPanel,   PricesBackdrop,   PricesSlideTransform);
+            _updatesEntry  = new OverlayManager.OverlayEntry(UpdatesOverlay,  UpdatesPanel,  UpdatesBackdrop,  UpdatesSlideTransform);
+            _sidebarEntry  = new OverlayManager.OverlayEntry(SidebarOverlay,  SidebarPanel,  SidebarBackdrop,  SidebarSlideTransform);
+            _printEntry    = new OverlayManager.OverlayEntry(PrintOverlay,    PrintPanel,    PrintBackdrop,    PrintSlideTransform);
+            var slopeEntry = new OverlayManager.OverlayEntry(SlopeOverlay,    SlopePanel,    SlopeBackdrop,    SlopeSlideTransform);
+
+            var allOverlays = new[] { _ordersEntry, _pricesEntry, _updatesEntry, _sidebarEntry, slopeEntry, _printEntry };
+
+            _overlayManager = new OverlayManager(
+                allOverlays,
+                SetActiveNavButton,
+                OnBeforeClosePrint);
+
+            // ── SlopeOverlayCoordinator (created once, with shared Entry) ──
+            _slopeCoordinator = new SlopeOverlayCoordinator(
+                SlopePanelControl, slopeEntry,
+                () => ViewModel.PricesVM,
+                () => ViewModel.CalcVM,
+                _overlayManager,
+                SetActiveNavButton);
+        }
+
+        /// <summary>
+        /// Called by OverlayManager.CloseAll before closing overlays.
+        /// Saves print settings if PrintOverlay is visible.
+        /// </summary>
+        private void OnBeforeClosePrint()
+        {
+            if (PrintOverlay.Visibility == Visibility.Visible)
             {
-                _navCollapseTimer?.Stop();
-                ExpandNavPanel();
-            };
-            NavPanel.MouseLeave += (_, _) =>
-            {
-                _navCollapseTimer?.Start();
-            };
+                PrintPreviewControl.CollectSettings();
+                LastPrintSettings = PrintPreviewControl.GetSettings();
+            }
+            PrintPreviewControl.Closed -= OnPrintPreviewClosed;
         }
 
         private void MainWindow_Loaded(object sender, RoutedEventArgs e)
@@ -357,6 +458,13 @@ namespace MosquitoNetCalculator
 
             // Set initial active nav button (templates are now applied)
             SetActiveNavButton("Calc");
+
+            // UX#5: Auto-focus on Type field so user can start typing immediately
+            Dispatcher.BeginInvoke(() => QuickAddControl.CmbType?.Focus(),
+                System.Windows.Threading.DispatcherPriority.Input);
+
+            // UX: Populate EmptyState product chips so beginners see available products
+            OrderItemsControl.PopulateProductChips(ProductNames);
         }
 
         internal void UpdateEmptyState()
@@ -365,8 +473,40 @@ namespace MosquitoNetCalculator
             OrderItemsControl.Empty.Visibility = OrderItems.Count == 0 ? Visibility.Visible : Visibility.Collapsed;
         }
 
+        /// <summary>
+        /// Called when the user clicks a product chip in the EmptyState.
+        /// Selects the product in QuickAdd's Type ComboBox, which triggers
+        /// color/price population, then focuses the Width field.
+        /// </summary>
+        internal void SelectProductFromChip(string productName)
+        {
+            // Find and select the product in the Type ComboBox
+            var cmb = QuickAddControl.CmbType;
+            if (cmb == null) return;
+
+            int idx = -1;
+            for (int i = 0; i < cmb.Items.Count; i++)
+            {
+                if (cmb.Items[i] is string s && s == productName)
+                {
+                    idx = i;
+                    break;
+                }
+            }
+            if (idx < 0) return;
+
+            cmb.SelectedIndex = idx;
+
+            // Focus Width field so user can start typing immediately
+            Dispatcher.BeginInvoke(() =>
+            {
+                if (QuickAddControl.TxtWidth != null && QuickAddControl.TxtWidth.IsEnabled)
+                    QuickAddControl.TxtWidth.Focus();
+            }, System.Windows.Threading.DispatcherPriority.Input);
+        }
+
         // ═══════════════════════════════════════════════════════════════
-        // NAVIGATION VIEW
+        // NAVIGATION VIEW — thin delegates to NavigationService
         // ═══════════════════════════════════════════════════════════════
 
         internal void NavigateToCalculation()
@@ -388,149 +528,46 @@ namespace MosquitoNetCalculator
                     _onNavToCalc?.Invoke();
                     break;
                 case "Orders":
-                    if (OrdersOverlay.Visibility == Visibility.Visible)
-                        CloseAllOverlays();
-                    else
-                        ShowOverlay(OrdersOverlay, OrdersPanel, OrdersBackdrop, OrdersSlideTransform);
+                    _overlayManager!.Toggle(_ordersEntry!, "Orders");
                     break;
                 case "Prices":
-                    if (PricesOverlay.Visibility == Visibility.Visible)
-                        CloseAllOverlays();
-                    else
-                        ShowOverlay(PricesOverlay, PricesPanel, PricesBackdrop, PricesSlideTransform);
+                    _overlayManager!.Toggle(_pricesEntry!, "Prices");
                     break;
                 case "Updates":
-                    if (UpdatesOverlay.Visibility == Visibility.Visible)
+                    _overlayManager!.Toggle(_updatesEntry!, "Updates");
+                    break;
+                case "Slope":
+                    if (SlopeOverlay.Visibility == Visibility.Visible)
                         CloseAllOverlays();
                     else
-                        ShowOverlay(UpdatesOverlay, UpdatesPanel, UpdatesBackdrop, UpdatesSlideTransform);
+                        ShowSlopeOverlay();
+                    break;
+                case "Print":
+                    if (PrintOverlay.Visibility == Visibility.Visible)
+                        CloseAllOverlays();
+                    else
+                        ShowPrintOverlay();
                     break;
             }
         }
 
-        // Keyboard shortcut handlers (Ctrl+1..4)
+        // Keyboard shortcut handlers (Ctrl+1..5)
         private void NavCalculation_Click(object s, ExecutedRoutedEventArgs e) { NavigateToCalculation(); }
         private void NavOrders_Click(object s, ExecutedRoutedEventArgs e)     { NavButton_Click(NavBtnOrders, new RoutedEventArgs()); }
         private void NavPrices_Click(object s, ExecutedRoutedEventArgs e)     { NavButton_Click(NavBtnPrices, new RoutedEventArgs()); }
         private void NavUpdates_Click(object s, ExecutedRoutedEventArgs e)    { NavButton_Click(NavBtnUpdates, new RoutedEventArgs()); }
+        private void NavPrint_Click(object s, ExecutedRoutedEventArgs e)      { NavButton_Click(NavBtnPrint, new RoutedEventArgs()); }
 
-        private void SetActiveNavButton(string tag)
-        {
-            _activeNavTag = tag;
-            var allButtons = new[] { NavBtnCalc, NavBtnOrders, NavBtnPrices, NavBtnUpdates };
-            var allIcons = new[] { NavIconCalc, NavIconOrders, NavIconPrices, NavIconUpdates };
-
-            for (int i = 0; i < allButtons.Length; i++)
-            {
-                bool isActive = allButtons[i].Tag?.ToString() == tag;
-
-                // Find ActivePill through template (same pattern as TitleBar UpdateBadge)
-                var pill = allButtons[i].Template?.FindName("ActivePill", allButtons[i]) as Border;
-                if (pill != null)
-                    pill.Opacity = isActive ? 1 : 0;
-
-                var iconBrush = isActive
-                    ? (Brush)(TryFindResource("Accent") ?? Brushes.Black)
-                    : (Brush)(TryFindResource("TextMuted") ?? Brushes.Gray);
-                allIcons[i].Foreground = iconBrush;
-
-                if (_navLabels[i] != null)
-                {
-                    _navLabels[i].Foreground = iconBrush;
-                    _navLabels[i].FontWeight = isActive ? FontWeights.SemiBold : FontWeights.Regular;
-                }
-            }
-        }
+        /// <summary>Thin delegate to NavigationService.SetActive.</summary>
+        internal void SetActiveNavButton(string tag) => _navService?.SetActive(tag);
 
         // ═══════════════════════════════════════════════════════════════
-        // SLIDE-OUT NAVIGATION PANEL
+        // OVERLAY PANELS — thin delegates to OverlayManager
         // ═══════════════════════════════════════════════════════════════
 
-        private void ExpandNavPanel()
+        internal void ToggleSidebarOverlay()
         {
-            if (NavPanel == null) return;
-
-            var widthAnim = new DoubleAnimation(160, TimeSpan.FromMilliseconds(250))
-            {
-                EasingFunction = new CubicEase { EasingMode = EasingMode.EaseOut }
-            };
-            NavPanel.BeginAnimation(WidthProperty, widthAnim);
-
-            // Fade in labels
-            foreach (var label in _navLabels)
-            {
-                if (label == null) continue;
-                var fadeIn = new DoubleAnimation(1, TimeSpan.FromMilliseconds(150))
-                {
-                    EasingFunction = new CubicEase { EasingMode = EasingMode.EaseOut }
-                };
-                label.BeginAnimation(OpacityProperty, fadeIn);
-            }
-        }
-
-        private void CollapseNavPanel()
-        {
-            if (NavPanel == null) return;
-            if (NavPanel.IsMouseOver) return;
-
-            var widthAnim = new DoubleAnimation(52, TimeSpan.FromMilliseconds(200))
-            {
-                EasingFunction = new CubicEase { EasingMode = EasingMode.EaseIn }
-            };
-            NavPanel.BeginAnimation(WidthProperty, widthAnim);
-
-            // Fade out labels
-            foreach (var label in _navLabels)
-            {
-                if (label == null) continue;
-                var fadeOut = new DoubleAnimation(0, TimeSpan.FromMilliseconds(120))
-                {
-                    EasingFunction = new CubicEase { EasingMode = EasingMode.EaseIn }
-                };
-                label.BeginAnimation(OpacityProperty, fadeOut);
-            }
-        }
-
-        // ═══════════════════════════════════════════════════════════════
-        // OVERLAY PANELS
-        // ═══════════════════════════════════════════════════════════════
-
-        private void ShowOverlay(Grid overlay, Border panel, Border backdrop, TranslateTransform slideTransform)
-        {
-            // Close any other open overlay first
-            foreach (var ov in new[] { OrdersOverlay, PricesOverlay, UpdatesOverlay })
-            {
-                if (ov != overlay && ov.Visibility == Visibility.Visible)
-                    HideOverlayInstant(ov);
-            }
-
-            overlay.Visibility = Visibility.Visible;
-
-            // Reset backdrop for clean fade-in from 0
-            backdrop.Opacity = 0;
-
-            // Force measure to get correct ActualWidth on first open
-            panel.Measure(new System.Windows.Size(double.PositiveInfinity, double.PositiveInfinity));
-            double panelWidth = panel.ActualWidth > 0 ? panel.ActualWidth : 800;
-            slideTransform.X = panelWidth;
-
-            var slideAnim = new DoubleAnimation(0, TimeSpan.FromMilliseconds(280))
-            {
-                EasingFunction = new CubicEase { EasingMode = EasingMode.EaseOut }
-            };
-            slideTransform.BeginAnimation(TranslateTransform.XProperty, slideAnim);
-
-            // Fade in backdrop
-            var fadeIn = new DoubleAnimation(1, TimeSpan.FromMilliseconds(200))
-            {
-                EasingFunction = new CubicEase { EasingMode = EasingMode.EaseOut }
-            };
-            backdrop.BeginAnimation(OpacityProperty, fadeIn);
-
-            // Set active nav button
-            if (overlay == OrdersOverlay) SetActiveNavButton("Orders");
-            else if (overlay == PricesOverlay) SetActiveNavButton("Prices");
-            else if (overlay == UpdatesOverlay) SetActiveNavButton("Updates");
+            _overlayManager!.Toggle(_sidebarEntry!);
         }
 
         private void CloseOverlay_Click(object sender, RoutedEventArgs e)
@@ -543,59 +580,122 @@ namespace MosquitoNetCalculator
             CloseAllOverlays();
         }
 
-        private void CloseAllOverlays()
+        internal void CloseAllOverlays() => _overlayManager?.CloseAll();
+
+        // ═══════════════════════════════════════════════════════════════
+        // SLOPE OVERLAY — thin delegates to SlopeOverlayCoordinator
+        // ═══════════════════════════════════════════════════════════════
+
+        /// <summary>Thin delegate to SlopeOverlayCoordinator.Show.</summary>
+        internal void ShowSlopeOverlay() => _slopeCoordinator?.Show();
+
+        /// <summary>Thin delegate to SlopeOverlayCoordinator.Edit.</summary>
+        internal void EditSlopeItem(OrderItem materialItem) => _slopeCoordinator?.Edit(materialItem);
+
+        /// <summary>Thin delegate to SlopeOverlayCoordinator.Close.</summary>
+        internal void CloseSlopeOverlay() => _slopeCoordinator?.Close();
+
+        private void BackdropSlope_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
         {
-            var overlays = new[]
-            {
-                (Grid: OrdersOverlay, Panel: OrdersPanel, Backdrop: OrdersBackdrop, Slide: OrdersSlideTransform),
-                (Grid: PricesOverlay, Panel: PricesPanel, Backdrop: PricesBackdrop, Slide: PricesSlideTransform),
-                (Grid: UpdatesOverlay, Panel: UpdatesPanel, Backdrop: UpdatesBackdrop, Slide: UpdatesSlideTransform),
-            };
-
-            foreach (var (grid, panel, backdrop, slide) in overlays)
-            {
-                if (grid.Visibility != Visibility.Visible) continue;
-
-                // Cancel any running animations before starting close
-                slide.BeginAnimation(TranslateTransform.XProperty, null);
-                backdrop.BeginAnimation(OpacityProperty, null);
-
-                // Animate slide-out to right
-                double panelWidth = panel.ActualWidth > 0 ? panel.ActualWidth : 800;
-                var slideOut = new DoubleAnimation(panelWidth, TimeSpan.FromMilliseconds(220))
-                {
-                    EasingFunction = new CubicEase { EasingMode = EasingMode.EaseIn }
-                };
-                slideOut.Completed += (_, _) =>
-                {
-                    grid.Visibility = Visibility.Collapsed;
-                };
-                slide.BeginAnimation(TranslateTransform.XProperty, slideOut);
-
-                // Fade out backdrop
-                var fadeOut = new DoubleAnimation(0, TimeSpan.FromMilliseconds(180))
-                {
-                    EasingFunction = new CubicEase { EasingMode = EasingMode.EaseOut }
-                };
-                backdrop.BeginAnimation(OpacityProperty, fadeOut);
-            }
-
-            SetActiveNavButton("Calc");
+            CloseSlopeOverlay();
         }
 
-        private static void HideOverlayInstant(Grid overlay)
+        private void NavSlope_Click(object sender, RoutedEventArgs e)
         {
-            overlay.Visibility = Visibility.Collapsed;
-            // Cancel any running animations so they don't interfere with re-open
-            foreach (var child in overlay.Children)
+            // Toggle-close path — НЕ показываем шутку при закрытии уже открытого
+            // оверлея: пользователь хочет закрыть, а не увидеть рекламу.
+            if (SlopeOverlay.Visibility == Visibility.Visible)
             {
-                if (child is Border border)
-                {
-                    border.BeginAnimation(OpacityProperty, null);
-                    if (border.RenderTransform is TranslateTransform t)
-                        t.BeginAnimation(TranslateTransform.XProperty, null);
-                }
+                CloseAllOverlays();
+                return;
             }
+
+            // EASTER-EGG v3.43.2.9 — шуточная «PRO подписка» в меню Откосы.
+            // Триггер ТОЛЬКО на menu-click (не на Ctrl+5/Print и не из
+            // EditSlopeItem — правка существующего откоса).
+            //
+            // Чтобы выпилить шутку: см. чеклист в SlopesProUpsellGate.cs
+            bool canOpenSlopes = _slopesProUpsellGate.ShouldOpenSlopes(this, () =>
+            {
+                ToastService.ShowToast(
+                    "Шуточная PRO-подписка не сработала — откосы всё равно бесплатны 😄",
+                    ToastType.Info,
+                    durationMs: 4000);
+            });
+
+            if (!canOpenSlopes) return;
+
+            ShowSlopeOverlay();
+        }
+
+        // ═══════════════════════════════════════════════════════════════
+        // PRINT OVERLAY — kept in MainWindow (custom panel width + init logic)
+        // ═══════════════════════════════════════════════════════════════
+
+        /// <summary>
+        /// Строит FlowDocument КП и показывает PrintOverlay с PrintPreviewControl.
+        /// </summary>
+        internal void ShowPrintOverlay()
+        {
+            var validItems = OrderItems.Where(i => !string.IsNullOrEmpty(i.Name) && i.IsActive && i.Total > 0).ToList();
+            if (validItems.Count == 0)
+            {
+                ToastService.ShowToast("Добавьте хотя бы одну позицию.", ToastType.Warning);
+                return;
+            }
+
+            // Close any other open overlay first
+            _overlayManager?.HideAllExcept(_printEntry);
+
+            double total = validItems.Sum(i => i.TotalWithDeduction);
+            string amountInWords = AmountInWordsService.Convert(total);
+
+            var document = PrintService.BuildFlowDocument(validItems, ClientInfo, total, amountInWords);
+            if (document == null)
+            {
+                ToastService.ShowToast("Нет данных для печати.", ToastType.Warning);
+                return;
+            }
+
+            // Initialize the PrintPreviewControl with PDF export data
+            PrintPreviewControl.Initialize(document, PrintService, ClientInfo.ContractNumber, LastPrintSettings,
+                items: validItems, clientInfo: ClientInfo, totalAmount: total, amountInWords: amountInWords);
+
+            // Subscribe to Closed event — save settings + close overlay
+            PrintPreviewControl.Closed -= OnPrintPreviewClosed;  // unsubscribe first to avoid double-subscription
+            PrintPreviewControl.Closed += OnPrintPreviewClosed;
+
+            // Set panel width: use 90% of window width for ample preview space
+            double availableWidth = this.ActualWidth - 52;  // minus nav panel
+            PrintPanel.Width = Math.Min(1050, availableWidth);
+
+            PrintOverlay.Visibility = Visibility.Visible;
+            PrintBackdrop.Opacity = 0;
+
+            // Slide from right
+            PrintPanel.Measure(new System.Windows.Size(double.PositiveInfinity, double.PositiveInfinity));
+            double panelWidth = PrintPanel.ActualWidth > 0 ? PrintPanel.ActualWidth : PrintPanel.Width;
+            PrintSlideTransform.X = panelWidth;
+
+            var slideAnim = new DoubleAnimation(0, TimeSpan.FromMilliseconds(280))
+            {
+                EasingFunction = new CubicEase { EasingMode = EasingMode.EaseOut }
+            };
+            PrintSlideTransform.BeginAnimation(TranslateTransform.XProperty, slideAnim);
+
+            var fadeIn = new DoubleAnimation(1, TimeSpan.FromMilliseconds(200))
+            {
+                EasingFunction = new CubicEase { EasingMode = EasingMode.EaseOut }
+            };
+            PrintBackdrop.BeginAnimation(OpacityProperty, fadeIn);
+
+            SetActiveNavButton("Print");
+        }
+
+        private void OnPrintPreviewClosed(object? sender, EventArgs e)
+        {
+            // CloseAllOverlays already saves settings and unsubscribes safely.
+            CloseAllOverlays();
         }
 
         // ═══════════════════════════════════════════════════════════════

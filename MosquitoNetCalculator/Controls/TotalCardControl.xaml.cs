@@ -1,5 +1,7 @@
+using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Documents;
+using MosquitoNetCalculator.Services;
 
 namespace MosquitoNetCalculator.Controls
 {
@@ -13,6 +15,18 @@ namespace MosquitoNetCalculator.Controls
         public TotalCardControl()
         {
             InitializeComponent();
+        }
+
+        private void BtnCopyTotal_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                string amount = RunTotalAmount.Text;
+                if (string.IsNullOrWhiteSpace(amount)) return;
+                Clipboard.SetText(amount);
+                ToastService.ShowToast("Сумма скопирована в буфер обмена", ToastType.Success);
+            }
+            catch { ToastService.ShowToast("Не удалось скопировать", ToastType.Warning); }
         }
     }
 }

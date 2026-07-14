@@ -62,6 +62,18 @@ namespace MosquitoNetCalculator
 
         private void UpdateDirtyIndicator() => ApplyTitle();
 
+        /// <summary>
+        /// Updates the undo/redo hint in the status bar. Called after every undo/redo push.
+        /// Shows available shortcuts when the undo stack is non-empty.
+        /// </summary>
+        internal void UpdateUndoRedoHint()
+        {
+            if (UndoRedoHint == null) return;
+            bool canUndo = ViewModel.UndoRedo.CanUndo;
+            UndoRedoHint.Visibility = canUndo ? Visibility.Visible : Visibility.Collapsed;
+            UndoRedoHint.Text = canUndo ? "Ctrl+Z — отменить | Ctrl+Y — повторить" : "";
+        }
+
         internal void MarkDirty()
         {
             ViewModel.UndoRedo.MarkDirty();
@@ -86,13 +98,15 @@ namespace MosquitoNetCalculator
                 catch { /* serialization failure is non-fatal; push anyway */ }
             }
             ViewModel.UndoRedo.PushUndo(snapshot);
+            UpdateUndoRedoHint();
         }
 
         private void RestoreFromSnapshot(OrderSnapshot snapshot)
         {
-            ViewModel.RestoreFromSnapshot(snapshot, UpdateTotal);
+            ViewModel.RestoreFromSnapshot(snapshot, RecalculateAndUpdateTotal);
             UpdateTotal();
             UpdateEmptyState();
+            UpdateUndoRedoHint();
         }
 
         private void Undo()
@@ -103,7 +117,7 @@ namespace MosquitoNetCalculator
                 return;
             }
             var prev = ViewModel.UndoRedo.Undo(ViewModel.SnapshotItems);
-            if (prev != null) RestoreFromSnapshot(prev);
+            if (prev != null) { RestoreFromSnapshot(prev); UpdateUndoRedoHint(); }
         }
 
         private void Redo()
@@ -114,7 +128,7 @@ namespace MosquitoNetCalculator
                 return;
             }
             var next = ViewModel.UndoRedo.Redo(ViewModel.SnapshotItems);
-            if (next != null) RestoreFromSnapshot(next);
+            if (next != null) { RestoreFromSnapshot(next); UpdateUndoRedoHint(); }
         }
 
         public event PropertyChangedEventHandler? PropertyChanged;

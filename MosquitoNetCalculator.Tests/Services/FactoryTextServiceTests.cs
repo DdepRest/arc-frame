@@ -300,7 +300,8 @@ namespace MosquitoNetCalculator.Tests.Services
         [InlineData("ПСУЛ")]
         [InlineData("Отлив")]
         [InlineData("Доставка")]
-        [InlineData("Откос материал")]
+        [InlineData("Откос")]
+        [InlineData("Работа за откос")]
         [InlineData("Уплотнение")]
         [InlineData("Короб")]
         public void BuildSelectableItems_NonProduction_IsNotSelected(string productName)
@@ -319,6 +320,7 @@ namespace MosquitoNetCalculator.Tests.Services
         [InlineData("Anwis")]
         [InlineData("На навесах")]
         [InlineData("Оконная на метал. крепл.")]
+        [InlineData("Дверная сетка")]
         [InlineData("Козырёк")]
         public void BuildSelectableItems_Production_IsSelected(string productName)
         {

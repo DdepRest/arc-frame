@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using MosquitoNetCalculator.Models;
+using MosquitoNetCalculator.Services;
 using Xunit;
 
 namespace MosquitoNetCalculator.Tests.Models
@@ -64,7 +65,9 @@ namespace MosquitoNetCalculator.Tests.Models
         [InlineData("Брус", "шт.")]
         [InlineData("Пояс", "шт.")]
         [InlineData("Доставка", "шт.")]
-        [InlineData("Откос материал", "шт.")]
+        [InlineData("Откос", "шт.")]
+        [InlineData("Работа за откос", "шт.")]
+        [InlineData("Материал", "шт.")]
         public void Recalculate_PieceBasedProduct(string name, string expectedUnit)
         {
             var item = new OrderItem
@@ -145,16 +148,19 @@ namespace MosquitoNetCalculator.Tests.Models
         [InlineData("Anwis", "м²")]
         [InlineData("На навесах", "м²")]
         [InlineData("Оконная на метал. крепл.", "м²")]
+        [InlineData("Дверная сетка", "м²")]
         [InlineData("Отлив", "м²")]
         [InlineData("Козырёк", "м²")]
         [InlineData("Короб", "м²")]
         [InlineData("ПСУЛ", "м.п.")]
         [InlineData("Уплотнение", "м.п.")]
-        [InlineData("Откос материал", "шт.")]
+        [InlineData("Откос", "шт.")]
+        [InlineData("Работа за откос", "шт.")]
         [InlineData("Работа", "шт.")]
         [InlineData("Брус", "шт.")]
         [InlineData("Пояс", "шт.")]
         [InlineData("Доставка", "шт.")]
+        [InlineData("Материал", "шт.")]
         public void Unit_ReturnsCorrectValue(string name, string expectedUnit)
         {
             var item = new OrderItem { Name = name };
@@ -434,6 +440,23 @@ namespace MosquitoNetCalculator.Tests.Models
             Assert.True(new OrderItem { Name = "На навесах" }.IsInstallationApplicable);
         }
 
+        [Fact]
+        public void IsInstallationApplicable_DvernayaSetka_True()
+        {
+            Assert.True(new OrderItem { Name = "Дверная сетка" }.IsInstallationApplicable);
+        }
+
+        [Fact]
+        public void IsInstallationApplicable_OkonnayaNaMetallKrepl_True()
+        {
+            // v3.43.2.10: extend the mounted-product toggle (like Anwis /
+            // На навесах / Дверная сетка) to «Оконная на метал. крепл.» —
+            // user-requested feature parity. Per-piece deduction falls back
+            // to the standard 500 ₽ (see DefaultInstallationDeduction in
+            // OrderItem.Installation.cs).
+            Assert.True(new OrderItem { Name = "Оконная на метал. крепл." }.IsInstallationApplicable);
+        }
+
         [Theory]
         [InlineData("Отлив")]
         [InlineData("Козырёк")]
@@ -445,6 +468,277 @@ namespace MosquitoNetCalculator.Tests.Models
         public void IsInstallationApplicable_OtherProducts_False(string name)
         {
             Assert.False(new OrderItem { Name = name }.IsInstallationApplicable);
+        }
+
+        // ─── InstallationAdjustment tests (v3.43.2.11) ───────────────
+        //
+        // Mode 0 («Монтаж включён») теперь поддерживает signed adjustment,
+        // ИНТУИТИВНАЯ конвенция (+ добавляет, − вычитает):
+        //   • положительное значение добавляется к Total (надбавка);
+        //   • отрицательное значение вычитается из Total (формула сама инвертирует знак);
+        //   • 0 (default) — Total без изменений.
+
+        [Fact]
+        public void InstallationAdjustment_Defaults_To_Zero()
+        {
+            var item = new OrderItem { Name = "Anwis" };
+            Assert.Equal(0, item.InstallationAdjustment);
+        }
+
+        [Fact]
+        public void InstallationAdjustment_Positive_Kept_AsIs()
+        {
+            var item = new OrderItem { Name = "Anwis", InstallationAdjustment = 500 };
+            Assert.Equal(500, item.InstallationAdjustment);
+        }
+
+        [Fact]
+        public void InstallationAdjustment_Negative_Kept_AsIs()
+        {
+            // v3.43.2.10: setter НЕ клампит отрицательные — для mode 0
+            // это семантически означает «добавить к сумме».
+            var item = new OrderItem { Name = "Anwis", InstallationAdjustment = -300 };
+            Assert.Equal(-300, item.InstallationAdjustment);
+        }
+
+        [Fact]
+        public void InstallationAdjustment_Fires_PropertyChanged()
+        {
+            var item = new OrderItem { Name = "Anwis" };
+            bool fired = false;
+            item.PropertyChanged += (s, e) =>
+            {
+                if (e.PropertyName == nameof(OrderItem.InstallationAdjustment))
+                    fired = true;
+            };
+            item.InstallationAdjustment = 100;
+            Assert.True(fired, "InstallationAdjustment setter must fire PropertyChanged");
+        }
+
+        [Fact]
+        public void CurrentInstallationAmount_Mode0_ReturnsAdjustment()
+        {
+            var item = new OrderItem { Name = "Anwis", InstallationMode = 0, InstallationAdjustment = 350 };
+            Assert.Equal(350, item.CurrentInstallationAmount);
+        }
+
+        [Fact]
+        public void CurrentInstallationAmount_Mode0_Default_Returns_Zero()
+        {
+            var item = new OrderItem { Name = "Anwis", InstallationMode = 0 };
+            Assert.Equal(0, item.CurrentInstallationAmount);
+        }
+
+        [Fact]
+        public void SetCurrentInstallationAmount_Mode0_Writes_To_Adjustment()
+        {
+            // Явный override дефолтных значений 500 для Deduction/Surcharge —
+            // чтобы тест проверял именно «не трогаем», а не fallback от ctor'а.
+            var item = new OrderItem
+            {
+                Name = "Anwis",
+                InstallationMode = 0,
+                InstallationDeduction = 0,
+                InstallationSurcharge = 0,
+            };
+            item.SetCurrentInstallationAmount(450);
+            Assert.Equal(450, item.InstallationAdjustment);
+            Assert.Equal(0, item.InstallationDeduction);  // не трогаем
+            Assert.Equal(0, item.InstallationSurcharge); // не трогаем
+        }
+
+        [Fact]
+        public void SetCurrentInstallationAmount_Mode0_Allows_Negative()
+        {
+            // v3.43.2.10: убран `if (value < 0) value = 0` из SetCurrentInstallationAmount.
+            var item = new OrderItem { Name = "Anwis", InstallationMode = 0 };
+            item.SetCurrentInstallationAmount(-300);
+            Assert.Equal(-300, item.InstallationAdjustment);
+        }
+
+        [Fact]
+        public void TotalWithDeduction_Mode0_PositiveAdjustment_Adds()
+        {
+            // v3.43.2.11: интуитивная конвенция — положительное значение добавляется к Total.
+            var item = new OrderItem
+            {
+                Name = "Anwis",
+                Width = 1000, Height = 1000, Price = 1800,
+                InstallationMode = 0,
+                InstallationAdjustment = 500,
+            };
+            // 1800 + 500×1 = 2300
+            Assert.Equal(2300, item.TotalWithDeduction, 2);
+        }
+
+        [Fact]
+        public void TotalWithDeduction_Mode0_NegativeAdjustment_Subtracts()
+        {
+            // v3.43.2.11: интуитивная конвенция — отрицательное значение вычитается из Total.
+            var item = new OrderItem
+            {
+                Name = "Anwis",
+                Width = 1000, Height = 1000, Price = 1800,
+                InstallationMode = 0,
+                InstallationAdjustment = -200,
+            };
+            // 1800 + (−200)×1 = 1600
+            Assert.Equal(1600, item.TotalWithDeduction, 2);
+        }
+
+        [Fact]
+        public void TotalWithDeduction_Mode0_ZeroAdjustment_ReturnsTotal()
+        {
+            // default case: no-op, Total passthrough.
+            var item = new OrderItem
+            {
+                Name = "Anwis",
+                Width = 1000, Height = 1000, Price = 1800,
+                InstallationMode = 0,
+            };
+            Assert.Equal(1800, item.TotalWithDeduction, 2);
+        }
+
+        [Fact]
+        public void TotalWithDeduction_Mode0_AdjustmentScaledByQuantity()
+        {
+            // Per-piece × Qty: На навесах используем (identity sizing — никаких Anwis формул).
+            // Total = 1.5 × 1200 × 3 = 5400; Adjustment = -300 × 3 = -900;
+            // TotalWithDeduction = 5400 + (−900) = 4500.
+            var item = new OrderItem
+            {
+                Name = "На навесах",
+                Width = 1500, Height = 1000, Quantity = 3, Price = 1200,
+                InstallationMode = 0,
+                InstallationAdjustment = -300,
+            };
+            Assert.Equal(4500, item.TotalWithDeduction, 2);
+        }
+
+        [Fact]
+        public void TotalWithDeduction_Mode0_ClampsToZero_WhenAdjustmentExceeds()
+        {
+            // v3.43.2.11: флипнут конвенцию — clamp-to-zero теперь проверяем с большим
+            // ОТРИЦАТЕЛЬНЫМ adjustment (Total=100, Adjustment=-1500 × Q=1 = -1500 → зажимается в 0).
+            // Положительное же значение при той же формуле даёт 100 + 1500 = 1600 (без clamp),
+            // поэтому для теста clamp-ветки нужно именно большое отрицательное.
+            // «На навесах» (identity-sized, в InstallationApplicableProducts с v3.43.2.9).
+            var item = new OrderItem
+            {
+                Name = "На навесах",
+                Width = 1000, Height = 1000, Quantity = 1, Price = 100, // CV=1.0, Total=100
+                InstallationMode = 0,
+                InstallationAdjustment = -1500,
+            };
+            Assert.Equal(0, item.TotalWithDeduction, 2);
+        }
+
+        // v3.43.2.11: regression guard sister-test for `_ClampsToZero_WhenAdjustmentExceeds`
+        // (above). Both sister-tests use «На навесах» (identity-sized, no Anwis formula
+        // constants) so the only thing that changes between them is the SIGN of the
+        // Adjustment — readers scanning the pair see «same product, same Total=100 base,
+        // only Adjustment sign + magnitude flip». Post-flip formula `Total + Adj × Q`
+        // can ONLY trigger the `Math.Max(0, …)` clamp via a NEGATIVE adjustment (giant
+        // positive pushes higher, never lower). The clamp-test above covers the
+        // negative-extreme; this covers the positive-extreme to guarantee it does NOT
+        // over-clamp — a future "always clamp" refactor would silently convert
+        // 1000099 → 0 and only this test would catch it.
+        [Fact]
+        public void TotalWithDeduction_Mode0_HugePositiveAdjustment_DoesNotClamp()
+        {
+            var item = new OrderItem
+            {
+                Name = "На навесах",
+                Width = 1000, Height = 1000, Quantity = 1, Price = 100, // CV=1.0, Total=100
+                InstallationMode = 0,
+                InstallationAdjustment = 999999,
+            };
+            // 100 + 999999×1 = 1000099 → Math.Round(1000099, 2) = 1000099 (no clamp).
+            // Both 1000099 (literal) and the computed value are exactly representable
+            // integers in IEEE-754 double (≤ 2^53), so `Assert.Equal(int, double)`
+            // (exact equality, no precision arg) is the right assertion here.
+            Assert.Equal(1000099, item.TotalWithDeduction);
+        }
+
+        [Fact]
+        public void InstallationToolTip_Mode0_AdjustmentZero_HidesAmount()
+        {
+            var item = new OrderItem { Name = "Anwis", InstallationMode = 0, InstallationAdjustment = 0 };
+            Assert.Contains("Монтаж включён", item.InstallationToolTip);
+            // При нулевой корректировке не показываем «× Кол-во»/«вычитается».
+            Assert.DoesNotContain("руб./шт.", item.InstallationToolTip);
+            Assert.DoesNotContain("вычитается", item.InstallationToolTip);
+        }
+
+        [Fact]
+        public void InstallationToolTip_Mode0_AdjustmentPositive_ShowsPlus()
+        {
+            // v3.43.2.11: положительное adjustment → tooltip показывает «+500 добавляется к сумме».
+            var item = new OrderItem { Name = "Anwis", InstallationMode = 0, InstallationAdjustment = 500 };
+            Assert.Contains("+500", item.InstallationToolTip);
+        }
+
+        [Fact]
+        public void InstallationToolTip_Mode0_AdjustmentNegative_ShowsMinus()
+        {
+            // v3.43.2.11: отрицательное adjustment → tooltip показывает «−300 вычитается из суммы».
+            var item = new OrderItem { Name = "Anwis", InstallationMode = 0, InstallationAdjustment = -300 };
+            Assert.Contains("−300", item.InstallationToolTip);
+        }
+
+        [Fact]
+        public void InstallationAdjustment_Independent_From_Other_Modes()
+        {
+            // При переключении режимов значения adjustment/deduction/surcharge не обнуляются:
+            // user мог настроить 500 в режиме 0 (вычесть), перейти в режим 1 (вычитать
+            // дефолтные 500), потом вернуться — adjustment=500 сохраняется.
+            var item = new OrderItem
+            {
+                Name = "Anwis",
+                InstallationMode = 0,
+                InstallationAdjustment = 500,
+                InstallationDeduction = 500,
+                InstallationSurcharge = 500,
+            };
+            item.InstallationMode = 1;
+            Assert.Equal(500, item.InstallationDeduction);
+            Assert.Equal(500, item.InstallationAdjustment); // сохраняется
+            item.InstallationMode = 0;
+            Assert.Equal(500, item.InstallationAdjustment); // значение вернулось
+        }
+
+        [Fact]
+        public void Clone_PreservesInstallationAdjustment()
+        {
+            var original = new OrderItem
+            {
+                Name = "Anwis", Width = 1000, Height = 1000, Price = 1800,
+                InstallationMode = 0,
+                InstallationAdjustment = 250,
+                InstallationDeduction = 999,
+            };
+            var clone = original.Clone();
+            Assert.Equal(250, clone.InstallationAdjustment);
+            Assert.Equal(999, clone.InstallationDeduction);
+        }
+
+        [Fact]
+        public void SetCurrentInstallationAmount_Mode1_StillClampsNegatives()
+        {
+            // Regression: mode 1 «Без монтажа» по-прежнему клампит InstallationDeduction
+            // к 0 внутри своего setter'а — «добавить» через mode 1 невозможно.
+            var item = new OrderItem { Name = "Anwis", InstallationMode = 1 };
+            item.SetCurrentInstallationAmount(-500);
+            Assert.Equal(0, item.InstallationDeduction);
+        }
+
+        [Fact]
+        public void SetCurrentInstallationAmount_Mode2_StillClampsNegatives()
+        {
+            // Regression: mode 2 «В конструкцию» по-прежнему клампит InstallationSurcharge.
+            var item = new OrderItem { Name = "Anwis", InstallationMode = 2 };
+            item.SetCurrentInstallationAmount(-500);
+            Assert.Equal(0, item.InstallationSurcharge);
         }
 
         // ─── Clone tests ─────────────────────────────────────
@@ -794,6 +1088,77 @@ namespace MosquitoNetCalculator.Tests.Models
             Assert.Equal("5", work.QuantityDisplay);
         }
 
+        // ─── Optional quantity product tests (Материал) ──────
+
+        [Fact]
+        public void IsQuantityOptional_True_ForMaterial()
+        {
+            Assert.True(new OrderItem { Name = "Материал" }.IsQuantityOptional);
+        }
+
+        [Theory]
+        [InlineData("Работа")]
+        [InlineData("Брус")]
+        [InlineData("Anwis")]
+        [InlineData("Отлив")]
+        public void IsQuantityOptional_False_ForOtherProducts(string name)
+        {
+            Assert.False(new OrderItem { Name = name }.IsQuantityOptional);
+        }
+
+        [Fact]
+        public void QuantityDisplay_Material_DefaultQuantity_Hidden()
+        {
+            // Материал with default quantity (1) hides quantity in the grid.
+            var item = new OrderItem { Name = "Материал", Quantity = 1, Price = 5000 };
+            Assert.Equal("", item.QuantityDisplay);
+        }
+
+        [Fact]
+        public void CalculatedValueDisplay_Material_DefaultQuantity_Hidden()
+        {
+            // Материал with default quantity (1) hides calculated value in the grid.
+            var item = new OrderItem { Name = "Материал", Quantity = 1, Price = 5000 };
+            Assert.Equal("", item.CalculatedValueDisplay);
+        }
+
+        [Fact]
+        public void QuantityDisplay_Material_QuantityGreaterThanOne_Visible()
+        {
+            // Материал with quantity > 1 shows quantity in the grid.
+            var item = new OrderItem { Name = "Материал", Quantity = 3, Price = 1000 };
+            Assert.Equal("3", item.QuantityDisplay);
+        }
+
+        [Fact]
+        public void CalculatedValueDisplay_Material_QuantityGreaterThanOne_Visible()
+        {
+            // Материал with quantity > 1 shows calculated value (шт.) in the grid.
+            var item = new OrderItem { Name = "Материал", Quantity = 3, Price = 1000 };
+            Assert.Equal("3 шт.", item.CalculatedValueDisplay);
+        }
+
+        [Fact]
+        public void Material_Total_PriceTimesQuantity()
+        {
+            // Total for Материал = Price * Quantity (CalculatedValue = 1).
+            var item = new OrderItem { Name = "Материал", Quantity = 3, Price = 1500 };
+            Assert.Equal(1, item.CalculatedValue, 3);
+            Assert.Equal(4500, item.Total, 2);
+        }
+
+        [Fact]
+        public void Material_IsManualPiece_True()
+        {
+            Assert.True(new OrderItem { Name = "Материал" }.IsManualPiece);
+        }
+
+        [Fact]
+        public void Material_IsAmountOnly_False()
+        {
+            Assert.False(new OrderItem { Name = "Материал" }.IsAmountOnly);
+        }
+
         [Fact]
         public void CalculatedValueDisplay_AreaProduct_MultipliedByQuantity()
         {
@@ -815,7 +1180,8 @@ namespace MosquitoNetCalculator.Tests.Models
 
         [Theory]
         [InlineData("Работа")]
-        [InlineData("Откос материал")]
+        [InlineData("Откос")]
+        [InlineData("Работа за откос")]
         [InlineData("Anwis")]
         [InlineData("Отлив")]
         [InlineData("ПСУЛ")]
@@ -844,12 +1210,12 @@ namespace MosquitoNetCalculator.Tests.Models
         // ─── IsWidthOnly tests ───────────────────────────────────────────────────────────
 
         [Fact]
-        public void IsWidthOnly_True_ForOtkosMaterial()
+        public void IsWidthOnly_True_ForOtkos()
         {
-            // Откос материал records Width as a per-row spec but doesn't use
+            // Откос records Width as a per-row spec but doesn't use
             // it in the Total formula, so Width stays editable while Height/Color
             // stay blocked (same gate as other ManualPiece products).
-            Assert.True(new OrderItem { Name = "Откос материал" }.IsWidthOnly);
+            Assert.True(new OrderItem { Name = "Откос" }.IsWidthOnly);
         }
 
         [Theory]
@@ -893,7 +1259,7 @@ namespace MosquitoNetCalculator.Tests.Models
                 if (e.PropertyName == nameof(OrderItem.IsWidthOnly))
                     fired = true;
             };
-            item.Name = "Откос материал";
+            item.Name = "Откос";
             Assert.True(item.IsWidthOnly);
             Assert.True(fired, "IsWidthOnly must fire PropertyChanged when Name changes");
         }
@@ -1016,22 +1382,23 @@ namespace MosquitoNetCalculator.Tests.Models
         {
             // v3.35.0 fix: for non-Anwis products, Размеры returns identity
             // (all three layers equal). ШиринаВвод = stored Width = 1500.
-            var item = new OrderItem { Name = "Отлив", Width = 1500 };
+            var item = new OrderItem { Name = "Отлив", Width = 1500, Height = 100 };
             Assert.Equal(1500, item.ШиринаВвод);
         }
 
         [Fact]
         public void ВысотаВвод_NonAnwis_ReturnsIdentity_NotPlus30()
         {
-            // Regression test for v3.35.0 bug: non-Anwis products (Откос материал,
+            // Regression test for v3.35.0 bug: non-Anwis products (Откос,
             // Работа, Пояс) showed height=30mm because ReverseCalcHeight(0, ББ60)
             // returned 0+30=30. After fix, ВысотаВвод = stored Height = 0.
-            var item = new OrderItem { Name = "Откос материал", Width = 250, Height = 0 };
+            var item = new OrderItem { Name = "Откос", Width = 250, Height = 0 };
             Assert.Equal(0, item.ВысотаВвод);
         }
 
         [Theory]
-        [InlineData("Откос материал")]
+        [InlineData("Откос")]
+        [InlineData("Работа за откос")]
         [InlineData("Работа")]
         [InlineData("Пояс")]
         public void Размеры_NonAnwis_DisplayEqualsCalc(string name)
@@ -1080,11 +1447,11 @@ namespace MosquitoNetCalculator.Tests.Models
         [Fact]
         public void ШиринаВвод_Setter_NonAnwis_StoresIdentity()
         {
-            // v3.35.0 fix: editing width on non-Anwis (e.g. Откос материал)
+            // v3.35.0 fix: editing width on non-Anwis (e.g. Откос)
             // should store raw value directly, not apply Anwis calc (+2 for ББ60).
             var item = new OrderItem
             {
-                Name = "Откос материал",
+                Name = "Откос",
                 Width = 250, Height = 0,
             };
             Assert.Equal(250, item.ШиринаВвод);
@@ -1348,11 +1715,28 @@ namespace MosquitoNetCalculator.Tests.Models
         [InlineData("Anwis", true)]
         [InlineData("На навесах", true)]
         [InlineData("Оконная на метал. крепл.", true)]
+        [InlineData("Дверная сетка", true)]
         [InlineData("Отлив", false)]
         [InlineData("ПСУЛ", false)]
         public void AnticatApplicableProducts_ContainsExpected(string name, bool expected)
         {
             Assert.Equal(expected, OrderItem.AnticatApplicableProducts.Contains(name));
+        }
+
+        // ─── Clone with AnwisSizeMode test ───────────────────
+
+        [Fact]
+        public void GetDefaultInstallationDeduction_DvernayaSetka_Returns600()
+        {
+            Assert.Equal(600, OrderItem.GetDefaultInstallationDeduction("Дверная сетка"));
+            Assert.Equal(600, OrderItem.GetDefaultInstallationSurcharge("Дверная сетка"));
+        }
+
+        [Fact]
+        public void GetDefaultInstallationDeduction_Anwis_ReturnsFallback500()
+        {
+            Assert.Equal(500, OrderItem.GetDefaultInstallationDeduction("Anwis"));
+            Assert.Equal(500, OrderItem.GetDefaultInstallationSurcharge("На навесах"));
         }
 
         // ─── Clone with AnwisSizeMode test ───────────────────
@@ -1371,6 +1755,81 @@ namespace MosquitoNetCalculator.Tests.Models
             Assert.Equal(AnwisSizeMode.Брусбокс70, clone.AnwisSizeMode);
             Assert.Equal(original.Width, clone.Width);
             Assert.Equal(original.Height, clone.Height);
+        }
+
+        // ─── Slope ↔ OrderItem PropertyChanged cascade (v3.43.3) ──────
+        //
+        // Контракт: правка Quantity/Price в панели откоса каскадно
+        // обновляет OrderItem.Total через
+        //   SlopeMaterial.Quantity setter
+        //   → SlopeMaterial.Sum PropertyChanged
+        //   → SlopeCalculation.OnChildMaterialChanged
+        //   → SlopeCalculation.TotalMaterials PropertyChanged
+        //   → OrderItem.OnSlopeDataPropertyChanged (подписан в SlopeData setter)
+        //   → OrderItem.Recalculate() → _total обновлён
+        // Без этого контракта юзер правит «Старый: 2→3», а Total в DataGrid
+        // и печатном КП остаётся прежним.
+
+        [Fact]
+        public void SlopeDataChildMaterialQuantityChange_CascadeRefreshesOrderItemTotal()
+        {
+            var calc = SlopeCalculatorService.Calculate(1000, 1000, 0.15, 1, 1,
+                1200, 750, 350, 135, 135, 250, 450, 600);
+            double materialsAtStart = calc.TotalMaterials;
+
+            var item = new OrderItem
+            {
+                Name = "Откос",
+                Width = 1000,
+                Height = 1000,
+                Quantity = 1,
+                Price = materialsAtStart,
+                SlopeData = calc,
+            };
+            // v3.43.5: DistributedSharedSum заполняется только в
+            // RecalculateSealantAndTape; вызываем её, чтобы total
+            // учитывал долю герметика/скотча до ручной правки.
+            SlopeCalculatorService.RecalculateSealantAndTape(new[] { item });
+            double totalBefore = item.Total;
+
+            // Симулируем правку Sandwich.Quantity в панели: юзер поставил Quantity=99.5
+            // вручную. IsQuantityOverridden=true ставится из LostFocus handler'а
+            // панели, а setter Quantity → cascade → OrderItem.Total обновляется.
+            calc.Sandwich.IsQuantityOverridden = true;
+            calc.Sandwich.Quantity = 99.5;
+
+            // v3.43.8: Старт — 3 стороны, F-планка — 3 стороны +100 мм.
+            double newMaterials = 99.5 * 1200 + 1 * 750
+                + Math.Ceiling(1 / 4.0) * 350
+                + Math.Ceiling(1 / 3.0) * 135
+                + SlopeCalculatorService.OptimizeStrips(1000, 1000) * 135
+                + SlopeCalculatorService.OptimizeStrips(1100, 1100) * 250
+                + SlopeCalculatorService.GetPenoplexSheets(1.0) * 450;
+            double expectedTotal = Math.Round(newMaterials, 2);
+
+            Assert.NotEqual(totalBefore, item.Total);
+            Assert.Equal(expectedTotal, item.Total, 2);
+        }
+
+        [Fact]
+        public void Clone_SlopeData_IsDeepCopy_NotSharedReference()
+        {
+            // v3.43.3 (review fix): клон должен иметь СВОЙ SlopeCalculation,
+            // не шарить инстанс с оригиналом. Иначе правка Sandwich.Quantity
+            // у оригинала тоже меняла материалы клона.
+            var src = SlopeCalculatorService.Calculate(1000, 1000, 0.15, 1, 1);
+            var original = new OrderItem { Name = "Откос", SlopeData = src };
+
+            var clone = original.Clone();
+
+            Assert.NotNull(clone.SlopeData);
+            Assert.NotSame(original.SlopeData, clone.SlopeData);
+            Assert.NotSame(original.SlopeData.Sandwich, clone.SlopeData!.Sandwich);
+
+            // Меняем оригинал — клон не должен реагировать.
+            original.SlopeData!.Sandwich.IsQuantityOverridden = true;
+            original.SlopeData.Sandwich.Quantity = 42.0;
+            Assert.NotEqual(42.0, clone.SlopeData.Sandwich.Quantity);
         }
 
         // ─── Размеры computed property test ──────────────────

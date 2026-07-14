@@ -24,11 +24,13 @@ namespace MosquitoNetCalculator.Models
         {
             "ПСУЛ" => "м.п.",
             "Уплотнение" => "м.п.",
-            "Откос материал" => "шт.",
+            "Откос" => "шт.",
+            "Работа за откос" => "шт.",
             "Работа" => "шт.",
             "Брус" => "шт.",
             "Пояс" => "шт.",
             "Доставка" => "шт.",
+            "Материал" => "шт.",
             _ => "м²"
         };
 
@@ -41,6 +43,7 @@ namespace MosquitoNetCalculator.Models
             get
             {
                 if (IsAmountOnly) return "";
+                if (IsQuantityOptional && Quantity <= 1) return "";
                 if (CalculatedValue <= 0) return "";
                 double total = CalculatedValue * Quantity;
                 return Unit == "шт."
@@ -55,14 +58,48 @@ namespace MosquitoNetCalculator.Models
         /// <summary>Display string for effective total (with installation deduction applied)</summary>
         public string TotalDisplay => TotalWithDeduction > 0 ? Services.MoneyFormatService.Format(TotalWithDeduction) : "";
 
-        /// <summary>Display string for quantity (empty when 0 or amount-only product)</summary>
-        public string QuantityDisplay => Quantity > 0 && !IsAmountOnly ? Quantity.ToString() : "";
+        /// <summary>Display string for quantity (empty when 0, amount-only product, or optional-quantity product with default quantity)</summary>
+        public string QuantityDisplay => Quantity > 0 && !IsAmountOnly && !(IsQuantityOptional && Quantity <= 1) ? Quantity.ToString() : "";
 
-        private void Recalculate()
+        /// <summary>
+        /// v3.44.1: internal для принудительного пересчёта из внешних сервисов
+        /// (например, после распределения общих материалов в RecalculateSealantAndTape).
+        /// </summary>
+        [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.NoInlining)]
+        internal void Recalculate()
         {
             bool totalOverridden = false;
 
-            if (Name == "ПСУЛ")
+            // Откосы: Total берётся из SlopeData
+            if (SlopeData != null)
+            {
+                if (Name == "Откос")
+                {
+                    CalculatedValue = 1;
+                    // v3.43.5 (bugfix): герметик/скотч — ОБЩИЕ на весь заказ, НЕ умножаются на Quantity.
+                    // v3.44.1: Старт/F-планка также общие, если включена экономия (IsProfileEconomyApplied).
+                    // per-window материалы: сэндвич, пена, пеноплекс, ламинатина
+                    // общие: герметик, скотч, Старт, F-планка (при IsProfileEconomyApplied)
+                    double perWindowSum = SlopeData.Sandwich.Sum + SlopeData.Foam.Sum
+                                           + SlopeData.Penoplex.Sum + SlopeData.Laminatina.Sum;
+                    if (!SlopeData.IsProfileEconomyApplied)
+                    {
+                        perWindowSum += SlopeData.StartProfile.Sum + SlopeData.FProfile.Sum;
+                    }
+                    // DistributedSharedSum — доля общей стоимости shared-материалов,
+                    // распределённая пропорционально WindowCount в RecalculateSealantAndTape.
+                    double sharedSum = SlopeData.DistributedSharedSum;
+                    _total = Math.Round(perWindowSum * Quantity + sharedSum, 2);
+                    totalOverridden = true;
+                }
+                else if (Name == "Работа за откос")
+                {
+                    CalculatedValue = 1;
+                    _total = Math.Round(SlopeData.TotalLabor * Quantity, 2);
+                    totalOverridden = true;
+                }
+            }
+            else if (Name == "ПСУЛ")
             {
                 if (Width == 0 && Height == 0)
                 {
@@ -90,7 +127,7 @@ namespace MosquitoNetCalculator.Models
                     CalculatedValue = Math.Round((Width + Height) * 2 / 1000.0, 3);
                 }
             }
-            else if (Name is "Откос материал" or "Работа" or "Брус" or "Пояс" or "Доставка")
+            else if (Name is "Откос" or "Работа за откос" or "Работа" or "Брус" or "Пояс" or "Доставка" or "Материал")
             {
                 CalculatedValue = 1;
             }

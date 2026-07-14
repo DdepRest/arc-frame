@@ -17,6 +17,7 @@
         </Grid.Triggers>
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
             <RowDefinition Height="*"/>
         </Grid.RowDefinitions>
 
@@ -67,8 +68,34 @@
             </Grid>
         </Border>
 
+        <!-- Search bar -->
+        <Border Grid.Row="1" Margin="8,0,8,4">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+                <TextBlock Grid.Column="0" Text="&#xE721;"
+                           FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets"
+                           FontSize="14" Foreground="{DynamicResource TextMuted}"
+                           VerticalAlignment="Center" Margin="0,0,8,0"/>
+                <TextBox x:Name="TxtSearchOrders" Grid.Column="1"
+                         Style="{DynamicResource QuickInput}"
+                         TextChanged="TxtSearchOrders_TextChanged"
+                         ToolTip="Фильтр по № КП, адресу или телефону"/>
+                <Button x:Name="BtnClearOrdersSearch" Grid.Column="2"
+                        Style="{DynamicResource GhostButton}"
+                        Content="&#xE711;" FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets"
+                        FontSize="10" Padding="4,2" Margin="4,0,0,0" Cursor="Hand"
+                        Visibility="Collapsed"
+                        Click="BtnClearOrdersSearch_Click"
+                        ToolTip="Очистить поиск"/>
+            </Grid>
+        </Border>
+
         <!-- Orders table -->
-        <Border Grid.Row="1" Background="{DynamicResource Surface}" CornerRadius="10"
+        <Border Grid.Row="2" Background="{DynamicResource Surface}" CornerRadius="10"
                 BorderBrush="{DynamicResource Border}" BorderThickness="1" Margin="8,0,8,8"
                 Style="{DynamicResource Card}"
                 ClipToBounds="True">
@@ -141,6 +168,7 @@
                                 <Setter Property="Margin" Value="6,0"/>
                                 <Setter Property="FontWeight" Value="Medium"/>
                                 <Setter Property="Foreground" Value="{DynamicResource TextPrimary}"/>
+                                <Setter Property="Typography.NumeralAlignment" Value="Tabular"/>
                             </Style>
                         </DataGridTextColumn.ElementStyle>
                     </DataGridTextColumn>
@@ -169,7 +197,7 @@
                 </DataGrid.Columns>
             </DataGrid>
 
-                <!-- Empty state for orders history list -->
+                <!-- Empty state — Fluent illustration with action button -->
                 <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center"
                             x:Name="OrdersEmptyState"
                             Visibility="{Binding IsEmpty, RelativeSource={RelativeSource AncestorType=UserControl}, Converter={StaticResource BoolToVis}}"
@@ -183,11 +211,20 @@
                                FontSize="14" FontWeight="SemiBold"
                                Foreground="{DynamicResource TextMuted}"
                                HorizontalAlignment="Center" Margin="0,10,0,2"/>
-                    <TextBlock Text="Перейдите на вкладку «Расчёт», создайте заказ и сохраните"
+                    <TextBlock Text="Создайте первый заказ на вкладке «Расчёт», заполните позиции и сохраните"
                                FontSize="11"
                                Foreground="{DynamicResource TextMuted}"
-                               Opacity="0.85"
-                               HorizontalAlignment="Center"/>
+                               Opacity="0.75"
+                               HorizontalAlignment="Center" Margin="0,0,0,18"/>
+                    <Button Style="{DynamicResource GhostButton}"
+                            HorizontalAlignment="Center"
+                            Click="BtnGoToCalculation_Click"
+                            ToolTip="Вернуться к расчёту (Ctrl+1)">
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Style="{DynamicResource FluentIconButton}" Text="&#xE1D0;"/>
+                            <TextBlock Text="Перейти к расчёту"/>
+                        </StackPanel>
+                    </Button>
                 </StackPanel>
             </Grid>
         </Border>

@@ -33,21 +33,8 @@ namespace MosquitoNetCalculator.Controls
         private void BtnPrintKp_Click(object sender, RoutedEventArgs e)
         {
             if (!TryGetMainWindow(nameof(BtnPrintKp_Click), out var mw)) return;
-            var validItems = mw.OrderItems.Where(i => !string.IsNullOrEmpty(i.Name) && i.IsActive && i.Total > 0).ToList();
-            if (validItems.Count == 0)
-            {
-                ToastService.ShowToast("Добавьте хотя бы одну позицию.", ToastType.Warning);
-                return;
-            }
-
-            double total = validItems.Sum(i => i.TotalWithDeduction);
-            string amountInWords = AmountInWordsService.Convert(total);
-            string html = mw.PrintService.GenerateKpHtml(validItems, mw.ClientInfo, total, amountInWords);
-
-            if (string.IsNullOrEmpty(html)) return;
-
-            var preview = new PrintPreviewWindow(html) { Owner = mw };
-            preview.ShowDialog();
+            // Navigate to Print tab — document is built and preview shown in PrintOverlay
+            mw.ShowPrintOverlay();
         }
 
         internal void BtnSaveOrder_Click(object sender, RoutedEventArgs e)
@@ -81,22 +68,7 @@ namespace MosquitoNetCalculator.Controls
                 }).ToList(),
                 Status = mw.Sidebar.CmbOrderStatus.SelectedItem?.ToString() ?? OrderStatuses.All[0],
                 TotalAmount = activeItems.Sum(i => i.TotalWithDeduction) + mw.ClientInfo.AdditionalKpsTotal,
-                Items = allItems.Select(i => new OrderItemData
-                {
-                    Name = i.Name,
-                    Color = i.Color,
-                    Width = i.Width,
-                    Height = i.Height,
-                    Quantity = i.Quantity,
-                    Price = i.Price,
-                    InstallationMode = i.InstallationMode,
-                    HasInstallation = i.InstallationMode == 0,
-                    InstallationDeduction = i.InstallationDeduction,
-                    InstallationSurcharge = i.InstallationSurcharge,
-                    IsActive = i.IsActive,
-                    AnwisSizeMode = (int)i.AnwisSizeMode,
-                    IsAnticat = i.IsAnticat
-                }).ToList()
+                Items = allItems.Select(i => i.ToOrderItemData()).ToList()
             };
 
             mw.OrdersVM.SaveOrder(orderData);
@@ -114,10 +86,38 @@ namespace MosquitoNetCalculator.Controls
         private void BtnNewOrder_Click(object sender, RoutedEventArgs e)
         {
             if (!TryGetMainWindow(nameof(BtnNewOrder_Click), out var mw)) return;
-            var validItems = mw.OrderItems.Where(i => !string.IsNullOrEmpty(i.Name) && i.Total > 0).ToList();
-            if (validItems.Count > 0)
+
+            // v3.45.0 — confirm only when there are actual unsaved changes
+            // (StatusDirtyIndicator is Visible). Previously checked
+            // validItems.Count > 0 which incorrectly prompted users with
+            // already-saved orders to re-confirm.
+            if (mw.StatusDirtyIndicator.Visibility != Visibility.Collapsed)
             {
-                if (!DialogService.ShowConfirm("У вас есть несохранённые данные. Создать новый заказ?", "Новый заказ", mw)) return;
+                var result = DialogService.ShowSaveDiscardCancel(
+                    "Есть несохранённые изменения. Сохранить заказ перед созданием нового?",
+                    "Новый заказ",
+                    mw);
+                switch (result)
+                {
+                    case SaveDiscardCancelResult.Save:
+                        BtnSaveOrder_Click(sender, e);
+                        // v3.45.0 hotfix — если сохранение не удалось
+                        // (нет валидных позиций), BtnSaveOrder_Click
+                        // показывает warning-toast и возвращается БЕЗ
+                        // MarkClean(). Если StatusDirtyIndicator всё ещё
+                        // Visible — пользователь только что нажал «Да»,
+                        // но данные не сохранены. Прерываем создание
+                        // нового заказа, чтобы не потерять его данные.
+                        if (mw.StatusDirtyIndicator.Visibility != Visibility.Collapsed)
+                            return;
+                        break;
+                    case SaveDiscardCancelResult.Discard:
+                        // proceed without saving
+                        break;
+                    case SaveDiscardCancelResult.Cancel:
+                    default:
+                        return; // user changed mind — abort
+                }
             }
 
             mw.StartNewOrder();
@@ -148,19 +148,50 @@ namespace MosquitoNetCalculator.Controls
             window.ShowDialog();
         }
 
+        private void BtnOrderInfo_Click(object sender, RoutedEventArgs e)
+        {
+            if (!TryGetMainWindow(nameof(BtnOrderInfo_Click), out var mw)) return;
+            mw.ToggleSidebarOverlay();
+        }
+
         private void BtnClearAll_Click(object sender, RoutedEventArgs e)
         {
             if (!TryGetMainWindow(nameof(BtnClearAll_Click), out var mw)) return;
             if (mw.OrderItems.Count == 0) return;
 
-            if (DialogService.ShowConfirm("Очистить все позиции расчёта?", "Подтверждение", mw))
+            // v3.45.0 — Save/Discard/Cancel dialog replaces simple Yes/No.
+            // Save: сохранить заказ, затем очистить; Discard: очистить без
+            // сохранения; Cancel: отмена. Если сохранение не удалось (например,
+            // нет позиций), BtnSaveOrder_Click покажет warning-toast и сам
+            // вернёт управление — очистка в этом случае НЕ произойдёт
+            // (следующий case Discard не сработает, потому что switch уже
+            // завершился). Это корректное поведение: данные не теряются.
+            var result = DialogService.ShowSaveDiscardCancel(
+                "Все позиции будут удалены из расчёта. Сохранить заказ перед очисткой?",
+                "Очистить всё",
+                mw);
+            switch (result)
             {
-                mw.PushUndo();
-                mw.CalcVM.UnsubscribeAll(mw.UpdateTotal);
-                mw.CalcVM.ClearAll();
-                mw.UpdateTotal();
-                mw.UpdateEmptyState();
+                case SaveDiscardCancelResult.Save:
+                    BtnSaveOrder_Click(sender, e);
+                    // v3.45.0 hotfix — не очищаем, если сохранение не
+                    // удалось (нет валидных позиций → MarkClean не
+                    // вызван → StatusDirtyIndicator всё ещё Visible).
+                    if (mw.StatusDirtyIndicator.Visibility != Visibility.Collapsed)
+                        return;
+                    break;
+                case SaveDiscardCancelResult.Discard:
+                    break;
+                case SaveDiscardCancelResult.Cancel:
+                default:
+                    return;
             }
+
+            mw.PushUndo();
+            mw.CalcVM.UnsubscribeAll(mw.UpdateTotal);
+            mw.CalcVM.ClearAll();
+            mw.UpdateTotal();
+            mw.UpdateEmptyState();
         }
 
     }

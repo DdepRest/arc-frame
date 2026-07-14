@@ -11,6 +11,9 @@
                      they must be loaded before styles, especially ShadowColor
                      used in the Card style's DropShadowEffect (a Freezable). -->
                 <ResourceDictionary Source="Themes/Brushes.xaml"/>
+                <!-- Focus visual: loaded early so all subsequent style dictionaries
+                     can reference FluentFocusVisual via StaticResource. -->
+                <ResourceDictionary Source="Themes/FocusVisualStyles.xaml"/>
                 <!-- Base/dependency-free styles -->
                 <ResourceDictionary Source="Themes/CardStyles.xaml"/>
                 <ResourceDictionary Source="Themes/FontStyles.xaml"/>
@@ -18,6 +21,8 @@
                 <ResourceDictionary Source="Themes/ButtonStyles.xaml"/>
                 <ResourceDictionary Source="Themes/InputStyles.xaml"/>
                 <ResourceDictionary Source="Themes/DataGridStyles.xaml"/>
+                <!-- п.2: Fluent RadioButton style (implicit, без x:Key → подхватывается глобально). -->
+                <ResourceDictionary Source="Themes/InputStyles.RadioButton.xaml"/>
                 <ResourceDictionary Source="Themes/ScrollViewerStyles.xaml"/>
                 <ResourceDictionary Source="Themes/ContextMenuStyles.xaml"/>
                 <ResourceDictionary Source="Themes/MiscStyles.xaml"/>
@@ -34,6 +39,22 @@
             <conv:RussianDateConverter x:Key="RussianDateConv"/>
             <conv:UpdateTypeToBrushConverter x:Key="UpdateTypeBrush"/>
             <conv:UpdateTypeToIconConverter x:Key="UpdateTypeIcon"/>
+            <conv:InverseBoolConverter x:Key="InverseBool"/>
+
+            <!-- ═══════════════════════════════════════════════════════ -->
+            <!-- GLOBAL TOOLTIP STYLE — applied to all tooltips without    -->
+            <!-- explicit Style. Uses theme brushes so tooltip follows    -->
+            <!-- light/dark theme. Tooltips with explicit Style override.  -->
+            <!-- ═══════════════════════════════════════════════════════ -->
+            <Style TargetType="ToolTip">
+                <Setter Property="Background" Value="{DynamicResource Surface}"/>
+                <Setter Property="Foreground" Value="{DynamicResource TextPrimary}"/>
+                <Setter Property="BorderBrush" Value="{DynamicResource Border}"/>
+                <Setter Property="BorderThickness" Value="1"/>
+                <Setter Property="Padding" Value="8,5"/>
+                <Setter Property="FontSize" Value="11"/>
+                <Setter Property="HasDropShadow" Value="False"/>
+            </Style>
 
         </ResourceDictionary>
     </Application.Resources>

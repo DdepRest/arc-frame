@@ -3,6 +3,8 @@ using System.ComponentModel;
 using System.Diagnostics;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Data;
+using MosquitoNetCalculator.Models;
 
 namespace MosquitoNetCalculator.Controls
 {
@@ -82,5 +84,35 @@ namespace MosquitoNetCalculator.Controls
 
         private void CtxDelete_Click(object sender, RoutedEventArgs e) =>
             TryForwardToMain(nameof(CtxDelete_Click), mw => mw.DeleteSelectedOrder());
+
+        private void BtnGoToCalculation_Click(object sender, RoutedEventArgs e) =>
+            TryForwardToMain(nameof(BtnGoToCalculation_Click), mw => mw.NavigateToCalculation());
+
+        // ── Search / filter orders ──────────────────────────────────────
+        private void TxtSearchOrders_TextChanged(object sender, TextChangedEventArgs e)
+        {
+            BtnClearOrdersSearch.Visibility = string.IsNullOrEmpty(TxtSearchOrders.Text)
+                ? Visibility.Collapsed : Visibility.Visible;
+
+            var view = CollectionViewSource.GetDefaultView(OrdersList.ItemsSource);
+            if (view == null) return;
+            string filter = TxtSearchOrders.Text.Trim();
+            view.Filter = string.IsNullOrEmpty(filter)
+                ? null
+                : item =>
+                {
+                    if (item is OrderData order)
+                        return (order.ContractNumber?.Contains(filter, StringComparison.OrdinalIgnoreCase) ?? false)
+                            || (order.ClientAddress?.Contains(filter, StringComparison.OrdinalIgnoreCase) ?? false)
+                            || (order.ClientPhone?.Contains(filter, StringComparison.OrdinalIgnoreCase) ?? false);
+                    return true;
+                };
+        }
+
+        private void BtnClearOrdersSearch_Click(object sender, RoutedEventArgs e)
+        {
+            TxtSearchOrders.Text = string.Empty;
+            TxtSearchOrders.Focus();
+        }
     }
 }

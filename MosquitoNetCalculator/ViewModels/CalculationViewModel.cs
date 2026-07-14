@@ -7,6 +7,12 @@ using MosquitoNetCalculator.Services;
 
 namespace MosquitoNetCalculator.ViewModels
 {
+    public delegate void SlopesChangedHandler();
+
+    /// <summary>
+    /// Arguments for notifying that slopes have changed.
+    /// </summary>
+
     /// <summary>
     /// Result of UpdateTotal — consumed by MainWindow to update UI TextBlocks.
     /// </summary>
@@ -22,6 +28,11 @@ namespace MosquitoNetCalculator.ViewModels
     public class CalculationViewModel
     {
         public ObservableCollection<OrderItem> OrderItems { get; } = new();
+
+        /// <summary>
+        /// Событие: откосы в заказе изменились (добавление/удаление/изменение Q).
+        /// </summary>
+        public event SlopesChangedHandler? SlopesChanged;
 
         /// <summary>
         /// Adds a new order item from quick-add parameters.
@@ -53,6 +64,11 @@ namespace MosquitoNetCalculator.ViewModels
                 Quantity = qty,
                 Price = price,
                 InstallationMode = type == "Отлив" ? 1 : 0,
+                InstallationDeduction = OrderItem.GetDefaultInstallationDeduction(type),
+                InstallationSurcharge = OrderItem.GetDefaultInstallationSurcharge(type),
+                // v3.43.2.10: signed adjustment for mode 0 («Монтаж включён»).
+                // Default 0 (no modification) at item-add time.
+                InstallationAdjustment = 0,
                 RowNumber = OrderItems.Count + 1
             };
             // Use SetAnwisModeQuiet — Width/Height above are already-final stored
@@ -62,6 +78,73 @@ namespace MosquitoNetCalculator.ViewModels
 
             OrderItems.Add(item);
             return item;
+        }
+
+        /// <summary>
+        /// Добавляет откос из расчёта в заказ (2 строки: «Откос» и «Работа за откос»).
+        /// </summary>
+        /// <param name="slopeCalc">Расчёт откоса.</param>
+        /// <param name="priceService">Для получения цен из прайса.</param>
+        /// <returns>Список созданных OrderItem (2 шт).</returns>
+        public List<OrderItem> AddSlope(SlopeCalculation slopeCalc, PriceService? priceService = null)
+        {
+            var items = new List<OrderItem>();
+
+            // Строка «Откос» — материалы
+            double totalMaterials = slopeCalc.TotalMaterials;
+            var materialItem = new OrderItem
+            {
+                Name = "Откос",
+                Color = "",
+                Width = slopeCalc.WidthMm,
+                Height = slopeCalc.HeightMm,
+                Quantity = slopeCalc.WindowCount,
+                Price = totalMaterials,
+                SlopeData = slopeCalc,
+                RowNumber = OrderItems.Count + 1
+            };
+            materialItem.SetDefaultPrice(0);
+            OrderItems.Add(materialItem);
+            items.Add(materialItem);
+
+            // Строка «Работа за откос» — работа
+            // v3.43.4 (bugfix): НЕ проставляем SlopeData — иначе два OrderItem
+            // (Откос + Работа) SHAR'ят один SlopeCalculation. Когда после AddSlope
+            // вызывается RecalculateAllSlopes(), оба item'а итерируются в
+            // RecalculateSealantAndTape и WindowCount суммируется дважды
+            // (3+3=6 вместо 3). Это дёргает PropertyChanged каскад → вторая
+            // Recalculate с неправильным TotalMaterials по sealant/tape.
+            // Работа/за/откос не участвует в экономии герметика/скотча —
+            // её Price 4380 статичен, а при изменении Qty в DataGrid падает
+            // в fallback-путь Recalculate(): _total = Price×Qty = 4380×Qty.
+            double totalLabor = slopeCalc.TotalLabor;
+            var laborItem = new OrderItem
+            {
+                Name = "Работа за откос",
+                Color = "",
+                Width = 0,
+                Height = 0,
+                Quantity = slopeCalc.WindowCount,
+                Price = totalLabor,
+                RowNumber = OrderItems.Count + 1
+            };
+            laborItem.SetDefaultPrice(0);
+            OrderItems.Add(laborItem);
+            items.Add(laborItem);
+
+            // Пересчёт герметика/скотча по всему заказу
+            RecalculateAllSlopes();
+            SlopesChanged?.Invoke();
+
+            return items;
+        }
+
+        /// <summary>
+        /// Пересчитывает Sealant и Tape для ВСЕХ откосов в заказе (герметик/скотч — экономия по всему заказу).
+        /// </summary>
+        public void RecalculateAllSlopes()
+        {
+            SlopeCalculatorService.RecalculateSealantAndTape(OrderItems);
         }
 
         /// <summary>
@@ -146,10 +229,30 @@ namespace MosquitoNetCalculator.ViewModels
             OrderItems.Clear();
             foreach (var od in order.Items)
             {
+                // Конвертация старого «Откос материал» в новый формат?
+                if (od.Name == "Откос материал" && od.SlopeData == null)
+                {
+                    // Старый заказ — создаём SlopeCalculation из Width (глубина) + height (0)
+                    if (od.Width > 0)
+                    {
+                        var oldCalc = new SlopeCalculation
+                        {
+                            WidthMm = od.Height > 0 ? od.Height : 1000,
+                            HeightMm = od.Height > 0 ? od.Width : 1000,
+                            DepthM = od.Width / 1000.0,
+                            WindowCount = od.Quantity
+                        };
+                        od.SlopeData = SlopeCalculationData.FromSlopeCalculation(
+                            Services.SlopeCalculatorService.Calculate(
+                                oldCalc.WidthMm, oldCalc.HeightMm, oldCalc.DepthM,
+                                od.Quantity, od.Quantity));
+                    }
+                }
+
                 var item = new OrderItem
                 {
                     RowNumber = OrderItems.Count + 1,
-                    Name = od.Name,
+                    Name = od.Name == "Откос материал" ? "Откос" : od.Name,
                     Color = od.Color,
                     Width = od.Width,
                     Height = od.Height,
@@ -158,8 +261,13 @@ namespace MosquitoNetCalculator.ViewModels
                     InstallationMode = od.InstallationMode != 0 ? od.InstallationMode : (od.HasInstallation ? 0 : 1),
                     InstallationDeduction = od.InstallationDeduction,
                     InstallationSurcharge = od.InstallationSurcharge,
+                    // v3.43.2.10: signed adjustment for «Монтаж включён».
+                    // DTO default 0 → старые orders.json без этого поля загружаются
+                    // без изменений суммы (no-op backward-compatible).
+                    InstallationAdjustment = od.InstallationAdjustment,
                     IsActive = od.IsActive,
-                    IsAnticat = od.IsAnticat
+                    IsAnticat = od.IsAnticat,
+                    SlopeData = od.SlopeData?.ToSlopeCalculation()
                 };
                 // Use SetAnwisModeQuiet — Width/Height above are already-final stored
                 // values for the loaded od.AnwisSizeMode. The public setter would
@@ -168,6 +276,10 @@ namespace MosquitoNetCalculator.ViewModels
                 item.RecalculateRequested += recalculateCallback;
                 OrderItems.Add(item);
             }
+
+            // v3.43.5 (bugfix): после загрузки заказа пересчитываем общие
+            // материалы (герметик/скотч) и их распределение между строками.
+            RecalculateAllSlopes();
         }
 
         /// <summary>

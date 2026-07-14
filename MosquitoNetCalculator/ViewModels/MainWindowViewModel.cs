@@ -42,6 +42,36 @@ namespace MosquitoNetCalculator.ViewModels
                 Updates.Add(entry);
         }
 
+        /// <summary>
+        /// Runtime-добавление новой записи обновления.
+        /// Снимает признак <see cref="UpdateItem.IsLatest"/> со старой
+        /// новейшей записи и проставляет новой, затем вставляет её в начало
+        /// коллекции (index 0). Старые карточки остаются в своих позициях
+        /// (с индексами 1..N до сдвига), WPF лишь вставляет новый контейнер
+        /// сверху — никаких ре-триггеров анимаций появления на старых.
+        /// </summary>
+        /// <param name="newItem">Новая запись для отображения.</param>
+        public void AddNewUpdate(UpdateItem newItem)
+        {
+            if (newItem == null) return;
+
+            // Pre-set the new item to true BEFORE clearing the previous one:
+            // in a single block (no UI-binding flicker window where no item
+            // is marked as latest). WPF bindings see: at-most-one-false then
+            // at-most-one-true, never "empty".
+            newItem.IsLatest = true;
+
+            // Clear IsLatest on all current entries (normally exactly one had it).
+            foreach (var existing in Updates)
+                if (existing.IsLatest && !ReferenceEquals(existing, newItem))
+                    existing.IsLatest = false;
+
+            // Insert at the top — this is the NEW entry, by definition;
+            // older items get re-indexed by WPF (no per-card animation replay
+            // because their Tag no longer drives anything).
+            Updates.Insert(0, newItem);
+        }
+
         public void StartNewOrder()
         {
             CurrentOrderId = Guid.NewGuid().ToString();
