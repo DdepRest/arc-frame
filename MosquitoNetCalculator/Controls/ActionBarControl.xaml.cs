@@ -86,38 +86,10 @@ namespace MosquitoNetCalculator.Controls
         private void BtnNewOrder_Click(object sender, RoutedEventArgs e)
         {
             if (!TryGetMainWindow(nameof(BtnNewOrder_Click), out var mw)) return;
-
-            // v3.45.0 — confirm only when there are actual unsaved changes
-            // (StatusDirtyIndicator is Visible). Previously checked
-            // validItems.Count > 0 which incorrectly prompted users with
-            // already-saved orders to re-confirm.
-            if (mw.StatusDirtyIndicator.Visibility != Visibility.Collapsed)
+            var validItems = mw.OrderItems.Where(i => !string.IsNullOrEmpty(i.Name) && i.Total > 0).ToList();
+            if (validItems.Count > 0)
             {
-                var result = DialogService.ShowSaveDiscardCancel(
-                    "Есть несохранённые изменения. Сохранить заказ перед созданием нового?",
-                    "Новый заказ",
-                    mw);
-                switch (result)
-                {
-                    case SaveDiscardCancelResult.Save:
-                        BtnSaveOrder_Click(sender, e);
-                        // v3.45.0 hotfix — если сохранение не удалось
-                        // (нет валидных позиций), BtnSaveOrder_Click
-                        // показывает warning-toast и возвращается БЕЗ
-                        // MarkClean(). Если StatusDirtyIndicator всё ещё
-                        // Visible — пользователь только что нажал «Да»,
-                        // но данные не сохранены. Прерываем создание
-                        // нового заказа, чтобы не потерять его данные.
-                        if (mw.StatusDirtyIndicator.Visibility != Visibility.Collapsed)
-                            return;
-                        break;
-                    case SaveDiscardCancelResult.Discard:
-                        // proceed without saving
-                        break;
-                    case SaveDiscardCancelResult.Cancel:
-                    default:
-                        return; // user changed mind — abort
-                }
+                if (!DialogService.ShowConfirm("У вас есть несохранённые данные. Создать новый заказ?", "Новый заказ", mw)) return;
             }
 
             mw.StartNewOrder();
@@ -159,39 +131,14 @@ namespace MosquitoNetCalculator.Controls
             if (!TryGetMainWindow(nameof(BtnClearAll_Click), out var mw)) return;
             if (mw.OrderItems.Count == 0) return;
 
-            // v3.45.0 — Save/Discard/Cancel dialog replaces simple Yes/No.
-            // Save: сохранить заказ, затем очистить; Discard: очистить без
-            // сохранения; Cancel: отмена. Если сохранение не удалось (например,
-            // нет позиций), BtnSaveOrder_Click покажет warning-toast и сам
-            // вернёт управление — очистка в этом случае НЕ произойдёт
-            // (следующий case Discard не сработает, потому что switch уже
-            // завершился). Это корректное поведение: данные не теряются.
-            var result = DialogService.ShowSaveDiscardCancel(
-                "Все позиции будут удалены из расчёта. Сохранить заказ перед очисткой?",
-                "Очистить всё",
-                mw);
-            switch (result)
+            if (DialogService.ShowConfirm("Очистить все позиции расчёта?", "Подтверждение", mw))
             {
-                case SaveDiscardCancelResult.Save:
-                    BtnSaveOrder_Click(sender, e);
-                    // v3.45.0 hotfix — не очищаем, если сохранение не
-                    // удалось (нет валидных позиций → MarkClean не
-                    // вызван → StatusDirtyIndicator всё ещё Visible).
-                    if (mw.StatusDirtyIndicator.Visibility != Visibility.Collapsed)
-                        return;
-                    break;
-                case SaveDiscardCancelResult.Discard:
-                    break;
-                case SaveDiscardCancelResult.Cancel:
-                default:
-                    return;
+                mw.PushUndo();
+                mw.CalcVM.UnsubscribeAll(mw.UpdateTotal);
+                mw.CalcVM.ClearAll();
+                mw.UpdateTotal();
+                mw.UpdateEmptyState();
             }
-
-            mw.PushUndo();
-            mw.CalcVM.UnsubscribeAll(mw.UpdateTotal);
-            mw.CalcVM.ClearAll();
-            mw.UpdateTotal();
-            mw.UpdateEmptyState();
         }
 
     }

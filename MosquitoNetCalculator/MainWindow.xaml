@@ -3,7 +3,6 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:controls="clr-namespace:MosquitoNetCalculator.Controls"
         Title="A.R.C. Frame"
-        Icon="pack://application:,,,/Resources/app_icon.ico"
         Width="1200" Height="760"
         MinWidth="1000" MinHeight="600"
         WindowStartupLocation="CenterScreen"
@@ -121,9 +120,6 @@
             <Setter Property="FontFamily" Value="Segoe Fluent Icons, Segoe MDL2 Assets"/>
             <Setter Property="FontSize" Value="12"/>
             <Setter Property="Content" Value="&#xE8BB;"/>
-            <Setter Property="ToolTip" Value="Закрыть"/>
-            <Setter Property="AutomationProperties.Name" Value="Закрыть"/>
-            <Setter Property="FocusVisualStyle" Value="{StaticResource FluentFocusVisual}"/>
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="Button">
@@ -207,7 +203,7 @@
                                 HorizontalAlignment="Stretch" Background="Transparent">
                             <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
                                 <TextBlock x:Name="StatusOrderInfo" Text="Новый заказ"
-                                           FontSize="11" Foreground="{DynamicResource TextSecondary}"
+                                           FontSize="10" Foreground="{DynamicResource TextMuted}"
                                            VerticalAlignment="Center"/>
                                 <Border x:Name="StatusDirtyIndicator" Visibility="Collapsed"
                                         Background="{DynamicResource BadgeWarningBg}"
@@ -563,7 +559,10 @@
                                     <TextBlock x:Name="NavIconSlope" Text="&#xE790;"
                                                FontSize="20" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                                 </Grid>
-                                <TextBlock x:Name="NavLabelSlope" Grid.Column="1" Text="Авто-Откосы" Opacity="0"
+                                <!-- EASTER-EGG v3.43.2.8 — "Откосы" → "Авто · Откосы" (компактно: 13 chars,
+                                     умещается в 108px-ширину раскрытого nav menu; "Авто" сигнализирует,
+                                     что расчёт автоматический). Чтобы вернуть: заменить обратно на "Откосы". -->
+                                <TextBlock x:Name="NavLabelSlope" Grid.Column="1" Text="Авто · Откосы" Opacity="0"
                                            Margin="10,0,0,0" FontSize="12" VerticalAlignment="Center"
                                            FontFamily="Segoe UI"/>
                             </Grid>

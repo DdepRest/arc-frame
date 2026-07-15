@@ -357,11 +357,9 @@
                            HorizontalAlignment="Center" Margin="0,0,0,4" Opacity="0.85"/>
                 <TextBlock FontSize="11" Foreground="{DynamicResource TextSecondary}" Opacity="0.85"
                            HorizontalAlignment="Center" Margin="0,0,0,14" TextAlignment="Center">
-                    <Run Text="Кликните товар ниже — он подставится в поле"/>
+                    <Run Text="Нажмите на товар — он появится в поле"/>
                     <Run Text=" «Тип»" Foreground="{DynamicResource Accent}" FontWeight="SemiBold"/>
-                    <Run Text=". Затем нажмите"/>
-                    <Run Text=" «Добавить»" Foreground="{DynamicResource Accent}" FontWeight="SemiBold"/>
-                    <Run Text=" (Enter)."/>
+                    <Run Text=" выше"/>
                 </TextBlock>
 
                 <!-- Product chips grid — populated from code-behind -->

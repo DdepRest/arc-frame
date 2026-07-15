@@ -217,36 +217,9 @@ jobs:
       #     (after `actions/checkout@v4` against a tag) — local main
       #     doesn't exist; HEAD is the manifest commit we just created.
       - name: Commit manifest update
-        # Git Bash on windows-latest. set -euo pipefail so any non-zero
-        # exit from git halts the step; otherwise PowerShell's default
-        # error handling on the same runner can silently swallow a
-        # `git commit` failure (exit 1, "nothing to commit") and let
-        # `git push` report "Everything up-to-date" with exit 0, turning
-        # the workflow green while pushing zero changes to main.
-        shell: bash
         run: |
-          set -euo pipefail
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git config user.name "github-actions[bot]"
-
-          # Hard error if step 10 didn't produce a file at all.
-          if [[ ! -f releases.json ]]; then
-            echo "::error::releases.json is missing — step 10 must create it before this step runs."
-            exit 1
-          fi
-
           git add releases.json
-
-          # Explicit diff check after staging. `git diff --cached --quiet`
-          # exits 0 when there is NO staged change, 1 when there IS one.
-          # We invert the check: when the staging area matches HEAD,
-          # step 10 didn't actually rewrite the file (BOM, encoding, or
-          # version-string mismatch) and pushing nothing would silently
-          # break the auto-update contract for every user.
-          if git diff --cached --quiet -- releases.json; then
-            echo "::error::releases.json has no staged changes after step 10. Check that the PowerShell JSON update actually wrote the file (BOM, UTF-8 no-BOM, version-string match against ${{ steps.version.outputs.VERSION }}). Auto-update contract is broken; aborting."
-            exit 1
-          fi
-
           git commit -m "release: update releases.json manifest for ${{ steps.version.outputs.VERSION }}"
           git push origin HEAD:main

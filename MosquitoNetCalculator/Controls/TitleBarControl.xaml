@@ -42,8 +42,6 @@
                         Width="40" Height="40" Background="Transparent" BorderThickness="0"
                         Foreground="{DynamicResource TextPrimary}"
                         ToolTip="Настройки"
-                        FocusVisualStyle="{StaticResource FluentFocusVisual}"
-                        AutomationProperties.Name="Настройки"
                         WindowChrome.IsHitTestVisibleInChrome="True">
                     <Button.Template>
                         <ControlTemplate TargetType="Button">
@@ -87,12 +85,12 @@
                     <TextBlock Text="&#xE713;" FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets" FontSize="14"/>
                     <Button.ContextMenu>
                         <ContextMenu x:Name="SettingsMenu">
-                            <MenuItem x:Name="MenuThemeLight" Header="Светлая тема" IsCheckable="True" Click="MenuThemeLight_Click"/>
-                            <MenuItem x:Name="MenuThemeDark" Header="Тёмная тема" IsCheckable="True" Click="MenuThemeDark_Click"/>
+                            <MenuItem x:Name="MenuThemeLight" Header="☀  Светлая тема" IsCheckable="True" Click="MenuThemeLight_Click"/>
+                            <MenuItem x:Name="MenuThemeDark" Header="🌙  Тёмная тема" IsCheckable="True" Click="MenuThemeDark_Click"/>
                             <Separator/>
-                            <MenuItem Header="Сменить точку установки…" Click="MenuChangeLocation_Click"/>
+                            <MenuItem Header="📍 Сменить точку установки…" Click="MenuChangeLocation_Click"/>
                             <Separator/>
-                            <MenuItem Header="Проверить обновления" Click="MenuCheckUpdates_Click"/>
+                            <MenuItem Header="🔄 Проверить обновления" Click="MenuCheckUpdates_Click"/>
                         </ContextMenu>
                     </Button.ContextMenu>
                 </Button>
@@ -100,9 +98,6 @@
                 <Button x:Name="BtnMinimize" Click="BtnMinimize_Click"
                         Width="40" Height="40" Background="Transparent" BorderThickness="0"
                         Foreground="{DynamicResource TextPrimary}"
-                        FocusVisualStyle="{StaticResource FluentFocusVisual}"
-                        ToolTip="Свернуть"
-                        AutomationProperties.Name="Свернуть"
                         WindowChrome.IsHitTestVisibleInChrome="True">
                     <Button.Template>
                         <ControlTemplate TargetType="Button">
@@ -142,9 +137,6 @@
                 <Button x:Name="BtnMaximize" Click="BtnMaximize_Click"
                         Width="40" Height="40" Background="Transparent" BorderThickness="0"
                         Foreground="{DynamicResource TextPrimary}"
-                        FocusVisualStyle="{StaticResource FluentFocusVisual}"
-                        ToolTip="Развернуть"
-                        AutomationProperties.Name="Развернуть"
                         WindowChrome.IsHitTestVisibleInChrome="True">
                     <Button.Template>
                         <ControlTemplate TargetType="Button">
@@ -184,9 +176,6 @@
                 <Button x:Name="BtnClose" Click="BtnClose_Click"
                         Width="40" Height="40" Background="Transparent" BorderThickness="0"
                         Foreground="{DynamicResource TextPrimary}"
-                        FocusVisualStyle="{StaticResource FluentFocusVisual}"
-                        ToolTip="Закрыть"
-                        AutomationProperties.Name="Закрыть"
                         WindowChrome.IsHitTestVisibleInChrome="True">
                     <Button.Template>
                         <ControlTemplate TargetType="Button">

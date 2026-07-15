@@ -1,0 +1,111 @@
+Сборка начата 11.07.2026 15:07:37.
+     1>Проект "C:\Users\Asus\Desktop\A.R.C. Frame\gwga\MosquitoNetCalculator.Tests\MosquitoNetCalculator.Tests.csproj" в узле 1 (целевые объекты Restore).
+     1>_GetAllRestoreProjectPathItems:
+         Определение проектов для восстановления...
+       Restore:
+         При проверке цепочки сертификатов X.509 будет использоваться хранилище доверия по умолчанию, выбранное .NET для подписывания кода.
+         При проверке цепочки сертификатов X.509 будет использоваться хранилище доверия по умолчанию, выбранное .NET для установки метки времени.
+         Файл ресурсов не был изменен. Пропуск записи файла ресурсов. Путь: C:\Users\Asus\Desktop\A.R.C. Frame\gwga\MosquitoNetCalculator.Tests\obj\project.assets.json
+         Файл ресурсов не был изменен. Пропуск записи файла ресурсов. Путь: C:\Users\Asus\Desktop\A.R.C. Frame\gwga\MosquitoNetCalculator\obj\project.assets.json
+         Восстановлен C:\Users\Asus\Desktop\A.R.C. Frame\gwga\MosquitoNetCalculator\MosquitoNetCalculator.csproj (за 52 мс).
+         Восстановлен C:\Users\Asus\Desktop\A.R.C. Frame\gwga\MosquitoNetCalculator.Tests\MosquitoNetCalculator.Tests.csproj (за 52 мс).
+         
+         Использованные файлы конфигурации NuGet:
+             C:\Users\Asus\AppData\Roaming\NuGet\NuGet.Config
+         
+         Использованные веб-каналы:
+             https://api.nuget.org/v3/index.json
+         Все проекты обновлены для восстановления.
+     1>Сборка проекта "C:\Users\Asus\Desktop\A.R.C. Frame\gwga\MosquitoNetCalculator.Tests\MosquitoNetCalculator.Tests.csproj" завершена (целевые объекты Restore).
+   1:7>Проект "C:\Users\Asus\Desktop\A.R.C. Frame\gwga\MosquitoNetCalculator.Tests\MosquitoNetCalculator.Tests.csproj" в узле 1 (целевые объекты VSTest).
+     1>BuildProject:
+         Сборка начата, подождите...
+   1:7>Проект "C:\Users\Asus\Desktop\A.R.C. Frame\gwga\MosquitoNetCalculator.Tests\MosquitoNetCalculator.Tests.csproj" (1:7) выполняет сборку "C:\Users\Asus\Desktop\A.R.C. Frame\gwga\MosquitoNetCalculator.Tests\MosquitoNetCalculator.Tests.csproj" (1:8) в узле 1 (целевые объекты по умолчанию).
+   1:8>Проект "C:\Users\Asus\Desktop\A.R.C. Frame\gwga\MosquitoNetCalculator.Tests\MosquitoNetCalculator.Tests.csproj" (1:8) выполняет сборку "C:\Users\Asus\Desktop\A.R.C. Frame\gwga\MosquitoNetCalculator\MosquitoNetCalculator.csproj" (2:6) в узле 1 (целевые объекты по умолчанию).
+     2>MainResourcesGeneration:
+       Целевой объект "MainResourcesGeneration" пропускается, так как все выходные файлы актуальны по отношению к входным.
+       GenerateTargetFrameworkMonikerAttribute:
+       Целевой объект "GenerateTargetFrameworkMonikerAttribute" пропускается, так как все выходные файлы актуальны по отношению к входным.
+       CoreGenerateAssemblyInfo:
+       Целевой объект "CoreGenerateAssemblyInfo" пропускается, так как все выходные файлы актуальны по отношению к входным.
+       _GenerateSourceLinkFile:
+         Файл Source Link "obj\Debug\net8.0-windows\MosquitoNetCalculator.sourcelink.json" обновлен.
+       CoreCompile:
+       Целевой объект "CoreCompile" пропускается, так как все выходные файлы актуальны по отношению к входным.
+       _CreateAppHost:
+       Целевой объект "_CreateAppHost" пропускается, так как все выходные файлы актуальны по отношению к входным.
+       _CopyOutOfDateSourceItemsToOutputDirectory:
+       Целевой объект "_CopyOutOfDateSourceItemsToOutputDirectory" пропускается, так как все выходные файлы актуальны по отношению к входным.
+       GenerateBuildDependencyFile:
+       Целевой объект "GenerateBuildDependencyFile" пропускается, так как все выходные файлы актуальны по отношению к входным.
+       GenerateBuildRuntimeConfigurationFiles:
+       Целевой объект "GenerateBuildRuntimeConfigurationFiles" пропускается, так как все выходные файлы актуальны по отношению к входным.
+       CopyFilesToOutputDirectory:
+         MosquitoNetCalculator -> C:\Users\Asus\Desktop\A.R.C. Frame\gwga\MosquitoNetCalculator\bin\Debug\net8.0-windows\MosquitoNetCalculator.dll
+     2>Сборка проекта "C:\Users\Asus\Desktop\A.R.C. Frame\gwga\MosquitoNetCalculator\MosquitoNetCalculator.csproj" завершена (целевые объекты по умолчанию).
+     1>GenerateTargetFrameworkMonikerAttribute:
+       Целевой объект "GenerateTargetFrameworkMonikerAttribute" пропускается, так как все выходные файлы актуальны по отношению к входным.
+       CoreGenerateAssemblyInfo:
+       Целевой объект "CoreGenerateAssemblyInfo" пропускается, так как все выходные файлы актуальны по отношению к входным.
+       _GenerateSourceLinkFile:
+         Файл Source Link "obj\Debug\net8.0-windows\MosquitoNetCalculator.Tests.sourcelink.json" обновлен.
+       CoreCompile:
+       Целевой объект "CoreCompile" пропускается, так как все выходные файлы актуальны по отношению к входным.
+       _CopyOutOfDateSourceItemsToOutputDirectory:
+       Целевой объект "_CopyOutOfDateSourceItemsToOutputDirectory" пропускается, так как все выходные файлы актуальны по отношению к входным.
+       GenerateBuildDependencyFile:
+       Целевой объект "GenerateBuildDependencyFile" пропускается, так как все выходные файлы актуальны по отношению к входным.
+       GenerateBuildRuntimeConfigurationFiles:
+       Целевой объект "GenerateBuildRuntimeConfigurationFiles" пропускается, так как все выходные файлы актуальны по отношению к входным.
+       CopyFilesToOutputDirectory:
+         MosquitoNetCalculator.Tests -> C:\Users\Asus\Desktop\A.R.C. Frame\gwga\MosquitoNetCalculator.Tests\bin\Debug\net8.0-windows\MosquitoNetCalculator.Tests.dll
+     1>Сборка проекта "C:\Users\Asus\Desktop\A.R.C. Frame\gwga\MosquitoNetCalculator.Tests\MosquitoNetCalculator.Tests.csproj" завершена (целевые объекты по умолчанию).
+     1>BuildProject:
+         Сборка выполнена.
+         
+Тестовый запуск для C:\Users\Asus\Desktop\A.R.C. Frame\gwga\MosquitoNetCalculator.Tests\bin\Debug\net8.0-windows\MosquitoNetCalculator.Tests.dll (.NETCoreApp,Version=v8.0)
+Версия VSTest 17.11.1 (x64)
+
+Запуск выполнения тестов; подождите...
+Общее количество тестовых файлов (1), соответствующих указанному шаблону.
+[xUnit.net 00:00:00.00] xUnit.net VSTest Adapter v2.5.7+8f2703126a (64-bit .NET 8.0.28)
+[xUnit.net 00:00:00.10]   Discovering: MosquitoNetCalculator.Tests
+[xUnit.net 00:00:00.27]   Discovered:  MosquitoNetCalculator.Tests
+[xUnit.net 00:00:00.27]   Starting:    MosquitoNetCalculator.Tests
+[RECALC LOOP] item=64379541, W=1000, H=1000, DistributedSharedSum before=242,5, Total before=2617,5
+[RECALC LOOP] item=64379541, W=1000, H=1000, DistributedSharedSum after=242,5, Total after=2617,5
+[RECALC LOOP] item=18063220, W=1200, H=1200, DistributedSharedSum before=242,5, Total before=2860,5
+[RECALC LOOP] item=18063220, W=1200, H=1200, DistributedSharedSum after=242,5, Total after=2860,5
+[TEST] item1 hash=64379541, calc1 W=1000, H=1000, expected=2617,5, actual=2617,5
+[xUnit.net 00:00:00.35]     MosquitoNetCalculator.Tests.Services.SlopeCalculatorServiceTests.RecalculateSealantAndTape_OrderItemTotal_UsesDistributedSharedSum [FAIL]
+[xUnit.net 00:00:00.35]       Assert.Equal() Failure: Values are not within 2 decimal places
+[xUnit.net 00:00:00.35]       Expected: 2617,5 (rounded from 2617,5)
+[xUnit.net 00:00:00.35]       Actual:   2860,5 (rounded from 2860,5)
+[xUnit.net 00:00:00.35]       Stack Trace:
+[xUnit.net 00:00:00.35]         C:\Users\Asus\Desktop\A.R.C. Frame\gwga\MosquitoNetCalculator.Tests\Services\SlopeCalculatorServiceTests.cs(454,0): at MosquitoNetCalculator.Tests.Services.SlopeCalculatorServiceTests.RecalculateSealantAndTape_OrderItemTotal_UsesDistributedSharedSum()
+[xUnit.net 00:00:00.35]            at System.RuntimeMethodHandle.InvokeMethod(Object target, Void** arguments, Signature sig, Boolean isConstructor)
+[xUnit.net 00:00:00.35]            at System.Reflection.MethodBaseInvoker.InvokeWithNoArgs(Object obj, BindingFlags invokeAttr)
+[xUnit.net 00:00:00.36]   Finished:    MosquitoNetCalculator.Tests
+  Не пройден MosquitoNetCalculator.Tests.Services.SlopeCalculatorServiceTests.RecalculateSealantAndTape_OrderItemTotal_UsesDistributedSharedSum [16 ms]
+  Сообщение об ошибке:
+   Assert.Equal() Failure: Values are not within 2 decimal places
+Expected: 2617,5 (rounded from 2617,5)
+Actual:   2860,5 (rounded from 2860,5)
+  Трассировка стека:
+     at MosquitoNetCalculator.Tests.Services.SlopeCalculatorServiceTests.RecalculateSealantAndTape_OrderItemTotal_UsesDistributedSharedSum() in C:\Users\Asus\Desktop\A.R.C. Frame\gwga\MosquitoNetCalculator.Tests\Services\SlopeCalculatorServiceTests.cs:line 454
+   at System.RuntimeMethodHandle.InvokeMethod(Object target, Void** arguments, Signature sig, Boolean isConstructor)
+   at System.Reflection.MethodBaseInvoker.InvokeWithNoArgs(Object obj, BindingFlags invokeAttr)
+
+Сбой тестового запуска.
+Всего тестов: 1
+     Не пройдено: 1
+ Общее время: 0,9928 Секунды
+       _VSTestConsole:
+         MSB4181: задача "VSTestTask" возвратила значение false, но не зарегистрировала ошибку.
+     1>Сборка проекта "C:\Users\Asus\Desktop\A.R.C. Frame\gwga\MosquitoNetCalculator.Tests\MosquitoNetCalculator.Tests.csproj" завершена (целевые объекты VSTest) с ошибкой.
+
+Ошибка сборки.
+    Предупреждений: 0
+    Ошибок: 0
+
+Прошло времени 00:00:02.98

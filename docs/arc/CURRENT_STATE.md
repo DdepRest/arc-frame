@@ -33,7 +33,7 @@
 - Тёмная тема стабильна, переключается без потери данных.
 - Undo/Redo работает для позиций расчёта и Доп.КП.
 - Юнит-тесты покрывают ключевые сценарии (расчёты, экспорт/импорт, версия, обновления).
-- Текущая версия: **3.44.0** (релиз 2026-07-14: новая система «Автопросчёт откосов» — автоматический расчёт материалов; завершён переход на нативную печать КП — мгновенный предпросмотр, идеальное совпадение экрана и бумаги, встроенный PDF; добавлен товар «Материал» + bugfix-пакет откосов/печати).
+- Текущая версия: **3.44.1** (релиз 2026-07-14: технические исправления).
 - **Bugfix v3.44.2 (2026-07-12):** broadened else-branch reset в `SlopeCalculatorService.RecalculateSealantAndTape` — orphan calcs (все «Откос» IsActive=false или rename в не-slope) корректно сбрасывают DSS=0, а не зависают от defensive init (485). Snapshot isolation invariant: `OrderItem.Clone()→DeepCloneSlopeData()` исключает шаринг refs между live и undo/redo коллекциями. **906/906 tests pass.**
 - **Новый товар «Материал» (v3.43.3/Unreleased):** добавлен в типы товаров; цена и количество вручную, ширина/высота не функциональны, количество опционально (скрыто в таблице при значении 1), без суммы добавление блокируется с красной обводкой поля «Цена». Покрыт юнит-тестами.
 - **Bugfix-пакет откосов/печати (v3.43.3/Unreleased):**
@@ -257,6 +257,8 @@ AGENT.md / AGENTS.md / CLAUDE.md / GEMINI.md
 - `render-matrix.ps1` — JSON -> DOCUMENTATION_MATRIX.md.
 
 ## Last verified
+
+2026-07-14 — **v3.44.1 release prep:** version bump, CHANGELOG, update-log, releases.json, CURRENT_STATE.md.
 
 2026-07-12 — **Фаза 3 рефакторинга завершена.** `PrintService.cs` 632→81 строк (−87%). 6 компонентов: `DrawingService`, `FlowDocumentBuilder`, `FixedDocumentBuilder`, `PrintQueueManager`, `PdfExportService`, плюс модели `PageMode`/`PrintSettings`/`PrintResult`. +~40 тестов. **1038/1038 tests pass.** Бизнес-логика не затронута.
 

@@ -41,21 +41,6 @@
             <conv:UpdateTypeToIconConverter x:Key="UpdateTypeIcon"/>
             <conv:InverseBoolConverter x:Key="InverseBool"/>
 
-            <!-- ═══════════════════════════════════════════════════════ -->
-            <!-- GLOBAL TOOLTIP STYLE — applied to all tooltips without    -->
-            <!-- explicit Style. Uses theme brushes so tooltip follows    -->
-            <!-- light/dark theme. Tooltips with explicit Style override.  -->
-            <!-- ═══════════════════════════════════════════════════════ -->
-            <Style TargetType="ToolTip">
-                <Setter Property="Background" Value="{DynamicResource Surface}"/>
-                <Setter Property="Foreground" Value="{DynamicResource TextPrimary}"/>
-                <Setter Property="BorderBrush" Value="{DynamicResource Border}"/>
-                <Setter Property="BorderThickness" Value="1"/>
-                <Setter Property="Padding" Value="8,5"/>
-                <Setter Property="FontSize" Value="11"/>
-                <Setter Property="HasDropShadow" Value="False"/>
-            </Style>
-
         </ResourceDictionary>
     </Application.Resources>
 </Application>
