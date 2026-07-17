@@ -1,5 +1,7 @@
 using System.Collections.Generic;
 using System.Linq;
+using System.Windows;
+using System.Windows.Controls;
 using System.Windows.Documents;
 using MosquitoNetCalculator.Models;
 using MosquitoNetCalculator.Services;
@@ -138,10 +140,191 @@ namespace MosquitoNetCalculator.Tests.Services
             });
         }
 
+        [Fact]
+        public void Build_FormattedNotes_RendersBoldItalicAndColor()
+        {
+            var items = new List<OrderItem>
+            {
+                new() { Name = "Anwis", Color = "Белый", Width = 1000, Height = 1000, Quantity = 1, Price = 1800, Total = 1800 }
+            };
+            var client = new ClientInfo
+            {
+                Notes = "**важно** *курсив* [color=#D32F2F]красный[/color]\n- пункт"
+            };
+
+            WpfTestHelper.RunOnSta(() =>
+            {
+                var doc = _builder.Build(items, client, 1800, "");
+                Assert.NotNull(doc);
+
+                var notesSection = doc!.Blocks.OfType<Section>().FirstOrDefault(s =>
+                {
+                    var text = ExtractText(s);
+                    return text.Contains("ПРИМЕЧАНИЯ");
+                });
+                Assert.NotNull(notesSection);
+
+                var paragraphs = notesSection!.Blocks.OfType<Paragraph>().ToList();
+                Assert.Equal(3, paragraphs.Count);
+
+                var firstParagraphRuns = paragraphs[1].Inlines.OfType<Run>().ToList();
+                Assert.Contains(firstParagraphRuns, r => r.Text == "важно" && r.FontWeight == FontWeights.Bold);
+                Assert.Contains(firstParagraphRuns, r => r.Text == "курсив" && r.FontStyle == FontStyles.Italic);
+                Assert.Contains(firstParagraphRuns, r => r.Text == "красный" && r.Foreground != null);
+
+                var secondParagraphRuns = paragraphs[2].Inlines.OfType<Run>().ToList();
+                Assert.Contains(secondParagraphRuns, r => r.Text == "• ");
+                Assert.Contains(secondParagraphRuns, r => r.Text == "пункт");
+            });
+        }
+
+        [Fact]
+        public void BuildClientBlock_UsesGridWithAutoLabelColumn()
+        {
+            var client = new ClientInfo
+            {
+                ClientName = "Иванов И.И.",
+                ClientPhone = "+7-999-123-45-67",
+                ClientAddress = "РТУТНАЯ 10"
+            };
+            var items = new List<OrderItem>
+            {
+                new() { Name = "Anwis", Color = "Белый", Width = 1000, Height = 1000, Quantity = 1, Price = 1800, Total = 1800 }
+            };
+
+            WpfTestHelper.RunOnSta(() =>
+            {
+                var doc = _builder.Build(items, client, 1800, "");
+                Assert.NotNull(doc);
+
+                // Client block is a BlockUIContainer (Grid inside)
+                var block = doc!.Blocks.OfType<BlockUIContainer>().FirstOrDefault();
+                Assert.NotNull(block);
+                var grid = block!.Child as Grid;
+                Assert.NotNull(grid);
+
+                // 2 columns: Auto (label) + Star (value)
+                Assert.Equal(2, grid!.ColumnDefinitions.Count);
+                Assert.Equal(GridUnitType.Auto, grid.ColumnDefinitions[0].Width.GridUnitType);
+                Assert.Equal(GridUnitType.Star, grid.ColumnDefinitions[1].Width.GridUnitType);
+
+                // 3 rows + 3 bottom-border Rectangles = 9 children
+                Assert.Equal(9, grid.Children.Count);
+
+                // Label TextBlocks should be SemiBold
+                var labelTbs = grid.Children.OfType<TextBlock>()
+                    .Where(tb => Grid.GetColumn(tb) == 0).ToList();
+                Assert.Equal(3, labelTbs.Count);
+                Assert.All(labelTbs, tb => Assert.Equal(FontWeights.SemiBold, tb.FontWeight));
+
+                Assert.Equal("Заказчик:", labelTbs[0].Text);
+                Assert.Equal("Телефон:",   labelTbs[1].Text);
+                Assert.Equal("Адрес:",     labelTbs[2].Text);
+            });
+        }
+
+        [Fact]
+        public void BuildClientBlock_SkipsEmptyFields()
+        {
+            var client = new ClientInfo
+            {
+                ClientName = "Иванов И.И.",
+                ClientPhone = "",
+                ClientAddress = null!
+            };
+            var items = new List<OrderItem>
+            {
+                new() { Name = "Anwis", Color = "Белый", Width = 1000, Height = 1000, Quantity = 1, Price = 1800, Total = 1800 }
+            };
+
+            WpfTestHelper.RunOnSta(() =>
+            {
+                var doc = _builder.Build(items, client, 1800, "");
+                Assert.NotNull(doc);
+
+                var block = doc!.Blocks.OfType<BlockUIContainer>().FirstOrDefault();
+                Assert.NotNull(block);
+                var grid = block!.Child as Grid;
+                Assert.NotNull(grid);
+
+                // Only 1 row: label + value + border = 3 children
+                Assert.Equal(3, grid!.Children.Count);
+
+                var labels = grid.Children.OfType<TextBlock>()
+                    .Where(tb => Grid.GetColumn(tb) == 0).ToList();
+                Assert.Single(labels);
+                Assert.Equal("Заказчик:", labels[0].Text);
+            });
+        }
+
+        [Fact]
+        public void BuildClientBlock_AllFieldsEmpty_ReturnsEmptySection()
+        {
+            var client = new ClientInfo
+            {
+                ClientName = null!,
+                ClientPhone = "",
+                ClientAddress = "  "
+            };
+            var items = new List<OrderItem>
+            {
+                new() { Name = "Anwis", Color = "Белый", Width = 1000, Height = 1000, Quantity = 1, Price = 1800, Total = 1800 }
+            };
+
+            WpfTestHelper.RunOnSta(() =>
+            {
+                var doc = _builder.Build(items, client, 1800, "");
+                Assert.NotNull(doc);
+
+                // No BlockUIContainer — fallback empty Section was returned
+                var containers = doc!.Blocks.OfType<BlockUIContainer>().ToList();
+                Assert.Empty(containers);
+            });
+        }
+
+        [Fact]
+        public void BuildClientBlock_StripsNewlinesInValue()
+        {
+            var client = new ClientInfo
+            {
+                ClientName = "Иванов\r\nИ.И.",
+                ClientPhone = null!,
+                ClientAddress = null!
+            };
+            var items = new List<OrderItem>
+            {
+                new() { Name = "Anwis", Color = "Белый", Width = 1000, Height = 1000, Quantity = 1, Price = 1800, Total = 1800 }
+            };
+
+            WpfTestHelper.RunOnSta(() =>
+            {
+                var doc = _builder.Build(items, client, 1800, "");
+                Assert.NotNull(doc);
+
+                var block = doc!.Blocks.OfType<BlockUIContainer>().FirstOrDefault();
+                Assert.NotNull(block);
+                var grid = block!.Child as Grid;
+                Assert.NotNull(grid);
+
+                var valueTb = grid!.Children.OfType<TextBlock>()
+                    .First(tb => Grid.GetColumn(tb) == 1);
+                Assert.DoesNotContain("\r\n", valueTb.Text);
+                Assert.DoesNotContain("\n", valueTb.Text);
+                Assert.Equal("Иванов И.И.", valueTb.Text);
+            });
+        }
+
         private static string ExtractText(FlowDocument doc)
         {
             var sb = new System.Text.StringBuilder();
             ExtractTextFromBlocks(doc.Blocks, sb);
+            return sb.ToString();
+        }
+
+        private static string ExtractText(Section section)
+        {
+            var sb = new System.Text.StringBuilder();
+            ExtractTextFromBlocks(section.Blocks, sb);
             return sb.ToString();
         }
 
@@ -165,7 +348,25 @@ namespace MosquitoNetCalculator.Tests.Services
                     case Section s:
                         ExtractTextFromBlocks(s.Blocks, sb);
                         break;
+                    case BlockUIContainer bcu:
+                        ExtractTextFromUielement(bcu.Child, sb);
+                        break;
                 }
+            }
+        }
+
+        private static void ExtractTextFromUielement(UIElement? element, System.Text.StringBuilder sb)
+        {
+            if (element == null) return;
+            if (element is TextBlock tb)
+            {
+                sb.Append(tb.Text);
+                sb.Append(' ');
+            }
+            if (element is Panel panel)
+            {
+                foreach (UIElement child in panel.Children)
+                    ExtractTextFromUielement(child, sb);
             }
         }
     }

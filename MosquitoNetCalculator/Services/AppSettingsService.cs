@@ -40,6 +40,7 @@ namespace MosquitoNetCalculator.Services
             public bool FirstRunComplete { get; set; } = false;
             // BETA banner for slope auto-calculation. Once dismissed, stays hidden.
             public bool SlopeBetaBannerHidden { get; set; } = false;
+            public string LastColor { get; set; } = "";
             public string UpdateUrl { get; set; } = "";
             public string? PendingUpdateVersion { get; set; }
         }
@@ -293,6 +294,31 @@ namespace MosquitoNetCalculator.Services
             {
                 var settings = LoadSettings();
                 settings.SlopeBetaBannerHidden = true;
+                SaveSettings(settings);
+            }
+        }
+
+        // ─────────────────────────────────────────────────────────
+        //  Last custom colour for notes formatting toolbar.
+        //  Persisted so the ColorDialog re-opens with the user's
+        //  previously chosen colour.
+        // ─────────────────────────────────────────────────────────
+
+        public static string LoadLastColor()
+        {
+            lock (_lock)
+            {
+                var settings = LoadSettings();
+                return settings.LastColor ?? "";
+            }
+        }
+
+        public static void SaveLastColor(string hex)
+        {
+            lock (_lock)
+            {
+                var settings = LoadSettings();
+                settings.LastColor = hex ?? "";
                 SaveSettings(settings);
             }
         }

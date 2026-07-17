@@ -122,7 +122,7 @@
                 <DataGrid.ContextMenu>
                     <ContextMenu Style="{StaticResource {x:Type ContextMenu}}">
                         <MenuItem x:Name="CtxOpenMenu" Header="Открыть заказ" Click="CtxOpen_Click" Style="{StaticResource {x:Type MenuItem}}"/>
-                        <MenuItem x:Name="CtxStatusMenu" Header="Изменить статус" IsEnabled="False" Style="{StaticResource {x:Type MenuItem}}"/>
+                        <MenuItem x:Name="CtxStatusMenu" Header="Изменить статус..." IsEnabled="False" Click="CtxStatus_Click" Style="{StaticResource {x:Type MenuItem}}"/>
                         <MenuItem x:Name="CtxExportMenu" Header="Экспорт заказа" IsEnabled="False" Click="CtxExport_Click" Style="{StaticResource {x:Type MenuItem}}"/>
                         <Separator Style="{StaticResource {x:Type Separator}}"/>
                         <MenuItem x:Name="CtxCopyMenu" Header="Копировать" IsEnabled="False" Click="CtxCopy_Click" Style="{StaticResource {x:Type MenuItem}}"/>
@@ -136,6 +136,7 @@
                 <DataGrid.Columns>
                     <DataGridTextColumn Header="№ КП"
                                         Binding="{Binding ContractNumber}"
+                                        SortMemberPath="ContractNumberSortKey"
                                         Width="Auto" MinWidth="60"/>
 
                     <DataGridTextColumn Header="Адрес"

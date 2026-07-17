@@ -21,6 +21,16 @@ namespace MosquitoNetCalculator.Services
             QuestPDF.Settings.EnableDebugging = true;
         }
 
+        // Padding added to the widest measured amount when sizing the amount
+        // ConstantItem — keeps the right edge a hair away from the row's
+        // border so bold digits don't visually touch it.
+        private const float AmountColumnPaddingPt = 4f;
+
+        // Default row font size (matches page.DefaultTextStyle .FontSize(9)).
+        private const float DefaultRowFontPt = 9f;
+        // Grand-total row font size (in BuildAdditionalKpPdf).
+        private const float GrandTotalFontPt = 12f;
+
         /// <summary>
         /// Exports a КП as a PDF file.
         /// </summary>
@@ -191,12 +201,41 @@ namespace MosquitoNetCalculator.Services
                             col.Item().Element(c => BuildAdditionalKpPdf(c, clientInfo, totalAmount));
 
                         if (!string.IsNullOrWhiteSpace(clientInfo.Notes))
+                        {
                             col.Item().Background(Colors.Grey.Lighten4).BorderLeft(3).BorderColor(Colors.Grey.Medium)
                                 .Padding(8).Text(t =>
                                 {
                                     t.Line("ПРИМЕЧАНИЯ").Bold().FontSize(8.5f);
-                                    t.Span(clientInfo.Notes.Trim()).FontSize(8.5f);
+                                    var noteLines = NotesFormatter.Parse(clientInfo.Notes);
+                                    for (int i = 0; i < noteLines.Count; i++)
+                                    {
+                                        var line = noteLines[i];
+                                        if (line.IsListItem)
+                                            t.Span("• ").FontSize(8.5f);
+
+                                        foreach (var segment in line.Segments)
+                                        {
+                                            var span = t.Span(segment.Text).FontSize(8.5f);
+                                            if (segment.IsBold) span.Bold();
+                                            if (segment.IsItalic) span.Italic();
+                                            if (!string.IsNullOrWhiteSpace(segment.ColorTag))
+                                            {
+                                                try
+                                                {
+                                                    span.FontColor(segment.ColorTag);
+                                                }
+                                                catch
+                                                {
+                                                    // Unknown color — keep default PDF color.
+                                                }
+                                            }
+                                        }
+
+                                        if (i < noteLines.Count - 1)
+                                            t.EmptyLine();
+                                    }
                                 });
+                        }
 
                         col.Item().PaddingTop(20).BorderTop(1).BorderColor(Colors.Grey.Medium).PaddingTop(8).Text(t =>
                         {
@@ -231,7 +270,7 @@ namespace MosquitoNetCalculator.Services
             t.Cell().BorderBottom(1).BorderColor(Colors.Grey.Medium).PaddingRight(8).PaddingVertical(2)
                 .Text(label).SemiBold().FontSize(8.5f);
             t.Cell().BorderBottom(1).BorderColor(Colors.Grey.Medium).PaddingBottom(1)
-                .Text(cleanValue).FontSize(9);
+                .Text(cleanValue).SemiBold().FontSize(9);
         }
 
         private static IContainer EHeaderCell(IContainer c) =>
@@ -264,6 +303,15 @@ namespace MosquitoNetCalculator.Services
                     return;
                 }
 
+                // Size the amount column to fit the widest rendered sum + " руб." suffix.
+                // Measures each row at its own font size/weight so the column grows
+                // with longer sums instead of wrapping "руб." to a second line.
+                var amountRows = kps.Select(k => (amount: k.Amount, isGrand: false))
+                    .Append((mainTotal, false))
+                    .Concat(kps.Where(k => k.Amount > 0).Select(k => (amount: k.Amount, isGrand: false)))
+                    .Append((mainTotal + kpSum, true));
+                float amountColumnPt = ComputeAmountColumnWidth(amountRows);
+
                 col2.Item().Background(Colors.Grey.Lighten4).Border(1).BorderColor(Colors.Grey.Lighten2).Padding(10).Column(box =>
                 {
                     foreach (var kp in kps)
@@ -273,14 +321,14 @@ namespace MosquitoNetCalculator.Services
                         box.Item().Row(r =>
                         {
                             r.RelativeItem().Text(left).FontSize(9);
-                            r.ConstantItem(80).AlignRight().Text($"{MoneyFormatService.Format(kp.Amount)} руб.").SemiBold().FontSize(9);
+                            r.ConstantItem(amountColumnPt).AlignRight().Text($"{MoneyFormatService.Format(kp.Amount)} руб.").SemiBold().FontSize(9);
                         });
                     }
 
                     box.Item().PaddingTop(8).Row(r =>
                     {
                         r.RelativeItem().Text("Сумма основного КП:");
-                        r.ConstantItem(80).AlignRight().Text($"{MoneyFormatService.Format(mainTotal)} руб.").SemiBold();
+                        r.ConstantItem(amountColumnPt).AlignRight().Text($"{MoneyFormatService.Format(mainTotal)} руб.").SemiBold();
                     });
                     foreach (var kp in kps.Where(k => k.Amount > 0))
                     {
@@ -289,17 +337,61 @@ namespace MosquitoNetCalculator.Services
                         box.Item().Row(r =>
                         {
                             r.RelativeItem().Text($"{lbl}:");
-                            r.ConstantItem(80).AlignRight().Text($"{MoneyFormatService.Format(kp.Amount)} руб.").SemiBold();
+                            r.ConstantItem(amountColumnPt).AlignRight().Text($"{MoneyFormatService.Format(kp.Amount)} руб.").SemiBold();
                         });
                     }
                     box.Item().BorderTop(1.5f).BorderColor(Colors.Black).PaddingTop(4).Row(r =>
                     {
                         r.RelativeItem().Text("ОБЩИЙ ИТОГ:").Bold().FontSize(10.5f);
-                        r.ConstantItem(80).AlignRight().Text($"{MoneyFormatService.Format(mainTotal + kpSum)} руб.").Bold().FontSize(12);
+                        r.ConstantItem(amountColumnPt).AlignRight().Text($"{MoneyFormatService.Format(mainTotal + kpSum)} руб.").Bold().FontSize(12);
                     });
                     box.Item().PaddingTop(4).Text(AmountInWordsService.Convert(mainTotal + kpSum)).Italic().FontSize(8.5f).FontColor(Colors.Grey.Darken2);
                 });
             });
+        }
+
+        /// <summary>
+        /// Returns the widest rendered width (in PDF points) of every amount
+        /// rendered at the matching row's font size and weight, plus padding.
+        /// The grand-total row uses 12 pt Bold; all others use the default
+        /// 9 pt SemiBold.
+        /// </summary>
+        private static float ComputeAmountColumnWidth(
+            IEnumerable<(double amount, bool isGrand)> rows)
+        {
+            float widest = 0f;
+            foreach (var (amount, isGrand) in rows)
+            {
+                float fontSize = isGrand ? GrandTotalFontPt : DefaultRowFontPt;
+                string rendered = $"{MoneyFormatService.Format(amount)} руб.";
+                float measured = MeasureTextWidthPt(rendered, fontSize, bold: true);
+                if (measured > widest) widest = measured;
+            }
+            return widest + AmountColumnPaddingPt;
+        }
+
+        /// <summary>
+        /// Measures a text width using System.Drawing.Graphics (Skia-backed
+        /// measurement that matches QuestPDF's renderer closely).
+        /// Sets <see cref="Graphics.PageUnit"/> to Point so the returned
+        /// width is in PDF points (1pt = 1/72 in), matching what
+        /// <c>ConstantItem</c> expects — the 96-DPI default would have
+        /// produced pixels and made the column ~25% too narrow.
+        /// "Bold" is intentional for both SemiBold (600) and Bold (700)
+        /// rows: <see cref="FontStyle"/> has no SemiBold variant, and
+        /// measuring as Bold slightly over-sizes regular rows, which is
+        /// the safer (never-wrap) direction.
+        /// </summary>
+        private static float MeasureTextWidthPt(string text, float fontSizePt, bool bold)
+        {
+            // 1×1 bitmap + Graphics is the standard lightweight way to call
+            // MeasureString without spinning up an on-screen window.
+            using var bitmap = new System.Drawing.Bitmap(1, 1);
+            using var graphics = System.Drawing.Graphics.FromImage(bitmap);
+            graphics.PageUnit = System.Drawing.GraphicsUnit.Point;
+            var style = bold ? System.Drawing.FontStyle.Bold : System.Drawing.FontStyle.Regular;
+            using var font = new System.Drawing.Font("Segoe UI", fontSizePt, style);
+            return graphics.MeasureString(text, font).Width;
         }
     }
 }

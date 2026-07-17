@@ -259,8 +259,12 @@ namespace MosquitoNetCalculator.ViewModels
                     Quantity = od.Quantity,
                     Price = od.Price,
                     InstallationMode = od.InstallationMode != 0 ? od.InstallationMode : (od.HasInstallation ? 0 : 1),
-                    InstallationDeduction = od.InstallationDeduction,
-                    InstallationSurcharge = od.InstallationSurcharge,
+                    InstallationDeduction = od.InstallationDeduction > 0 && od.InstallationMode != 0
+                        ? -od.InstallationDeduction   // v3.46.1 migration: old positive → new signed convention (negative = subtract)
+                        : od.InstallationDeduction,
+                    InstallationSurcharge = od.InstallationSurcharge > 0 && od.InstallationMode != 0
+                        ? -od.InstallationSurcharge   // v3.46.1 migration: old positive → new signed convention
+                        : od.InstallationSurcharge,
                     // v3.43.2.10: signed adjustment for «Монтаж включён».
                     // DTO default 0 → старые orders.json без этого поля загружаются
                     // без изменений суммы (no-op backward-compatible).

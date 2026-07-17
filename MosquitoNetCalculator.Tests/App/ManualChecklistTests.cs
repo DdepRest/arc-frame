@@ -241,17 +241,18 @@ namespace MosquitoNetCalculator.Tests.App
         public void Check3_Custom_Amount_Overrides_Default_Deduction()
         {
             // §3.5 — пользовательская сумма в поле «Сумма:».
+            // v3.46.1: signed convention — negative = subtract.
             var item = new OrderItem
             {
                 Name = "Anwis", Width = 1000, Height = 1000, Quantity = 1, Price = 1800
             };
             item.InstallationMode = 1;
-            item.SetCurrentInstallationAmount(1000);
-            Assert.Equal(800.00, item.TotalWithDeduction, 2);   // 1800 − 1000
+            item.SetCurrentInstallationAmount(-1000);
+            Assert.Equal(800.00, item.TotalWithDeduction, 2);   // 1800 + (−1000)
 
             item.InstallationMode = 2;
-            item.SetCurrentInstallationAmount(250);
-            Assert.Equal(1550.00, item.TotalWithDeduction, 2);  // 1800 − 250
+            item.SetCurrentInstallationAmount(-250);
+            Assert.Equal(1550.00, item.TotalWithDeduction, 2);  // 1800 + (−250)
         }
 
         // ═══════════════════════════════════════════════════════════════════
@@ -525,11 +526,7 @@ namespace MosquitoNetCalculator.Tests.App
                         ExtractTextFromBlocks(s.Blocks, sb);
                         break;
                     case System.Windows.Documents.BlockUIContainer buc:
-                        if (buc.Child is System.Windows.Controls.TextBlock tb2)
-                        {
-                            sb.Append(tb2.Text);
-                            sb.Append(' ');
-                        }
+                        ExtractTextFromUiElement(buc.Child, sb);
                         break;
                 }
             }
@@ -546,6 +543,21 @@ namespace MosquitoNetCalculator.Tests.App
                     foreach (var child in s.Inlines)
                         ExtractTextFromInline(child, sb);
                     break;
+            }
+        }
+
+        private static void ExtractTextFromUiElement(System.Windows.UIElement? element, System.Text.StringBuilder sb)
+        {
+            if (element == null) return;
+            if (element is System.Windows.Controls.TextBlock tb)
+            {
+                sb.Append(tb.Text);
+                sb.Append(' ');
+            }
+            if (element is System.Windows.Controls.Panel panel)
+            {
+                foreach (System.Windows.UIElement child in panel.Children)
+                    ExtractTextFromUiElement(child, sb);
             }
         }
 

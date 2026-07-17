@@ -344,4 +344,4 @@ docs/arc/REFACTORING_PLAN.md
 
 ## Last verified
 
-2026-07-01 (v3.41.0 release run: §7 release-safety rule expanded with explicit git push sequence + CDN-cache gotcha; cross-refs to RELEASE_PROCESS.md и AUTO_UPDATE.md для деталей)
+2026-07-17 — документ просмотрен и синхронизирован с текущим состоянием проекта (v3.46.0): dynamic amount-column width в PdfExportService (System.Drawing.Graphics.MeasureString + `PageUnit=Point`), жирные значения в клиентском блоке КП, юнит-тесты на хелперы измерения ширины. **1227/1227 tests pass.**

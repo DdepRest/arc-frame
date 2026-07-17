@@ -32,7 +32,7 @@
 | Тип приложения | WinExe, single-file publish |
 | Целевая ОС | Windows 10/11 |
 | Архитектура | win-x64 |
-| Внешние зависимости | Microsoft.Web.WebView2 (для предпросмотра/рендеринга), QuestPDF (для PDF-экспорта) |
+| Внешние зависимости | QuestPDF (для PDF-экспорта) |
 
 ## Ключевые функции
 
@@ -59,10 +59,10 @@
 
 - `MosquitoNetCalculator/MosquitoNetCalculator.csproj` — версия, зависимости, настройки сборки.
 - `MosquitoNetCalculator/App.xaml.cs` — точка входа, инициализация.
-- `README.md` — короткое описание (почти пустое).
+- `README.md` — описание проекта, инструкции по сборке и тестированию.
 
 ## Last verified
 
-2026-07-12 — документ перепроверен в рамках Фазы 3 рефакторинга; описание проекта, стек, сценарии и критичные области актуальны. Учтена декомпозиция печатного конвейера (`FlowDocumentBuilder`, `DrawingService`, `FixedDocumentBuilder`, `PrintQueueManager`, `PdfExportService`) и bugfix экономии Старт/F-планка в откосах.
+2026-07-15 — документ синхронизирован с текущим стеком: убрана устаревшая зависимость `Microsoft.Web.WebView2` (печатный конвейер переписан на нативный WPF `FlowDocumentPageViewer`), оставлена `QuestPDF` для PDF-экспорта. Описание проекта, стек, сценарии и критичные области актуальны.
 
 2026-06-27 (A.R.C. v4 — SYMBOL_INDEX, INTENTS, arc-check)

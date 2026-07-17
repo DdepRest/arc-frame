@@ -10,6 +10,7 @@ on:
     branches: [main]
   pull_request:
     branches: [main]
+  workflow_dispatch:
 
 # Cancel in-progress CI on the same ref when a new commit lands.
 # Saves Runner-minutes on PRs that get force-pushed.
@@ -39,16 +40,16 @@ jobs:
         with:
           dotnet-version: 8.0.x
 
-      # 3. Restore both the app and test projects. WebView2 package lives
-      #    in the main project's csproj; restoring at solution level
-      #    catches any new references added by future PRs.
+      # 3. Restore both the app and test projects at solution level so
+      #    any new references added by future PRs are caught early.
       - name: Restore
         run: dotnet restore MosquitoNetCalculator.sln
 
       # 4. Build. --no-restore because the restore step above is the source
       #    of truth (avoids silent cache mismatches between restore and build).
+      #    Use win-x64 RID to match the release artifact layout.
       - name: Build (Release)
-        run: dotnet build MosquitoNetCalculator.sln -c Release --no-restore -v minimal
+        run: dotnet build MosquitoNetCalculator.sln -c Release -r win-x64 --no-restore -v minimal
 
       # 5. Test. --no-build forces test to use freshly built binaries
       #    (prevents stale DLLs from a previous test run). xUnit's
@@ -56,3 +57,13 @@ jobs:
       #    handles WPF STA isolation internally — no project-config needed.
       - name: Test
         run: dotnet test MosquitoNetCalculator.sln -c Release --no-build --verbosity minimal
+
+      # 6. Upload build artifacts so release workflow can reuse them
+      #    (optional — release.yml rebuilds from tag for reproducibility).
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-artifacts
+          path: |
+            MosquitoNetCalculator/bin/Release/net8.0-windows/win-x64/
+          if-no-files-found: warn

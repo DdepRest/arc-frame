@@ -21,7 +21,7 @@ if exist "MosquitoNetCalculator\obj" (
     rmdir /s /q "MosquitoNetCalculator\obj"
 )
 
-REM Restore NuGet packages (including WebView2)
+REM Restore NuGet packages
 echo.
 echo Restoring NuGet packages...
 dotnet restore MosquitoNetCalculator/MosquitoNetCalculator.csproj

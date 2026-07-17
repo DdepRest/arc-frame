@@ -1,5 +1,91 @@
 # Changelog
 
+## 3.46.0 — 2026-07-16
+
+### Новое — форматирование примечаний в КП
+
+- **Лёгкий markup для поля «Примечания»:** теперь текст примечаний можно оформлять прямо в сайдбаре.
+  - `**жирный**` — выделение жирным.
+  - `*курсив*` — выделение курсивом.
+  - `[color=#RRGGBB]цветной текст[/color]` — цветной текст (поддерживаются hex и named colors).
+  - `- список` — маркированный список.
+- **Панель форматирования в сайдбаре:** кнопки «Ж», «К», цветные кнопки (красный/зелёный/синий/оранжевый) и «Список» оборачивают выделенный текст или текущую строку в соответствующие теги.
+- **Live-превью:** под полем ввода примечаний добавлена область предпросмотра, которая сразу показывает, как форматирование будет выглядеть в печатном КП.
+- **Единый рендерер:** `Services/NotesRenderer.cs` конвертирует распарсенные примечания в WPF `Inline` одинаково для печатного КП (`FlowDocumentBuilder`) и для live-превью (`SidebarControl`).
+- **PDF-экспорт:** `PdfExportService` рендерит форматированные примечания с сохранением жирного, курсива и цвета.
+- **Тесты:** +18 тестов — `NotesFormatterTests.cs` (12) и `NotesRendererTests.cs` (6 STA). Все существующие тесты продолжают проходить.
+
+### Техническое
+
+- `Services/NotesFormatter.cs` (NEW) — парсер лёгкого markup: `**bold**`, `*italic*`, `[color=...]...[/color]`, `- list item`.
+- `Services/NotesRenderer.cs` (NEW) — WPF-рендерер `NoteLine`/`NoteSegment` → `Inline`.
+- `Services/FlowDocumentBuilder.cs` — `BuildNotesSection` теперь использует `NotesFormatter` + `NotesRenderer`.
+- `Services/PdfExportService.cs` — блок примечаний в PDF теперь рендерит форматирование и разделяет строки через `EmptyLine()`.
+- `Controls/SidebarControl.xaml/.cs` — добавлена панель инструментов форматирования и live-превью `FlowDocumentScrollViewer`.
+
+## 3.46.1 — 2026-07-17
+
+### UI — переключатель +/- в системе монтажа
+
+- **ToggleSwitch +/-** в контекстном меню монтажа: крупный зелёный/красный переключатель
+  `SignToggleCheckBox` (48×26 px) с тактильной обратной связью при нажатии, заменяет
+  мелкий 20×20 CheckBox.
+- **Только значки в таблице:** в колонке «Монтаж» теперь отображаются только **V**
+  (включён), **X** (без монтажа), **В** (в конструкцию), **—** (не предусмотрен).
+  Значки без фона и обводки, с мягким hover-эффектом (Opacity 0.65).
+- **Hover сохраняет цвет состояния:** при наведении меняется только прозрачность,
+  цвет значка (зелёный/красный/серый) остаётся неизменным.
+- **Убранные иконки:** старые цветные Fluent-иконки режимов монтажа удалены,
+  кнопка стала простой текстовой без лишнего визуального шума.
+- Новое свойство `InstallationButtonLabel` в `OrderItem.Installation.cs`
+  с уведомлениями об изменении (`OnPropertyChanged`).
+
+### Техническое
+
+- `Models/OrderItem.Installation.cs` — свойство `InstallationButtonLabel` возвращает
+  однобуквенные метки: `"V"`, `"X"`, `"В"`, `"—"`.
+- `Themes/InputStyles.CheckBox.xaml` — стиль `SignToggleCheckBox`: ToggleSwitch
+  48×26 px, Success/Danger цвета, IsPressed анимация.
+- `Controls/OrderItemsControl.xaml` — кнопка 34×26 px без фона/обводки,
+  `Content="{Binding InstallationButtonLabel}"`.
+- Удалены неиспользуемые `IntEqualsConverter.cs`, `BoolToCursorConverter.cs`
+  и их регистрации в `App.xaml`.
+- **Тесты:** 1227/1227 pass (без изменений — только UI).
+
+────────────────────────────────────────
+
+## 3.45.0 — 2026-07-15
+
+### Техническое — завершение Фазы 6 рефакторинга (`MainWindow.Orders.cs`)
+
+Из `MainWindow.Orders.cs` (527 → 226 строк, −57 %) выделены три чистых компонента. Бизнес-логика не тронута, public/internal API сохранены как тонкие прокси.
+
+- **`Services/OrderGridPresenter.cs` (NEW, static internal, ~140 строк)** — pure-helper для DataGrid заказов: `RefreshOrdersGrid(grid, orders)` (autosize колонок к содержимому, restore SortDescriptions, apply sort indicators), `ApplySortIndicators(grid)` (▲/▼ arrows), `GetColumnSortKey(col)` (SortMemberPath → Binding.Path), `IsHeaderClick(hit)` (visual tree walker для double-click filter). Паттерн совпадает с `DataGridColumnAutoSizer` (static internal helpers).
+- **`Services/OrderImportExportService.cs` (NEW, instance, ~210 строк)** — оркестратор file-IO поверх `OrderStorageService` + `OrdersHistoryViewModel`. Методы: `ExportAllOrders`, `ExportSingleOrder` (BuildSingleOrderFileName pure helper), `ImportOrders` (multi-select dialog), `CopyOrder` (DeepCloneOrder + identity mutation + Save + return new contract number). Все сигнатуры `Window? owner = null` (matches `DialogService.ShowConfirm` pattern) — позволяет headless-test early-return paths без MTA-thread Window ctor.
+- **`Controls/ChangeOrderStatusWindow.xaml + .cs` (NEW, ~150 строк)** — хромосом-диалог изменения статуса заказа в Phase 4 паттерне (`MessageDialogWindow`). Заменяет ~110 строк legacy inline-XAML в `MainWindow.ChangeSelectedOrderStatus`. ComboBox заполнен через `{x:Static models:OrderStatuses.All}`, IsEditable-gated SelectAll, DragMove title bar, анимированный ✕ button (Danger overlay fade 150 мс).
+- **`MainWindow.Orders.cs`** — теперь тонкий orchestrator: lazy-init `OrderImportExportService`, `RefreshOrdersList` делегирует grid-логику в `OrderGridPresenter`, `BtnExportOrders_Click`/`BtnImportOrders_Click`/`ExportSelectedOrder`/`CopySelectedOrder` делегируют в service, `ChangeSelectedOrderStatus` показывает `ChangeOrderStatusWindow`. **`OpenSelectedOrder` оставлен инлайн** (комплексный multi-VM flow: ClientInfo + Sidebar + CalcVM + UndoRedo — extracting в service потребовал бы state-handle context object хуже текущего delegation). Удалён мёртвый `using System.Windows.Media;` (VisualTreeHelper переехал в presenter).
+- **Nullable-tolerance contract:** `DeepCloneOrder(OrderData? source)`, `BuildSingleOrderFileName(OrderData? order)`, `CopyOrder(OrderData? source)`, `ExportSingleOrder(OrderData? order)`, `ExportAllOrders(IReadOnlyList<OrderData>? orders)`. Если caller передаёт null — defensive early-return с toast/informative message; никаких NRE на null order.
+
+### Техническое — тесты (+27, итого 1179/1179)
+
+- **`Services/OrderGridPresenterTests.cs` (NEW, 12 STA тестов):** GetColumnSortKey (4: SortMemberPath / Binding.Path / null / null column), IsHeaderClick (4: column header / row header / generic hit / null), ApplySortIndicators (5: ascending/descending arrows, idempotent re-render, no-sort clears arrow, no-matching-key doesn't pick foreign arrow), **RefreshOrdersGrid (4: null grid guard, null orders guard, sets ItemsSource, restores SortDescriptions after ItemsSource swap — capture-карта regression inline RefreshOrdersList)**.
+- **`Services/OrderImportExportServiceTests.cs` (NEW, 12 pure тестов):** DeepCloneOrder (4: independent ref, null source, preserves all fields incl. IsAnticat, no-mutate source), BuildSingleOrderFileName (8: empty/null/whitespace address fallback, slash→space, uppercase + collapse spaces, strip invalid chars `<>|*"`, 60-char trim, null order, regression round-trip).
+- **`Services/OrderImportExportServiceValidationTests.cs` (NEW, 4 [Collection("FileSystem")] тесты):** early-return path coverage без UI-host dependencies — ExportAllOrders_NullOrders/EmptyList, ExportSingleOrder_NullOrder, CopyOrder_NullSource.
+
+### Техническое — backward-compat
+
+- Поведение, типы, public API не изменились. Все существующие 1143 → 1179 тестов (1143 baseline + 27 Phase 6) проходят. Производственные формулы, JSON-контракт `OrderData`, печатное КП, автообновление, сериализация заказов — без изменений.
+- `OpenSelectedOrder` оставлен в partial-классном `MainWindow.Orders.cs` (как было до рефакторинга) — 10+ VM-полей (ClientInfo, CalcVM, Sidebar, UndoRedo, ...). Решение зафиксировано в `REFACTORING_PLAN.md §8` + этот CHANGELOG.
+- Генерация `update-log.json` автоматическая через `generate-update-log.ps1` (Phase A.R.C. v3).
+
+### Исправления после физического QA
+
+- **Натуральная сортировка по колонке «№ КП»:** стандартная WPF-сортировка строк вела себя лексикографически — например, «2-9» оказывалась выше «2-21». Добавлено cached свойство `OrderData.ContractNumberSortKey` (`[JsonIgnore]`), которое pre-pads каждое число в номере КП до 10 цифр (`«2-1»` → `«0000000002-0000000001»`), после чего обычный string-compare даёт правильный числовой порядок. В `OrdersHistoryControl.xaml` для колонки «№ КП» установлен `SortMemberPath="ContractNumberSortKey"` (отображение по-прежнему через `ContractNumber`). Sort-индикаторы (▲/▼) продолжают работать через `OrderGridPresenter.ApplySortIndicators`. Добавлен 11 юнит-тестов в `OrderDataSortKeyTests.cs` (Theory-based: `2-9 < 2-10`, `2-9 < 2-21`, `10-1 > 2-1`, memoization, padding invariant).
+
+- **«Изменить статус» теперь открывает диалог:** динамически генерируемые sub-items в контекстном меню «Изменить статус» не работали надёжно из-за WPF ContextMenu caching на virtualized rows. Теперь пункт меню «Изменить статус...» сразу открывает уже существующее модальное окно `ChangeOrderStatusWindow` (Phase 4). Удалены мёртвые методы `RefreshStatusSubMenu` и `ChangeSelectedOrderStatusInline`, а также их вызов; единственный flow — `MainWindow.ChangeSelectedOrderStatus()` → `ChangeOrderStatusWindow.ShowDialog()`.
+
+────────────────────────────────────────
+
 ## 3.44.1 — 2026-07-14
 
 ### Технические исправления

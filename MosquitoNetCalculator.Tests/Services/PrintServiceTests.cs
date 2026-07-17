@@ -841,9 +841,8 @@ namespace MosquitoNetCalculator.Tests.Services
                     case Section s:
                         ExtractTextFromBlocks(s.Blocks, sb);
                         break;
-                    case BlockUIContainer { Child: TextBlock tb }:
-                        sb.Append(tb.Text);
-                        sb.Append(' ');
+                    case BlockUIContainer bcu:
+                        ExtractTextFromUiElement(bcu.Child, sb);
                         break;
                 }
             }
@@ -860,6 +859,21 @@ namespace MosquitoNetCalculator.Tests.Services
                     foreach (var child in s.Inlines)
                         ExtractTextFromInline(child, sb);
                     break;
+            }
+        }
+
+        private static void ExtractTextFromUiElement(UIElement? element, System.Text.StringBuilder sb)
+        {
+            if (element == null) return;
+            if (element is TextBlock tb)
+            {
+                sb.Append(tb.Text);
+                sb.Append(' ');
+            }
+            if (element is Panel panel)
+            {
+                foreach (UIElement child in panel.Children)
+                    ExtractTextFromUiElement(child, sb);
             }
         }
     }

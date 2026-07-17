@@ -58,6 +58,8 @@ Or run: what-to-update.ps1 (git diff --name-only) -- the script reads documentat
 | `Services/DialogService.cs` | `CURRENT_STATE.md` |
 | `Services/ToastService.cs` | `CURRENT_STATE.md` |
 | `Services/UndoRedoService.cs` | `GOTCHAS.md#10`, `CURRENT_STATE.md` |
+| `Services/NotesFormatter.cs` | `CURRENT_STATE.md`, `CHANGELOG.md` (lightweight notes markup parser) |
+| `Services/NotesRenderer.cs` | `CURRENT_STATE.md`, `CHANGELOG.md` (WPF inline renderer for formatted notes) |
 
 ### Controls (WPF UI)
 
@@ -106,8 +108,10 @@ Or run: what-to-update.ps1 (git diff --name-only) -- the script reads documentat
 
 | Changed file | Update docs |
 |---|---|
+| `docs/arc/PROJECT_OVERVIEW.md` | `CURRENT_STATE.md` (project description and tech stack) |
 | `docs/arc/INTENTS.md` | `CURRENT_STATE.md` (A.R.C. v4: intent-to-file routing) |
 | `docs/arc/SYMBOL_INDEX.md` | `CURRENT_STATE.md` (A.R.C. v4: auto-generated symbol index) |
+| `README.md` | `CURRENT_STATE.md` (project overview for GitHub) |
 | `docs/arc/REFACTORING_PLAN.md` | `CURRENT_STATE.md`, `MULTI_AGENT_ARC_CALC_CONTROL.md`, `AGENTS.md` (system refactoring plan) |
 | `gensymbols.ps1` | `CURRENT_STATE.md` (A.R.C. v4: symbol index generator) |
 | `arc-check.ps1` | `CURRENT_STATE.md` (A.R.C. v4: pre-commit doc sync check) |
@@ -131,4 +135,4 @@ Use what-to-update.ps1 to get the list of docs to update - the script reads docu
 
 ## Last verified
 
-2026-07-13 (generated from JSON)
+2026-07-16 (generated from JSON)

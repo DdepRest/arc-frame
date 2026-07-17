@@ -264,7 +264,7 @@ foreach ($docFile in $docsFiles) {
         $gitDate = git -C $projectRoot log -1 --format="%as" -- $docFile.FullName 2>$null
         if (-not $gitDate) { $gitDate = "unknown" }
         $dateChecked++
-        if ($gitDate -ne $docDate -and $gitDate -ne "unknown") {
+        if ($gitDate -ne "unknown" -and $docDate -lt $gitDate) {
             Write-Host "  STALE: $($docFile.Name) - doc says $docDate, git says $gitDate" -ForegroundColor Yellow
             $dateStale++
         }

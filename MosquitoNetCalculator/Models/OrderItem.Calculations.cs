@@ -163,6 +163,7 @@ namespace MosquitoNetCalculator.Models
             OnPropertyChanged(nameof(InstallationDisplay));
             OnPropertyChanged(nameof(KpInstallationDisplay));
             OnPropertyChanged(nameof(InstallationLabel));
+            OnPropertyChanged(nameof(InstallationButtonLabel));
             OnPropertyChanged(nameof(InstallationForegroundColor));
             OnPropertyChanged(nameof(InstallationToolTip));
 

@@ -455,6 +455,7 @@ namespace MosquitoNetCalculator.Tests.Services
 
             var anwis = loaded.Items[1];
             Assert.Equal("Anwis", anwis.Name);
+            // DTO level — migration only applies in CalculationViewModel.LoadFromOrderData.
             Assert.Equal(500, anwis.InstallationDeduction);
             Assert.Equal(500, anwis.InstallationSurcharge);
         }
@@ -540,6 +541,9 @@ namespace MosquitoNetCalculator.Tests.Services
 
             var anwis = loaded.Items[0];
             Assert.Equal("Anwis", anwis.Name);
+            // v3.46.1 migration is in CalculationViewModel.LoadFromOrderData
+            // (DTO→OrderItem), NOT in OrderStorageService.LoadOrder (JSON→DTO).
+            // DTO-level values are preserved as-is from JSON.
             Assert.Equal(500, anwis.InstallationDeduction, 0);
             Assert.Equal(500, anwis.InstallationSurcharge, 0);
 
@@ -553,12 +557,11 @@ namespace MosquitoNetCalculator.Tests.Services
         }
 
         [Fact]
-        public void LoadFromRawJson_MissingDeductionFields_FallsBackToDtoDefault500()
+        public void LoadFromRawJson_MissingDeductionFields_FallsBackToDtoDefaultNegative500()
         {
             // Simulate a very old order where InstallationDeduction / InstallationSurcharge
-            // fields are completely absent from the JSON. DTO defaults to 500 —
-            // loading must NOT apply the new 600 default for Дверная сетка or any
-            // other product-specific default. Missing fields → DTO default (500).
+            // fields are completely absent from the JSON. DTO defaults to −500 —
+            // loading must NOT apply any product-specific default. Missing fields → DTO default (−500).
             string oldJson = @"{
   ""Id"": ""old-order-missing-fields"",
   ""ClientName"": ""Древний заказ"",
@@ -586,9 +589,9 @@ namespace MosquitoNetCalculator.Tests.Services
 
             var anwis = loaded.Items[0];
             Assert.Equal("Anwis", anwis.Name);
-            // Fields absent → DTO default (500), NOT 600 or any product-specific default
-            Assert.Equal(500, anwis.InstallationDeduction, 0);
-            Assert.Equal(500, anwis.InstallationSurcharge, 0);
+            // Fields absent → DTO default (−500), NOT any product-specific default
+            Assert.Equal(-500, anwis.InstallationDeduction, 0);
+            Assert.Equal(-500, anwis.InstallationSurcharge, 0);
             Assert.Equal(0, anwis.AnwisSizeMode);   // int default
             Assert.False(anwis.IsAnticat);           // bool default
 

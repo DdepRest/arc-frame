@@ -215,13 +215,14 @@ namespace MosquitoNetCalculator.Tests.Models
         [Fact]
         public void TotalWithDeduction_Mode1_SubtractsDeduction()
         {
+            // v3.46.1: signed convention — negative deduction subtracts.
             var item = new OrderItem
             {
                 Name = "Anwis",
                 Width = 1000, Height = 1000,
                 Price = 1800,
                 InstallationMode = 1,
-                InstallationDeduction = 500
+                InstallationDeduction = -500
             };
             Assert.Equal(Math.Max(0, item.Total - 500), item.TotalWithDeduction, 2);
         }
@@ -235,22 +236,23 @@ namespace MosquitoNetCalculator.Tests.Models
                 Width = 100, Height = 100,
                 Price = 10,
                 InstallationMode = 1,
-                InstallationDeduction = 500
+                InstallationDeduction = -500
             };
-            // Total = 0.01 * 10 = 0.1, deduction = 500 → clamped to 0
+            // Total = 0.01 * 10 = 0.1, deduction = −500 → clamp to 0
             Assert.Equal(0, item.TotalWithDeduction, 2);
         }
 
         [Fact]
         public void TotalWithDeduction_Mode2_SubtractsSurcharge()
         {
+            // v3.46.1: signed convention — negative surcharge subtracts.
             var item = new OrderItem
             {
                 Name = "Anwis",
                 Width = 1000, Height = 1000,
                 Price = 1800,
                 InstallationMode = 2,
-                InstallationSurcharge = 200
+                InstallationSurcharge = -200
             };
             Assert.Equal(Math.Max(0, item.Total - 200), item.TotalWithDeduction, 2);
         }
@@ -332,8 +334,7 @@ namespace MosquitoNetCalculator.Tests.Models
         [Fact]
         public void TotalWithDeduction_Mode2_CustomSurcharge_Quantity3_MultipliesPerPiece()
         {
-            // User-entered surcharge is PER PIECE (CurrentInstallationAmount
-            // is the field value). Final deduction = surcharge × Quantity.
+            // v3.46.1: signed convention — negative surcharge subtracts per piece.
             var item = new OrderItem
             {
                 Name = "На навесах",
@@ -341,9 +342,9 @@ namespace MosquitoNetCalculator.Tests.Models
                 Quantity = 3,
                 Price = 3000,
                 InstallationMode = 2,
-                InstallationSurcharge = 200
+                InstallationSurcharge = -200
             };
-            // 13500 − 200×3 = 12900 ₽
+            // 13500 + (−200×3) = 12900 ₽
             Assert.Equal(12900, item.TotalWithDeduction, 2);
         }
 
@@ -723,22 +724,21 @@ namespace MosquitoNetCalculator.Tests.Models
         }
 
         [Fact]
-        public void SetCurrentInstallationAmount_Mode1_StillClampsNegatives()
+        public void SetCurrentInstallationAmount_Mode1_AcceptsNegative()
         {
-            // Regression: mode 1 «Без монтажа» по-прежнему клампит InstallationDeduction
-            // к 0 внутри своего setter'а — «добавить» через mode 1 невозможно.
+            // v3.46.1: all modes use signed convention — negative = subtract.
             var item = new OrderItem { Name = "Anwis", InstallationMode = 1 };
             item.SetCurrentInstallationAmount(-500);
-            Assert.Equal(0, item.InstallationDeduction);
+            Assert.Equal(-500, item.InstallationDeduction);
         }
 
         [Fact]
-        public void SetCurrentInstallationAmount_Mode2_StillClampsNegatives()
+        public void SetCurrentInstallationAmount_Mode2_AcceptsNegative()
         {
-            // Regression: mode 2 «В конструкцию» по-прежнему клампит InstallationSurcharge.
+            // v3.46.1: all modes use signed convention — negative = subtract.
             var item = new OrderItem { Name = "Anwis", InstallationMode = 2 };
             item.SetCurrentInstallationAmount(-500);
-            Assert.Equal(0, item.InstallationSurcharge);
+            Assert.Equal(-500, item.InstallationSurcharge);
         }
 
         // ─── Clone tests ─────────────────────────────────────
@@ -960,11 +960,12 @@ namespace MosquitoNetCalculator.Tests.Models
         }
 
         [Fact]
-        public void SetCurrentInstallationAmount_NegativeClampedToZero()
+        public void SetCurrentInstallationAmount_NegativeAcceptedAsIs()
         {
+            // v3.46.1: all modes accept signed values (negative = subtract).
             var item = new OrderItem { Name = "Anwis", InstallationMode = 1 };
             item.SetCurrentInstallationAmount(-100);
-            Assert.Equal(0, item.InstallationDeduction);
+            Assert.Equal(-100, item.InstallationDeduction);
         }
 
         // ─── PropertyChanged tests ───────────────────────────
@@ -1267,17 +1268,16 @@ namespace MosquitoNetCalculator.Tests.Models
         [Fact]
         public void TotalWithDeduction_Mode1_RoundedToTwoDecimals()
         {
-            // Bug #7 fix: TotalWithDeduction should be rounded to 2 decimal places.
-            // Use values that are exactly representable in double (no 0.01 / 0.99 binary rounding issues).
+            // v3.46.1: signed convention — negative deduction subtracts.
             var item = new OrderItem
             {
                 Name = "Anwis",
                 Width = 1000, Height = 1000,
                 Price = 1000,
                 InstallationMode = 1,
-                InstallationDeduction = 333.50
+                InstallationDeduction = -333.50
             };
-            // Width/Height are calc-adjusted (1000×1000). Total = 1000.0, 1000-333.50 = 666.50
+            // Total = 1000.0, 1000 + (−333.50) = 666.50
             Assert.Equal(666.50, item.TotalWithDeduction, 2);
         }
 
@@ -1567,11 +1567,12 @@ namespace MosquitoNetCalculator.Tests.Models
         [Fact]
         public void InstallationToolTip_Mode1_ShowsDeductionAmount()
         {
+            // v3.46.1: signed convention — negative = subtract, shows «−» and amount.
             var item = new OrderItem
             {
                 Name = "Anwis",
                 InstallationMode = 1,
-                InstallationDeduction = 500
+                InstallationDeduction = -500
             };
             Assert.Contains("−", item.InstallationToolTip);
             Assert.Contains("500", item.InstallationToolTip);
@@ -1640,22 +1641,24 @@ namespace MosquitoNetCalculator.Tests.Models
             Assert.Equal(200, item.CurrentInstallationAmount);
         }
 
-        // ─── InstallationDeduction/Surcharge clamping ────────
+        // ─── InstallationDeduction/Surcharge: no clamping (v3.46.1) ──
 
         [Fact]
-        public void InstallationDeduction_ClampedToZero()
+        public void InstallationDeduction_AcceptsNegative()
         {
+            // v3.46.1: clamping removed — signed convention (negative = subtract).
             var item = new OrderItem { Name = "Anwis" };
             item.InstallationDeduction = -100;
-            Assert.Equal(0, item.InstallationDeduction);
+            Assert.Equal(-100, item.InstallationDeduction);
         }
 
         [Fact]
-        public void InstallationSurcharge_ClampedToZero()
+        public void InstallationSurcharge_AcceptsNegative()
         {
+            // v3.46.1: clamping removed — signed convention (negative = subtract).
             var item = new OrderItem { Name = "Anwis" };
             item.InstallationSurcharge = -100;
-            Assert.Equal(0, item.InstallationSurcharge);
+            Assert.Equal(-100, item.InstallationSurcharge);
         }
 
         // ─── Anticat tests ───────────────────────────────────
@@ -1728,15 +1731,17 @@ namespace MosquitoNetCalculator.Tests.Models
         [Fact]
         public void GetDefaultInstallationDeduction_DvernayaSetka_Returns600()
         {
-            Assert.Equal(600, OrderItem.GetDefaultInstallationDeduction("Дверная сетка"));
-            Assert.Equal(600, OrderItem.GetDefaultInstallationSurcharge("Дверная сетка"));
+            // v3.46.1: signed convention — Дверная сетка default is −600.
+            Assert.Equal(-600, OrderItem.GetDefaultInstallationDeduction("Дверная сетка"));
+            Assert.Equal(-600, OrderItem.GetDefaultInstallationSurcharge("Дверная сетка"));
         }
 
         [Fact]
-        public void GetDefaultInstallationDeduction_Anwis_ReturnsFallback500()
+        public void GetDefaultInstallationDeduction_Anwis_ReturnsFallbackNegative500()
         {
-            Assert.Equal(500, OrderItem.GetDefaultInstallationDeduction("Anwis"));
-            Assert.Equal(500, OrderItem.GetDefaultInstallationSurcharge("На навесах"));
+            // v3.46.1: signed convention — defaults are negative (subtract).
+            Assert.Equal(-500, OrderItem.GetDefaultInstallationDeduction("Anwis"));
+            Assert.Equal(-500, OrderItem.GetDefaultInstallationSurcharge("На навесах"));
         }
 
         // ─── Clone with AnwisSizeMode test ───────────────────

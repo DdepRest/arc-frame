@@ -97,60 +97,98 @@ namespace MosquitoNetCalculator.Services
             return p;
         }
 
-        private static Table BuildClientBlock(ClientInfo clientInfo)
+        private static Block BuildClientBlock(ClientInfo clientInfo)
         {
-            const double labelWeight = 0.12;
-            const double valueWeight = 0.88;
-
-            var t = new Table
+            // Grid-in-BlockUIContainer avoids WPF FlowDocument Table column-
+            // measurement bugs. Auto column fits the longest label; Star column
+            // takes remaining space — value text starts right after the label.
+            var grid = new Grid
             {
                 Margin = new Thickness(0, 0, 0, 12),
-                CellSpacing = 0,
             };
-            t.Columns.Add(new TableColumn { Width = new GridLength(labelWeight, GridUnitType.Star) });
-            t.Columns.Add(new TableColumn { Width = new GridLength(valueWeight, GridUnitType.Star) });
+            grid.ColumnDefinitions.Add(new ColumnDefinition
+            {
+                Width = GridLength.Auto,
+                MinWidth = 0
+            });
+            grid.ColumnDefinitions.Add(new ColumnDefinition
+            {
+                Width = new GridLength(1, GridUnitType.Star)
+            });
 
-            var group = new TableRowGroup();
-            AddClientRow(group, "Заказчик:", clientInfo.ClientName);
-            AddClientRow(group, "Телефон:", clientInfo.ClientPhone);
-            AddClientRow(group, "Адрес:", clientInfo.ClientAddress);
-            t.RowGroups.Add(group);
-            return t;
+            var rowDefs = new List<RowDefinition>();
+
+            var borderBrush = new SolidColorBrush(Color.FromRgb(0x99, 0x99, 0x99));
+            borderBrush.Freeze();
+            var clientFontSize = 10 * 96.0 / 72.0;
+
+            AddClientGridRow(grid, rowDefs, "Заказчик:", clientInfo.ClientName,
+                clientFontSize, borderBrush);
+            AddClientGridRow(grid, rowDefs, "Телефон:",   clientInfo.ClientPhone,
+                clientFontSize, borderBrush);
+            AddClientGridRow(grid, rowDefs, "Адрес:",     clientInfo.ClientAddress,
+                clientFontSize, borderBrush);
+
+            foreach (var rd in rowDefs)
+                grid.RowDefinitions.Add(rd);
+
+            // Fallback: if no rows were added (all fields empty), return
+            // an empty Section to avoid layout issues.
+            if (grid.RowDefinitions.Count == 0)
+                return new Section();
+
+            return new BlockUIContainer(grid);
         }
 
-        private static void AddClientRow(TableRowGroup group, string label, string value)
+        private static void AddClientGridRow(
+            Grid grid, List<RowDefinition> rowDefs,
+            string label, string? value,
+            double fontSize, Brush borderBrush)
         {
             if (string.IsNullOrWhiteSpace(value)) return;
             var cleanValue = value.Replace("\r\n", " ").Replace('\n', ' ').Replace('\r', ' ').Trim();
             if (cleanValue.Length == 0) return;
-            var row = new TableRow();
-            var clientRowFont = 10 * 96.0 / 72.0;
-            var labelCell = new TableCell(new Paragraph(new Run(label))
+
+            int rowIdx = rowDefs.Count;
+            rowDefs.Add(new RowDefinition { Height = GridLength.Auto });
+
+            var labelTb = new TextBlock
             {
+                Text = label,
+                FontSize = fontSize,
                 FontWeight = FontWeights.SemiBold,
-                FontSize = clientRowFont,
-                Margin = new Thickness(0, 4, 8, 4),
-                LineStackingStrategy = LineStackingStrategy.BlockLineHeight,
-                LineHeight = clientRowFont * 1.35
-            })
-            {
-                BorderBrush = new SolidColorBrush(Color.FromRgb(0x99, 0x99, 0x99)),
-                BorderThickness = new Thickness(0, 0, 0, 1)
+                Margin = new Thickness(0, 4, 6, 4),
+                VerticalAlignment = VerticalAlignment.Center
             };
-            var valueCell = new TableCell(new Paragraph(new Run(cleanValue))
+            Grid.SetRow(labelTb, rowIdx);
+            Grid.SetColumn(labelTb, 0);
+            grid.Children.Add(labelTb);
+
+            var valueTb = new TextBlock
             {
-                FontSize = clientRowFont,
+                Text = cleanValue,
+                FontSize = fontSize,
+                FontWeight = FontWeights.SemiBold,
+                TextWrapping = TextWrapping.Wrap,
                 Margin = new Thickness(0, 4, 0, 4),
-                LineStackingStrategy = LineStackingStrategy.BlockLineHeight,
-                LineHeight = clientRowFont * 1.35
-            })
-            {
-                BorderBrush = new SolidColorBrush(Color.FromRgb(0x99, 0x99, 0x99)),
-                BorderThickness = new Thickness(0, 0, 0, 1)
+                VerticalAlignment = VerticalAlignment.Center
             };
-            row.Cells.Add(labelCell);
-            row.Cells.Add(valueCell);
-            group.Rows.Add(row);
+            Grid.SetRow(valueTb, rowIdx);
+            Grid.SetColumn(valueTb, 1);
+            grid.Children.Add(valueTb);
+
+            // Simulate bottom border via a 1px-thick Border at the bottom
+            var line = new System.Windows.Shapes.Rectangle
+            {
+                Height = 1,
+                Fill = borderBrush,
+                HorizontalAlignment = HorizontalAlignment.Stretch,
+                VerticalAlignment = VerticalAlignment.Bottom
+            };
+            Grid.SetRow(line, rowIdx);
+            Grid.SetColumn(line, 0);
+            Grid.SetColumnSpan(line, 2);
+            grid.Children.Add(line);
         }
 
         private static Table BuildItemsTable(List<OrderItem> validItems)
@@ -613,11 +651,22 @@ namespace MosquitoNetCalculator.Services
                 FontWeight = FontWeights.Bold,
                 FontSize = 8.5 * 96.0 / 72.0
             }));
-            sec.Blocks.Add(new Paragraph(new Run(clientInfo.Notes.Trim()))
+
+            var noteFontSize = 8.5 * 96.0 / 72.0;
+            foreach (var line in NotesFormatter.Parse(clientInfo.Notes))
             {
-                FontSize = 8.5 * 96.0 / 72.0,
-                Margin = new Thickness(0, 3, 0, 0)
-            });
+                var p = new Paragraph
+                {
+                    FontSize = noteFontSize,
+                    Margin = new Thickness(line.IsListItem ? 12 : 0, 3, 0, 0)
+                };
+
+                foreach (var inline in NotesRenderer.ToInlines(line))
+                    p.Inlines.Add(inline);
+
+                sec.Blocks.Add(p);
+            }
+
             doc.Blocks.Add(sec);
         }
 

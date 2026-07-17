@@ -48,6 +48,58 @@ namespace MosquitoNetCalculator.Models
         /// </remarks>
         [System.Text.Json.Serialization.JsonIgnore]
         public int StatusRank => OrderStatuses.GetRank(Status);
+
+        // Natural-sort key for the «№ КП» column in the Orders grid.
+        // WPF DataGrid sort is lexicographic by default — without this key the
+        // column sorts «2-1, 2-10, 2-2, …» instead of the natural «2-1, 2-2, …, 2-9,
+        // 2-10». We pre-pad every numeric run with 10 zeros so the default string
+        // comparator produces correct numeric ordering. Cached: the key is
+        // recomputed only when <see cref="ContractNumber"/> changes, otherwise
+        // the same StringBuilder allocation is reused across re-sort / refresh.
+        private string? _contractNumberForSort;
+        private string? _contractNumberSortKeyCache;
+
+        [System.Text.Json.Serialization.JsonIgnore]
+        public string ContractNumberSortKey
+        {
+            get
+            {
+                if (_contractNumberForSort != ContractNumber)
+                {
+                    _contractNumberForSort = ContractNumber;
+                    _contractNumberSortKeyCache = BuildNaturalSortKey(ContractNumber);
+                }
+                return _contractNumberSortKeyCache ?? string.Empty;
+            }
+        }
+
+        private static string BuildNaturalSortKey(string? value)
+        {
+            if (string.IsNullOrEmpty(value)) return string.Empty;
+            var sb = new System.Text.StringBuilder(value.Length + 12);
+            int i = 0;
+            while (i < value.Length)
+            {
+                if (char.IsDigit(value[i]))
+                {
+                    int start = i;
+                    while (i < value.Length && char.IsDigit(value[i])) i++;
+                    // Pad each numeric run to 10 digits — covers all reasonable
+                    // contract numbers (up to 9_999_999_999 per segment). The
+                    // padding is uniform across the dataset, so string compare
+                    // produces the same order as numeric compare.
+                    string num = value.Substring(start, i - start);
+                    if (num.Length < 10) sb.Append('0', 10 - num.Length);
+                    sb.Append(num);
+                }
+                else
+                {
+                    sb.Append(value[i]);
+                    i++;
+                }
+            }
+            return sb.ToString();
+        }
     }
 
     public static class OrderStatuses

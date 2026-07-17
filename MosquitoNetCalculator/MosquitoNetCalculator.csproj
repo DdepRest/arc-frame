@@ -5,9 +5,10 @@
     <TargetFramework>net8.0-windows</TargetFramework>
     <Nullable>enable</Nullable>
     <UseWPF>true</UseWPF>
+    <UseWindowsForms>true</UseWindowsForms>
     <EnableWindowsTargeting>true</EnableWindowsTargeting>
     <ApplicationIcon>Resources\app_icon.ico</ApplicationIcon>
-    <Version>3.44.1</Version>
+    <Version>3.46.1</Version>
     <RuntimeIdentifiers>win-x64</RuntimeIdentifiers>
     <!-- Treat every compiler / NuGet warning as an error so the build fails
          closed if any future change reintroduces a warning. The current

@@ -112,40 +112,59 @@ namespace MosquitoNetCalculator
 
             var txtDeduction = new TextBox
             {
-                Width = 60,
+                Width = 50,
                 Height = 24,
                 FontSize = 11,
                 HorizontalContentAlignment = HorizontalAlignment.Center
             };
 
+            // v3.46.1: +/- toggle for all modes.
+            // Placed BEFORE the amount field: [+/−] [500] ₽.
+            var chkSign = new CheckBox
+            {
+                IsChecked = true,
+                VerticalAlignment = VerticalAlignment.Center,
+                Margin = new Thickness(0, 0, 6, 0),
+                ToolTip = "Отмечено = добавить к сумме (+), не отмечено = вычесть из суммы (−)"
+            };
+            chkSign.SetResourceReference(FrameworkElement.StyleProperty, "SignToggleCheckBox");
+            chkSign.Click += (_, _) =>
+            {
+                CommitDeductionIfPending();
+                RefreshDeductionField();
+            };
+
             void RefreshDeductionField()
             {
-                bool adjust = item.InstallationMode == 1 || item.InstallationMode == 2;
-                // v3.43.2.11: поле «Сумма:» теперь доступно во всех трёх режимах.
-                // Mode 0 «Монтаж включён» — signed adjustment (±), ИНТУИТИВНАЯ конвенция:
-                //   положительное значение добавляется к сумме (надбавка);
-                //   отрицательное значение вычитается из суммы.
-                // Modes 1/2 — только положительные (вычитаются).
                 bool applicable = item.IsInstallationApplicable;
                 txtDeduction.IsEnabled = applicable;
-                txtDeduction.Text = applicable ? item.CurrentInstallationAmount.ToString("F0") : "0";
-                txtDeduction.ToolTip = !applicable
-                    ? "Не применяется в этом режиме"
-                    : item.InstallationMode == 0
-                        ? "Сумма корректировки: положительное значение добавляется к сумме, отрицательное — вычитается. По умолчанию 0."
-                        : "Сумма корректировки: всегда вычитается из суммы (только положительные значения).";
+                if (applicable)
+                {
+                    // v3.46.1: all modes show absolute amount + sign checkbox.
+                    // Convention: positive = add (+), negative = subtract (−).
+                    double currentVal = item.CurrentInstallationAmount;
+                    double absVal = Math.Abs(currentVal);
+                    txtDeduction.Text = absVal > 0.01 ? absVal.ToString("F0") : "0";
+                    bool isAdd = currentVal >= 0;
+                    chkSign.Visibility = Visibility.Visible;
+                    chkSign.IsChecked = isAdd;
+                    txtDeduction.ToolTip = "Введите сумму корректировки и выберите знак (+ добавить, − вычесть).";
+                }
+                else
+                {
+                    txtDeduction.Text = "0";
+                    chkSign.Visibility = Visibility.Collapsed;
+                    txtDeduction.ToolTip = "Не применяется в этом режиме";
+                }
             }
 
             void CommitDeductionIfPending()
             {
                 if (!txtDeduction.IsEnabled) return;
-                // v3.43.2.11: убрано `val >= 0` — mode 0 (Монтаж включён) принимает
-                // отрицательные значения для вычитания из суммы. Modes 1/2
-                // клампят в собственных property setters (Math.Max(0, ...),
-                // см. InstallationDeduction / InstallationSurcharge в
-                // OrderItem.Installation.cs).
-                if (double.TryParse(txtDeduction.Text, out double val))
+                if (double.TryParse(txtDeduction.Text, out double absVal) && absVal >= 0)
                 {
+                    // v3.46.1: all modes use signed convention (+ = add, − = subtract).
+                    double val = chkSign.IsChecked == true ? absVal : -absVal;
                     if (Math.Abs(item.CurrentInstallationAmount - val) > 0.01)
                     {
                         item.SetCurrentInstallationAmount(val);
@@ -221,29 +240,30 @@ namespace MosquitoNetCalculator
             {
                 Text = "Сумма:",
                 VerticalAlignment = VerticalAlignment.Center,
-                Margin = new Thickness(0, 0, 6, 0),
+                Margin = new Thickness(0, 0, 4, 0),
                 FontSize = 12
             });
             txtDeduction.LostFocus += (_, _) =>
             {
                 CommitDeductionIfPending();
-                txtDeduction.Text = item.CurrentInstallationAmount.ToString("F0");
+                RefreshDeductionField();
             };
             txtDeduction.KeyDown += (_, args) =>
             {
                 if (args.Key == Key.Enter)
                 {
                     CommitDeductionIfPending();
-                    txtDeduction.Text = item.CurrentInstallationAmount.ToString("F0");
+                    RefreshDeductionField();
                     menu.IsOpen = false;
                 }
             };
+            deductionPanel.Children.Add(chkSign);
             deductionPanel.Children.Add(txtDeduction);
             deductionPanel.Children.Add(new TextBlock
             {
                 Text = "₽",
                 VerticalAlignment = VerticalAlignment.Center,
-                Margin = new Thickness(4, 0, 0, 0),
+                Margin = new Thickness(2, 0, 0, 0),
                 FontSize = 11
             });
             deductionItem.Header = deductionPanel;

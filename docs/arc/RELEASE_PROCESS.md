@@ -116,6 +116,45 @@ update-releases-json.ps1
 
 ---
 
+## Автоматизированный CI/CD pipeline (GitHub Actions)
+
+Проект использует два workflow в `.github/workflows/`:
+
+### `ci.yml` — Build & Test
+
+- **Trigger:** push/PR в `main`, ручный запуск (`workflow_dispatch`).
+- **Runner:** `windows-latest`.
+- **Шаги:**
+  1. Checkout (full history).
+  2. Setup .NET 8 SDK.
+  3. `dotnet restore MosquitoNetCalculator.sln`
+  4. `dotnet build MosquitoNetCalculator.sln -c Release --no-restore`
+  5. `dotnet test MosquitoNetCalculator.sln -c Release --no-build`
+  6. Upload build artifacts (опционально, для отладки).
+
+### `release.yml` — Build, Test, Publish, Release
+
+- **Trigger:** push тега `vX.Y.Z`.
+- **Runner:** `windows-latest`.
+- **Права:** `contents: write` (для создания Release и push `releases.json`).
+- **Шаги:**
+  1. Build + Test (тот же gate, что и `ci.yml`).
+  2. `dotnet publish` single-file self-contained для `win-x64`.
+  3. Создание ZIP `ARC-Frame-X.Y.Z-full.zip`.
+  4. Вычисление SHA-256.
+  5. Обновление `releases.json` build-time полей (`url`, `size`, `sha256`, `date`).
+  6. Создание GitHub Release с ZIP-asset.
+  7. Commit `releases.json` в `main`.
+
+> **⚠️ Правило безопасности:** `releases.json` в ветке `main` является **триггером автообновления**. Workflow создаёт GitHub Release **ДО** push'а `releases.json`, чтобы пользователи не видели обновление раньше, чем ZIP станет доступен.
+
+### Ручной pipeline vs CI/CD
+
+- Для обычных релизов используйте **CI/CD**: push тега `vX.Y.Z` — остальное сделает workflow.
+- Ручной pipeline (см. ниже) оставлен как fallback и для локальной отладки.
+
+---
+
 ## Канонический Pipeline релиза (выучить один раз)
 
 > **⚠️ Правило безопасности:** `releases.json` в ветке `main` является **триггером автообновления**. Как только новая запись попадает в `main`, старые программы могут увидеть обновление. Поэтому `releases.json` нельзя публиковать в `main` раньше, чем GitHub Release создан и ZIP-asset загружен. Иначе пользователи увидят «Доступно обновление», но скачать не смогут.

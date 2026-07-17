@@ -7,8 +7,8 @@ namespace MosquitoNetCalculator.Models
     public partial class OrderItem
     {
         private int _installationMode; // 0 = включён, 1 = без монтажа, 2 = в конструкцию
-        private double _installationDeduction = 500;   // для mode 1 (вычет)
-        private double _installationSurcharge = 500;   // для mode 2 (вычет)
+        private double _installationDeduction = -500;   // v3.46.1: signed convention (like Adjustment): positive adds, negative subtracts. Default −500 = subtract 500.
+        private double _installationSurcharge = -500;   // v3.46.1: same signed convention.
         private double _installationAdjustment = 0;    // v3.43.2.11: для mode 0 (signed: +добавить, -вычесть) — интуитивная конвенция
 
         /// <summary>
@@ -18,11 +18,11 @@ namespace MosquitoNetCalculator.Models
         /// </summary>
         private static readonly Dictionary<string, double> DefaultInstallationDeductions = new()
         {
-            ["Дверная сетка"] = 600,
+            ["Дверная сетка"] = -600,
         };
 
         /// <summary>Fallback deduction when the product is not in the dictionary.</summary>
-        public const double DefaultInstallationDeductionFallback = 500;
+        public const double DefaultInstallationDeductionFallback = -500;
 
         /// <summary>
         /// Returns the default installation deduction for a given product name.
@@ -39,9 +39,10 @@ namespace MosquitoNetCalculator.Models
 
         /// <summary>
         /// Installation mode:
-        /// 0 = монтаж включён (без изменений)
-        /// 1 = без монтажа (Total - InstallationDeduction)
-        /// 2 = в конструкцию (Total - InstallationSurcharge)
+        /// 0 = монтаж включён (Total + InstallationAdjustment × Quantity)
+        /// 1 = без монтажа (Total + InstallationDeduction × Quantity)
+        /// 2 = в конструкцию (Total + InstallationSurcharge × Quantity)
+        /// v3.46.1: all three modes use signed convention: positive adds, negative subtracts.
         /// </summary>
         public int InstallationMode
         {
@@ -56,6 +57,7 @@ namespace MosquitoNetCalculator.Models
                     OnPropertyChanged(nameof(InstallationDisplay));
                     OnPropertyChanged(nameof(KpInstallationDisplay));
                     OnPropertyChanged(nameof(InstallationLabel));
+                    OnPropertyChanged(nameof(InstallationButtonLabel));
                     OnPropertyChanged(nameof(InstallationForegroundColor));
                     OnPropertyChanged(nameof(InstallationToolTip));
                     Recalculate();
@@ -63,32 +65,30 @@ namespace MosquitoNetCalculator.Models
             }
         }
 
-        /// <summary>Deduction applied to Total in mode 1 (Без монтажа). Default 500 ₽.</summary>
+        /// <summary>v3.46.1: signed convention — positive adds to Total, negative subtracts. Default −500 ₽.</summary>
         public double InstallationDeduction
         {
             get => _installationDeduction;
             set
             {
-                var clamped = Math.Max(0, value);
-                if (Math.Abs(_installationDeduction - clamped) > 0.01)
+                if (Math.Abs(_installationDeduction - value) > 0.01)
                 {
-                    _installationDeduction = clamped;
+                    _installationDeduction = value;
                     OnPropertyChanged();
                     Recalculate();
                 }
             }
         }
 
-        /// <summary>Amount deducted from Total in mode 2 (В конструкцию). Default 500 ₽.</summary>
+        /// <summary>v3.46.1: signed convention — positive adds to Total, negative subtracts. Default −500 ₽.</summary>
         public double InstallationSurcharge
         {
             get => _installationSurcharge;
             set
             {
-                var clamped = Math.Max(0, value);
-                if (Math.Abs(_installationSurcharge - clamped) > 0.01)
+                if (Math.Abs(_installationSurcharge - value) > 0.01)
                 {
-                    _installationSurcharge = clamped;
+                    _installationSurcharge = value;
                     OnPropertyChanged();
                     Recalculate();
                 }
@@ -133,14 +133,10 @@ namespace MosquitoNetCalculator.Models
             _ => 0
         };
 
-        /// <summary>Sets the per-mode amount from the context-menu field.</summary>
+        /// <summary>Sets the per-mode amount from the context-menu field.
+        /// v3.46.1: all modes accept signed values (positive = add, negative = subtract).</summary>
         public void SetCurrentInstallationAmount(double value)
         {
-            // v3.43.2.10: убран `if (value < 0) value = 0`. Отрицательные значения
-            // теперь допустимы — mode 0 (InstallationAdjustment) использует их для
-            // добавления к сумме. Modes 1/2 клампят в собственных property setters
-            // (Math.Max(0, value)), так что передача отрицательного числа в режиме
-            // 1 или 2 просто установит deduction/surcharge в 0.
             if (_installationMode == 0) InstallationAdjustment = value;
             else if (_installationMode == 1) InstallationDeduction = value;
             else if (_installationMode == 2) InstallationSurcharge = value;
@@ -169,10 +165,9 @@ namespace MosquitoNetCalculator.Models
 
         /// <summary>
         /// The effective total after applying the installation adjustment.
-        /// The deduction is multiplied by Quantity: skipping installation work
-        /// on N units subtracts the per-unit fee N times (one per piece, not
-        /// once per row). See GOTCHAS.md#12 for the historical bug that
-        /// returned a flat fee regardless of Quantity.
+        /// All three modes use the same signed convention: positive value adds,
+        /// negative subtracts. Formula: Total + value × Quantity.
+        /// See GOTCHAS.md#12 for the historical per-piece scaling bug.
         /// </summary>
         public double TotalWithDeduction
         {
@@ -181,12 +176,10 @@ namespace MosquitoNetCalculator.Models
                 if (!IsInstallationApplicable) return Total;
                 return _installationMode switch
                 {
-                    // v3.43.2.11: mode 0 supports signed adjustment (интуитивная конвенция: + добавляет, − вычитает).
-                    // Положительное значение InstallationAdjustment ДОБАВЛЯЕТСЯ к Total.
-                    // Отрицательное значение ВЫЧИТАЕТСЯ из Total (формула сама инвертирует знак).
+                    // v3.46.1: all modes use signed convention: positive = add, negative = subtract.
                     0 => Math.Round(Math.Max(0, Total + InstallationAdjustment * Quantity), 2),
-                    1 => Math.Round(Math.Max(0, Total - InstallationDeduction * Quantity), 2),
-                    2 => Math.Round(Math.Max(0, Total - InstallationSurcharge * Quantity), 2),
+                    1 => Math.Round(Math.Max(0, Total + InstallationDeduction * Quantity), 2),
+                    2 => Math.Round(Math.Max(0, Total + InstallationSurcharge * Quantity), 2),
                     _ => Total
                 };
             }
@@ -219,22 +212,31 @@ namespace MosquitoNetCalculator.Models
                 _ => "В конструкцию"
             };
 
+        /// <summary>Short glyph shown on the installation toggle button in the DataGrid.</summary>
+        public string InstallationButtonLabel => !IsInstallationApplicable
+            ? "—"
+            : _installationMode switch
+            {
+                0 => "V",
+                1 => "X",
+                _ => "В"
+            };
+
         /// <summary>Tooltip for the installation toggle button.
-        /// For modes 1/2 the per-unit fee is shown explicitly with «× Кол-во»
-        /// so the user understands that the displayed fee is PER PIECE and the
-        /// final deduction scales with Quantity. See GOTCHAS.md#12 for context.
-        /// v3.43.2.11: mode 0 with non-zero adjustment shows signed amount and
-        /// explains the sign convention (intuitive): positive adds, negative subtracts.</summary>
+        /// All modes use signed convention: positive adds, negative subtracts.
+        /// v3.46.1: per-unit fee shown with «× Кол-во» so the user understands
+        /// the deduction scales with Quantity.</summary>
         public string InstallationToolTip => !IsInstallationApplicable
             ? "Монтаж не предусмотрен для данного товара"
-            : (_installationMode == 0 && _installationAdjustment != 0
-                ? (_installationAdjustment > 0
-                    ? $"{InstallationLabel}, +{Services.MoneyFormatService.FormatWhole(_installationAdjustment)} руб./шт. × Кол-во (положит. — добавляется к сумме)"
-                    : $"{InstallationLabel}, −{Services.MoneyFormatService.FormatWhole(-_installationAdjustment)} руб./шт. × Кол-во (отрицат. — вычитается из суммы)")
-                : _installationMode == 0
-                    ? $"{InstallationLabel} (нажмите для переключения)"
-                    : _installationMode == 1
-                        ? $"{InstallationLabel}, −{Services.MoneyFormatService.FormatWhole(InstallationDeduction)} руб./шт. × Кол-во (нажмите для переключения)"
-                        : $"{InstallationLabel}, \u2212{Services.MoneyFormatService.FormatWhole(InstallationSurcharge)} руб./шт. × Кол-во (нажмите для переключения)");
+            : GetSignedTooltip(InstallationLabel, CurrentInstallationAmount);
+
+        private static string GetSignedTooltip(string label, double amount)
+        {
+            if (Math.Abs(amount) < 0.01)
+                return $"{label} (нажмите для переключения)";
+            return amount > 0
+                ? $"{label}, +{Services.MoneyFormatService.FormatWhole(amount)} руб./шт. × Кол-во (добавляется к сумме)"
+                : $"{label}, −{Services.MoneyFormatService.FormatWhole(-amount)} руб./шт. × Кол-во (вычитается из суммы)";
+        }
     }
 }

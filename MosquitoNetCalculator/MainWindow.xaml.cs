@@ -290,7 +290,6 @@ namespace MosquitoNetCalculator
             };
 
             OrdersHistoryControl.OrdersGrid.MouseDoubleClick += OrdersList_MouseDoubleClick;
-            RefreshStatusSubMenu();
             OrdersHistoryControl.OrdersGrid.SelectionChanged += (_, _) =>
             {
                 var hasSelection = OrdersHistoryControl.OrdersGrid.SelectedItem is OrderData;

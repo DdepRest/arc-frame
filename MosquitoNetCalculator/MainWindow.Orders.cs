@@ -1,14 +1,11 @@
 using System;
 using System.Collections.Generic;
-using System.ComponentModel;
 using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
-using System.Windows.Media;
-using Microsoft.Win32;
+using System.Windows.Threading;
 using MosquitoNetCalculator.Controls;
-using MosquitoNetCalculator.Helpers;
 using MosquitoNetCalculator.Models;
 using MosquitoNetCalculator.Services;
 
@@ -16,38 +13,22 @@ namespace MosquitoNetCalculator
 {
     public partial class MainWindow
     {
+        // Lazy-init so MainWindow, which owns the VM, is always available
+        // before the ImportExport service is asked to do anything.
+        private OrderImportExportService? _importExport;
+        private OrderImportExportService ImportExport =>
+            _importExport ??= new OrderImportExportService(ViewModel.OrdersVM);
+
+        // ─── Refresh ────────────────────────────────────────────
+
         internal void RefreshOrdersList()
         {
-            var sortDescriptions = OrdersHistoryControl.OrdersGrid.Items.SortDescriptions.ToList();
-
             var orders = ViewModel.OrdersVM.LoadAllOrders();
 
-            var grid = OrdersHistoryControl.OrdersGrid;
-            DataGridColumnAutoSizer.SetColumnMinWidth(grid, DataGridColumnAutoSizer.FindCol(grid, "№ КП"), "№ КП",
-                orders.Select(o => o.ContractNumber));
-            DataGridColumnAutoSizer.SetColumnMinWidth(grid, DataGridColumnAutoSizer.FindCol(grid, "Адрес"), "Адрес");
-            DataGridColumnAutoSizer.SetColumnMinWidth(grid, DataGridColumnAutoSizer.FindCol(grid, "Телефон"), "Телефон",
-                orders.Select(o => o.ClientPhone));
-            DataGridColumnAutoSizer.SetColumnMinWidth(grid, DataGridColumnAutoSizer.FindCol(grid, "Дата"), "Дата",
-                orders.Select(o => o.ContractDate.ToString("dd.MM.yyyy")));
-            DataGridColumnAutoSizer.SetColumnMinWidth(grid, DataGridColumnAutoSizer.FindCol(grid, "Сумма, руб."), "Сумма, руб.",
-                orders.Select(o => MoneyFormatService.Format(o.TotalAmount)),
-                contentWeight: FontWeights.Medium);
-            DataGridColumnAutoSizer.SetColumnMinWidth(grid, DataGridColumnAutoSizer.FindCol(grid, "Статус"), "Статус",
-                orders.Select(o => o.Status).Distinct(),
-                contentPad: 32, contentWeight: FontWeights.Medium, contentFontSize: 11);
-            DataGridColumnAutoSizer.SetColumnMinWidth(grid, DataGridColumnAutoSizer.FindCol(grid, "Обновлено"), "Обновлено",
-                orders.Select(o => o.UpdatedAt.ToString("dd.MM.yy HH:mm")));
-
-            grid.ItemsSource = orders;
-
-            foreach (var sd in sortDescriptions)
-            {
-                grid.Items.SortDescriptions.Add(sd);
-            }
-            grid.Items.Refresh();
-
-            UpdateSortIndicatorsFromSortDescriptions();
+            // Grid-level work (autosize, sort restore, sort indicators)
+            // delegated to the presenter. MainWindow only owns the
+            // side-effects (count chip, nav badge).
+            OrderGridPresenter.RefreshOrdersGrid(OrdersHistoryControl.OrdersGrid, orders);
 
             if (OrdersHistoryControl?.OrdersCount != null)
                 OrdersHistoryControl.OrdersCount.Text = $"Заказов: {orders.Count}";
@@ -56,147 +37,57 @@ namespace MosquitoNetCalculator
             RefreshNavBadges();
         }
 
-        /// <summary>Update the persisted order status from a context-menu
-        /// submenu item, skipping the modal dialog of <see cref="ChangeSelectedOrderStatus"/>.</summary>
-        internal void ChangeSelectedOrderStatusInline(string newStatus)
-        {
-            if (OrdersHistoryControl.OrdersGrid.SelectedItem is not OrderData order) return;
-            if (string.IsNullOrEmpty(newStatus) || newStatus == order.Status) return;
-
-            order.Status = newStatus;
-            ViewModel.OrdersVM.SaveOrder(order);
-            RefreshOrdersList();
-            ToastService.ShowToast($"Статус: {newStatus}", ToastType.Success);
-        }
-
-        /// <summary>Populate the «Изменить статус» submenu of the orders
-        /// DataGrid context menu with one item per <see cref="OrderStatuses.All"/> entry.</summary>
-        internal void RefreshStatusSubMenu()
-        {
-            if (OrdersHistoryControl?.CtxStatusMenu == null) return;
-            OrdersHistoryControl.CtxStatusMenu.Items.Clear();
-            foreach (var status in OrderStatuses.All)
-            {
-                var item = new MenuItem { Header = status };
-                item.Click += (_, _) => ChangeSelectedOrderStatusInline(status);
-                OrdersHistoryControl.CtxStatusMenu.Items.Add(item);
-            }
-        }
+        // ─── Status change (modal dialog — sole UI surface, v3.45.0) ─
+        //
+        // v3.45.0 bug-fix: the legacy inline sub-menu "Изменить статус → <status>"
+        // approach was deleted. The dynamically-populated sub-items often collapsed
+        // in WPF's virtualised ContextMenu caching (user couldn't reliably click a
+        // status), and the PrePhase-6 chromeless ChangeOrderStatusWindow had no XAML
+        // entry-point (CtxStatus_Click was dead code until v3.45.0 restored the
+        // Click binding on CtxStatusMenu in OrdersHistoryControl.xaml).
+        //
+        // Sole flow now: user right-clicks row → «Изменить статус...» →
+        // CtxStatus_Click → MainWindow.ChangeSelectedOrderStatus() →
+        // ChangeOrderStatusWindow.ShowDialog() → Saved + SelectedStatus.
 
         internal void BtnRefreshOrders_Click(object sender, RoutedEventArgs e)
         {
             RefreshOrdersList();
         }
 
+        // ─── Export / Import (delegated to OrderImportExportService) ──
+
         internal void BtnExportOrders_Click(object sender, RoutedEventArgs e)
         {
             var allOrders = ViewModel.OrdersVM.LoadAllOrders();
-            if (allOrders.Count == 0)
-            {
-                ToastService.ShowToast("Нет заказов для экспорта.", ToastType.Info);
-                return;
-            }
-
-            var dlg = new SaveFileDialog
-            {
-                Title = "Экспорт заказов",
-                Filter = "JSON файлы (*.json)|*.json|Все файлы (*.*)|*.*",
-                DefaultExt = ".json",
-                FileName = $"orders_{DateTime.Now:yyyy-MM-dd}.json"
-            };
-
-            if (dlg.ShowDialog() == true)
-            {
-                try
-                {
-                    ViewModel.OrdersVM.ExportOrders(allOrders, dlg.FileName);
-                    ToastService.ShowToast($"Экспортировано {allOrders.Count} заказов.", ToastType.Success);
-                }
-                catch (Exception ex)
-                {
-                    ToastService.ShowToast($"Ошибка экспорта: {ex.Message}", ToastType.Error);
-                }
-            }
+            if (ImportExport.ExportAllOrders(allOrders, this))
+                RefreshOrdersList();
         }
 
         internal void BtnImportOrders_Click(object sender, RoutedEventArgs e)
         {
-            var dlg = new OpenFileDialog
-            {
-                Title = "Импорт заказов",
-                Filter = "JSON файлы (*.json)|*.json|Все файлы (*.*)|*.*",
-                DefaultExt = ".json",
-                Multiselect = false
-            };
-
-            if (dlg.ShowDialog() == true)
-            {
-                try
-                {
-                    List<OrderData>? fileOrders;
-                    try
-                    {
-                        fileOrders = ViewModel.OrdersVM.ReadOrdersFromFile(dlg.FileName);
-                    }
-                    catch
-                    {
-                        ToastService.ShowToast("Не удалось прочитать файл. Проверьте формат.", ToastType.Error);
-                        return;
-                    }
-
-                    if (fileOrders == null || fileOrders.Count == 0)
-                    {
-                        ToastService.ShowToast("Файл не содержит заказов.", ToastType.Info);
-                        return;
-                    }
-
-                    List<OrderData>? selected;
-                    if (fileOrders.Count == 1)
-                    {
-                        selected = fileOrders;
-                    }
-                    else
-                    {
-                        var importDlg = new ImportDialogWindow(fileOrders, this);
-                        importDlg.ShowDialog();
-                        if (!importDlg.DialogResultOk) return;
-                        selected = importDlg.SelectedOrders;
-                    }
-
-                    if (selected.Count == 0)
-                    {
-                        ToastService.ShowToast("Не выбрано ни одного заказа.", ToastType.Info);
-                        return;
-                    }
-
-                    var imported = ViewModel.OrdersVM.MergeImport(selected);
-
-                    RefreshOrdersList();
-
-                    if (imported.Count > 0)
-                        ToastService.ShowToast($"Импортировано {imported.Count} заказов.", ToastType.Success);
-                    else
-                        ToastService.ShowToast("Все выбранные заказы уже существуют в актуальной версии.", ToastType.Info);
-                }
-                catch (Exception ex)
-                {
-                    ToastService.ShowToast($"Ошибка импорта: {ex.Message}", ToastType.Error);
-                }
-            }
+            if (ImportExport.ImportOrders(this))
+                RefreshOrdersList();
         }
+
+        // ─── Double-click → open order ─────────────────────────────
 
         private void OrdersList_MouseDoubleClick(object sender, MouseButtonEventArgs e)
         {
-            var hit = e.OriginalSource as DependencyObject;
-            while (hit != null)
-            {
-                if (hit is System.Windows.Controls.Primitives.DataGridColumnHeader
-                    || hit is System.Windows.Controls.Primitives.DataGridRowHeader)
-                    return;
-                hit = VisualTreeHelper.GetParent(hit);
-            }
+            // Header clicks already trigger a sort — don't also open the order.
+            if (OrderGridPresenter.IsHeaderClick(e.OriginalSource as DependencyObject))
+                return;
             OpenSelectedOrder();
         }
+
+        // ─── Open order (complex flow — intentionally kept inline) ──
+        //
+        // Why: this method touches ClientInfo, Sidebar, ViewModel.CalcVM,
+        // UndoRedo, QuickAddControl, and many MainWindow state flags
+        // (_suppressContractNumberUpdate, SuppressPrefixSave, CurrentOrderId).
+        // Extracting it into a service would require passing ~10 state
+        // handles per call — an anti-pattern worse than the current
+        // partial-class delegation.
 
         internal void OpenSelectedOrder()
         {
@@ -273,165 +164,38 @@ namespace MosquitoNetCalculator
             }
         }
 
+        // ─── Change status (XAML dialog — Phase 4 pattern) ──────────
+
         internal void ChangeSelectedOrderStatus()
         {
             if (OrdersHistoryControl.OrdersGrid.SelectedItem is not OrderData order) return;
 
-            var window = new Window
-            {
-                Title = "Изменить статус заказа",
-                Width = 380,
-                WindowStartupLocation = WindowStartupLocation.CenterOwner,
-                Owner = this,
-                ResizeMode = ResizeMode.NoResize,
-                ShowInTaskbar = false,
-                WindowStyle = WindowStyle.None,
-                AllowsTransparency = true,
-                Background = Brushes.Transparent,
-                SizeToContent = SizeToContent.Height
-            };
+            // Phase 6 (v3.45.0): inline XAML mini-dialog replaced by a
+            // dedicated chromeless window using the Phase 4 pattern.
+            // Strips ~110 lines of legacy code from this file.
+            var dlg = new ChangeOrderStatusWindow(order, this);
+            dlg.ShowDialog();
 
-            var card = new Border
-            {
-                Background = (Brush)FindResource("Surface") ?? Brushes.White,
-                BorderBrush = (Brush)FindResource("Border") ?? Brushes.Gray,
-                BorderThickness = new Thickness(1),
-                CornerRadius = new CornerRadius(12),
-                Margin = new Thickness(8),
-                Effect = new System.Windows.Media.Effects.DropShadowEffect
-                {
-                    Color = (Color)FindResource("ShadowColor"),
-                    BlurRadius = 20,
-                    ShadowDepth = 2,
-                    Opacity = 0.25
-                }
-            };
+            if (!dlg.Saved || dlg.SelectedStatus == null || dlg.SelectedStatus == order.Status)
+                return;
 
-            var rootStack = new StackPanel();
-
-            var titleBar = new Border
-            {
-                Background = (Brush)FindResource("HeaderBg") ?? Brushes.WhiteSmoke,
-                CornerRadius = new CornerRadius(12, 12, 0, 0),
-                Height = 32,
-                Padding = new Thickness(14, 0, 0, 0)
-            };
-            var titleBarGrid = new Grid();
-            titleBarGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
-            titleBarGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
-
-            var titleText = new TextBlock
-            {
-                Text = "Изменить статус заказа",
-                FontSize = 12,
-                FontWeight = FontWeights.SemiBold,
-                Foreground = (Brush)FindResource("TextPrimary") ?? Brushes.Black,
-                VerticalAlignment = VerticalAlignment.Center,
-                HorizontalAlignment = HorizontalAlignment.Left
-            };
-            Grid.SetColumn(titleText, 0);
-            titleBarGrid.Children.Add(titleText);
-
-            var closeBtn = DialogService.CreateFluentCloseButton(() => window.Close());
-            Grid.SetColumn(closeBtn, 1);
-            titleBarGrid.Children.Add(closeBtn);
-
-            titleBar.MouseLeftButtonDown += (s, e) =>
-            {
-                if (e.ChangedButton == MouseButton.Left) window.DragMove();
-            };
-
-            titleBar.Child = titleBarGrid;
-            rootStack.Children.Add(titleBar);
-
-            var content = new StackPanel { Margin = new Thickness(24, 20, 24, 20) };
-            content.Children.Add(new TextBlock
-            {
-                Text = $"Заказ: {order.ContractNumber}",
-                FontWeight = FontWeights.Bold,
-                FontSize = 14,
-                Foreground = (Brush)FindResource("TextPrimary") ?? Brushes.Black,
-                Margin = new Thickness(0, 0, 0, 12)
-            });
-
-            var combo = new ComboBox
-            {
-                ItemsSource = OrderStatuses.All,
-                SelectedItem = order.Status,
-                Margin = new Thickness(0, 0, 0, 16)
-            };
-            content.Children.Add(combo);
-
-            var btnPanel = new StackPanel
-            {
-                Orientation = Orientation.Horizontal,
-                HorizontalAlignment = HorizontalAlignment.Right
-            };
-
-            var btnCancel = new Button
-            {
-                Content = "Отмена",
-                Style = (Style)FindResource("GhostButton") ?? null,
-                Padding = new Thickness(16, 7, 16, 7),
-                Margin = new Thickness(0, 0, 8, 0),
-                FontSize = 13,
-                FontWeight = FontWeights.Normal,
-                Cursor = Cursors.Hand,
-                IsCancel = true
-            };
-            btnCancel.Click += (s, e) => window.Close();
-
-            var btnOk = new Button
-            {
-                Content = "Сохранить",
-                Style = (Style)FindResource("PrimaryButton") ?? null,
-                Padding = new Thickness(16, 7, 16, 7),
-                FontSize = 13,
-                FontWeight = FontWeights.SemiBold,
-                Cursor = Cursors.Hand,
-                IsDefault = true
-            };
-            btnOk.Click += (s, e) =>
-            {
-                order.Status = combo.SelectedItem?.ToString() ?? order.Status;
-                ViewModel.OrdersVM.SaveOrder(order);
-                RefreshOrdersList();
-                window.Close();
-                ToastService.ShowToast("Статус обновлён.", ToastType.Success);
-            };
-
-            btnPanel.Children.Add(btnCancel);
-            btnPanel.Children.Add(btnOk);
-            content.Children.Add(btnPanel);
-
-            rootStack.Children.Add(content);
-            card.Child = rootStack;
-            window.Content = card;
-
-            window.ShowDialog();
+            order.Status = dlg.SelectedStatus;
+            ViewModel.OrdersVM.SaveOrder(order);
+            RefreshOrdersList();
+            ToastService.ShowToast("Статус обновлён.", ToastType.Success);
         }
+
+        // ─── Copy (delegated to OrderImportExportService.CopyOrder) ──
 
         internal void CopySelectedOrder()
         {
             if (OrdersHistoryControl.OrdersGrid.SelectedItem is not OrderData source) return;
 
-            // Clone the order — deep copy
-            string json = System.Text.Json.JsonSerializer.Serialize(source, OrderStorageService.JsonOptions);
-            var copy = System.Text.Json.JsonSerializer.Deserialize<OrderData>(json, OrderStorageService.JsonOptions);
-            if (copy == null) return;
+            var newNumber = ImportExport.CopyOrder(source);
+            if (newNumber == null) return;
 
-            // New identity
-            copy.Id = Guid.NewGuid().ToString();
-            copy.CreatedAt = DateTime.Now;
-            copy.UpdatedAt = DateTime.Now;
-            copy.Status = OrderStatuses.All[0]; // «Новый»
-
-            // Generate copy contract number: "2-8" → "2-8.1", "2-8.1" → "2-8.2"
-            copy.ContractNumber = ViewModel.OrdersVM.GenerateCopyContractNumber(source.ContractNumber);
-
-            ViewModel.OrdersVM.SaveOrder(copy);
             RefreshOrdersList();
-            ToastService.ShowToast($"Заказ скопирован: {copy.ContractNumber}", ToastType.Success);
+            ToastService.ShowToast($"Заказ скопирован: {newNumber}", ToastType.Success);
         }
 
         internal void DeleteSelectedOrder()
@@ -449,78 +213,23 @@ namespace MosquitoNetCalculator
         internal void ExportSelectedOrder()
         {
             if (OrdersHistoryControl.OrdersGrid.SelectedItem is not OrderData order) return;
-
-            string raw = (order.ClientAddress ?? string.Empty).Replace('/', ' ');
-            string address = ViewModel.OrdersVM.SanitizeFileName(raw);
-            if (!string.IsNullOrEmpty(address))
-            {
-                address = address.ToUpperInvariant();
-                address = string.Join(" ", address.Split(' ', StringSplitOptions.RemoveEmptyEntries));
-            }
-            string defaultName = string.IsNullOrEmpty(address)
-                ? $"order {order.ContractNumber}.json"
-                : $"{address} {order.ContractNumber}.json";
-
-            var dlg = new SaveFileDialog
-            {
-                Title = "Экспорт заказа",
-                Filter = "JSON файлы (*.json)|*.json|Все файлы (*.*)|*.*",
-                DefaultExt = ".json",
-                FileName = defaultName
-            };
-
-            if (dlg.ShowDialog() == true)
-            {
-                try
-                {
-                    ViewModel.OrdersVM.ExportOrders(new List<OrderData> { order }, dlg.FileName);
-                    ToastService.ShowToast($"Заказ {order.ContractNumber} экспортирован!", ToastType.Success);
-                }
-                catch (Exception ex)
-                {
-                    ToastService.ShowToast($"Ошибка экспорта: {ex.Message}", ToastType.Error);
-                }
-            }
+            ImportExport.ExportSingleOrder(order, this);
         }
+
+        // ─── Sort indicator management (delegated to OrderGridPresenter) ──
 
         internal void OrdersList_Sorting(object sender, DataGridSortingEventArgs e)
         {
-            Dispatcher.BeginInvoke(new Action(UpdateSortIndicatorsFromSortDescriptions),
-                System.Windows.Threading.DispatcherPriority.Background);
-        }
-
-        private static string? GetColumnSortKey(System.Windows.Controls.DataGridColumn col)
-        {
-            if (!string.IsNullOrEmpty(col.SortMemberPath))
-                return col.SortMemberPath;
-            if (col is System.Windows.Controls.DataGridBoundColumn bound
-                && bound.Binding is System.Windows.Data.Binding b
-                && b.Path != null)
-                return b.Path.Path;
-            return null;
+            // Indicator update is post-sort — Dispatcher yields so the
+            // DataGrid finishes applying its sort before we touch headers.
+            Dispatcher.BeginInvoke(new Action(() =>
+                OrderGridPresenter.ApplySortIndicators(OrdersHistoryControl.OrdersGrid)),
+                DispatcherPriority.Background);
         }
 
         internal void UpdateSortIndicatorsFromSortDescriptions()
         {
-            foreach (var col in OrdersHistoryControl.OrdersGrid.Columns)
-            {
-                string clean = DataGridColumnAutoSizer.StripSortIndicator(col.Header?.ToString());
-                string? sortKey = GetColumnSortKey(col);
-                var match = !string.IsNullOrEmpty(sortKey)
-                    ? OrdersHistoryControl.OrdersGrid.Items.SortDescriptions
-                        .FirstOrDefault(x => x.PropertyName == sortKey)
-                    : default;
-                if (!string.IsNullOrEmpty(match.PropertyName))
-                {
-                    col.Header = clean + (match.Direction == ListSortDirection.Ascending ? " \u25B2" : " \u25BC");
-                    col.SortDirection = match.Direction;
-                }
-                else
-                {
-                    col.Header = clean;
-                    col.SortDirection = null;
-                }
-            }
+            OrderGridPresenter.ApplySortIndicators(OrdersHistoryControl.OrdersGrid);
         }
     }
 }

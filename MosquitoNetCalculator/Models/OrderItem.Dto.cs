@@ -19,8 +19,8 @@ namespace MosquitoNetCalculator.Models
         public double Price { get; set; }
         public int InstallationMode { get; set; }
         public bool HasInstallation { get; set; } = true;
-        public double InstallationDeduction { get; set; } = 500;
-        public double InstallationSurcharge { get; set; } = 500;
+        public double InstallationDeduction { get; set; } = -500;
+        public double InstallationSurcharge { get; set; } = -500;
         // v3.43.2.10: signed adjustment for mode 0 («Монтаж включён»).
         // Default 0 → backward compatible (existing orders.json without this
         // field load cleanly as no-op adjustment).
