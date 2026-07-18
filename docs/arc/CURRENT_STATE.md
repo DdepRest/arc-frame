@@ -106,7 +106,7 @@ AGENT.md / AGENTS.md / CLAUDE.md / GEMINI.md
 
 ## Source files
 
-- `MosquitoNetCalculator/MosquitoNetCalculator.csproj` — версия 3.45.0.
+- `MosquitoNetCalculator/MosquitoNetCalculator.csproj` — версия 3.46.1.
 - `releases.json` — история релизов (latest заполняется после GitHub Release + ZIP).
 - `MosquitoNetCalculator/Resources/update-log.json` — история для UI.
 - `docs/arc/*.md` — вся проектная документация.
