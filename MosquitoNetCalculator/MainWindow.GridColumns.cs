@@ -44,7 +44,7 @@ namespace MosquitoNetCalculator
                 OrderItems.Select(i => i.InstallationDisplay),
                 contentPad: 40, contentWeight: FontWeights.Bold, contentFontSize: 14);
             DataGridColumnAutoSizer.SetColumnMinWidth(grid, DataGridColumnAutoSizer.FindCol(grid, "Кол-во"), "Кол-во",
-                OrderItems.Select(i => i.IsAmountOnly ? "" : i.Quantity > 0 ? i.Quantity.ToString() : ""),
+                OrderItems.Select(i => i.IsAmountOnly ? "" : i.Quantity > 0 ? i.Quantity.ToString("G") : ""),
                 contentPad: 24);
             DataGridColumnAutoSizer.SetColumnMinWidth(grid, DataGridColumnAutoSizer.FindCol(grid, "Площ./Дл."), "Площ./Дл.",
                 OrderItems.Select(i => i.CalculatedValueDisplay),

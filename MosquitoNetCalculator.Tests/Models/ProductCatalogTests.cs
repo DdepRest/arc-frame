@@ -10,7 +10,8 @@ namespace MosquitoNetCalculator.Tests.Models
         [InlineData("На навесах", true)]
         [InlineData("Дверная сетка", true)]
         [InlineData("Оконная на метал. крепл.", true)]
-        [InlineData("Отлив", false)]
+        [InlineData("Отлив", true)]
+        [InlineData("Козырёк", true)]
         [InlineData("Работа", false)]
         public void IsInstallationApplicable_ReturnsExpected(string name, bool expected)
         {
@@ -112,6 +113,9 @@ namespace MosquitoNetCalculator.Tests.Models
             Assert.True(item.IsWidthOnly);
             Assert.False(item.IsAmountOnly);
             Assert.False(item.IsInstallationApplicable);
+
+            item.Name = "Отлив";
+            Assert.True(item.IsInstallationApplicable);
 
             item.Name = "Anwis";
             Assert.False(item.IsManualPiece);

@@ -278,4 +278,53 @@
                 </Setter.Value>
             </Setter>
         </Style>
+
+        <!--
+          FlatIconButton — utility style for icon-only buttons that should
+          render with NO chrome whatsoever (no border, no background pill,
+          no light-blue button fill that the default WPF Button template
+          shows through in dark / Win10 themes).
+
+          Default padding is 0 so the icon sits flush with the bounds the
+          consumer sets via Width/Height. Foreground is NOT preset — callers
+          bind or set it directly (e.g. {Binding InstallationForegroundColor}).
+
+          Hover dim (Opacity 0.65) and disabled dim (Opacity 0.35) replace
+          the chrome-based hover/disabled visuals; the icon stays the only
+          thing the user sees.
+
+          v3.47.1: вынесен из inline-стиля колонки «Монтаж» в OrderItemsControl.
+          Применять там, где кнопка должна показывать только глиф/иконку/символ
+          без рамки или подсветки фона (V/X/B в «Монтаж», и любые будущие
+          иконочные кнопки в гриде).
+        -->
+        <Style x:Key="FlatIconButton" TargetType="Button">
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="BorderBrush" Value="Transparent"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Padding" Value="0"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border Background="Transparent"
+                                BorderBrush="Transparent"
+                                BorderThickness="0"
+                                SnapsToDevicePixels="True">
+                            <ContentPresenter HorizontalAlignment="Center"
+                                              VerticalAlignment="Center"
+                                              Margin="{TemplateBinding Padding}"/>
+                        </Border>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+            <Style.Triggers>
+                <Trigger Property="IsMouseOver" Value="True">
+                    <Setter Property="Opacity" Value="0.65"/>
+                </Trigger>
+                <Trigger Property="IsEnabled" Value="False">
+                    <Setter Property="Opacity" Value="0.35"/>
+                </Trigger>
+            </Style.Triggers>
+        </Style>
 </ResourceDictionary>

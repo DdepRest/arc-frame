@@ -22,7 +22,7 @@ namespace MosquitoNetCalculator.ViewModels
         public int Count { get; init; }
         public double TotalArea { get; init; }
         public double TotalLinear { get; init; }
-        public int TotalPieces { get; init; }
+        public double TotalPieces { get; init; }
     }
 
     public class CalculationViewModel
@@ -35,11 +35,18 @@ namespace MosquitoNetCalculator.ViewModels
         public event SlopesChangedHandler? SlopesChanged;
 
         /// <summary>
+        /// Returns true for products whose installation toggle should start in
+        /// the "Без монтажа" state (0 ₽) by default.
+        /// </summary>
+        private static bool IsInstallationDefaultNoInstallation(string type) =>
+            type is "Отлив" or "Козырёк";
+
+        /// <summary>
         /// Adds a new order item from quick-add parameters.
         /// For Anwis products, applies calc adjustment to Width/Height before storing.
         /// Returns the created item, or null if validation failed.
         /// </summary>
-        public OrderItem? AddItem(string type, string color, int width, int height, int qty, double price,
+        public OrderItem? AddItem(string type, string color, int width, int height, double qty, double price,
             Models.AnwisSizeMode anwisMode = Models.AnwisSizeMode.Брусбокс60)
         {
             if (qty <= 0) qty = 1;
@@ -63,12 +70,13 @@ namespace MosquitoNetCalculator.ViewModels
                 Height = storedH,
                 Quantity = qty,
                 Price = price,
-                InstallationMode = type == "Отлив" ? 1 : 0,
+                InstallationMode = IsInstallationDefaultNoInstallation(type) ? 1 : 0,
                 InstallationDeduction = OrderItem.GetDefaultInstallationDeduction(type),
                 InstallationSurcharge = OrderItem.GetDefaultInstallationSurcharge(type),
                 // v3.43.2.10: signed adjustment for mode 0 («Монтаж включён»).
                 // Default 0 (no modification) at item-add time.
-                InstallationAdjustment = 0,
+                // v3.47.0: per-linear-meter products (Отлив, Козырёк) get their rate.
+                InstallationAdjustment = OrderItem.GetDefaultInstallationAdjustment(type),
                 RowNumber = OrderItems.Count + 1
             };
             // Use SetAnwisModeQuiet — Width/Height above are already-final stored
@@ -185,7 +193,7 @@ namespace MosquitoNetCalculator.ViewModels
             // E.g. 3 windows of 1 м² each → TotalArea = 3 м², not 1 м².
             double totalArea = validItems.Where(i => i.Unit == "м²").Sum(i => i.CalculatedValue * i.Quantity);
             double totalLinear = validItems.Where(i => i.Unit == "м.п.").Sum(i => i.CalculatedValue * i.Quantity);
-            int totalPieces = validItems.Where(i => i.Unit == "шт.").Sum(i => i.Quantity);
+            double totalPieces = validItems.Where(i => i.Unit == "шт.").Sum(i => i.Quantity);
 
             return new TotalInfo
             {
@@ -240,12 +248,12 @@ namespace MosquitoNetCalculator.ViewModels
                             WidthMm = od.Height > 0 ? od.Height : 1000,
                             HeightMm = od.Height > 0 ? od.Width : 1000,
                             DepthM = od.Width / 1000.0,
-                            WindowCount = od.Quantity
+                            WindowCount = (int)od.Quantity
                         };
                         od.SlopeData = SlopeCalculationData.FromSlopeCalculation(
                             Services.SlopeCalculatorService.Calculate(
                                 oldCalc.WidthMm, oldCalc.HeightMm, oldCalc.DepthM,
-                                od.Quantity, od.Quantity));
+                                (int)od.Quantity, (int)od.Quantity));
                     }
                 }
 
@@ -277,6 +285,17 @@ namespace MosquitoNetCalculator.ViewModels
                 // values for the loaded od.AnwisSizeMode. The public setter would
                 // reverse-apply through default ББ 60 and corrupt dimensions.
                 item.SetAnwisModeQuiet((Models.AnwisSizeMode)od.AnwisSizeMode);
+
+                // v3.47.0 migration: Отлив and Козырёк were previously non-applicable.
+                // Legacy saved orders may have InstallationMode=0 with zero adjustment.
+                // Default them to mode 1 (no installation) to preserve old behavior.
+                if ((item.Name == "Отлив" || item.Name == "Козырёк") &&
+                    item.InstallationMode == 0 &&
+                    Math.Abs(item.InstallationAdjustment) < 0.01)
+                {
+                    item.InstallationMode = 1;
+                }
+
                 item.RecalculateRequested += recalculateCallback;
                 OrderItems.Add(item);
             }

@@ -96,7 +96,7 @@ namespace MosquitoNetCalculator.Models
         private string _color = string.Empty;
         private double _width;
         private double _height;
-        private int _quantity = 1;
+        private double _quantity = 1;
         private double _price;
         private bool _isActive = true;
         private AnwisSizeMode _anwisSizeMode = AnwisSizeMode.Брусбокс60;
@@ -221,13 +221,13 @@ namespace MosquitoNetCalculator.Models
             ? AnwisSize.ОтХранимого(_width, _height, _anwisSizeMode)
             : AnwisSize.Identity(_width, _height);
 
-        public int Quantity
+        public double Quantity
         {
             get => _quantity;
             set
             {
-                var clamped = Math.Max(1, value);
-                if (_quantity != clamped)
+                var clamped = Math.Max(0.001, value);
+                if (Math.Abs(_quantity - clamped) > 0.0001)
                 {
                     _quantity = clamped;
                     OnPropertyChanged();

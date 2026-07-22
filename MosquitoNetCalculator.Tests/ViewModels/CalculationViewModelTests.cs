@@ -69,6 +69,36 @@ namespace MosquitoNetCalculator.Tests.ViewModels
             Assert.Equal(0, item!.InstallationMode);
         }
 
+        [Fact]
+        public void AddItem_SetsInstallationMode1_AndZeroDeduction_ForOtliv()
+        {
+            // v3.47.0: Отлив defaults to "Без монтажа" with 0 ₽ deduction.
+            var item = _vm.AddItem("Отлив", "Белый", 1000, 500, 1, 2150);
+            Assert.Equal(1, item!.InstallationMode);
+            Assert.Equal(0, item.InstallationDeduction);
+            Assert.Equal(500, item.InstallationAdjustment);
+            Assert.Equal(item.Total, item.TotalWithDeduction);
+        }
+
+        [Fact]
+        public void AddItem_SetsInstallationMode1_AndZeroDeduction_ForKozyrek()
+        {
+            // v3.47.0: Козырёк defaults to "Без монтажа" with 0 ₽ deduction.
+            var item = _vm.AddItem("Козырёк", "Белый", 1000, 500, 1, 2150);
+            Assert.Equal(1, item!.InstallationMode);
+            Assert.Equal(0, item.InstallationDeduction);
+            Assert.Equal(750, item.InstallationAdjustment);
+            Assert.Equal(item.Total, item.TotalWithDeduction);
+        }
+
+        [Fact]
+        public void AddItem_DecimalQuantity_Allowed()
+        {
+            // v3.47.0: Quantity accepts decimal values.
+            var item = _vm.AddItem("Anwis", "Белый", 1000, 1000, 2.5, 1800);
+            Assert.Equal(2.5, item!.Quantity);
+        }
+
         // ─── DeleteItem tests ────────────────────────────────
 
         [Fact]

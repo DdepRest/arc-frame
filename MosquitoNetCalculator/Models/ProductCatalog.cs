@@ -14,7 +14,7 @@ namespace MosquitoNetCalculator.Models
         /// </summary>
         public static readonly HashSet<string> InstallationApplicableProducts = new()
         {
-            "Anwis", "На навесах", "Дверная сетка", "Оконная на метал. крепл."
+            "Anwis", "На навесах", "Дверная сетка", "Оконная на метал. крепл.", "Отлив", "Козырёк"
         };
 
         /// <summary>

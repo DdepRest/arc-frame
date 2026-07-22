@@ -124,7 +124,14 @@
                 </ItemsControl.ItemsPanel>
                 <ItemsControl.ItemTemplate>
                     <DataTemplate>
+                        <!-- v3.47.1: GhostButton — безхромовый дефолт (убирает WPF-хром в тёмной теме);
+                             DialogButton_Loaded переопределяет button.Style (PrimaryButton/...)
+                             и ставит FontWeight (SemiBold для IsDefault=true). Не дублируем
+                             FontWeight в XAML — handler (DialogButton_Loaded) остаётся единым
+                             источником для этого свойства; Style оставлен как GhostButton-дефолт
+                             и при необходимости повышается тем же хендлером до PrimaryButton/... -->
                         <Button Content="{Binding Content}"
+                                Style="{DynamicResource GhostButton}"
                                 MinWidth="90"
                                 Padding="16,7"
                                 Margin="8,0,0,0"

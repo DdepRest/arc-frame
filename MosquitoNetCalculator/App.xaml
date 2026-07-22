@@ -36,6 +36,7 @@
             <conv:StatusToBadgeBackgroundConverter x:Key="StatusToBadgeBg"/>
             <conv:StatusToBadgeForegroundConverter x:Key="StatusToBadgeFg"/>
             <conv:MoneyConverter x:Key="MoneyConv"/>
+            <conv:QuantityConverter x:Key="QtyConv"/>
             <conv:RussianDateConverter x:Key="RussianDateConv"/>
             <conv:UpdateTypeToBrushConverter x:Key="UpdateTypeBrush"/>
             <conv:UpdateTypeToIconConverter x:Key="UpdateTypeIcon"/>

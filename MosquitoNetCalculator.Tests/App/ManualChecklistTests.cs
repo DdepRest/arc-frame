@@ -223,16 +223,18 @@ namespace MosquitoNetCalculator.Tests.App
             Assert.True(new OrderItem { Name = "На навесах" }.IsInstallationApplicable);
             Assert.True(new OrderItem { Name = "Дверная сетка" }.IsInstallationApplicable);
             Assert.True(new OrderItem { Name = "Оконная на метал. крепл." }.IsInstallationApplicable);
-            // Отлив и ПСУЛ — переключатель неактивен.
-            Assert.False(new OrderItem { Name = "Отлив" }.IsInstallationApplicable);
+            // v3.47.0: Отлив и Козырёк теперь поддерживают монтаж (по умолчанию выключен).
+            Assert.True(new OrderItem { Name = "Отлив" }.IsInstallationApplicable);
+            Assert.True(new OrderItem { Name = "Козырёк" }.IsInstallationApplicable);
+            // ПСУЛ — переключатель неактивен.
             Assert.False(new OrderItem { Name = "ПСУЛ" }.IsInstallationApplicable);
         }
 
         [Fact]
         public void Check3_NonApplicable_Renders_Dash()
         {
-            // §3.4 — серый «—» в колонке.
-            var item = new OrderItem { Name = "Отлив", Width = 200, Height = 1000, Quantity = 1, Price = 2150 };
+            // §3.4 — серый «—» в колонке для товаров без монтажа.
+            var item = new OrderItem { Name = "ПСУЛ", Width = 200, Height = 1000, Quantity = 1, Price = 2150 };
             Assert.Equal("—", item.InstallationDisplay);
             Assert.Equal("—", item.KpInstallationDisplay);
         }

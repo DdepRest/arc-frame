@@ -17,8 +17,8 @@
 - Тёмная тема стабильна, переключается без потери данных.
 - Undo/Redo работает для позиций расчёта и Доп.КП.
 - Юнит-тесты покрывают ключевые сценарии (расчёты, экспорт/импорт, версия, обновления).
-- **Текущая версия: 3.46.1** (релиз 2026-07-17: переключатель +/- для монтажа, улучшенные примечания в КП).
-- **Текущий статус тестов: 1227/1227 pass.**
+- **Текущая версия: 3.47.1** (релиз 2026-07-20: portable ZIP для ручного обновления, скрипт create-manual-update.ps1).
+- **Текущий статус тестов: 1234/1234 pass.**
 
 > Полная история изменений по версиям — в [`CHANGELOG.md`](../../CHANGELOG.md).
 
@@ -106,7 +106,7 @@ AGENT.md / AGENTS.md / CLAUDE.md / GEMINI.md
 
 ## Source files
 
-- `MosquitoNetCalculator/MosquitoNetCalculator.csproj` — версия 3.46.1.
+- `MosquitoNetCalculator/MosquitoNetCalculator.csproj` — версия 3.47.1.
 - `releases.json` — история релизов (latest заполняется после GitHub Release + ZIP).
 - `MosquitoNetCalculator/Resources/update-log.json` — история для UI.
 - `docs/arc/*.md` — вся проектная документация.
@@ -118,7 +118,7 @@ AGENT.md / AGENTS.md / CLAUDE.md / GEMINI.md
 
 ## Last verified
 
-2026-07-17 — **v3.46.1:** Синхронизация doc-версии с реальным состоянием проекта (ранее sticky на v3.45.0). Тесты: 1195 → 1227/1227 pass. Изменения серии v3.46.0:
+2026-07-20 — **v3.47.1:** Portable ZIP для ручного обновления (create-manual-update.ps1 + README_ОБНОВЛЕНИЕ.txt). Те же фичи: монтаж для Отлива/Козырька (500/750 ₽/м.п., по умолчанию выключен), дробное количество в заказе, убран цветной фон SignToggleCheckBox в тёмной теме. Тесты: 1234/1234 pass.
 - **AGENTS.md:** добавлены секции «Wrapper contract» и «Last verified».
 - **PdfExportService.BuildAdditionalKpPdf:** динамическая ширина ConstantItem через `ComputeAmountColumnWidth` + `MeasureTextWidthPt` (`Graphics.PageUnit=Point` для корректного DPI-преобразования).
 - **PdfExportService.AddClientRowPdf + FlowDocumentBuilder.AddClientGridRow:** значения в клиентском блоке КП теперь `SemiBold` (жирные), не только лейблы.

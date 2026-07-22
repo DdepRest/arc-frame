@@ -66,7 +66,9 @@
                 <ControlTemplate TargetType="CheckBox">
                     <Border x:Name="SwitchTrack" Width="48" Height="26"
                             CornerRadius="13"
-                            Background="{DynamicResource Danger}"
+                            Background="Transparent"
+                            BorderBrush="{DynamicResource Border}"
+                            BorderThickness="1"
                             SnapsToDevicePixels="True">
                         <Grid>
                             <!-- Background signs -->
@@ -91,14 +93,14 @@
                     </Border>
                     <ControlTemplate.Triggers>
                         <Trigger Property="IsChecked" Value="True">
-                            <Setter TargetName="SwitchTrack" Property="Background" Value="{DynamicResource Success}"/>
+                            <Setter TargetName="SwitchTrack" Property="BorderBrush" Value="{DynamicResource Success}"/>
                             <Setter TargetName="SwitchThumb" Property="HorizontalAlignment" Value="Right"/>
                             <Setter TargetName="SwitchThumb" Property="Margin" Value="0,0,2,0"/>
                             <Setter TargetName="ThumbText" Property="Text" Value="+"/>
                             <Setter TargetName="ThumbText" Property="Foreground" Value="{DynamicResource Success}"/>
                         </Trigger>
                         <Trigger Property="IsMouseOver" Value="True">
-                            <Setter TargetName="SwitchTrack" Property="Opacity" Value="0.85"/>
+                            <Setter TargetName="SwitchTrack" Property="BorderBrush" Value="{DynamicResource Accent}"/>
                         </Trigger>
                         <Trigger Property="IsPressed" Value="True">
                             <Setter TargetName="SwitchThumb" Property="RenderTransform">

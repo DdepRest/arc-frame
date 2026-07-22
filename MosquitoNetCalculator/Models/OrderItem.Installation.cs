@@ -15,14 +15,47 @@ namespace MosquitoNetCalculator.Models
         /// Default per-piece installation deduction for mode 1 (Без монтажа).
         /// Keyed by product name. Products not listed here use the standard 500 ₽
         /// fallback (<see cref="DefaultInstallationDeductionFallback"/>).
+        /// v3.47.0: Отлив and Козырёк default to 0 ₽ because their installation
+        /// is optional and starts disabled.
         /// </summary>
         private static readonly Dictionary<string, double> DefaultInstallationDeductions = new()
         {
             ["Дверная сетка"] = -600,
+            ["Отлив"] = 0,
+            ["Козырёк"] = 0,
         };
 
         /// <summary>Fallback deduction when the product is not in the dictionary.</summary>
         public const double DefaultInstallationDeductionFallback = -500;
+
+        /// <summary>
+        /// Default installation adjustment for mode 0 (Монтаж включён).
+        /// For per-linear-meter products (Отлив, Козырёк) the rate is in ₽/м.п.
+        /// </summary>
+        private static readonly Dictionary<string, double> DefaultInstallationAdjustments = new()
+        {
+            ["Отлив"] = 500,
+            ["Козырёк"] = 750,
+        };
+
+        /// <summary>
+        /// Default installation surcharge for mode 2 (В конструкцию).
+        /// For per-linear-meter products (Отлив, Козырёк) the rate is in ₽/м.п.
+        /// </summary>
+        private static readonly Dictionary<string, double> DefaultInstallationSurcharges = new()
+        {
+            ["Отлив"] = 500,
+            ["Козырёк"] = 750,
+        };
+
+        /// <summary>
+        /// Products whose installation cost is calculated per linear meter
+        /// (perimeter of the item) instead of per piece.
+        /// </summary>
+        private static readonly HashSet<string> PerLinearMeterProducts = new()
+        {
+            "Отлив", "Козырёк"
+        };
 
         /// <summary>
         /// Returns the default installation deduction for a given product name.
@@ -31,11 +64,32 @@ namespace MosquitoNetCalculator.Models
             DefaultInstallationDeductions.GetValueOrDefault(productName, DefaultInstallationDeductionFallback);
 
         /// <summary>
+        /// Returns the default installation adjustment for mode 0 (Монтаж включён).
+        /// For per-linear-meter products returns the rate in ₽/м.п.; otherwise 0.
+        /// </summary>
+        public static double GetDefaultInstallationAdjustment(string productName) =>
+            DefaultInstallationAdjustments.GetValueOrDefault(productName, 0);
+
+        /// <summary>
         /// Returns the default installation surcharge for a given product name.
-        /// (Same value as deduction — mirrored by design.)
+        /// For per-linear-meter products returns the rate in ₽/м.п.; otherwise
+        /// mirrors the deduction value.
         /// </summary>
         public static double GetDefaultInstallationSurcharge(string productName) =>
-            GetDefaultInstallationDeduction(productName);
+            DefaultInstallationSurcharges.GetValueOrDefault(productName,
+                GetDefaultInstallationDeduction(productName));
+
+        /// <summary>True when installation for this product is priced per linear meter.</summary>
+        public bool IsInstallationPerLinearMeter => !string.IsNullOrEmpty(Name) && PerLinearMeterProducts.Contains(Name);
+
+        /// <summary>
+        /// Linear meters used for installation cost calculation.
+        /// For per-linear-meter products this is the perimeter in meters;
+        /// for per-piece products it is 1.
+        /// </summary>
+        public double InstallationLinearMeters => IsInstallationPerLinearMeter
+            ? Math.Round((Width + Height) * 2 / 1000.0, 3)
+            : 1.0;
 
         /// <summary>
         /// Installation mode:
@@ -166,7 +220,9 @@ namespace MosquitoNetCalculator.Models
         /// <summary>
         /// The effective total after applying the installation adjustment.
         /// All three modes use the same signed convention: positive value adds,
-        /// negative subtracts. Formula: Total + value × Quantity.
+        /// negative subtracts. Formula: Total + value × InstallationLinearMeters × Quantity.
+        /// For per-piece products InstallationLinearMeters is 1; for Отлив/Козырёк
+        /// it is the perimeter in meters.
         /// See GOTCHAS.md#12 for the historical per-piece scaling bug.
         /// </summary>
         public double TotalWithDeduction
@@ -174,12 +230,13 @@ namespace MosquitoNetCalculator.Models
             get
             {
                 if (!IsInstallationApplicable) return Total;
+                double factor = InstallationLinearMeters * Quantity;
                 return _installationMode switch
                 {
                     // v3.46.1: all modes use signed convention: positive = add, negative = subtract.
-                    0 => Math.Round(Math.Max(0, Total + InstallationAdjustment * Quantity), 2),
-                    1 => Math.Round(Math.Max(0, Total + InstallationDeduction * Quantity), 2),
-                    2 => Math.Round(Math.Max(0, Total + InstallationSurcharge * Quantity), 2),
+                    0 => Math.Round(Math.Max(0, Total + InstallationAdjustment * factor), 2),
+                    1 => Math.Round(Math.Max(0, Total + InstallationDeduction * factor), 2),
+                    2 => Math.Round(Math.Max(0, Total + InstallationSurcharge * factor), 2),
                     _ => Total
                 };
             }
@@ -225,18 +282,28 @@ namespace MosquitoNetCalculator.Models
         /// <summary>Tooltip for the installation toggle button.
         /// All modes use signed convention: positive adds, negative subtracts.
         /// v3.46.1: per-unit fee shown with «× Кол-во» so the user understands
-        /// the deduction scales with Quantity.</summary>
+        /// the deduction scales with Quantity.
+        /// v3.47.0: per-linear-meter products show «× м.п. × Кол-во».</summary>
         public string InstallationToolTip => !IsInstallationApplicable
             ? "Монтаж не предусмотрен для данного товара"
-            : GetSignedTooltip(InstallationLabel, CurrentInstallationAmount);
+            : GetSignedTooltip(InstallationLabel, CurrentInstallationAmount, IsInstallationPerLinearMeter, InstallationLinearMeters);
 
-        private static string GetSignedTooltip(string label, double amount)
+        private static string GetSignedTooltip(string label, double amount, bool perMeter, double linearMeters)
         {
             if (Math.Abs(amount) < 0.01)
                 return $"{label} (нажмите для переключения)";
+
+            string unit = perMeter ? "м.п." : "шт.";
+            if (perMeter)
+            {
+                return amount > 0
+                    ? $"{label}, +{Services.MoneyFormatService.FormatWhole(amount)} руб./{unit} × {linearMeters:F2} м.п. × Кол-во (добавляется к сумме)"
+                    : $"{label}, −{Services.MoneyFormatService.FormatWhole(-amount)} руб./{unit} × {linearMeters:F2} м.п. × Кол-во (вычитается из суммы)";
+            }
+
             return amount > 0
-                ? $"{label}, +{Services.MoneyFormatService.FormatWhole(amount)} руб./шт. × Кол-во (добавляется к сумме)"
-                : $"{label}, −{Services.MoneyFormatService.FormatWhole(-amount)} руб./шт. × Кол-во (вычитается из суммы)";
+                ? $"{label}, +{Services.MoneyFormatService.FormatWhole(amount)} руб./{unit} × Кол-во (добавляется к сумме)"
+                : $"{label}, −{Services.MoneyFormatService.FormatWhole(-amount)} руб./{unit} × Кол-во (вычитается из суммы)";
         }
     }
 }

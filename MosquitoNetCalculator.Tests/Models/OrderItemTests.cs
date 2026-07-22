@@ -266,8 +266,10 @@ namespace MosquitoNetCalculator.Tests.Models
                 Width = 1000, Height = 1000,
                 Price = 2150,
                 InstallationMode = 1,
-                InstallationDeduction = 500
+                InstallationDeduction = 0
             };
+            // v3.47.0: Отлив is now installation-applicable, but default mode 1
+            // with 0 deduction means TotalWithDeduction equals Total.
             Assert.Equal(item.Total, item.TotalWithDeduction);
         }
 
@@ -393,21 +395,78 @@ namespace MosquitoNetCalculator.Tests.Models
         }
 
         [Fact]
-        public void TotalWithDeduction_NonApplicable_Quantity3_StillIgnoresDeduction()
+        public void TotalWithDeduction_Otliv_DefaultMode_NoInstallationCost()
         {
-            // Отлив is not subject to any installation mode — TotalWithDeduction
-            // must equal Total regardless of Quantity or InstallationMode.
-            // Guards against a regression that accidentally re-applies the
-            // formula on non-eligible products.
+            // v3.47.0: Отлив supports installation but defaults to mode 1 (no installation)
+            // with 0 ₽ deduction, so TotalWithDeduction equals Total.
             var item = new OrderItem
             {
                 Name = "Отлив",
                 Width = 1500, Height = 100,
-                Quantity = 3,
+                Quantity = 1,
                 Price = 2150,
-                InstallationMode = 2
+                InstallationMode = 1,
+                InstallationDeduction = 0
             };
             Assert.Equal(item.Total, item.TotalWithDeduction);
+        }
+
+        [Fact]
+        public void TotalWithDeduction_Otliv_Mode0_PerLinearMeter()
+        {
+            // v3.47.0: Отлив installation is 500 ₽/м.п.
+            // Perimeter = (1500 + 100) * 2 / 1000 = 3.2 м.п.
+            // Installation cost = 500 * 3.2 = 1600 ₽
+            // Total = 0.15 * 2150 = 322.5; TotalWithDeduction = 322.5 + 1600 = 1922.5
+            var item = new OrderItem
+            {
+                Name = "Отлив",
+                Width = 1500, Height = 100,
+                Quantity = 1,
+                Price = 2150,
+                InstallationMode = 0,
+                InstallationAdjustment = 500
+            };
+            Assert.Equal(1922.5, item.TotalWithDeduction, 2);
+        }
+
+        [Fact]
+        public void TotalWithDeduction_Kozyrek_Mode0_PerLinearMeter()
+        {
+            // v3.47.0: Козырёк installation is 750 ₽/м.п.
+            // Perimeter = (1200 + 200) * 2 / 1000 = 2.8 м.п.
+            // Installation cost = 750 * 2.8 = 2100 ₽
+            // Total = 0.24 * 3000 = 720; TotalWithDeduction = 720 + 2100 = 2820
+            var item = new OrderItem
+            {
+                Name = "Козырёк",
+                Width = 1200, Height = 200,
+                Quantity = 1,
+                Price = 3000,
+                InstallationMode = 0,
+                InstallationAdjustment = 750
+            };
+            Assert.Equal(2820, item.TotalWithDeduction, 2);
+        }
+
+        [Fact]
+        public void TotalWithDeduction_Otliv_Mode0_QuantityMultiplier_AppliesToLinearMeters()
+        {
+            // v3.47.0: per-linear-meter installation also scales with Quantity.
+            // Perimeter = 3.2 м.п., Qty = 2 → linear factor = 6.4
+            // Installation = 500 * 6.4 = 3200 ₽
+            var item = new OrderItem
+            {
+                Name = "Отлив",
+                Width = 1500, Height = 100,
+                Quantity = 2,
+                Price = 2150,
+                InstallationMode = 0,
+                InstallationAdjustment = 500
+            };
+            double expectedTotal = 0.15 * 2150 * 2; // 645
+            double expected = expectedTotal + 500 * 3.2 * 2; // 645 + 3200 = 3845
+            Assert.Equal(expected, item.TotalWithDeduction, 2);
         }
 
         [Fact]
@@ -459,8 +518,6 @@ namespace MosquitoNetCalculator.Tests.Models
         }
 
         [Theory]
-        [InlineData("Отлив")]
-        [InlineData("Козырёк")]
         [InlineData("Короб")]
         [InlineData("ПСУЛ")]
         [InlineData("Работа")]
@@ -856,7 +913,7 @@ namespace MosquitoNetCalculator.Tests.Models
         [Fact]
         public void InstallationLabel_NonApplicableProduct_ReturnsNotSupported()
         {
-            var item = new OrderItem { Name = "Отлив" };
+            var item = new OrderItem { Name = "ПСУЛ" };
             Assert.Equal("Монтаж не предусмотрен", item.InstallationLabel);
         }
 
@@ -875,15 +932,14 @@ namespace MosquitoNetCalculator.Tests.Models
             Assert.Equal("Без монтажа", last);
             item.InstallationMode = 2;
             Assert.Equal("В конструкцию", last);
-        }
-
-        [Fact]
+        }        [Fact]
         public void InstallationLabel_FlipsOnNameChange_AndFiresPropertyChanged()
         {
             // Name drives IsInstallationApplicable, which drives InstallationLabel.
-            // Mutating Name from "Anwis" to "Отлив" must notify the binding.
+            // Mutating Name from "Anwis" to "ПСУЛ" must notify the binding.
             var item = new OrderItem { Name = "Anwis" };
             Assert.Equal("Монтаж включён", item.InstallationLabel);
+
 
             bool fired = false;
             string? observed = null;
@@ -895,7 +951,7 @@ namespace MosquitoNetCalculator.Tests.Models
                     observed = item.InstallationLabel;
                 }
             };
-            item.Name = "Отлив";
+            item.Name = "ПСУЛ";
             Assert.True(fired, "InstallationLabel PropertyChanged must fire on Name change");
             Assert.Equal("Монтаж не предусмотрен", observed);
         }
@@ -903,7 +959,7 @@ namespace MosquitoNetCalculator.Tests.Models
         [Fact]
         public void KpInstallationDisplay_NonApplicable_ReturnsDash()
         {
-            var item = new OrderItem { Name = "Отлив" };
+            var item = new OrderItem { Name = "ПСУЛ" };
             Assert.Equal("\u2014", item.KpInstallationDisplay);
         }
 
@@ -937,7 +993,7 @@ namespace MosquitoNetCalculator.Tests.Models
         [Fact]
         public void InstallationDisplay_NonApplicable_ReturnsDash()
         {
-            var item = new OrderItem { Name = "Отлив" };
+            var item = new OrderItem { Name = "ПСУЛ" };
             Assert.Equal("\u2014", item.InstallationDisplay);
         }
 
@@ -1037,19 +1093,41 @@ namespace MosquitoNetCalculator.Tests.Models
         {
             var item = new OrderItem();
             Assert.Equal("", item.PriceDisplay);
+        }        [Fact]
+        public void Quantity_ClampedToMinimumOne()
+        {
+            // v3.47.0: Quantity is double and clamps to a small positive
+            // value to allow decimal quantities like 0.5.
+            var item = new OrderItem { Quantity = 0 };
+            Assert.True(item.Quantity > 0);
+            Assert.Equal("0,001", item.QuantityDisplay);
+
+
+            var item2 = new OrderItem { Quantity = -5 };
+            Assert.True(item2.Quantity > 0);
+            Assert.Equal("0,001", item2.QuantityDisplay);
         }
 
         [Fact]
-        public void Quantity_ClampedToMinimumOne()
+        public void Quantity_AllowsDecimalValues()
         {
-            // Setter now clamps non-positive values to 1, so QuantityDisplay never returns "".
-            var item = new OrderItem { Quantity = 0 };
-            Assert.Equal(1, item.Quantity);
-            Assert.Equal("1", item.QuantityDisplay);
+            // v3.47.0: Quantity is double, so 5.75 and 0.5 are valid.
+            var item = new OrderItem { Name = "Anwis", Width = 1000, Height = 1000, Price = 1800, Quantity = 5.75 };
+            Assert.Equal(5.75, item.Quantity);
+            Assert.Equal("5,75", item.QuantityDisplay);
 
-            var item2 = new OrderItem { Quantity = -5 };
-            Assert.Equal(1, item2.Quantity);
-            Assert.Equal("1", item2.QuantityDisplay);
+            var item2 = new OrderItem { Name = "Anwis", Width = 1000, Height = 1000, Price = 1800, Quantity = 0.5 };
+            Assert.Equal(0.5, item2.Quantity);
+            Assert.Equal("0,5", item2.QuantityDisplay);
+        }
+
+        [Fact]
+        public void Quantity_DecimalMultiplier_UsedInTotal()
+        {
+            // v3.47.0: decimal Quantity must multiply Total correctly.
+            var item = new OrderItem { Name = "Anwis", Width = 1000, Height = 1000, Price = 1800, Quantity = 2.5 };
+            // CV = 1.0, Total = 1.0 * 1800 * 2.5 = 4500
+            Assert.Equal(4500, item.Total, 2);
         }
 
         [Fact]
@@ -1614,7 +1692,7 @@ namespace MosquitoNetCalculator.Tests.Models
         [Fact]
         public void InstallationToolTip_NonApplicable_ReturnsNotSupported()
         {
-            var item = new OrderItem { Name = "Отлив" };
+            var item = new OrderItem { Name = "ПСУЛ" };
             Assert.Equal("Монтаж не предусмотрен для данного товара", item.InstallationToolTip);
         }
 

@@ -15,7 +15,7 @@ namespace MosquitoNetCalculator.Models
         public string Color { get; set; } = "";
         public double Width { get; set; }
         public double Height { get; set; }
-        public int Quantity { get; set; } = 1;
+        public double Quantity { get; set; } = 1;
         public double Price { get; set; }
         public int InstallationMode { get; set; }
         public bool HasInstallation { get; set; } = true;

@@ -197,34 +197,20 @@
                     <DataGridTemplateColumn Header="Монтаж" Width="Auto" MinWidth="60">
                         <DataGridTemplateColumn.CellTemplate>
                             <DataTemplate>
+                                <!-- v3.47.1: FlatIconButton — без WPF-овского «хрома» (фон-кнопка),
+                                     только глиф V/X/B. Не-applicable товары затемняются
+                                     через IsEnabled=False в стиле. -->
                                 <Button Content="{Binding InstallationButtonLabel}"
+                                        Style="{DynamicResource FlatIconButton}"
                                         FontSize="14"
                                         FontWeight="Bold"
                                         Width="34"
                                         Height="26"
-                                        Padding="0"
                                         HorizontalAlignment="Center"
-                                        Cursor="Hand"
+                                        Foreground="{Binding InstallationForegroundColor}"
                                         Click="BtnToggleInstallation_Click"
                                         ToolTip="{Binding InstallationToolTip}"
-                                        IsEnabled="{Binding IsInstallationApplicable}">
-                                    <Button.Style>
-                                        <Style TargetType="Button">
-                                            <Setter Property="Background" Value="Transparent"/>
-                                            <Setter Property="BorderBrush" Value="Transparent"/>
-                                            <Setter Property="BorderThickness" Value="0"/>
-                                            <Setter Property="Foreground" Value="{Binding InstallationForegroundColor}"/>
-                                            <Style.Triggers>
-                                                <Trigger Property="IsMouseOver" Value="True">
-                                                    <Setter Property="Opacity" Value="0.65"/>
-                                                </Trigger>
-                                                <DataTrigger Binding="{Binding IsInstallationApplicable}" Value="False">
-                                                    <Setter Property="Opacity" Value="0.35"/>
-                                                </DataTrigger>
-                                            </Style.Triggers>
-                                        </Style>
-                                    </Button.Style>
-                                </Button>
+                                        IsEnabled="{Binding IsInstallationApplicable}"/>
                             </DataTemplate>
                         </DataGridTemplateColumn.CellTemplate>
                     </DataGridTemplateColumn>
@@ -232,7 +218,7 @@
                     <!-- Кол-во (editable; hidden for amount-only products) -->
                     <DataGridTextColumn Header="Кол-во" Width="Auto" MinWidth="55">
                         <DataGridTextColumn.Binding>
-                            <Binding Path="Quantity" UpdateSourceTrigger="PropertyChanged"/>
+                            <Binding Path="Quantity" Converter="{StaticResource QtyConv}" UpdateSourceTrigger="PropertyChanged"/>
                         </DataGridTextColumn.Binding>
                         <DataGridTextColumn.ElementStyle>
                             <Style TargetType="TextBlock" BasedOn="{StaticResource CenterCell}">

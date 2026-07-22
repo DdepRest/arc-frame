@@ -47,7 +47,7 @@ namespace MosquitoNetCalculator.Models
                 if (CalculatedValue <= 0) return "";
                 double total = CalculatedValue * Quantity;
                 return Unit == "шт."
-                    ? $"{(int)total} {Unit}"
+                    ? $"{total.ToString("G", Services.MoneyFormatService.RuCulture)} {Unit}"
                     : $"{total.ToString("F3", Services.MoneyFormatService.RuCulture)} {Unit}";
             }
         }
@@ -59,7 +59,7 @@ namespace MosquitoNetCalculator.Models
         public string TotalDisplay => TotalWithDeduction > 0 ? Services.MoneyFormatService.Format(TotalWithDeduction) : "";
 
         /// <summary>Display string for quantity (empty when 0, amount-only product, or optional-quantity product with default quantity)</summary>
-        public string QuantityDisplay => Quantity > 0 && !IsAmountOnly && !(IsQuantityOptional && Quantity <= 1) ? Quantity.ToString() : "";
+        public string QuantityDisplay => Quantity > 0 && !IsAmountOnly && !(IsQuantityOptional && Quantity <= 1) ? Quantity.ToString("G") : "";
 
         /// <summary>
         /// v3.44.1: internal для принудительного пересчёта из внешних сервисов
