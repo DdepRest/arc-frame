@@ -288,18 +288,15 @@ namespace MosquitoNetCalculator.Services
             rootPanel.Children.Add(accentBar);
             rootPanel.Children.Add(contentStack);
 
-            // Явно ставим IsHitTestVisible=true: ToastCanvas в XAML объявлен с
-            // IsHitTestVisible=False, и это inheritable DP — кнопки внутри
-            // Border'а наследуют False и не получают Click. Override на этом
-            // Border восстанавливает реактивность; дальше вниз по дереву
-            // наследование работает нормально.
+            // Hit-testing: ToastCanvas in MainWindow.xaml no longer opts out of hit-testing,
+            // so the empty-canvas region passes clicks through while this Border + its
+            // inner Buttons receive Clicks correctly.
             var toast = new Border
             {
                 Child = rootPanel,
                 HorizontalAlignment = HorizontalAlignment.Right,
                 VerticalAlignment = VerticalAlignment.Bottom,
                 MaxWidth = UpdateToastWidth,
-                IsHitTestVisible = true,
             };
             if (Application.Current?.FindResource("ToastBorder") is Style toastStyle)
                 toast.Style = toastStyle;

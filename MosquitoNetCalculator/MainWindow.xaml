@@ -589,8 +589,12 @@
             </Grid>
         </Grid>
 
-        <!-- Toast notification container — overlays on top of everything -->
-        <Grid x:Name="ToastCanvas" Grid.Row="2" Panel.ZIndex="20" IsHitTestVisible="False"
+        <!-- Toast notification container — overlays on top of everything.
+             No IsHitTestVisible=False: WPF hit-testing prunes the whole subtree at
+             this level, breaking every toast button (persistent update toast with
+             «Обновить»/«Позже» is the most visible victim). Background is null, so
+             empty-canvas click-through still works. -->
+        <Grid x:Name="ToastCanvas" Grid.Row="2" Panel.ZIndex="20"
               HorizontalAlignment="Stretch" VerticalAlignment="Stretch"
               ClipToBounds="True"/>
     </Grid>

@@ -557,6 +557,39 @@ namespace MosquitoNetCalculator.Tests.App
             Assert.Contains("InvalidateVisual", body);
         }
 
+        // ─────────────────────────────────────────────────────────
+        //  ToastCanvas hit-testing pin — guard against
+        //  re-introducing IsHitTestVisible=False on the toast canvas
+        // ─────────────────────────────────────────────────────────
+
+        [Fact]
+        public void MainWindow_ToastCanvas_Is_Not_HitTestSuppressed()
+        {
+            // v3.47.2 regression guard. Reset to fix the "Доступно обновление"
+            // toast (Обновить / Позже) being rendered but unclickable. Root
+            // cause: parent Grid with IsHitTestVisible=False prunes the entire
+            // subtree from WPF hit-testing — child Border.IsHitTestVisible=True
+            // does not restore it. So we source-scan MainWindow.xaml and pin the
+            // opening <Grid x:Name="ToastCanvas" …> tag to never carry that flag.
+            //
+            // The scan is intentionally scoped to the ToastCanvas opening tag
+            // (between x:Name="ToastCanvas" and the first '>' that closes the
+            // tag) so a future legitimate IsHitTestVisible=False on a sibling
+            // element would NOT trip this assertion.
+            var src = ReadSource("MainWindow.xaml");
+            int canvasIdx = src.IndexOf("x:Name=\"ToastCanvas\"", StringComparison.Ordinal);
+            Assert.True(canvasIdx > 0,
+                "ToastCanvas element not found in MainWindow.xaml — was it renamed or removed?");
+
+            int tagEnd = src.IndexOf('>', canvasIdx);
+            Assert.True(tagEnd > canvasIdx,
+                "ToastCanvas opening tag is malformed (no closing '>' found).");
+
+            var openingTag = src.Substring(canvasIdx, tagEnd - canvasIdx + 1);
+            Assert.DoesNotContain("IsHitTestVisible=\"False\"", openingTag);
+            Assert.DoesNotContain("IsHitTestVisible=\"false\"", openingTag);
+        }
+
         [Fact]
         public void TitleBar_Xaml_Binds_Background_Via_DynamicResource_Surface()
         {

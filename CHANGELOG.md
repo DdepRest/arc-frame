@@ -1,5 +1,15 @@
 # Changelog
 
+## 3.47.2 — 2026-07-21
+
+### Исправление багов
+
+- **Не реагировали на клик кнопки «Обновить» / «Позже» в уведомлении о новой версии.**
+  - **Корневая причина:** `ToastCanvas` (Grid в `MainWindow.xaml`) был объявлен с `IsHitTestVisible="False"`. WPF hit-testing engine исключает всю ветку ниже такого предка из рассмотрения, поэтому события мыши никогда не доходили до кнопок тоста — клики молча проваливались насквозь. Попытка обойти это через `IsHitTestVisible=true` на дочернем Border не работала: при `IsHitTestVisible=False` родителя дочерние значения в hit-test tree уже не проверяются.
+  - **Fix:** убран `IsHitTestVisible="False"` с `ToastCanvas`. Пустая область `Grid` без `Background` пропускает клики в пустых местах сама по себе — флаг был лишний.
+  - Затронутые файлы: `MainWindow.xaml`, `Services/ToastService.cs`.
+  - **Тесты:** добавлен регрессионный источник-scan-тест `MainWindow_ToastCanvas_Is_Not_HitTestSuppressed` в `AppLifecycleTests.cs` — сканирует opening-тег `<Grid x:Name="ToastCanvas" ...>` и проверяет отсутствие `IsHitTestVisible="False"`.
+
 ## 3.47.1 — 2026-07-20
 
 ### Исправление багов
