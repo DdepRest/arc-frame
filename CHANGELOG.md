@@ -1,5 +1,65 @@
 # Changelog
 
+## 3.47.3 — 2026-07-22
+
+### Исправление багов (СРОЧНО)
+
+- **В старых заказах теперь 0 пишет, если выбран X или B — Отлив/Козырёк.**
+  - **Корневая причина:** Отлив и Козырёк стали installation-applicable только в v3.47.0.
+    Старые заказы (сохранённые до v3.47.0) для этих товаров содержат только DTO-дефолты
+    (`InstallationMode=0`, `InstallationDeduction=-500`, `InstallationSurcharge=-500`,
+    `InstallationAdjustment=0`). В v3.47.0 формула итого изменилась на
+    `Total + value × InstallationLinearMeters × Quantity` (₽/м.п.). С legacy ded=-500
+    и типичным Отлив 1000×500 (linear=3 м.п., Q=1, Total=1075):
+    `Max(0, 1075 + (-500)×3×1) = Max(0, −425) = 0` — X или B отображали 0.
+    Прежняя v3.47.0-миграция (`mode==0+adj==0 → mode=1`) переключала режим, но не
+    сбрасывала устаревшие значения вычета/надбавки.
+  - **Fix (#1):** Усилена миграция в `CalculationViewModel.LoadFromOrderData`: при
+    `isLegacyLoad` (= `mode×0` + `adj≈0` + `ded≈−500` + `sur≈−500` для Отлив/Козырёк)
+    применяются v3.47.0 per-linear-meter дефолты — `mode=1`, `ded=0`,
+    `sur=+500/+750` (₽/м.п. для Отлив/Козырёк соответственно), `adj=+500/+750`.
+    Прежний fallback на `mode=1` остаётся для нестандартных ded/sur.
+  - **Fix (#2):** В v3.46.1-миграции знака (`InstallationDeduction>0 && mode!=0 ⇒ -ded`)
+    исключены Отлив/Козырёк — их v3.47.0+ сохраняемые значения ПОЛОЖИТЕЛЬНЫЕ
+    (per-linear-meter convention) и не должны флипаться. Без этого фикса заказы,
+    сохранённые в v3.47.0+, при перезагрузке давали sur=-500 вместо +500.
+  - Затронутые файлы: `ViewModels/CalculationViewModel.cs`.
+  - **Тесты:** +5 регрессионных тестов в `CalculationViewModelTests.cs`:
+    - `LoadFromOrderData_Otliv_LegacyDefaults_ResetsToV347Defaults_NoZeroTotal`
+    - `LoadFromOrderData_Kozyrek_LegacyDefaults_ResetsToV347Defaults_NoZeroTotal`
+    - `LoadFromOrderData_LegacyOtlivKozyrek_TotalWithDeduction_NonZero_InAllThreeModes`
+    - `LoadFromOrderData_Otliv_NewV347Order_NotAffectedByMigration`
+    - `LoadFromOrderData_Otliv_CustomDeduction_NotOverridden`
+    - **Всего тестов: 1253/1253 pass** (baseline 1234 + 5 фикс + 14 уже в master
+      от других фиксов). Все ранее зелёные тесты остались зелёными.
+
+### Техническое
+
+- **Извлечён `ProductCatalog.IsPerLinearMeter(string?)` helper** — single source of truth
+  для per-linear-meter products. Раньше name-string чек `"Отлив" or "Козырёк"`
+  дублировался в 4 местах `CalculationViewModel.cs` (sign-flip exclusion × 2,
+  isLegacyLoad migration, IsInstallationDefaultNoInstallation) + 1 в
+  `OrderItem.Installation.cs::PerLinearMeterProducts` private HashSet.
+  Рефакторинг: HashSet и helper переехали в `ProductCatalog.cs` (по паттерну
+  уже существующих `IsInstallationApplicable`/`IsAreaBased`/`IsPerLinearMeter`).
+  `OrderItem.IsInstallationPerLinearMeter` теперь делегирует напрямую
+  в `ProductCatalog.IsPerLinearMeter(Name)`.
+- **Расширен `isLegacyLoad` heuristic** в `LoadFromOrderData` — теперь
+  использует `Math.Abs(Math.Abs(item.InstallationDeduction) - 500) < 0.01`,
+  что соответствует как pre-v3.46.1 positive convention (+500 означало
+  «subtract» в OLD convention), так и v3.46.1+ signed convention (-500).
+  Узкая проверка `ded+500` ловила только v3.46.1+ JSON; broadened — обе формы.
+- Новая грабля зафиксирована в `docs/arc/GOTCHAS.md#16` + обновлёны инструкции
+  добавления нового per-linear-meter товара (шаг 1: только `ProductCatalog.PerLinearMeterProducts`,
+  остальное автоматически подхватывается).
+- **Тесты:** добавлены 5 тестов в `CalculationViewModelTests.cs`:
+  - `LoadFromOrderData_PerLinearMeter_LegacyDefaults_BothSigns_ResetToV347Defaults` (Theory 4 cases ±Отлив/±Козырёк)
+  - `LoadFromOrderData_PerLinearMeter_SignFlipExclusion_KeepsV347PositiveValues`
+  - `LoadFromOrderData_Anvis_LegacyPositiveConvention_FlippedToNegative` (pin что exclusion не over-extends)
+  - `ProductCatalog_IsPerLinearMeter_ConsistentWithOrderItemInstanceProperty`
+  - (4 новых регрессионных, +1 уточненный — `LoadFromOrderData_Otliv_CustomDeduction_NotOverridden`
+    теперь тестирует broadened behavior)
+
 ## 3.47.2 — 2026-07-21
 
 ### Исправление багов

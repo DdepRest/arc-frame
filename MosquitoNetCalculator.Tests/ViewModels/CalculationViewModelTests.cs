@@ -515,7 +515,291 @@ namespace MosquitoNetCalculator.Tests.ViewModels
             Assert.Equal(970, item.Height);  // 1000 − 30 (ББ70/ББ60 share H formula)
         }
 
+        // ─── v3.47.3: legacy Отлив/Козырёк order migration regression ────
+        // URGENT bug: pre-v3.47.0 saved JSON for Отлив/Козырёк contains DTO
+        // defaults (mode=0, ded=-500, sur=-500, adj=0) because these products
+        // were not installation-aware before v3.47.0. The per-linear-meter
+        // formula `Total + value × linear × Quantity` then clamps
+        // TotalWithDeduction to 0 when X (mode 1) or B (mode 2) is selected:
+        //   For Отлив 1000×500 (linear=3 м.п., Q=1, Total=1075):
+        //   Max(0, 1075 + (-500)×3×1) = Max(0, −425) = 0  ← BUG
+        // The fix detects the legacy defaults pattern and replaces them with
+        // v3.47.0 per-linear-meter defaults so totals stay non-zero.
+
+        [Fact]
+        public void LoadFromOrderData_Otliv_LegacyDefaults_ResetsToV347Defaults_NoZeroTotal()
+        {
+            var order = new OrderData
+            {
+                Items = new System.Collections.Generic.List<OrderItemData>
+                {
+                    new()
+                    {
+                        Name = "Отлив", Color = "Белый",
+                        Width = 1000, Height = 500, Quantity = 1, Price = 2150,
+                        // Pre-v3.47.0 JSON: DTO defaults inherited because Otliv
+                        // was not installation-applicable.
+                        InstallationMode = 0, InstallationDeduction = -500,
+                        InstallationSurcharge = -500, InstallationAdjustment = 0
+                    }
+                }
+            };
+
+            _vm.LoadFromOrderData(order, () => { });
+
+            var item = _vm.OrderItems[0];
+            Assert.Equal("Отлив", item.Name);
+            // v3.47.0 defaults applied by the migration:
+            Assert.Equal(1, item.InstallationMode);          // auto-switched to "Без монтажа"
+            Assert.Equal(0, item.InstallationDeduction);    // 0 ₽ (no deduction)
+            Assert.Equal(500, item.InstallationSurcharge);  // 500 ₽/м.п.
+            Assert.Equal(500, item.InstallationAdjustment);  // 500 ₽/м.п.
+            // Total = 0.5 м² × 2150 = 1075; mode 1 → 1075 + 0×3×1 = 1075. NOT 0.
+            Assert.Equal(1075, item.TotalWithDeduction, 2);
+        }
+
+        [Fact]
+        public void LoadFromOrderData_Kozyrek_LegacyDefaults_ResetsToV347Defaults_NoZeroTotal()
+        {
+            var order = new OrderData
+            {
+                Items = new System.Collections.Generic.List<OrderItemData>
+                {
+                    new()
+                    {
+                        Name = "Козырёк", Color = "Белый",
+                        Width = 1000, Height = 500, Quantity = 1, Price = 2150,
+                        InstallationMode = 0, InstallationDeduction = -500,
+                        InstallationSurcharge = -500, InstallationAdjustment = 0
+                    }
+                }
+            };
+
+            _vm.LoadFromOrderData(order, () => { });
+
+            var item = _vm.OrderItems[0];
+            Assert.Equal("Козырёк", item.Name);
+            Assert.Equal(1, item.InstallationMode);
+            Assert.Equal(0, item.InstallationDeduction);
+            Assert.Equal(750, item.InstallationSurcharge);  // Козырёк: 750 ₽/м.п.
+            Assert.Equal(750, item.InstallationAdjustment);
+            // TotalWithDeduction (mode 1) = 1075 + 0×3×1 = 1075.
+            Assert.Equal(1075, item.TotalWithDeduction, 2);
+        }
+
+        [Theory]
+        [InlineData("Отлив")]
+        [InlineData("Козырёк")]
+        public void LoadFromOrderData_LegacyOtlivKozyrek_TotalWithDeduction_NonZero_InAllThreeModes(string product)
+        {
+            // Indirect regression: even if user toggles to mode 2 (B) AFTER load,
+            // the per-linear-meter formula must use v3.47.0 defaults, not legacy -500.
+            // Without the fix, ded=-500 × linear > Total → clamps to 0 in modes
+            // 1 (X) and 2 (В) when Total is typical (1000 ish).
+            var order = new OrderData
+            {
+                Items = new System.Collections.Generic.List<OrderItemData>
+                {
+                    new()
+                    {
+                        Name = product, Width = 1000, Height = 500, Quantity = 1, Price = 2150,
+                        InstallationMode = 0, InstallationDeduction = -500,
+                        InstallationSurcharge = -500, InstallationAdjustment = 0
+                    }
+                }
+            };
+            _vm.LoadFromOrderData(order, () => { });
+            var item = _vm.OrderItems[0];
+
+            // TotalWithDeduction in modes 0, 1, 2 must all be > 0 (the bug clamped them to 0).
+            item.InstallationMode = 0;
+            Assert.True(item.TotalWithDeduction > 0, $"mode 0 (V) for legacy {product} must produce non-zero total");
+            item.InstallationMode = 1;
+            Assert.True(item.TotalWithDeduction > 0, $"mode 1 (X) for legacy {product} must produce non-zero total");
+            item.InstallationMode = 2;
+            Assert.True(item.TotalWithDeduction > 0, $"mode 2 (В) for legacy {product} must produce non-zero total");
+        }
+
+        [Fact]
+        public void LoadFromOrderData_Otliv_NewV347Order_NotAffectedByMigration()
+        {
+            // v3.47.0+ saved orders already carry correct per-linear-meter defaults.
+            // The legacy migration must NOT override them.
+            var order = new OrderData
+            {
+                Items = new System.Collections.Generic.List<OrderItemData>
+                {
+                    new()
+                    {
+                        Name = "Отлив", Color = "Белый",
+                        Width = 1000, Height = 500, Quantity = 1, Price = 2150,
+                        InstallationMode = 1,               // explicit mode (NOT DTO default 0)
+                        InstallationDeduction = 0,           // v3.47.0 default
+                        InstallationSurcharge = 500,         // v3.47.0 default per m.п.
+                        InstallationAdjustment = 500         // v3.47.0 default per m.п.
+                    }
+                }
+            };
+            _vm.LoadFromOrderData(order, () => { });
+            var item = _vm.OrderItems[0];
+
+            // Migration should NOT re-fire (mode ≠ 0): values preserved as-loaded.
+            Assert.Equal(1, item.InstallationMode);
+            Assert.Equal(0, item.InstallationDeduction);
+            Assert.Equal(500, item.InstallationSurcharge);
+            Assert.Equal(500, item.InstallationAdjustment);
+        }
+
+        [Fact]
+        public void LoadFromOrderData_Otliv_CustomDeduction_NotOverridden()
+        {
+            // Edge case: user has legitimately set ded=200 (NOT -500 DTO default).
+            // The stricter isLegacyLoad check requires |ded|-500 ≈ 0; this test ensures
+            // we don't accidentally reset a user-custom value that happens to fall
+            // outside the legacy-conditions.
+            var order = new OrderData
+            {
+                Items = new System.Collections.Generic.List<OrderItemData>
+                {
+                    new()
+                    {
+                        Name = "Отлив", Color = "Белый",
+                        Width = 1000, Height = 500, Quantity = 1, Price = 2150,
+                        InstallationMode = 0,
+                        InstallationDeduction = 200,        // user-custom (NOT ±500)
+                        InstallationSurcharge = 500,
+                        InstallationAdjustment = 0
+                    }
+                }
+            };
+            _vm.LoadFromOrderData(order, () => { });
+            var item = _vm.OrderItems[0];
+
+            // isLegacyLoad = false (ded != -500): value-reset skipped.
+            // The original v3.47.0 auto-switch (mode==0 + adj==0) DOES fire here.
+            Assert.Equal(1, item.InstallationMode);
+            Assert.Equal(200, item.InstallationDeduction);
+            Assert.Equal(500, item.InstallationSurcharge);
+            Assert.Equal(0, item.InstallationAdjustment);
+        }
+
+        [Theory]
+        [InlineData("Отлив",   500,   500, 0)]   // pre-v3.46.1 positive convention legacy
+        [InlineData("Отлив",  -500,  -500, 0)]   // v3.46.1+ signed convention legacy
+        [InlineData("Козырёк", 500,   500, 0)]   // pre-v3.46.1 positive convention legacy
+        [InlineData("Козырёк",-500,  -500, 0)]   // v3.46.1+ signed convention legacy
+        public void LoadFromOrderData_PerLinearMeter_LegacyDefaults_BothSigns_ResetToV347Defaults(
+            string product, double ded, double sur, double adj)
+        {
+            // v3.47.3 broadened heuristic: Math.Abs(Math.Abs(x) - 500) matches BOTH
+            // pre-v3.46.1 (+500 = "subtract" under OLD convention) and v3.46.1+ (-500
+            // = "subtract" under NEW signed convention) legacy defaults.
+            var order = new OrderData
+            {
+                Items = new System.Collections.Generic.List<OrderItemData>
+                {
+                    new()
+                    {
+                        Name = product, Color = "Белый",
+                        Width = 1000, Height = 500, Quantity = 1, Price = 2150,
+                        InstallationMode = 0,
+                        InstallationDeduction = ded,
+                        InstallationSurcharge = sur,
+                        InstallationAdjustment = adj
+                    }
+                }
+            };
+
+            _vm.LoadFromOrderData(order, () => { });
+
+            var item = _vm.OrderItems[0];
+            // Both sign variations of legacy defaults must trigger the migration.
+            Assert.Equal(1, item.InstallationMode);
+            Assert.Equal(0, item.InstallationDeduction);
+            Assert.Equal(product == "Отлив" ? 500 : 750, item.InstallationSurcharge);
+            Assert.Equal(product == "Отлив" ? 500 : 750, item.InstallationAdjustment);
+            // TotalWithDeduction in all modes must be > 0.
+            Assert.True(item.TotalWithDeduction > 0);
+        }
+
+        [Fact]
+        public void LoadFromOrderData_PerLinearMeter_SignFlipExclusion_KeepsV347PositiveValues()
+        {
+            // v3.46.1 sign-flip (pos ⇒ neg) must NOT apply to per-linear-meter
+            // products. Here we load a v3.47.0+ order with POSITIVE surcharge
+            // (the new convention) and verify it's NOT flipped to negative.
+            var order = new OrderData
+            {
+                Items = new System.Collections.Generic.List<OrderItemData>
+                {
+                    new()
+                    {
+                        Name = "Отлив", Color = "Белый",
+                        Width = 1000, Height = 500, Quantity = 1, Price = 2150,
+                        InstallationMode = 1,           // mode != 0 (explicit user choice)
+                        InstallationDeduction = 0,
+                        InstallationSurcharge = 500,    // POSITIVE convention since v3.47.0
+                        InstallationAdjustment = 500
+                    }
+                }
+            };
+            _vm.LoadFromOrderData(order, () => { });
+            var item = _vm.OrderItems[0];
+
+            Assert.Equal(1, item.InstallationMode);
+            Assert.Equal(0, item.InstallationDeduction);
+            Assert.Equal(500, item.InstallationSurcharge);     // NOT flipped to -500
+            Assert.Equal(500, item.InstallationAdjustment);
+        }
+
+        [Fact]
+        public void LoadFromOrderData_Anvis_LegacyPositiveConvention_FlippedToNegative()
+        {
+            // v3.46.1 sign-flip MUST still apply to non-per-linear-meter products.
+            // Anvis with mode=1 + ded=+500 (positive OLD convention) → flip → ded=-500.
+            // This locks that the IsPerLinearMeter exclusion does NOT over-extend.
+            var order = new OrderData
+            {
+                Items = new System.Collections.Generic.List<OrderItemData>
+                {
+                    new()
+                    {
+                        Name = "Anwis", Color = "Белый",
+                        Width = 1000, Height = 1000, Quantity = 1, Price = 1800,
+                        InstallationMode = 1,
+                        InstallationDeduction = 500,    // OLD positive convention — must flip
+                        InstallationSurcharge = 500,
+                        InstallationAdjustment = 0
+                    }
+                }
+            };
+            _vm.LoadFromOrderData(order, () => { });
+            var item = _vm.OrderItems[0];
+
+            Assert.Equal(1, item.InstallationMode);
+            Assert.Equal(-500, item.InstallationDeduction);   // flipped to NEW negative convention
+            Assert.Equal(-500, item.InstallationSurcharge);
+        }
+
+        [Fact]
+        public void ProductCatalog_IsPerLinearMeter_ConsistentWithOrderItemInstanceProperty()
+        {
+            // Locks the refactor: the migration logic in CalculationViewModel
+            // delegates to ProductCatalog.IsPerLinearMeter, and
+            // OrderItem.IsInstallationPerLinearMeter reads the same catalog.
+            Assert.True(ProductCatalog.IsPerLinearMeter("Отлив"));
+            Assert.True(ProductCatalog.IsPerLinearMeter("Козырёк"));
+            Assert.False(ProductCatalog.IsPerLinearMeter("Anwis"));
+            Assert.False(ProductCatalog.IsPerLinearMeter(null));
+            Assert.False(ProductCatalog.IsPerLinearMeter(""));
+
+            Assert.True(new OrderItem { Name = "Отлив" }.IsInstallationPerLinearMeter);
+            Assert.True(new OrderItem { Name = "Козырёк" }.IsInstallationPerLinearMeter);
+            Assert.False(new OrderItem { Name = "Anwis" }.IsInstallationPerLinearMeter);
+        }
+
         // ─── v3.35.0: non-Anwis AddItem regression tests ─────────
+
 
         [Theory]
         [InlineData("Откос")]

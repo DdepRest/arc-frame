@@ -151,6 +151,18 @@ namespace MosquitoNetCalculator.Services
         /// </summary>
         internal static Func<string, IEnumerable<UpdateItem>, bool>? ShowUpdateAvailableOverride;
 
+        /// <summary>
+        /// v3.48.0 (Phase 2.A): test seam for the watchdog launch.
+        /// Production leaves this <c>null</c> — the flow calls real
+        /// <see cref="Process.Start(ProcessStartInfo)"/>. Tests inject an
+        /// <see cref="Action{T}"/> that either returns silently (success)
+        /// or throws <see cref="System.ComponentModel.Win32Exception"/>
+        /// with native code 1223 (ERROR_CANCELLED — user declined UAC),
+        /// 740 (ERROR_ELEVATION_REQUIRED), or 1313 (ERROR_NO_SUCH_PRIVILEGE)
+        /// to simulate each failure mode.
+        /// </summary>
+        internal static Action<ProcessStartInfo>? LaunchWatchdogForTest;
+
 
         /// <summary>
         /// Invokes <see cref="UpdateDetected"/> with **per-subscriber**
@@ -489,46 +501,100 @@ namespace MosquitoNetCalculator.Services
 
                 // Phase 5: Stage update and restart
                 ToastService.ShowToast("Установка обновления...", ToastType.Info);
-                AppSettingsService.SavePendingUpdateVersion(null);
-                // Сбрасываем «уже показывали плашку» — обновление завершено,
-                // следующий фоновый tick сможет предложить новую версию.
-                _lastNotifiedVersion = null;
 
+                // Phase 5a (v3.48.0, Phase 2.A): PRE-FLIGHT — confirm write
+                // permissions to BOTH the staging (%AppData%) and target
+                // (BasePath) directories. Without this check, UAC-cancelled
+                // installs on Program Files silently spend 120 sec in the
+                // watchdog waiting for a write that will never happen.
+                var preflight = WatchdogService.PreFlightCheck();
+                if (!preflight.CanWriteInstallDir)
+                {
+                    TryDelete(tempZip);
+                    var reason = preflight.FailureReason ?? "Нет прав для установки обновления.";
+                    if (isAutomatic)
+                    {
+                        ToastService.ShowToast(reason, ToastType.Error);
+                    }
+                    else
+                    {
+                        MessageBox.Show(
+                            $"Не удалось установить обновление:\n{reason}",
+                            "Ошибка установки",
+                            MessageBoxButton.OK,
+                            MessageBoxImage.Warning);
+                    }
+                    return;
+                }
+
+                // Stage update files only after we KNOW we can install —
+                // avoid leaving arc-stage-* orphans in %AppData% from a
+                // cancelled install.
                 WatchdogService.StageUpdate(tempZip);
 
-                // Launch watchdog .bat with UAC elevation to ensure write access
-                // to protected directories (e.g. Program Files).
+                // Phase 5b (v3.48.0, Phase 2.A): Launch watchdog .bat with
+                // UAC elevation. Win32Exception with native codes 1223/740/1313
+                // means the user declined UAC or can't elevate — NO silent
+                // fallback (the fallback previously caused «Установка ✓» log
+                // but no actual install on Program Files). Explicit cleanup +
+                // pending-save so the next scheduler tick retries cleanly.
                 // .bat files are registered with 'cmdfile' in the registry, so
                 // Verb='runas' on the .bat path itself works directly — no
                 // `cmd.exe /c` wrapper needed (and the wrapper breaks on
                 // AppLocker-restricted systems where cmd.exe is blocked).
+                bool watchdogLaunched = false;
                 try
                 {
-                    Process.Start(new ProcessStartInfo(WatchdogService.WatchdogPath)
+                    var psi = new ProcessStartInfo(WatchdogService.WatchdogPath)
                     {
                         UseShellExecute = true,
                         Verb = "runas", // triggers UAC prompt if needed
                         WindowStyle = ProcessWindowStyle.Hidden
-                    });
+                    };
+                    if (LaunchWatchdogForTest != null)
+                    {
+                        // Test seam: tests inject a Func that throws Win32Exception
+                        // to simulate UAC cancellation, or returns silently.
+                        LaunchWatchdogForTest(psi);
+                    }
+                    else
+                    {
+                        Process.Start(psi);
+                    }
+                    watchdogLaunched = true;
                 }
-                catch (Exception ex)
+                catch (System.ComponentModel.Win32Exception ex)
                 {
-                    Debug.WriteLine($"[UpdateService] Failed to launch watchdog elevated: {ex.Message}");
-                    // Fallback: try without elevation (user may have write access)
-                    try
-                    {
-                        Process.Start(new ProcessStartInfo(WatchdogService.WatchdogPath)
-                        {
-                            UseShellExecute = true,
-                            WindowStyle = ProcessWindowStyle.Hidden
-                        });
-                    }
-                    catch (Exception ex2)
-                    {
-                        Debug.WriteLine($"[UpdateService] Fallback watchdog launch also failed: {ex2}");
-                    }
+                    // 1223=ERROR_CANCELLED, 740=ERROR_ELEVATION_REQUIRED, 1313=ERROR_NO_SUCH_PRIVILEGE
+                    Debug.WriteLine(
+                        $"[UpdateService] UAC launch declined: native={ex.NativeErrorCode} ({ex.NativeErrorCode switch { 1223 => "ERROR_CANCELLED", 740 => "ERROR_ELEVATION_REQUIRED", 1313 => "ERROR_NO_SUCH_PRIVILEGE", _ => "unknown" }}); user-facing message: Запустите программу от имени администратора.");
                 }
 
+                if (!watchdogLaunched)
+                {
+                    WatchdogService.CleanupStagedUpdate();
+                    AppSettingsService.SavePendingUpdateVersion(release.Version);
+                    if (isAutomatic)
+                    {
+                        ToastService.ShowToast(
+                            "Установка обновления отменена. Запустите программу от имени администратора или установите ZIP вручную.",
+                            ToastType.Error);
+                    }
+                    else
+                    {
+                        MessageBox.Show(
+                            "Установка обновления отменена. Запустите программу от имени администратора или скачайте ZIP вручную с сайта.",
+                            "Отменено",
+                            MessageBoxButton.OK,
+                            MessageBoxImage.Warning);
+                    }
+                    return;
+                }
+
+                // Success path — clear pending state and reset session-level
+                // notification flag so next background tick can offer a new version.
+                AppSettingsService.SavePendingUpdateVersion(null);
+                _lastNotifiedVersion = null;
                 Application.Current.Shutdown();
             }
             catch (Exception ex)

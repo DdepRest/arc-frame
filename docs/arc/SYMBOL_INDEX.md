@@ -38,6 +38,7 @@
 | DimensionConverter | class | Converters/DimensionConverter.cs | | Methods: Convert, ConvertBack |
 | InverseBoolConverter | class | Converters/InverseBoolConverter.cs | | Methods: Convert, ConvertBack |
 | MoneyConverter | class | Converters/MoneyConverter.cs | | Methods: Convert, ConvertBack |
+| QuantityConverter | class | Converters/QuantityConverter.cs | | Methods: Convert, ConvertBack |
 | RussianDateConverter | class | Converters/RussianDateConverter.cs | | Methods: Convert, ConvertBack |
 | StatusToBadgeBackgroundConverter | class | Converters/StatusToBadgeBackgroundConverter.cs | | Methods: Convert, ConvertBack |
 | StatusToBadgeForegroundConverter | class | Converters/StatusToBadgeForegroundConverter.cs | | Methods: Convert, ConvertBack |
@@ -55,14 +56,14 @@
 | ClientInfo | class | Models/ClientInfo.cs | Props: AdditionalKps |
 | EconomyDetailRow | class | Models/EconomyDetailRow.cs | Props: AmountSaved, AverageSavedPerSlope, MaterialName, QtySaved, QtyWithEconomy, QtyWithoutEconomy, Tooltip, Unit |
 | LocationOptions | static class | Models/LocationOptions.cs | Props: All | Methods: GetByPrefixOrDefault, IsValidPrefix | Static: M:GetByPrefixOrDefault, M:IsValidPrefix, P:All |
-| OrderItem | class | Models/OrderItem.Installation.cs | | Methods: GetDefaultInstallationDeduction, GetDefaultInstallationSurcharge, SetCurrentInstallationAmount | Static: M:GetDefaultInstallationDeduction, M:GetDefaultInstallationSurcharge |
+| OrderItem | class | Models/OrderItem.Installation.cs | | Methods: GetDefaultInstallationAdjustment, GetDefaultInstallationDeduction, GetDefaultInstallationSurcharge, SetCurrentInstallationAmount | Static: M:GetDefaultInstallationAdjustment, M:GetDefaultInstallationDeduction, M:GetDefaultInstallationSurcharge |
 | OrderItemData | class | Models/OrderItem.Dto.cs | Props: AnwisSizeMode, Color, HasInstallation, Height, InstallationAdjustment, InstallationDeduction, InstallationMode, InstallationSurcharge, IsActive, IsAnticat, Name, Price, Quantity, SlopeData, Width |
 | OrderSnapshot | class | Models/OrderSnapshot.cs | Props: AdditionalKps, Items |
 | OrderStatuses | static class | Models/OrderData.cs | | Methods: GetRank | Static: M:GetRank |
 | PageMode | enum | Models/PageMode.cs | |
 | PriceItem | class | Models/PriceItem.cs | |
 | PrintResultType | enum | Models/PrintResult.cs | Props: DebugMessage, IsRetryable, Type, UserMessage | Methods: Ok | Static: M:Ok |
-| ProductCatalog | static class | Models/ProductCatalog.cs | | Methods: IsAmountOnly, IsAnticatApplicable, IsAreaBased, IsInstallationApplicable, IsManualPiece, IsNoColor, IsQuantityOptional, IsWidthOnly | Static: M:IsAmountOnly, M:IsAnticatApplicable, M:IsAreaBased, M:IsInstallationApplicable, M:IsManualPiece, M:IsNoColor, M:IsQuantityOptional, M:IsWidthOnly |
+| ProductCatalog | static class | Models/ProductCatalog.cs | | Methods: IsAmountOnly, IsAnticatApplicable, IsAreaBased, IsInstallationApplicable, IsManualPiece, IsNoColor, IsPerLinearMeter, IsQuantityOptional, IsWidthOnly | Static: M:IsAmountOnly, M:IsAnticatApplicable, M:IsAreaBased, M:IsInstallationApplicable, M:IsManualPiece, M:IsNoColor, M:IsPerLinearMeter, M:IsQuantityOptional, M:IsWidthOnly |
 | ReleaseInfo | class | Models/UpdateManifest.cs | Props: Changes, Date, Sha256, Size, Title, Type, Url, Version |
 | SlopeCalculationData | class | Models/SlopeCalculation.cs | Props: DepthM, FoamPrice, FoamQuantity, FProfilePrice, FProfileQuantity, HeightMm, IsManualOverride, IsProfileEconomyApplied, LaborPrice, LaborQuantity, LaminatinaLaborPrice, LaminatinaLaborQuantity, LaminatinaPrice, LaminatinaQuantity, PenoplexPrice, PenoplexQuantity, SandwichPrice, SandwichQuantity, SealantPrice, SealantQuantity, StartProfilePrice, StartProfileQuantity, TapePrice, TapeQuantity, WidthMm, WindowCount | Methods: FromSlopeCalculation, ToSlopeCalculation | Static: M:FromSlopeCalculation |
 | SlopeCalculationExtensions | static class | Models/SlopeCalculationExtensions.cs | | Methods: DeepClone | Static: M:DeepClone |
@@ -137,7 +138,7 @@
 | AmountInWordsService | static class | Services/AmountInWordsService.cs | | Methods: Convert | Static: M:Convert |
 | AnwisSizeCalculator | static class | Services/AnwisSizeCalculator.cs | | Methods: ApplyCalcHeight, ApplyCalcWidth, ReverseCalcHeight, ReverseCalcWidth | Static: M:ApplyCalcHeight, M:ApplyCalcWidth, M:ReverseCalcHeight, M:ReverseCalcWidth |
 | AnwisSizeService | static class | Services/AnwisSizeService.cs | | Methods: GetSectionHeader, IsApplicable | Static: M:GetSectionHeader, M:IsApplicable |
-| AppSettingsService | static class | Services/AppSettingsService.cs | Props: ContractPrefix, FirstRunComplete, LocationName, PendingUpdateVersion, SettingsPath, SlopeBetaBannerHidden, SlopesProUpsellUnlocked, Theme, UpdateUrl | Methods: HideSlopeBetaBanner, IsFirstRun, IsSlopeBetaBannerHidden, IsSlopesProUpsellUnlocked, LoadContractPrefix, LoadLocationName, LoadPendingUpdateVersion, LoadTheme, LoadUpdateUrl, MarkFirstRunComplete, MarkSlopesProUpsellUnlocked, SaveContractPrefix, SaveLocationName, SavePendingUpdateVersion, SaveTheme, SaveUpdateUrl | Static: M:HideSlopeBetaBanner, M:IsFirstRun, M:IsSlopeBetaBannerHidden, M:IsSlopesProUpsellUnlocked, M:LoadContractPrefix, M:LoadLocationName, M:LoadPendingUpdateVersion, M:LoadTheme, M:LoadUpdateUrl, M:MarkFirstRunComplete, M:MarkSlopesProUpsellUnlocked, M:SaveContractPrefix, M:SaveLocationName, M:SavePendingUpdateVersion, M:SaveTheme, M:SaveUpdateUrl, P:SettingsPath |
+| AppSettingsService | static class | Services/AppSettingsService.cs | Props: ContractPrefix, FirstRunComplete, LastColor, LocationName, PendingUpdateVersion, SettingsPath, SlopeBetaBannerHidden, SlopesProUpsellUnlocked, Theme, UpdateUrl | Methods: HideSlopeBetaBanner, IsFirstRun, IsSlopeBetaBannerHidden, IsSlopesProUpsellUnlocked, LoadContractPrefix, LoadLastColor, LoadLocationName, LoadPendingUpdateVersion, LoadTheme, LoadUpdateUrl, MarkFirstRunComplete, MarkSlopesProUpsellUnlocked, SaveContractPrefix, SaveLastColor, SaveLocationName, SavePendingUpdateVersion, SaveTheme, SaveUpdateUrl | Static: M:HideSlopeBetaBanner, M:IsFirstRun, M:IsSlopeBetaBannerHidden, M:IsSlopesProUpsellUnlocked, M:LoadContractPrefix, M:LoadLastColor, M:LoadLocationName, M:LoadPendingUpdateVersion, M:LoadTheme, M:LoadUpdateUrl, M:MarkFirstRunComplete, M:MarkSlopesProUpsellUnlocked, M:SaveContractPrefix, M:SaveLastColor, M:SaveLocationName, M:SavePendingUpdateVersion, M:SaveTheme, M:SaveUpdateUrl, P:SettingsPath |
 | DependencyCheckerService | static class | Services/DependencyCheckerService.cs | | Methods: IsVCRedistInstalled | Static: M:IsVCRedistInstalled |
 | DialogService | static class | Services/DialogService.cs | | Methods: CreateFluentCloseButton, ShowConfirm, ShowSaveDiscardCancel, ShowUpdateAvailable | Static: M:CreateFluentCloseButton, M:ShowConfirm, M:ShowSaveDiscardCancel, M:ShowUpdateAvailable |
 | DrawingService | static class | Services/DrawingService.cs | | Methods: CreateDrawingImageElement, GetDrawingImage, GetDrawingSvg, WrapForCentering | Static: M:CreateDrawingImageElement, M:GetDrawingImage, M:GetDrawingSvg, M:WrapForCentering |
@@ -146,6 +147,8 @@
 | FlowDocumentBuilder | class | Services/FlowDocumentBuilder.cs | | Methods: Build |
 | IdleDetector | static class | Services/IdleDetector.cs | | Methods: GetIdleTime | Static: M:GetIdleTime |
 | MoneyFormatService | static class | Services/MoneyFormatService.cs | | Methods: Format, FormatWhole, TryParse | Static: M:Format, M:FormatWhole, M:TryParse |
+| NotesFormatter | static class | Services/NotesFormatter.cs | | Methods: Parse | Static: M:Parse |
+| NotesRenderer | static class | Services/NotesRenderer.cs | | Methods: ToInlines | Static: M:ToInlines |
 | OrderGridPresenter | static class | Services/OrderGridPresenter.cs | | Methods: ApplySortIndicators, GetColumnSortKey, IsHeaderClick, RefreshOrdersGrid | Static: M:ApplySortIndicators, M:GetColumnSortKey, M:IsHeaderClick, M:RefreshOrdersGrid |
 | OrderImportExportService | class | Services/OrderImportExportService.cs | | Methods: BuildSingleOrderFileName, CopyOrder, DeepCloneOrder, ExportAllOrders, ExportSingleOrder, ImportOrders | Static: M:BuildSingleOrderFileName, M:DeepCloneOrder |
 | OrderStorageService | class | Services/OrderStorageService.cs | Props: OrdersDir | Methods: DeleteOrder, ExportOrders, GenerateContractNumber, GenerateCopyContractNumber, GetNextOrderNumber, LoadAllOrders, LoadOrder, SaveOrder | Static: P:OrdersDir |
@@ -165,7 +168,7 @@
 | UpdateService | static class | Services/UpdateService.cs | | Methods: CheckAndApplyAsync, CheckInBackgroundAsync, CheckOnStartupAsync, CreateReleaseStub, DownloadWithProgressAsync, FetchManifestAsync, FireUpdateDetected, GetAvailableUpdate, GetIdleTime, HasPendingUpdate, IsCurrentVersionBrokenForAutoUpdate, ParseSafe, ResolveVersion, RunUpdateFlowAsync, StripVersionSuffix, TryResolveCurrentVersion | Static: M:CheckAndApplyAsync, M:CheckInBackgroundAsync, M:CheckOnStartupAsync, M:CreateReleaseStub, M:DownloadWithProgressAsync, M:FetchManifestAsync, M:FireUpdateDetected, M:GetAvailableUpdate, M:GetIdleTime, M:HasPendingUpdate, M:IsCurrentVersionBrokenForAutoUpdate, M:ParseSafe, M:ResolveVersion, M:RunUpdateFlowAsync, M:StripVersionSuffix, M:TryResolveCurrentVersion |
 | UpdateVerifier | static class | Services/UpdateVerifier.cs | | Methods: ComputeSha256, VerifyHash | Static: M:ComputeSha256, M:VerifyHash |
 | VersionResolver | static class | Services/VersionResolver.cs | | Methods: GetAvailableUpdate, IsBrokenForAutoUpdate, ParseSafe, ResolveVersion, StripVersionSuffix | Static: M:GetAvailableUpdate, M:IsBrokenForAutoUpdate, M:ParseSafe, M:ResolveVersion, M:StripVersionSuffix |
-| WatchdogService | static class | Services/WatchdogService.cs | | Methods: HandleStartup, StageUpdate | Static: M:HandleStartup, M:StageUpdate |
+| WatchdogService | static class | Services/WatchdogService.cs | | Methods: CleanupOrphanedStageDirectories, CleanupStagedUpdate, ExtractWithRetry, HandleStartup, StageUpdate | Static: M:CleanupOrphanedStageDirectories, M:CleanupStagedUpdate, M:ExtractWithRetry, M:HandleStartup, M:StageUpdate |
 
 ### ViewModels
 
@@ -229,4 +232,4 @@ Context phase: grep SYMBOL_INDEX.md for the class/method you need
 
 ## Last generated
 
-2026-07-15 (наша эраen392648bol39.p391)
+2026-07-23 (наша эраen212645bol21.p211)

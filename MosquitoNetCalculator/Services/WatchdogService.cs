@@ -46,9 +46,20 @@ namespace MosquitoNetCalculator.Services
         // Computed paths — update artifacts live in %AppData% (writable),
         // the running .exe stays in BaseDirectory (e.g. Program Files).
         public static string BasePath => AppContext.BaseDirectory;
-        public static string UpdateDataDir => Path.Combine(
-            Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
-            "MosquitoNetCalculator");
+
+        // Mutable static field (mirrors AppSettingsService.SettingsPath pattern) so
+        // xUnit tests can redirect to a temp directory. Production code never sets
+        // this — it always falls through to the %AppData% default. .NET 8 throws
+        // FieldAccessException on initonly write via reflection, so we expose a
+        // get/set property with a nullable backing field instead.
+        private static string? _updateDataDirOverride;
+        public static string UpdateDataDir
+        {
+            get => _updateDataDirOverride ?? Path.Combine(
+                Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
+                "MosquitoNetCalculator");
+            set => _updateDataDirOverride = value;
+        }
 
         public static string ExePath => Path.Combine(BasePath, ExeFileName);
         public static string ExeBakPath => Path.Combine(UpdateDataDir, ExeFileName + BackupSuffix);
@@ -129,16 +140,31 @@ namespace MosquitoNetCalculator.Services
         }
 
         /// <summary>
+        /// Per-entry extract retry budget. AV products (Defender, Kaspersky,
+        /// ESET, etc.) typically hold a write-lock on a freshly-written DLL
+        /// for 200–800 ms while scanning. We retry with growing backoff
+        /// (250 / 750 / 1500 ms) before giving up — total ≤ 2.5 s of wall
+        /// time. Anything longer than that is a real failure, not a race.
+        /// </summary>
+        private const int AvRetryAttempts = 4;
+        private static readonly int[] AvBackoffMs = { 250, 750, 1500 };
+
+        /// <summary>
+        /// v3.48.0 (Phase 2.B): orphan-cleanup cutoff. arc-stage-{guid}
+        /// directories from a previous crashed extract are deleted only
+        /// after this much wall-clock time to avoid racing a concurrent
+        /// valid install owned by another process.
+        /// </summary>
+        internal static readonly TimeSpan OrphanWindow = TimeSpan.FromHours(1);
+
+        /// <summary>
         /// Stage an update for the next run. Called by UpdateService just
         /// before shutdown.
-        /// 
-        /// Extracts the ZIP via C# <see cref="ZipFile.ExtractToDirectory"/>
-        /// (not PowerShell Expand-Archive, which triggers antivirus) into a
-        /// staging directory. The watchdog .bat then copies pre-extracted
-        /// files — no PowerShell dependency.
-        /// 
-        /// Order matters: .bat first, extraction second, .exe.bak third.
-        /// Throws if staging fails.
+        ///
+        /// v3.48.0 (Phase 2.B): per-entry extract with AV-aware retry,
+        /// zip-slip defense, and orphan cleanup replaces the previous bulk
+        /// ZipFile.ExtractToDirectory that threw on the first AV lock and
+        /// left an orphan tmpDir in %AppData%.
         /// </summary>
         public static void StageUpdate(string downloadedZipPath)
         {
@@ -147,25 +173,196 @@ namespace MosquitoNetCalculator.Services
 
             Directory.CreateDirectory(UpdateDataDir);
 
+            // 0. Cleanup orphan arc-stage-{guid} directories from any PREVIOUS
+            //    crashed install attempts (older than OrphanWindow). Best-effort.
+            CleanupOrphanedStageDirectories();
+
             // 1. Commit the watchdog .bat FIRST (references StageDir).
             File.WriteAllText(WatchdogPath, BuildWatchdogBat(BasePath, StageDir));
 
-            // 2. Extract ZIP via C# (no PowerShell) into a fresh temp dir,
-            // then atomically rename to StageDir. This avoids the race where
-            // a locked old StageDir causes ExtractToDirectory to throw.
-            var tmpDir = Path.Combine(UpdateDataDir,
-                $"arc-stage-{Guid.NewGuid():N}");
-            ZipFile.ExtractToDirectory(downloadedZipPath, tmpDir);
+            // 2. Per-entry extract with AV-aware retry. Catches transient
+            //    IOException (AV lock) and backs off 250/750/1500 ms.
+            //    Replaces bulk ZipFile.ExtractToDirectory — which throws
+            //    on the FIRST locked entry, leaving orphan tmpDir.
+            var tmpDir = Path.Combine(UpdateDataDir, $"arc-stage-{Guid.NewGuid():N}");
+            var tmpDirResolved = Path.GetFullPath(tmpDir);
+            try
+            {
+                Directory.CreateDirectory(tmpDir);
+                using var archive = ZipFile.OpenRead(downloadedZipPath);
+                foreach (var entry in archive.Entries)
+                {
+                    // Zip-slip defense (CWE-22): reject any entry whose
+                    // resolved path escapes the staging root directory.
+                    var destPath = Path.GetFullPath(Path.Combine(tmpDir, entry.FullName));
+                    var rootWithSep = tmpDirResolved + Path.DirectorySeparatorChar;
+                    if (!destPath.StartsWith(rootWithSep, StringComparison.OrdinalIgnoreCase)
+                        && !string.Equals(destPath, tmpDirResolved, StringComparison.OrdinalIgnoreCase))
+                    {
+                        throw new InvalidDataException(
+                            $"Zip-slip detected: entry '{entry.FullName}' resolves outside staging dir.");
+                    }
+                    var parent = Path.GetDirectoryName(destPath);
+                    if (!string.IsNullOrEmpty(parent)) Directory.CreateDirectory(parent);
+                    ExtractWithRetry(entry, destPath);
+                }
+            }
+            catch
+            {
+                // Partial extract — wipe tmpDir so CleanupOrphanedStageDirectories
+                // doesn't have to wait OrphanWindow before reclaiming space.
+                TryDeleteDir(tmpDir);
+                throw;
+            }
+
+            // 3. Atomic swap: delete old StageDir (best-effort, AV-lock-aware),
+            //    then move new one in. If old StageDir can't be deleted, leave
+            //    it for next startup to handle. Wrap Move in a catch so a
+            //    failure (e.g. AV holding the path open) doesn't leak the
+            //    tmpDir — CleanupOrphanedStageDirectories would eventually
+            //    clean it up but only after OrphanWindow (1 h) wall time.
             if (Directory.Exists(StageDir))
             {
                 try { Directory.Delete(StageDir, recursive: true); }
-                catch (IOException) { /* locked by AV — old dir orphaned, harmless */ }
+                catch (IOException)
+                {
+                    System.Diagnostics.Debug.WriteLine(
+                        "[WatchdogService] Could not delete old StageDir (AV lock?); leaving for next-startup cleanup.");
+                }
             }
-            Directory.Move(tmpDir, StageDir);
+            try
+            {
+                Directory.Move(tmpDir, StageDir);
+            }
+            catch
+            {
+                TryDeleteDir(tmpDir); // cleanup partial swap on Move failure
+                throw;
+            }
 
-            // 3. Commit the backup copy of the current .exe.
+            // 4. Commit the backup copy of the current .exe.
             if (File.Exists(ExePath))
                 File.Copy(ExePath, ExeBakPath, overwrite: true);
+        }
+
+        /// <summary>
+        /// Extract a single ZIP entry with retry on transient
+        /// <see cref="IOException"/> (AV/lock race). Sleeps with backoff
+        /// between attempts; throws after exhausting retries. Non-IO
+        /// exceptions propagate immediately (would indicate a structural
+        /// problem we can't fix by waiting — e.g. zip-slip,
+        /// UnauthorizedAccess).
+        /// </summary>
+        internal static void ExtractWithRetry(ZipArchiveEntry entry, string destPath)
+        {
+            Exception? lastEx = null;
+            for (int i = 0; i < AvRetryAttempts; i++)
+            {
+                try
+                {
+                    entry.ExtractToFile(destPath, overwrite: true);
+                    return;
+                }
+                catch (IOException ex) when (i < AvRetryAttempts - 1)
+                {
+                    lastEx = ex;
+                    var backoffIdx = Math.Min(i, AvBackoffMs.Length - 1);
+                    System.Threading.Thread.Sleep(AvBackoffMs[backoffIdx]);
+                }
+            }
+            throw lastEx ?? new IOException(
+                $"Failed to extract '{entry.FullName}' after {AvRetryAttempts} attempts (AV lock?).");
+        }
+
+        /// <summary>
+        /// v3.48.0 (Phase 2.A): pre-flight check for write permission to
+        /// <see cref="UpdateDataDir"/> only (%AppData% — always writable
+        /// for the current user). We DELIBERATELY do NOT probe
+        /// <see cref="BasePath"/> (the install dir under Program Files)
+        /// because that path is read-only without UAC elevation — that's
+        /// exactly what <c>Process.Start(Verb="runas")</c> exists to
+        /// solve. Probing BasePath before the UAC prompt would falsely
+        /// fail legitimate installs that would otherwise succeed once
+        /// the user accepts the elevation prompt.
+        /// </summary>
+        public static (bool CanWriteInstallDir, string? FailureReason) PreFlightCheck()
+        {
+            try
+            {
+                var dataProbe = Path.Combine(UpdateDataDir,
+                    $".write-{Guid.NewGuid():N}.tmp");
+                File.WriteAllBytes(dataProbe, new byte[] { 1 });
+                File.Delete(dataProbe);
+                return (true, null);
+            }
+            catch (UnauthorizedAccessException ex)
+            {
+                return (false, $"Нет прав записи в папку обновлений: {ex.Message}");
+            }
+            catch (Exception ex)
+            {
+                return (false, $"Ошибка доступа к папке обновлений: {ex.Message}");
+            }
+        }
+
+        /// <summary>
+        /// v3.48.0 (Phase 2.A / Phase 2.B): cleanup all leftover update
+        /// artifacts from a (possibly failed) previous attempt. Best-effort,
+        /// never throws. Called by UpdateService when the watchdog launch
+        /// is cancelled (UAC declined) so %AppData% doesn't linger with
+        /// half-extracted junk.
+        /// </summary>
+        public static void CleanupStagedUpdate()
+        {
+            TryDeleteDir(StageDir);
+            TryDeleteFile(WatchdogPath);
+            foreach (var d in Directory.EnumerateDirectories(UpdateDataDir, "arc-stage-*"))
+            {
+                TryDeleteDir(d);
+            }
+        }
+
+        /// <summary>
+        /// v3.48.0 (Phase 2.B): walk UpdateDataDir and delete orphaned
+        /// arc-stage-{guid} directories from previous crashed extracts.
+        /// Skips anything newer than <see cref="OrphanWindow"/> to avoid
+        /// racing a concurrent valid install owned by another process.
+        /// Best-effort, never throws.
+        /// </summary>
+        internal static void CleanupOrphanedStageDirectories()
+        {
+            try
+            {
+                foreach (var d in Directory.EnumerateDirectories(UpdateDataDir, "arc-stage-*"))
+                {
+                    try
+                    {
+                        var age = DateTime.UtcNow - new DirectoryInfo(d).CreationTimeUtc;
+                        if (age > OrphanWindow)
+                        {
+                            Directory.Delete(d, recursive: true);
+                        }
+                    }
+                    catch { /* best-effort; skip lock errors */ }
+                }
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine(
+                    $"[WatchdogService] CleanupOrphanedStageDirectories failed: {ex.Message}");
+            }
+        }
+
+        private static void TryDeleteDir(string path)
+        {
+            try { if (Directory.Exists(path)) Directory.Delete(path, recursive: true); }
+            catch { /* best-effort */ }
+        }
+
+        private static void TryDeleteFile(string path)
+        {
+            try { if (File.Exists(path)) File.Delete(path); }
+            catch { /* best-effort */ }
         }
 
         /// <summary>

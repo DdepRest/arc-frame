@@ -118,6 +118,8 @@ AGENT.md / AGENTS.md / CLAUDE.md / GEMINI.md
 
 ## Last verified
 
+2026-07-22 — **v3.47.3 (URGENT + refactor):** В старых заказах после system V X B в Отлив/Козырёк, X или B показывали «0 ₽». Root cause: pre-v3.47.0 saved JSON содержал DTO defaults (-500/-500/0); v3.47.0 per-linear-meter formula умножала (-500) × linearMeters × Q, превышая Total и зажимая в 0. Fix: расширил `CalculationViewModel.LoadFromOrderData` строгим `isLegacyLoad` детектором + исключил Отлив/Козырёк из v3.46.1 sign-flip migration. Refactor: извлек `ProductCatalog.PerLinearMeterProducts` HashSet + `IsPerLinearMeter(string?)` helper как single source of truth — убрал 4 дублирования name-string чеков в `CalculationViewModel.cs`; broadened heuristic до `Math.Abs(Math.Abs(x)-500) < 0.01` для поддержки обоих conventions (±500). Файлы: `ViewModels/CalculationViewModel.cs`, `Models/ProductCatalog.cs`, `Models/OrderItem.Installation.cs`. **Тесты: 1253/1253 pass** (+4 регрессионных тестов в `CalculationViewModelTests.cs`). Зафиксировано в `GOTCHAS.md#16` как правило для будущих per-linear-meter добавлений.
+
 2026-07-20 — **v3.47.1:** Portable ZIP для ручного обновления (create-manual-update.ps1 + README_ОБНОВЛЕНИЕ.txt). Те же фичи: монтаж для Отлива/Козырька (500/750 ₽/м.п., по умолчанию выключен), дробное количество в заказе, убран цветной фон SignToggleCheckBox в тёмной теме. Тесты: 1234/1234 pass.
 - **AGENTS.md:** добавлены секции «Wrapper contract» и «Last verified».
 - **PdfExportService.BuildAdditionalKpPdf:** динамическая ширина ConstantItem через `ComputeAmountColumnWidth` + `MeasureTextWidthPt` (`Graphics.PageUnit=Point` для корректного DPI-преобразования).

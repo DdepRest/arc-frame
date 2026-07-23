@@ -48,14 +48,8 @@ namespace MosquitoNetCalculator.Models
             ["Козырёк"] = 750,
         };
 
-        /// <summary>
-        /// Products whose installation cost is calculated per linear meter
-        /// (perimeter of the item) instead of per piece.
-        /// </summary>
-        private static readonly HashSet<string> PerLinearMeterProducts = new()
-        {
-            "Отлив", "Козырёк"
-        };
+        // Per-linear-meter product list is owned by ProductCatalog.PerLinearMeterProducts.
+        // No local HashSet is needed — IsInstallationPerLinearMeter delegates directly.
 
         /// <summary>
         /// Returns the default installation deduction for a given product name.
@@ -80,7 +74,7 @@ namespace MosquitoNetCalculator.Models
                 GetDefaultInstallationDeduction(productName));
 
         /// <summary>True when installation for this product is priced per linear meter.</summary>
-        public bool IsInstallationPerLinearMeter => !string.IsNullOrEmpty(Name) && PerLinearMeterProducts.Contains(Name);
+        public bool IsInstallationPerLinearMeter => ProductCatalog.IsPerLinearMeter(Name);
 
         /// <summary>
         /// Linear meters used for installation cost calculation.

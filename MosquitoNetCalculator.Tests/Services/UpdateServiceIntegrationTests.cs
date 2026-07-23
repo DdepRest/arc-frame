@@ -613,5 +613,150 @@ namespace MosquitoNetCalculator.Tests.Services
             }
         }
 
+        // ─── v3.48.0 (Phase 2.A): UAC cancellation handling ──────────────────────
+        //
+        // Production flow when user declines runas (1223) or admin elevation is
+        // unavailable (740/1313): RunUpdateFlowAsync must NOT silently fall back
+        // to a non-elevated Process.Start (the previous behaviour left users on
+        // Program Files seeing «✓ Установка» while no files actually moved). The
+        // new contract:
+        //   1. StageUpdate + PreFlightCheck ran successfully
+        //   2. LaunchWatchdogForTest throws Win32Exception(1223) in test seam
+        //   3. CleanupStagedUpdate runs (StageDir + .bat removed)
+        //   4. SavePendingUpdateVersion(Latest) — next scheduler tick retries
+        //   5. IsChecking / IsDownloading reset for the next RunUpdateFlowAsync attempt
+        [Fact]
+        public async Task RunUpdateFlowAsync_UacCancel_CleansUpAndSavesPendingVersion()
+        {
+            const string TestVersion = "999.0.5";
+
+            var originalSettingsPath = AppSettingsService.SettingsPath;
+            var tempSettingsPath = Path.Combine(Path.GetTempPath(),
+                $"arc-settings-uac-{Guid.NewGuid():N}.json");
+            AppSettingsService.SettingsPath = tempSettingsPath;
+
+            var originalDataDir = WatchdogService.UpdateDataDir;
+            var tempWatchdogDir = Path.Combine(Path.GetTempPath(),
+                $"arc-watchdog-uac-{Guid.NewGuid():N}");
+            Directory.CreateDirectory(tempWatchdogDir);
+            WatchdogService.UpdateDataDir = tempWatchdogDir;
+
+            // Pre-compute SHA-256 of a minimal valid in-memory ZIP so the verify
+            // step passes and RunUpdateFlowAsync reaches the post-verify launch
+            // branch where UAC cancellation happens.
+            var zipBytes = UacTestHelpers.CreateMinimalZipBytes();
+            var zipSha = UacTestHelpers.ComputeSha256Hex(zipBytes);
+
+            var mockClient = CreateMockClient((req, ct) =>
+            {
+                var url = req.RequestUri?.ToString() ?? "";
+                if (url.Contains("releases.json"))
+                {
+                    var manifest = new UpdateManifest
+                    {
+                        Latest = TestVersion,
+                        Releases = new()
+                        {
+                            new ReleaseInfo
+                            {
+                                Version = TestVersion,
+                                Url = "http://mock.test/uac-test.zip",
+                                Sha256 = zipSha
+                            }
+                        }
+                    };
+                    var json = JsonSerializer.Serialize(manifest);
+                    return Task.FromResult(new HttpResponseMessage(HttpStatusCode.OK)
+                    {
+                        Content = new StringContent(json)
+                    });
+                }
+                if (url.Contains("uac-test.zip"))
+                {
+                    return Task.FromResult(new HttpResponseMessage(HttpStatusCode.OK)
+                    {
+                        Content = new ByteArrayContent(zipBytes)
+                    });
+                }
+                throw new InvalidOperationException($"Unexpected URL: {url}");
+            });
+
+            UpdateItem? captured = null;
+            Action<UpdateItem> probe = item => captured = item;
+            UpdateService.UpdateDetected += probe;
+            UpdateService.ShowUpdateAvailableOverride = (_, _) => true; // user confirmed
+            UpdateService.LaunchWatchdogForTest = _ => throw new System.ComponentModel.Win32Exception(
+                1223, "ERROR_CANCELLED — test seam simulates UAC decline");
+
+            try
+            {
+                await UpdateService.RunUpdateFlowAsync(owner: null, isAutomatic: true, httpClient: mockClient);
+
+                // ── Post-cancel invariants ──────────────────────────────────
+                // 1. Pending version saved for next-boot retry
+                Assert.Equal(TestVersion, AppSettingsService.LoadPendingUpdateVersion());
+                // 2. RunUpdateFlowAsync finished cleanly without throwing Application.Shutdown
+                Assert.False(UpdateService.IsChecking);
+                Assert.False(UpdateService.IsDownloading);
+                // 3. UpdateDetected DID fire (user confirmed the dialog BEFORE we
+                //    reached UAC step — captures the same semantics as real flow)
+                Assert.NotNull(captured);
+                Assert.Equal(TestVersion, captured!.Version);
+                // 4. CleanupStagedUpdate ran — StageDir + .bat gone
+                Assert.False(Directory.Exists(Path.Combine(tempWatchdogDir, "arc-update-stage")),
+                    "StageDir must be cleaned up after UAC cancel");
+                Assert.False(File.Exists(Path.Combine(tempWatchdogDir, "arc-update-watchdog.bat")),
+                    "Watchdog .bat must be cleaned up after UAC cancel");
+            }
+            finally
+            {
+                UpdateService.UpdateDetected -= probe;
+                UpdateService.ShowUpdateAvailableOverride = null;
+                UpdateService.LaunchWatchdogForTest = null;
+                AppSettingsService.SettingsPath = originalSettingsPath;
+                WatchdogService.UpdateDataDir = originalDataDir;
+                if (File.Exists(tempSettingsPath)) File.Delete(tempSettingsPath);
+                try { if (Directory.Exists(tempWatchdogDir)) Directory.Delete(tempWatchdogDir, recursive: true); } catch { }
+            }
+        }
+
+    }
+
+    // ─── Helpers used by v3.48.0 UAC e2e test ──────────────────────────────────
+    // Kept outside the test class so they don't show up in xUnit test discovery.
+    internal static class UacTestHelpers
+    {
+        /// <summary>
+        /// Build a 1-entry in-memory ZIP ('stub.txt') that mirrors the shape
+        /// the production release pipeline produces (ZIP containing the
+        /// update payload). Returned as a single byte array.
+        /// </summary>
+        public static byte[] CreateMinimalZipBytes()
+        {
+            using var ms = new MemoryStream();
+            using (var archive = new System.IO.Compression.ZipArchive(
+                ms, System.IO.Compression.ZipArchiveMode.Create, leaveOpen: true))
+            {
+                var entry = archive.CreateEntry("stub.txt");
+                using var es = entry.Open();
+                var payload = System.Text.Encoding.UTF8.GetBytes("v3.48.0-uac-cancel-test");
+                es.Write(payload, 0, payload.Length);
+            }
+            return ms.ToArray();
+        }
+
+        /// <summary>
+        /// Hex SHA-256 of a byte array (matching what the production
+        /// <c>UpdateVerifier.ComputeSha256</c> would produce). Lower-case,
+        /// 64 chars, no prefix.
+        /// </summary>
+        public static string ComputeSha256Hex(byte[] data)
+        {
+            using var sha = System.Security.Cryptography.SHA256.Create();
+            var hash = sha.ComputeHash(data);
+            var sb = new System.Text.StringBuilder(hash.Length * 2);
+            for (int i = 0; i < hash.Length; i++) sb.Append(hash[i].ToString("x2"));
+            return sb.ToString();
+        }
     }
 }

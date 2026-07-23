@@ -37,9 +37,12 @@ namespace MosquitoNetCalculator.ViewModels
         /// <summary>
         /// Returns true for products whose installation toggle should start in
         /// the "Без монтажа" state (0 ₽) by default.
+        /// Delegates to <see cref="ProductCatalog.IsPerLinearMeter"/> — single
+        /// source of truth for "per-linear-meter products" used across
+        /// LoadFromOrderData migrations, sign-flip exclusion, and this AddItem.
         /// </summary>
         private static bool IsInstallationDefaultNoInstallation(string type) =>
-            type is "Отлив" or "Козырёк";
+            ProductCatalog.IsPerLinearMeter(type);
 
         /// <summary>
         /// Adds a new order item from quick-add parameters.
@@ -267,10 +270,17 @@ namespace MosquitoNetCalculator.ViewModels
                     Quantity = od.Quantity,
                     Price = od.Price,
                     InstallationMode = od.InstallationMode != 0 ? od.InstallationMode : (od.HasInstallation ? 0 : 1),
-                    InstallationDeduction = od.InstallationDeduction > 0 && od.InstallationMode != 0
+                    // v3.46.1 migration: positive deduction/surcharge stored in older orders
+                    // means "subtract" per OLD convention. Flip sign to match v3.46.1+ signed
+                    // convention (negative = subtract). EXCEPTION: per-linear-meter products
+                    // (Отлив/Козырёк since v3.47.0) use POSITIVE surcharge/deduction
+                    // convention — their v3.47.0+ saved values must NOT be sign-flipped.
+                    InstallationDeduction = (od.InstallationDeduction > 0 && od.InstallationMode != 0)
+                        && !ProductCatalog.IsPerLinearMeter(od.Name)
                         ? -od.InstallationDeduction   // v3.46.1 migration: old positive → new signed convention (negative = subtract)
                         : od.InstallationDeduction,
-                    InstallationSurcharge = od.InstallationSurcharge > 0 && od.InstallationMode != 0
+                    InstallationSurcharge = (od.InstallationSurcharge > 0 && od.InstallationMode != 0)
+                        && !ProductCatalog.IsPerLinearMeter(od.Name)
                         ? -od.InstallationSurcharge   // v3.46.1 migration: old positive → new signed convention
                         : od.InstallationSurcharge,
                     // v3.43.2.10: signed adjustment for «Монтаж включён».
@@ -286,14 +296,46 @@ namespace MosquitoNetCalculator.ViewModels
                 // reverse-apply through default ББ 60 and corrupt dimensions.
                 item.SetAnwisModeQuiet((Models.AnwisSizeMode)od.AnwisSizeMode);
 
-                // v3.47.0 migration: Отлив and Козырёк were previously non-applicable.
-                // Legacy saved orders may have InstallationMode=0 with zero adjustment.
-                // Default them to mode 1 (no installation) to preserve old behavior.
-                if ((item.Name == "Отлив" || item.Name == "Козырёк") &&
-                    item.InstallationMode == 0 &&
-                    Math.Abs(item.InstallationAdjustment) < 0.01)
+                // v3.47.0+ migration for legacy per-linear-meter product orders.
+                // These products were NOT installation-applicable before v3.47.0,
+                // so pre-v3.47.0 saved JSON for them only carries DTO defaults.
+                // The v3.47.0 per-linear-meter formula scales the rate by
+                // InstallationLinearMeters = (W+H)*2/1000. With legacy defaults and
+                // a typical Отлив 1000×500 (linear=3 м.п., Q=1, Total=1075):
+                //   TotalWithDeduction = Max(0, 1075 + (-500)×3×1) = Max(0, −425) = 0
+                // → selecting X (mode 1) or B (mode 2) displays 0 in the UI.
+                //
+                // History of legacy default conventions (handled symmetrically):
+                //   pre-v3.46.1: deduction/surcharge stored as POSITIVE +500
+                //     (meaning "subtract" under the OLD convention).
+                //   v3.46.1+:    deduction/surcharge stored as NEGATIVE -500
+                //     under the NEW signed convention.
+                // The Math.Abs(Math.Abs(...) - 500) check matches both signs so the
+                // migration is robust against either pre-v3.47.0 JSON shape.
+                //
+                // The original auto-switch to mode 1 is preserved as a defensive
+                // fallback for orders with custom ded/sur but unset mode/adjustment.
+                if (ProductCatalog.IsPerLinearMeter(item.Name))
                 {
-                    item.InstallationMode = 1;
+                    bool isLegacyLoad =
+                        item.InstallationMode == 0 &&
+                        Math.Abs(item.InstallationAdjustment) < 0.01 &&
+                        Math.Abs(Math.Abs(item.InstallationDeduction) - 500) < 0.01 &&
+                        Math.Abs(Math.Abs(item.InstallationSurcharge) - 500) < 0.01;
+                    if (isLegacyLoad)
+                    {
+                        item.InstallationMode = 1;
+                        item.InstallationDeduction = OrderItem.GetDefaultInstallationDeduction(item.Name);
+                        item.InstallationSurcharge = OrderItem.GetDefaultInstallationSurcharge(item.Name);
+                        item.InstallationAdjustment = OrderItem.GetDefaultInstallationAdjustment(item.Name);
+                    }
+                    else if (item.InstallationMode == 0 &&
+                             Math.Abs(item.InstallationAdjustment) < 0.01)
+                    {
+                        // Defensive fallback: legacy ded/sur in custom range (not ±500),
+                        // but mode+adj still at defaults. Switch to mode 1 (no install).
+                        item.InstallationMode = 1;
+                    }
                 }
 
                 item.RecalculateRequested += recalculateCallback;

@@ -18,6 +18,24 @@ namespace MosquitoNetCalculator.Models
         };
 
         /// <summary>
+        /// Products whose installation cost scales with the perimeter
+        /// (per linear meter, ₽/м.п.) rather than per piece. The
+        /// <c>TotalWithDeduction</c> formula multiplies the rate by
+        /// <c>InstallationLinearMeters</c> for these products.
+        /// <para/>
+        /// v3.47.0: only Отлив and Козырёк qualify. Adding a new product to this
+        /// set MUST be paired with a migration step in
+        /// <c>CalculationViewModel.LoadFromOrderData</c> — see <see cref="GOTCHAS.md"/>
+        /// (legacy DTO defaults trap: pre-existing JSON entries for newly-
+        /// installable products still carry <c>(mode=0, ded=-500, sur=-500, adj=0)</c>
+        /// defaults which clamp <c>TotalWithDeduction</c> to 0 in modes 1/2).
+        /// </summary>
+        public static readonly HashSet<string> PerLinearMeterProducts = new()
+        {
+            "Отлив", "Козырёк"
+        };
+
+        /// <summary>
         /// Products measured by square meters: CalculatedValue = W * H / 1_000_000.
         /// Source of truth for the Quick-Add preview in MainWindow.xaml.cs.
         /// </summary>
@@ -110,6 +128,16 @@ namespace MosquitoNetCalculator.Models
         /// <summary>True when the product is eligible for the installation toggle.</summary>
         public static bool IsInstallationApplicable(string? name) =>
             !string.IsNullOrEmpty(name) && InstallationApplicableProducts.Contains(name);
+
+        /// <summary>
+        /// True when the product's installation cost is calculated per linear
+        /// meter (perimeter) rather than per piece. Single source of truth —
+        /// used by <c>OrderItem.IsInstallationPerLinearMeter</c>,
+        /// <c>CalculationViewModel.LoadFromOrderData</c> legacy migration, and
+        /// v3.46.1 sign-flip exclusion.
+        /// </summary>
+        public static bool IsPerLinearMeter(string? name) =>
+            !string.IsNullOrEmpty(name) && PerLinearMeterProducts.Contains(name);
 
         /// <summary>True when the product is measured by square meters.</summary>
         public static bool IsAreaBased(string? name) =>
