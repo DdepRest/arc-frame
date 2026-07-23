@@ -12,8 +12,8 @@
                                          "Улучшена совместимость загрузки заказов, сохранённых в v3.47.0+ — значения монтажа не теряются при перезагрузке."
                                      ],
                          "url":  "https://github.com/DdepRest/arc-frame/releases/download/v3.47.3/ARC-Frame-3.47.3-full.zip",
-                         "size":  226897920,
-                         "sha256":  "82a17e1a7377eadf45d41a2f1dfa53b1bdb2e7e408d97f4c6a6917bc7517690f"
+                         "size":  130390674,
+                         "sha256":  "cafd84fffe6c164a4671463553a4496a92b6f9d778ba3c35e8c2423077434826"
                      },
                      {
                          "version":  "3.47.2",
