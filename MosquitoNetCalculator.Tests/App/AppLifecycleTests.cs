@@ -591,6 +591,163 @@ namespace MosquitoNetCalculator.Tests.App
         }
 
         [Fact]
+        public void RefreshAiMode_Does_Not_Recenter_MainWindow_On_MaximizeRestore()
+        {
+            // v3.47.x regression guard: maximizing and then restoring the
+            // program while the AI dock is open must NOT re-center the MAIN
+            // window. Root cause: RefreshAiMode() → ShowDockedAiWindow() →
+            // CenterMainWindowForAiDock() re-shifted the main window on every
+            // restore-from-maximized; on monitors where the group
+            // «program + dock» (1200+420 px) is wider than the screen, the
+            // clamp pinned the window to the monitor's LEFT edge — the window
+            // "clung to the edge" instead of returning to its pre-maximize
+            // position. Whole-program centering may only happen on FIRST open
+            // of the dock (OpenAiAssistant passes centerProgramForDock: true).
+            var src = ReadSource("MainWindow.AI.cs");
+
+            // The centering call must be gated by the flag — never unconditional.
+            Assert.Contains("if (centerProgramForDock)", src);
+            // First open is the only path that opts in.
+            Assert.Contains("ShowDockedAiWindow(centerProgramForDock: true)", src);
+            // RefreshAiMode must show the dock WITHOUT re-centering (default false).
+            // "ShowDockedAiWindow();" is unambiguous: the opted-in call above has
+            // argument text between the parens, so it can't match this substring.
+            Assert.Contains("ShowDockedAiWindow();", src);
+        }
+
+        [Fact]
+        public void AiAssistant_KnowsSlopesAndUpdates_InSystemPrompt()
+        {
+            // v3.47.x regression guard: the AI assistant must have "full access"
+            // to the program — it should answer questions about the app and its
+            // recent updates, and it must know how to trigger the built-in slope
+            // auto-calculator (calc_slope). All of this lives in the system prompt.
+            var src = ReadSource("Services/AiAssistantService.cs");
+
+            // Slope auto-calc knowledge + JSON action name.
+            Assert.Contains("ОТКОСЫ ИЗ СЭНДВИЧА", src);
+            Assert.Contains("calc_slope", src);
+            // Recent-updates knowledge sourced from the real update log.
+            Assert.Contains("UpdateLog.AllNewestFirst", src);
+        }
+
+        [Fact]
+        public void MainWindow_HandlesCalcSlope_Command()
+        {
+            // v3.47.x regression guard: the AI's calc_slope command must be
+            // executed — it opens the slope calculator prefilled with the
+            // requested dimensions (width/height/depth/quantity).
+            var src = ReadSource("MainWindow.AI.cs");
+
+            Assert.Contains("AiCommandType.CalcSlope", src);
+            Assert.Contains("ShowSlopeOverlay(", src);
+
+            // Z-order guard (IN-PANEL mode only): AiOverlay is declared AFTER
+            // SlopeOverlay in MainWindow.xaml at the same Panel.ZIndex=15, so in
+            // maximized/in-panel mode it would render ON TOP of the freshly opened
+            // slope panel and hide it. The handler MUST close the in-panel AI
+            // surface BEFORE showing the slope calculator. In docked mode the AI
+            // is a separate window that never overlaps the overlay, so the chat
+            // must stay open.
+            //
+            // Scope the ordering to the CalcSlope case body: a naive file-wide
+            // IndexOf for "CloseAiAssistant();" would match ToggleAiOverlay()
+            // (which legitimately appears earlier in the file) and make the pin
+            // a tautology. Extract from "case AiCommandType.CalcSlope:" to the
+            // closing brace before the next case.
+            int caseIdx = src.IndexOf("case AiCommandType.CalcSlope:", StringComparison.Ordinal);
+            Assert.True(caseIdx > 0, "calc_slope case not found in MainWindow.AI.cs.");
+            int caseEnd = src.IndexOf("case AiCommandType.", caseIdx + 10, StringComparison.Ordinal);
+            string body = caseEnd > caseIdx
+                ? src[caseIdx..caseEnd]
+                : src[caseIdx..];
+
+            Assert.Contains("AiOverlay.Visibility == Visibility.Visible", body);
+            int closeIdx = body.IndexOf("CloseAiAssistant();", StringComparison.Ordinal);
+            int showIdx = body.IndexOf("ShowSlopeOverlay(", StringComparison.Ordinal);
+            Assert.True(
+                closeIdx > 0 && showIdx > closeIdx,
+                "calc_slope handler must call CloseAiAssistant() BEFORE ShowSlopeOverlay(...) " +
+                "so the freshly opened slope panel is not hidden behind the AI overlay.");
+        }
+
+        [Fact]
+        public void AiAssistant_PromptTeachesInstallationMode_AndAsksAnwisMode()
+        {
+            // v3.47.x regression guard: the AI must (a) support «в конструцию»
+            // via installation_mode in add_item, and (b) ASK which Anwis mode to
+            // use instead of silently defaulting to ББ60 when the user didn't
+            // specify one (user report: «Добавь анвис корич 500 1000 в конструцию»
+            // was added with the wrong mode and no installation applied).
+            var src = ReadSource("Services/AiAssistantService.cs");
+
+            // add_item schema carries the optional installation_mode field.
+            Assert.Contains("installation_mode", src);
+            Assert.Contains("в конструцию", src);
+            // Rule: ask for the Anwis mode instead of silently defaulting.
+            Assert.Contains("задай уточняющий вопрос", src);
+            Assert.Contains("НЕ добавляй товар с выдуманным режимом", src);
+        }
+
+        [Fact]
+        public void MainWindow_AppliesAiInstallationMode_OnAddItem()
+        {
+            // v3.47.x regression guard: the AI's add_item command carries an
+            // optional InstallationMode; the handler MUST apply it to the created
+            // item (mode 2 = «в конструкцию»), otherwise the user's «в конструцию»
+            // request silently falls back to the program default.
+            var src = ReadSource("MainWindow.AI.cs");
+
+            Assert.Contains("command.Params.InstallationMode", src);
+            Assert.Contains("item.InstallationMode = command.Params.InstallationMode", src);
+        }
+
+        [Fact]
+        public void AiApiKeyDialog_UsesPasswordBoxes_AndNeverEchoesKeyFragments()
+        {
+            var xaml = ReadSource("Controls/AiApiKeyDialog.xaml");
+            var code = ReadSource("Controls/AiApiKeyDialog.xaml.cs");
+
+            // API keys must never be rendered as ordinary text fields. PasswordBox
+            // masks the value while still allowing the user to replace it.
+            Assert.Contains("<PasswordBox x:Name=\"TxtApiKey\"", xaml);
+            Assert.Contains("<PasswordBox x:Name=\"TxtNvidiaKey\"", xaml);
+            Assert.DoesNotContain("<TextBox x:Name=\"TxtApiKey\"", xaml);
+            Assert.DoesNotContain("<TextBox x:Name=\"TxtNvidiaKey\"", xaml);
+
+            // The status labels may say whether a key is configured, but must not
+            // expose any prefix or suffix of the secret.
+            Assert.Contains("ваш ключ · скрыт", code);
+            Assert.Contains("встроенный ключ", code);
+            Assert.DoesNotContain("ваш ключ: {masked}", code);
+            Assert.DoesNotContain("currentKey[..", code);
+            Assert.DoesNotContain("currentNvidiaKey[..", code);
+
+            // Both providers must use the same fixed visual mask. Loading the
+            // real secret into PasswordBox would expose its length and produce
+            // the inconsistent UI where OR and NV show different star counts.
+            Assert.Contains("TxtApiKey.Password = DummyPassword", code);
+            Assert.Contains("TxtNvidiaKey.Password = DummyPassword", code);
+            Assert.Contains("private string _savedApiKey", code);
+            Assert.Contains("private string _savedNvidiaApiKey", code);
+            Assert.Contains("_apiKeyMaskActive", code);
+            Assert.Contains("_nvidiaKeyMaskActive", code);
+            Assert.DoesNotContain("TxtApiKey.Password = currentKey", code);
+            Assert.DoesNotContain("TxtNvidiaKey.Password = currentNvidiaKey", code);
+        }
+
+        [Fact]
+        public void AiApiKeyDialog_ReadsAndSavesSecretsOnlyThroughPasswordProperty()
+        {
+            var code = ReadSource("Controls/AiApiKeyDialog.xaml.cs");
+
+            Assert.Contains("TxtApiKey.Password", code);
+            Assert.Contains("TxtNvidiaKey.Password", code);
+            Assert.DoesNotContain("TxtApiKey.Text", code);
+            Assert.DoesNotContain("TxtNvidiaKey.Text", code);
+        }
+
+        [Fact]
         public void TitleBar_Xaml_Binds_Background_Via_DynamicResource_Surface()
         {
             // Counterpart to OnThemeChanged_Does_Not_Manually_Rebind_*:

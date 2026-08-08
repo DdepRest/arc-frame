@@ -65,7 +65,10 @@ namespace MosquitoNetCalculator.ViewModels
             foreach (var name in all)
                 if (!SlopeMaterialsHiddenFromQuickAdd.Contains(name))
                     visible.Add(name);
-            return visible;
+            // Order by the UX catalog hierarchy (Сетки → Доборы → Комплектующие →
+            // Откосы → Услуги), NOT alphabetically — alphabetical sorting would
+            // push «Anwis» to the end and destroy the approved group order.
+            return ProductCatalog.OrderProductNames(visible);
         }
 
         public List<string> GetColorsForProduct(string productName) => _priceService.GetColorsForProduct(Prices.ToList(), productName);

@@ -95,6 +95,14 @@
 | Перегенерировать DOCUMENTATION_MATRIX.md | Run: `powershell -File render-matrix.ps1` |
 | Добавить новый файл в матрицу | Edit: `documentation-matrix.json`, then run `render-matrix.ps1` |
 | Проверить синхронизацию перед коммитом | Run: `powershell -File arc-check.ps1` |
+| Разбил большой файл на части | Run: `gensymbols.ps1`; update INTENTS.md, MODULES.md, DOCUMENTATION_MATRIX.md, CURRENT_STATE.md → CONTROL#13 |
+| Переименовал/переместил файл или класс | Run: `gensymbols.ps1`; update INTENTS.md, MODULES.md, DOCUMENTATION_MATRIX.md → CONTROL#13 |
+| Добавил новый класс/сервис/модуль | Run: `gensymbols.ps1`; update INTENTS.md (если есть intent), MODULES.md → CONTROL#13 |
+| Изменил сигнатуры методов/свойств | Run: `gensymbols.ps1` (SYMBOL_INDEX.md) → CONTROL#13 |
+| Изменил бизнес-логику/формулы/монтаж | `CALCULATION_LOGIC.md`, `GOTCHAS.md`, `CALCULATION_TEST_CASES.md` ⚠️ critical domain → CONTROL#3 |
+| Изменил процессы (релиз/автообновление) | `RELEASE_PROCESS.md`, `AUTO_UPDATE.md` → CONTROL#13 |
+| Изменил саму систему документации (правила/routing) | `MULTI_AGENT_ARC_CALC_CONTROL.md`, `CHEATSHEET.md`, `AGENTS.md`, `CURRENT_STATE.md` → CONTROL#13 |
+| Не уверен, обновлять ли docs | Run: `what-to-update.ps1 $(git diff --name-only)`; если система неактуальна — обязан обновить → CONTROL#13 |
 
 ---
 
@@ -113,6 +121,8 @@ Intake phase: user describes intent
 - `docs/arc/INTENTS.md` — this file
 
 ## Last verified
+
+2026-08-03 (v3.47.3) — добавлены mapping'и структурных изменений (разбивка/переименование/новые классы/сигнатуры/бизнес-логика/процессы/сама система документации) согласно CONTROL#13.
 
 2026-07-12 — документ перепроверен в рамках Фазы 3 рефакторинга; routing-таблица и mapping намерений на файлы актуальны. Учтена декомпозиция `PrintService` на `FlowDocumentBuilder`/`DrawingService`/`FixedDocumentBuilder`/`PrintQueueManager`/`PdfExportService` и bugfix экономии Старт/F-планка в откосах.
 

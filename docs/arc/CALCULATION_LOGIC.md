@@ -721,6 +721,8 @@ double perWindowSum = SlopeData.Sandwich.Sum + SlopeData.Foam.Sum
 
 ## Last verified
 
+2026-08-06 — maintenance pass (CONTROL#13): дата верификации синхронизирована с git-историей; содержимое сверено с текущим состоянием (v3.47.3, 1511/1511 tests pass).
+
 2026-07-12 (1038/1038 tests pass) — документ перепроверен в рамках завершения Фазы 3 рефакторинга; разделы «API-контракт `DistributedSharedSum`» и «Ламинат в откосах» актуальны.
 
 2026-07-06 (878/878 tests pass) — добавлена секция «API-контракт `DistributedSharedSum` (общие материалы откоса)»: описание контракта `SlopeCalculatorService.RecalculateSealantAndTape`, защитная инициализация в `_ApplyDefaults`, формула распределения пропорционально `WindowCount`, последний откос забирает остаток, тестовое покрытие в `SlopeCalculatorServiceTests.cs`.

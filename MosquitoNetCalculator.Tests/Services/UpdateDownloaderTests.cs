@@ -39,7 +39,7 @@ namespace MosquitoNetCalculator.Tests.Services
             using var http = new HttpClient(handler);
             string destination = GetTempPath();
             var progressReports = new System.Collections.Generic.List<int>();
-            var progress = new Progress<int>(p => progressReports.Add(p));
+            var progress = new ImmediateProgress(progressReports);
 
             try
             {
@@ -72,7 +72,7 @@ namespace MosquitoNetCalculator.Tests.Services
             using var http = new HttpClient(handler);
             string destination = GetTempPath();
             var progressReports = new System.Collections.Generic.List<int>();
-            var progress = new Progress<int>(p => progressReports.Add(p));
+            var progress = new ImmediateProgress(progressReports);
 
             try
             {
@@ -139,6 +139,18 @@ namespace MosquitoNetCalculator.Tests.Services
                     "https://example.com/update.zip", destination, progress, http));
 
             UpdateDownloader.TryDelete(destination);
+        }
+
+        private sealed class ImmediateProgress : IProgress<int>
+        {
+            private readonly System.Collections.Generic.List<int> _reports;
+
+            public ImmediateProgress(System.Collections.Generic.List<int> reports)
+            {
+                _reports = reports;
+            }
+
+            public void Report(int value) => _reports.Add(value);
         }
 
         // ─── IsTransient ──────────────────────────────────────────────

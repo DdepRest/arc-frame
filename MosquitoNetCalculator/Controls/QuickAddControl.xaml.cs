@@ -176,5 +176,6 @@ namespace MosquitoNetCalculator.Controls
             var border = Application.Current?.TryFindResource("Border") as SolidColorBrush;
             if (border != null) tb.BorderBrush = border;
         }
+
     }
 }

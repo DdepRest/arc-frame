@@ -13,9 +13,12 @@ Write-Host ""
 Write-Host "[1] Running validate-docs.ps1..." -ForegroundColor Yellow
 $validateOutput = & powershell -ExecutionPolicy Bypass -File (Join-Path $PSScriptRoot "validate-docs.ps1") 2>&1
 $validateText = $validateOutput -join "`n"
+$validateExitCode = $LASTEXITCODE
 
-if ($validateText -match "RESULT: ALL CHECKS PASSED") {
-    Write-Host "  PASS: validate-docs.ps1 all clear" -ForegroundColor Green
+# Soft level (CONTROL#13): validate-docs exits 0 даже при warnings (мягкие проверки #7/#8/#10 не блокируют).
+# Реагируем только на реальные issues (exit 1).
+if ($validateExitCode -eq 0) {
+    Write-Host "  PASS: validate-docs.ps1 exit 0 (warnings допустимы — soft level)" -ForegroundColor Green
 } else {
     Write-Host "  ISSUES in validate-docs.ps1:" -ForegroundColor Red
     Write-Host $validateText -ForegroundColor Red

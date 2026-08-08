@@ -426,7 +426,7 @@ namespace MosquitoNetCalculator.Tests.App
             {
                 var ps = new PrintService();
                 var doc = ps.BuildFlowDocument(items, client, total, words);
-                return doc != null ? ExtractFlowDocumentText(doc) : "";
+                return doc != null ? FlowDocumentTextExtractor.ExtractAllText(doc) : "";
             });
         }
 
@@ -496,71 +496,6 @@ namespace MosquitoNetCalculator.Tests.App
             // FlowDocument table uses KpInstallationDisplay (short print glyph "В"),
             // not InstallationLabel ("В конструкцию"). "В" is the mode-2 glyph.
             Assert.Contains(" В ", text);  // standalone token, not substring of another word
-        }
-
-        // ─── Helper: extract text from FlowDocument ─────────────────
-
-        private static string ExtractFlowDocumentText(System.Windows.Documents.FlowDocument doc)
-        {
-            var sb = new System.Text.StringBuilder();
-            ExtractTextFromBlocks(doc.Blocks, sb);
-            return sb.ToString();
-        }
-
-        private static void ExtractTextFromBlocks(System.Collections.IEnumerable blocks, System.Text.StringBuilder sb)
-        {
-            foreach (var block in blocks)
-            {
-                switch (block)
-                {
-                    case System.Windows.Documents.Paragraph p:
-                        foreach (var inline in p.Inlines)
-                            ExtractTextFromInline(inline, sb);
-                        sb.Append(' ');
-                        break;
-                    case System.Windows.Documents.Table t:
-                        foreach (var rowGroup in t.RowGroups)
-                            foreach (var row in rowGroup.Rows)
-                                foreach (var cell in row.Cells)
-                                    ExtractTextFromBlocks(cell.Blocks, sb);
-                        break;
-                    case System.Windows.Documents.Section s:
-                        ExtractTextFromBlocks(s.Blocks, sb);
-                        break;
-                    case System.Windows.Documents.BlockUIContainer buc:
-                        ExtractTextFromUiElement(buc.Child, sb);
-                        break;
-                }
-            }
-        }
-
-        private static void ExtractTextFromInline(System.Windows.Documents.Inline inline, System.Text.StringBuilder sb)
-        {
-            switch (inline)
-            {
-                case System.Windows.Documents.Run r:
-                    sb.Append(r.Text);
-                    break;
-                case System.Windows.Documents.Span s:
-                    foreach (var child in s.Inlines)
-                        ExtractTextFromInline(child, sb);
-                    break;
-            }
-        }
-
-        private static void ExtractTextFromUiElement(System.Windows.UIElement? element, System.Text.StringBuilder sb)
-        {
-            if (element == null) return;
-            if (element is System.Windows.Controls.TextBlock tb)
-            {
-                sb.Append(tb.Text);
-                sb.Append(' ');
-            }
-            if (element is System.Windows.Controls.Panel panel)
-            {
-                foreach (System.Windows.UIElement child in panel.Children)
-                    ExtractTextFromUiElement(child, sb);
-            }
         }
 
         // ═══════════════════════════════════════════════════════════════════

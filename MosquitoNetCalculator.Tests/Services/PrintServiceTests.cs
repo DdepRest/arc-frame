@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
@@ -40,7 +41,7 @@ namespace MosquitoNetCalculator.Tests.Services
             return WpfTestHelper.RunOnSta(() =>
             {
                 var doc = _service.BuildFlowDocument(items, client, total, words);
-                return doc != null ? ExtractAllText(doc) : "";
+                return doc != null ? FlowDocumentTextExtractor.ExtractAllText(doc) : "";
             });
         }
 
@@ -166,340 +167,165 @@ namespace MosquitoNetCalculator.Tests.Services
             Assert.Contains("Антикошка", text);
         }
 
-        [Fact]
-        public void BuildFlowDocument_AnwisBrusbox60_ShowsCalcAdjustedSizes()
+        /// <summary>
+        /// Regression guard data for dimension display in the printed КП.
+        /// Each case describes a product whose stored/calc/factory dimensions
+        /// must appear (or must not appear) in the generated document.
+        /// </summary>
+        public static IEnumerable<object[]> DimensionTestCases => new List<object[]>
         {
-            var items = new List<OrderItem>
-            {
-                new()
-                {
-                    Name = "Anwis", Color = "Белый",
-                    Width = 1002, Height = 970, Quantity = 1, Price = 1800, Total = 1749.60,
-                    AnwisSizeMode = AnwisSizeMode.Брусбокс60
-                }
-            };
-            var text = BuildAndExtract(items, new ClientInfo(), 1749.60, "");
-            // v3.44.12 (print-fixes): FormatIntWithNbsp теперь с порогом ≥10 000.
-            // Width=1002 (<10000) → отображается как «1002» без NBSP-разделителя.
-            // Width=141084 (≥10000) → «141\u00A0084» с NBSP. Проверяем оба контракта.
-            // Данный тест (1002×970 мм) — оба значения <10000 → без NBSP.
-            Assert.Contains("1002", text);
-            Assert.Contains("970", text);
+            // Anwis ББ60: stored 1002×970 (calc-adjusted). FormatIntWithNbsp
+            // threshold is ≥10 000, so values render without NBSP.
+            new object[] { new DimensionTestCase(
+                "Anwis ББ60 calc 1002×970",
+                new OrderItem { Name = "Anwis", Color = "Белый", Width = 1002, Height = 970, Quantity = 1, Price = 1800, Total = 1749.60, AnwisSizeMode = AnwisSizeMode.Брусбокс60 },
+                1749.60,
+                new[] { "1002", "970" },
+                Array.Empty<string>())
+            },
+
+            // v3.43.2 regression guard: Anwis ББ60 raw 500×1000 → stored 502×970.
+            // Factory (calc − 20 = 482×950) and raw values must NOT leak into КП.
+            new object[] { new DimensionTestCase(
+                "Anwis ББ60 raw 500×1000 → 502×970 (no raw/factory)",
+                new OrderItem { Name = "Anwis", Color = "Белый", Width = 502, Height = 970, Quantity = 1, Price = 1800, Total = 876.60, AnwisSizeMode = AnwisSizeMode.Брусбокс60 },
+                876.60,
+                new[] { "502", "970" },
+                new[] { "500", "1000", "482", "950" })
+            },
+
+            // Anwis ББ70 raw 500×1000 → stored 498×970; factory 478×950 excluded.
+            new object[] { new DimensionTestCase(
+                "Anwis ББ70 raw 500×1000 → 498×970 (no raw/factory)",
+                new OrderItem { Name = "Anwis", Color = "Белый", Width = 498, Height = 970, Quantity = 1, Price = 1800, Total = 869.40 },
+                869.40,
+                new[] { "498", "970" },
+                new[] { "500", "1000", "478", "950" })
+            },
+
+            // Anwis РазмерПроёма: raw 600×1200 → stored 620×1220; raw/factory excluded.
+            new object[] { new DimensionTestCase(
+                "Anwis РазмерПроёма 600×1200 → 620×1220 (no raw)",
+                new OrderItem { Name = "Anwis", Color = "Белый", Width = 620, Height = 1220, Quantity = 1, Price = 1800, Total = 1360.80 },
+                1360.80,
+                new[] { "620", "1220" },
+                new[] { "600", "1200" })
+            },
+
+            // Anwis Габаритный: raw=calc=500×1000; factory 480×980 excluded.
+            new object[] { new DimensionTestCase(
+                "Anwis Габаритный 500×1000 (no factory)",
+                new OrderItem { Name = "Anwis", Color = "Белый", Width = 500, Height = 1000, Quantity = 1, Price = 1800, Total = 900.00 },
+                900.00,
+                new[] { "500", "1000" },
+                new[] { "480", "980" })
+            },
+
+            // Non-Anwis m² product: stored = raw = calc = factory.
+            new object[] { new DimensionTestCase(
+                "На навесах 1000×800",
+                new OrderItem { Name = "На навесах", Color = "Белый", Width = 1000, Height = 800, Quantity = 1, Price = 1800, Total = 1440.00 },
+                1440.00,
+                new[] { "1000", "800" },
+                Array.Empty<string>())
+            },
+
+            // Non-Anwis fallback product.
+            new object[] { new DimensionTestCase(
+                "Оконная на метал. крепл. 1200×900",
+                new OrderItem { Name = "Оконная на метал. крепл.", Color = "Белый", Width = 1200, Height = 900, Quantity = 1, Price = 1800, Total = 1944.00 },
+                1944.00,
+                new[] { "Оконная на метал. крепл.", "1200", "900" },
+                Array.Empty<string>())
+            },
+
+            // Door net.
+            new object[] { new DimensionTestCase(
+                "Дверная сетка 1200×1000",
+                new OrderItem { Name = "Дверная сетка", Color = "Белый", Width = 1200, Height = 1000, Quantity = 1, Price = 3000, Total = 3600.00 },
+                3600.00,
+                new[] { "Дверная сетка", "1200", "1000" },
+                Array.Empty<string>())
+            },
+
+            // Sill.
+            new object[] { new DimensionTestCase(
+                "Отлив 250×1200",
+                new OrderItem { Name = "Отлив", Width = 250, Height = 1200, Quantity = 1, Price = 2000, Total = 600.00 },
+                600.00,
+                new[] { "Отлив", "250", "1200" },
+                Array.Empty<string>())
+            },
+
+            // Canopy.
+            new object[] { new DimensionTestCase(
+                "Козырёк 1800×700",
+                new OrderItem { Name = "Козырёк", Color = "Белый", Width = 1800, Height = 700, Quantity = 1, Price = 2500, Total = 3150.00 },
+                3150.00,
+                new[] { "Козырёк", "1800", "700" },
+                Array.Empty<string>())
+            },
+
+            // Frame.
+            new object[] { new DimensionTestCase(
+                "Короб 2000×500",
+                new OrderItem { Name = "Короб", Color = "Белый", Width = 2000, Height = 500, Quantity = 1, Price = 3000, Total = 3000.00 },
+                3000.00,
+                new[] { "Короб", "2000", "500" },
+                Array.Empty<string>())
+            },
+
+            // Linear PSUL.
+            new object[] { new DimensionTestCase(
+                "ПСУЛ 400×600",
+                new OrderItem { Name = "ПСУЛ", Width = 400, Height = 600, Quantity = 1, Price = 2000, Total = 4000.00 },
+                4000.00,
+                new[] { "ПСУЛ", "400", "600" },
+                Array.Empty<string>())
+            },
+
+            // Manual piece slope material.
+            new object[] { new DimensionTestCase(
+                "Откос материал 250 (WidthOnly)",
+                new OrderItem { Name = "Откос материал", Width = 250, Height = 0, Quantity = 3, Price = 500, Total = 1500.00 },
+                1500.00,
+                new[] { "Откос материал", "250" },
+                Array.Empty<string>())
+            },
+        };
+
+        [Theory]
+        [MemberData(nameof(DimensionTestCases))]
+        public void BuildFlowDocument_DimensionTests(DimensionTestCase testCase)
+        {
+            var text = BuildAndExtract(new List<OrderItem> { testCase.Item }, new ClientInfo(), testCase.Total, "");
+
+            foreach (var expected in testCase.ExpectedContained)
+                Assert.Contains(expected, text);
+
+            foreach (var notExpected in testCase.ExpectedExcluded)
+                Assert.DoesNotContain(notExpected, text);
         }
 
-        /// <summary>
-        /// v3.43.2 regression guard: для Anwis ББ60 с сырыми размерами 500×1000
-        /// в печатной таблице КП должны быть расчётные размеры 502×970 —
-        /// НЕ сырые (500×1000) и НЕ заводские (482×950).
-        ///
-        /// Расследование бага (2026-07-06): пользователь сообщил, что печать
-        /// показывает «без +20». Анализ кода показал, что утечки заводских
-        /// размеров нет — DataGrid показывает сырые (ШиринаВвод), а КП —
-        /// расчётные (Width). Этот тест фиксирует контракт: в КП всегда
-        /// расчётные размеры, никогда не сырые и не заводские.
-        /// </summary>
-        [Fact]
-        public void BuildFlowDocument_AnwisBrusbox60_Raw500x1000_ShowsCalc502x970_NotRawNorFactory()
+        /// <summary>Data holder for parameterized dimension assertions.</summary>
+        public class DimensionTestCase
         {
-            // Raw input: W=500, H=1000.
-            // Stored (calc-adjusted via ББ60): W=502, H=970.
-            // Factory (calc − 20): W=482, H=950 — must NEVER appear in КП.
-            var items = new List<OrderItem>
+            public string Name { get; }
+            public OrderItem Item { get; }
+            public double Total { get; }
+            public IReadOnlyList<string> ExpectedContained { get; }
+            public IReadOnlyList<string> ExpectedExcluded { get; }
+
+            public DimensionTestCase(string name, OrderItem item, double total, string[] expectedContained, string[] expectedExcluded)
             {
-                new()
-                {
-                    Name = "Anwis", Color = "Белый",
-                    Width = 502, Height = 970, Quantity = 1, Price = 1800,
-                    Total = 876.60, // 0.487 × 1800 (Recalculate rounds to 2dp)
-                    AnwisSizeMode = AnwisSizeMode.Брусбокс60
-                }
-            };
-            // Recalculated: CalculatedValue = Math.Round(502*970/1M, 3) = 0.487,
-            // Total = Math.Round(0.487 × 1800 × 1, 2) = 876.60.
-            var text = BuildAndExtract(items, new ClientInfo(), 876.60, "");
+                Name = name;
+                Item = item;
+                Total = total;
+                ExpectedContained = expectedContained;
+                ExpectedExcluded = expectedExcluded;
+            }
 
-            // Расчётные размеры — должны быть в таблице КП
-            Assert.Contains("502", text);
-            Assert.Contains("970", text);
-
-            // Сырые размеры — НЕ должны просочиться
-            Assert.DoesNotContain("500", text);
-            Assert.DoesNotContain("1000", text);
-
-            // Заводские размеры (расчёт − 20) — НЕ должны просочиться
-            Assert.DoesNotContain("482", text);
-            Assert.DoesNotContain("950", text);
-        }
-
-        /// <summary>
-        /// ББ70: raw 500×1000 → calc 498×970, factory 478×950.
-        /// В КП — расчётные 498×970; сырые и заводские — отсутствуют.
-        /// AnwisSizeMode не задан (default ББ60) — для таблицы КП не важно,
-        /// используется только item.Width/Height.
-        /// </summary>
-        [Fact]
-        public void BuildFlowDocument_AnwisBrusbox70_Raw500x1000_ShowsCalc498x970_NotRawNorFactory()
-        {
-            var items = new List<OrderItem>
-            {
-                new()
-                {
-                    Name = "Anwis", Color = "Белый",
-                    Width = 498, Height = 970, Quantity = 1, Price = 1800,
-                    Total = 869.40 // 0.483 × 1800 (Recalculate: 498*970/1M=0.483)
-                }
-            };
-            var text = BuildAndExtract(items, new ClientInfo(), 869.40, "");
-
-            Assert.Contains("498", text);
-            Assert.Contains("970", text);
-
-            Assert.DoesNotContain("500", text);   // raw
-            Assert.DoesNotContain("1000", text);  // raw
-            Assert.DoesNotContain("478", text);   // factory (498 − 20)
-            Assert.DoesNotContain("950", text);   // factory (970 − 20)
-        }
-
-        /// <summary>
-        /// РазмерПроёма: raw 600×1200 → calc 620×1220, factory=raw=600×1200.
-        /// В КП — расчётные 620×1220; raw/factory (совпадают) — отсутствуют.
-        /// AnwisSizeMode не задан — для таблицы КП не важно.
-        /// </summary>
-        [Fact]
-        public void BuildFlowDocument_AnwisRazmerProyoma_Raw600x1200_ShowsCalc620x1220_NotRaw()
-        {
-            var items = new List<OrderItem>
-            {
-                new()
-                {
-                    Name = "Anwis", Color = "Белый",
-                    Width = 620, Height = 1220, Quantity = 1, Price = 1800,
-                    Total = 1360.80 // 620*1220/1M=0.756, 0.756×1800=1360.80 (Recalculate)
-                }
-            };
-            var text = BuildAndExtract(items, new ClientInfo(), 1360.80, "");
-
-            Assert.Contains("620", text);
-            Assert.Contains("1220", text);
-
-            // raw = factory = 600×1200 для РазмерПроёма (calc − 20 = raw).
-            // В КП должны быть только расчётные, не сырые.
-            Assert.DoesNotContain("600", text);
-            Assert.DoesNotContain("1200", text);
-        }
-
-        /// <summary>
-        /// Габаритный: raw 500×1000 → calc=raw=500×1000, factory 480×980.
-        /// В КП — raw=calc (совпадают) 500×1000; заводские — отсутствуют.
-        /// AnwisSizeMode не задан — для таблицы КП не важно.
-        /// </summary>
-        [Fact]
-        public void BuildFlowDocument_AnwisGabarityj_Raw500x1000_ShowsCalc500x1000_NotFactory()
-        {
-            var items = new List<OrderItem>
-            {
-                new()
-                {
-                    Name = "Anwis", Color = "Белый",
-                    Width = 500, Height = 1000, Quantity = 1, Price = 1800,
-                    Total = 900.00 // 500*1000/1M=0.5, 0.5×1800=900.00 (Recalculate)
-                }
-            };
-            var text = BuildAndExtract(items, new ClientInfo(), 900.00, "");
-
-            // calc = raw = 500×1000 — оба значения должны быть в КП
-            Assert.Contains("500", text);
-            Assert.Contains("1000", text);
-
-            // factory (500 − 20 = 480, 1000 − 20 = 980) — НЕ должны просочиться
-            Assert.DoesNotContain("480", text);
-            Assert.DoesNotContain("980", text);
-        }
-
-        /// <summary>
-        /// Не-Anwis товар «На навесах»: raw=calc=factory=1000×800.
-        /// IsAnwis=false → нет вычитания −20; все три слоя равны.
-        /// В КП — 1000×800.
-        /// </summary>
-        [Fact]
-        public void BuildFlowDocument_NaNavesah_ShowsStoredDimensions()
-        {
-            var items = new List<OrderItem>
-            {
-                new()
-                {
-                    Name = "На навесах", Color = "Белый",
-                    Width = 1000, Height = 800, Quantity = 1, Price = 1800,
-                    Total = 1440.00 // 1000*800/1M*1800 = 1440
-                }
-            };
-            var text = BuildAndExtract(items, new ClientInfo(), 1440.00, "");
-
-            // Не-Anwis: stored = raw = calc = factory. Все равны.
-            Assert.Contains("1000", text);
-            Assert.Contains("800", text);
-
-            // Для не-Anwis нет вычитания −20 — factory=1000×800,
-            // так что заводские НЕ отличаются от расчётных.
-            // Проверяем только что значения присутствуют.
-        }
-
-        /// <summary>
-        /// «Оконная на метал. крепл.» — m²-based товар с чертежом-заглушкой
-        /// (BuildFallback). Не-Anwis → raw=calc=factory. Проверяем, что
-        /// размеры корректно отображаются в таблице КП.
-        /// </summary>
-        [Fact]
-        public void BuildFlowDocument_OkonnayaNaMetallKrepl_ShowsStoredDimensions()
-        {
-            var items = new List<OrderItem>
-            {
-                new()
-                {
-                    Name = "Оконная на метал. крепл.", Color = "Белый",
-                    Width = 1200, Height = 900, Quantity = 1, Price = 1800,
-                    Total = 1944.00 // 1200*900/1M=1.08, 1.08×1800=1944.00 (Recalculate)
-                }
-            };
-            var text = BuildAndExtract(items, new ClientInfo(), 1944.00, "");
-
-            Assert.Contains("Оконная на метал. крепл.", text);
-            Assert.Contains("1200", text);
-            Assert.Contains("900", text);
-        }
-
-        /// <summary>
-        /// «Дверная сетка» — m²-based (3000 ₽/м²), чертёж BuildDvernayaSetka
-        /// (прямоугольник с петлями, лейбл «двер.сетка»).
-        /// </summary>
-        [Fact]
-        public void BuildFlowDocument_DvernayaSetka_ShowsStoredDimensions()
-        {
-            var items = new List<OrderItem>
-            {
-                new()
-                {
-                    Name = "Дверная сетка", Color = "Белый",
-                    Width = 1200, Height = 1000, Quantity = 1, Price = 3000,
-                    Total = 3600.00 // 1200*1000/1M=1.2, 1.2×3000=3600.00
-                }
-            };
-            var text = BuildAndExtract(items, new ClientInfo(), 3600.00, "");
-
-            Assert.Contains("Дверная сетка", text);
-            Assert.Contains("1200", text);
-            Assert.Contains("1000", text);
-        }
-
-        /// <summary>
-        /// «Отлив» — m²-based, чертёж BuildOtliv (L-образный профиль 100×36).
-        /// </summary>
-        [Fact]
-        public void BuildFlowDocument_Otliv_ShowsStoredDimensions()
-        {
-            var items = new List<OrderItem>
-            {
-                new()
-                {
-                    Name = "Отлив",
-                    Width = 250, Height = 1200, Quantity = 1, Price = 2000,
-                    Total = 600.00 // 250*1200/1M=0.3, 0.3×2000=600.00
-                }
-            };
-            var text = BuildAndExtract(items, new ClientInfo(), 600.00, "");
-
-            Assert.Contains("Отлив", text);
-            Assert.Contains("250", text);
-            Assert.Contains("1200", text);
-        }
-
-        /// <summary>
-        /// «Козырёк» — m²-based, чертёж BuildKozyrek (прямоугольник с пунктиром).
-        /// </summary>
-        [Fact]
-        public void BuildFlowDocument_Kozyrek_ShowsStoredDimensions()
-        {
-            var items = new List<OrderItem>
-            {
-                new()
-                {
-                    Name = "Козырёк", Color = "Белый",
-                    Width = 1800, Height = 700, Quantity = 1, Price = 2500,
-                    Total = 3150.00 // 1800*700/1M=1.26, 1.26×2500=3150.00
-                }
-            };
-            var text = BuildAndExtract(items, new ClientInfo(), 3150.00, "");
-
-            Assert.Contains("Козырёк", text);
-            Assert.Contains("1800", text);
-            Assert.Contains("700", text);
-        }
-
-        /// <summary>
-        /// «Короб» — m²-based, чертёж BuildKorob (двойной прямоугольник, толстая рамка).
-        /// </summary>
-        [Fact]
-        public void BuildFlowDocument_Korob_ShowsStoredDimensions()
-        {
-            var items = new List<OrderItem>
-            {
-                new()
-                {
-                    Name = "Короб", Color = "Белый",
-                    Width = 2000, Height = 500, Quantity = 1, Price = 3000,
-                    Total = 3000.00 // 2000*500/1M=1.0, 1.0×3000=3000.00
-                }
-            };
-            var text = BuildAndExtract(items, new ClientInfo(), 3000.00, "");
-
-            Assert.Contains("Короб", text);
-            Assert.Contains("2000", text);
-            Assert.Contains("500", text);
-        }
-
-        /// <summary>
-        /// «ПСУЛ» — линейный (м.п.), чертёж BuildPsul (жирная рамка 3px).
-        /// Расчёт: (W+H)×2/1000 × Price.
-        /// </summary>
-        [Fact]
-        public void BuildFlowDocument_Psul_ShowsStoredDimensions()
-        {
-            var items = new List<OrderItem>
-            {
-                new()
-                {
-                    Name = "ПСУЛ",
-                    Width = 400, Height = 600, Quantity = 1, Price = 2000,
-                    Total = 4000.00 // (400+600)*2/1000=2.0, 2.0×2000=4000.00
-                }
-            };
-            var text = BuildAndExtract(items, new ClientInfo(), 4000.00, "");
-
-            Assert.Contains("ПСУЛ", text);
-            Assert.Contains("400", text);
-            Assert.Contains("600", text);
-        }
-
-        /// <summary>
-        /// «Откос материал» — штучный (ManualPiece, WidthOnly), чертёж BuildOtkos
-        /// (прямоугольник с диагоналями, лейбл «откос», 100×36).
-        /// </summary>
-        [Fact]
-        public void BuildFlowDocument_OtkosMaterial_ShowsStoredDimensions()
-        {
-            var items = new List<OrderItem>
-            {
-                new()
-                {
-                    Name = "Откос материал",
-                    Width = 250, Height = 0, Quantity = 3, Price = 500,
-                    Total = 1500.00 // ManualPiece: 1 × 500 × 3 = 1500.00
-                }
-            };
-            var text = BuildAndExtract(items, new ClientInfo(), 1500.00, "");
-
-            Assert.Contains("Откос материал", text);
-            Assert.Contains("250", text);
+            public override string ToString() => Name;
         }
 
         // ─── v3.43.2.12: Цвет column readability regression guards ───
@@ -807,74 +633,6 @@ namespace MosquitoNetCalculator.Tests.Services
             Assert.True(System.Enum.IsDefined(typeof(PrintResultType), type));
         }
 
-        // ─── Helper: extract all text from FlowDocument ─────────────
-        //
-        // #hotfix: теперь некоторые ячейки таблицы (Цвет, Ш, В, Кол-во, Монтаж,
-        // Площ./Дл., Ед., Цена, Сумма) используют BlockUIContainer+TextBlock
-        // ради TextWrapping=NoWrap (WPF `Paragraph` не имеет TextWrapping).
-        // Walker должен descend into BlockUIContainer → TextBlock.Text,
-        // иначе Assert.Contains(...) будет ломаться на «Белый», «1002» и т.п.
-        private static string ExtractAllText(FlowDocument doc)
-        {
-            var sb = new System.Text.StringBuilder();
-            ExtractTextFromBlocks(doc.Blocks, sb);
-            return sb.ToString();
-        }
-
-        private static void ExtractTextFromBlocks(System.Collections.IEnumerable blocks, System.Text.StringBuilder sb)
-        {
-            foreach (var block in blocks)
-            {
-                switch (block)
-                {
-                    case Paragraph p:
-                        foreach (var inline in p.Inlines)
-                            ExtractTextFromInline(inline, sb);
-                        sb.Append(' ');
-                        break;
-                    case Table t:
-                        foreach (var rowGroup in t.RowGroups)
-                            foreach (var row in rowGroup.Rows)
-                                foreach (var cell in row.Cells)
-                                    ExtractTextFromBlocks(cell.Blocks, sb);
-                        break;
-                    case Section s:
-                        ExtractTextFromBlocks(s.Blocks, sb);
-                        break;
-                    case BlockUIContainer bcu:
-                        ExtractTextFromUiElement(bcu.Child, sb);
-                        break;
-                }
-            }
-        }
-
-        private static void ExtractTextFromInline(Inline inline, System.Text.StringBuilder sb)
-        {
-            switch (inline)
-            {
-                case Run r:
-                    sb.Append(r.Text);
-                    break;
-                case Span s:
-                    foreach (var child in s.Inlines)
-                        ExtractTextFromInline(child, sb);
-                    break;
-            }
-        }
-
-        private static void ExtractTextFromUiElement(UIElement? element, System.Text.StringBuilder sb)
-        {
-            if (element == null) return;
-            if (element is TextBlock tb)
-            {
-                sb.Append(tb.Text);
-                sb.Append(' ');
-            }
-            if (element is Panel panel)
-            {
-                foreach (UIElement child in panel.Children)
-                    ExtractTextFromUiElement(child, sb);
-            }
-        }
     }
+
 }

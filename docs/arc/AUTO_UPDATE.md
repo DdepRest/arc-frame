@@ -391,4 +391,6 @@ Watchdog .bat запускает обновлённый `MosquitoNetCalculator.e
 
 ## Last verified
 
-2026-07-20 (v3.47.1 � �������� create-manual-update.ps1 ��� portable ZIP ������� ����������; v3.42.1 hotfix: watchdog files moved from BaseDirectory to %AppData% to fix E_ACCESSDENIED when app is installed under Program Files)
+2026-08-03 (v3.47.3) — само-обновление (CONTROL#13): перепроверено при синхронизации версий; содержимое актуально (v3.47.2/v3.47.3 не меняли runtime автообновления).
+
+2026-07-20 (v3.47.1 — добавлен create-manual-update.ps1 для portable ZIP ручного обновления; v3.42.1 hotfix: watchdog files moved from BaseDirectory to %AppData% to fix E_ACCESSDENIED when app is installed under Program Files)

@@ -24,6 +24,7 @@ namespace MosquitoNetCalculator.Services
 
         /// <summary>
         /// Loads the saved theme preference and applies it.
+        /// Defaults to light theme on first run (when no saved preference exists).
         /// </summary>
         public static void LoadTheme()
         {
@@ -224,41 +225,44 @@ namespace MosquitoNetCalculator.Services
         // ContractPrefix methods removed — use AppSettingsService.LoadContractPrefix / SaveContractPrefix instead.
 
         // ─────────────────────────────────────────────────────────
-        // Light theme colors — Windows 11 Fluent Design
+        // Light theme — modern card design with clear hierarchy
+        //
+        // Elevation system:
+        //   L0  AppBg      #F5F5F7  — page background
+        //   L1  Surface    #FFFFFF  — cards, panels
+        //   L2  QuickBg    #FCFCFD  — interactive cards
+        //   L3  HeaderBg   #F8F8FA  — column headers
         // ─────────────────────────────────────────────────────────
         private static readonly Dictionary<string, string> LightColors = new()
         {
             // Backgrounds
-            ["AppBg"]        = "#F3F3F3",
+            ["AppBg"]        = "#F5F5F7",
             ["Surface"]       = "#FFFFFF",
-            ["QuickBg"]       = "#F9F9F9",
-            ["RowHover"]      = "#F5F5F5",
-            ["RowAlt"]        = "#FAFAFA",
-            ["RowAltHover"]   = "#F0F0F0",
-            ["RowAltSelected"] = "#EBF3FD",
-            // Row-hover/select animation targets (Color, not Brush — used by
-            // DataGridRow Style to animate Background smoothly in light theme)
-            ["RowHoverColor"]    = "#F5F5F5",
-            ["AccentLightColor"] = "#EBF3FD",
-            // Accent (Windows 11 Blue)
-            ["Accent"]        = "#005FB8",
-            ["AccentHover"]   = "#004E99",
-            ["AccentPress"]   = "#003E7A",
-            ["AccentLight"]   = "#EBF3FD",
-            // AccentShadowColor — mirror of Accent (brush) as Color for NavOrdersBadge DropShadow.
-            // WPF cannot bind a Brush to a Color DependencyProperty.
-            ["AccentShadowColor"] = "#005FB8",
+            ["QuickBg"]       = "#FCFCFD",
+            ["RowHover"]      = "#F0F0F5",
+            ["RowAlt"]        = "#FAFAFD",
+            ["RowAltHover"]   = "#F0F0F5",
+            ["RowAltSelected"] = "#E8F0FA",
+            // Row-hover/select animation targets (Color)
+            ["RowHoverColor"]    = "#F0F0F5",
+            ["AccentLightColor"] = "#E8F0FA",
+            // Accent — professional blue
+            ["Accent"]        = "#3878C8",
+            ["AccentHover"]   = "#4A90E0",
+            ["AccentPress"]   = "#2A60AA",
+            ["AccentLight"]   = "#EBF3FC",
+            ["AccentShadowColor"] = "#3878C8",
             // Text
-            ["TextPrimary"]   = "#1A1A1A",
-            ["TextSecondary"] = "#5D5D5D",
-            ["TextMuted"]     = "#8A8A8A",
+            ["TextPrimary"]   = "#1A1A24",
+            ["TextSecondary"] = "#585868",
+            ["TextMuted"]     = "#90909C",
             // Borders
-            ["Border"]        = "#D9D9D9",
-            ["BorderHover"]   = "#B8B8B8",
-            ["SubtleBorder"]  = "#EBEBEB",
-            ["GridLine"]      = "#F0F0F0",
-            ["TrackBg"]       = "#D4D4D4",
-            ["ScrollBarThumb"] = "#B0B0B0",
+            ["Border"]        = "#E0E0E8",
+            ["BorderHover"]   = "#C0C0CC",
+            ["SubtleBorder"]  = "#EEEEF2",
+            ["GridLine"]      = "#F0F0F5",
+            ["TrackBg"]       = "#E0E0E8",
+            ["ScrollBarThumb"] = "#B8B8C4",
             // Semantic
             ["Success"]       = "#0F7B3F",
             ["SuccessHover"]  = "#0A6333",
@@ -267,38 +271,38 @@ namespace MosquitoNetCalculator.Services
             ["Warning"]       = "#D48C00",
             ["DangerLight"]   = "#FDE7E9",
             ["DangerGhostBorder"] = "#F0C6CA",
-            // On-accent text (text on Accent/Success/Danger button) — dark on light bg
+            // On-accent text
             ["OnAccent"]      = "#FFFFFF",
             ["OnSuccess"]     = "#FFFFFF",
             ["OnDanger"]      = "#FFFFFF",
-            // Ghost button — slightly elevated surface for visibility
+            // Ghost button
             ["GhostBg"]       = "#FFFFFF",
-            ["GhostBorder"]   = "#D0D0D0",
-            // Section card — subtle tinted background for sidebar sub-cards
+            ["GhostBorder"]   = "#D4D4DC",
+            // Section card
             ["SectionBg"]     = "#F8F9FB",
-            ["SectionAccent"] = "#005FB8",
-            // Glow color for button hover
-            ["GlowAccent"]    = "#005FB8",
+            ["SectionAccent"] = "#3878C8",
+            // Glow / shadow
+            ["GlowAccent"]    = "#3878C8",
             ["SuccessShadow"] = "#0F7B3F",
             ["DangerShadow"]  = "#C42B1C",
             // Total bar
-            ["TotalBg"]       = "#1B1B1B",
+            ["TotalBg"]       = "#1A1A24",
             ["TotalText"]     = "#FFFFFF",
-            ["TotalTextMuted"] = "#A0A0A0",
+            ["TotalTextMuted"] = "#A0A0AC",
             // Quick-add / chips
-            ["ChipBg"]        = "#EFF4FB",
+            ["ChipBg"]        = "#EBF3FC",
             // DataGrid headers — Fluent light
-            ["HeaderBg"]      = "#F9F9F9",
-            ["HeaderBorder"]  = "#E8E8E8",
-            ["HeaderText"]    = "#424242",
-            ["HeaderPress"]   = "#E0E0E0",
+            ["HeaderBg"]      = "#F9F9FC",
+            ["HeaderBorder"]  = "#E8E8F0",
+            ["HeaderText"]    = "#484858",
+            ["HeaderPress"]   = "#E8E8EC",
             // Menu
             ["MenuItemPressed"] = "#E8EDF5",
             // Shadow
-            ["ShadowColor"]   = "#1A1A1A",
+            ["ShadowColor"]   = "#1A1A24",
             // Badges
-            ["BadgeDefaultBg"]  = "#EFF4FB",
-            ["BadgeDefaultFg"]  = "#005FB8",
+            ["BadgeDefaultBg"]  = "#EBF3FC",
+            ["BadgeDefaultFg"]  = "#3878C8",
             ["BadgeSuccessBg"]  = "#E6F5EC",
             ["BadgeSuccessFg"]  = "#0F7B3F",
             ["BadgeWarningBg"]  = "#FFF4CE",
@@ -308,101 +312,100 @@ namespace MosquitoNetCalculator.Services
             // Install toggle
             ["InstallGreen"]  = "#0F7B3F",
             ["InstallRed"]    = "#C42B1C",
-            ["InstallGray"]   = "#8A8A8A",
+            ["InstallGray"]   = "#8A8A9A",
         };
 
         // ─────────────────────────────────────────────────────────
-        // Dark theme colors — Windows 11 Fluent Design (Dark)
+        // Dark theme — high-contrast modern card design
         //
-        // Elevation system (Windows 11 Dark):
-        //   L0  AppBg      #202020  — deepest page background
-        //   L0.5 RowAlt    #252525  — alternating rows
-        //   L1  Surface    #2D2D2D  — cards, panels, table bodies
-        //   L2  HeaderBg   #383838  — elevated panels, column headers
+        // Elevation system (4 visible levels):
+        //   L0  AppBg      #0F0F12  — deepest page background
+        //   L0.5 RowAlt    #16161A  — alternating row background
+        //   L1  Surface    #1C1C22  — cards, panels, tables
+        //   L2  QuickBg    #25252D  — elevated interactive cards
+        //   L3  HeaderBg   #2E2E38  — column headers, prominent panels
         // ─────────────────────────────────────────────────────────
         private static readonly Dictionary<string, string> DarkColors = new()
         {
-            // Backgrounds
-            ["AppBg"]        = "#202020",
-            ["Surface"]       = "#2D2D2D",
-            ["QuickBg"]       = "#2D2D2D",
-            ["RowAlt"]        = "#252525",
-            ["RowHover"]      = "#383838",
-            ["RowAltHover"]   = "#383838",
-            ["RowAltSelected"] = "#2A4A6E",
-            // Row-hover/select animation targets (Color) for dark theme
-            ["RowHoverColor"]    = "#383838",
-            ["AccentLightColor"] = "#1A3A54",
-            // Accent (Windows 11 Dark Blue)
-            ["Accent"]        = "#60CDFF",
-            ["AccentHover"]   = "#4DB8E8",
-            ["AccentPress"]   = "#3AA0D0",
-            ["AccentLight"]   = "#1A3A54",
-            // AccentShadowColor — mirror of Accent for DropShadowEffect on dark theme.
-            // Same hue as Accent brush — glow is brighter cyan on dark background.
-            ["AccentShadowColor"] = "#60CDFF",
-            // Text
+            // Backgrounds — 4-level elevation
+            ["AppBg"]        = "#0F0F12",
+            ["Surface"]       = "#1C1C22",
+            ["QuickBg"]       = "#25252D",
+            ["RowAlt"]        = "#16161A",
+            ["RowHover"]      = "#2A2A35",
+            ["RowAltHover"]   = "#2A2A35",
+            ["RowAltSelected"] = "#1E3050",
+            // Row-hover/select animation targets (Color)
+            ["RowHoverColor"]    = "#2A2A35",
+            ["AccentLightColor"] = "#1E3050",
+            // Accent — modern blue, stands out on dark
+            ["Accent"]        = "#5299E0",
+            ["AccentHover"]   = "#6BAFEF",
+            ["AccentPress"]   = "#4088CC",
+            ["AccentLight"]   = "#1A3050",
+            ["AccentShadowColor"] = "#5299E0",
+            // Text — bright, high-contrast
             ["TextPrimary"]   = "#FFFFFF",
-            ["TextSecondary"] = "#C5C5C5",
-            ["TextMuted"]     = "#A0A0A0",
-            // Borders
-            ["Border"]        = "#4A4A4A",
-            ["BorderHover"]   = "#5F5F5F",
-            ["SubtleBorder"]  = "#3D3D3D",
-            ["GridLine"]      = "#383838",
-            ["TrackBg"]       = "#4A4A4A",
-            ["ScrollBarThumb"] = "#8A8A8A",
-            ["HeaderBorder"]  = "#555555",
+            ["TextSecondary"] = "#C8C8D0",
+            ["TextMuted"]     = "#888896",
+            // Borders — visible but not aggressive
+            ["Border"]        = "#353540",
+            ["BorderHover"]   = "#505060",
+            ["SubtleBorder"]  = "#2A2A34",
+            ["GridLine"]      = "#22222C",
+            ["TrackBg"]       = "#30303A",
+            ["ScrollBarThumb"] = "#606070",
+            ["HeaderBorder"]  = "#3A3A48",
             // Semantic
             ["Success"]       = "#4CC97D",
-            ["SuccessHover"]  = "#3DB86E",
+            ["SuccessHover"]  = "#5DE08F",
             ["Danger"]        = "#FF6B6B",
-            ["DangerHover"]   = "#E85555",
+            ["DangerHover"]   = "#FF8585",
             ["Warning"]       = "#FFB347",
-            ["DangerLight"]   = "#3A2028",
-            ["DangerGhostBorder"] = "#5A2838",
-            // On-accent text — dark on bright Accent/Success/Danger in dark mode
-            ["OnAccent"]      = "#0A1A2A",
-            ["OnSuccess"]     = "#0A1F12",
-            ["OnDanger"]      = "#2A0A0A",
-            // Ghost button — slightly elevated surface for visibility
-            ["GhostBg"]       = "#383838",
-            ["GhostBorder"]   = "#5A5A5A",
-            // Section card — subtle tinted background for sidebar sub-cards
-            ["SectionBg"]     = "#353535",
-            ["SectionAccent"] = "#60CDFF",
-            // Glow color for button hover
-            ["GlowAccent"]    = "#60CDFF",
-            ["SuccessShadow"] = "#4CC98A",
+            ["DangerLight"]   = "#2A1820",
+            ["DangerGhostBorder"] = "#4A2838",
+            // On-accent text — dark text on bright buttons
+            ["OnAccent"]      = "#FFFFFF",
+            ["OnSuccess"]     = "#0D1F14",
+            ["OnDanger"]      = "#FFFFFF",
+            // Ghost button — elevated from surface
+            ["GhostBg"]       = "#2A2A34",
+            ["GhostBorder"]   = "#404050",
+            // Section card — sidebar sub-cards
+            ["SectionBg"]     = "#22222C",
+            ["SectionAccent"] = "#5299E0",
+            // Glow / shadow
+            ["GlowAccent"]    = "#5299E0",
+            ["SuccessShadow"] = "#4CC97D",
             ["DangerShadow"]  = "#FF6B6B",
             // Total bar
-            ["TotalBg"]       = "#1A1A1A",
+            ["TotalBg"]       = "#141418",
             ["TotalText"]     = "#FFFFFF",
-            ["TotalTextMuted"] = "#A0A0A0",
-            // Quick-add / chips
-            ["ChipBg"]        = "#1A3A54",
-            // DataGrid headers — Fluent dark
-            ["HeaderBg"]      = "#383838",
-            ["HeaderBorder"]  = "#4A4A4A",
-            ["HeaderText"]    = "#C5C5C5",
-            ["HeaderPress"]   = "#202020",
+            ["TotalTextMuted"] = "#909098",
+            // Quick-add / chips — visible accent
+            ["ChipBg"]        = "#1A3050",
+            // DataGrid headers — elevated
+            ["HeaderBg"]      = "#2E2E38",
+            ["HeaderBorder"]  = "#3A3A48",
+            ["HeaderText"]    = "#D0D0D8",
+            ["HeaderPress"]   = "#22222A",
             // Menu
-            ["MenuItemPressed"] = "#2A4A6E",
+            ["MenuItemPressed"] = "#1E3050",
             // Shadow
-            ["ShadowColor"]   = "#060606",
+            ["ShadowColor"]   = "#000000",
             // Badges
-            ["BadgeDefaultBg"]  = "#1A3A54",
-            ["BadgeDefaultFg"]  = "#60CDFF",
-            ["BadgeSuccessBg"]  = "#1A3828",
+            ["BadgeDefaultBg"]  = "#1A3050",
+            ["BadgeDefaultFg"]  = "#5299E0",
+            ["BadgeSuccessBg"]  = "#142820",
             ["BadgeSuccessFg"]  = "#5BC98A",
-            ["BadgeWarningBg"]  = "#3A2A18",
+            ["BadgeWarningBg"]  = "#2A2014",
             ["BadgeWarningFg"]  = "#FFB347",
-            ["BadgeDangerBg"]   = "#3A2028",
+            ["BadgeDangerBg"]   = "#2A1820",
             ["BadgeDangerFg"]   = "#FF6B6B",
             // Install toggle
             ["InstallGreen"]  = "#4CC97D",
             ["InstallRed"]    = "#FF6B6B",
-            ["InstallGray"]   = "#8A8A8A",
+            ["InstallGray"]   = "#808090",
         };
     }
 }

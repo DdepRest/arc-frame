@@ -90,6 +90,10 @@
                             <Separator/>
                             <MenuItem Header="📍 Сменить точку установки…" Click="MenuChangeLocation_Click"/>
                             <Separator/>
+                            <MenuItem Header="🤖 AI Ассистент — API ключ…"
+                                      Click="MenuAiApiKey_Click"
+                                      IsEnabled="False"
+                                      ToolTip="AI Ассистент — в разработке"/>
                             <MenuItem Header="🔄 Проверить обновления" Click="MenuCheckUpdates_Click"/>
                         </ContextMenu>
                     </Button.ContextMenu>

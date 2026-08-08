@@ -398,6 +398,8 @@ powershell -ExecutionPolicy Bypass -File validate-docs.ps1
 
 ## Last verified
 
+2026-08-06 — maintenance pass (CONTROL#13): дата верификации синхронизирована с git-историей; содержимое сверено с текущим состоянием (v3.47.3, 1511/1511 tests pass).
+
 2026-07-15 — **Фаза 6 завершена.** `MainWindow.Orders.cs` 527→226 строк (−57 %). Выделены 3 компонента: `OrderGridPresenter` (static internal pure-helper для DataGrid заказов — autosize, sort indicators, header-vs-row hit-test), `OrderImportExportService` (instance-оркестратор file-IO поверх OrderStorageService, nullable-tolerant сигнатуры `Window? owner = null` и `OrderData?`), `ChangeOrderStatusWindow` (NEW XAML-диалог изменения статуса в Phase 4 паттерне, заменил ~110 строк legacy inline-XAML). +27 тестов (12 STA сортировка/grid, 11 pure deep-clone/filename-build, 4 [Collection("FileSystem")] param-validation). **1179/1179 tests pass.** Бизнес-логика, JSON-контракт OrderData, печатное КП, автообновление — без изменений. `OpenSelectedOrder` оставлен inline как комплексный multi-VM flow.
 
 2026-07-13 — **Фаза 5 завершена.** `OrderItem.cs` 651→~520 строк (−20 %). Выделены 3 компонента: `ProductCatalog` (категории товаров), `AnwisSizeCalculator` (pure-функции Anwis), `SlopeCalculationExtensions` (методы-расширения для `SlopeCalculation`). +21 тест. **1133/1133 tests pass.** Бизнес-логика и public API не затронуты.

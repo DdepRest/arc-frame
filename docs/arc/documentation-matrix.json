@@ -2,74 +2,736 @@
   "generated": "2026-06-24",
   "source": "docs/arc/DOCUMENTATION_MATRIX.md (canonical — edit the JSON, re-render the MD)",
   "mappings": [
-    {"file": "Models/OrderItem.Calculations.cs",     "docs": ["CALCULATION_LOGIC.md", "CALCULATION_TEST_CASES.md", "CURRENT_STATE.md", "CHANGELOG.md"]},
-    {"file": "Models/OrderItem.cs",                  "docs": ["CALCULATION_LOGIC.md", "GOTCHAS.md#1", "CURRENT_STATE.md", "CHANGELOG.md"], "note": "Width/Height setter'ы, ШиринаВвод/ВысотаВвод"},
-    {"file": "Models/OrderItem.Installation.cs",     "docs": ["CALCULATION_LOGIC.md#монтаж", "GOTCHAS.md#11", "CURRENT_STATE.md", "CHANGELOG.md"]},
-    {"file": "Models/AnwisSize.cs",                  "docs": ["CALCULATION_LOGIC.md", "CALCULATION_TEST_CASES.md", "GOTCHAS.md#1", "CHANGELOG.md"], "note": "Phase 5: delegates to AnwisSizeCalculator"},
-    {"file": "Models/ProductCatalog.cs",             "docs": ["CALCULATION_LOGIC.md", "CURRENT_STATE.md", "CHANGELOG.md"], "note": "Phase 5: product category HashSets"},
-    {"file": "Models/SlopeCalculationExtensions.cs", "docs": ["CURRENT_STATE.md", "CHANGELOG.md"], "note": "Phase 5: DeepClone extension for SlopeCalculation"},
-    {"file": "Models/AnwisSizeMode.cs",              "docs": ["GOTCHAS.md#1"], "note": "enum values 0-4 — breaking change"},
-    {"file": "Models/OrderData.cs",                  "docs": ["CURRENT_STATE.md", "CHANGELOG.md"]},
-    {"file": "Models/OrderItem.Dto.cs",              "docs": ["GOTCHAS.md#3", "CURRENT_STATE.md", "CHANGELOG.md"], "note": "derived-поля!"},
-    {"file": "Models/ClientInfo.cs",                 "docs": ["CURRENT_STATE.md", "CHANGELOG.md"]},
-    {"file": "Models/PriceItem.cs",                  "docs": ["CURRENT_STATE.md", "CHANGELOG.md"]},
-    {"file": "Models/UpdateManifest.cs",             "docs": ["AUTO_UPDATE.md", "RELEASE_PROCESS.md", "CHANGELOG.md"]},
-    {"file": "Models/LocationOptions.cs",            "docs": ["CURRENT_STATE.md"]},
-    {"file": "Models/OrderSnapshot.cs",              "docs": ["CURRENT_STATE.md"], "note": "Undo/Redo"},
-    {"file": "Models/UpdateItem.cs",                 "docs": ["CURRENT_STATE.md"]},
-    {"file": "Models/AdditionalKpItem.cs",           "docs": ["CURRENT_STATE.md"]},
-    {"file": "ViewModels/CalculationViewModel.cs",   "docs": ["CALCULATION_LOGIC.md#итоги", "CURRENT_STATE.md", "CHANGELOG.md"]},
-    {"file": "ViewModels/MainWindowViewModel.cs",    "docs": ["CURRENT_STATE.md", "CHANGELOG.md"]},
-    {"file": "ViewModels/OrdersHistoryViewModel.cs", "docs": ["CURRENT_STATE.md", "CHANGELOG.md"]},
-    {"file": "ViewModels/PricesViewModel.cs",        "docs": ["CURRENT_STATE.md", "CHANGELOG.md"]},
-    {"file": "Services/PriceService.cs",             "docs": ["GOTCHAS.md#4", "CALCULATION_LOGIC.md#цены", "CURRENT_STATE.md", "CHANGELOG.md"]},
-    {"file": "Services/PrintService.cs",             "docs": ["GOTCHAS.md#6", "CALCULATION_LOGIC.md#КП", "CURRENT_STATE.md", "CHANGELOG.md"]},
-    {"file": "Services/FactoryTextService.cs",       "docs": ["GOTCHAS.md#завод", "CALCULATION_LOGIC.md#завод", "CALCULATION_TEST_CASES.md", "CHANGELOG.md"]},
-    {"file": "Services/UpdateService.cs",            "docs": ["AUTO_UPDATE.md", "GOTCHAS.md#5", "GOTCHAS.md#8", "RELEASE_PROCESS.md", "CHANGELOG.md"]},
-    {"file": "Services/WatchdogService.cs",          "docs": ["AUTO_UPDATE.md", "GOTCHAS.md#5", "RELEASE_PROCESS.md", "CHANGELOG.md"]},
-    {"file": "Services/UpdateLog.cs",                "docs": ["CURRENT_STATE.md"]},
-    {"file": "Services/OrderStorageService.cs",      "docs": ["GOTCHAS.md#3", "GOTCHAS.md#9", "CURRENT_STATE.md", "CHANGELOG.md"]},
-    {"file": "Services/AppSettingsService.cs",       "docs": ["GOTCHAS.md#9", "CURRENT_STATE.md", "CHANGELOG.md"]},
-    {"file": "Services/AnwisSizeService.cs",         "docs": ["CURRENT_STATE.md"]},
-    {"file": "Services/AnwisSizeCalculator.cs",      "docs": ["CALCULATION_LOGIC.md", "CALCULATION_TEST_CASES.md", "CURRENT_STATE.md", "CHANGELOG.md"], "note": "Phase 5: pure Anwis size calculation functions"},
-    {"file": "Services/AmountInWordsService.cs",     "docs": ["CALCULATION_TEST_CASES.md", "CHANGELOG.md"], "note": "Case 11"},
-    {"file": "Services/MoneyFormatService.cs",       "docs": ["CURRENT_STATE.md"]},
-    {"file": "Services/ThemeService.cs",             "docs": ["GOTCHAS.md#7", "DECISIONS.md#10", "CHANGELOG.md"]},
-    {"file": "Services/DialogService.cs",            "docs": ["CURRENT_STATE.md"]},
-    {"file": "Services/ToastService.cs",             "docs": ["CURRENT_STATE.md"]},
-    {"file": "Services/UndoRedoService.cs",          "docs": ["GOTCHAS.md#10", "CURRENT_STATE.md"]},
-    {"file": "Services/NotesFormatter.cs",             "docs": ["CURRENT_STATE.md", "CHANGELOG.md"], "note": "lightweight notes markup parser"},
-    {"file": "Services/NotesRenderer.cs",              "docs": ["CURRENT_STATE.md", "CHANGELOG.md"], "note": "WPF inline renderer for formatted notes"},
-    {"file": "Controls/QuickAddControl.*",           "docs": ["CURRENT_STATE.md", "CHANGELOG.md"]},
-    {"file": "Controls/OrderItemsControl.*",         "docs": ["CURRENT_STATE.md", "CHANGELOG.md"]},
-    {"file": "Controls/SidebarControl.*",            "docs": ["CURRENT_STATE.md", "CHANGELOG.md"]},
-    {"file": "Controls/ActionBarControl.*",          "docs": ["CURRENT_STATE.md", "CHANGELOG.md"]},
-    {"file": "Controls/OrdersHistoryControl.*",      "docs": ["CURRENT_STATE.md", "CHANGELOG.md"]},
-    {"file": "Controls/PricesControl.*",             "docs": ["CURRENT_STATE.md", "CHANGELOG.md"]},
-    {"file": "Controls/UpdatesTabControl.*",         "docs": ["CURRENT_STATE.md", "CHANGELOG.md"]},
-    {"file": "Controls/TotalCardControl.*",          "docs": ["CURRENT_STATE.md"]},
-    {"file": "Controls/SendToFactoryWindow.*",       "docs": ["CURRENT_STATE.md", "CHANGELOG.md"]},
-    {"file": "Controls/AnwisContextMenuBuilder.cs",  "docs": ["CURRENT_STATE.md", "CHANGELOG.md"]},
-    {"file": "Themes/Brushes.xaml",                  "docs": ["DECISIONS.md#10", "GOTCHAS.md#7", "CHANGELOG.md"]},
-    {"file": "Themes/*.xaml",                        "docs": ["CHANGELOG.md"], "note": "стили"},
-    {"file": "Resources/update-log.json",            "docs": ["CURRENT_STATE.md", "RELEASE_PROCESS.md"]},
-    {"file": "MosquitoNetCalculator.csproj",         "docs": ["RELEASE_PROCESS.md", "CURRENT_STATE.md", "CHANGELOG.md", "AUTO_UPDATE.md"], "note": "версия"},
-    {"file": "releases.json",                        "docs": ["AUTO_UPDATE.md", "RELEASE_PROCESS.md", "CURRENT_STATE.md"]},
-    {"file": "build.bat",                            "docs": ["RELEASE_PROCESS.md", "CHANGELOG.md"]},
-    {"file": "installer.iss",                        "docs": ["RELEASE_PROCESS.md", "CHANGELOG.md"]},
-    {"file": "*.Tests.cs",                           "docs": ["CURRENT_STATE.md"], "note": "количество тестов, если изменилось (включая ProductCatalogTests, AnwisSizeCalculatorTests, SlopeCalculationExtensionsTests для Phase 5)"},
-    {"file": "docs/arc/PROJECT_OVERVIEW.md",         "docs": ["CURRENT_STATE.md"], "note": "project description and tech stack"},
-    {"file": "docs/arc/INTENTS.md",                  "docs": ["CURRENT_STATE.md"], "note": "A.R.C. v4: intent-to-file routing"},
-    {"file": "docs/arc/SYMBOL_INDEX.md",             "docs": ["CURRENT_STATE.md"], "note": "A.R.C. v4: auto-generated symbol index"},
-    {"file": "README.md",                              "docs": ["CURRENT_STATE.md"], "note": "project overview for GitHub"},
-    {"file": "docs/arc/REFACTORING_PLAN.md",           "docs": ["CURRENT_STATE.md", "MULTI_AGENT_ARC_CALC_CONTROL.md", "AGENTS.md"], "note": "system refactoring plan"},
-    {"file": "gensymbols.ps1",                       "docs": ["CURRENT_STATE.md"], "note": "A.R.C. v4: symbol index generator"},
-    {"file": "arc-check.ps1",                        "docs": ["CURRENT_STATE.md"], "note": "A.R.C. v4: pre-commit doc sync check"},
-    {"file": "MosquitoNetCalculator/MainWindow.xaml.cs", "docs": ["REFACTORING_PLAN.md", "CURRENT_STATE.md", "CHANGELOG.md"], "note": "Phase 1: NavigationService, OverlayManager, SlopeOverlayCoordinator"},
-    {"file": "MosquitoNetCalculator/MainWindow.Orders.cs", "docs": ["REFACTORING_PLAN.md", "CURRENT_STATE.md", "CHANGELOG.md"], "note": "Phase 6: OrderImportExportService, OrderDialogService, OrderGridPresenter"},
-    {"file": "MosquitoNetCalculator/Services/UpdateService.cs", "docs": ["REFACTORING_PLAN.md", "AUTO_UPDATE.md", "GOTCHAS.md#5", "GOTCHAS.md#8", "RELEASE_PROCESS.md", "CURRENT_STATE.md", "CHANGELOG.md"], "note": "Phase 2: manifest/version/download/verify/presenter"},
-    {"file": "MosquitoNetCalculator/Services/PrintService.cs", "docs": ["REFACTORING_PLAN.md", "GOTCHAS.md#6", "CALCULATION_LOGIC.md#КП", "CURRENT_STATE.md", "CHANGELOG.md"], "note": "Phase 3: queue resolver, fixed document builder, orchestrator"},
-    {"file": "MosquitoNetCalculator/Services/DialogService.cs", "docs": ["REFACTORING_PLAN.md", "CURRENT_STATE.md", "CHANGELOG.md"], "note": "Phase 4: XAML templates + DialogBuilder"},
-    {"file": "MosquitoNetCalculator/Models/OrderItem.cs", "docs": ["REFACTORING_PLAN.md", "CALCULATION_LOGIC.md", "GOTCHAS.md#1", "CURRENT_STATE.md", "CHANGELOG.md"], "note": "Phase 5: ProductCatalog, AnwisSizeCalculator, SlopeCalculationExtensions"}
+    {
+      "file": "Models/OrderItem.Calculations.cs",
+      "docs": [
+        "CALCULATION_LOGIC.md",
+        "CALCULATION_TEST_CASES.md",
+        "CURRENT_STATE.md",
+        "CHANGELOG.md"
+      ]
+    },
+    {
+      "file": "Models/OrderItem.cs",
+      "docs": [
+        "CALCULATION_LOGIC.md",
+        "GOTCHAS.md#1",
+        "CURRENT_STATE.md",
+        "CHANGELOG.md"
+      ],
+      "note": "Width/Height setter'ы, ШиринаВвод/ВысотаВвод"
+    },
+    {
+      "file": "Models/OrderItem.Installation.cs",
+      "docs": [
+        "CALCULATION_LOGIC.md#монтаж",
+        "GOTCHAS.md#11",
+        "CURRENT_STATE.md",
+        "CHANGELOG.md"
+      ]
+    },
+    {
+      "file": "Models/AnwisSize.cs",
+      "docs": [
+        "CALCULATION_LOGIC.md",
+        "CALCULATION_TEST_CASES.md",
+        "GOTCHAS.md#1",
+        "CHANGELOG.md"
+      ],
+      "note": "Phase 5: delegates to AnwisSizeCalculator"
+    },
+    {
+      "file": "Models/ProductCatalog.cs",
+      "docs": [
+        "CALCULATION_LOGIC.md",
+        "CURRENT_STATE.md",
+        "CHANGELOG.md"
+      ],
+      "note": "Phase 5: product category HashSets"
+    },
+    {
+      "file": "Models/SlopeCalculationExtensions.cs",
+      "docs": [
+        "CURRENT_STATE.md",
+        "CHANGELOG.md"
+      ],
+      "note": "Phase 5: DeepClone extension for SlopeCalculation"
+    },
+    {
+      "file": "Models/AnwisSizeMode.cs",
+      "docs": [
+        "GOTCHAS.md#1"
+      ],
+      "note": "enum values 0-4 — breaking change"
+    },
+    {
+      "file": "Models/OrderData.cs",
+      "docs": [
+        "CURRENT_STATE.md",
+        "CHANGELOG.md"
+      ]
+    },
+    {
+      "file": "Models/OrderItem.Dto.cs",
+      "docs": [
+        "GOTCHAS.md#3",
+        "CURRENT_STATE.md",
+        "CHANGELOG.md"
+      ],
+      "note": "derived-поля!"
+    },
+    {
+      "file": "Models/ClientInfo.cs",
+      "docs": [
+        "CURRENT_STATE.md",
+        "CHANGELOG.md"
+      ]
+    },
+    {
+      "file": "Models/PriceItem.cs",
+      "docs": [
+        "CURRENT_STATE.md",
+        "CHANGELOG.md"
+      ]
+    },
+    {
+      "file": "Models/UpdateManifest.cs",
+      "docs": [
+        "AUTO_UPDATE.md",
+        "RELEASE_PROCESS.md",
+        "CHANGELOG.md"
+      ]
+    },
+    {
+      "file": "Models/LocationOptions.cs",
+      "docs": [
+        "CURRENT_STATE.md"
+      ]
+    },
+    {
+      "file": "Models/OrderSnapshot.cs",
+      "docs": [
+        "CURRENT_STATE.md"
+      ],
+      "note": "Undo/Redo"
+    },
+    {
+      "file": "Models/UpdateItem.cs",
+      "docs": [
+        "CURRENT_STATE.md"
+      ]
+    },
+    {
+      "file": "Models/AdditionalKpItem.cs",
+      "docs": [
+        "CURRENT_STATE.md"
+      ]
+    },
+    {
+      "file": "ViewModels/CalculationViewModel.cs",
+      "docs": [
+        "CALCULATION_LOGIC.md#итоги",
+        "CURRENT_STATE.md",
+        "CHANGELOG.md"
+      ]
+    },
+    {
+      "file": "ViewModels/MainWindowViewModel.cs",
+      "docs": [
+        "CURRENT_STATE.md",
+        "CHANGELOG.md"
+      ]
+    },
+    {
+      "file": "ViewModels/OrdersHistoryViewModel.cs",
+      "docs": [
+        "CURRENT_STATE.md",
+        "CHANGELOG.md"
+      ]
+    },
+    {
+      "file": "ViewModels/PricesViewModel.cs",
+      "docs": [
+        "CURRENT_STATE.md",
+        "CHANGELOG.md"
+      ]
+    },
+    {
+      "file": "Services/PriceService.cs",
+      "docs": [
+        "GOTCHAS.md#4",
+        "CALCULATION_LOGIC.md#цены",
+        "CURRENT_STATE.md",
+        "CHANGELOG.md"
+      ]
+    },
+    {
+      "file": "Services/PrintService.cs",
+      "docs": [
+        "GOTCHAS.md#6",
+        "CALCULATION_LOGIC.md#КП",
+        "CURRENT_STATE.md",
+        "CHANGELOG.md"
+      ]
+    },
+    {
+      "file": "Services/FactoryTextService.cs",
+      "docs": [
+        "GOTCHAS.md#завод",
+        "CALCULATION_LOGIC.md#завод",
+        "CALCULATION_TEST_CASES.md",
+        "CHANGELOG.md"
+      ]
+    },
+    {
+      "file": "Services/UpdateService.cs",
+      "docs": [
+        "AUTO_UPDATE.md",
+        "GOTCHAS.md#5",
+        "GOTCHAS.md#8",
+        "RELEASE_PROCESS.md",
+        "CHANGELOG.md"
+      ]
+    },
+    {
+      "file": "Services/WatchdogService.cs",
+      "docs": [
+        "AUTO_UPDATE.md",
+        "GOTCHAS.md#5",
+        "RELEASE_PROCESS.md",
+        "CHANGELOG.md"
+      ]
+    },
+    {
+      "file": "Services/UpdateLog.cs",
+      "docs": [
+        "CURRENT_STATE.md"
+      ]
+    },
+    {
+      "file": "Services/OrderStorageService.cs",
+      "docs": [
+        "GOTCHAS.md#3",
+        "GOTCHAS.md#9",
+        "CURRENT_STATE.md",
+        "CHANGELOG.md"
+      ]
+    },
+    {
+      "file": "Services/AppSettingsService.cs",
+      "docs": [
+        "GOTCHAS.md#9",
+        "CURRENT_STATE.md",
+        "CHANGELOG.md"
+      ]
+    },
+    {
+      "file": "Services/AnwisSizeService.cs",
+      "docs": [
+        "CURRENT_STATE.md"
+      ]
+    },
+    {
+      "file": "Services/AnwisSizeCalculator.cs",
+      "docs": [
+        "CALCULATION_LOGIC.md",
+        "CALCULATION_TEST_CASES.md",
+        "CURRENT_STATE.md",
+        "CHANGELOG.md"
+      ],
+      "note": "Phase 5: pure Anwis size calculation functions"
+    },
+    {
+      "file": "Services/AmountInWordsService.cs",
+      "docs": [
+        "CALCULATION_TEST_CASES.md",
+        "CHANGELOG.md"
+      ],
+      "note": "Case 11"
+    },
+    {
+      "file": "Services/MoneyFormatService.cs",
+      "docs": [
+        "CURRENT_STATE.md"
+      ]
+    },
+    {
+      "file": "Services/ThemeService.cs",
+      "docs": [
+        "GOTCHAS.md#7",
+        "DECISIONS.md#10",
+        "CHANGELOG.md"
+      ]
+    },
+    {
+      "file": "Services/DialogService.cs",
+      "docs": [
+        "CURRENT_STATE.md"
+      ]
+    },
+    {
+      "file": "Services/ToastService.cs",
+      "docs": [
+        "CURRENT_STATE.md"
+      ]
+    },
+    {
+      "file": "Services/UndoRedoService.cs",
+      "docs": [
+        "GOTCHAS.md#10",
+        "CURRENT_STATE.md"
+      ]
+    },
+    {
+      "file": "Services/NotesFormatter.cs",
+      "docs": [
+        "CURRENT_STATE.md",
+        "CHANGELOG.md"
+      ],
+      "note": "lightweight notes markup parser"
+    },
+    {
+      "file": "Services/NotesRenderer.cs",
+      "docs": [
+        "CURRENT_STATE.md",
+        "CHANGELOG.md"
+      ],
+      "note": "WPF inline renderer for formatted notes"
+    },
+    {
+      "file": "Services/AiAssistantService.cs",
+      "docs": [
+        "CURRENT_STATE.md",
+        "CHANGELOG.md"
+      ],
+      "note": "AI streaming, model routing and free-provider fallback"
+    },
+    {
+      "file": "Services/AiModelSelector.cs",
+      "docs": [
+        "CURRENT_STATE.md",
+        "CHANGELOG.md"
+      ],
+      "note": "task-based free-model ranking"
+    },
+    {
+      "file": "Services/AiTaskClassifier.cs",
+      "docs": [
+        "CURRENT_STATE.md",
+        "CHANGELOG.md"
+      ],
+      "note": "local task classification for model selection"
+    },
+    {
+      "file": "Controls/QuickAddControl.*",
+      "docs": [
+        "CURRENT_STATE.md",
+        "CHANGELOG.md"
+      ]
+    },
+    {
+      "file": "Controls/OrderItemsControl.*",
+      "docs": [
+        "CURRENT_STATE.md",
+        "CHANGELOG.md"
+      ]
+    },
+    {
+      "file": "Controls/SidebarControl.*",
+      "docs": [
+        "CURRENT_STATE.md",
+        "CHANGELOG.md"
+      ]
+    },
+    {
+      "file": "Controls/ActionBarControl.*",
+      "docs": [
+        "CURRENT_STATE.md",
+        "CHANGELOG.md"
+      ]
+    },
+    {
+      "file": "Controls/OrdersHistoryControl.*",
+      "docs": [
+        "CURRENT_STATE.md",
+        "CHANGELOG.md"
+      ]
+    },
+    {
+      "file": "Controls/PricesControl.*",
+      "docs": [
+        "CURRENT_STATE.md",
+        "CHANGELOG.md"
+      ]
+    },
+    {
+      "file": "Controls/UpdatesTabControl.*",
+      "docs": [
+        "CURRENT_STATE.md",
+        "CHANGELOG.md"
+      ]
+    },
+    {
+      "file": "Controls/TotalCardControl.*",
+      "docs": [
+        "CURRENT_STATE.md"
+      ]
+    },
+    {
+      "file": "Controls/SendToFactoryWindow.*",
+      "docs": [
+        "CURRENT_STATE.md",
+        "CHANGELOG.md"
+      ]
+    },
+    {
+      "file": "Controls/AnwisContextMenuBuilder.cs",
+      "docs": [
+        "CURRENT_STATE.md",
+        "CHANGELOG.md"
+      ]
+    },
+    {
+      "file": "Controls/AiAssistantControl.*",
+      "docs": [
+        "CURRENT_STATE.md",
+        "CHANGELOG.md"
+      ],
+      "note": "streaming chat UI, model badges, plan preview card with Выполнить/Отмена and Отменить действие"
+    },
+    {
+      "file": "Controls/AiApiKeyDialog.*",
+      "docs": [
+        "CURRENT_STATE.md",
+        "CHANGELOG.md"
+      ],
+      "note": "AI keys, model catalog and auto-select UX"
+    },
+    {
+      "file": "Models/AiChatMessage.cs",
+      "docs": [
+        "CURRENT_STATE.md",
+        "CHANGELOG.md"
+      ],
+      "note": "persisted AI model/provider badge + plan state (awaiting confirmation/executed/cancelled)"
+    },
+    {
+      "file": "Models/AiClarificationForm.cs",
+      "docs": [
+        "CURRENT_STATE.md",
+        "CHANGELOG.md"
+      ],
+      "note": "interactive parameter card for AI clarification replies"
+    },
+    {
+      "file": "Services/AiCommandParser.cs",
+      "docs": [
+        "CURRENT_STATE.md",
+        "CHANGELOG.md"
+      ],
+      "note": "add-item JSON parsing + plan-mode (steps); GetDefaultPrice/GenerateActionConfirmation reused by clarification form"
+    },
+    {
+      "file": "ViewModels/AiAssistantViewModel.cs",
+      "docs": [
+        "CURRENT_STATE.md",
+        "CHANGELOG.md"
+      ],
+      "note": "AI Agent Mode: background streaming, slash routing, plan→confirm→execute, undo/redo requests"
+    },
+    {
+      "file": "Themes/Brushes.xaml",
+      "docs": [
+        "DECISIONS.md#10",
+        "GOTCHAS.md#7",
+        "CHANGELOG.md"
+      ]
+    },
+    {
+      "file": "Themes/*.xaml",
+      "docs": [
+        "CHANGELOG.md"
+      ],
+      "note": "стили"
+    },
+    {
+      "file": "Resources/update-log.json",
+      "docs": [
+        "CURRENT_STATE.md",
+        "RELEASE_PROCESS.md"
+      ]
+    },
+    {
+      "file": "MosquitoNetCalculator.csproj",
+      "docs": [
+        "RELEASE_PROCESS.md",
+        "CURRENT_STATE.md",
+        "CHANGELOG.md",
+        "AUTO_UPDATE.md"
+      ],
+      "note": "версия"
+    },
+    {
+      "file": "releases.json",
+      "docs": [
+        "AUTO_UPDATE.md",
+        "RELEASE_PROCESS.md",
+        "CURRENT_STATE.md"
+      ]
+    },
+    {
+      "file": "build.bat",
+      "docs": [
+        "RELEASE_PROCESS.md",
+        "CHANGELOG.md"
+      ]
+    },
+    {
+      "file": "installer.iss",
+      "docs": [
+        "RELEASE_PROCESS.md",
+        "CHANGELOG.md"
+      ]
+    },
+    {
+      "file": "*.Tests.cs",
+      "docs": [
+        "CURRENT_STATE.md"
+      ],
+      "note": "количество тестов, если изменилось (включая ProductCatalogTests, AnwisSizeCalculatorTests, SlopeCalculationExtensionsTests для Phase 5)"
+    },
+    {
+      "file": "docs/arc/PROJECT_OVERVIEW.md",
+      "docs": [
+        "CURRENT_STATE.md"
+      ],
+      "note": "project description and tech stack"
+    },
+    {
+      "file": "docs/arc/INTENTS.md",
+      "docs": [
+        "CURRENT_STATE.md"
+      ],
+      "note": "A.R.C. v4: intent-to-file routing"
+    },
+    {
+      "file": "docs/arc/SYMBOL_INDEX.md",
+      "docs": [
+        "CURRENT_STATE.md"
+      ],
+      "note": "A.R.C. v4: auto-generated symbol index"
+    },
+    {
+      "file": "README.md",
+      "docs": [
+        "CURRENT_STATE.md"
+      ],
+      "note": "project overview for GitHub"
+    },
+    {
+      "file": "docs/arc/REFACTORING_PLAN.md",
+      "docs": [
+        "CURRENT_STATE.md",
+        "MULTI_AGENT_ARC_CALC_CONTROL.md",
+        "AGENTS.md"
+      ],
+      "note": "system refactoring plan"
+    },
+    {
+      "file": "gensymbols.ps1",
+      "docs": [
+        "CURRENT_STATE.md"
+      ],
+      "note": "A.R.C. v4: symbol index generator"
+    },
+    {
+      "file": "arc-check.ps1",
+      "docs": [
+        "CURRENT_STATE.md"
+      ],
+      "note": "A.R.C. v4: pre-commit doc sync check"
+    },
+    {
+      "file": "MosquitoNetCalculator/MainWindow.xaml",
+      "docs": [
+        "CURRENT_STATE.md",
+        "CHANGELOG.md"
+      ],
+      "note": "AI BETA navigation and panel badge"
+    },
+    {
+      "file": "MosquitoNetCalculator/Converters/BoolVisibilityConverter.cs",
+      "docs": [
+        "CURRENT_STATE.md",
+        "CHANGELOG.md"
+      ],
+      "note": "AI model badge visibility converter"
+    },
+    {
+      "file": "MosquitoNetCalculator/MainWindow.xaml.cs",
+      "docs": [
+        "REFACTORING_PLAN.md",
+        "CURRENT_STATE.md",
+        "CHANGELOG.md"
+      ],
+      "note": "Phase 1: NavigationService, OverlayManager, SlopeOverlayCoordinator"
+    },
+    {
+      "file": "MosquitoNetCalculator/MainWindow.Orders.cs",
+      "docs": [
+        "REFACTORING_PLAN.md",
+        "CURRENT_STATE.md",
+        "CHANGELOG.md"
+      ],
+      "note": "Phase 6: OrderImportExportService, OrderDialogService, OrderGridPresenter"
+    },
+    {
+      "file": "MosquitoNetCalculator/Services/UpdateService.cs",
+      "docs": [
+        "REFACTORING_PLAN.md",
+        "AUTO_UPDATE.md",
+        "GOTCHAS.md#5",
+        "GOTCHAS.md#8",
+        "RELEASE_PROCESS.md",
+        "CURRENT_STATE.md",
+        "CHANGELOG.md"
+      ],
+      "note": "Phase 2: manifest/version/download/verify/presenter"
+    },
+    {
+      "file": "MosquitoNetCalculator/Services/PrintService.cs",
+      "docs": [
+        "REFACTORING_PLAN.md",
+        "GOTCHAS.md#6",
+        "CALCULATION_LOGIC.md#КП",
+        "CURRENT_STATE.md",
+        "CHANGELOG.md"
+      ],
+      "note": "Phase 3: queue resolver, fixed document builder, orchestrator"
+    },
+    {
+      "file": "MosquitoNetCalculator/Services/DialogService.cs",
+      "docs": [
+        "REFACTORING_PLAN.md",
+        "CURRENT_STATE.md",
+        "CHANGELOG.md"
+      ],
+      "note": "Phase 4: XAML templates + DialogBuilder"
+    },
+    {
+      "file": "MosquitoNetCalculator/Models/OrderItem.cs",
+      "docs": [
+        "REFACTORING_PLAN.md",
+        "CALCULATION_LOGIC.md",
+        "GOTCHAS.md#1",
+        "CURRENT_STATE.md",
+        "CHANGELOG.md"
+      ],
+      "note": "Phase 5: ProductCatalog, AnwisSizeCalculator, SlopeCalculationExtensions"
+    },
+    {
+      "file": "Models/AiActionPlan.cs",
+      "docs": [
+        "CURRENT_STATE.md",
+        "CHANGELOG.md"
+      ],
+      "note": "AI Agent Mode: action plan with steps, confirmation and execution state"
+    },
+    {
+      "file": "Models/AiOrderContext.cs",
+      "docs": [
+        "CURRENT_STATE.md",
+        "CHANGELOG.md"
+      ],
+      "note": "AI Agent Mode: rich order snapshot context sent to the LLM"
+    },
+    {
+      "file": "Models/AiRequestMetrics.cs",
+      "docs": [
+        "CURRENT_STATE.md",
+        "CHANGELOG.md"
+      ],
+      "note": "AI Agent Mode: per-request metrics (provider, attempt, fallback)"
+    },
+    {
+      "file": "Models/AiCalculationExplanationContext.cs",
+      "docs": [
+        "CURRENT_STATE.md",
+        "CHANGELOG.md"
+      ],
+      "note": "AI Agent Mode: calculation explanation context for /объясни"
+    },
+    {
+      "file": "Services/AiPlanBuilder.cs",
+      "docs": [
+        "CURRENT_STATE.md",
+        "CHANGELOG.md"
+      ],
+      "note": "AI Agent Mode: converts parsed commands into validated action plans"
+    },
+    {
+      "file": "Services/AiPlanValidator.cs",
+      "docs": [
+        "CURRENT_STATE.md",
+        "CHANGELOG.md"
+      ],
+      "note": "AI Agent Mode: local parameter validation before execution"
+    },
+    {
+      "file": "Services/AiPlanExecutor.cs",
+      "docs": [
+        "CURRENT_STATE.md",
+        "CHANGELOG.md"
+      ],
+      "note": "AI Agent Mode: atomic batch execution with rollback"
+    },
+    {
+      "file": "Services/AiOrderContextBuilder.cs",
+      "docs": [
+        "CURRENT_STATE.md",
+        "CHANGELOG.md"
+      ],
+      "note": "AI Agent Mode: builds AiOrderContext from live order state"
+    },
+    {
+      "file": "Services/AiExplanationContextBuilder.cs",
+      "docs": [
+        "CURRENT_STATE.md",
+        "CHANGELOG.md"
+      ],
+      "note": "AI Agent Mode: builds explanation context from actual totals"
+    },
+    {
+      "file": "Services/AiTelemetryService.cs",
+      "docs": [
+        "CURRENT_STATE.md",
+        "CHANGELOG.md"
+      ],
+      "note": "AI Agent Mode: request metrics and in-memory stats"
+    },
+    {
+      "file": "Services/AiLocalCommandRouter.cs",
+      "docs": [
+        "CURRENT_STATE.md",
+        "CHANGELOG.md"
+      ],
+      "note": "AI Agent Mode: offline slash commands (/товары /итоги /объясни etc.)"
+    },
+    {
+      "file": "MosquitoNetCalculator/MainWindow.AI.cs",
+      "docs": [
+        "CURRENT_STATE.md",
+        "CHANGELOG.md"
+      ],
+      "note": "AI Agent Mode: rich order context, plan execution with single undo snapshot, guarded undo/redo"
+    },
+    {
+      "file": "MosquitoNetCalculator/Models/AiCommand.cs",
+      "docs": [
+        "CURRENT_STATE.md",
+        "CHANGELOG.md"
+      ],
+      "note": "AI Agent Mode: plan-mode AiResponse.Plan + update/delete command params"
+    }
   ]
 }

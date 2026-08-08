@@ -14,9 +14,13 @@
 
 | ActionBarControl | class | Controls/ActionBarControl.xaml.cs | | Methods: BtnSaveOrder_Click |
 | AdditionalKpsControl | class | Controls/AdditionalKpsControl.xaml.cs | |
+| AiApiKeyDialog | class | Controls/AiApiKeyDialog.xaml.cs | Props: ApiKey, SelectedModels |
+| AiAssistantControl | class | Controls/AiAssistantControl.xaml.cs | |
+| AiAssistantWindow | class | Controls/AiAssistantWindow.xaml.cs | | Methods: PositionNextTo, PositionNextToCore |
 | AnwisContextMenuBuilder | static class | Controls/AnwisContextMenuBuilder.cs | | Methods: Build | Static: M:Build |
 | ChangeOrderStatusWindow | class | Controls/ChangeOrderStatusWindow.xaml.cs | Props: Saved, SelectedStatus |
 | EasterProUpsellWindow | class | Controls/EasterProUpsellWindow.xaml.cs | |
+| MarkdownRenderer | static class | Controls/MarkdownRenderer.cs | | Methods: GetText, ParseToInlines, SetText | Static: M:GetText, M:ParseToInlines, M:SetText |
 | MessageDialogWindow | class | Controls/MessageDialogWindow.xaml.cs | Props: SelectedResult |
 | NumericUpDownControl | class | Controls/NumericUpDownControl.xaml.cs | |
 | OrderItemsControl | class | Controls/OrderItemsControl.xaml.cs | | Methods: PopulateProductChips |
@@ -27,7 +31,7 @@
 | SendToFactoryWindow | class | Controls/SendToFactoryWindow.xaml.cs | |
 | SidebarControl | class | Controls/SidebarControl.xaml.cs | |
 | SlopeEconomyDetailsWindow | class | Controls/SlopeEconomyDetailsWindow.xaml.cs | | Methods: LoadData |
-| SlopePanelControl | class | Controls/SlopePanelControl.xaml.cs | Props: TotalWindowCountInOrder | Methods: BuildMaterialSummaryRows, ComputeTotalSavings, LoadForEdit, Reset, SetPriceService | Static: M:BuildMaterialSummaryRows, M:ComputeTotalSavings |
+| SlopePanelControl | class | Controls/SlopePanelControl.xaml.cs | Props: TotalWindowCountInOrder | Methods: BuildMaterialSummaryRows, ComputeTotalSavings, LoadForEdit, PrefillDimensions, Reset, SetPriceService | Static: M:BuildMaterialSummaryRows, M:ComputeTotalSavings |
 | TitleBarControl | class | Controls/TitleBarControl.xaml.cs | | Methods: RefreshUpdateBadge, UpdateSettingsMenu |
 | TotalCardControl | class | Controls/TotalCardControl.xaml.cs | |
 | UpdateAvailableWindow | class | Controls/UpdateAvailableWindow.xaml.cs | Props: Accepted |
@@ -38,6 +42,7 @@
 | DimensionConverter | class | Converters/DimensionConverter.cs | | Methods: Convert, ConvertBack |
 | InverseBoolConverter | class | Converters/InverseBoolConverter.cs | | Methods: Convert, ConvertBack |
 | MoneyConverter | class | Converters/MoneyConverter.cs | | Methods: Convert, ConvertBack |
+| NonEmptyStringToVisibilityConverter | class | Converters/BoolVisibilityConverter.cs | | Methods: Convert, ConvertBack |
 | QuantityConverter | class | Converters/QuantityConverter.cs | | Methods: Convert, ConvertBack |
 | RussianDateConverter | class | Converters/RussianDateConverter.cs | | Methods: Convert, ConvertBack |
 | StatusToBadgeBackgroundConverter | class | Converters/StatusToBadgeBackgroundConverter.cs | | Methods: Convert, ConvertBack |
@@ -52,6 +57,9 @@
 ### Models
 
 | AdditionalKpItem | class | Models/AdditionalKpItem.cs | | Methods: Clone |
+| AiCommandType | enum | Models/AiCommand.cs | Props: AnwisMode, Color, Depth, Height, InstallationMode, Price, Quantity, TargetProduct, Type, UpdateAnwisMode, UpdateColor, UpdateInstallationAmount, UpdateInstallationMode, UpdatePrice, Width |
+| AiPlanMode | enum | Models/AiActionPlan.cs | Props: CommandType, CreatedAt, Error, ExecutedAt, IsReadOnly, Mode, Params, PlanId, PreviewText, ProducedBy, ReplyText, RequestId, RequiresConfirmation, RolledBack, SourceMessageId, SourceUserText, Status, StepId, StepResults, Steps, Success, Summary, ValidationMessages | Methods: ToCommand |
+| AiProvider | enum | Models/AiModelOption.cs | Props: DisplayName, Id, Provider |
 | AnwisSizeMode | enum | Models/AnwisSizeMode.cs | |
 | ClientInfo | class | Models/ClientInfo.cs | Props: AdditionalKps |
 | EconomyDetailRow | class | Models/EconomyDetailRow.cs | Props: AmountSaved, AverageSavedPerSlope, MaterialName, QtySaved, QtyWithEconomy, QtyWithoutEconomy, Tooltip, Unit |
@@ -63,7 +71,7 @@
 | PageMode | enum | Models/PageMode.cs | |
 | PriceItem | class | Models/PriceItem.cs | |
 | PrintResultType | enum | Models/PrintResult.cs | Props: DebugMessage, IsRetryable, Type, UserMessage | Methods: Ok | Static: M:Ok |
-| ProductCatalog | static class | Models/ProductCatalog.cs | | Methods: IsAmountOnly, IsAnticatApplicable, IsAreaBased, IsInstallationApplicable, IsManualPiece, IsNoColor, IsPerLinearMeter, IsQuantityOptional, IsWidthOnly | Static: M:IsAmountOnly, M:IsAnticatApplicable, M:IsAreaBased, M:IsInstallationApplicable, M:IsManualPiece, M:IsNoColor, M:IsPerLinearMeter, M:IsQuantityOptional, M:IsWidthOnly |
+| ProductCatalog | static class | Models/ProductCatalog.cs | | Methods: GetVisibleGroups, IsAmountOnly, IsAnticatApplicable, IsAreaBased, IsInstallationApplicable, IsManualPiece, IsNoColor, IsPerLinearMeter, IsQuantityOptional, IsWidthOnly, OrderProductNames | Static: M:GetVisibleGroups, M:IsAmountOnly, M:IsAnticatApplicable, M:IsAreaBased, M:IsInstallationApplicable, M:IsManualPiece, M:IsNoColor, M:IsPerLinearMeter, M:IsQuantityOptional, M:IsWidthOnly, M:OrderProductNames |
 | ReleaseInfo | class | Models/UpdateManifest.cs | Props: Changes, Date, Sha256, Size, Title, Type, Url, Version |
 | SlopeCalculationData | class | Models/SlopeCalculation.cs | Props: DepthM, FoamPrice, FoamQuantity, FProfilePrice, FProfileQuantity, HeightMm, IsManualOverride, IsProfileEconomyApplied, LaborPrice, LaborQuantity, LaminatinaLaborPrice, LaminatinaLaborQuantity, LaminatinaPrice, LaminatinaQuantity, PenoplexPrice, PenoplexQuantity, SandwichPrice, SandwichQuantity, SealantPrice, SealantQuantity, StartProfilePrice, StartProfileQuantity, TapePrice, TapeQuantity, WidthMm, WindowCount | Methods: FromSlopeCalculation, ToSlopeCalculation | Static: M:FromSlopeCalculation |
 | SlopeCalculationExtensions | static class | Models/SlopeCalculationExtensions.cs | | Methods: DeepClone | Static: M:DeepClone |
@@ -76,6 +84,10 @@
 ### MosquitoNetCalculator/ImportDialogWindow.xaml.cs
 
 | ImportDialogWindow | class | ImportDialogWindow.xaml.cs | Props: DialogResultOk, SelectedOrders |
+
+### MosquitoNetCalculator/MainWindow.AI.cs
+
+| MainWindow | class | MainWindow.AI.cs | Props: AiVm | Methods: ComputeCenteredGroupLeft, ComputeCenteredGroupTop, ToggleAiOverlay | Static: M:ComputeCenteredGroupLeft, M:ComputeCenteredGroupTop |
 
 ### MosquitoNetCalculator/MainWindow.Animations.cs
 
@@ -135,6 +147,15 @@
 
 ### Services
 
+| AiCommandParser | static class | Services/AiCommandParser.cs | | Methods: AnwisModeLabel, GenerateActionConfirmation, GetDefaultPrice, Parse | Static: M:AnwisModeLabel, M:GenerateActionConfirmation, M:GetDefaultPrice, M:Parse |
+| AiExplanationContextBuilder | static class | Services/AiExplanationContextBuilder.cs | | Methods: Build, BuildText, BuildTextForAll, BuildTextForLast | Static: M:Build, M:BuildText, M:BuildTextForAll, M:BuildTextForLast |
+| AiLocalCommandRouter | static class | Services/AiLocalCommandRouter.cs | | Methods: TryRoute | Static: M:TryRoute |
+| AiModelSelector | static class | Services/AiModelSelector.cs | | Methods: MergeWithUserSelection, SelectForTask | Static: M:MergeWithUserSelection, M:SelectForTask |
+| AiOrderContextBuilder | static class | Services/AiOrderContextBuilder.cs | | Methods: Build | Static: M:Build |
+| AiPlanBuilder | static class | Services/AiPlanBuilder.cs | | Methods: BuildStepPreview, FromCommand, FromCommands, RequiresConfirmation | Static: M:BuildStepPreview, M:FromCommand, M:FromCommands, M:RequiresConfirmation |
+| AiPlanExecutor | static class | Services/AiPlanExecutor.cs | | Methods: CommandHandler, Execute | Static: M:Execute |
+| AiPlanValidator | static class | Services/AiPlanValidator.cs | Props: AllProducts, Categories | Methods: GetCategory, IsKnownTarget, Validate, ValidateCommand | Static: M:GetCategory, M:IsKnownTarget, M:Validate, M:ValidateCommand, P:AllProducts, P:Categories |
+| AiTaskClassifier | static class | Services/AiTaskClassifier.cs | | Methods: Classify | Static: M:Classify |
 | AmountInWordsService | static class | Services/AmountInWordsService.cs | | Methods: Convert | Static: M:Convert |
 | AnwisSizeCalculator | static class | Services/AnwisSizeCalculator.cs | | Methods: ApplyCalcHeight, ApplyCalcWidth, ReverseCalcHeight, ReverseCalcWidth | Static: M:ApplyCalcHeight, M:ApplyCalcWidth, M:ReverseCalcHeight, M:ReverseCalcWidth |
 | AnwisSizeService | static class | Services/AnwisSizeService.cs | | Methods: GetSectionHeader, IsApplicable | Static: M:GetSectionHeader, M:IsApplicable |
@@ -160,7 +181,7 @@
 | SlopeCalculatorService | static class | Services/SlopeCalculatorService.cs | | Methods: Calculate, GetPenoplexSheets, OptimizeStrips, OptimizeStripsForMultipleWindows, OptimizeStripsForMultipleWindows3Sides, OptimizeStripsForPerimeter, RecalculateSealantAndTape, UpdateInPlace | Static: M:Calculate, M:GetPenoplexSheets, M:OptimizeStrips, M:OptimizeStripsForMultipleWindows, M:OptimizeStripsForMultipleWindows3Sides, M:OptimizeStripsForPerimeter, M:RecalculateSealantAndTape, M:UpdateInPlace |
 | SlopeEconomyCalculator | static class | Services/SlopeEconomyCalculator.cs | | Methods: CalculateDetails, CalculateTotalSaved | Static: M:CalculateDetails, M:CalculateTotalSaved |
 | ThemeService | static class | Services/ThemeService.cs | Props: IsDarkTheme, TransitionDuration | Methods: ApplyTheme, GetCurrentSurfaceColor, LoadTheme, ToggleTheme | Static: M:ApplyTheme, M:GetCurrentSurfaceColor, M:LoadTheme, M:ToggleTheme, P:IsDarkTheme, P:TransitionDuration |
-| ToastService | static class | Services/ToastService.cs | | Methods: Initialize, RepositionToasts, ShowToast, ShowUpdateNotification | Static: M:Initialize, M:RepositionToasts, M:ShowToast, M:ShowUpdateNotification |
+| ToastService | static class | Services/ToastService.cs | | Methods: Initialize, RegisterCanvas, RepositionToasts, ShowToast, ShowUpdateNotification, UnregisterCanvas | Static: M:Initialize, M:RegisterCanvas, M:RepositionToasts, M:ShowToast, M:ShowUpdateNotification, M:UnregisterCanvas |
 | UndoRedoService | class | Services/UndoRedoService.cs | Props: CanRedo, CanUndo, IsDirty | Methods: Clear, MarkClean, MarkDirty, PushUndo, Redo, SetDirtyCallback, SuppressDirtyChanges, TryPeekTopSnapshot, Undo |
 | UpdateDownloader | static class | Services/UpdateDownloader.cs | | Methods: DownloadWithProgressAsync, IsTransient, TryDelete | Static: M:DownloadWithProgressAsync, M:IsTransient, M:TryDelete |
 | UpdateLog | static class | Services/UpdateLog.cs | | Methods: AllNewestFirst, GetChangesSince | Static: M:AllNewestFirst, M:GetChangesSince |
@@ -184,12 +205,12 @@
 | Symbol | File(s) |
 |---|---|
 | $k | ViewModels/CalculationViewModel.cs |
+| $sym | Models/AiCommand.cs, Models/OrderItem.Dto.cs |
+| $sym | Models/AiCommand.cs, Models/OrderItem.Dto.cs |
+| $sym | Models/AiCommand.cs, Models/OrderItem.Dto.cs |
+| $sym | Models/AiCommand.cs, Models/OrderItem.Dto.cs |
 | $sym | Models/OrderItem.Dto.cs |
-| $sym | Models/OrderItem.Dto.cs |
-| $sym | Models/OrderItem.Dto.cs |
-| $sym | Models/OrderItem.Dto.cs |
-| $sym | Models/OrderItem.Dto.cs |
-| $sym | Models/OrderItem.Dto.cs |
+| $sym | Models/AiCommand.cs, Models/OrderItem.Dto.cs |
 | $k | Controls/SlopePanelControl.xaml.cs |
 | $methKey | Models/ProductCatalog.cs |
 | $methKey | Models/ProductCatalog.cs |
@@ -197,7 +218,7 @@
 | $methKey | Models/ProductCatalog.cs |
 | $methKey | Models/AdditionalKpItem.cs |
 | $sym | Models/OrderItem.Dto.cs |
-| $sym | Models/OrderItem.Dto.cs |
+| $sym | Models/AiCommand.cs, Models/OrderItem.Dto.cs |
 | $sym | Models/OrderItem.Dto.cs |
 | $methKey | MainWindow.Pricing.cs, Services/PriceService.cs, ViewModels/MainWindowViewModel.cs, ViewModels/PricesViewModel.cs |
 | $methKey | Services/PriceService.cs, ViewModels/PricesViewModel.cs |
@@ -232,4 +253,4 @@ Context phase: grep SYMBOL_INDEX.md for the class/method you need
 
 ## Last generated
 
-2026-07-23 (наша эраen212645bol21.p211)
+2026-08-04 (gensymbols.ps1)

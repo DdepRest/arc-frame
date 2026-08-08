@@ -83,6 +83,7 @@ docs/arc/CHEATSHEET.md
 | Сохранения/загрузки данных | `GOTCHAS.md#2,#3,#9`, `DECISIONS.md#3` |
 | Тестов | `CALCULATION_TEST_CASES.md` |
 | Новый агент (первый вход) | + `MODULES.md`, `DECISIONS.md`, `PROJECT_OVERVIEW.md` |
+| Структурные изменения (разбивка/переименование/новые файлы или классы) | `CONTROL#13`, `SYMBOL_INDEX.md`, `INTENTS.md`, `DOCUMENTATION_MATRIX.md` |
 | Всё остальное | Только `CURRENT_STATE.md` |
 | **Тривиальная задача (≤10 строк, не critical domain)** | Только `CHEATSHEET.md`, затем проверь `GOTCHAS.md` по ключевым словам |
 
@@ -218,6 +219,10 @@ Intake → Context → Plan → Execute → Verify → Document → Report
 
 ## Документация обновлена
 
+## Метрики (feedback loop)
+- шагов/токенов, сэкономленных системой (например: «класс найден по SYMBOL_INDEX за 1 чтение»)
+- если система ничего не сэкономила — честно написать, что нет
+
 ## Проверки
 
 ## Риски / TODO
@@ -235,12 +240,12 @@ Intake → Context → Plan → Execute → Verify → Document → Report
 |--------|-----------|
 | `gensymbols.ps1` | Сканирует .cs файлы → генерирует `docs/arc/SYMBOL_INDEX.md`. **Запускать после добавления/удаления классов.** |
 | `what-to-update.ps1 $(git diff --name-only)` | Принимает список изменённых файлов → выводит, какие `docs/arc/*.md` обновить. Читает `documentation-matrix.json`. |
-| `validate-docs.ps1` | 8 автоматических проверок: версия, ссылки MODULES, CHEATSHEET cross-refs, MATRIX cross-refs, CONTROL cross-refs, полнота docs/arc, git-based Last verified, staleness. |
+| `validate-docs.ps1` | 10 автоматических проверок: версия, ссылки MODULES, CHEATSHEET cross-refs, MATRIX cross-refs, CONTROL cross-refs, полнота docs/arc, git-based Last verified, staleness, releases.json, **self-maintenance (устаревание версии в Last verified, мягкая)**. |
 | `generate-update-log.ps1` | Генерирует `update-log.json` из `CHANGELOG.md` (при релизе). |
 | `render-matrix.ps1` | Генерирует `DOCUMENTATION_MATRIX.md` из `documentation-matrix.json`. |
 | `arc-check.ps1` | Проверяет, что все docs/arc актуальны. Используется как pre-commit safety net. |
 
-**Обязательный финальный ритуал после любых изменений:**
+**Обязательный финальный ритуал после любых изменений** (включая изменения самих docs/arc — это тоже «изменения», CONTROL#13):
 
 ```powershell
 # 1. Узнать что обновить
@@ -284,6 +289,8 @@ docs/arc/MULTI_AGENT_ARC_CALC_CONTROL.md
 Затем следуй routing-таблице в CHEATSHEET.md.
 
 На фазе Document используй docs/arc/DOCUMENTATION_MATRIX.md.
+
+Систему docs/arc держи в актуальности: структурные изменения кода → SYMBOL_INDEX/INTENTS/MODULES (CONTROL#13).
 
 Цикл: Intake → Context → Plan → Execute → Verify → Document → Report.
 
@@ -331,6 +338,42 @@ docs/arc/REFACTORING_PLAN.md
 
 ---
 
+## 13. Обязанность самоподдержания системы (SELF-MAINTENANCE DUTY) ⚠️
+
+Система A.R.C. жива, только пока её держат в актуальности. Каждый агент **обязан**
+обновлять документацию, если его изменения кода или процесса сделали её неактуальной.
+**Устаревшая документация хуже отсутствующей — она активно вводит в заблуждение.**
+
+### Когда документация обязана быть обновлена (ситуации А–Ж)
+
+| # | Ситуация | Что обновить |
+|---|---|---|
+| А | Разбил большой файл на части | `SYMBOL_INDEX.md` (через `gensymbols.ps1`), `INTENTS.md`, `MODULES.md`, `DOCUMENTATION_MATRIX.md`, `CURRENT_STATE.md` |
+| Б | Переименовал/переместил файл или класс | `SYMBOL_INDEX.md` (через `gensymbols.ps1`), `INTENTS.md`, `MODULES.md`, `DOCUMENTATION_MATRIX.md` |
+| В | Добавил новый класс/сервис/модуль | `SYMBOL_INDEX.md` (через `gensymbols.ps1`), `INTENTS.md` (если есть intent), `MODULES.md` |
+| Г | Изменил сигнатуры методов/свойств (упомянутых в SYMBOL_INDEX) | `SYMBOL_INDEX.md` (через `gensymbols.ps1`) |
+| Д | Изменил бизнес-логику | `CALCULATION_LOGIC.md`, `GOTCHAS.md`, `CALCULATION_TEST_CASES.md` + critical domain ритуал (§3) |
+| Е | Изменил процессы (релиз, автообновление) | `RELEASE_PROCESS.md`, `AUTO_UPDATE.md` |
+| Ж | Изменил саму систему документации (этот файл, routing, CHEATSHEET) | `CHEATSHEET.md`, `AGENTS.md`, `CURRENT_STATE.md` |
+
+### Правила самоподдержания
+
+1. **Право и обязанность:** ИИ может и должен править `AGENTS.md` и `docs/arc/*.md`,
+   если данные неактуальны. Это не «самодеятельность», а часть задачи.
+2. **Фиксируй в том же цикле:** документацию обновляй на фазе **Document** того же
+   цикла, где сделал изменения кода, — не «потом» и не «в следующей задаче».
+3. **Код важнее комментария** (§6), но **документация следует за кодом**: если docs
+   противоречат коду — обнови docs (при сомнении — спроси владельца).
+4. **Мягкий контроль:** `validate-docs.ps1` предупреждает (warning), но не блокирует.
+   Если проверка указала на рассинхрон — исправь до финального отчёта.
+5. **Метрики (feedback loop):** в финальном отчёте указывай, сколько шагов/токенов
+   сэкономила система (например, «класс найден по SYMBOL_INDEX за 1 чтение»).
+   Это позволяет владельцу верифицировать пользу A.R.C. (причина №1).
+6. **Проверка после правок docs:** `what-to-update.ps1` → обновить перечисленные →
+   `validate-docs.ps1` (ритуал §9).
+
+---
+
 ## Source files
 
 - `docs/arc/CHEATSHEET.md` — быстрый вход
@@ -343,5 +386,7 @@ docs/arc/REFACTORING_PLAN.md
 - `validate-docs.ps1` — валидация документации
 
 ## Last verified
+
+2026-08-03 (v3.47.3) — добавлен §13 «Обязанность самоподдержания системы» (ситуации А–Ж, метрики в шаблоне отчёта, routing для структурных изменений); правило подтверждено владельцем по ТЗ `docs/arc/ТЗ_самоподдержание_AGENTS_2026-08-03.md`.
 
 2026-07-17 — документ просмотрен и синхронизирован с текущим состоянием проекта (v3.46.1): переключатель +/- для монтажа (SignToggleCheckBox), только значки V/X/В в таблице, динамическая ширина колонки в PdfExportService, жирные значения в клиентском блоке КП, форматирование примечаний (жирный/курсив/цвет/списки). **1227/1227 tests pass.**

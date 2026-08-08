@@ -78,6 +78,27 @@ namespace MosquitoNetCalculator.Services
             _overlayManager.Show(Entry);
         }
 
+        // ── Show with dimensions (AI-assistant prefill) ───────────────
+
+        /// <summary>
+        /// Opens the slope calculator panel prefilled with the given dimensions
+        /// (millimetres). Used by the AI assistant (calc_slope command): the
+        /// panel immediately runs the auto-calculation so the manager sees the
+        /// material breakdown and can add it to the КП.
+        /// </summary>
+        public void ShowWithDimensions(int widthMm, int heightMm, int depthMm, int windowCount)
+        {
+            int totalFromOrder = _getCalcVM().OrderItems
+                .Where(i => i.SlopeData != null)
+                .Sum(i => i.SlopeData!.WindowCount);
+
+            LoadSlopePrices(totalFromOrder);
+            _slopePanel.PrefillDimensions(widthMm, heightMm, depthMm, windowCount);
+
+            // Show() already hides all other visible overlays internally
+            _overlayManager.Show(Entry);
+        }
+
         // ── Edit (existing slope row) ────────────────────────────────
 
         /// <summary>

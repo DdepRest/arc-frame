@@ -59,5 +59,54 @@ namespace MosquitoNetCalculator.Tests.ViewModels
             Assert.Contains("ПСУЛ", names);
             Assert.Contains("Уплотнение", names);
         }
+
+        // ────────────────────────────────────────────────────────────────
+        // v3.4x: порядок каталога — НЕ алфавитный. Иерархия согласована с
+        // пользователем: Сетки → Доборы → Комплектующие → Откосы → Услуги.
+        // Алфавитная сортировка уводила «Anwis» в конец списка — регрессия.
+        // ────────────────────────────────────────────────────────────────
+
+        private static readonly string[] CatalogOrder =
+        {
+            "Anwis", "На навесах", "Оконная на метал. крепл.", "Дверная сетка",
+            "Отлив", "Козырёк", "Короб",
+            "ПСУЛ", "Уплотнение", "Брус", "Пояс", "Материал",
+            "Откос", "Работа за откос",
+            "Работа", "Доставка"
+        };
+
+        [Fact]
+        public void GetProductNames_KeepsCatalogGroupOrder()
+        {
+            var vm = new PricesViewModel();
+            vm.LoadPrices();
+
+            var names = vm.GetProductNames();
+
+            // Иерархия групп сохраняется: каждый товар идёт строго после предыдущего.
+            for (int i = 1; i < CatalogOrder.Length; i++)
+            {
+                int prev = names.IndexOf(CatalogOrder[i - 1]);
+                int cur = names.IndexOf(CatalogOrder[i]);
+                Assert.True(prev >= 0, $"{CatalogOrder[i - 1]} отсутствует в списке");
+                Assert.True(cur >= 0, $"{CatalogOrder[i]} отсутствует в списке");
+                Assert.True(prev < cur, $"{CatalogOrder[i - 1]} должен идти раньше {CatalogOrder[i]}");
+            }
+        }
+
+        [Fact]
+        public void GetProductNames_AppendsUserProductsAfterCatalog()
+        {
+            // Пользовательские товары (которых нет в фиксированных группах)
+            // добавляются В КОНЕЦ, а не вклиниваются в иерархию.
+            var vm = new PricesViewModel();
+            vm.LoadPrices();
+            vm.Prices.Add(new PriceItem { Name = "Сетка Пользователя", Color = "", Price = 0 });
+
+            var names = vm.GetProductNames();
+
+            Assert.Contains("Сетка Пользователя", names);
+            Assert.Equal(names.Count - 1, names.IndexOf("Сетка Пользователя"));
+        }
     }
 }

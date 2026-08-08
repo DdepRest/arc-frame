@@ -256,6 +256,23 @@ trade-off trailing-запятой исчезнет (потому что "15000,"
 
 ---
 
+### 17. Поле «Сумма» в переключателе монтажа: знак нельзя терять на нулевом значении (СРЕДНИЙ)
+
+**Где:** `MosquitoNetCalculator/MainWindow.Items.cs` — контекстное меню монтажа, обработчики `chkSign` и `CommitDeductionIfPending`.
+
+**Симптом:** при нулевой сумме пользователь нажимает «−», но обновление поля тут же возвращает переключатель в «+», потому что математический ноль не имеет знака. Кроме того, явно введённое `-500` раньше игнорировалось проверкой `absVal >= 0`.
+
+**Контракт UI:**
+- «+» означает положительную корректировку (добавить к итогу);
+- «−» означает отрицательную корректировку (вычесть из итога);
+- при сумме `0` выбранный знак сохраняется, чтобы пользователь мог выбрать «−» до ввода числа;
+- явно введённый минус имеет приоритет над состоянием переключателя;
+- нечисловые и бесконечные значения не записываются в модель.
+
+Модель и формула `TotalWithDeduction` не менялись: исправлено только преобразование ввода popup в signed amount. Регрессии покрыты `OrderItemTests.NormalizeInstallationAmount_PreservesSignedInput`, `NormalizeInstallationAmount_RejectsNonFiniteValues` и `ShouldRefreshInstallationSign_OnlyForMeaningfulAmount`.
+
+---
+
 ## Риски по категориям
 
 | Категория | Риск | Уровень |
@@ -437,6 +454,8 @@ InstallationSurcharge = (od.InstallationSurcharge > 0 && od.InstallationMode != 
 ---
 
 ## Last verified
+
+2026-08-06 — maintenance pass (CONTROL#13): дата верификации синхронизирована с git-историей; содержимое сверено с текущим состоянием (v3.47.3, 1511/1511 tests pass).
 
 2026-07-22 (v3.47.3 — URGENT bugfix per-linear-meter legacy JSON для Отлив/Козырёк:
 строгий `isLegacyLoad` детектор + sign-flip exclusion для per-linear-meter +

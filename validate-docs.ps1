@@ -389,6 +389,42 @@ if (-not (Test-Path $releasesJsonPath)) {
 
 Write-Host ""
 
+# 10. Self-maintenance: stale version in docs/arc Last verified (soft, CONTROL#13)
+# Мягкая проверка: НЕ полное покрытие — «видит» только файлы, где версия стоит
+# внутри секции Last verified в пределах 300 символов. GOTCHAS/MODULES/etc. без
+# версии в Last verified молча пропускаются. Это осознанно (soft level, CONTROL#13).
+Write-Host "[10] Self-maintenance: version staleness in docs/arc (soft)" -ForegroundColor Yellow
+
+if ($csprojVersion) {
+    if (-not $docsFiles) {
+        $docsFiles = @(Get-ChildItem -Path $docsArcDir -Filter "*.md" | Where-Object { $_.Name -ne "DOCUMENTATION_MATRIX.md" })
+    }
+    $verChecked = 0
+    $verStale = 0
+    foreach ($docFile in $docsFiles) {
+        $content = Get-Content $docFile.FullName -Raw -Encoding UTF8
+        # Find a version like v3.42.0 inside the Last verified section
+        if ($content -match '(?m)^## Last verified[\s\S]{0,1000}?\(?(v?\d+\.\d+\.\d+)') {
+            $docVer = $Matches[1] -replace '^v',''
+            $verChecked++
+            if ($docVer -ne $csprojVersion) {
+                Write-Host "  STALE VER: $($docFile.Name) - Last verified says v$docVer, csproj=$csprojVersion" -ForegroundColor Yellow
+                $verStale++
+            }
+        }
+    }
+    if ($verStale -eq 0) {
+        Write-Host "  PASS: All $verChecked docs/arc Last verified versions match csproj" -ForegroundColor Green
+    } else {
+        Write-Host "  WARN: $verStale/$verChecked docs reference an older version (soft — не блокирует, обнови при случае)" -ForegroundColor Yellow
+        $warnings += $verStale
+    }
+} else {
+    Write-Host "  SKIP: csproj version unavailable" -ForegroundColor Gray
+}
+
+Write-Host ""
+
 # Summary
 Write-Host "====================================" -ForegroundColor Cyan
 if ($issues -eq 0 -and $warnings -eq 0) {

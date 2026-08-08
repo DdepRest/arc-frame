@@ -116,7 +116,29 @@ namespace MosquitoNetCalculator.Services
         /// </summary>
         public static List<string> GetInstalledPrinterNames()
         {
-            var result = new List<string>();
+            var queues = GetInstalledPrintQueues();
+            try
+            {
+                return queues
+                    .Select(ReadQueueFullName)
+                    .Where(name => !string.IsNullOrWhiteSpace(name))
+                    .OrderBy(name => name, StringComparer.Ordinal)
+                    .ToList();
+            }
+            finally
+            {
+                DisposeQueues(queues);
+            }
+        }
+
+        /// <summary>
+        /// Returns the actual Windows queue objects used to populate the printer
+        /// picker. Keeping these instances avoids losing a network/local-port
+        /// binding by resolving the selected display name a second time.
+        /// </summary>
+        public static List<PrintQueue> GetInstalledPrintQueues()
+        {
+            var result = new List<PrintQueue>();
             try
             {
                 var server = new LocalPrintServer();
@@ -125,12 +147,13 @@ namespace MosquitoNetCalculator.Services
                     EnumeratedPrintQueueTypes.Local,
                     EnumeratedPrintQueueTypes.Connections
                 });
-                result.AddRange(queues.Select(q => q.FullName));
-                result.Sort(StringComparer.Ordinal);
+                result.AddRange(queues);
+                result.Sort((left, right) =>
+                    string.Compare(ReadQueueFullName(left), ReadQueueFullName(right), StringComparison.Ordinal));
             }
             catch (Exception ex)
             {
-                Debug.WriteLine($"[PrintQueueManager] GetInstalledPrinterNames failed: {ex.Message}");
+                Debug.WriteLine($"[PrintQueueManager] GetInstalledPrintQueues failed: {ex.Message}");
             }
             return result;
         }
@@ -153,24 +176,63 @@ namespace MosquitoNetCalculator.Services
         }
 
         /// <summary>
-        /// Получает PrintQueue по имени. Если не найден — возвращает DefaultPrintQueue.
+        /// Получает PrintQueue по имени.
+        /// Для пустого имени возвращает DefaultPrintQueue; если явно указанная
+        /// очередь не найдена, возвращает null, чтобы не отправить документ
+        /// молча на другой принтер.
         /// Не диспозит LocalPrintServer — PrintQueue удерживает ссылку на спулер.
+        ///
+        /// Для сетевых подключений очередь обязательно разрешается через
+        /// перечисление Local + Connections. Прямой GetPrintQueue(name) может
+        /// вернуть объект без корректного контекста подключённой сетевой очереди;
+        /// XpsDocumentWriter тогда отправляет задание в Windows со статусом
+        /// «Принтер не в сети», хотя тот же принтер работает в других приложениях.
         /// </summary>
         public static PrintQueue? ResolvePrintQueue(string? printerName)
         {
             try
             {
                 var server = new LocalPrintServer();
-                if (!string.IsNullOrEmpty(printerName))
+                if (!string.IsNullOrWhiteSpace(printerName))
                 {
-                    var q = server.GetPrintQueue(printerName);
-                    if (q != null) return q;
+                    var queues = server.GetPrintQueues(new[]
+                    {
+                        EnumeratedPrintQueueTypes.Local,
+                        EnumeratedPrintQueueTypes.Connections
+                    });
+
+                    // FullName preserves the server/connection context. Resolve
+                    // the exact selected identity first; do not substitute the
+                    // default queue when an explicit target cannot be resolved.
+                    var selected = FindQueueByFullName(queues, printerName);
+                    if (selected != null)
+                        return selected;
+
+                    // Short names are supported only for legacy saved settings.
+                    // An UNC target must never be reduced to a short name: that
+                    // could select a similarly named local/USB queue instead.
+                    if (!printerName.TrimStart().StartsWith(@"\\", StringComparison.Ordinal))
+                    {
+                        var matches = FindQueuesByShortName(queues, printerName);
+                        if (matches.Count == 1)
+                            return matches[0];
+                    }
+
+                    return null;
                 }
+
                 return server.DefaultPrintQueue;
             }
             catch (Exception ex)
             {
                 Debug.WriteLine($"[PrintQueueManager] ResolvePrintQueue failed: {ex.Message}");
+                // An explicit printer selection must never fall back to the
+                // Windows default (often a physically connected USB printer).
+                // Returning null lets the UI report that the selected queue was
+                // not resolved instead of silently sending to another device.
+                if (!string.IsNullOrWhiteSpace(printerName))
+                    return null;
+
                 try
                 {
                     var server = new LocalPrintServer();
@@ -178,6 +240,66 @@ namespace MosquitoNetCalculator.Services
                 }
                 catch { return null; }
             }
+        }
+
+        private static string ReadQueueFullName(PrintQueue queue)
+        {
+            try { return queue.FullName ?? string.Empty; }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"[PrintQueueManager] Queue FullName read failed: {ex.Message}");
+                return string.Empty;
+            }
+        }
+
+        private static void DisposeQueues(IEnumerable<PrintQueue> queues)
+        {
+            foreach (var queue in queues)
+            {
+                try { queue.Dispose(); }
+                catch (Exception ex) { Debug.WriteLine($"[PrintQueueManager] Queue dispose failed: {ex.Message}"); }
+            }
+        }
+
+        private static PrintQueue? FindQueueByFullName(
+            IEnumerable<PrintQueue> queues,
+            string printerName)
+        {
+            foreach (var queue in queues)
+            {
+                try
+                {
+                    if (string.Equals(queue.FullName, printerName, StringComparison.OrdinalIgnoreCase))
+                        return queue;
+                }
+                catch (Exception ex)
+                {
+                    Debug.WriteLine($"[PrintQueueManager] Queue identity read failed: {ex.Message}");
+                }
+            }
+
+            return null;
+        }
+
+        private static List<PrintQueue> FindQueuesByShortName(
+            IEnumerable<PrintQueue> queues,
+            string printerName)
+        {
+            var matches = new List<PrintQueue>();
+            foreach (var queue in queues)
+            {
+                try
+                {
+                    if (string.Equals(queue.Name, printerName, StringComparison.OrdinalIgnoreCase))
+                        matches.Add(queue);
+                }
+                catch (Exception ex)
+                {
+                    Debug.WriteLine($"[PrintQueueManager] Queue name read failed: {ex.Message}");
+                }
+            }
+
+            return matches;
         }
     }
 }

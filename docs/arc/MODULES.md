@@ -22,6 +22,13 @@
 | `UpdateManifest.cs` | DTO для releases.json (версия, URL, SHA-256). | Поля должны соответствовать releases.json. |
 | `AdditionalKpItem.cs` | Модель дополнительного КП. | — |
 | `LocationOptions.cs` | Список точек установки для экрана приветствия. | — |
+| `AiChatMessage.cs` | Модель сообщения чата AI (текст, статус, модель, временная метка) + состояние плана (ожидает подтверждения / выполнен / отменён) и `MessageId` для защиты от повторного выполнения. | `MessageId` и `PlanId` — идентичность сообщения; нельзя выполнить план дважды. |
+| `AiClarificationForm.cs` | Интерактивная форма уточнения параметров товара в AI-чате (тип, размеры, цвет, количество, режим Anwis, монтаж); `TryBuildCommand()` собирает `AiCommand` без повторного запроса к LLM. | Каталоги списков (типы/цвета/режимы) должны совпадать с `PriceService` и `AnwisSizeMode`. |
+| `AiCommand.cs` | Команды AI (`AiCommand`, `AiCommandParams`, `AiCommandType`) + `AiResponse` с полем `Plan` (plan-mode JSON от LLM). | Поля `Params` — контракт с парсером; без валидации не выполнять. |
+| `AiActionPlan.cs` | План действий AI: список шагов `AiActionStep`, статус (`Draft`/`AwaitingConfirmation`/`Executed`/`Cancelled`), `RequestId`/`PlanId`/`SourceMessageId` для защиты от дублей, `RequiresConfirmation`. | План — единственный разрешённый путь изменения заказа через AI; каждое выполнение — один Undo-снимок. |
+| `AiOrderContext.cs` | Богатый контекст заказа для LLM: позиции, итоги, клиент, дополнительные КП. | — |
+| `AiRequestMetrics.cs` | Метрики запроса: провайдер, модель, номер попытки, fallback, задержки. | — |
+| `AiCalculationExplanationContext.cs` | Контекст для объяснения расчёта: фактические позиции, итоги, монтаж, откосы. | Должен строиться из фактических значений, а не догадок AI. |
 
 ### 2. ViewModels — ViewModels (логика экранов)
 
@@ -55,6 +62,15 @@
 | `DialogService.cs` | Fluent-диалоги (подтверждение, ввод, уведомления). | — |
 | `ToastService.cs` | Всплывающие тост-уведомления. | — |
 | `UndoRedoService.cs` | Undo/Redo через стек снимков. | — |
+| `AiAssistantService.cs` | Сетевые вызовы к OpenRouter/NVIDIA: стриминг, ретраи до 3 раз, гарантированный NVIDIA-фолбэк, колбэк `onStreamInfo` с метриками. | Ключи, URL провайдеров, попытки — влияют на доступность AI. |
+| `AiCommandParser.cs` | Парсинг JSON-ответа LLM: legacy-формат (single action) и plan-mode (`mode`/`steps`). | Контракт JSON — синхронизировать с промптом LLM. |
+| `AiPlanBuilder.cs` | Собирает `AiActionPlan` из команд (одиночной или пакета), строит preview-текст шагов, определяет `RequiresConfirmation`. | Preview должен показывать пользователю, что именно будет выполнено. |
+| `AiPlanValidator.cs` | Локальная проверка параметров команд до выполнения (каталог, цвет, размеры, цель обновления/удаления). | Валидация — последний рубеж перед мутацией заказа. |
+| `AiPlanExecutor.cs` | Атомарное выполнение плана: применяет шаги через `CommandHandler`, при ошибке откатывает через сохранённый снимок (`RolledBack`). | Один вызов = либо всё применено, либо откат к исходному состоянию. |
+| `AiOrderContextBuilder.cs` | Строит `AiOrderContext` из живого состояния заказа (позиции, итоги). | Итоги должны совпадать с `CalculationViewModel.CalculateTotal`. |
+| `AiExplanationContextBuilder.cs` | Строит `AiCalculationExplanationContext` (фактические итоги/монтаж/откосы) и текстовые сводки для `/объясни`. | — |
+| `AiTelemetryService.cs` | Сбор метрик запросов в памяти: количество запросов, попыток, fallback'ов. | — |
+| `AiLocalCommandRouter.cs` | Локальные slash-команды без LLM: `/товары`, `/цены`, `/итоги`, `/статус`, `/последняя`, `/отменить`, `/повторить`, `/очистить`, `/объясни`. | `/очистить` при пустом расчёте отвечает без запроса подтверждения. |
 
 ### 4. Controls — пользовательские WPF-контролы
 
@@ -111,6 +127,16 @@
 | `OrderStorageServiceTests.cs` | Сохранение/загрузка заказов. |
 | `AppSettingsServiceTests.cs` | Настройки. |
 | `ManualChecklistTests.cs` | Интеграционные проверки. |
+| `AiAssistantViewModelTests.cs` | VM AI-ассистента: отправка, стриминг, `SubmitClarificationForm`, план→подтверждение→выполнение, slash-команды не блокируют композер. |
+| `AiClarificationFormTests.cs` | Модель формы уточнения: списки, валидация, сборка команды. |
+| `AiPlanValidatorTests.cs` | Валидатор плана: каталог, цвета, размеры, цели обновления/удаления. |
+| `AiPlanExecutorTests.cs` | Атомарное выполнение и rollback при ошибке. |
+| `AiLocalCommandRouterTests.cs` | Slash-команды: маршрутизация, форматирование итогов. |
+| `AiOrderContextBuilderTests.cs` | Сборка контекста заказа из позиций и итогов. |
+| `AiTelemetryServiceTests.cs` | Метрики запросов. |
+| `AiExplanationContextTests.cs` | Контекст и тексты объяснения расчёта. |
+| `AiCommandParserPlanModeTests.cs` | Парсинг plan-mode JSON (steps, batch). |
+| `AiGoldenCaseTests.cs` | Golden-кейсы реальных фраз менеджеров из `AI/golden-cases.json`. |
 
 ## Source files
 
@@ -118,6 +144,6 @@
 
 ## Last verified
 
-2026-07-12 — документ перепроверен в рамках Фазы 3 рефакторинга; карта модулей актуальна (учтены новые сервисы Фаз 1–3: NavigationService, OverlayManager, SlopeOverlayCoordinator, SlopesProUpsellGate, VersionResolver, IdleDetector, UpdateVerifier, UpdateManifestClient, UpdateDownloader, DrawingService, FlowDocumentBuilder, FixedDocumentBuilder, PrintQueueManager, PdfExportService). Дополнительно учтён bugfix экономии Старт/F-планка в откосах (`SlopeCalculatorService.cs`, `SlopePanelControl.xaml.cs`).
+2026-08-04 — AI Agent Mode: добавлены модули плана и сервисы AI-агентности (`AiActionPlan`, `AiPlanBuilder`/`AiPlanValidator`/`AiPlanExecutor`, `AiOrderContextBuilder`, `AiExplanationContextBuilder`, `AiTelemetryService`, `AiLocalCommandRouter`); карта модулей расширена моделями AI-контекста и тестами.
 
 2026-06-27

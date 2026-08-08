@@ -28,6 +28,12 @@ Or run: what-to-update.ps1 (git diff --name-only) -- the script reads documentat
 | `Models/OrderSnapshot.cs` | `CURRENT_STATE.md` (Undo/Redo) |
 | `Models/UpdateItem.cs` | `CURRENT_STATE.md` |
 | `Models/AdditionalKpItem.cs` | `CURRENT_STATE.md` |
+| `Models/AiChatMessage.cs` | `CURRENT_STATE.md`, `CHANGELOG.md` (persisted AI model/provider badge + plan state (awaiting confirmation/executed/cancelled)) |
+| `Models/AiClarificationForm.cs` | `CURRENT_STATE.md`, `CHANGELOG.md` (interactive parameter card for AI clarification replies) |
+| `Models/AiActionPlan.cs` | `CURRENT_STATE.md`, `CHANGELOG.md` (AI Agent Mode: action plan with steps, confirmation and execution state) |
+| `Models/AiOrderContext.cs` | `CURRENT_STATE.md`, `CHANGELOG.md` (AI Agent Mode: rich order snapshot context sent to the LLM) |
+| `Models/AiRequestMetrics.cs` | `CURRENT_STATE.md`, `CHANGELOG.md` (AI Agent Mode: per-request metrics (provider, attempt, fallback)) |
+| `Models/AiCalculationExplanationContext.cs` | `CURRENT_STATE.md`, `CHANGELOG.md` (AI Agent Mode: calculation explanation context for /объясни) |
 
 ### ViewModels
 
@@ -37,6 +43,7 @@ Or run: what-to-update.ps1 (git diff --name-only) -- the script reads documentat
 | `ViewModels/MainWindowViewModel.cs` | `CURRENT_STATE.md`, `CHANGELOG.md` |
 | `ViewModels/OrdersHistoryViewModel.cs` | `CURRENT_STATE.md`, `CHANGELOG.md` |
 | `ViewModels/PricesViewModel.cs` | `CURRENT_STATE.md`, `CHANGELOG.md` |
+| `ViewModels/AiAssistantViewModel.cs` | `CURRENT_STATE.md`, `CHANGELOG.md` (AI Agent Mode: background streaming, slash routing, plan→confirm→execute, undo/redo requests) |
 
 ### Services
 
@@ -60,6 +67,17 @@ Or run: what-to-update.ps1 (git diff --name-only) -- the script reads documentat
 | `Services/UndoRedoService.cs` | `GOTCHAS.md#10`, `CURRENT_STATE.md` |
 | `Services/NotesFormatter.cs` | `CURRENT_STATE.md`, `CHANGELOG.md` (lightweight notes markup parser) |
 | `Services/NotesRenderer.cs` | `CURRENT_STATE.md`, `CHANGELOG.md` (WPF inline renderer for formatted notes) |
+| `Services/AiAssistantService.cs` | `CURRENT_STATE.md`, `CHANGELOG.md` (AI streaming, model routing and free-provider fallback) |
+| `Services/AiModelSelector.cs` | `CURRENT_STATE.md`, `CHANGELOG.md` (task-based free-model ranking) |
+| `Services/AiTaskClassifier.cs` | `CURRENT_STATE.md`, `CHANGELOG.md` (local task classification for model selection) |
+| `Services/AiCommandParser.cs` | `CURRENT_STATE.md`, `CHANGELOG.md` (add-item JSON parsing + plan-mode (steps); GetDefaultPrice/GenerateActionConfirmation reused by clarification form) |
+| `Services/AiPlanBuilder.cs` | `CURRENT_STATE.md`, `CHANGELOG.md` (AI Agent Mode: converts parsed commands into validated action plans) |
+| `Services/AiPlanValidator.cs` | `CURRENT_STATE.md`, `CHANGELOG.md` (AI Agent Mode: local parameter validation before execution) |
+| `Services/AiPlanExecutor.cs` | `CURRENT_STATE.md`, `CHANGELOG.md` (AI Agent Mode: atomic batch execution with rollback) |
+| `Services/AiOrderContextBuilder.cs` | `CURRENT_STATE.md`, `CHANGELOG.md` (AI Agent Mode: builds AiOrderContext from live order state) |
+| `Services/AiExplanationContextBuilder.cs` | `CURRENT_STATE.md`, `CHANGELOG.md` (AI Agent Mode: builds explanation context from actual totals) |
+| `Services/AiTelemetryService.cs` | `CURRENT_STATE.md`, `CHANGELOG.md` (AI Agent Mode: request metrics and in-memory stats) |
+| `Services/AiLocalCommandRouter.cs` | `CURRENT_STATE.md`, `CHANGELOG.md` (AI Agent Mode: offline slash commands (/товары /итоги /объясни etc.)) |
 
 ### Controls (WPF UI)
 
@@ -75,6 +93,8 @@ Or run: what-to-update.ps1 (git diff --name-only) -- the script reads documentat
 | `Controls/TotalCardControl.*` | `CURRENT_STATE.md` |
 | `Controls/SendToFactoryWindow.*` | `CURRENT_STATE.md`, `CHANGELOG.md` |
 | `Controls/AnwisContextMenuBuilder.cs` | `CURRENT_STATE.md`, `CHANGELOG.md` |
+| `Controls/AiAssistantControl.*` | `CURRENT_STATE.md`, `CHANGELOG.md` (streaming chat UI, model badges, plan preview card with Выполнить/Отмена and Отменить действие) |
+| `Controls/AiApiKeyDialog.*` | `CURRENT_STATE.md`, `CHANGELOG.md` (AI keys, model catalog and auto-select UX) |
 
 ### Themes
 
@@ -115,12 +135,16 @@ Or run: what-to-update.ps1 (git diff --name-only) -- the script reads documentat
 | `docs/arc/REFACTORING_PLAN.md` | `CURRENT_STATE.md`, `MULTI_AGENT_ARC_CALC_CONTROL.md`, `AGENTS.md` (system refactoring plan) |
 | `gensymbols.ps1` | `CURRENT_STATE.md` (A.R.C. v4: symbol index generator) |
 | `arc-check.ps1` | `CURRENT_STATE.md` (A.R.C. v4: pre-commit doc sync check) |
+| `MosquitoNetCalculator/MainWindow.xaml` | `CURRENT_STATE.md`, `CHANGELOG.md` (AI BETA navigation and panel badge) |
+| `MosquitoNetCalculator/Converters/BoolVisibilityConverter.cs` | `CURRENT_STATE.md`, `CHANGELOG.md` (AI model badge visibility converter) |
 | `MosquitoNetCalculator/MainWindow.xaml.cs` | `REFACTORING_PLAN.md`, `CURRENT_STATE.md`, `CHANGELOG.md` (Phase 1: NavigationService, OverlayManager, SlopeOverlayCoordinator) |
 | `MosquitoNetCalculator/MainWindow.Orders.cs` | `REFACTORING_PLAN.md`, `CURRENT_STATE.md`, `CHANGELOG.md` (Phase 6: OrderImportExportService, OrderDialogService, OrderGridPresenter) |
 | `MosquitoNetCalculator/Services/UpdateService.cs` | `REFACTORING_PLAN.md`, `AUTO_UPDATE.md`, `GOTCHAS.md#5`, `GOTCHAS.md#8`, `RELEASE_PROCESS.md`, `CURRENT_STATE.md`, `CHANGELOG.md` (Phase 2: manifest/version/download/verify/presenter) |
 | `MosquitoNetCalculator/Services/PrintService.cs` | `REFACTORING_PLAN.md`, `GOTCHAS.md#6`, `CALCULATION_LOGIC.md#КП`, `CURRENT_STATE.md`, `CHANGELOG.md` (Phase 3: queue resolver, fixed document builder, orchestrator) |
 | `MosquitoNetCalculator/Services/DialogService.cs` | `REFACTORING_PLAN.md`, `CURRENT_STATE.md`, `CHANGELOG.md` (Phase 4: XAML templates + DialogBuilder) |
 | `MosquitoNetCalculator/Models/OrderItem.cs` | `REFACTORING_PLAN.md`, `CALCULATION_LOGIC.md`, `GOTCHAS.md#1`, `CURRENT_STATE.md`, `CHANGELOG.md` (Phase 5: ProductCatalog, AnwisSizeCalculator, SlopeCalculationExtensions) |
+| `MosquitoNetCalculator/MainWindow.AI.cs` | `CURRENT_STATE.md`, `CHANGELOG.md` (AI Agent Mode: rich order context, plan execution with single undo snapshot, guarded undo/redo) |
+| `MosquitoNetCalculator/Models/AiCommand.cs` | `CURRENT_STATE.md`, `CHANGELOG.md` (AI Agent Mode: plan-mode AiResponse.Plan + update/delete command params) |
 
 ---
 
@@ -135,4 +159,4 @@ Use what-to-update.ps1 to get the list of docs to update - the script reads docu
 
 ## Last verified
 
-2026-07-16 (generated from JSON)
+2026-08-04 (generated from JSON)

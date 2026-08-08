@@ -1,0 +1,487 @@
+<Window x:Class="MosquitoNetCalculator.Controls.AiApiKeyDialog"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Настройки AI"
+        Width="520" Height="760"
+        WindowStartupLocation="CenterOwner"
+        WindowStyle="None" ResizeMode="NoResize"
+        Background="{DynamicResource AppBg}"
+        Foreground="{DynamicResource TextPrimary}"
+        ShowInTaskbar="False"
+        Topmost="True"
+        MouseLeftButtonDown="Window_MouseLeftButtonDown">
+
+    <Window.Resources>
+        <!-- DialogCheckBox stays dialog-local; DialogOutlineButton and
+             DialogPrimaryButton live in Themes/ButtonStyles.xaml because the
+             AI plan card in AiAssistantControl also uses DialogOutlineButton. -->
+        <Style x:Key="DialogCheckBox" TargetType="CheckBox">
+            <Setter Property="Focusable" Value="False"/>
+            <Setter Property="VerticalAlignment" Value="Center"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="CheckBox">
+                        <Border x:Name="CheckBorder" Width="18" Height="18" CornerRadius="5"
+                                Background="{DynamicResource SectionBg}"
+                                BorderBrush="{DynamicResource TextMuted}" BorderThickness="2">
+                            <TextBlock x:Name="CheckMark" Text="✓" FontSize="12" FontWeight="Bold"
+                                       Foreground="{DynamicResource OnAccent}"
+                                       HorizontalAlignment="Center" VerticalAlignment="Center"
+                                       Visibility="Collapsed"/>
+                        </Border>
+                        <ControlTemplate.Triggers>                                    <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="CheckBorder" Property="Background" Value="{DynamicResource RowHover}"/>
+                                <Setter TargetName="CheckBorder" Property="BorderBrush" Value="{DynamicResource Accent}"/>
+                            </Trigger>
+                            <Trigger Property="IsChecked" Value="True">
+                                <Setter TargetName="CheckBorder" Property="Background" Value="{DynamicResource Accent}"/>
+                                <Setter TargetName="CheckBorder" Property="BorderBrush" Value="{DynamicResource Accent}"/>
+                                <Setter TargetName="CheckMark" Property="Visibility" Value="Visible"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+    </Window.Resources>
+
+    <Border BorderBrush="{DynamicResource Border}" BorderThickness="1" CornerRadius="12"
+            Background="{DynamicResource Surface}">
+        <Grid Margin="20,0">
+            <!-- Three-zone layout that can never clip the footer: header and
+                 action row are pinned to the window top/bottom, the middle (*)
+                 zone is a ScrollViewer that absorbs any overflow — so
+                 «Отмена»/«Сохранить» stay fully visible at any DPI. -->
+            <Grid.RowDefinitions>
+                <RowDefinition Height="54"/>
+                <RowDefinition Height="*"/>
+                <RowDefinition Height="Auto"/>
+            </Grid.RowDefinitions>
+
+            <!-- Header -->
+            <Grid Grid.Row="0">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="34"/>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="32"/>
+                </Grid.ColumnDefinitions>
+                <Border Grid.Column="0" Width="28" Height="28" CornerRadius="8"
+                        Background="{DynamicResource Accent}" VerticalAlignment="Center">
+                    <TextBlock Text="AI" FontSize="10" FontWeight="Bold"
+                               Foreground="{DynamicResource OnAccent}"
+                               HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                </Border>
+                <StackPanel Grid.Column="1" VerticalAlignment="Center" Margin="8,0,0,0">
+                    <TextBlock Text="Настройки AI Ассистента" FontSize="15" FontWeight="SemiBold"
+                               Foreground="{DynamicResource TextPrimary}"/>
+                    <TextBlock Text="Бесплатные модели · автовыбор · резервное подключение" FontSize="10"
+                               Foreground="{DynamicResource TextMuted}" Margin="0,2,0,0"
+                               TextTrimming="CharacterEllipsis"/>
+                </StackPanel>
+                <Button Grid.Column="2" x:Name="BtnClose" Content="✕"
+                        Width="28" Height="28" Click="BtnClose_Click"
+                        Background="Transparent" BorderThickness="0"
+                        Foreground="{DynamicResource TextMuted}" Cursor="Hand" FontSize="14"
+                        ToolTip="Закрыть (Esc)" VerticalAlignment="Center"
+                        MouseEnter="CloseBtn_MouseEnter" MouseLeave="CloseBtn_MouseLeave"/>
+            </Grid>
+
+            <!-- All form content lives in a scrollable middle zone. The model
+                 list caps itself with MaxHeight so the fixed window never
+                 overflows; taller content scrolls inside this zone only. -->
+            <ScrollViewer Grid.Row="1"
+                          VerticalScrollBarVisibility="Auto"
+                          HorizontalScrollBarVisibility="Disabled"
+                          Focusable="False">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="1"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                    </Grid.RowDefinitions>
+
+            <!-- Status banner: concise and actionable -->
+            <Border Grid.Row="0" Margin="2,8,2,14" Padding="12,10" CornerRadius="8"
+                    Background="{DynamicResource BadgeSuccessBg}"
+                    BorderBrush="{DynamicResource Success}" BorderThickness="1">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="30"/>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+                    <Border Grid.Column="0" Width="22" Height="22" CornerRadius="11"
+                            Background="{DynamicResource Success}" VerticalAlignment="Center">
+                        <TextBlock Text="✓" FontSize="12" FontWeight="Bold"
+                                   Foreground="{DynamicResource OnSuccess}"
+                                   HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                    </Border>
+                    <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                        <TextBlock Text="Встроенные подключения готовы" FontSize="12" FontWeight="SemiBold"
+                                   Foreground="{DynamicResource BadgeSuccessFg}"/>
+                        <TextBlock Text="OpenRouter подтверждает ключ · NVIDIA проверяет доступность сервиса"
+                                   FontSize="10" Foreground="{DynamicResource TextMuted}" Margin="0,2,0,0"
+                                   TextTrimming="CharacterEllipsis"/>
+                    </StackPanel>
+                    <TextBlock Grid.Column="2" Text="FREE" FontSize="9" FontWeight="Bold"
+                               Foreground="{DynamicResource BadgeSuccessFg}" VerticalAlignment="Center"
+                               Margin="10,0,2,0"/>
+                </Grid>
+            </Border>
+
+            <!-- Keys section heading -->
+            <Grid Grid.Row="1" Margin="2,0,2,7">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+                <StackPanel Grid.Column="0">
+                    <TextBlock Text="API-КЛЮЧИ" FontSize="10" FontWeight="Bold"
+                               Foreground="{DynamicResource TextMuted}"/>
+                    <TextBlock Text="Свои ключи необязательны · проверка без сохранения" FontSize="10"
+                               Foreground="{DynamicResource TextMuted}" Margin="0,2,0,0"/>
+                </StackPanel>
+                <TextBlock Grid.Column="1" Text="2 сервиса" FontSize="10"
+                           Foreground="{DynamicResource TextMuted}" VerticalAlignment="Center"/>
+            </Grid>
+
+            <!-- Keys card -->
+            <Border Grid.Row="2" Padding="12,11" CornerRadius="8"
+                    Background="{DynamicResource SectionBg}"
+                    BorderBrush="{DynamicResource Border}" BorderThickness="1">
+                <StackPanel>
+                    <!-- OpenRouter -->
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="132"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+                        <StackPanel Grid.Column="0" VerticalAlignment="Top">
+                            <StackPanel Orientation="Horizontal">
+                                <Border Width="18" Height="18" CornerRadius="5"
+                                        Background="{DynamicResource ChipBg}" Margin="0,0,6,0">
+                                    <TextBlock Text="OR" FontSize="8" FontWeight="Bold"
+                                               Foreground="{DynamicResource Accent}"
+                                               HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                </Border>
+                                <TextBlock Text="OpenRouter" FontSize="12" FontWeight="SemiBold"
+                                           Foreground="{DynamicResource TextPrimary}" VerticalAlignment="Center"/>
+                            </StackPanel>
+                            <TextBlock x:Name="TxtCurrentKey" Text="встроенный ключ"
+                                       FontSize="10" Foreground="{DynamicResource TextMuted}"
+                                       Margin="24,3,0,0" TextTrimming="CharacterEllipsis"/>
+                        </StackPanel>
+                        <StackPanel Grid.Column="1">
+                            <Grid>
+                                <PasswordBox x:Name="TxtApiKey" Height="32" Padding="9,5" FontSize="11"
+                                             BorderBrush="{DynamicResource Border}" BorderThickness="1"
+                                             Background="{DynamicResource Surface}" Foreground="{DynamicResource TextPrimary}"
+                                             VerticalContentAlignment="Center"
+                                             PasswordChanged="TxtApiKey_PasswordChanged"
+                                             ToolTip="Вставьте свой ключ OpenRouter, если хотите использовать собственный лимит"/>
+                                <TextBlock x:Name="ApiKeyPlaceholder"
+                                           Text="Вставьте ключ OpenRouter (необязательно)"
+                                           FontSize="10" Foreground="{DynamicResource TextMuted}"
+                                           Margin="10,0,8,0" VerticalAlignment="Center"
+                                           IsHitTestVisible="False"/>
+                            </Grid>
+                            <Border x:Name="OrTestStatus" CornerRadius="4" Padding="7,3"
+                                    HorizontalAlignment="Left" Margin="2,4,0,0"
+                                    Background="{DynamicResource SectionBg}"
+                                    BorderBrush="{DynamicResource SubtleBorder}" BorderThickness="1">
+                                <StackPanel Orientation="Horizontal">
+                                    <Border x:Name="OrTestDot" Width="8" Height="8" CornerRadius="4"
+                                            Background="{DynamicResource TextMuted}" Margin="0,0,5,0"
+                                            VerticalAlignment="Center"/>
+                                    <TextBlock x:Name="TxtOrTestStatus" Text="не проверено" FontSize="10"
+                                               Foreground="{DynamicResource TextMuted}" VerticalAlignment="Center"/>
+                                </StackPanel>
+                            </Border>
+                        </StackPanel>
+                    </Grid>
+
+                    <Border Height="1" Background="{DynamicResource SubtleBorder}" Margin="0,10"/>
+
+                    <!-- NVIDIA -->
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="132"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+                        <StackPanel Grid.Column="0" VerticalAlignment="Top">
+                            <StackPanel Orientation="Horizontal">
+                                <Border Width="18" Height="18" CornerRadius="5"
+                                        Background="{DynamicResource BadgeSuccessBg}" Margin="0,0,6,0">
+                                    <TextBlock Text="NV" FontSize="8" FontWeight="Bold"
+                                               Foreground="{DynamicResource Success}"
+                                               HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                </Border>
+                                <TextBlock Text="NVIDIA" FontSize="12" FontWeight="SemiBold"
+                                           Foreground="{DynamicResource TextPrimary}" VerticalAlignment="Center"/>
+                            </StackPanel>
+                            <TextBlock x:Name="TxtCurrentNvidiaKey" Text="ключ не задан"
+                                       FontSize="10" Foreground="{DynamicResource TextMuted}"
+                                       Margin="24,3,0,0" TextTrimming="CharacterEllipsis"/>
+                        </StackPanel>
+                        <StackPanel Grid.Column="1">
+                            <Grid>
+                                <PasswordBox x:Name="TxtNvidiaKey" Height="32" Padding="9,5" FontSize="11"
+                                             BorderBrush="{DynamicResource Border}" BorderThickness="1"
+                                             Background="{DynamicResource Surface}" Foreground="{DynamicResource TextPrimary}"
+                                             VerticalContentAlignment="Center"
+                                             PasswordChanged="TxtNvidiaKey_PasswordChanged"
+                                             ToolTip="Вставьте свой ключ NVIDIA, если он у вас есть"/>
+                                <TextBlock x:Name="NvidiaKeyPlaceholder"
+                                           Text="Вставьте ключ NVIDIA (необязательно)"
+                                           FontSize="10" Foreground="{DynamicResource TextMuted}"
+                                           Margin="10,0,8,0" VerticalAlignment="Center"
+                                           IsHitTestVisible="False"/>
+                            </Grid>
+                            <Border x:Name="NvTestStatus" CornerRadius="4" Padding="7,3"
+                                    HorizontalAlignment="Left" Margin="2,4,0,0"
+                                    Background="{DynamicResource SectionBg}"
+                                    BorderBrush="{DynamicResource SubtleBorder}" BorderThickness="1">
+                                <StackPanel Orientation="Horizontal">
+                                    <Border x:Name="NvTestDot" Width="8" Height="8" CornerRadius="4"
+                                            Background="{DynamicResource TextMuted}" Margin="0,0,5,0"
+                                            VerticalAlignment="Center"/>
+                                    <TextBlock x:Name="TxtNvTestStatus" Text="не проверено" FontSize="10"
+                                               Foreground="{DynamicResource TextMuted}" VerticalAlignment="Center"/>
+                                </StackPanel>
+                            </Border>
+                        </StackPanel>
+                    </Grid>
+                </StackPanel>
+            </Border>
+
+            <!-- Test action is visually attached to the keys card -->
+            <Border Grid.Row="3" Margin="2,0,2,12" Padding="12,8"
+                    Background="{DynamicResource SectionBg}"
+                    BorderBrush="{DynamicResource Border}" BorderThickness="1,0,1,1"
+                    CornerRadius="0,0,8,8">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+                    <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center">
+                        <TextBlock Text="●" FontSize="9" Foreground="{DynamicResource TextMuted}" Margin="0,0,6,0"/>
+                        <TextBlock Text="Живой запрос · данные не сохраняются" FontSize="10"
+                                   Foreground="{DynamicResource TextMuted}"/>
+                    </StackPanel>
+                    <Button Grid.Column="1" x:Name="BtnTestKeys"
+                            Content="Проверить подключение" Height="30" Click="BtnTestKeys_Click"
+                            Style="{StaticResource DialogOutlineButton}"
+                            ToolTip="Параллельно проверить ключ OpenRouter и доступность NVIDIA"/>
+                </Grid>
+            </Border>
+
+            <Border Grid.Row="4" Background="{DynamicResource SubtleBorder}"/>
+
+            <!-- Models heading + auto-select toggle -->
+            <Grid Grid.Row="5" Margin="2,13,2,7">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+                <StackPanel Grid.Column="0">
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock Text="Выбор моделей" FontSize="12" FontWeight="SemiBold"
+                                   Foreground="{DynamicResource TextPrimary}"/>
+                        <Border CornerRadius="4" Padding="6,2" Margin="8,0,0,0"
+                                Background="{DynamicResource ChipBg}">
+                            <TextBlock Text="НЕСКОЛЬКО" FontSize="8" FontWeight="Bold"
+                                       Foreground="{DynamicResource Accent}"/>
+                        </Border>
+                    </StackPanel>
+                    <TextBlock x:Name="TxtModelDescription"
+                               Text="Автовыбор подбирает модель под задачу; отмеченные — резерв"
+                               FontSize="10" Foreground="{DynamicResource TextMuted}" Margin="0,3,0,0"
+                               TextTrimming="CharacterEllipsis"/>
+                </StackPanel>
+                <!-- Auto-select toggle -->
+                <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center"
+                            Margin="0,0,10,0" ToolTip="Автоматически выбирать лучшую модель под задачу. Модели из списка используются как приоритетный резерв.">
+                    <ToggleButton x:Name="TglAutoSelect" Width="36" Height="20"
+                                  Checked="TglAutoSelect_Changed" Unchecked="TglAutoSelect_Changed"
+                                  Focusable="True" IsTabStop="True" Cursor="Hand"
+                                  ToolTip="Автоматически выбрать лучшую бесплатную модель под текущую задачу"
+                                  AutomationProperties.Name="Автоматический выбор модели">
+                        <ToggleButton.Style>
+                            <Style TargetType="ToggleButton">
+                                <Setter Property="Template">
+                                    <Setter.Value>
+                                        <ControlTemplate TargetType="ToggleButton">
+                                            <Border x:Name="SwitchTrack" Width="36" Height="20"
+                                                    CornerRadius="10" Background="{DynamicResource Border}">
+                                                <Border x:Name="SwitchThumb" Width="16" Height="16"
+                                                        CornerRadius="8" Background="White"
+                                                        HorizontalAlignment="Left" Margin="2,0,0,0"/>
+                                            </Border>
+                                            <ControlTemplate.Triggers>
+                                                <Trigger Property="IsChecked" Value="True">
+                                                    <Setter TargetName="SwitchTrack" Property="Background"
+                                                            Value="{DynamicResource Accent}"/>
+                                                    <Setter TargetName="SwitchThumb" Property="HorizontalAlignment"
+                                                            Value="Right"/>
+                                                    <Setter TargetName="SwitchThumb" Property="Margin"
+                                                            Value="0,0,2,0"/>
+                                                </Trigger>
+                                            </ControlTemplate.Triggers>
+                                        </ControlTemplate>
+                                    </Setter.Value>
+                                </Setter>
+                            </Style>
+                        </ToggleButton.Style>
+                    </ToggleButton>
+                    <TextBlock x:Name="TxtAutoLabel" Text="Автовыбор" FontSize="10"
+                               Foreground="{DynamicResource TextMuted}" VerticalAlignment="Center"
+                               Margin="6,0,0,0"/>
+                </StackPanel>
+                <Button Grid.Column="2" x:Name="BtnRefreshModels" Content="↻" Width="30" Height="30"
+                        Click="BtnRefreshModels_Click" ToolTip="Обновить список моделей"
+                        Style="{StaticResource DialogOutlineButton}" FontSize="16" Padding="0"/>
+            </Grid>
+
+            <!-- Search -->
+            <Grid Grid.Row="6" Margin="2,0,2,7">
+                <TextBox x:Name="TxtSearch" Height="31" Padding="30,5,30,5" FontSize="11"
+                         BorderBrush="{DynamicResource Border}" BorderThickness="1"
+                         Background="{DynamicResource SectionBg}" Foreground="{DynamicResource TextPrimary}"
+                         TextChanged="TxtSearch_TextChanged" KeyDown="TxtSearch_KeyDown"/>
+                <TextBlock Text="⌕" FontSize="16" Foreground="{DynamicResource TextMuted}"
+                           VerticalAlignment="Center" Margin="10,0,0,0" IsHitTestVisible="False"/>
+                <Button x:Name="BtnClearSearch" Visibility="Collapsed" Content="✕" Width="20" Height="20"
+                        Click="BtnClearSearch_Click" Background="Transparent" BorderThickness="0"
+                        Foreground="{DynamicResource TextMuted}" Cursor="Hand" HorizontalAlignment="Right"
+                        VerticalAlignment="Center" Margin="0,0,7,0" ToolTip="Очистить поиск"/>
+            </Grid>
+
+            <!-- Model list gets the remaining space -->
+            <Border Grid.Row="7" CornerRadius="8" BorderBrush="{DynamicResource Border}"
+                    BorderThickness="1" Background="{DynamicResource Surface}">
+                <ListBox x:Name="LstModels" Padding="0" BorderThickness="0" MaxHeight="190"
+                         Background="Transparent" Foreground="{DynamicResource TextPrimary}"
+                         Focusable="True" SelectionMode="Multiple"
+                         KeyboardNavigation.TabNavigation="Continue"
+                         VirtualizingPanel.ScrollUnit="Pixel">
+                    <ListBox.ItemContainerStyle>
+                        <Style TargetType="ListBoxItem">
+                            <Setter Property="Padding" Value="0"/>
+                            <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
+                            <Setter Property="Background" Value="Transparent"/>
+                            <Setter Property="BorderThickness" Value="3,0,0,0"/>
+                            <Setter Property="BorderBrush" Value="Transparent"/>
+                            <Style.Triggers>
+                                <Trigger Property="IsMouseOver" Value="True">
+                                    <Setter Property="Background" Value="{DynamicResource RowHover}"/>
+                                </Trigger>
+                                <DataTrigger Binding="{Binding IsSelected}" Value="True">
+                                    <Setter Property="Background" Value="{DynamicResource RowAltSelected}"/>
+                                    <Setter Property="BorderBrush" Value="{DynamicResource Accent}"/>
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </ListBox.ItemContainerStyle>
+                    <ListBox.ItemTemplate>
+                        <DataTemplate>
+                            <Border Background="Transparent" Cursor="Hand"
+                                    MouseLeftButtonUp="Row_MouseLeftButtonUp" Tag="{Binding}">
+                                <Grid Margin="11,7">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="Auto"/>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                    </Grid.ColumnDefinitions>
+                                    <CheckBox Grid.Column="0" Margin="0,0,10,0"
+                                              IsChecked="{Binding IsSelected, Mode=TwoWay}"
+                                              Click="RowCheck_Click" Style="{StaticResource DialogCheckBox}"/>
+                                    <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                                        <TextBlock Text="{Binding DisplayName}" FontSize="11"
+                                                   Foreground="{DynamicResource TextPrimary}"
+                                                   TextTrimming="CharacterEllipsis"/>
+                                    </StackPanel>
+                                    <Border Grid.Column="2" CornerRadius="4" Padding="6,3"
+                                            VerticalAlignment="Center" Margin="8,0,0,0"
+                                            ToolTip="{Binding ProviderTooltip}">
+                                        <Border.Style>
+                                            <Style TargetType="Border">
+                                                <Setter Property="Background" Value="{DynamicResource ChipBg}"/>
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding Model.Provider}" Value="Nvidia">
+                                                        <Setter Property="Background" Value="{DynamicResource BadgeSuccessBg}"/>
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </Border.Style>
+                                        <TextBlock FontSize="9" FontWeight="Bold">
+                                            <TextBlock.Style>
+                                                <Style TargetType="TextBlock">
+                                                    <Setter Property="Text" Value="OR"/>
+                                                    <Setter Property="Foreground" Value="{DynamicResource Accent}"/>
+                                                    <Style.Triggers>
+                                                        <DataTrigger Binding="{Binding Model.Provider}" Value="Nvidia">
+                                                            <Setter Property="Text" Value="NV"/>
+                                                            <Setter Property="Foreground" Value="{DynamicResource Success}"/>
+                                                        </DataTrigger>
+                                                    </Style.Triggers>
+                                                </Style>
+                                            </TextBlock.Style>
+                                        </TextBlock>
+                                    </Border>
+                                </Grid>
+                            </Border>
+                        </DataTemplate>
+                    </ListBox.ItemTemplate>
+                </ListBox>
+            </Border>
+
+            <!-- Model footer -->
+            <Grid Grid.Row="8" Margin="2,7,2,0">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+                <TextBlock Grid.Column="0" x:Name="TxtModelStatus" FontSize="10"
+                           Foreground="{DynamicResource TextMuted}" VerticalAlignment="Center"
+                           TextTrimming="CharacterEllipsis"/>
+                <StackPanel Grid.Column="1" Orientation="Horizontal">
+                    <Button x:Name="BtnSelectAll" Content="Выбрать всё" Width="88" Height="27"
+                            Click="BtnSelectAll_Click" Style="{StaticResource DialogOutlineButton}" FontSize="10"
+                            Padding="8,0" Margin="0,0,5,0"/>
+                    <Button x:Name="BtnClearAll" Content="Снять всё" Width="75" Height="27"
+                            Click="BtnClearAll_Click" Style="{StaticResource DialogOutlineButton}" FontSize="10"
+                            Padding="8,0"/>
+                </StackPanel>
+            </Grid>
+
+            <!-- Help link -->
+            <TextBlock Grid.Row="9" Margin="2,10,2,0"
+                       Text="Бесплатные ключи OpenRouter → openrouter.ai/keys"
+                       FontSize="10" Foreground="{DynamicResource Accent}" Cursor="Hand"
+                       MouseLeftButtonDown="Link_MouseLeftButtonDown" TextDecorations="Underline"/>
+                </Grid>
+            </ScrollViewer>
+
+            <!-- Bottom actions -->
+            <Border Grid.Row="2" Margin="-1,0,-1,0" Padding="0,12,0,14"
+                    BorderBrush="{DynamicResource SubtleBorder}" BorderThickness="0,1,0,0"
+                    VerticalAlignment="Stretch">
+                <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center">
+                    <Button Content="Отмена" Click="BtnCancel_Click" Width="88" Height="35"
+                            Style="{StaticResource DialogOutlineButton}" Margin="0,0,8,0" FontSize="12"/>
+                    <Button Content="Сохранить" Click="BtnSave_Click" Width="116" Height="35"
+                            Style="{StaticResource DialogPrimaryButton}" FontSize="12"/>
+                </StackPanel>
+            </Border>
+        </Grid>
+    </Border>
+</Window>

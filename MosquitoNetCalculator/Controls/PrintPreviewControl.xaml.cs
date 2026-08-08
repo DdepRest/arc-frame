@@ -32,6 +32,7 @@ namespace MosquitoNetCalculator.Controls
         private PrintService _printService;
         private string _contractNumber;
         private PrintSettings _settings;
+        private readonly List<PrintQueue> _printerQueues = new();
 
         // ── PDF export data ──
         private List<OrderItem> _items = new();
@@ -183,6 +184,9 @@ namespace MosquitoNetCalculator.Controls
             SinglePageControl.ValueChanged -= RangeField_ValueChanged;
             CopiesControl.ValueChanged -= CopiesControl_ValueChanged;
 
+            DisposePrinterQueues();
+            _printerQueues.Clear();
+
             if (_pageNumberDescriptor != null && _innerViewer != null)
             {
                 _pageNumberDescriptor.RemoveValueChanged(_innerViewer, OnPageNumberChanged);
@@ -278,10 +282,13 @@ namespace MosquitoNetCalculator.Controls
         private void PopulatePrinterList()
         {
             PrinterCombo.Items.Clear();
-            var printers = PrintService.GetInstalledPrinterNames();
+            DisposePrinterQueues();
+            _printerQueues.Clear();
+            _printerQueues.AddRange(PrintService.GetInstalledPrintQueues());
 
-            if (printers.Count == 0)
+            if (_printerQueues.Count == 0)
             {
+                PrinterCombo.DisplayMemberPath = null;
                 PrinterCombo.Items.Add("Принтеры не найдены");
                 PrinterCombo.SelectedIndex = 0;
                 PrinterCombo.IsEnabled = false;
@@ -289,14 +296,51 @@ namespace MosquitoNetCalculator.Controls
                 return;
             }
 
-            foreach (var name in printers)
-                PrinterCombo.Items.Add(name);
+            PrinterCombo.IsEnabled = true;
+            PrinterCombo.DisplayMemberPath = "FullName";
+            foreach (var queue in _printerQueues)
+                PrinterCombo.Items.Add(queue);
 
             string? target = _settings.PrinterName ?? PrintService.GetDefaultPrinterName();
-            if (!string.IsNullOrEmpty(target) && PrinterCombo.Items.Contains(target))
-                PrinterCombo.SelectedItem = target;
-            else if (PrinterCombo.Items.Count > 0)
-                PrinterCombo.SelectedIndex = 0;
+            int targetIndex = -1;
+            if (!string.IsNullOrWhiteSpace(target))
+            {
+                targetIndex = _printerQueues.FindIndex(queue =>
+                    string.Equals(queue.FullName, target, StringComparison.OrdinalIgnoreCase));
+            }
+
+            // Never silently switch to the first device when a saved target
+            // disappeared. Leave the selection empty and disable Print until
+            // the user explicitly picks an available queue.
+            PrinterCombo.SelectedIndex = targetIndex;
+            if (targetIndex < 0)
+            {
+                PrinterCombo.SelectedItem = null;
+                PrintButton.IsEnabled = false;
+                PrinterCombo.ToolTip = "Сохранённый принтер недоступен. Выберите доступную очередь.";
+            }
+        }
+
+        private void DisposePrinterQueues()
+        {
+            foreach (var queue in _printerQueues)
+            {
+                try { queue.Dispose(); }
+                catch (Exception ex) { Debug.WriteLine($"[PrintPreviewControl] Printer queue dispose failed: {ex.Message}"); }
+            }
+        }
+
+        private void PrinterCombo_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            if (PrinterCombo.SelectedItem is PrintQueue)
+            {
+                PrintButton.IsEnabled = true;
+                PrinterCombo.ToolTip = null;
+            }
+            else if (_printerQueues.Count > 0)
+            {
+                PrintButton.IsEnabled = false;
+            }
         }
 
         // ═══════════════════════════════════════════════════════════════
@@ -332,8 +376,8 @@ namespace MosquitoNetCalculator.Controls
 
         private void CollectSettingsInto(PrintSettings target)
         {
-            if (PrinterCombo.SelectedItem is string printerName && PrinterCombo.IsEnabled)
-                target.PrinterName = printerName;
+            if (PrinterCombo.SelectedItem is PrintQueue selectedQueue && PrinterCombo.IsEnabled)
+                target.PrinterName = selectedQueue.FullName;
             target.Copies = Math.Max(1, CopiesControl.Value);
             target.Collated = CollatedCheck.IsChecked == true;
             target.Color = ColorBtn.IsChecked == true;
@@ -533,17 +577,20 @@ namespace MosquitoNetCalculator.Controls
                     return;
             }
 
-            string? printerName = attempt.PrinterName;
-            PrintQueue? queue = PrintService.ResolvePrintQueue(printerName);
+            PrintQueue? queue = PrinterCombo.SelectedItem as PrintQueue;
             if (queue == null)
             {
                 MessageBox.Show(
-                    "Не удалось найти ни одного принтера.\nУстановите принтер и попробуйте снова.",
+                    "Не удалось определить выбранный принтер.\nОбновите окно предпросмотра и попробуйте снова.",
                     "Ошибка печати",
                     MessageBoxButton.OK,
                     MessageBoxImage.Error);
                 return;
             }
+
+            // Keep the persisted setting aligned with the exact queue object
+            // selected in the UI, including UNC/server context.
+            attempt.PrinterName = queue.FullName;
 
             PrintTicket ticket;
             try

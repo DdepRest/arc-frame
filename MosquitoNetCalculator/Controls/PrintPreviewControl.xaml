@@ -18,7 +18,9 @@
 
                 <!-- Принтер -->
                 <TextBlock Text="ПРИНТЕР" Style="{DynamicResource SectionLabel}" Margin="0,0,0,4"/>
-                <ComboBox x:Name="PrinterCombo" Margin="0,0,0,12"/>
+                <ComboBox x:Name="PrinterCombo" Margin="0,0,0,12"
+                          DisplayMemberPath="FullName"
+                          SelectionChanged="PrinterCombo_SelectionChanged"/>
 
                 <!-- Копии -->
                 <TextBlock Text="КОПИИ" Style="{DynamicResource SectionLabel}" Margin="0,0,0,4"/>

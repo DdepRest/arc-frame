@@ -38,16 +38,6 @@ namespace MosquitoNetCalculator.Models
             ["Козырёк"] = 750,
         };
 
-        /// <summary>
-        /// Default installation surcharge for mode 2 (В конструкцию).
-        /// For per-linear-meter products (Отлив, Козырёк) the rate is in ₽/м.п.
-        /// </summary>
-        private static readonly Dictionary<string, double> DefaultInstallationSurcharges = new()
-        {
-            ["Отлив"] = 500,
-            ["Козырёк"] = 750,
-        };
-
         // Per-linear-meter product list is owned by ProductCatalog.PerLinearMeterProducts.
         // No local HashSet is needed — IsInstallationPerLinearMeter delegates directly.
 
@@ -66,12 +56,12 @@ namespace MosquitoNetCalculator.Models
 
         /// <summary>
         /// Returns the default installation surcharge for a given product name.
-        /// For per-linear-meter products returns the rate in ₽/м.п.; otherwise
-        /// mirrors the deduction value.
+        /// Currently mirrors the deduction default (signed convention), which is
+        /// 0 for per-linear-meter products (Отлив, Козырёк) and −500/−600 ₽/шт.
+        /// for per-piece products.
         /// </summary>
         public static double GetDefaultInstallationSurcharge(string productName) =>
-            DefaultInstallationSurcharges.GetValueOrDefault(productName,
-                GetDefaultInstallationDeduction(productName));
+            GetDefaultInstallationDeduction(productName);
 
         /// <summary>True when installation for this product is priced per linear meter.</summary>
         public bool IsInstallationPerLinearMeter => ProductCatalog.IsPerLinearMeter(Name);

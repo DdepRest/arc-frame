@@ -334,6 +334,7 @@ namespace MosquitoNetCalculator
                 _updateCheckScheduler?.Stop();
                 _navBadgeTimer?.Stop();
                 _navService?.Shutdown();
+                DetachAiAssistant();
             };
 
             StateChanged += (s, e) =>
@@ -347,6 +348,7 @@ namespace MosquitoNetCalculator
 
             // ── Phase 1: initialize extracted services ──────────────────
             InitializeServices();
+            InitAiAssistant();
         }
 
         // ═══════════════════════════════════════════════════════════════
@@ -363,9 +365,9 @@ namespace MosquitoNetCalculator
         private void InitializeServices()
         {
             // ── NavigationService ──
-            var navButtons = new[] { NavBtnCalc, NavBtnOrders, NavBtnPrices, NavBtnUpdates, NavBtnSlope, NavBtnPrint };
-            var navIcons = new[] { NavIconCalc, NavIconOrders, NavIconPrices, NavIconUpdates, NavIconSlope, NavIconPrint };
-            var navLabels = new[] { NavLabelCalc, NavLabelOrders, NavLabelPrices, NavLabelUpdates, NavLabelSlope, NavLabelPrint };
+            var navButtons = new[] { NavBtnCalc, NavBtnOrders, NavBtnPrices, NavBtnUpdates, NavBtnSlope, NavBtnPrint, NavBtnAi };
+            var navIcons = new[] { NavIconCalc, NavIconOrders, NavIconPrices, NavIconUpdates, NavIconSlope, NavIconPrint, NavIconAi };
+            var navLabels = new[] { NavLabelCalc, NavLabelOrders, NavLabelPrices, NavLabelUpdates, NavLabelSlope, NavLabelPrint, NavLabelAi };
 
             _navService = new NavigationService(navButtons, navIcons, navLabels, NavPanel, this);
 
@@ -560,6 +562,23 @@ namespace MosquitoNetCalculator
         /// <summary>Thin delegate to NavigationService.SetActive.</summary>
         internal void SetActiveNavButton(string tag) => _navService?.SetActive(tag);
 
+        /// <summary>
+        /// Explicitly toggles the left navigation. It starts expanded and does
+        /// not react to hover; collapsing is an intentional user action.
+        /// </summary>
+        private void BtnToggleNav_Click(object sender, RoutedEventArgs e)
+        {
+            if (_navService == null) return;
+
+            _navService.Toggle();
+            bool expanded = _navService.IsExpanded;
+            CalculationView.Margin = new Thickness(expanded ? 160 : 52, 0, 0, 0);
+            NavToggleLabel.Visibility = expanded ? Visibility.Visible : Visibility.Collapsed;
+            BtnToggleNav.ToolTip = expanded
+                ? "Свернуть панель навигации"
+                : "Развернуть панель навигации";
+        }
+
         // ═══════════════════════════════════════════════════════════════
         // OVERLAY PANELS — thin delegates to OverlayManager
         // ═══════════════════════════════════════════════════════════════
@@ -587,6 +606,10 @@ namespace MosquitoNetCalculator
 
         /// <summary>Thin delegate to SlopeOverlayCoordinator.Show.</summary>
         internal void ShowSlopeOverlay() => _slopeCoordinator?.Show();
+
+        /// <summary>Thin delegate to SlopeOverlayCoordinator for AI calc_slope command.</summary>
+        internal void ShowSlopeOverlay(int widthMm, int heightMm, int depthMm, int windowCount)
+            => _slopeCoordinator?.ShowWithDimensions(widthMm, heightMm, depthMm, windowCount);
 
         /// <summary>Thin delegate to SlopeOverlayCoordinator.Edit.</summary>
         internal void EditSlopeItem(OrderItem materialItem) => _slopeCoordinator?.Edit(materialItem);
@@ -665,7 +688,7 @@ namespace MosquitoNetCalculator
             PrintPreviewControl.Closed += OnPrintPreviewClosed;
 
             // Set panel width: use 90% of window width for ample preview space
-            double availableWidth = this.ActualWidth - 52;  // minus nav panel
+            double availableWidth = this.ActualWidth - ( _navService?.IsExpanded == false ? 52 : 160);  // minus nav panel
             PrintPanel.Width = Math.Min(1050, availableWidth);
 
             PrintOverlay.Visibility = Visibility.Visible;

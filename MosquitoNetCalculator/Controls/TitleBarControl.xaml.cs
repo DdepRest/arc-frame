@@ -104,6 +104,13 @@ namespace MosquitoNetCalculator.Controls
             TryGetMainWindow()?.OpenWelcomeWindow();
         }
 
+        private void MenuAiApiKey_Click(object sender, RoutedEventArgs e)
+        {
+            // The menu item remains visible for discoverability, but AI is
+            // intentionally unavailable until the feature leaves development.
+            // Do not construct or show AiApiKeyDialog here.
+        }
+
         private async void MenuCheckUpdates_Click(object sender, RoutedEventArgs e)
         {
             var mw = TryGetMainWindow();

@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using MosquitoNetCalculator;
 using MosquitoNetCalculator.Models;
 using MosquitoNetCalculator.Services;
 using Xunit;
@@ -165,6 +166,46 @@ namespace MosquitoNetCalculator.Tests.Models
         {
             var item = new OrderItem { Name = name };
             Assert.Equal(expectedUnit, item.Unit);
+        }
+
+        // ─── Installation mode tests ─────────────────────────
+
+        [Theory]
+        [InlineData(-500, true, -500)]
+        [InlineData(500, false, -500)]
+        [InlineData(500, true, 500)]
+        [InlineData(0, false, -0)]
+        [InlineData(double.MaxValue, false, -double.MaxValue)]
+        public void NormalizeInstallationAmount_PreservesSignedInput(
+            double rawValue, bool isAdd, double expected)
+        {
+            // The popup accepts both an explicit minus and the +/- toggle.
+            // An explicit minus must never be turned into a positive amount.
+            Assert.Equal(expected,
+                MainWindow.NormalizeInstallationAmount(rawValue, isAdd));
+        }
+
+        [Fact]
+        public void NormalizeInstallationAmount_RejectsNonFiniteValues()
+        {
+            Assert.Throws<ArgumentOutOfRangeException>(() =>
+                MainWindow.NormalizeInstallationAmount(double.NaN, true));
+            Assert.Throws<ArgumentOutOfRangeException>(() =>
+                MainWindow.NormalizeInstallationAmount(double.PositiveInfinity, true));
+            Assert.Equal(-double.MaxValue,
+                MainWindow.NormalizeInstallationAmount(double.MinValue, true));
+        }
+
+        [Theory]
+        [InlineData(0, false)]
+        [InlineData(0.01, false)]
+        [InlineData(-0.01, false)]
+        [InlineData(500, true)]
+        public void ShouldRefreshInstallationSign_OnlyForMeaningfulAmount(
+            double currentValue, bool expected)
+        {
+            Assert.Equal(expected,
+                MainWindow.ShouldRefreshInstallationSign(currentValue));
         }
 
         // ─── Installation mode tests ─────────────────────────
@@ -796,6 +837,21 @@ namespace MosquitoNetCalculator.Tests.Models
             var item = new OrderItem { Name = "Anwis", InstallationMode = 2 };
             item.SetCurrentInstallationAmount(-500);
             Assert.Equal(-500, item.InstallationSurcharge);
+        }
+
+        [Theory]
+        [InlineData("Anwis", -500)]
+        [InlineData("На навесах", -500)]
+        [InlineData("Оконная на метал. крепл.", -500)]
+        [InlineData("Дверная сетка", -600)]
+        [InlineData("Отлив", 0)]
+        [InlineData("Козырёк", 0)]
+        public void GetDefaultInstallationSurcharge_ReturnsExpected(string name, double expected)
+        {
+            // v3.47.4 (fix): switching to "В конструкцию" resets the surcharge
+            // to the product's default. Per-piece products default to −500/−600,
+            // per-linear-meter products default to 0.
+            Assert.Equal(expected, OrderItem.GetDefaultInstallationSurcharge(name));
         }
 
         // ─── Clone tests ─────────────────────────────────────

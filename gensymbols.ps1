@@ -276,7 +276,7 @@ foreach ($sym in $importantSymbols) {
 [void]$sb.AppendLine("")
 [void]$sb.AppendLine("## Last generated")
 [void]$sb.AppendLine("")
-[void]$sb.AppendLine((Get-Date -Format "yyyy-MM-dd (gensymbols.ps1)"))
+[void]$sb.AppendLine((Get-Date -Format "yyyy-MM-dd") + " (gensymbols.ps1)")
 
 # Write output
 [System.IO.File]::WriteAllText($outputPath, $sb.ToString(), [System.Text.UTF8Encoding]::new($true))

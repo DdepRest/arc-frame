@@ -52,6 +52,10 @@ namespace MosquitoNetCalculator.Services
         public static List<string> GetInstalledPrinterNames()
             => PrintQueueManager.GetInstalledPrinterNames();
 
+        /// <summary>Returns the actual installed Windows queues for direct selection.</summary>
+        public static List<PrintQueue> GetInstalledPrintQueues()
+            => PrintQueueManager.GetInstalledPrintQueues();
+
         /// <summary>Returns the default printer name.</summary>
         public static string? GetDefaultPrinterName()
             => PrintQueueManager.GetDefaultPrinterName();

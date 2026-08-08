@@ -85,6 +85,22 @@ namespace MosquitoNetCalculator.Tests.Services
         }
 
         [Fact]
+        public void Navigation_StartsExpanded_AndToggleChangesState()
+        {
+            RunOnStaThread(() =>
+            {
+                var (svc, _, _, _, _) = CreateNavigationService();
+                Assert.True(svc.IsExpanded);
+
+                svc.Toggle();
+                Assert.False(svc.IsExpanded);
+
+                svc.Toggle();
+                Assert.True(svc.IsExpanded);
+            });
+        }
+
+        [Fact]
         public void SetActive_Calc_SetsCorrectFontWeight()
         {
             RunOnStaThread(() =>

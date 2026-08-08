@@ -13,6 +13,28 @@ namespace MosquitoNetCalculator
 {
     public partial class MainWindow
     {
+        /// <summary>
+        /// Converts the amount entered in the installation popup to the signed
+        /// value used by the calculation model. The explicit minus in the text
+        /// wins over the toggle state; otherwise the toggle supplies the sign.
+        /// </summary>
+        internal static double NormalizeInstallationAmount(double rawValue, bool isAdd)
+        {
+            if (!double.IsFinite(rawValue))
+                throw new ArgumentOutOfRangeException(nameof(rawValue), "Installation amount must be finite.");
+
+            // Avoid Math.Abs(double.MinValue) overflow while keeping the
+            // popup's normal numeric-input path exception-free.
+            if (rawValue == double.MinValue)
+                return -double.MaxValue;
+
+            double absoluteValue = Math.Abs(rawValue);
+            return isAdd && rawValue >= 0 ? absoluteValue : -absoluteValue;
+        }
+
+        internal static bool ShouldRefreshInstallationSign(double currentValue)
+            => Math.Abs(currentValue) > 0.01;
+
         internal void StartNewOrder()
         {
             ViewModel.UndoRedo.SuppressDirtyChanges(() =>
@@ -145,9 +167,12 @@ namespace MosquitoNetCalculator
                     double currentVal = item.CurrentInstallationAmount;
                     double absVal = Math.Abs(currentVal);
                     txtDeduction.Text = absVal > 0.01 ? absVal.ToString("F0") : "0";
-                    bool isAdd = currentVal >= 0;
+                    // Zero has no mathematical sign, but the user may select
+                    // the minus state before entering the amount. Do not reset
+                    // that choice while the field is zero.
+                    if (ShouldRefreshInstallationSign(currentVal))
+                        chkSign.IsChecked = currentVal > 0;
                     chkSign.Visibility = Visibility.Visible;
-                    chkSign.IsChecked = isAdd;
                     txtDeduction.ToolTip = "Введите сумму корректировки и выберите знак (+ добавить, − вычесть).";
                 }
                 else
@@ -161,10 +186,12 @@ namespace MosquitoNetCalculator
             void CommitDeductionIfPending()
             {
                 if (!txtDeduction.IsEnabled) return;
-                if (double.TryParse(txtDeduction.Text, out double absVal) && absVal >= 0)
+                if (double.TryParse(txtDeduction.Text, out double rawVal)
+                    && double.IsFinite(rawVal))
                 {
                     // v3.46.1: all modes use signed convention (+ = add, − = subtract).
-                    double val = chkSign.IsChecked == true ? absVal : -absVal;
+                    // Accept an explicitly typed minus as well as the toggle state.
+                    double val = NormalizeInstallationAmount(rawVal, chkSign.IsChecked == true);
                     if (Math.Abs(item.CurrentInstallationAmount - val) > 0.01)
                     {
                         item.SetCurrentInstallationAmount(val);
@@ -181,6 +208,14 @@ namespace MosquitoNetCalculator
                 PushUndo();
                 CommitDeductionIfPending();
                 item.InstallationMode = mode;
+
+                // When switching to "В конструкцию", reset the surcharge to the
+                // product's default: −500 / −600 ₽/шт. for piece products
+                // (Anwis, window/canopy nets, door net) and 0 for per-linear-meter
+                // products (Отлив, Козырёк) under the signed convention.
+                if (mode == 2)
+                    item.InstallationSurcharge = OrderItem.GetDefaultInstallationSurcharge(item.Name);
+
                 foreach (var m in menu.Items.OfType<MenuItem>().Take(3))
                     m.IsChecked = m == menu.Items[mode];
                 RefreshDeductionField();

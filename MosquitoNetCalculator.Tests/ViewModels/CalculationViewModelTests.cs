@@ -549,10 +549,10 @@ namespace MosquitoNetCalculator.Tests.ViewModels
 
             var item = _vm.OrderItems[0];
             Assert.Equal("Отлив", item.Name);
-            // v3.47.0 defaults applied by the migration:
+            // v3.47.0 defaults applied by the migration (surcharge now 0 for mode 2):
             Assert.Equal(1, item.InstallationMode);          // auto-switched to "Без монтажа"
             Assert.Equal(0, item.InstallationDeduction);    // 0 ₽ (no deduction)
-            Assert.Equal(500, item.InstallationSurcharge);  // 500 ₽/м.п.
+            Assert.Equal(0, item.InstallationSurcharge);    // 0 ₽/м.п.
             Assert.Equal(500, item.InstallationAdjustment);  // 500 ₽/м.п.
             // Total = 0.5 м² × 2150 = 1075; mode 1 → 1075 + 0×3×1 = 1075. NOT 0.
             Assert.Equal(1075, item.TotalWithDeduction, 2);
@@ -581,7 +581,7 @@ namespace MosquitoNetCalculator.Tests.ViewModels
             Assert.Equal("Козырёк", item.Name);
             Assert.Equal(1, item.InstallationMode);
             Assert.Equal(0, item.InstallationDeduction);
-            Assert.Equal(750, item.InstallationSurcharge);  // Козырёк: 750 ₽/м.п.
+            Assert.Equal(0, item.InstallationSurcharge);  // Козырёк: 0 ₽/м.п. in mode 2
             Assert.Equal(750, item.InstallationAdjustment);
             // TotalWithDeduction (mode 1) = 1075 + 0×3×1 = 1075.
             Assert.Equal(1075, item.TotalWithDeduction, 2);
@@ -716,7 +716,7 @@ namespace MosquitoNetCalculator.Tests.ViewModels
             // Both sign variations of legacy defaults must trigger the migration.
             Assert.Equal(1, item.InstallationMode);
             Assert.Equal(0, item.InstallationDeduction);
-            Assert.Equal(product == "Отлив" ? 500 : 750, item.InstallationSurcharge);
+            Assert.Equal(0, item.InstallationSurcharge);  // mode 2 defaults to 0 for per-linear-meter products
             Assert.Equal(product == "Отлив" ? 500 : 750, item.InstallationAdjustment);
             // TotalWithDeduction in all modes must be > 0.
             Assert.True(item.TotalWithDeduction > 0);
@@ -855,6 +855,37 @@ namespace MosquitoNetCalculator.Tests.ViewModels
 
             Assert.Equal(0, item.Height);
             Assert.Equal(0, item.ВысотаВвод);
+        }
+
+        // ─── AI assistant add-item regression tests ─────────────
+
+        [Fact]
+        public void AddItem_AiScenario_700x1900_AddsAnwisWithBb60Adjustment()
+        {
+            // Regression for the bug where AI says it added an item but
+            // the order grid did not show it. This test locks the
+            // lower-level AddItem path used by OnAiCommandReceived.
+            var item = _vm.AddItem("Anwis", "Белый", 700, 1900, 1, 1800);
+
+            Assert.NotNull(item);
+            Assert.Equal("Anwis", item!.Name);
+            Assert.Equal("Белый", item.Color);
+            Assert.Equal(702, item.Width);   // 700 + 2 (ББ60)
+            Assert.Equal(1870, item.Height); // 1900 - 30 (ББ60)
+            Assert.Equal(1, item.Quantity);
+            Assert.Equal(1800, item.Price);
+            Assert.True(item.Total > 0);
+        }
+
+        [Fact]
+        public void AddItem_AiScenario_700x1900_AnwisTotal_IsPositive()
+        {
+            // The item must produce a positive total so the grid row is not
+            // filtered out by CalculateTotal's Total > 0 guard.
+            var item = _vm.AddItem("Anwis", "Белый", 700, 1900, 1, 1800);
+
+            Assert.True(item!.Total > 0);
+            Assert.True(item.TotalWithDeduction > 0);
         }
     }
 }

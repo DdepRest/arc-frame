@@ -179,6 +179,20 @@ namespace MosquitoNetCalculator.Controls
         }
 
         /// <summary>
+        /// Заполняет поля панели размерами (для вызова из AI-ассистента)
+        /// и сразу выполняет авто-просчёт. Размеры — в миллиметрах.
+        /// </summary>
+        public void PrefillDimensions(int widthMm, int heightMm, int depthMm, int windowCount)
+        {
+            Reset();
+            if (widthMm > 0) TxtWidth.Text = widthMm.ToString();
+            if (heightMm > 0) TxtHeight.Text = heightMm.ToString();
+            if (depthMm > 0) TxtDepth.Text = depthMm.ToString();
+            if (windowCount > 0) NumWindowCount.Value = windowCount;
+            UpdateCalculation();
+        }
+
+        /// <summary>
         /// Сбрасывает все поля.
         /// </summary>
         public void Reset()

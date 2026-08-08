@@ -41,6 +41,8 @@
             <conv:UpdateTypeToBrushConverter x:Key="UpdateTypeBrush"/>
             <conv:UpdateTypeToIconConverter x:Key="UpdateTypeIcon"/>
             <conv:InverseBoolConverter x:Key="InverseBool"/>
+            <conv:BoolVisibilityConverter x:Key="BoolVisibility"/>
+            <conv:InverseBoolVisibilityConverter x:Key="InverseBoolVisibility"/>
 
         </ResourceDictionary>
     </Application.Resources>

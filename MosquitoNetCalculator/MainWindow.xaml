@@ -176,7 +176,7 @@
                 <!-- ═══════════════════════════════════════ -->
                 <!-- PRIMARY: РАСЧЁТ view                    -->
                 <!-- ═══════════════════════════════════════ -->
-                <Grid x:Name="CalculationView" Background="{DynamicResource AppBg}" Margin="52,0,0,0">
+                <Grid x:Name="CalculationView" Background="{DynamicResource AppBg}" Margin="160,0,0,0">
                     <Grid Margin="8,8,8,8">
                         <Grid.RowDefinitions>
                             <RowDefinition Height="Auto"/>  <!-- Action bar -->
@@ -392,6 +392,50 @@
                 </Grid>
 
                 <!-- ═══════════════════════════════════════ -->
+                <!-- OVERLAY: AI ASSISTANT                  -->
+                <!-- ══════════════════════════════════════════════════ -->
+                <Grid x:Name="AiOverlay" Visibility="Collapsed" Panel.ZIndex="15">
+                    <Border x:Name="AiBackdrop" Background="#80000000" Opacity="0"
+                            MouseLeftButtonDown="Backdrop_MouseLeftButtonDown" Cursor="Hand"/>
+                    <Border x:Name="AiPanel"
+                            Background="{DynamicResource Surface}"
+                            HorizontalAlignment="Right" Width="480"
+                            BorderBrush="{DynamicResource Border}" BorderThickness="1,0,0,0">
+                        <Grid>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="*"/>
+                            </Grid.RowDefinitions>
+                            <Border Grid.Row="0" Background="{DynamicResource HeaderBg}"
+                                    Padding="16,10" BorderBrush="{DynamicResource Border}" BorderThickness="0,0,0,1">
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                    </Grid.ColumnDefinitions>
+                                    <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center">
+                                        <TextBlock Text="&#xE99A;" FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets" FontSize="16"
+                                                   Foreground="{DynamicResource Accent}" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                                        <TextBlock Text="AI Ассистент" FontSize="14" FontWeight="SemiBold"
+                                                   Foreground="{DynamicResource TextPrimary}" VerticalAlignment="Center"/>
+                                        <Border CornerRadius="5" Padding="5,2" Margin="8,0,0,0"
+                                                Background="{DynamicResource BadgeWarningBg}"
+                                                BorderBrush="{DynamicResource BadgeWarningFg}" BorderThickness="1"
+                                                ToolTip="AI-функции находятся в стадии тестирования">
+                                            <TextBlock Text="BETA" FontSize="8" FontWeight="Bold"
+                                                       Foreground="{DynamicResource BadgeWarningFg}"/>
+                                        </Border>
+                                    </StackPanel>
+                                    <Button Grid.Column="1" Style="{StaticResource OverlayCloseButton}"
+                                            HorizontalAlignment="Right" Click="CloseAiOverlay_Click"/>
+                                </Grid>
+                            </Border>
+                            <controls:AiAssistantControl x:Name="AiAssistantControl" Grid.Row="1"
+                                                         DataContext="{Binding AiVm}"/>
+                        </Grid>
+                    </Border>
+                </Grid>
+
                 <!-- OVERLAY: ДАННЫЕ ЗАКАЗА (sidebar)        -->
                 <!-- ═══════════════════════════════════════ -->
                 <Grid x:Name="SidebarOverlay" Visibility="Collapsed" Panel.ZIndex="15">
@@ -465,15 +509,32 @@
                     </Border>
                 </Grid>
 
-                <!-- ── NavigationView (slide-out overlay, 52→160px) ── -->
+                <!-- ── NavigationView (fixed expanded panel; optionally collapsible) ── -->
                 <Border x:Name="NavPanel"
-                        HorizontalAlignment="Left" Width="52"
+                        HorizontalAlignment="Left" Width="160"
                         Panel.ZIndex="16"
                         Background="{DynamicResource Surface}"
                         BorderBrush="{DynamicResource Border}" BorderThickness="0,0,1,0"
                         ClipToBounds="True"
                         WindowChrome.IsHitTestVisibleInChrome="True">
                     <StackPanel VerticalAlignment="Top" Margin="6,8,6,0">
+                        <!-- Explicit toggle: the panel stays expanded until the user collapses it. -->
+                        <Button x:Name="BtnToggleNav" Style="{StaticResource NavButton}" Width="148"
+                                ToolTip="Свернуть панель навигации" Click="BtnToggleNav_Click"
+                                Margin="0,0,0,8">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+                                <Grid Width="30" Height="28">
+                                    <TextBlock Text="☰" FontSize="17"
+                                               HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                </Grid>
+                                <TextBlock x:Name="NavToggleLabel" Grid.Column="1" Text="Свернуть" Margin="10,0,0,0"
+                                           FontSize="12" VerticalAlignment="Center" FontFamily="Segoe UI"/>
+                            </Grid>
+                        </Button>
                         <!-- Расчёт -->
                         <Button x:Name="NavBtnCalc" Style="{StaticResource NavButton}" Width="148"
                                 ToolTip="Расчёт (Ctrl+1)" Click="NavButton_Click" Tag="Calc">
@@ -486,7 +547,7 @@
                                     <TextBlock x:Name="NavIconCalc" Text="&#xE1D0;"
                                                FontSize="20" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                                 </Grid>
-                                <TextBlock x:Name="NavLabelCalc" Grid.Column="1" Text="Расчёт" Opacity="0"
+                                <TextBlock x:Name="NavLabelCalc" Grid.Column="1" Text="Расчёт" Opacity="1"
                                            Margin="10,0,0,0" FontSize="12" VerticalAlignment="Center"
                                            FontFamily="Segoe UI"/>
                             </Grid>
@@ -504,7 +565,7 @@
                                                FontSize="20" HorizontalAlignment="Center" VerticalAlignment="Center"/>
 
                                 </Grid>
-                                <TextBlock x:Name="NavLabelOrders" Grid.Column="1" Text="Заказы" Opacity="0"
+                                <TextBlock x:Name="NavLabelOrders" Grid.Column="1" Text="Заказы" Opacity="1"
                                            Margin="10,0,0,0" FontSize="12" VerticalAlignment="Center"
                                            FontFamily="Segoe UI"/>
                             </Grid>
@@ -521,7 +582,7 @@
                                     <TextBlock x:Name="NavIconPrices" Text="&#xE8C7;"
                                                FontSize="20" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                                 </Grid>
-                                <TextBlock x:Name="NavLabelPrices" Grid.Column="1" Text="Цены" Opacity="0"
+                                <TextBlock x:Name="NavLabelPrices" Grid.Column="1" Text="Цены" Opacity="1"
                                            Margin="10,0,0,0" FontSize="12" VerticalAlignment="Center"
                                            FontFamily="Segoe UI"/>
                             </Grid>
@@ -542,7 +603,7 @@
                                              Margin="0,2,-4,0" Visibility="Collapsed"
                                              ToolTip="Доступна новая версия!"/>
                                 </Grid>
-                                <TextBlock x:Name="NavLabelUpdates" Grid.Column="1" Text="Обновления" Opacity="0"
+                                <TextBlock x:Name="NavLabelUpdates" Grid.Column="1" Text="Обновления" Opacity="1"
                                            Margin="10,0,0,0" FontSize="12" VerticalAlignment="Center"
                                            FontFamily="Segoe UI"/>
                             </Grid>
@@ -562,9 +623,34 @@
                                 <!-- EASTER-EGG v3.43.2.8 — "Откосы" → "Авто · Откосы" (компактно: 13 chars,
                                      умещается в 108px-ширину раскрытого nav menu; "Авто" сигнализирует,
                                      что расчёт автоматический). Чтобы вернуть: заменить обратно на "Откосы". -->
-                                <TextBlock x:Name="NavLabelSlope" Grid.Column="1" Text="Авто · Откосы" Opacity="0"
+                                <TextBlock x:Name="NavLabelSlope" Grid.Column="1" Text="Авто · Откосы" Opacity="1"
                                            Margin="10,0,0,0" FontSize="12" VerticalAlignment="Center"
                                            FontFamily="Segoe UI"/>
+                            </Grid>
+                        </Button>
+                        <!-- AI Ассистент -->
+                        <Button x:Name="NavBtnAi" Style="{StaticResource NavButton}" Width="148"
+                                ToolTip="AI Ассистент" Click="NavAi_Click" Tag="AI" Margin="0,4,0,0">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+                                <Grid Grid.Column="0" Width="30" Height="28">
+                                    <TextBlock x:Name="NavIconAi" Text="&#xE99A;"
+                                               FontSize="20" HorizontalAlignment="Center" VerticalAlignment="Center"
+                                               Margin="0,0,0,4"/>
+                                    <TextBlock Text="AI" FontSize="9" FontWeight="Bold"
+                                               HorizontalAlignment="Center" VerticalAlignment="Bottom"
+                                               Foreground="{DynamicResource Accent}"/>
+                                </Grid>
+                                <TextBlock x:Name="NavLabelAi" Grid.Column="1" Opacity="1"
+                                           Margin="10,0,0,0" FontSize="12" VerticalAlignment="Center"
+                                           FontFamily="Segoe UI">
+                                    <Run Text="AI"/>
+                                    <Run Text="  BETA" FontSize="8" FontWeight="Bold"
+                                         Foreground="{DynamicResource BadgeWarningFg}"/>
+                                </TextBlock>
                             </Grid>
                         </Button>
                         <!-- Печать -->
@@ -579,7 +665,7 @@
                                     <TextBlock x:Name="NavIconPrint" Text="&#xE7B3;"
                                                FontSize="20" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                                 </Grid>
-                                <TextBlock x:Name="NavLabelPrint" Grid.Column="1" Text="Печать" Opacity="0"
+                                <TextBlock x:Name="NavLabelPrint" Grid.Column="1" Text="Печать" Opacity="1"
                                            Margin="10,0,0,0" FontSize="12" VerticalAlignment="Center"
                                            FontFamily="Segoe UI"/>
                             </Grid>

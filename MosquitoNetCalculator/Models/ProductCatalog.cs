@@ -1,7 +1,18 @@
 using System.Collections.Generic;
+using System.Linq;
 
 namespace MosquitoNetCalculator.Models
 {
+    /// <summary>
+    /// A group of products with display name, optional sub-title, and ordered products.
+    /// </summary>
+    public class ProductGroup
+    {
+        public string Name { get; init; } = "";
+        public string? Subtitle { get; init; }
+        public List<string> Products { get; init; } = new();
+    }
+
     /// <summary>
     /// Single source of truth for product categories and catalog metadata.
     /// Extracted from <see cref="OrderItem"/> during Phase 5 refactoring to keep
@@ -167,5 +178,94 @@ namespace MosquitoNetCalculator.Models
         public static bool IsNoColor(string? name) =>
             !string.IsNullOrEmpty(name) && NoColorProducts.Contains(name);
 
+        // ─────────────────────────────────────────────────────────
+        // Product grouping for the UX catalog (all groups visible)
+        // ─────────────────────────────────────────────────────────
+
+        /// <summary>
+        /// Defines the user-facing product groups with their display names,
+        /// optional sub-titles, and ordered product lists.
+        /// Inner slope materials are excluded — they are used only by the
+        /// automatic slope calculator.
+        /// </summary>
+        public static readonly List<ProductGroup> UserGroups = new()
+        {
+            new ProductGroup
+            {
+                Name = "Москитные сетки",
+                Products = new List<string> { "Anwis", "На навесах", "Оконная на метал. крепл.", "Дверная сетка" }
+            },
+            new ProductGroup
+            {
+                Name = "Изделия из металла",
+                Subtitle = "Фасадные доборы",
+                Products = new List<string> { "Отлив", "Козырёк", "Короб" }
+            },
+            new ProductGroup
+            {
+                Name = "Комплектующие и материалы",
+                Products = new List<string> { "ПСУЛ", "Уплотнение", "Брус", "Пояс", "Материал" }
+            },
+            new ProductGroup
+            {
+                Name = "Откосы",
+                Products = new List<string> { "Откос", "Работа за откос" }
+            },
+            new ProductGroup
+            {
+                Name = "Услуги",
+                Products = new List<string> { "Работа", "Доставка" }
+            },
+        };
+
+        /// <summary>
+        /// Returns the user-facing product groups filtered to only include
+        /// products that actually exist in the given product name list.
+        /// This gracefully handles user-added products that don't appear
+        /// in the fixed grouping — they simply won't appear in groups.
+        /// </summary>
+        public static List<ProductGroup> GetVisibleGroups(List<string> productNames)
+        {
+            var nameSet = new HashSet<string>(productNames);
+            return UserGroups
+                .Select(g => new ProductGroup
+                {
+                    Name = g.Name,
+                    Subtitle = g.Subtitle,
+                    Products = g.Products.Where(p => nameSet.Contains(p)).ToList()
+                })
+                .Where(g => g.Products.Count > 0)
+                .ToList();
+        }
+
+        /// <summary>
+        /// Orders a flat product-name list by the UX catalog hierarchy:
+        /// group order first (<see cref="UserGroups"/>), then the product
+        /// order inside each group. Names that don't exist in the catalog
+        /// (user-added products) are appended at the end, keeping their
+        /// original relative order.
+        /// <para/>
+        /// Single source of truth for the QuickAdd «Тип» ComboBox, the
+        /// search-suggestion popup and the empty-state product chips.
+        /// Do NOT apply an alphabetical sort here — the user-approved
+        /// catalog order (Сетки → Доборы → Комплектующие → Откосы → Услуги)
+        /// must survive, otherwise «Anwis» ends up last.
+        /// </summary>
+        public static List<string> OrderProductNames(IEnumerable<string> names)
+        {
+            // Callers pass materialized distinct lists, so a HashSet is a safe,
+            // case-sensitive membership filter; duplicate input names collapse.
+            var remaining = new HashSet<string>(names);
+            var ordered = new List<string>();
+
+            foreach (var group in UserGroups)
+                foreach (var product in group.Products)
+                    if (remaining.Remove(product))
+                        ordered.Add(product);
+
+            // User-added products not present in any group keep their original order.
+            ordered.AddRange(names.Where(remaining.Contains));
+            return ordered;
+        }
     }
 }

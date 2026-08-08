@@ -869,6 +869,8 @@ Phase 1+2+3 → v3.48.0; Phase 4 → v3.49.0; Phase 5+6 → v3.50.0.
 
 ## Last verified
 
+2026-08-03 (v3.47.3) — само-обновление (CONTROL#13): baseline перепроверен при синхронизации версий; план не менялся.
+
 2026-07-22 — v3.47.2 baseline. После применения плана: целевой архитектурный
 pattern «manifest → signed ZIP → atomic stage swap → UAC-aware watchdog →
 per-entry retry», durable defense against:

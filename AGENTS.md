@@ -30,13 +30,21 @@ GEMINI.md  ← Gemini-specific thin wrapper (if present)
 Any rule change, routing-table update, or workflow tweak belongs in
 `docs/arc/`, **not** here.
 
-For the canonical file's full content — project rules, routing table,
-automation tools and the agent workflow — see the file linked above.
+---
+
+## Self-maintenance duty (обязанность самоподдержания)
+
+This wrapper is **part of the system and must be kept up to date by AI agents**,
+like every file under `docs/arc/`. Any structural change (file splits,
+renames/moves, new modules) or change to the control system itself must be
+reflected here and in `docs/arc/` in the same work cycle. Rules, situations А–Ж
+and enforcement — see `docs/arc/MULTI_AGENT_ARC_CALC_CONTROL.md` §13
+(self-maintenance duty). Stale documentation actively misleads agents.
 
 ---
 
 ## Last verified
 
-2026-07-17 — wrapper reviewed; `validate-docs.ps1` reports 0 issues and
-0 warnings across all 9 consistency checks. No content drift between
-this file and `docs/arc/MULTI_AGENT_ARC_CALC_CONTROL.md`.
+2026-08-03 — wrapper reviewed; self-maintenance duty section added (CONTROL §13);
+`validate-docs.ps1` reports 0 issues (мягкие git-based warnings допустимы до коммита —
+проверки #7/#8 сравнивают даты с git-историей).

@@ -1,0 +1,124 @@
+[
+  {
+    "id": "add-anwis-full",
+    "user_text": "Добавь белую Anwis 700×1400 ББ60",
+    "model_response": "{\"action\":\"add_item\",\"params\":{\"type\":\"Anwis\",\"color\":\"Белый\",\"width\":700,\"height\":1400,\"quantity\":1,\"price\":1800,\"anwis_mode\":\"ББ60\"}}",
+    "expected_action": "add_item",
+    "expected_type": "Anwis",
+    "expected_color": "Белый",
+    "expected_width": 700,
+    "expected_height": 1400,
+    "expected_quantity": 1,
+    "expected_anwis_mode": "ББ60",
+    "expected_confirmation": true
+  },
+  {
+    "id": "add-anwis-corich-mode",
+    "user_text": "Добавь анвис корич 500 1000 в конструцию",
+    "model_response": "{\"action\":\"add_item\",\"params\":{\"type\":\"Anwis\",\"color\":\"Коричневый\",\"width\":500,\"height\":1000,\"quantity\":1,\"price\":1900,\"anwis_mode\":\"ББ60\",\"installation_mode\":2}}",
+    "expected_action": "add_item",
+    "expected_type": "Anwis",
+    "expected_color": "Коричневый",
+    "expected_width": 500,
+    "expected_height": 1000,
+    "expected_installation_mode": 2,
+    "expected_confirmation": true
+  },
+  {
+    "id": "add-anwis-missing-mode",
+    "user_text": "Сделай сетку Anwis 500×500 белую",
+    "model_response": "Уточните, пожалуйста: какой режим Anwis использовать — ББ60, ББ70, ПП, Проём или Габарит?",
+    "expected_mode": "clarification",
+    "expected_confirmation": false
+  },
+  {
+    "id": "add-otliv-brown-2pcs",
+    "user_text": "Отлив 200×1500 коричневый, 2 штуки",
+    "model_response": "{\"action\":\"add_item\",\"params\":{\"type\":\"Отлив\",\"color\":\"Коричневый\",\"width\":200,\"height\":1500,\"quantity\":2,\"price\":2150}}",
+    "expected_action": "add_item",
+    "expected_type": "Отлив",
+    "expected_color": "Коричневый",
+    "expected_width": 200,
+    "expected_height": 1500,
+    "expected_quantity": 2,
+    "expected_confirmation": true
+  },
+  {
+    "id": "add-dostavka-manual-piece",
+    "user_text": "Доставка 500",
+    "model_response": "{\"action\":\"add_item\",\"params\":{\"type\":\"Доставка\",\"color\":\"\",\"width\":0,\"height\":0,\"quantity\":1,\"price\":500}}",
+    "expected_action": "add_item",
+    "expected_type": "Доставка",
+    "expected_width": 0,
+    "expected_height": 0,
+    "expected_price": 500,
+    "expected_confirmation": true
+  },
+  {
+    "id": "calc-slope",
+    "user_text": "откосы из сэндвича, в 1500 ш 700 г 300",
+    "model_response": "{\"action\":\"calc_slope\",\"params\":{\"width\":1500,\"height\":700,\"depth\":300,\"quantity\":1}}",
+    "expected_action": "calc_slope",
+    "expected_width": 1500,
+    "expected_height": 700,
+    "expected_depth": 300,
+    "expected_confirmation": false
+  },
+  {
+    "id": "update-items-installation",
+    "user_text": "Козырёк с монтажом 900р",
+    "model_response": "{\"action\":\"update_items\",\"params\":{\"product\":\"Козырёк\",\"installation_mode\":0,\"price\":900}}",
+    "expected_action": "update_items",
+    "expected_target": "Козырёк",
+    "expected_update_installation_mode": 0,
+    "expected_update_price": 900,
+    "expected_confirmation": true
+  },
+  {
+    "id": "update-items-category",
+    "user_text": "Все сетки без монтажа",
+    "model_response": "{\"action\":\"update_items\",\"params\":{\"product\":\"сетки\",\"installation_mode\":1}}",
+    "expected_action": "update_items",
+    "expected_target": "сетки",
+    "expected_update_installation_mode": 1,
+    "expected_confirmation": true
+  },
+  {
+    "id": "delete-items-by-name",
+    "user_text": "Удали все козырьки",
+    "model_response": "{\"action\":\"delete_items\",\"params\":{\"product\":\"Козырёк\"}}",
+    "expected_action": "delete_items",
+    "expected_target": "Козырёк",
+    "expected_confirmation": true
+  },
+  {
+    "id": "clear-all",
+    "user_text": "Очисти расчёт",
+    "model_response": "{\"action\":\"clear_all\"}",
+    "expected_action": "clear_all",
+    "expected_confirmation": true
+  },
+  {
+    "id": "list-products",
+    "user_text": "Покажи товары",
+    "model_response": "{\"action\":\"list_products\"}",
+    "expected_action": "list_products",
+    "expected_confirmation": false
+  },
+  {
+    "id": "plan-batch-two-items",
+    "user_text": "Добавь белую сетку Anwis 700×1400 ББ60 и два коричневых отлива 200×1500 с монтажом",
+    "model_response": "{\"mode\":\"plan\",\"reply\":\"Я подготовил план.\",\"requires_confirmation\":true,\"steps\":[{\"action\":\"add_item\",\"params\":{\"type\":\"Anwis\",\"color\":\"Белый\",\"width\":700,\"height\":1400,\"quantity\":1,\"anwis_mode\":\"ББ60\"}},{\"action\":\"add_item\",\"params\":{\"type\":\"Отлив\",\"color\":\"Коричневый\",\"width\":200,\"height\":1500,\"quantity\":2,\"installation_mode\":0}}]}",
+    "expected_mode": "plan",
+    "expected_steps": 2,
+    "expected_confirmation": true
+  },
+  {
+    "id": "plan-batch-add-then-update",
+    "user_text": "Добавь отлив и поставь монтаж на новые позиции",
+    "model_response": "{\"mode\":\"plan\",\"reply\":\"Сначала добавлю, потом обновлю монтаж.\",\"requires_confirmation\":true,\"steps\":[{\"action\":\"add_item\",\"params\":{\"type\":\"Отлив\",\"color\":\"Белый\",\"width\":200,\"height\":1500,\"quantity\":1}},{\"action\":\"update_items\",\"params\":{\"product\":\"Отлив\",\"installation_mode\":0}}]}",
+    "expected_mode": "plan",
+    "expected_steps": 2,
+    "expected_confirmation": true
+  }
+]

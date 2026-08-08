@@ -26,4 +26,9 @@
     <ProjectReference Include="..\MosquitoNetCalculator\MosquitoNetCalculator.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <!-- Golden offline AI regression suite (real manager phrases + recorded model responses). -->
+    <None Update="AI\golden-cases.json" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
 </Project>

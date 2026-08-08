@@ -301,4 +301,6 @@ git commit -m "release: update releases.json for vX.Y.Z"
 
 ## Last verified
 
-2026-07-20 (v3.47.1 release: �������� create-manual-update.ps1 ��� portable ZIP ������� ����������; 4-stage pipeline + git push sequence + CDN-cache diagnostic systematized after real release run)
+2026-08-03 (v3.47.3) — само-обновление (CONTROL#13): перепроверено при синхронизации версий; pipeline актуален для v3.47.3.
+
+2026-07-20 (v3.47.1 release: добавлен create-manual-update.ps1 для portable ZIP ручного обновления; 4-stage pipeline + git push sequence + CDN-cache diagnostic systematized after real release run)
