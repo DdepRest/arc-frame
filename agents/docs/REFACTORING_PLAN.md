@@ -397,7 +397,7 @@ powershell -ExecutionPolicy Bypass -File agents/scripts/validate-docs.ps1
 - `MosquitoNetCalculator/Models/OrderItem.cs`
 
 ## Last verified
-2026-08-10 (v3.47.4) — auto-synced from csproj (sync-version.ps1, CONTROL#13).
+2026-08-17 (v3.47.4) — auto-synced from csproj (sync-version.ps1, CONTROL#13).
 
 
 2026-08-06 — maintenance pass (CONTROL#13): дата верификации синхронизирована с git-историей; содержимое сверено с текущим состоянием (v3.47.3, 1511/1511 tests pass).

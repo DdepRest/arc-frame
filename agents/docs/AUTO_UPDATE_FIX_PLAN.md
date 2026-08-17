@@ -868,7 +868,7 @@ Phase 1+2+3 → v3.48.0; Phase 4 → v3.49.0; Phase 5+6 → v3.50.0.
 ---
 
 ## Last verified
-2026-08-10 (v3.47.4) — auto-synced from csproj (sync-version.ps1, CONTROL#13).
+2026-08-17 (v3.47.4) — auto-synced from csproj (sync-version.ps1, CONTROL#13).
 
 
 2026-08-03 (v3.47.3) — само-обновление (CONTROL#13): baseline перепроверен при синхронизации версий; план не менялся.

@@ -244,7 +244,7 @@ Intake → Context → Plan → Execute → Verify → Document → Report
 | `agents/scripts/what-to-update.ps1 $(git diff --name-only)` | Принимает список изменённых файлов → выводит, какие `agents/docs/*.md` обновить. Читает `documentation-matrix.json`. |
 | `agents/scripts/validate-docs.ps1` | 11 автоматических проверок: версия, MODULES, CHEATSHEET cross-refs, MATRIX cross-refs, CONTROL cross-refs, полнота, git-based, staleness, releases.json, **self-maintenance (устаревание версии, мягкая, #10)**, **CONTROL#N link resolution (жёсткая, #11)**. |
 | `agents/scripts/sync-version.ps1` | Синхронизация версии из csproj во все `agents/docs/*.md` (секция `## Last verified`). Запускать после релиза. |
-| `generate-update-log.ps1` (корень) | Генерирует `update-log.json` из `CHANGELOG.md` (при релизе). |
+| `tools/release/generate-update-log.ps1` | Генерирует `update-log.json` из `CHANGELOG.md` (при релизе). |
 | `agents/scripts/render-matrix.ps1` | Генерирует `DOCUMENTATION_MATRIX.md` из `documentation-matrix.json`. |
 | `agents/scripts/arc-check.ps1` | Проверяет, что все agents/docs актуальны. Используется как pre-commit safety net. |
 
@@ -400,7 +400,7 @@ REFACTORING_PLAN.md
 - `validate-docs.ps1` — валидация документации
 
 ## Last verified
-2026-08-10 (v3.47.4) — auto-synced from csproj (sync-version.ps1, CONTROL#13).
+2026-08-17 (v3.47.4) — auto-synced from csproj (sync-version.ps1, CONTROL#13).
 
 
 2026-08-03 (v3.47.3) — добавлен §13 «Обязанность самоподдержания системы» (ситуации А–Ж, метрики в шаблоне отчёта, routing для структурных изменений); правило подтверждено владельцем по ТЗ `ТЗ_самоподдержание_AGENTS_2026-08-03.md`.

@@ -158,7 +158,7 @@
 - Вся структура `MosquitoNetCalculator/` и `MosquitoNetCalculator.Tests/`.
 
 ## Last verified
-2026-08-10 (v3.47.4) — auto-synced from csproj (sync-version.ps1, CONTROL#13).
+2026-08-17 (v3.47.4) — auto-synced from csproj (sync-version.ps1, CONTROL#13).
 
 
 2026-08-04 — AI Agent Mode: добавлены модули плана и сервисы AI-агентности (`AiActionPlan`, `AiPlanBuilder`/`AiPlanValidator`/`AiPlanExecutor`, `AiOrderContextBuilder`, `AiExplanationContextBuilder`, `AiTelemetryService`, `AiLocalCommandRouter`); карта модулей расширена моделями AI-контекста и тестами.

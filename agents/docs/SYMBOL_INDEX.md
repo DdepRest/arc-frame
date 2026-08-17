@@ -261,4 +261,4 @@ Context phase: grep SYMBOL_INDEX.md for the class/method you need
 
 ## Last generated
 
-2026-08-16 (gensymbols.ps1)
+2026-08-17 (gensymbols.ps1)

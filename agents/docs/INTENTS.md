@@ -70,7 +70,7 @@
 | Сделать релиз (bump версии) | `RELEASE_PROCESS.md`, `MosquitoNetCalculator.csproj` |
 | Настроить автообновление | `UpdateService.cs`, `releases.json`, `AUTO_UPDATE.md` |
 | Проблема с автообновлением | `AUTO_UPDATE.md`, `releases.json`, `UpdateService.cs`, `Generate-update-log.ps1` |
-| Обновить releases.json | `update-releases-json.ps1`, `releases.json`, `RELEASE_PROCESS.md` |
+| Обновить releases.json | `tools/release/update-releases-json.ps1`, `releases.json`, `RELEASE_PROCESS.md` |
 
 ## Цены
 
@@ -100,7 +100,7 @@
 | Изменить карточку уточнения параметров | `Models/AiClarificationForm.cs`, `AiAssistantControl.xaml` (XAML-карточка), `AiAssistantViewModel.SubmitClarificationForm` |
 | Изменить телеметрию AI | `Models/AiRequestMetrics.cs`, `Services/AiTelemetryService.cs` |
 | AI-регрессии (релиз) | `agents/scripts/what-to-update.ps1 -RunAiTests`; фильтр `AiGoldenCase|AiPlan|AiTelemetry` → CHEATSHEET#17b |
-| AI overlay (плашка «В РАЗРАБОТКЕ») | `insert-ai-overlay.ps1`, `insert_ai_overlay.py`, `MainWindow.AI.cs` (ToggleAiOverlay) |
+| AI overlay (плашка «В РАЗРАБОТКЕ») | `tools/dev/insert-ai-overlay.ps1`, `tools/dev/insert_ai_overlay.py`, `MainWindow.AI.cs` (ToggleAiOverlay) |
 
 ## A.R.C. / автодокументирование
 
@@ -139,7 +139,7 @@ Intake phase: user describes intent
 
 ## Last verified
 
-2026-08-10 (v3.47.4) — добавлена секция «AI Agent Mode»: mapping намерений на AI-файлы (AiAssistant*, AiPlan*, AiCommandParser, AiLocalCommandRouter, AiModelSelector, AiOrderContextBuilder, AiClarificationForm, AiRequestMetrics, AI-регрессии, overlay-скрипты).
+2026-08-17 (v3.47.4) — добавлена секция «AI Agent Mode»: mapping намерений на AI-файлы (AiAssistant*, AiPlan*, AiCommandParser, AiLocalCommandRouter, AiModelSelector, AiOrderContextBuilder, AiClarificationForm, AiRequestMetrics, AI-регрессии, overlay-скрипты).
 
 2026-08-03 (v3.47.3) — добавлены mapping'и структурных изменений (разбивка/переименование/новые классы/сигнатуры/бизнес-логика/процессы/сама система документации) согласно CONTROL#13.
 

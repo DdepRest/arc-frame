@@ -390,7 +390,7 @@ Watchdog .bat запускает обновлённый `MosquitoNetCalculator.e
 - `MosquitoNetCalculator.Tests/Services/UpdateCheckSchedulerTests.cs` (NEW, 20+ tests)
 
 ## Last verified
-2026-08-10 (v3.47.4) — auto-synced from csproj (sync-version.ps1, CONTROL#13).
+2026-08-17 (v3.47.4) — auto-synced from csproj (sync-version.ps1, CONTROL#13).
 
 
 2026-08-03 (v3.47.3) — само-обновление (CONTROL#13): перепроверено при синхронизации версий; содержимое актуально (v3.47.2/v3.47.3 не меняли runtime автообновления).

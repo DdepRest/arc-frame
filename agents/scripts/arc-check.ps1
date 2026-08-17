@@ -83,6 +83,45 @@ if ($changedFiles.Count -gt 0) {
 
 Write-Host ""
 
+# 4. Repo root hygiene (CHEATSHEET #22/#23)
+Write-Host "[4] Repo root hygiene..." -ForegroundColor Yellow
+$rootJunkPatterns = @('^(nul|_nul|-1)$', '\.log$', '^Refactorng', '^test_output', '^Probe\.cs$')
+$rootFiles = @(Get-ChildItem -Path $projectRoot -File | Where-Object { $_.Name -notmatch '^\.' })
+$junkFound = @()
+foreach ($rf in $rootFiles) {
+    foreach ($p in $rootJunkPatterns) {
+        if ($rf.Name -match $p) { $junkFound += $rf; break }
+    }
+}
+if ($junkFound.Count -gt 0) {
+    Write-Host "  ISSUE: junk files in repo root (move to archive/):" -ForegroundColor Red
+    $junkFound | ForEach-Object { Write-Host "    - $($_.Name)" -ForegroundColor Red }
+    $issues++
+} else {
+    Write-Host "  PASS: no junk files in repo root" -ForegroundColor Green
+}
+
+Write-Host ""
+
+# 5. Large file check (CHEATSHEET #21, soft warning)
+Write-Host "[5] Large file check (.cs > 1000 lines)..." -ForegroundColor Yellow
+$bigFiles = @()
+$csFiles = Get-ChildItem -Path (Join-Path $projectRoot "MosquitoNetCalculator") -Filter "*.cs" -Recurse |
+    Where-Object { $_.FullName -notmatch '\\obj\\' -and $_.FullName -notmatch '\\bin\\' }
+foreach ($cf in $csFiles) {
+    $lineCount = 0
+    foreach ($_ in [System.IO.File]::ReadLines($cf.FullName)) { $lineCount++ }
+    if ($lineCount -gt 1000) { $bigFiles += "$($cf.Name) ($lineCount lines)" }
+}
+if ($bigFiles.Count -gt 0) {
+    Write-Host "  WARN: files > 1000 lines (split per CHEATSHEET #21 / REFACTORING_PLAN_BIG_FILES):" -ForegroundColor Yellow
+    $bigFiles | ForEach-Object { Write-Host "    - $_" -ForegroundColor Yellow }
+} else {
+    Write-Host "  PASS: no .cs files > 1000 lines" -ForegroundColor Green
+}
+
+Write-Host ""
+
 # Summary
 Write-Host "====================================" -ForegroundColor Cyan
 if ($issues -eq 0) {

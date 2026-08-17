@@ -126,14 +126,14 @@ AGENT.md / AGENTS.md / CLAUDE.md / GEMINI.md
 - `agents/scripts/gensymbols.ps1` — сканирует .cs → SYMBOL_INDEX.md.
 - `agents/scripts/what-to-update.ps1` — git diff → docs к обновлению.
 - `agents/scripts/validate-docs.ps1` — 11 проверок консистентности.
-- `generate-update-log.ps1` — CHANGELOG → update-log (корень).
+- `tools/release/generate-update-log.ps1` — CHANGELOG → update-log.
 - `agents/scripts/render-matrix.ps1` — JSON → DOCUMENTATION_MATRIX.md.
 - `agents/scripts/arc-check.ps1` — pre-commit проверка docs.
 - `agents/scripts/sync-version.ps1` — версия из csproj → `Last verified`.
 
 ## Last verified
 
-2026-08-10 — **Миграция системы в `agents/`:** `docs/arc/*` → `agents/docs/`, скрипты → `agents/scripts/`. AGENTS.md — чистый wrapper на `agents/README.md`. Внутренние ссылки — короткие имена. Все 11 проверок валидатора — 0 issues.
+2026-08-17 — **Миграция системы в `agents/`:** `docs/arc/*` → `agents/docs/`, скрипты → `agents/scripts/`. AGENTS.md — чистый wrapper на `agents/README.md`. Внутренние ссылки — короткие имена. Все 11 проверок валидатора — 0 issues.
 
 2026-08-10 — **A.R.C. улучшения II (v3.47.4):** добавлена жёсткая проверка #11 в validate-docs.ps1 (битые ссылки `CONTROL#N` резолвятся в реальные секции CONTROL); новая секция «AI Agent Mode» в INTENTS.md (mapping намерений на AI-файлы); новый скрипт `sync-version.ps1` — версия берётся из csproj и автоматически синхронизируется в `## Last verified` всех agents/docs, убирая ручную правку ~9 файлов при релизе; правило разбиения больших файлов (CONTROL §13 п.7, CHEATSHEET #21) — файл > 400–500 строк разбивается в том же цикле, а не «на потом». Синхронизированы версии 14 agents/docs с v3.47.4.
 

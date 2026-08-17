@@ -62,7 +62,7 @@ build.bat
 ### Шаг 2: Создание установщика (опционально)
 
 ```batch
-compile-installer.bat
+tools/release/compile-installer.bat
 ```
 
 Требует Inno Setup 6. Создаёт `Output\setup.exe`.
@@ -72,7 +72,7 @@ compile-installer.bat
 Запустить PowerShell-скрипт (или вручную):
 
 ```powershell
-update-releases-json.ps1
+tools/release/update-releases-json.ps1
 ```
 
 Или вручную добавить запись в `releases.json`:
@@ -96,7 +96,7 @@ update-releases-json.ps1
 После `build.bat`:
 - **EXE:** `publish\MosquitoNetCalculator.exe`
 - **ZIP для GitHub:** `publish\ARC-Frame-X.Y.Z-full.zip`
-- **Установщик:** `Output\setup.exe` (после `compile-installer.bat`)
+- **Установщик:** `Output\setup.exe` (после `tools/release/compile-installer.bat`)
 
 ---
 
@@ -295,12 +295,12 @@ git commit -m "release: update releases.json for vX.Y.Z"
 - `releases.json`
 - `MosquitoNetCalculator/Resources/update-log.json`
 - `build.bat`
-- `compile-installer.bat`
-- `update-releases-json.ps1`
+- `tools/release/compile-installer.bat`
+- `tools/release/update-releases-json.ps1`
 - `extract-release-notes.ps1`
 
 ## Last verified
-2026-08-10 (v3.47.4) — auto-synced from csproj (sync-version.ps1, CONTROL#13).
+2026-08-17 (v3.47.4) — auto-synced from csproj (sync-version.ps1, CONTROL#13).
 
 
 2026-08-03 (v3.47.3) — само-обновление (CONTROL#13): перепроверено при синхронизации версий; pipeline актуален для v3.47.3.

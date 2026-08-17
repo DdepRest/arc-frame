@@ -21,7 +21,7 @@
 16. Перед изменениями сверься с DOCUMENTATION_MATRIX.md                     → DOCUMENTATION_MATRIX
 17. После изменений: what-to-update.ps1 → обнови docs → validate-docs.ps1   → скрипты
 17a. AI Agent Mode: full status table (Этап 0–12) — CURRENT_STATE.md → секция «AI Agent Mode — Progress».
-     План: [`../../ai-agent-mode-plan.md`](../../ai-agent-mode-plan.md).
+     План: [`../../docs/plans/ai-agent-mode-plan.md`](../../docs/plans/ai-agent-mode-plan.md).
 17b. Release-flow AI-регрессии: `dotnet test --filter "FullyQualifiedName~AiGoldenCase|FullyQualifiedName~AiPlan|FullyQualifiedName~AiTelemetry"`.
      `what-to-update.ps1 -RunAiTests` гоняет его автоматически; если в diff есть AI-файлы, скрипт предупреждает в любом случае.
 18. Структурные изменения (разбивка/переименование/новые классы) → gensymbols.ps1 + INTENTS/MODULES/matrix → CONTROL#13
@@ -34,6 +34,10 @@
     НЕ использовать как источник кода/доков. Разбор — только владельцем.
     Код → MosquitoNetCalculator/, доки → agents/docs/, активные файлы → корень.
     (Незавершённая миграция → migration/STATUS.md, это НЕ мусор.)
+23. Корень = только точки входа (AGENTS/CLAUDE/README/CHANGELOG/LICENSE, .sln,  → arc-check.ps1 [4]
+    installer.iss, releases.json, build/dev/check-deps.bat). Спеки → docs/specs/,
+    отчёты → docs/reports/, планы → docs/plans/, скрипты → tools/release|dev.
+    Джанк-файлы (nul, _nul, -1, *.log) в корне — ISSUE.
 ```
 
 ## Быстрый routing
@@ -71,7 +75,7 @@ AI-регрессии (релиз)     dotnet test --filter AiGoldenCase|AiPlan|
 | Завод | Расчёт − 20 мм (`ШиринаЗавод`/`ВысотаЗавод`) |
 | КП | = Расчётные размеры (`Width`/`Height`) |
 | A.R.C. | Agent Reference & Control — система AI-документации проекта |
-| AI Agent Mode | План развития AI [`ai-agent-mode-plan.md`](../../ai-agent-mode-plan.md); статус — CURRENT_STATE.md → «AI Agent Mode — Progress» |
+| AI Agent Mode | План развития AI [`ai-agent-mode-plan.md`](../../docs/plans/ai-agent-mode-plan.md); статус — CURRENT_STATE.md → «AI Agent Mode — Progress» |
 | plan-mode | Контракт ответа модели: `{mode: plan\|answer\|clarification\|explanation, reply, requires_confirmation, steps[]}` |
 
 ## Инструменты автоматизации
@@ -82,7 +86,7 @@ agents/scripts/what-to-update.ps1 $(git diff --name-only)   # Что обнов�
                                                              # С флагом -RunAiTests реально запускает AI-регрессии
 agents/scripts/validate-docs.ps1                             # 10+ проверок консистентности (вкл. self-maintenance, мягкая)
 agents/scripts/sync-version.ps1                               # Синхронизация версии из csproj во все agents/docs (Last verified)
-generate-update-log.ps1                                       # CHANGELOG.md → update-log.json (корень)
+tools/release/generate-update-log.ps1                         # CHANGELOG.md → update-log.json
 agents/scripts/render-matrix.ps1                             # JSON → DOCUMENTATION_MATRIX.md
 agents/scripts/arc-check.ps1                                 # Проверка docs перед коммитом
 ```
@@ -98,7 +102,7 @@ agents/scripts/arc-check.ps1                                 # Проверка 
 - `ai-agent-mode-plan.md` — полный план AI Agent Mode (13 этапов: Этап 0–12)
 
 ## Last verified
-2026-08-10 (v3.47.4) — auto-synced from csproj (sync-version.ps1, CONTROL#13).
+2026-08-17 (v3.47.4) — auto-synced from csproj (sync-version.ps1, CONTROL#13).
 
 
 2026-08-05 — добавлены правила **17a** (AI Agent Mode — таблица Этап 0–12 в CURRENT_STATE.md) и **17b** (release-flow AI-регрессии: `dotnet test --filter AiGoldenCase|AiPlan|AiTelemetry`, автоматически через `what-to-update.ps1 -RunAiTests`); новая routing-строка «AI Agent Mode»; ссылка на план в Source files.

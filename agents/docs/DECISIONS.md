@@ -171,7 +171,7 @@
 - `MosquitoNetCalculator/Services/PrintService.cs`
 
 ## Last verified
-2026-08-10 (v3.47.4) — auto-synced from csproj (sync-version.ps1, CONTROL#13).
+2026-08-17 (v3.47.4) — auto-synced from csproj (sync-version.ps1, CONTROL#13).
 
 
 2026-08-04 — добавлено решение №13 «AI меняет заказ только через план с подтверждением» (AI Agent Mode): конвейер план → валидация → предпросмотр → подтверждение → атомарное выполнение → Undo, один снимок на пакет, защита от двойного выполнения. Прочие решения актуальны.

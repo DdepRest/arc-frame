@@ -59,6 +59,27 @@
   `AiAssistantService.cs`, `PrintPreviewControl.xaml.cs`, `SlopePanelControl.xaml.cs`
   (фазы A→B→C; дождаться стабилизации AI-дизайна перед фазой B).
 
+## Наведение порядка в файлах (2026-08-17)
+
+Выполнено (коммиты `190ad15`, `caa733c` + рабочий этап):
+
+- ✅ Фаза 1: джанк-файлы удалены из git; миграция закоммичена.
+- ✅ Фаза 2: спеки → `docs/specs/`, отчёты → `docs/reports/`, release-notes →
+  `docs/release-notes/`, план AI → `docs/plans/` (ссылки в CHEATSHEET обновлены),
+  TESTING_CHECKLIST → `docs/`, README_installer → `docs/README_installer.md`.
+- ✅ Фаза 3: релизные скрипты → `tools/release/`, dev-скрипты → `tools/dev/`;
+  ссылки в agents/docs и отчётах обновлены. Точки входа остались в корне.
+- ✅ Фаза 4: `A.R.C.Icon.png` (не использовалась) → `archive/` + удалена из git;
+  пустая `docs/images/` удалена.
+- ⏭ Фаза 5: CHANGELOG НЕ разбивался — история начинается с 3.35.0 (2026-06-23),
+  старых записей нет. Нарезка спеков и рефакторинг .cs — по мере работы (план готов).
+- ✅ Фаза 6: `arc-check.ps1` — проверки [4] гигиена корня и [5] большие файлы;
+  CHEATSHEET #23 (структура корня).
+
+**Открытый вопрос:** дубль `~/.claude/skills/MULTI_AGENT_ARC_CALC_CONTROL.md`
+(tracked, исторический bootstrap) и `.claude/skills/...` (копия из миграции) —
+файлы идентичны; какой источник каноничен — решение владельца.
+
 ## Last verified
 
 2026-08-17 — файл создан по итогам анализа рабочего дерева (git status, grep по ссылкам).
