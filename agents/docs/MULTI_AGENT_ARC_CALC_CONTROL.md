@@ -46,7 +46,7 @@ AGENT.md
 AGENTS.md
 CLAUDE.md
 GEMINI.md
-~/.claude/skills/MULTI_AGENT_ARC_CALC_CONTROL.md
+.claude/skills/MULTI_AGENT_ARC_CALC_CONTROL.md
 ```
 
 являются только совместимыми thin wrappers / redirect-файлами. Они не должны дублировать правила проекта. Если wrapper-файл противоречит этому файлу — приоритет у этого файла.

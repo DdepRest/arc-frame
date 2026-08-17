@@ -79,7 +79,7 @@ AUTO_UPDATE.md
 agents/scripts/validate-docs.ps1
     = автоматическая валидация консистентности документации
 
-~/.claude/skills/MULTI_AGENT_ARC_CALC_CONTROL.md
+.claude/skills/MULTI_AGENT_ARC_CALC_CONTROL.md
     = external bootstrap loader (только для Claude-среды)
 
 AGENT.md / AGENTS.md / CLAUDE.md / GEMINI.md
