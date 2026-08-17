@@ -1,6 +1,6 @@
 {
   "generated": "2026-06-24",
-  "source": "docs/arc/DOCUMENTATION_MATRIX.md (canonical — edit the JSON, re-render the MD)",
+  "source": "DOCUMENTATION_MATRIX.md (canonical — edit the JSON, re-render the MD)",
   "mappings": [
     {
       "file": "Models/OrderItem.Calculations.cs",
@@ -501,21 +501,21 @@
       "note": "количество тестов, если изменилось (включая ProductCatalogTests, AnwisSizeCalculatorTests, SlopeCalculationExtensionsTests для Phase 5)"
     },
     {
-      "file": "docs/arc/PROJECT_OVERVIEW.md",
+      "file": "agents/docs/PROJECT_OVERVIEW.md",
       "docs": [
         "CURRENT_STATE.md"
       ],
       "note": "project description and tech stack"
     },
     {
-      "file": "docs/arc/INTENTS.md",
+      "file": "agents/docs/INTENTS.md",
       "docs": [
         "CURRENT_STATE.md"
       ],
       "note": "A.R.C. v4: intent-to-file routing"
     },
     {
-      "file": "docs/arc/SYMBOL_INDEX.md",
+      "file": "agents/docs/SYMBOL_INDEX.md",
       "docs": [
         "CURRENT_STATE.md"
       ],
@@ -529,7 +529,7 @@
       "note": "project overview for GitHub"
     },
     {
-      "file": "docs/arc/REFACTORING_PLAN.md",
+      "file": "agents/docs/REFACTORING_PLAN.md",
       "docs": [
         "CURRENT_STATE.md",
         "MULTI_AGENT_ARC_CALC_CONTROL.md",
@@ -538,14 +538,14 @@
       "note": "system refactoring plan"
     },
     {
-      "file": "gensymbols.ps1",
+      "file": "agents/scripts/gensymbols.ps1",
       "docs": [
         "CURRENT_STATE.md"
       ],
       "note": "A.R.C. v4: symbol index generator"
     },
     {
-      "file": "arc-check.ps1",
+      "file": "agents/scripts/arc-check.ps1",
       "docs": [
         "CURRENT_STATE.md"
       ],
@@ -732,6 +732,157 @@
         "CHANGELOG.md"
       ],
       "note": "AI Agent Mode: plan-mode AiResponse.Plan + update/delete command params"
+    },
+    {
+      "file": "agents/scripts/validate-docs.ps1",
+      "docs": [
+        "CURRENT_STATE.md"
+      ],
+      "note": "A.R.C.: doc consistency validator (10 checks, incl. soft #10 self-maintenance)"
+    },
+    {
+      "file": "AGENTS.md",
+      "docs": [
+        "CHEATSHEET.md",
+        "CURRENT_STATE.md"
+      ],
+      "note": "thin wrapper; self-maintenance duty CONTROL#13"
+    },
+    {
+      "file": "agents/docs/CHEATSHEET.md",
+      "docs": [
+        "CURRENT_STATE.md"
+      ],
+      "note": "critical rules + routing table"
+    },
+    {
+      "file": "agents/docs/MULTI_AGENT_ARC_CALC_CONTROL.md",
+      "docs": [
+        "CHEATSHEET.md",
+        "CURRENT_STATE.md",
+        "AGENTS.md"
+      ],
+      "note": "canonical source of truth; CONTROL#13 self-maintenance"
+    },
+    {
+      "file": "agents/scripts/sync-version.ps1",
+      "docs": [
+        "CHEATSHEET.md",
+        "MULTI_AGENT_ARC_CALC_CONTROL.md"
+      ],
+      "note": "sync-version.ps1: auto-sync csproj version to all agents/docs Last verified"
+    },
+    {
+      "file": "Models/OfficeReport.cs",
+      "docs": [
+        "CURRENT_STATE.md",
+        "CHANGELOG.md"
+      ],
+      "note": "Админ-панель: отчёт устройства офиса (gist office-{prefix}-{deviceId}.json, DeviceId/DeviceName)"
+    },
+    {
+      "file": "Models/OfficeDeviceRow.cs",
+      "docs": [
+        "CURRENT_STATE.md",
+        "CHANGELOG.md"
+      ],
+      "note": "Админ-панель: одно устройство офиса (версия/статус/имя ПК)"
+    },
+    {
+      "file": "Models/OfficeStatusRow.cs",
+      "docs": [
+        "CURRENT_STATE.md",
+        "CHANGELOG.md"
+      ],
+      "note": "Админ-панель: статусы офисов (UpToDate/Outdated/NoData)"
+    },
+    {
+      "file": "Services/OfficeReportService.cs",
+      "docs": [
+        "CURRENT_STATE.md",
+        "CHANGELOG.md"
+      ],
+      "note": "Админ-панель: обмен отчётами через секретный GitHub Gist, очистка дублей устройств (кнопка «Очистить дубли»)"
+    },
+    {
+      "file": "Services/OfficeStatusCalculator.cs",
+      "docs": [
+        "CURRENT_STATE.md",
+        "CHANGELOG.md"
+      ],
+      "note": "Админ-панель: чистая логика статусов (порог свежести 72ч)"
+    },
+    {
+      "file": "Controls/AdminPanelControl.xaml",
+      "docs": [
+        "CURRENT_STATE.md",
+        "CHANGELOG.md"
+      ],
+      "note": "Админ-панель: UI статусов офисов"
+    },
+    {
+      "file": "Controls/AdminPanelControl.xaml.cs",
+      "docs": [
+        "CURRENT_STATE.md",
+        "CHANGELOG.md"
+      ],
+      "note": "Админ-панель: RefreshAsync (отчёты + последняя версия)"
+    },
+    {
+      "file": "Controls/AdminPasswordWindow.xaml",
+      "docs": [
+        "CURRENT_STATE.md",
+        "CHANGELOG.md"
+      ],
+      "note": "Админ-панель: окно входа/установки пароля"
+    },
+    {
+      "file": "Controls/AdminPasswordWindow.xaml.cs",
+      "docs": [
+        "CURRENT_STATE.md",
+        "CHANGELOG.md"
+      ],
+      "note": "Админ-панель: EnterMode/SetMode диалога пароля"
+    },
+    {
+      "file": "MosquitoNetCalculator/Converters/OfficeStatusConverters.cs",
+      "docs": [
+        "CURRENT_STATE.md",
+        "CHANGELOG.md"
+      ],
+      "note": "Админ-панель: бейджи статусов (BadgeSuccess/Warning/Danger)"
+    },
+    {
+      "file": "Models/OfficeStatsRow.cs",
+      "docs": [
+        "CURRENT_STATE.md",
+        "CHANGELOG.md"
+      ],
+      "note": "Админ-панель «Статистика»: строка с кол-вом заказов офиса"
+    },
+    {
+      "file": "Services/OfficeStatsCalculator.cs",
+      "docs": [
+        "CURRENT_STATE.md",
+        "CHANGELOG.md"
+      ],
+      "note": "Админ-панель «Статистика»: чистая логика кол-ва заказов по офисам"
+    },
+    {
+      "file": "Services/OfficeDeviceGrouping.cs",
+      "docs": [
+        "CURRENT_STATE.md",
+        "CHANGELOG.md"
+      ],
+      "note": "Админ-панель: дедупликация устройств офиса по имени машины (один ПК = одно устройство, легаси-записи)"
+    },
+    {
+      "file": "Services/OfficeReportScheduler.cs",
+      "docs": [
+        "CURRENT_STATE.md",
+        "CHANGELOG.md"
+      ],
+      "note": "Админ-панель: периодическая отправка отчёта офиса каждые 30 мин (живые статусы/статистика)"
     }
   ]
 }

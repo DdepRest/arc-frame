@@ -1,4 +1,4 @@
-# MODULES.md
+﻿# MODULES.md
 
 ## Карта модулей проекта
 
@@ -22,6 +22,10 @@
 | `UpdateManifest.cs` | DTO для releases.json (версия, URL, SHA-256). | Поля должны соответствовать releases.json. |
 | `AdditionalKpItem.cs` | Модель дополнительного КП. | — |
 | `LocationOptions.cs` | Список точек установки для экрана приветствия. | — |
+| `OfficeReport.cs` | Отчёт УСТРОЙСТВА офиса (версия, время, кол-во заказов, deviceId, deviceName) — содержимое файла `office-{prefix}-{deviceId}.json` в секретном gist. | Поля сериализуются в gist — панель читает их по именам JSON-полей; новые поля добавляются обратносовместимо (старые отчёты читаются с дефолтами). |
+| `OfficeDeviceRow.cs` | Одно устройство офиса в админ-панели: имя ПК, версия, статус (✓/⚠/❓), время отчёта, display-свойства. | — |
+| `OfficeStatsRow.cs` | Строка секции «Статистика» админ-панели: офис + кол-во заказов (сумма по устройствам) + `DeviceCount`. | — |
+| `OfficeStatusRow.cs` | Строка админ-панели: офис + статус (UpToDate/Outdated/NoData) + display-свойства. | — |
 | `AiChatMessage.cs` | Модель сообщения чата AI (текст, статус, модель, временная метка) + состояние плана (ожидает подтверждения / выполнен / отменён) и `MessageId` для защиты от повторного выполнения. | `MessageId` и `PlanId` — идентичность сообщения; нельзя выполнить план дважды. |
 | `AiClarificationForm.cs` | Интерактивная форма уточнения параметров товара в AI-чате (тип, размеры, цвет, количество, режим Anwis, монтаж); `TryBuildCommand()` собирает `AiCommand` без повторного запроса к LLM. | Каталоги списков (типы/цвета/режимы) должны совпадать с `PriceService` и `AnwisSizeMode`. |
 | `AiCommand.cs` | Команды AI (`AiCommand`, `AiCommandParams`, `AiCommandType`) + `AiResponse` с полем `Plan` (plan-mode JSON от LLM). | Поля `Params` — контракт с парсером; без валидации не выполнять. |
@@ -54,7 +58,12 @@
 | `WatchdogService.cs` | .bat-скрипт для замены .exe после выхода приложения. | BuildWatchdogBat — ошибка = сломанное обновление. |
 | `UpdateLog.cs` | Загрузка истории обновлений из embedded update-log.json. | — |
 | `OrderStorageService.cs` | Сохранение/загрузка заказов в JSON в %AppData%. | JsonOptions, пути — влияет на сохранность данных клиентов. |
-| `AppSettingsService.cs` | Настройки (тема, префикс договора, точка установки, pending update). | Пути к %AppData%, формат settings.json — влияет на все пользователи. |
+| `AppSettingsService.cs` | Настройки (тема, префикс договора, точка установки, pending update, вшитый пароль админ-панели, переопределение токена/ID gist, стабильный deviceId через `LoadOrCreateDeviceId` — кросс-процессно безопасно через файл `device-id`). | Пути к %AppData%, формат settings.json — влияет на все пользователи. |
+| `OfficeReportService.cs` | Обмен отчётами через секретный GitHub Gist: PATCH своего файла (по устройству `office-{prefix}-{deviceId}.json`) при старте/проверках обновлений/по расписанию, чтение всего gist для панели, очистка дублей устройств (PATCH с content:null для лишних файлов). | Gist ID/токен — единственная «облачная» точка; токен встраивается в сборку при релизе. |
+| `OfficeDeviceGrouping.cs` | Дедупликация устройств офиса: один ПК = одно устройство (по имени машины, иначе по deviceId), легаси-записи без имени отбрасываются при наличии именованных. | Идентичность устройства — поведение статусов и статистики при нескольких копиях программы на ПК. |
+| `OfficeStatusCalculator.cs` | Чистая логика статусов офисов: свежесть отчёта (порог 72ч) + сравнение версий по УСТРОЙСТВАМ (статус офиса агрегируется по свежим устройствам, `DeviceCount`/`Devices`). | Порог свежести и правила статусов — поведение панели. |
+| `OfficeStatsCalculator.cs` | Чистая логика секции «Статистика»: кол-во заказов по офисам (сумма по всем устройствам) из тех же отчётов. | — |
+| `OfficeReportScheduler.cs` | Периодическая отправка отчёта офиса каждые 2 часа, пока программа открыта (редкие считки: запуск программы + раз в 2 ч). | Контракт Start/Stop/ShouldSendAt — по образцу UpdateCheckScheduler. |
 | `AnwisSizeService.cs` | UI-словари для Anwis (метки, подсказки, описания режимов). | Тексты подсказок — не критично, но должны соответствовать формулам в AnwisSize. |
 | `AmountInWordsService.cs` | Сумма прописью для КП. | Тексты — влияет на официальный документ. |
 | `MoneyFormatService.cs` | Форматирование денежных сумм (разделитель тысяч, копейки). | — |
@@ -87,6 +96,8 @@
 | `OrdersHistoryControl` | Вкладка "Заказы" — список, поиск, импорт/экспорт. |
 | `PricesControl` | Вкладка "Цены" — редактирование прайс-листа. |
 | `UpdatesTabControl` | Вкладка "Обновления" — история версий. |
+| `AdminPanelControl` | Админ-панель — контейнер секций (вкладки): «Обновления» (статусы версий) и «Статистика» (кол-во заказов). Новые секции = новый TabItem + свой список строк. | Читает gist — без сети показывает "нет связи"; формат отчёта расширяется обратносовместимо. |
+| `AdminPasswordWindow` | Окно ввода пароля админ-панели (вшитый пароль, единый для всех офисов). | — |
 | `SendToFactoryWindow` | Диалог "Отправить на завод" с чекбоксами. |
 | `AdditionalKpsControl` | Блок дополнительных КП. |
 
@@ -137,12 +148,18 @@
 | `AiExplanationContextTests.cs` | Контекст и тексты объяснения расчёта. |
 | `AiCommandParserPlanModeTests.cs` | Парсинг plan-mode JSON (steps, batch). |
 | `AiGoldenCaseTests.cs` | Golden-кейсы реальных фраз менеджеров из `AI/golden-cases.json`. |
+| `OfficeStatusCalculatorTests.cs` | Логика статусов офисов (свежесть, сравнение версий, неизвестные офисы). |
+| `OfficeReportServiceTests.cs` | Парсинг ответа gist + HTTP-обмен (фейковый handler, Bearer-токен). |
+| `OfficeAdminPasswordTests.cs` | Вшитый пароль админ-панели. |
+| `OfficeReportSchedulerTests.cs` | Периодическая отправка: интервалы, Start/Stop, fire-once контракт. |
 
 ## Source files
 
 - Вся структура `MosquitoNetCalculator/` и `MosquitoNetCalculator.Tests/`.
 
 ## Last verified
+2026-08-10 (v3.47.4) — auto-synced from csproj (sync-version.ps1, CONTROL#13).
+
 
 2026-08-04 — AI Agent Mode: добавлены модули плана и сервисы AI-агентности (`AiActionPlan`, `AiPlanBuilder`/`AiPlanValidator`/`AiPlanExecutor`, `AiOrderContextBuilder`, `AiExplanationContextBuilder`, `AiTelemetryService`, `AiLocalCommandRouter`); карта модулей расширена моделями AI-контекста и тестами.
 

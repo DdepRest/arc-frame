@@ -1,13 +1,13 @@
 ﻿# gensymbols.ps1
 # A.R.C. v4 — Symbol Index Generator
 # Scans all .cs files in MosquitoNetCalculator/ and generates
-# docs/arc/SYMBOL_INDEX.md with class→member→file mapping.
+# agents/docs/SYMBOL_INDEX.md with class→member→file mapping.
 # Usage: powershell -ExecutionPolicy Bypass -File gensymbols.ps1
 
 $ErrorActionPreference = "Stop"
-$projectRoot = $PSScriptRoot
+$projectRoot = (Resolve-Path (Join-Path $PSScriptRoot "..\..")).Path
 $srcDir = Join-Path $projectRoot "MosquitoNetCalculator"
-$outputPath = Join-Path $projectRoot "docs\arc\SYMBOL_INDEX.md"
+$outputPath = Join-Path $projectRoot "agents\docs\SYMBOL_INDEX.md"
 
 # Patterns for extraction
 $classPattern = '^\s*(public|internal|static)\s+(partial\s+)?(class|struct|enum|static class)\s+(\w+)'

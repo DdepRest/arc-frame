@@ -1,10 +1,11 @@
 ﻿# arc-check.ps1
 # A.R.C. v4 — Pre-commit documentation sync check
 # Usage: powershell -ExecutionPolicy Bypass -File arc-check.ps1
-# Verifies that docs/arc files are up-to-date with the current codebase.
+# Verifies that agents/docs files are up-to-date with the current codebase.
 
 $ErrorActionPreference = "Continue"
 $issues = 0
+$projectRoot = (Resolve-Path (Join-Path $PSScriptRoot "..\..")).Path
 
 Write-Host "=== A.R.C. v4 — Documentation Sync Check ===" -ForegroundColor Cyan
 Write-Host ""
@@ -29,10 +30,10 @@ Write-Host ""
 
 # 2. Check SYMBOL_INDEX.md is not stale vs source files
 Write-Host "[2] Checking SYMBOL_INDEX.md staleness..." -ForegroundColor Yellow
-$symbolIndexPath = Join-Path $PSScriptRoot "docs\arc\SYMBOL_INDEX.md"
+$symbolIndexPath = Join-Path $projectRoot "agents\docs\SYMBOL_INDEX.md"
 if (Test-Path $symbolIndexPath) {
     $indexDate = (Get-Item $symbolIndexPath).LastWriteTime
-    $srcFiles = Get-ChildItem -Path (Join-Path $PSScriptRoot "MosquitoNetCalculator") -Filter "*.cs" -Recurse |
+    $srcFiles = Get-ChildItem -Path (Join-Path $projectRoot "MosquitoNetCalculator") -Filter "*.cs" -Recurse |
         Where-Object { $_.FullName -notmatch '\\obj\\' -and $_.FullName -notmatch '\\bin\\' }
     $newestSrc = ($srcFiles | Sort-Object LastWriteTime -Descending | Select-Object -First 1)
     
@@ -51,12 +52,12 @@ Write-Host ""
 
 # 3. Check for uncommitted changes to source files without doc updates
 Write-Host "[3] Checking doc sync for uncommitted changes..." -ForegroundColor Yellow
-$changedFiles = & git -C $PSScriptRoot diff --name-only 2>$null
+$changedFiles = & git -C $projectRoot diff --name-only 2>$null
 $changedFiles = @($changedFiles | Where-Object { $_ })
 
 if ($changedFiles.Count -gt 0) {
-    $srcChanged = @($changedFiles | Where-Object { $_ -match '\.(cs|xaml|html|json|css)$' -and $_ -notmatch '^(docs/arc/|publish/)' })
-    $docsChanged = @($changedFiles | Where-Object { $_ -match '^docs/arc/' -or $_ -match '^CHANGELOG.md$' })
+    $srcChanged = @($changedFiles | Where-Object { $_ -match '\.(cs|xaml|html|json|css)$' -and $_ -notmatch '^(agents/docs/|publish/)' })
+    $docsChanged = @($changedFiles | Where-Object { $_ -match '^agents/docs/' -or $_ -match '^CHANGELOG.md$' })
     
     if ($srcChanged.Count -gt 0) {
         Write-Host "  INFO: $($srcChanged.Count) source files changed" -ForegroundColor Gray
@@ -67,7 +68,7 @@ if ($changedFiles.Count -gt 0) {
         Write-Host "  $whatUpdateText" -ForegroundColor Gray
         
         if ($docsChanged.Count -eq 0) {
-            Write-Host "  WARN: Source files changed but no docs/arc or CHANGELOG.md updated" -ForegroundColor Yellow
+            Write-Host "  WARN: Source files changed but no agents/docs or CHANGELOG.md updated" -ForegroundColor Yellow
             Write-Host "  Run: what-to-update.ps1 your-changed-files" -ForegroundColor Yellow
             $issues++
         } else {

@@ -1,7 +1,7 @@
-# AUTO_UPDATE — План исправлений (v3.47.2 → v3.48.x)
+﻿# AUTO_UPDATE — План исправлений (v3.47.2 → v3.48.x)
 
 > Многоэтапный план устранения 9 проблем, выявленных в brainstorm-анализе
-> (`docs/arc/AUTO_UPDATE.md` + обзор кода на 2026-07-22).
+> (`AUTO_UPDATE.md` + обзор кода на 2026-07-22).
 > Общий бюджет: **12–18 часов разработки + интеграция по 3 релизам**.
 > Приоритет этапов 2 и 4 (UAC/AV и Security hardening) — **HIGHEST**.
 
@@ -802,7 +802,7 @@ Kind + Detail.
 
 ## Phase 7 — Release cycle (применяется каждый релиз)
 
-Стандартный pipeline, как в `docs/arc/RELEASE_PROCESS.md`. После применения
+Стандартный pipeline, как в `RELEASE_PROCESS.md`. После применения
 Phase 1+2+3 → v3.48.0; Phase 4 → v3.49.0; Phase 5+6 → v3.50.0.
 
 ---
@@ -868,6 +868,8 @@ Phase 1+2+3 → v3.48.0; Phase 4 → v3.49.0; Phase 5+6 → v3.50.0.
 ---
 
 ## Last verified
+2026-08-10 (v3.47.4) — auto-synced from csproj (sync-version.ps1, CONTROL#13).
+
 
 2026-08-03 (v3.47.3) — само-обновление (CONTROL#13): baseline перепроверен при синхронизации версий; план не менялся.
 

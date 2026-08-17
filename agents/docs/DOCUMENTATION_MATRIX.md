@@ -1,12 +1,12 @@
 # DOCUMENTATION_MATRIX.md
 
-> Auto-generated from documentation-matrix.json. Edit the JSON, then run render-matrix.ps1.
+> Auto-generated from documentation-matrix.json. Edit the JSON, then run agents/scripts/render-matrix.ps1.
 
 ## File -> Docs mapping
 
 Use on the **Document** phase. If you changed a file in the left column, update all files in the right column.
 
-Or run: what-to-update.ps1 (git diff --name-only) -- the script reads documentation-matrix.json.
+Or run: agents/scripts/what-to-update.ps1 (git diff --name-only) -- the script reads documentation-matrix.json.
 
 ### Models
 
@@ -34,6 +34,10 @@ Or run: what-to-update.ps1 (git diff --name-only) -- the script reads documentat
 | `Models/AiOrderContext.cs` | `CURRENT_STATE.md`, `CHANGELOG.md` (AI Agent Mode: rich order snapshot context sent to the LLM) |
 | `Models/AiRequestMetrics.cs` | `CURRENT_STATE.md`, `CHANGELOG.md` (AI Agent Mode: per-request metrics (provider, attempt, fallback)) |
 | `Models/AiCalculationExplanationContext.cs` | `CURRENT_STATE.md`, `CHANGELOG.md` (AI Agent Mode: calculation explanation context for /объясни) |
+| `Models/OfficeReport.cs` | `CURRENT_STATE.md`, `CHANGELOG.md` (Админ-панель: отчёт устройства офиса (gist office-{prefix}-{deviceId}.json, DeviceId/DeviceName)) |
+| `Models/OfficeDeviceRow.cs` | `CURRENT_STATE.md`, `CHANGELOG.md` (Админ-панель: одно устройство офиса (версия/статус/имя ПК)) |
+| `Models/OfficeStatusRow.cs` | `CURRENT_STATE.md`, `CHANGELOG.md` (Админ-панель: статусы офисов (UpToDate/Outdated/NoData)) |
+| `Models/OfficeStatsRow.cs` | `CURRENT_STATE.md`, `CHANGELOG.md` (Админ-панель «Статистика»: строка с кол-вом заказов офиса) |
 
 ### ViewModels
 
@@ -78,6 +82,11 @@ Or run: what-to-update.ps1 (git diff --name-only) -- the script reads documentat
 | `Services/AiExplanationContextBuilder.cs` | `CURRENT_STATE.md`, `CHANGELOG.md` (AI Agent Mode: builds explanation context from actual totals) |
 | `Services/AiTelemetryService.cs` | `CURRENT_STATE.md`, `CHANGELOG.md` (AI Agent Mode: request metrics and in-memory stats) |
 | `Services/AiLocalCommandRouter.cs` | `CURRENT_STATE.md`, `CHANGELOG.md` (AI Agent Mode: offline slash commands (/товары /итоги /объясни etc.)) |
+| `Services/OfficeReportService.cs` | `CURRENT_STATE.md`, `CHANGELOG.md` (Админ-панель: обмен отчётами через секретный GitHub Gist, очистка дублей устройств (кнопка «Очистить дубли»)) |
+| `Services/OfficeStatusCalculator.cs` | `CURRENT_STATE.md`, `CHANGELOG.md` (Админ-панель: чистая логика статусов (порог свежести 72ч)) |
+| `Services/OfficeStatsCalculator.cs` | `CURRENT_STATE.md`, `CHANGELOG.md` (Админ-панель «Статистика»: чистая логика кол-ва заказов по офисам) |
+| `Services/OfficeDeviceGrouping.cs` | `CURRENT_STATE.md`, `CHANGELOG.md` (Админ-панель: дедупликация устройств офиса по имени машины (один ПК = одно устройство, легаси-записи)) |
+| `Services/OfficeReportScheduler.cs` | `CURRENT_STATE.md`, `CHANGELOG.md` (Админ-панель: периодическая отправка отчёта офиса каждые 30 мин (живые статусы/статистика)) |
 
 ### Controls (WPF UI)
 
@@ -95,6 +104,10 @@ Or run: what-to-update.ps1 (git diff --name-only) -- the script reads documentat
 | `Controls/AnwisContextMenuBuilder.cs` | `CURRENT_STATE.md`, `CHANGELOG.md` |
 | `Controls/AiAssistantControl.*` | `CURRENT_STATE.md`, `CHANGELOG.md` (streaming chat UI, model badges, plan preview card with Выполнить/Отмена and Отменить действие) |
 | `Controls/AiApiKeyDialog.*` | `CURRENT_STATE.md`, `CHANGELOG.md` (AI keys, model catalog and auto-select UX) |
+| `Controls/AdminPanelControl.xaml` | `CURRENT_STATE.md`, `CHANGELOG.md` (Админ-панель: UI статусов офисов) |
+| `Controls/AdminPanelControl.xaml.cs` | `CURRENT_STATE.md`, `CHANGELOG.md` (Админ-панель: RefreshAsync (отчёты + последняя версия)) |
+| `Controls/AdminPasswordWindow.xaml` | `CURRENT_STATE.md`, `CHANGELOG.md` (Админ-панель: окно входа/установки пароля) |
+| `Controls/AdminPasswordWindow.xaml.cs` | `CURRENT_STATE.md`, `CHANGELOG.md` (Админ-панель: EnterMode/SetMode диалога пароля) |
 
 ### Themes
 
@@ -128,13 +141,13 @@ Or run: what-to-update.ps1 (git diff --name-only) -- the script reads documentat
 
 | Changed file | Update docs |
 |---|---|
-| `docs/arc/PROJECT_OVERVIEW.md` | `CURRENT_STATE.md` (project description and tech stack) |
-| `docs/arc/INTENTS.md` | `CURRENT_STATE.md` (A.R.C. v4: intent-to-file routing) |
-| `docs/arc/SYMBOL_INDEX.md` | `CURRENT_STATE.md` (A.R.C. v4: auto-generated symbol index) |
+| `agents/docs/PROJECT_OVERVIEW.md` | `CURRENT_STATE.md` (project description and tech stack) |
+| `agents/docs/INTENTS.md` | `CURRENT_STATE.md` (A.R.C. v4: intent-to-file routing) |
+| `agents/docs/SYMBOL_INDEX.md` | `CURRENT_STATE.md` (A.R.C. v4: auto-generated symbol index) |
 | `README.md` | `CURRENT_STATE.md` (project overview for GitHub) |
-| `docs/arc/REFACTORING_PLAN.md` | `CURRENT_STATE.md`, `MULTI_AGENT_ARC_CALC_CONTROL.md`, `AGENTS.md` (system refactoring plan) |
-| `gensymbols.ps1` | `CURRENT_STATE.md` (A.R.C. v4: symbol index generator) |
-| `arc-check.ps1` | `CURRENT_STATE.md` (A.R.C. v4: pre-commit doc sync check) |
+| `agents/docs/REFACTORING_PLAN.md` | `CURRENT_STATE.md`, `MULTI_AGENT_ARC_CALC_CONTROL.md`, `AGENTS.md` (system refactoring plan) |
+| `agents/scripts/gensymbols.ps1` | `CURRENT_STATE.md` (A.R.C. v4: symbol index generator) |
+| `agents/scripts/arc-check.ps1` | `CURRENT_STATE.md` (A.R.C. v4: pre-commit doc sync check) |
 | `MosquitoNetCalculator/MainWindow.xaml` | `CURRENT_STATE.md`, `CHANGELOG.md` (AI BETA navigation and panel badge) |
 | `MosquitoNetCalculator/Converters/BoolVisibilityConverter.cs` | `CURRENT_STATE.md`, `CHANGELOG.md` (AI model badge visibility converter) |
 | `MosquitoNetCalculator/MainWindow.xaml.cs` | `REFACTORING_PLAN.md`, `CURRENT_STATE.md`, `CHANGELOG.md` (Phase 1: NavigationService, OverlayManager, SlopeOverlayCoordinator) |
@@ -145,18 +158,24 @@ Or run: what-to-update.ps1 (git diff --name-only) -- the script reads documentat
 | `MosquitoNetCalculator/Models/OrderItem.cs` | `REFACTORING_PLAN.md`, `CALCULATION_LOGIC.md`, `GOTCHAS.md#1`, `CURRENT_STATE.md`, `CHANGELOG.md` (Phase 5: ProductCatalog, AnwisSizeCalculator, SlopeCalculationExtensions) |
 | `MosquitoNetCalculator/MainWindow.AI.cs` | `CURRENT_STATE.md`, `CHANGELOG.md` (AI Agent Mode: rich order context, plan execution with single undo snapshot, guarded undo/redo) |
 | `MosquitoNetCalculator/Models/AiCommand.cs` | `CURRENT_STATE.md`, `CHANGELOG.md` (AI Agent Mode: plan-mode AiResponse.Plan + update/delete command params) |
+| `agents/scripts/validate-docs.ps1` | `CURRENT_STATE.md` (A.R.C.: doc consistency validator (10 checks, incl. soft #10 self-maintenance)) |
+| `AGENTS.md` | `CHEATSHEET.md`, `CURRENT_STATE.md` (thin wrapper; self-maintenance duty CONTROL#13) |
+| `agents/docs/CHEATSHEET.md` | `CURRENT_STATE.md` (critical rules + routing table) |
+| `agents/docs/MULTI_AGENT_ARC_CALC_CONTROL.md` | `CHEATSHEET.md`, `CURRENT_STATE.md`, `AGENTS.md` (canonical source of truth; CONTROL#13 self-maintenance) |
+| `agents/scripts/sync-version.ps1` | `CHEATSHEET.md`, `MULTI_AGENT_ARC_CALC_CONTROL.md` (sync-version.ps1: auto-sync csproj version to all agents/docs Last verified) |
+| `MosquitoNetCalculator/Converters/OfficeStatusConverters.cs` | `CURRENT_STATE.md`, `CHANGELOG.md` (Админ-панель: бейджи статусов (BadgeSuccess/Warning/Danger)) |
 
 ---
 
 ## Auto-update of 'Last verified'
 
-Use what-to-update.ps1 to get the list of docs to update - the script reads documentation-matrix.json directly.
+Use agents/scripts/what-to-update.ps1 to get the list of docs to update - the script reads documentation-matrix.json directly.
 
 ## Source files
 
-- docs/arc/documentation-matrix.json -- machine-readable source (edit this!)
-- render-matrix.ps1 -- generates this file from JSON
+- agents/docs/documentation-matrix.json -- machine-readable source (edit this!)
+- agents/scripts/render-matrix.ps1 -- generates this file from JSON
 
 ## Last verified
 
-2026-08-04 (generated from JSON)
+2026-08-17 (generated from JSON)

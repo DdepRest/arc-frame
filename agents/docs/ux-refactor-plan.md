@@ -1,4 +1,4 @@
-# UX Refactor Plan — A.R.C. Frame v3.41
+﻿# UX Refactor Plan — A.R.C. Frame v3.41
 
 ## Цель
 
@@ -179,8 +179,8 @@
 - Обновить `CHANGELOG.md` через skill `arc-frame-changelog`.
 
 #### 5e. Проверка A.R.C.
-- `powershell -ExecutionPolicy Bypass -File validate-docs.ps1`.
-- `powershell -ExecutionPolicy Bypass -File arc-check.ps1`.
+- `powershell -ExecutionPolicy Bypass -File agents/scripts/validate-docs.ps1`.
+- `powershell -ExecutionPolicy Bypass -File agents/scripts/arc-check.ps1`.
 
 ---
 
@@ -211,6 +211,8 @@
 ---
 
 ## Last verified
+2026-08-10 (v3.47.4) — auto-synced from csproj (sync-version.ps1, CONTROL#13).
+
 
 2026-08-06 — maintenance pass (CONTROL#13): дата верификации синхронизирована с git-историей; содержимое сверено с текущим состоянием (v3.47.3, 1511/1511 tests pass).
 

@@ -1,4 +1,4 @@
-# AUTO_UPDATE.md
+﻿# AUTO_UPDATE.md
 
 ## Как работает автообновление
 
@@ -102,7 +102,7 @@
 
 **Манифест (используется программой в runtime):** `https://raw.githubusercontent.com/DdepRest/arc-frame/main/releases.json`
 
-> ⚠️ Этот URL кэшируется на GitHub CDN. После `git push` файла в `main` обновление видно на этом URL через **5-15 минут** (диапазон совпадает с `docs/arc/RELEASE_PROCESS.md`). Если нужна нулевая задержка диагностики — используйте `https://api.github.com/repos/DdepRest/arc-frame/contents/releases.json` (НЕ кэшируется, но требует авторизации для частых запросов).
+> ⚠️ Этот URL кэшируется на GitHub CDN. После `git push` файла в `main` обновление видно на этом URL через **5-15 минут** (диапазон совпадает с `RELEASE_PROCESS.md`). Если нужна нулевая задержка диагностики — используйте `https://api.github.com/repos/DdepRest/arc-frame/contents/releases.json` (НЕ кэшируется, но требует авторизации для частых запросов).
 
 **Диагностический endpoint (НЕ кэшируется):** `https://api.github.com/repos/DdepRest/arc-frame/contents/releases.json`
 
@@ -149,7 +149,7 @@
 
 Файл `releases.json` живёт в ветке `main` и читается напрямую с `raw.githubusercontent.com`. Публикация новой версии в нём **необратимо** запускает обновление у всех пользователей. Если в `releases.json` указана версия, а соответствующий ZIP ещё не загружен в GitHub Release — пользователи получат ошибку скачивания.
 
-> ⚠️ **Канонический дом:** полный release pipeline, ⚠️ правило безопасности, 4 этапа (ZIP → GitHub Release → push `releases.json`) и git push sequence — в `docs/arc/RELEASE_PROCESS.md` (раздел «Канонический Pipeline релиза»).
+> ⚠️ **Канонический дом:** полный release pipeline, ⚠️ правило безопасности, 4 этапа (ZIP → GitHub Release → push `releases.json`) и git push sequence — в `RELEASE_PROCESS.md` (раздел «Канонический Pipeline релиза»).
 > Этот файл описывает только **runtime-поведение манифеста** (как программа его получает, поведение CDN-кэша, диагностику «не видит обновление») — НЕ процедуру релиза.
 
 ---
@@ -390,6 +390,8 @@ Watchdog .bat запускает обновлённый `MosquitoNetCalculator.e
 - `MosquitoNetCalculator.Tests/Services/UpdateCheckSchedulerTests.cs` (NEW, 20+ tests)
 
 ## Last verified
+2026-08-10 (v3.47.4) — auto-synced from csproj (sync-version.ps1, CONTROL#13).
+
 
 2026-08-03 (v3.47.3) — само-обновление (CONTROL#13): перепроверено при синхронизации версий; содержимое актуально (v3.47.2/v3.47.3 не меняли runtime автообновления).
 

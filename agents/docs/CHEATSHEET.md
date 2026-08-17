@@ -1,4 +1,4 @@
-# CHEATSHEET — критические правила (читай перед любой задачей)
+﻿# CHEATSHEET — критические правила (читай перед любой задачей)
 
 Правила без объяснений. Подробности — по ссылкам.
 
@@ -27,6 +27,13 @@
 18. Структурные изменения (разбивка/переименование/новые классы) → gensymbols.ps1 + INTENTS/MODULES/matrix → CONTROL#13
 19. AGENTS.md/docs держать в актуальности — обязанность агента, не опция       → CONTROL#13
 20. В отчёте указывай метрики экономии (шагов/токенов), честно если ноль       → CONTROL#8
+21. Файл растёт (>400–500 строк / разные ответственности) → разбей СЕЙЧАС,      → CONTROL#13
+    не оставляй «рефакторинг на потом»: большой файл = дорогое чтение для
+    следующего агента. После разбивки — ритуал ситуации А (gensymbols + INTENTS)
+22. archive/ — КОРЗИНА мусора: НЕ заходить, НЕ искать, НЕ читать,              → archive/README.md
+    НЕ использовать как источник кода/доков. Разбор — только владельцем.
+    Код → MosquitoNetCalculator/, доки → agents/docs/, активные файлы → корень.
+    (Незавершённая миграция → migration/STATUS.md, это НЕ мусор.)
 ```
 
 ## Быстрый routing
@@ -70,26 +77,29 @@ AI-регрессии (релиз)     dotnet test --filter AiGoldenCase|AiPlan|
 ## Инструменты автоматизации
 
 ```
-gensymbols.ps1                                # Генерация SYMBOL_INDEX.md (индекс классов)
-what-to-update.ps1 $(git diff --name-only)   # Что обновить в docs? + рекомендованный AI-фильтр
-                                             # С флагом -RunAiTests реально запускает AI-регрессии
-validate-docs.ps1                             # 10 проверок консистентности (вкл. self-maintenance, мягкая)
-generate-update-log.ps1                       # CHANGELOG.md → update-log.json
-render-matrix.ps1                             # JSON → DOCUMENTATION_MATRIX.md
-arc-check.ps1                                 # Проверка docs перед коммитом
+agents/scripts/gensymbols.ps1                                # Генерация SYMBOL_INDEX.md (индекс классов)
+agents/scripts/what-to-update.ps1 $(git diff --name-only)   # Что обновить в docs? + рекомендованный AI-фильтр
+                                                             # С флагом -RunAiTests реально запускает AI-регрессии
+agents/scripts/validate-docs.ps1                             # 10+ проверок консистентности (вкл. self-maintenance, мягкая)
+agents/scripts/sync-version.ps1                               # Синхронизация версии из csproj во все agents/docs (Last verified)
+generate-update-log.ps1                                       # CHANGELOG.md → update-log.json (корень)
+agents/scripts/render-matrix.ps1                             # JSON → DOCUMENTATION_MATRIX.md
+agents/scripts/arc-check.ps1                                 # Проверка docs перед коммитом
 ```
 
 ## Source files
 
-- `docs/arc/MULTI_AGENT_ARC_CALC_CONTROL.md` — полные правила
-- `docs/arc/DOCUMENTATION_MATRIX.md` — карта «файл → документы» (генерируется из JSON)
-- `docs/arc/documentation-matrix.json` — машиночитаемый источник матрицы
-- `docs/arc/CURRENT_STATE.md` — текущее состояние проекта (включая «AI Agent Mode — Progress» Этап 0–12)
-- `docs/arc/SYMBOL_INDEX.md` — индекс классов/методов/свойств (60 классов, 16 модулей)
-- `docs/arc/INTENTS.md` — mapping намерений на файлы
+- `MULTI_AGENT_ARC_CALC_CONTROL.md` — полные правила
+- `DOCUMENTATION_MATRIX.md` — карта «файл → документы» (генерируется из JSON)
+- `documentation-matrix.json` — машиночитаемый источник матрицы
+- `CURRENT_STATE.md` — текущее состояние проекта (включая «AI Agent Mode — Progress» Этап 0–12)
+- `SYMBOL_INDEX.md` — индекс классов/методов/свойств (60 классов, 16 модулей)
+- `INTENTS.md` — mapping намерений на файлы
 - `ai-agent-mode-plan.md` — полный план AI Agent Mode (13 этапов: Этап 0–12)
 
 ## Last verified
+2026-08-10 (v3.47.4) — auto-synced from csproj (sync-version.ps1, CONTROL#13).
+
 
 2026-08-05 — добавлены правила **17a** (AI Agent Mode — таблица Этап 0–12 в CURRENT_STATE.md) и **17b** (release-flow AI-регрессии: `dotnet test --filter AiGoldenCase|AiPlan|AiTelemetry`, автоматически через `what-to-update.ps1 -RunAiTests`); новая routing-строка «AI Agent Mode»; ссылка на план в Source files.
 

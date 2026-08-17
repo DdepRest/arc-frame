@@ -1,22 +1,25 @@
 # Agent Wrapper — AGENTS.md
 
-This repository uses a canonical multi-agent control file:
+The agent system lives in `agents/` (single folder):
 
 ```text
-docs/arc/MULTI_AGENT_ARC_CALC_CONTROL.md
+agents/README.md                         ← что это за система и как ей пользоваться
+agents/docs/MULTI_AGENT_ARC_CALC_CONTROL.md  ← canonical source of truth (routing, CONTROL)
+agents/docs/CHEATSHEET.md                ← быстрый вход (критические правила, читай первым)
+agents/scripts/                          ← validate-docs.ps1, arc-check.ps1, what-to-update.ps1, gensymbols.ps1, render-matrix.ps1, sync-version.ps1
 ```
 
-Read that file before any non-trivial task.
+Read `agents/README.md` and then `agents/docs/MULTI_AGENT_ARC_CALC_CONTROL.md` before any non-trivial task.
 
 ---
 
 ## Wrapper contract
 
 `AGENTS.md` (this file) is a **thin compatibility wrapper** only. It must
-**not** duplicate content from `docs/arc/MULTI_AGENT_ARC_CALC_CONTROL.md`
-or any other doc under `docs/arc/`. If a conflict ever appears between
+**not** duplicate content from `agents/docs/MULTI_AGENT_ARC_CALC_CONTROL.md`
+or any other doc under `agents/docs/`. If a conflict ever appears between
 this wrapper and the canonical file, the canonical wins — see
-`docs/arc/MULTI_AGENT_ARC_CALC_CONTROL.md §1 ("Источник истины")`.
+`agents/docs/MULTI_AGENT_ARC_CALC_CONTROL.md §1 ("Источник истины")`.
 
 The other wrappers in this repo follow the same contract:
 
@@ -28,23 +31,22 @@ GEMINI.md  ← Gemini-specific thin wrapper (if present)
 ```
 
 Any rule change, routing-table update, or workflow tweak belongs in
-`docs/arc/`, **not** here.
+`agents/docs/`, **not** here.
 
 ---
 
 ## Self-maintenance duty (обязанность самоподдержания)
 
 This wrapper is **part of the system and must be kept up to date by AI agents**,
-like every file under `docs/arc/`. Any structural change (file splits,
+like every file under `agents/docs/`. Any structural change (file splits,
 renames/moves, new modules) or change to the control system itself must be
-reflected here and in `docs/arc/` in the same work cycle. Rules, situations А–Ж
-and enforcement — see `docs/arc/MULTI_AGENT_ARC_CALC_CONTROL.md` §13
+reflected here and in `agents/docs/` in the same work cycle. Rules, situations А–Ж
+and enforcement — see `agents/docs/MULTI_AGENT_ARC_CALC_CONTROL.md` §13
 (self-maintenance duty). Stale documentation actively misleads agents.
 
 ---
 
 ## Last verified
 
-2026-08-03 — wrapper reviewed; self-maintenance duty section added (CONTROL §13);
-`validate-docs.ps1` reports 0 issues (мягкие git-based warnings допустимы до коммита —
-проверки #7/#8 сравнивают даты с git-историей).
+2026-08-10 — system moved into a single `agents/` folder (docs + scripts);
+wrapper now points to `agents/README.md`. `agents/scripts/validate-docs.ps1` reports 0 issues.

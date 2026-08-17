@@ -193,9 +193,9 @@ dotnet test MosquitoNetCalculator.Tests/MosquitoNetCalculator.Tests.csproj -c Re
 
 Также доступны вспомогательные PowerShell-скрипты:
 
-- `validate-docs.ps1` — проверка консистентности документации.
-- `arc-check.ps1` — pre-commit проверка синхронизации документов.
-- `gensymbols.ps1` — перегенерация `SYMBOL_INDEX.md`.
+- `agents/scripts/validate-docs.ps1` — проверка консистентности документации.
+- `agents/scripts/arc-check.ps1` — pre-commit проверка синхронизации документов.
+- `agents/scripts/gensymbols.ps1` — перегенерация `SYMBOL_INDEX.md`.
 
 ---
 
@@ -215,8 +215,11 @@ gwga/
 │   ├── ViewModels/                   # ViewModel'и
 │   └── Resources/                    # Иконки, update-log.json
 ├── MosquitoNetCalculator.Tests/        # Юнит- и STA-тесты
-├── docs/                               # Документация
-│   ├── arc/                          # Архитектурная документация (A.R.C.)
+├── agents/                             # A.R.C. агент-система (README + docs + scripts)
+│   ├── README.md                       # Точка входа системы
+│   ├── docs/                           # Архитектурная документация (A.R.C.)
+│   └── scripts/                        # Скрипты системы (validate-docs, arc-check, …)
+├── docs/                               # Прочая документация
 │   ├── USER_GUIDE.md                 # Руководство пользователя
 │   └── USER_GUIDE.html               # HTML-версия руководства
 ├── build.bat                           # Релизная сборка
@@ -257,12 +260,12 @@ gwga/
 
 Проект использует систему архитектурной документации A.R.C.:
 
-- `docs/arc/CHEATSHEET.md` — быстрый вход (критические правила + routing).
-- `docs/arc/MULTI_AGENT_ARC_CALC_CONTROL.md` — канонический source of truth.
-- `docs/arc/DOCUMENTATION_MATRIX.md` — карта «файл → документы».
-- `docs/arc/SYMBOL_INDEX.md` — индекс символов проекта.
-- `docs/arc/INTENTS.md` — routing фраз на файлы.
-- `validate-docs.ps1` — автоматическая валидация консистентности.
+- `agents/docs/CHEATSHEET.md` — быстрый вход (критические правила + routing).
+- `agents/docs/MULTI_AGENT_ARC_CALC_CONTROL.md` — канонический source of truth.
+- `agents/docs/DOCUMENTATION_MATRIX.md` — карта «файл → документы».
+- `agents/docs/SYMBOL_INDEX.md` — индекс символов проекта.
+- `agents/docs/INTENTS.md` — routing фраз на файлы.
+- `agents/scripts/validate-docs.ps1` — автоматическая валидация консистентности.
 
 ---
 
@@ -281,13 +284,13 @@ gwga/
 
 ```bat
 :: Проверка документации
-powershell -ExecutionPolicy Bypass -File validate-docs.ps1
+powershell -ExecutionPolicy Bypass -File agents/scripts/validate-docs.ps1
 
 :: Pre-commit проверка
-powershell -ExecutionPolicy Bypass -File arc-check.ps1
+powershell -ExecutionPolicy Bypass -File agents/scripts/arc-check.ps1
 
 :: Перегенерация индекса символов
-powershell -ExecutionPolicy Bypass -File gensymbols.ps1
+powershell -ExecutionPolicy Bypass -File agents/scripts/gensymbols.ps1
 ```
 
 ---

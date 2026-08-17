@@ -1,6 +1,6 @@
 ﻿# what-to-update.ps1
 # Принимает список изменённых файлов (git diff --name-only) и выводит,
-# какие docs/arc/*.md нужно обновить согласно documentation-matrix.json.
+# какие agents/docs/*.md нужно обновить согласно documentation-matrix.json.
 #
 # Использование:
 #   what-to-update.ps1 Models/AnwisSize.cs Services/PrintService.cs
@@ -29,9 +29,9 @@ param(
 )
 
 $ErrorActionPreference = "Continue"
-$projectRoot = $PSScriptRoot
+$projectRoot = (Resolve-Path (Join-Path $PSScriptRoot "..\..")).Path
 
-$matrixPath = Join-Path $projectRoot "docs\arc\documentation-matrix.json"
+$matrixPath = Join-Path $projectRoot "agents\docs\documentation-matrix.json"
 if (-not (Test-Path $matrixPath)) {
     Write-Host "FAIL: documentation-matrix.json not found at $matrixPath" -ForegroundColor Red
     exit 1
@@ -130,7 +130,7 @@ if (-not $foundAny) {
     Write-Host "=== Summary: all docs to update ===" -ForegroundColor Cyan
     $sorted = $allDocs.Keys | Sort-Object
     foreach ($doc in $sorted) {
-        Write-Host "  docs/arc/$doc" -ForegroundColor Green
+        Write-Host "  agents/docs/$doc" -ForegroundColor Green
     }
     Write-Host ""
     Write-Host "Also always update: CHANGELOG.md (if this is a user-facing change)" -ForegroundColor Cyan

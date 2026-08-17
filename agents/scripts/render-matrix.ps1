@@ -3,13 +3,13 @@
 # Run after editing the JSON file.
 #
 # Usage:
-#   powershell -ExecutionPolicy Bypass -File render-matrix.ps1
+#   powershell -ExecutionPolicy Bypass -File agents/scripts/render-matrix.ps1
 
 $ErrorActionPreference = "Stop"
-$projectRoot = $PSScriptRoot
+$projectRoot = (Resolve-Path (Join-Path $PSScriptRoot "..\..")).Path
 
-$jsonPath = Join-Path $projectRoot "docs\arc\documentation-matrix.json"
-$mdPath = Join-Path $projectRoot "docs\arc\DOCUMENTATION_MATRIX.md"
+$jsonPath = Join-Path $projectRoot "agents\docs\documentation-matrix.json"
+$mdPath = Join-Path $projectRoot "agents\docs\DOCUMENTATION_MATRIX.md"
 
 if (-not (Test-Path $jsonPath)) {
     Write-Host "FAIL: documentation-matrix.json not found" -ForegroundColor Red
@@ -50,13 +50,13 @@ foreach ($m in $matrix.mappings) {
 $mdLines = @()
 $mdLines += "# DOCUMENTATION_MATRIX.md"
 $mdLines += ""
-$mdLines += "> Auto-generated from documentation-matrix.json. Edit the JSON, then run render-matrix.ps1."
+$mdLines += "> Auto-generated from documentation-matrix.json. Edit the JSON, then run agents/scripts/render-matrix.ps1."
 $mdLines += ""
 $mdLines += "## File -> Docs mapping"
 $mdLines += ""
 $mdLines += "Use on the **Document** phase. If you changed a file in the left column, update all files in the right column."
 $mdLines += ""
-$mdLines += "Or run: what-to-update.ps1 (git diff --name-only) -- the script reads documentation-matrix.json."
+$mdLines += "Or run: agents/scripts/what-to-update.ps1 (git diff --name-only) -- the script reads documentation-matrix.json."
 $mdLines += ""
 
 foreach ($cat in $categories.GetEnumerator()) {
@@ -81,12 +81,12 @@ $mdLines += "---"
 $mdLines += ""
 $mdLines += "## Auto-update of 'Last verified'"
 $mdLines += ""
-$mdLines += "Use what-to-update.ps1 to get the list of docs to update - the script reads documentation-matrix.json directly."
+$mdLines += "Use agents/scripts/what-to-update.ps1 to get the list of docs to update - the script reads documentation-matrix.json directly."
 $mdLines += ""
 $mdLines += "## Source files"
 $mdLines += ""
-$mdLines += "- docs/arc/documentation-matrix.json -- machine-readable source (edit this!)"
-$mdLines += "- render-matrix.ps1 -- generates this file from JSON"
+$mdLines += "- agents/docs/documentation-matrix.json -- machine-readable source (edit this!)"
+$mdLines += "- agents/scripts/render-matrix.ps1 -- generates this file from JSON"
 $mdLines += ""
 $mdLines += "## Last verified"
 $mdLines += ""

@@ -5,7 +5,7 @@
 $ErrorActionPreference = "Continue"
 $issues = 0
 $warnings = 0
-$projectRoot = $PSScriptRoot
+$projectRoot = (Resolve-Path (Join-Path $PSScriptRoot "..\..")).Path
 
 Write-Host "=== A.R.C. Documentation Validator ===" -ForegroundColor Cyan
 Write-Host ""
@@ -14,7 +14,7 @@ Write-Host ""
 Write-Host "[1] Version consistency" -ForegroundColor Yellow
 
 $csprojPath = Join-Path $projectRoot "MosquitoNetCalculator\MosquitoNetCalculator.csproj"
-$currentStatePath = Join-Path $projectRoot "docs\arc\CURRENT_STATE.md"
+$currentStatePath = Join-Path $projectRoot "agents\docs\CURRENT_STATE.md"
 
 if (-not (Test-Path $csprojPath)) {
     Write-Host "  FAIL: MosquitoNetCalculator.csproj not found" -ForegroundColor Red
@@ -56,7 +56,7 @@ Write-Host ""
 # 2. MODULES.md file references exist on disk
 Write-Host "[2] MODULES.md file references" -ForegroundColor Yellow
 
-$modulesPath = Join-Path $projectRoot "docs\arc\MODULES.md"
+$modulesPath = Join-Path $projectRoot "agents\docs\MODULES.md"
 if (-not (Test-Path $modulesPath)) {
     Write-Host "  WARN: MODULES.md not found (skipping)" -ForegroundColor Yellow
     $warnings++
@@ -88,7 +88,7 @@ Write-Host ""
 # 3. CHEATSHEET.md cross-references
 Write-Host "[3] CHEATSHEET.md cross-references" -ForegroundColor Yellow
 
-$cheatsheetPath = Join-Path $projectRoot "docs\arc\CHEATSHEET.md"
+$cheatsheetPath = Join-Path $projectRoot "agents\docs\CHEATSHEET.md"
 if (-not (Test-Path $cheatsheetPath)) {
     Write-Host "  WARN: CHEATSHEET.md not found (skipping)" -ForegroundColor Yellow
     $warnings++
@@ -98,7 +98,7 @@ if (-not (Test-Path $cheatsheetPath)) {
     $refs = [regex]::Matches($cheatsheetContent, $refPattern) | ForEach-Object { $_.Groups[1].Value + ".md" } | Sort-Object -Unique
     $missing = 0
     foreach ($ref in $refs) {
-        $refPath = Join-Path $projectRoot "docs\arc\$ref"
+        $refPath = Join-Path $projectRoot "agents\docs\$ref"
         if (-not (Test-Path $refPath)) {
             Write-Host "  MISSING: $ref (referenced in CHEATSHEET)" -ForegroundColor Red
             $missing++
@@ -117,13 +117,13 @@ Write-Host ""
 # 4. DOCUMENTATION_MATRIX.md source file references
 Write-Host "[4] DOCUMENTATION_MATRIX.md source file references" -ForegroundColor Yellow
 
-$matrixMdPath = Join-Path $projectRoot "docs\arc\DOCUMENTATION_MATRIX.md"
+$matrixMdPath = Join-Path $projectRoot "agents\docs\DOCUMENTATION_MATRIX.md"
 if (-not (Test-Path $matrixMdPath)) {
     Write-Host "  WARN: DOCUMENTATION_MATRIX.md not found (skipping)" -ForegroundColor Yellow
     $warnings++
 } else {
     # Read from JSON instead of regex-parsing MD
-    $matrixJsonPath = Join-Path $projectRoot "docs\arc\documentation-matrix.json"
+    $matrixJsonPath = Join-Path $projectRoot "agents\docs\documentation-matrix.json"
     if (Test-Path $matrixJsonPath) {
         $matrix = Get-Content $matrixJsonPath -Raw -Encoding UTF8 | ConvertFrom-Json
         $checkedSrc = 0
@@ -187,7 +187,7 @@ Write-Host ""
 # 5. MULTI_AGENT_ARC_CALC_CONTROL.md cross-references
 Write-Host "[5] MULTI_AGENT_ARC_CALC_CONTROL.md cross-references" -ForegroundColor Yellow
 
-$controlPath = Join-Path $projectRoot "docs\arc\MULTI_AGENT_ARC_CALC_CONTROL.md"
+$controlPath = Join-Path $projectRoot "agents\docs\MULTI_AGENT_ARC_CALC_CONTROL.md"
 if (-not (Test-Path $controlPath)) {
     Write-Host "  FAIL: MULTI_AGENT_ARC_CALC_CONTROL.md not found!" -ForegroundColor Red
     $issues++
@@ -196,7 +196,7 @@ if (-not (Test-Path $controlPath)) {
     $controlRefs = [regex]::Matches($controlContent, $refPattern) | ForEach-Object { $_.Groups[1].Value + ".md" } | Sort-Object -Unique
     $ctrlMissing = 0
     foreach ($ref in $controlRefs) {
-        $refPath = Join-Path $projectRoot "docs\arc\$ref"
+        $refPath = Join-Path $projectRoot "agents\docs\$ref"
         if (-not (Test-Path $refPath)) {
             Write-Host "  MISSING: $ref (referenced in CONTROL)" -ForegroundColor Red
             $ctrlMissing++
@@ -212,8 +212,8 @@ if (-not (Test-Path $controlPath)) {
 
 Write-Host ""
 
-# 6. docs/arc/ completeness
-Write-Host "[6] docs/arc/ completeness" -ForegroundColor Yellow
+# 6. agents/docs/ completeness
+Write-Host "[6] agents/docs/ completeness" -ForegroundColor Yellow
 
 $expectedDocs = @(
     "MULTI_AGENT_ARC_CALC_CONTROL.md",
@@ -231,17 +231,17 @@ $expectedDocs = @(
     "AUTO_UPDATE.md"
 )
 
-$docsDir = Join-Path $projectRoot "docs\arc"
+$docsDir = Join-Path $projectRoot "agents\docs"
 $missingDocs = 0
 foreach ($doc in $expectedDocs) {
     $docPath = Join-Path $docsDir $doc
     if (-not (Test-Path $docPath)) {
-        Write-Host "  MISSING: docs/arc/$doc" -ForegroundColor Red
+        Write-Host "  MISSING: agents/docs/$doc" -ForegroundColor Red
         $missingDocs++
     }
 }
 if ($missingDocs -eq 0) {
-    Write-Host "  PASS: All $($expectedDocs.Count) expected docs/arc files present" -ForegroundColor Green
+    Write-Host "  PASS: All $($expectedDocs.Count) expected agents/docs files present" -ForegroundColor Green
 } else {
     Write-Host "  FAIL: $missingDocs/$($expectedDocs.Count) files missing" -ForegroundColor Red
     $issues += $missingDocs
@@ -252,7 +252,7 @@ Write-Host ""
 # 7. Last verified dates vs git
 Write-Host "[7] Last verified dates vs git" -ForegroundColor Yellow
 
-$docsArcDir = Join-Path $projectRoot "docs\arc"
+$docsArcDir = Join-Path $projectRoot "agents\docs"
 $docsFiles = @(Get-ChildItem -Path $docsArcDir -Filter "*.md" | Where-Object { $_.Name -ne "DOCUMENTATION_MATRIX.md" })
 $dateChecked = 0
 $dateStale = 0
@@ -280,7 +280,7 @@ if ($dateStale -eq 0) {
 
 Write-Host ""
 
-# 8. Staleness: docs/arc files not changed in recent releases
+# 8. Staleness: agents/docs files not changed in recent releases
 Write-Host "[8] Documentation staleness" -ForegroundColor Yellow
 
 # Redefine $docsFiles in case check 7 was skipped or failed
@@ -306,7 +306,7 @@ if (-not $lastReleaseTag) {
             }
         }
         if ($staleCount -eq 0) {
-            Write-Host "  PASS: All docs/arc files updated since last release" -ForegroundColor Green
+            Write-Host "  PASS: All agents/docs files updated since last release" -ForegroundColor Green
         } else {
             Write-Host "  WARN: $staleCount files not changed since last release" -ForegroundColor Yellow
             $warnings += $staleCount
@@ -389,11 +389,11 @@ if (-not (Test-Path $releasesJsonPath)) {
 
 Write-Host ""
 
-# 10. Self-maintenance: stale version in docs/arc Last verified (soft, CONTROL#13)
+# 10. Self-maintenance: stale version in agents/docs Last verified (soft, CONTROL#13)
 # Мягкая проверка: НЕ полное покрытие — «видит» только файлы, где версия стоит
 # внутри секции Last verified в пределах 300 символов. GOTCHAS/MODULES/etc. без
 # версии в Last verified молча пропускаются. Это осознанно (soft level, CONTROL#13).
-Write-Host "[10] Self-maintenance: version staleness in docs/arc (soft)" -ForegroundColor Yellow
+Write-Host "[10] Self-maintenance: version staleness in agents/docs (soft)" -ForegroundColor Yellow
 
 if ($csprojVersion) {
     if (-not $docsFiles) {
@@ -414,13 +414,50 @@ if ($csprojVersion) {
         }
     }
     if ($verStale -eq 0) {
-        Write-Host "  PASS: All $verChecked docs/arc Last verified versions match csproj" -ForegroundColor Green
+        Write-Host "  PASS: All $verChecked agents/docs Last verified versions match csproj" -ForegroundColor Green
     } else {
         Write-Host "  WARN: $verStale/$verChecked docs reference an older version (soft — не блокирует, обнови при случае)" -ForegroundColor Yellow
         $warnings += $verStale
     }
 } else {
     Write-Host "  SKIP: csproj version unavailable" -ForegroundColor Gray
+}
+
+# 11. CONTROL#N references resolve to real sections (hard)
+Write-Host "[11] CONTROL#N references resolve to real sections" -ForegroundColor Yellow
+
+$controlPath11 = Join-Path $projectRoot "agents\docs\MULTI_AGENT_ARC_CALC_CONTROL.md"
+if (Test-Path $controlPath11) {
+    $ctrlContent11 = Get-Content $controlPath11 -Raw -Encoding UTF8
+    # Собираем номера реальных секций: заголовки вида "## N. ..." (в т.ч. "### N.N." для вложенных)
+    $sectionNums = @{}
+    foreach ($m in [regex]::Matches($ctrlContent11, '(?m)^#{2,3}\s+(\d+(?:\.\d+)*)\s*\.')) {
+        $sectionNums[$m.Groups[1].Value] = $true
+    }
+    # Ищем все ссылки CONTROL#N во всех agents/docs/*.md и AGENTS.md
+    $refFiles = @(Get-ChildItem -Path $docsArcDir -Filter "*.md")
+    $refFiles += @(Get-Item (Join-Path $projectRoot "AGENTS.md") -ErrorAction SilentlyContinue)
+    $brokenRefs = 0
+    $checkedRefs = 0
+    foreach ($rf in $refFiles) {
+        $rc = Get-Content $rf.FullName -Raw -Encoding UTF8
+        foreach ($m in [regex]::Matches($rc, 'CONTROL#(\d+(?:\.\d+)*)')) {
+            $num = $m.Groups[1].Value
+            $checkedRefs++
+            if (-not $sectionNums.ContainsKey($num)) {
+                Write-Host "  BROKEN REF: $($rf.Name) -> CONTROL#$num (no such section)" -ForegroundColor Red
+                $brokenRefs++
+            }
+        }
+    }
+    if ($brokenRefs -eq 0) {
+        Write-Host "  PASS: All $checkedRefs CONTROL#N references resolve to real sections" -ForegroundColor Green
+    } else {
+        Write-Host "  FAIL: $brokenRefs broken CONTROL#N references" -ForegroundColor Red
+        $issues += $brokenRefs
+    }
+} else {
+    Write-Host "  SKIP: CONTROL file not found" -ForegroundColor Gray
 }
 
 Write-Host ""

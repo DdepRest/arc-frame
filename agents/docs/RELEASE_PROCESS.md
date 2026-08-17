@@ -1,4 +1,4 @@
-# RELEASE_PROCESS.md
+﻿# RELEASE_PROCESS.md
 
 ## Где хранится версия программы
 
@@ -23,7 +23,7 @@
 
 ### Рекомендуется:
 
-5. **`docs/arc/CURRENT_STATE.md`** — обновить текущую версию и статус.
+5. **`CURRENT_STATE.md`** — обновить текущую версию и статус.
 6. Проверить, что юнит-тесты проходят.
 
 ---
@@ -177,7 +177,7 @@ update-releases-json.ps1
 | 1.5 | Обновить `CHANGELOG.md` | секция `Unreleased` → `## X.Y.Z — YYYY-MM-DD` |
 | 1.6 | Обновить `update-log.json` (только пользовательские изменения, без техжаргона) | ручная правка |
 | 1.7 | Обновить `releases.json` (полная запись version+date+type+title+changes+url+size+sha256) | ручная правка |
-| 1.8 | Обновить `docs/arc/CURRENT_STATE.md` | версия+Last verified |
+| 1.8 | Обновить `CURRENT_STATE.md` | версия+Last verified |
 | 1.9 | Запустить тесты | `dotnet test MosquitoNetCalculator.sln -c Release` |
 | 1.10 | Показать владельцу финальный отчёт | ждать явного подтверждения |
 
@@ -300,6 +300,8 @@ git commit -m "release: update releases.json for vX.Y.Z"
 - `extract-release-notes.ps1`
 
 ## Last verified
+2026-08-10 (v3.47.4) — auto-synced from csproj (sync-version.ps1, CONTROL#13).
+
 
 2026-08-03 (v3.47.3) — само-обновление (CONTROL#13): перепроверено при синхронизации версий; pipeline актуален для v3.47.3.
 

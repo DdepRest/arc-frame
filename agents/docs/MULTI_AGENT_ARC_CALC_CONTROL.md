@@ -1,11 +1,11 @@
-# Multi-Agent Control Plan — A.R.C. / расчёты товаров, размеров, Anwis, КП, завод
+﻿# Multi-Agent Control Plan — A.R.C. / расчёты товаров, размеров, Anwis, КП, завод
 
 Этот документ адаптирует AI-самоконтроль под проект, который делают разные агенты.
 
 Проект уже имеет существующую структуру:
 
 ```text
-docs/arc/
+agents/docs/
   MULTI_AGENT_ARC_CALC_CONTROL.md   ← этот файл (source of truth)
   CHEATSHEET.md                     ← быстрый вход (читай первым!)
   INTENTS.md                        ← mapping намерений на файлы (A.R.C. v4)
@@ -23,6 +23,8 @@ docs/arc/
   AUTO_UPDATE.md                   ← автообновление
 ```
 
+Скрипты системы — в `agents/scripts/` (validate-docs.ps1, arc-check.ps1, what-to-update.ps1, gensymbols.ps1, render-matrix.ps1, sync-version.ps1).
+
 Главная задача: сделать так, чтобы любой агент, входящий в проект, не ломал расчёты, размеры, Anwis-логику, КП, заводские размеры, релизный процесс и автообновление — и тратил минимум токенов на понимание проекта.
 
 ---
@@ -32,12 +34,12 @@ docs/arc/
 Единственный канонический master-файл для всех агентов:
 
 ```text
-docs/arc/MULTI_AGENT_ARC_CALC_CONTROL.md
+MULTI_AGENT_ARC_CALC_CONTROL.md
 ```
 
 Этот файл является source of truth для поведения AI-агентов в проекте.
 
-Файлы вне `docs/arc/`:
+Файлы вне `agents/docs/`:
 
 ```text
 AGENT.md
@@ -49,7 +51,7 @@ GEMINI.md
 
 являются только совместимыми thin wrappers / redirect-файлами. Они не должны дублировать правила проекта. Если wrapper-файл противоречит этому файлу — приоритет у этого файла.
 
-Проектная память и фактическое состояние проекта находятся в `docs/arc/`.
+Проектная память и фактическое состояние проекта находятся в `agents/docs/`.
 
 ---
 
@@ -60,14 +62,14 @@ GEMINI.md
 Перед любой нетривиальной задачей агент обязан прочитать:
 
 ```text
-docs/arc/CHEATSHEET.md
+CHEATSHEET.md
 ```
 
 Это даёт критические правила и routing-таблицу за 15 секунд.
 
 ### Второй шаг: полные файлы по routing-таблице
 
-Затем агент читает `docs/arc/CURRENT_STATE.md` и, в зависимости от задачи, дополнительные файлы:
+Затем агент читает `CURRENT_STATE.md` и, в зависимости от задачи, дополнительные файлы:
 
 | Задача касается... | Читать обязательно (кроме CHEATSHEET + CURRENT_STATE) |
 |---|---|
@@ -87,14 +89,14 @@ docs/arc/CHEATSHEET.md
 | Всё остальное | Только `CURRENT_STATE.md` |
 | **Тривиальная задача (≤10 строк, не critical domain)** | Только `CHEATSHEET.md`, затем проверь `GOTCHAS.md` по ключевым словам |
 
-Если агент физически не имеет доступа к `docs/arc/MULTI_AGENT_ARC_CALC_CONTROL.md` — остановиться и сообщить владельцу. Запрещено использовать `AGENT.md` как source of truth.
+Если агент физически не имеет доступа к `MULTI_AGENT_ARC_CALC_CONTROL.md` — остановиться и сообщить владельцу. Запрещено использовать `AGENT.md` как source of truth.
 
 ### Третий шаг: SYMBOL_INDEX для поиска символов (A.R.C. v4)
 
 Если агент ищет конкретный класс, метод или свойство — проверить:
 
 ```text
-docs/arc/SYMBOL_INDEX.md
+SYMBOL_INDEX.md
 ```
 
 Этот файл содержит индекс 60+ классов с их свойствами, методами и файлами. Генерируется автоматически через `gensymbols.ps1`. Вместо чтения полных исходников, агент grep'ает этот индекс → находит файл → code_searcher для точной строки → экономит ~90% токенов на поиск символов.
@@ -104,7 +106,7 @@ docs/arc/SYMBOL_INDEX.md
 Если задача неочевидна или агент хочет проверить, какие файлы релевантны запросу — проверить:
 
 ```text
-docs/arc/INTENTS.md
+INTENTS.md
 ```
 
 Этот файл mapping'ит пользовательские фразы («скрыть колонку», «добавить товар») на конкретные файлы в проекте. 50+ mapping записей в 7 категориях. Вместо исследования кодовой базы агент может сразу перейти к релевантным файлам.
@@ -114,10 +116,10 @@ docs/arc/INTENTS.md
 На фазе **Document** цикла работы агент обязан свериться с:
 
 ```text
-docs/arc/DOCUMENTATION_MATRIX.md
+DOCUMENTATION_MATRIX.md
 ```
 
-Этот файл говорит, какие `docs/arc/*.md` обновить при изменении конкретного исходника. Делает документирование механическим.
+Этот файл говорит, какие `agents/docs/*.md` обновить при изменении конкретного исходника. Делает документирование механическим.
 
 ---
 
@@ -138,7 +140,7 @@ docs/arc/DOCUMENTATION_MATRIX.md
 
 Агент не имеет права менять эти области без:
 
-1. чтения релевантных `docs/arc`;
+1. чтения релевантных `agents/docs`;
 2. плана изменений;
 3. проверки тестами/сборкой;
 4. обновления документации (свериться с `DOCUMENTATION_MATRIX.md`);
@@ -149,7 +151,7 @@ docs/arc/DOCUMENTATION_MATRIX.md
 
 ## 4. Правило подтверждения владельцем
 
-Файл `docs/arc/CALCULATION_TEST_CASES.md` может содержать статусы:
+Файл `CALCULATION_TEST_CASES.md` может содержать статусы:
 
 - `baseline из кода`
 - `подтверждено владельцем`
@@ -176,7 +178,7 @@ docs/arc/DOCUMENTATION_MATRIX.md
 
 В `OrderItem.Installation.cs` есть свойство `InstallationSurcharge`. Исторический XML-комментарий утверждал `Default 0 ₽`, но фактическая бизнес-логика кода даёт `500 ₽` для обоих режимов вычета (`_installationDeduction = 500`, `_installationSurcharge = 500`).
 
-Правило: **код важнее комментария**. XML-комментарии могут устареть и ввести AI в заблуждение. Перед правкой монтажа обязательно читать `docs/arc/GOTCHAS.md#11`.
+Правило: **код важнее комментария**. XML-комментарии могут устареть и ввести AI в заблуждение. Перед правкой монтажа обязательно читать `GOTCHAS.md#11`.
 
 ---
 
@@ -186,8 +188,8 @@ docs/arc/DOCUMENTATION_MATRIX.md
 
 **Канонические дома:**
 
-- `docs/arc/RELEASE_PROCESS.md` (раздел «Канонический Pipeline релиза») — полный release pipeline, ⚠️ правило безопасности, git push sequence, `git checkout --theirs releases.json` при конфликте, **Запрещено**-список.
-- `docs/arc/AUTO_UPDATE.md` — диагностика «не видит обновление» (CDN-кэш, raw vs api endpoint).
+- `RELEASE_PROCESS.md` (раздел «Канонический Pipeline релиза») — полный release pipeline, ⚠️ правило безопасности, git push sequence, `git checkout --theirs releases.json` при конфликте, **Запрещено**-список.
+- `AUTO_UPDATE.md` — диагностика «не видит обновление» (CDN-кэш, raw vs api endpoint).
 
 ---
 
@@ -200,7 +202,7 @@ Intake → Context → Plan → Execute → Verify → Document → Report
 | Фаза | Действие |
 |------|----------|
 | **Intake** | Понять задачу, критичность и затронутые области |
-| **Context** | Прочитать `CHEATSHEET.md` → `CURRENT_STATE.md` → routing-таблица → релевантные `docs/arc` |
+| **Context** | Прочитать `CHEATSHEET.md` → `CURRENT_STATE.md` → routing-таблица → релевантные `agents/docs` |
 | **Plan** | Краткий план изменений |
 | **Execute** | Менять только нужные файлы |
 | **Verify** | Запустить сборку/тесты: `dotnet build`, `dotnet test`, или проектные аналоги |
@@ -238,28 +240,29 @@ Intake → Context → Plan → Execute → Verify → Document → Report
 
 | Скрипт | Назначение |
 |--------|-----------|
-| `gensymbols.ps1` | Сканирует .cs файлы → генерирует `docs/arc/SYMBOL_INDEX.md`. **Запускать после добавления/удаления классов.** |
-| `what-to-update.ps1 $(git diff --name-only)` | Принимает список изменённых файлов → выводит, какие `docs/arc/*.md` обновить. Читает `documentation-matrix.json`. |
-| `validate-docs.ps1` | 10 автоматических проверок: версия, ссылки MODULES, CHEATSHEET cross-refs, MATRIX cross-refs, CONTROL cross-refs, полнота docs/arc, git-based Last verified, staleness, releases.json, **self-maintenance (устаревание версии в Last verified, мягкая)**. |
-| `generate-update-log.ps1` | Генерирует `update-log.json` из `CHANGELOG.md` (при релизе). |
-| `render-matrix.ps1` | Генерирует `DOCUMENTATION_MATRIX.md` из `documentation-matrix.json`. |
-| `arc-check.ps1` | Проверяет, что все docs/arc актуальны. Используется как pre-commit safety net. |
+| `agents/scripts/gensymbols.ps1` | Сканирует .cs файлы → генерирует `SYMBOL_INDEX.md`. **Запускать после добавления/удаления классов.** |
+| `agents/scripts/what-to-update.ps1 $(git diff --name-only)` | Принимает список изменённых файлов → выводит, какие `agents/docs/*.md` обновить. Читает `documentation-matrix.json`. |
+| `agents/scripts/validate-docs.ps1` | 11 автоматических проверок: версия, MODULES, CHEATSHEET cross-refs, MATRIX cross-refs, CONTROL cross-refs, полнота, git-based, staleness, releases.json, **self-maintenance (устаревание версии, мягкая, #10)**, **CONTROL#N link resolution (жёсткая, #11)**. |
+| `agents/scripts/sync-version.ps1` | Синхронизация версии из csproj во все `agents/docs/*.md` (секция `## Last verified`). Запускать после релиза. |
+| `generate-update-log.ps1` (корень) | Генерирует `update-log.json` из `CHANGELOG.md` (при релизе). |
+| `agents/scripts/render-matrix.ps1` | Генерирует `DOCUMENTATION_MATRIX.md` из `documentation-matrix.json`. |
+| `agents/scripts/arc-check.ps1` | Проверяет, что все agents/docs актуальны. Используется как pre-commit safety net. |
 
-**Обязательный финальный ритуал после любых изменений** (включая изменения самих docs/arc — это тоже «изменения», CONTROL#13):
+**Обязательный финальный ритуал после любых изменений** (включая изменения самих agents/docs — это тоже «изменения», CONTROL#13):
 
 ```powershell
 # 1. Узнать что обновить
-what-to-update.ps1 $(git diff --name-only)
+agents/scripts/what-to-update.ps1 $(git diff --name-only)
 
-# 2. Обновить перечисленные docs/arc/*.md
+# 2. Обновить перечисленные agents/docs/*.md
 
 # 3. Проверить консистентность
-powershell -ExecutionPolicy Bypass -File validate-docs.ps1
+powershell -ExecutionPolicy Bypass -File agents/scripts/validate-docs.ps1
 ```
 
 Агент должен выполнять этот ритуал на фазе **Document** цикла работы.
 
-Источник матрицы — `docs/arc/documentation-matrix.json`. При добавлении нового файла в проект добавить запись в JSON и запустить `render-matrix.ps1`.
+Источник матрицы — `documentation-matrix.json`. При добавлении нового файла в проект добавить запись в JSON и запустить `agents/scripts/render-matrix.ps1`.
 
 ---
 
@@ -268,7 +271,7 @@ powershell -ExecutionPolicy Bypass -File validate-docs.ps1
 Готовые prompt-шаблоны для типовых сценариев вынесены в:
 
 ```text
-docs/arc/PROMPTS.md
+PROMPTS.md
 ```
 
 Не дублируй их здесь. Используй по необходимости.
@@ -280,17 +283,17 @@ docs/arc/PROMPTS.md
 ```
 Ты — агент проекта A.R.C. Frame. Следуй каноническому master-файлу:
 
-docs/arc/MULTI_AGENT_ARC_CALC_CONTROL.md
+MULTI_AGENT_ARC_CALC_CONTROL.md
 
 Перед работой прочитай:
-- docs/arc/CHEATSHEET.md          (критические правила + routing)
-- docs/arc/CURRENT_STATE.md       (текущее состояние)
+- CHEATSHEET.md          (критические правила + routing)
+- CURRENT_STATE.md       (текущее состояние)
 
 Затем следуй routing-таблице в CHEATSHEET.md.
 
-На фазе Document используй docs/arc/DOCUMENTATION_MATRIX.md.
+На фазе Document используй DOCUMENTATION_MATRIX.md.
 
-Систему docs/arc держи в актуальности: структурные изменения кода → SYMBOL_INDEX/INTENTS/MODULES (CONTROL#13).
+Систему agents/docs держи в актуальности: структурные изменения кода → SYMBOL_INDEX/INTENTS/MODULES (CONTROL#13).
 
 Цикл: Intake → Context → Plan → Execute → Verify → Document → Report.
 
@@ -304,7 +307,7 @@ docs/arc/MULTI_AGENT_ARC_CALC_CONTROL.md
 Проект находится в активной фазе устранения архитектурного долга (God-classes, high coupling). Детальный план по фазам, компонентам, тестам и критериям успеха зафиксирован в:
 
 ```text
-docs/arc/REFACTORING_PLAN.md
+REFACTORING_PLAN.md
 ```
 
 ### Ключевые направления
@@ -330,7 +333,7 @@ docs/arc/REFACTORING_PLAN.md
 
 Если задача касается рефакторинга — агент обязан:
 
-1. Прочитать `docs/arc/REFACTORING_PLAN.md`.
+1. Прочитать `REFACTORING_PLAN.md`.
 2. Определить, к какой фазе относится изменение.
 3. Зафиксировать baseline.
 4. Выполнить фазу согласно плану.
@@ -358,7 +361,7 @@ docs/arc/REFACTORING_PLAN.md
 
 ### Правила самоподдержания
 
-1. **Право и обязанность:** ИИ может и должен править `AGENTS.md` и `docs/arc/*.md`,
+1. **Право и обязанность:** ИИ может и должен править `AGENTS.md` и `agents/docs/*.md`,
    если данные неактуальны. Это не «самодеятельность», а часть задачи.
 2. **Фиксируй в том же цикле:** документацию обновляй на фазе **Document** того же
    цикла, где сделал изменения кода, — не «потом» и не «в следующей задаче».
@@ -371,22 +374,35 @@ docs/arc/REFACTORING_PLAN.md
    Это позволяет владельцу верифицировать пользу A.R.C. (причина №1).
 6. **Проверка после правок docs:** `what-to-update.ps1` → обновить перечисленные →
    `validate-docs.ps1` (ритуал §9).
+7. **Разбиение больших файлов — не «когда-нибудь», а прямо сейчас.** Если ты
+   (агент) пишешь код и видишь, что файл разрастается (правило-ориентир:
+   **> 400–500 строк**, или несколько несвязанных ответственностей в одном
+   файле) — **разбей его на части сам**, в том же цикле, а не оставляй
+   «рефакторинг на потом». Большой файл = дорогое чтение для следующих агентов
+   (токены на контекст, риск пропустить важное). Разбивка — это не
+   «дополнительная работа», а способ облегчить задачу **себе же** в будущем
+   (и владельцу). После разбивки — ритуал ситуации А (gensymbols + INTENTS +
+   MODULES + matrix). Правило-ориентир не жёсткий лимит: файлы < 400 строк
+   тоже стоит разбить, если ответственности разные (например, частичная
+   декомпозиция `MainWindow.*.cs` — это норма).
 
 ---
 
 ## Source files
 
-- `docs/arc/CHEATSHEET.md` — быстрый вход
-- `docs/arc/DOCUMENTATION_MATRIX.md` — карта «файл → документы»
-- `docs/arc/PROMPTS.md` — prompt-шаблоны
-- `docs/arc/CURRENT_STATE.md` — текущее состояние
-- `docs/arc/MODULES.md` — карта модулей
-- `docs/arc/DECISIONS.md` — принятые решения
-- `docs/arc/GOTCHAS.md` — опасные места
+- `CHEATSHEET.md` — быстрый вход
+- `DOCUMENTATION_MATRIX.md` — карта «файл → документы»
+- `PROMPTS.md` — prompt-шаблоны
+- `CURRENT_STATE.md` — текущее состояние
+- `MODULES.md` — карта модулей
+- `DECISIONS.md` — принятые решения
+- `GOTCHAS.md` — опасные места
 - `validate-docs.ps1` — валидация документации
 
 ## Last verified
+2026-08-10 (v3.47.4) — auto-synced from csproj (sync-version.ps1, CONTROL#13).
 
-2026-08-03 (v3.47.3) — добавлен §13 «Обязанность самоподдержания системы» (ситуации А–Ж, метрики в шаблоне отчёта, routing для структурных изменений); правило подтверждено владельцем по ТЗ `docs/arc/ТЗ_самоподдержание_AGENTS_2026-08-03.md`.
+
+2026-08-03 (v3.47.3) — добавлен §13 «Обязанность самоподдержания системы» (ситуации А–Ж, метрики в шаблоне отчёта, routing для структурных изменений); правило подтверждено владельцем по ТЗ `ТЗ_самоподдержание_AGENTS_2026-08-03.md`.
 
 2026-07-17 — документ просмотрен и синхронизирован с текущим состоянием проекта (v3.46.1): переключатель +/- для монтажа (SignToggleCheckBox), только значки V/X/В в таблице, динамическая ширина колонки в PdfExportService, жирные значения в клиентском блоке КП, форматирование примечаний (жирный/курсив/цвет/списки). **1227/1227 tests pass.**

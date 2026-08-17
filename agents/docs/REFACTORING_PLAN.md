@@ -1,4 +1,4 @@
-# План системного рефакторинга — A.R.C. Frame
+﻿# План системного рефакторинга — A.R.C. Frame
 
 ## 1. Executive summary
 
@@ -328,24 +328,24 @@ dotnet test MosquitoNetCalculator.Tests/MosquitoNetCalculator.Tests.csproj
 
 | Документ | Что обновить |
 |---|---|
-| `docs/arc/CURRENT_STATE.md` | Статус рефакторинга, новые сервисы |
-| `docs/arc/CHANGELOG.md` | Запись «Технический рефакторинг» |
-| `docs/arc/SYMBOL_INDEX.md` | Новые классы/интерфейсы |
-| `docs/arc/DOCUMENTATION_MATRIX.md` | Новые файлы → документы |
-| `docs/arc/MODULES.md` | Обновить карту модулей |
-| `docs/arc/DECISIONS.md` | Архитектурное решение о DI-сервисах |
+| `CURRENT_STATE.md` | Статус рефакторинга, новые сервисы |
+| `../../CHANGELOG.md` | Запись «Технический рефакторинг» |
+| `SYMBOL_INDEX.md` | Новые классы/интерфейсы |
+| `DOCUMENTATION_MATRIX.md` | Новые файлы → документы |
+| `MODULES.md` | Обновить карту модулей |
+| `DECISIONS.md` | Архитектурное решение о DI-сервисах |
 
 ### 9.3. Автоматизация
 
 ```powershell
 # Генерация SYMBOL_INDEX
-powershell -ExecutionPolicy Bypass -File gensymbols.ps1
+powershell -ExecutionPolicy Bypass -File agents/scripts/gensymbols.ps1
 
 # Проверка, что обновить
-what-to-update.ps1 $(git diff --name-only)
+agents/scripts/what-to-update.ps1 $(git diff --name-only)
 
 # Валидация
-powershell -ExecutionPolicy Bypass -File validate-docs.ps1
+powershell -ExecutionPolicy Bypass -File agents/scripts/validate-docs.ps1
 ```
 
 ---
@@ -397,6 +397,8 @@ powershell -ExecutionPolicy Bypass -File validate-docs.ps1
 - `MosquitoNetCalculator/Models/OrderItem.cs`
 
 ## Last verified
+2026-08-10 (v3.47.4) — auto-synced from csproj (sync-version.ps1, CONTROL#13).
+
 
 2026-08-06 — maintenance pass (CONTROL#13): дата верификации синхронизирована с git-историей; содержимое сверено с текущим состоянием (v3.47.3, 1511/1511 tests pass).
 

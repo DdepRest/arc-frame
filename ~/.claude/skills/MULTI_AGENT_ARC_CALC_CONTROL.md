@@ -7,7 +7,7 @@
 Канонический multi-agent control file находится в текущем репозитории:
 
 ```text
-docs/arc/MULTI_AGENT_ARC_CALC_CONTROL.md
+agents/docs/MULTI_AGENT_ARC_CALC_CONTROL.md
 ```
 
 ---
@@ -20,21 +20,21 @@ docs/arc/MULTI_AGENT_ARC_CALC_CONTROL.md
 2. Прочитай:
 
 ```text
-docs/arc/MULTI_AGENT_ARC_CALC_CONTROL.md
+agents/docs/MULTI_AGENT_ARC_CALC_CONTROL.md
 ```
 
 3. Следуй маршруту, который он задаёт.
 4. Затем прочитай:
 
 ```text
-docs/arc/CURRENT_STATE.md
+agents/docs/CURRENT_STATE.md
 ```
 
 ---
 
 ## Если репозиторный master-файл недоступен
 
-Если `docs/arc/MULTI_AGENT_ARC_CALC_CONTROL.md` отсутствует или нечитаем:
+Если `agents/docs/MULTI_AGENT_ARC_CALC_CONTROL.md` отсутствует или нечитаем:
 
 - **Остановись и сообщи владельцу**, что невозможно загрузить канонический master-файл.
 - **Не подставляй этот external skill как source of truth.**
@@ -46,9 +46,9 @@ docs/arc/CURRENT_STATE.md
 
 - Этот external skill — **не** source of truth.
 - Запрещено дублировать правила проекта в этом файле.
-- Если этот файл противоречит `docs/arc/MULTI_AGENT_ARC_CALC_CONTROL.md`, приоритет всегда у **репозиторного master-файла**.
-- Изменения правил проекта редактируются в `docs/arc/MULTI_AGENT_ARC_CALC_CONTROL.md`, не здесь.
+- Если этот файл противоречит `agents/docs/MULTI_AGENT_ARC_CALC_CONTROL.md`, приоритет всегда у **репозиторного master-файла**.
+- Изменения правил проекта редактируются в `agents/docs/MULTI_AGENT_ARC_CALC_CONTROL.md`, не здесь.
 
 ---
 
-*Этот файл — тонкий loader, не контейнер правил. Все правила проекта — в `docs/arc/MULTI_AGENT_ARC_CALC_CONTROL.md`.*
+*Этот файл — тонкий loader, не контейнер правил. Все правила проекта — в `agents/docs/MULTI_AGENT_ARC_CALC_CONTROL.md`.*

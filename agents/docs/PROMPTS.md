@@ -1,4 +1,4 @@
-# PROMPTS.md — готовые prompt-шаблоны
+﻿# PROMPTS.md — готовые prompt-шаблоны
 
 Вынесены из `MULTI_AGENT_ARC_CALC_CONTROL.md`. Используй для типовых сценариев.
 
@@ -10,10 +10,10 @@
 Ты — AI-программист и один из агентов проекта. Проект ведётся несколькими агентами, поэтому строго соблюдай канонический master-файл и проектную память.
 
 Перед любой нетривиальной задачей сначала прочитай:
-docs/arc/CHEATSHEET.md
-docs/arc/MULTI_AGENT_ARC_CALC_CONTROL.md
+agents/docs/CHEATSHEET.md
+agents/docs/MULTI_AGENT_ARC_CALC_CONTROL.md
 
-Затем прочитай docs/arc/CURRENT_STATE.md и следуй routing-таблице в CHEATSHEET.md.
+Затем прочитай agents/docs/CURRENT_STATE.md и следуй routing-таблице в CHEATSHEET.md.
 
 Работай по циклу:
 Intake -> Context -> Plan -> Execute -> Verify -> Document -> Report.
@@ -23,10 +23,10 @@ Intake -> Context -> Plan -> Execute -> Verify -> Document -> Report.
 2. краткого плана;
 3. тестов/сборки;
 4. обновления CHANGELOG.md;
-5. обновления docs/arc (сверься с DOCUMENTATION_MATRIX.md);
+5. обновления agents/docs (сверься с DOCUMENTATION_MATRIX.md);
 6. явного отчёта о рисках.
 
-Код является источником истины. Если комментарий противоречит коду — верь коду и проверь docs/arc/GOTCHAS.md.
+Код является источником истины. Если комментарий противоречит коду — верь коду и проверь agents/docs/GOTCHAS.md.
 
 Никогда не ставь статус «Подтверждено владельцем» в CALCULATION_TEST_CASES.md без явного подтверждения владельца.
 
@@ -38,11 +38,14 @@ Intake -> Context -> Plan -> Execute -> Verify -> Document -> Report.
 
 releases.json — рубильник автообновления. Сначала GitHub Release + ZIP, потом push releases.json в main.
 
-Система AGENTS.md/docs/arc — тоже продукт твоей работы, держи её в актуальности (CONTROL#13):
-- разбил файл на части / переименовал / добавил класс → запусти gensymbols.ps1 и обнови SYMBOL_INDEX/INTENTS/MODULES/DOCUMENTATION_MATRIX;
+Система AGENTS.md/agents/docs — тоже продукт твоей работы, держи её в актуальности (CONTROL#13):
+- разбил файл на части / переименовал / добавил класс → запусти agents/scripts/gensymbols.ps1 и обнови SYMBOL_INDEX/INTENTS/MODULES/DOCUMENTATION_MATRIX;
 - изменил бизнес-логику → CALCULATION_LOGIC/GOTCHAS/TEST_CASES;
 - изменил процессы → RELEASE_PROCESS/AUTO_UPDATE;
 - устаревшая документация хуже отсутствующей — обнови в этом же цикле.
+- **Файл > 400–500 строк / разные ответственности → разбей сам в этом же цикле (CONTROL#13).**
+  Большой файл = дорогое чтение агентам и риск пропустить ошибку. Разбивка —
+  не дополнительная работа, а способ облегчить задачу себе же в будущем.
 
 Если данных не хватает — задай 1–3 точных вопроса. Если безопасно можно сделать первый шаг — сделай его, но не выдумывай бизнес-правила.
 
@@ -63,23 +66,23 @@ releases.json — рубильник автообновления. Сначал�
 
 ```
 Следуй каноническому master-файлу:
-docs/arc/MULTI_AGENT_ARC_CALC_CONTROL.md
+agents/docs/MULTI_AGENT_ARC_CALC_CONTROL.md
 
 Перед работой прочитай:
-- docs/arc/CHEATSHEET.md
-- docs/arc/MULTI_AGENT_ARC_CALC_CONTROL.md
-- docs/arc/CURRENT_STATE.md
+- agents/docs/CHEATSHEET.md
+- agents/docs/MULTI_AGENT_ARC_CALC_CONTROL.md
+- agents/docs/CURRENT_STATE.md
 
 Затем следуй routing-таблице в CHEATSHEET.md для выбора дополнительных файлов.
 
 Работай по циклу:
 Intake -> Context -> Plan -> Execute -> Verify -> Document -> Report.
 
-На фазе Document используй docs/arc/DOCUMENTATION_MATRIX.md чтобы понять, какие файлы обновить.
+На фазе Document используй agents/docs/DOCUMENTATION_MATRIX.md чтобы понять, какие файлы обновить.
 
 Не меняй бизнес-код и расчётную логику без явного плана, проверок и обновления документации.
 
-Держи систему в актуальности (CONTROL#13): структурные изменения кода (разбивка/переименование/новые классы) → gensymbols.ps1 + INTENTS/MODULES/matrix; изменения бизнес-логики/процессов → релевантные docs/arc. Устаревшая документация хуже отсутствующей.
+Держи систему в актуальности (CONTROL#13): структурные изменения кода (разбивка/переименование/новые классы) → gensymbols.ps1 + INTENTS/MODULES/matrix; изменения бизнес-логики/процессов → релевантные agents/docs. Устаревшая документация хуже отсутствующей.
 
 В конце отчитайся по шаблону:
 ## Сделано
@@ -98,7 +101,7 @@ Intake -> Context -> Plan -> Execute -> Verify -> Document -> Report.
 
 ```
 Следуй каноническому master-файлу:
-docs/arc/MULTI_AGENT_ARC_CALC_CONTROL.md
+agents/docs/MULTI_AGENT_ARC_CALC_CONTROL.md
 
 Задача: подготовить CALCULATION_TEST_CASES.md к подтверждению владельцем.
 
@@ -109,11 +112,11 @@ docs/arc/MULTI_AGENT_ARC_CALC_CONTROL.md
 - Работай только с документацией.
 
 Прочитай:
-- docs/arc/MULTI_AGENT_ARC_CALC_CONTROL.md
-- docs/arc/CURRENT_STATE.md
-- docs/arc/CALCULATION_LOGIC.md
-- docs/arc/CALCULATION_TEST_CASES.md
-- docs/arc/GOTCHAS.md
+- agents/docs/MULTI_AGENT_ARC_CALC_CONTROL.md
+- agents/docs/CURRENT_STATE.md
+- agents/docs/CALCULATION_LOGIC.md
+- agents/docs/CALCULATION_TEST_CASES.md
+- agents/docs/GOTCHAS.md
 
 Сделай:
 1. Выведи краткую таблицу кейсов 1–15.
@@ -137,15 +140,15 @@ docs/arc/MULTI_AGENT_ARC_CALC_CONTROL.md
 
 ```
 Следуй каноническому master-файлу:
-docs/arc/MULTI_AGENT_ARC_CALC_CONTROL.md
+agents/docs/MULTI_AGENT_ARC_CALC_CONTROL.md
 
 Я подтверждаю следующие calculation cases: <перечислить номера>.
 
 Задача:
-1. Обнови docs/arc/CALCULATION_TEST_CASES.md.
+1. Обнови agents/docs/CALCULATION_TEST_CASES.md.
 2. Только для явно перечисленных кейсов поставь статус «Подтверждено владельцем».
 3. Не меняй остальные кейсы.
-4. Обнови docs/arc/CURRENT_STATE.md.
+4. Обнови agents/docs/CURRENT_STATE.md.
 5. Обнови CHANGELOG.md.
 6. Не меняй код.
 7. Запусти доступные проверки документации/сборки, если применимо.
@@ -163,7 +166,7 @@ docs/arc/MULTI_AGENT_ARC_CALC_CONTROL.md
 
 ```
 Следуй каноническому master-файлу:
-docs/arc/MULTI_AGENT_ARC_CALC_CONTROL.md
+agents/docs/MULTI_AGENT_ARC_CALC_CONTROL.md
 
 Задача: подготовить commit принятия изменений проектной документации.
 
@@ -176,11 +179,11 @@ docs/arc/MULTI_AGENT_ARC_CALC_CONTROL.md
 Проверь:
 - AGENT.md
 - CHANGELOG.md
-- docs/arc
+- agents
 
 Если всё корректно, предложи команду:
 
-git add AGENT.md CHANGELOG.md docs/arc && git commit -m "docs: update A.R.C. system — CHEATSHEET, DOCUMENTATION_MATRIX, PROMPTS, granular routing"
+git add AGENT.md CHANGELOG.md agents && git commit -m "docs: update A.R.C. system — CHEATSHEET, DOCUMENTATION_MATRIX, PROMPTS, granular routing"
 
 Не выполняй commit без моего явного разрешения, если агент имеет доступ к git.
 ```
@@ -191,7 +194,7 @@ git add AGENT.md CHANGELOG.md docs/arc && git commit -m "docs: update A.R.C. sys
 
 ```
 Запусти скрипт валидации:
-powershell -ExecutionPolicy Bypass -File validate-docs.ps1
+powershell -ExecutionPolicy Bypass -File agents/scripts/validate-docs.ps1
 
 Проверь вывод. Исправь все найденные расхождения.
 ```
@@ -209,17 +212,17 @@ powershell -ExecutionPolicy Bypass -File validate-docs.ps1
    git diff --name-only
 
 2. Запусти what-to-update.ps1 с этими файлами:
-   what-to-update.ps1 $(git diff --name-only)
+   agents/scripts/what-to-update.ps1 $(git diff --name-only)
 
 3. Сравни вывод скрипта с тем, что ты реально обновил.
-   Если what-to-update.ps1 показывает файлы, которые ты не трогал — обнови их.
+   Если agents/scripts/what-to-update.ps1 показывает файлы, которые ты не трогал — обнови их.
 
 3.5. Если менял структуру кода (разбивка/переименование/новые классы/сигнатуры):
-   powershell -File gensymbols.ps1
+   powershell -File agents/scripts/gensymbols.ps1
    и обнови INTENTS.md/MODULES.md если нужно (CONTROL#13).
 
 4. Запусти валидацию:
-   powershell -ExecutionPolicy Bypass -File validate-docs.ps1
+   powershell -ExecutionPolicy Bypass -File agents/scripts/validate-docs.ps1
 
 5. Если есть FAIL или WARN — исправь.
 
@@ -233,9 +236,11 @@ powershell -ExecutionPolicy Bypass -File validate-docs.ps1
 
 ## Source files
 
-- `docs/arc/MULTI_AGENT_ARC_CALC_CONTROL.md` (исходные секции 9–13)
+- `agents/docs/MULTI_AGENT_ARC_CALC_CONTROL.md` (исходные секции 9–13)
 
 ## Last verified
+2026-08-10 (v3.47.4) — auto-synced from csproj (sync-version.ps1, CONTROL#13).
+
 
 2026-08-03 (v3.47.3) — шаблоны синхронизированы с CONTROL#13 (обязанность самоподдержания: структурные изменения → gensymbols + INTENTS/MODULES) и метриками в шаблоне отчёта (feedback loop).
 

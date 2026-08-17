@@ -1,4 +1,4 @@
-# GOTCHAS.md
+﻿# GOTCHAS.md
 
 ## Опасные места
 
@@ -196,7 +196,7 @@ per-unit полями в DTO, старые сохранённые заказы �
 **Тесты:** `OrderItemTests.TotalWithDeduction_Mode{1,2}_Quantity3_SubtractsPerPiece*`,
 `TotalWithDeduction_Mode2_QuantityScaling_IsLinearWithQ` (теория Q∈{1,2,5}).
 
-**Кейс:** `docs/arc/CALCULATION_TEST_CASES.md#Case 16` (16/16b/16c).
+**Кейс:** `CALCULATION_TEST_CASES.md#Case 16` (16/16b/16c).
 
 ---
 
@@ -440,7 +440,7 @@ InstallationSurcharge = (od.InstallationSurcharge > 0 && od.InstallationMode != 
 3. Добавить регрессионные тесты на legacy JSON + v3.x+ JSON round-trip
    (Theory с параметрами ±500 для обеих convention, sign-flip exclusion case,
    ProductCatalog.IsPerLinearMeter consistency test).
-4. Запустить `what-to-update.ps1` и обновить `SYMBOL_INDEX.md` / `MODULES.md` /
+4. Запустить `agents/scripts/what-to-update.ps1` и обновить `SYMBOL_INDEX.md` / `MODULES.md` /
    `DECISIONS.md` если product name появился в новых местах.
 
 Без шагов 1–3 эта грабля повторится при следующем per-linear-meter product.
@@ -454,6 +454,8 @@ InstallationSurcharge = (od.InstallationSurcharge > 0 && od.InstallationMode != 
 ---
 
 ## Last verified
+2026-08-10 (v3.47.4) — auto-synced from csproj (sync-version.ps1, CONTROL#13).
+
 
 2026-08-06 — maintenance pass (CONTROL#13): дата верификации синхронизирована с git-историей; содержимое сверено с текущим состоянием (v3.47.3, 1511/1511 tests pass).
 

@@ -2,7 +2,7 @@
 
 ## Что сейчас выглядит рабочим
 
-- **Активный план системного рефакторинга (2026-07-12):** зафиксирован baseline, создан детальный план по 7 фазам в `docs/arc/REFACTORING_PLAN.md`.
+- **Активный план системного рефакторинга (2026-07-12):** зафиксирован baseline, создан детальный план по 7 фазам в `REFACTORING_PLAN.md`.
   - **Фаза 1 завершена (2026-07-12):** `MainWindow.xaml.cs` 1051→760 строк (−28%). Выделены 4 сервиса: `NavigationService`, `OverlayManager`, `SlopeOverlayCoordinator`, `SlopesProUpsellGate`. +26 тестов. **932/932 tests pass.** Бизнес-логика не затронута.
   - **Фаза 2 завершена (2026-07-12):** `UpdateService.cs` 910→608 строк (−33%). Выделены 5 компонентов: `VersionResolver`, `IdleDetector`, `UpdateVerifier`, `UpdateManifestClient`, `UpdateDownloader`. +67 тестов. **999/999 tests pass.** Бизнес-логика не затронута.
   - **Фаза 3 завершена (2026-07-12):** `PrintService.cs` 632→81 строк (−87%). Выделены 6 компонентов: `DrawingService`, `FlowDocumentBuilder`, `FixedDocumentBuilder`, `PrintQueueManager`, `PdfExportService`, плюс модели `PageMode`/`PrintSettings`/`PrintResult`. +~40 тестов. **1038/1038 tests pass.** Бизнес-логика не затронута.
@@ -27,7 +27,8 @@
 - **AI streaming reliability:** каждая модель ретраится до 3 раз на транзиентных ошибках (429/5xx/сеть/пустой поток) с паузой, в цепочку фолбэка всегда добавляется бесплатная NVIDIA-модель, даже если выбраны только OpenRouter; финальная ошибка нейтральна к провайдеру (`MaxAttemptsPerModel`, `RetryDelayMs`, `EnsureNvidiaFallback`).
 - **AI Agent Mode (Unreleased):** AI переведён с прямых мутаций заказа на безопасный конвейер «план → проверка → предпросмотр → подтверждение → атомарное выполнение → Undo». Новые модули: `AiActionPlan`/`AiActionStep` (статусы, `PlanId`/`MessageId`/`RequestId`), `AiPlanBuilder`/`AiPlanValidator`/`AiPlanExecutor` (атомарный пакет с rollback), `AiLocalCommandRouter` (slash-команды без LLM: `/товары /цены /итоги /статус /последняя /отменить /повторить /очистить /объясни`), `AiOrderContextBuilder` (богатый контекст заказа), `AiExplanationContextBuilder` (`/объясни` по фактическим итогам), `AiTelemetryService` (метрики запросов), plan-mode JSON в `AiCommandParser`, карточка плана с «Выполнить/Отмена» и «Отменить действие» в `AiAssistantControl.xaml`, guarded undo в `MainWindow.AI.cs` (один снимок на пакет, защита от отката поверх ручных правок).
 - **Исправлен краш AI Agent Mode:** `DialogOutlineButton`/`DialogPrimaryButton` перенесены из локальных ресурсов `AiApiKeyDialog` в общий `Themes/ButtonStyles.xaml` — карточка плана в `AiAssistantControl` больше не падает с `XamlParseException: StaticResourceHolder`. Добавлен регрессионный тест разрешимости StaticResource-ключей.
-- **Текущий статус тестов: 1527/1527 pass** (после стабилизации теста прогресса автообновления, добавления регрессий signed-ввода монтажа и source-contract тестов обработчиков +/-).
+- **Админ-панель (Unreleased):** пункт левой навигации **в самом низу списка** (отделён тонкой линией от основной навигации — явно показывает, что это тех-раздел, а не основной режим работы); виден всем офисам, вход по ВШИТОМУ паролю `AppSettingsService.EmbeddedAdminPassword` — одинаковый во всех офисах, ничего настраивать не нужно. Контейнер секций (вкладки): **«Обновления»** (статусы версий) и **«Статистика»** (кол-во заказов в программе каждого офиса) — новые секции добавляются как TabItem + свой список строк без изменения канала. UX: статусные **иконки (✓/⚠/❓) + цвет** в бейдже (`OfficeStatusRow.StatusGlyph`); **клик на устаревший офис** копирует в буфер напоминание («Здравствуйте! Поставьте vX.Y.Z — {download URL}») и показывает Success-тост; **большие сводные карточки** на вкладках с цифрой «3/5» и «36» (заказов); **пустые состояния** с пиктограммами если отчётов ещё нет; **авто-рефреш раз в 2 ч**, пока панель открыта (DispatcherTimer, останавливается при закрытии оверлея), в шапке видно «обновлено HH:mm · авто каждые 2 ч» (кнопка «Обновить» — мгновенно по требованию). **Живые данные весь день БЕЗ админки — редкие считки:** отчёт отправляется при запуске программы (`MainWindow_Loaded`) и каждые 2 часа планировщиком (`OfficeReportScheduler`, контракт как у UpdateCheckScheduler); ручная «Проверить обновления» тоже шлёт отчёт (`TitleBarControl`). Фоновая 30-мин проверка обновлений отчёт НЕ отправляет — автоматическая считка не чаще «запуск + раз в 2 ч». При открытой панели она обновляется по тому же редкому таймеру, без мигания UI. **Несколько устройств в одном офисе:** каждая программа имеет стабильный `deviceId` (GUID в settings.json, `AppSettingsService.LoadOrCreateDeviceId`) и тихо обновляет СВОЙ файл `office-{prefix}-{deviceId}.json` в секретном GitHub Gist (`OfficeReportService`, PATCH /gists/{id} с Bearer-токеном): версия, время, `deviceName` (имя ПК), `orderCount` (файлы заказов в %AppData%) — ПК офиса не перетирают друг друга, легаси-файлы `office-{prefix}.json` читаются как одно устройство. Панель читает весь gist, сравнивает с последним релизом (releases.json) и показывает статусы: Актуальна / Устарела / Нет данных (порог свежести 72ч, `OfficeStatusCalculator`, статус офиса агрегируется по свежим устройствам: есть хоть одно устаревшее → «Устарела»). В карточке офиса — чип «N устройств» + чипы устройств `имя ПК · vX.Y.Z ✓/⚠/❓` (тултип: статус + последний отчёт), сводка «X из N устройств актуальны»; статистика суммирует `orderCount` по всем устройствам офиса (`OfficeStatsCalculator`, чистая логика, покрыта тестами). **Один ПК = одно устройство:** отчёты дедуплицируются по имени машины (`OfficeDeviceGrouping.DistinctDevices`) — если на компьютере запущены две копии программы (обычная + dev) или при гонке первой генерации ID, панель не считает его дважды; легаси-записи `office-{prefix}.json` отбрасываются, когда у офиса есть именованные устройства. Генерация `deviceId` кросс-процессно безопасна (атомарный файл `device-id` рядом с settings.json). **Кнопка «Очистить дубли»** в шапке панели удаляет из gist лишние файлы устройств (PATCH с `content: null`): остаются только новейшие файлы каждого ПК, легаси-файлы при наличии именованных удаляются — gist приводится к тому, что показывает панель (`OfficeReportService.CleanupDuplicatesAsync`, чистый расчёт `ComputeDuplicateFilesToDelete`, покрыт тестами). Для напоминания об обновлении панель хранит версию и download URL из манифеста (`LatestManifestResult`); клик по устаревшему офису адресует конкретное устаревшее устройство. Токен встраивается при СБОРКЕ, а не в git: csproj-target `GenerateOfficeReportToken` берёт его из env `OFFICE_REPORT_TOKEN` или локального gitignored-файла `MosquitoNetCalculator/.office-report-token` (репозиторий публичный — токен не должен попадать в историю); переопределение через settings.json для отладки/тестов. Gist: https://gist.github.com/DdepRest/6d6ff7389efc44f7aa6e57361a55ee24. Новые/изменённые файлы: `Models/OfficeReport.cs` (+`deviceId`/`deviceName`), `Models/OfficeDeviceRow.cs`, `Models/OfficeStatusRow.cs` (+`DeviceCount`/`Devices`), `Models/OfficeStatsRow.cs` (+`DeviceCount`), `Services/OfficeReportService.cs`, `Services/OfficeReportScheduler.cs`, `Services/OfficeStatusCalculator.cs`, `Services/OfficeStatsCalculator.cs`, `Services/OfficeDeviceGrouping.cs` (дедупликация по имени машины), `Services/AppSettingsService.cs` (+`LoadOrCreateDeviceId`, кросс-процессный файл `device-id`), `Controls/AdminPanelControl.*`, `Controls/AdminPasswordWindow.*`, `Converters/OfficeStatusConverters.cs`, `MainWindow.xaml(.cs)` (навигация: админ-панель в самом низу, разделитель; `StartAsync`/`StopAutoRefresh` панели; стартовая отправка отчёта), `Controls/TitleBarControl.xaml.cs` (отчёт при ручной проверке обновлений).
+- **Текущий статус тестов: 1602/1602 pass** (+8 к 1594: очистка дублей — расчёт 4, сетевой PATCH 3, парсинг с именами файлов 1).
 - **Знак суммы монтажа исправлен:** в popup «Сумма» можно выбрать «−» при нулевой сумме и затем ввести значение; явно введённое `-500` также сохраняется как отрицательная корректировка. Формулы и модель расчёта не менялись.
 
 > Полная история изменений по версиям — в [`CHANGELOG.md`](../../CHANGELOG.md).
@@ -40,40 +41,42 @@
 ✅ Созданы эталонные расчётные кейсы в `CALCULATION_TEST_CASES.md` (с явными статусами).
 ✅ Термины по размерам (введённые / расчётные / заводские / в КП) разведены однозначно.
 ✅ Правило безопасного порядка публикации `releases.json` зафиксировано в `RELEASE_PROCESS.md` и `AUTO_UPDATE.md`.
-✅ Multi-agent master-файл перенесён в репозиторий (`docs/arc/MULTI_AGENT_ARC_CALC_CONTROL.md`) — source of truth версионируется.
+✅ Multi-agent master-файл перенесён в репозиторий (`MULTI_AGENT_ARC_CALC_CONTROL.md`) — source of truth версионируется.
 ✅ Wrappers (`AGENT.md`, `AGENTS.md`, `CLAUDE.md`, `GEMINI.md`) — тонкие redirect-файлы.
 ✅ **Все расчётные кейсы (1–15) подтверждены владельцем 2026-06-24.**
 ✅ **A.R.C. upgrade v2 (2026-06-24):** CHEATSHEET.md, DOCUMENTATION_MATRIX.md, PROMPTS.md, validate-docs.ps1, гранулярный routing, token-aware severity levels.
 ✅ **A.R.C. upgrade v4 (2026-06-25):** SYMBOL_INDEX.md, INTENTS.md, gensymbols.ps1, arc-check.ps1.
+✅ **A.R.C. upgrade v5 (2026-08-03):** добавлена обязанность самоподдержания (CONTROL §13): агент может и должен обновлять AGENTS.md/agents/docs при неактуальности; ситуации А–Ж (разбивка/переименование/новые классы/сигнатуры/бизнес-логика/процессы/сама система) → какие файлы обновлять; метрики экономии в шаблоне отчёта; routing-строка «Структурные изменения» в CHEATSHEET; мягкая проверка устаревания версии в validate-docs.ps1 (#10). ТЗ: `ТЗ_самоподдержание_AGENTS_2026-08-03.md`.
+
 ✅ `MULTI_AGENT_ARC_CALC_CONTROL.md` переработан: убрано дублирование, добавлены ссылки на новые файлы, расширена routing-таблица (12 категорий вместо 2).
 
 ## Архитектура multi-agent control
 
 ```text
-docs/arc/MULTI_AGENT_ARC_CALC_CONTROL.md
+MULTI_AGENT_ARC_CALC_CONTROL.md
     = canonical source of truth (версионируется в репозитории)
 
-docs/arc/CHEATSHEET.md
+CHEATSHEET.md
     = быстрый вход (критические правила + routing, 40 строк)
 
-docs/arc/DOCUMENTATION_MATRIX.md
+DOCUMENTATION_MATRIX.md
     = механическая карта «поменял файл → обнови документы»
 
-docs/arc/PROMPTS.md
+PROMPTS.md
     = готовые prompt-шаблоны для типовых сценариев
 
-docs/arc/CURRENT_STATE.md
-docs/arc/CALCULATION_LOGIC.md
-docs/arc/CALCULATION_TEST_CASES.md
-docs/arc/GOTCHAS.md
-docs/arc/MODULES.md
-docs/arc/DECISIONS.md
-docs/arc/PROJECT_OVERVIEW.md
-docs/arc/RELEASE_PROCESS.md
-docs/arc/AUTO_UPDATE.md
+CURRENT_STATE.md
+CALCULATION_LOGIC.md
+CALCULATION_TEST_CASES.md
+GOTCHAS.md
+MODULES.md
+DECISIONS.md
+PROJECT_OVERVIEW.md
+RELEASE_PROCESS.md
+AUTO_UPDATE.md
     = проектная память
 
-validate-docs.ps1
+agents/scripts/validate-docs.ps1
     = автоматическая валидация консистентности документации
 
 ~/.claude/skills/MULTI_AGENT_ARC_CALC_CONTROL.md
@@ -89,15 +92,15 @@ AGENT.md / AGENTS.md / CLAUDE.md / GEMINI.md
 2. `CURRENT_STATE.md` — текущее состояние.
 3. Routing-таблица в `CHEATSHEET.md` → релевантные полные файлы (2-3 вместо 5+).
 4. На фазе Document → `DOCUMENTATION_MATRIX.md` (механическое обновление docs).
-5. Валидация → `validate-docs.ps1`.
+5. Валидация → `agents/scripts/validate-docs.ps1`.
 
 ## Что выглядит незавершённым
 
 - ✅ `README.md` в корне обновлён: добавлено описание проекта, инструкции по сборке, тестированию и плейсхолдеры для скриншотов.
-- ✅ `docs/arc/PROJECT_OVERVIEW.md` синхронизирован с текущим стеком: убрана устаревшая зависимость `Microsoft.Web.WebView2`, оставлена `QuestPDF` для PDF-экспорта.
+- ✅ `PROJECT_OVERVIEW.md` синхронизирован с текущим стеком: убрана устаревшая зависимость `Microsoft.Web.WebView2`, оставлена `QuestPDF` для PDF-экспорта.
 - `releases.json` и `update-log.json` дублируют частично одну информацию — нужна синхронизация при каждом релизе (рассмотреть консолидацию).
 - Нет автоматической проверки калькуляции при релизе — только юнит-тесты.
-- Редизайн системы обновлений частично завершён (core-логика + тесты готовы, UI-полировка в процессе). Спецификация: `docs/arc/update-notification-rework-spec.md`.
+- Редизайн системы обновлений частично завершён (core-логика + тесты готовы, UI-полировка в процессе). Спецификация: `update-notification-rework-spec.md`.
 - **HeadlessWpf behavior-тест для «Цена автоширины» отменён** (6 итераций не дали рабочего решения). XAML-grep test в `DataGridBindingsTests.cs` остаётся канонической гарантией. Для возврата к этой фиче требуется либо project-wide `[CollectionFixture<WpfAppFixture>]`, либо переход на `Border + TextBlock + Width=NaN` без DataGrid.
 
 ## Открытые вопросы
@@ -109,28 +112,34 @@ AGENT.md / AGENTS.md / CLAUDE.md / GEMINI.md
 
 ## Рекомендуемые следующие шаги
 
-1. Запустить `validate-docs.ps1` и исправить найденные расхождения.
+1. Запустить `agents/scripts/validate-docs.ps1` и исправить найденные расхождения.
 2. Обновить `README.md` (низкий приоритет).
 3. Настроить CI/CD (GitHub Actions) для автоматической сборки и публикации релизов.
 4. Консолидировать CHANGELOG.md и update-log.json (один source of truth).
 
 ## Source files
 
-- `MosquitoNetCalculator/MosquitoNetCalculator.csproj` — версия 3.47.1.
+- `MosquitoNetCalculator/MosquitoNetCalculator.csproj` — версия 3.47.3.
 - `releases.json` — история релизов (latest заполняется после GitHub Release + ZIP).
 - `MosquitoNetCalculator/Resources/update-log.json` — история для UI.
-- `docs/arc/*.md` — вся проектная документация.
-- `docs/arc/documentation-matrix.json` — машиночитаемый источник матрицы.
-- `what-to-update.ps1` — git diff -> docs к обновлению.
-- `validate-docs.ps1` — 8 проверок консистентности.
-- `generate-update-log.ps1` — CHANGELOG -> update-log.
-- `render-matrix.ps1` — JSON -> DOCUMENTATION_MATRIX.md.
+- `agents/docs/*.md` — вся проектная документация.
+- `agents/scripts/gensymbols.ps1` — сканирует .cs → SYMBOL_INDEX.md.
+- `agents/scripts/what-to-update.ps1` — git diff → docs к обновлению.
+- `agents/scripts/validate-docs.ps1` — 11 проверок консистентности.
+- `generate-update-log.ps1` — CHANGELOG → update-log (корень).
+- `agents/scripts/render-matrix.ps1` — JSON → DOCUMENTATION_MATRIX.md.
+- `agents/scripts/arc-check.ps1` — pre-commit проверка docs.
+- `agents/scripts/sync-version.ps1` — версия из csproj → `Last verified`.
 
 ## Last verified
 
+2026-08-10 — **Миграция системы в `agents/`:** `docs/arc/*` → `agents/docs/`, скрипты → `agents/scripts/`. AGENTS.md — чистый wrapper на `agents/README.md`. Внутренние ссылки — короткие имена. Все 11 проверок валидатора — 0 issues.
+
+2026-08-10 — **A.R.C. улучшения II (v3.47.4):** добавлена жёсткая проверка #11 в validate-docs.ps1 (битые ссылки `CONTROL#N` резолвятся в реальные секции CONTROL); новая секция «AI Agent Mode» в INTENTS.md (mapping намерений на AI-файлы); новый скрипт `sync-version.ps1` — версия берётся из csproj и автоматически синхронизируется в `## Last verified` всех agents/docs, убирая ручную правку ~9 файлов при релизе; правило разбиения больших файлов (CONTROL §13 п.7, CHEATSHEET #21) — файл > 400–500 строк разбивается в том же цикле, а не «на потом». Синхронизированы версии 14 agents/docs с v3.47.4.
+
 2026-08-08 — **v3.47.4:** исправлена печать на сетевой принтер из локальной сети; добавлен переключатель +/- в режиме «Монтаж включён». Полный набор тестов: **1527/1527 pass**.
 
-2026-08-06 — Исправлено разрешение подключённых сетевых принтеров: список выбора и отправка теперь используют один и тот же экземпляр `PrintQueue` из `Local + Connections`, без повторного разрешения по имени; это исключает подмену выбранной сетевой очереди физическим USB-принтером. Для явно выбранного устройства fallback на default запрещён. AI-раздел переведён в preview-only режим до завершения разработки: блокирующая UI-плашка «В РАЗРАБОТКЕ», API-key menu item disabled/no-op. Дополнительно скрыты модель/провайдер/телеметрия из AI-панелей. Также стабилизирован flaky-тест прогресса автообновления синхронным `IProgress<int>`; production-код не менялся. Расчётная логика не затронута; целевые проверки печати проходят, `UpdateDownloaderTests` — **13/13**. Дополнительно синхронизированы даты «Last verified» в `docs/arc/*.md` с git-историей (CONTROL#13) — 7 файлов; код не менялся.
+2026-08-06 — Исправлено разрешение подключённых сетевых принтеров: список выбора и отправка теперь используют один и тот же экземпляр `PrintQueue` из `Local + Connections`, без повторного разрешения по имени; это исключает подмену выбранной сетевой очереди физическим USB-принтером. Для явно выбранного устройства fallback на default запрещён. AI-раздел переведён в preview-only режим до завершения разработки: блокирующая UI-плашка «В РАЗРАБОТКЕ», API-key menu item disabled/no-op. Дополнительно скрыты модель/провайдер/телеметрия из AI-панелей. Также стабилизирован flaky-тест прогресса автообновления синхронным `IProgress<int>`; production-код не менялся. Расчётная логика не затронута; целевые проверки печати проходят, `UpdateDownloaderTests` — **13/13**. Дополнительно синхронизированы даты «Last verified» в `agents/docs/*.md` с git-историей (CONTROL#13) — 7 файлов; код не менялся.
 
 2026-08-08 — Исправлен ввод знака в popup монтажа: «−» больше не сбрасывается при нулевой сумме, а явный отрицательный ввод принимается; добавлена фильтрация нечисловых/бесконечных значений. Формулы `TotalWithDeduction` и расчётная модель не изменялись. Полный набор: **1515/1515 pass**.
 
@@ -139,6 +148,8 @@ AGENT.md / AGENTS.md / CLAUDE.md / GEMINI.md
 2026-08-04 — **Unreleased AI UX:** добавлена интерактивная карточка уточнения параметров в AI-чате — когда AI просит уточнить тип/размеры/цвет/режим/монтаж, пользователь заполняет форму галочками и выпадающими списками, «Добавить в расчёт» создаёт AddItem без повторного запроса к LLM (`AiClarificationForm`, `SubmitClarificationForm`, XAML-карточка в `AiAssistantControl.xaml`); список «Тип» фильтруется по запросу («сетки» → только сеточные изделия). Надёжность: ретраи до 3 раз на транзиентные ошибки + гарантированный фолбэк на бесплатную NVIDIA-модель. Сборка и тесты: **1413/1413 pass**.
 
 2026-08-03 — **Unreleased AI UX:** исправлено зависание интерфейса при потоковом ответе AI буферизацией чанков и фоновым чтением сети; добавлены анимированный статус «Думает…» до первого токена, корректный приоритет task-ranked модели в автовыборе, исправлена обрезка кнопок настроек, добавлены метки фактически использованной модели/провайдера, `BETA` на AI-навигации и улучшены подсказки автовыбора. Сборка и тесты: **1388/1388 pass**.
+
+2026-08-03 — **v3.47.3 (самоподдержание A.R.C.):** добавлены CONTROL §13 (обязанность самоподдержания, ситуации А–Ж), правила 18–20 в CHEATSHEET, routing «Структурные изменения», мягкая проверка #10 в validate-docs.ps1 (устаревшая версия в Last verified). Зафиксирован baseline: валидатор до правок давал 1 issue (версия 3.47.2 ≠ csproj 3.47.3) + 20 warnings (устаревшие даты/версии в 10+ файлах). Тест-драйв SYMBOL_INDEX: класс найден за 1 grep-шаг. ТЗ согласовано владельцем.
 
 2026-07-22 — **v3.47.3 (URGENT + refactor):** В старых заказах после system V X B в Отлив/Козырёк, X или B показывали «0 ₽». Root cause: pre-v3.47.0 saved JSON содержал DTO defaults (-500/-500/0); v3.47.0 per-linear-meter formula умножала (-500) × linearMeters × Q, превышая Total и зажимая в 0. Fix: расширил `CalculationViewModel.LoadFromOrderData` строгим `isLegacyLoad` детектором + исключил Отлив/Козырёк из v3.46.1 sign-flip migration. Refactor: извлек `ProductCatalog.PerLinearMeterProducts` HashSet + `IsPerLinearMeter(string?)` helper как single source of truth — убрал 4 дублирования name-string чеков в `CalculationViewModel.cs`; broadened heuristic до `Math.Abs(Math.Abs(x)-500) < 0.01` для поддержки обоих conventions (±500). Файлы: `ViewModels/CalculationViewModel.cs`, `Models/ProductCatalog.cs`, `Models/OrderItem.Installation.cs`. **Тесты: 1253/1253 pass** (+4 регрессионных тестов в `CalculationViewModelTests.cs`). Зафиксировано в `GOTCHAS.md#16` как правило для будущих per-linear-meter добавлений.
 
