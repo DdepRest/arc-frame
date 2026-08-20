@@ -154,15 +154,7 @@ namespace MosquitoNetCalculator.Services
             return (new AiCommand { Type = AiCommandType.AddItem, Params = new AiCommandParams { Type = type, Color = color, Width = w, Height = h, Quantity = q, Price = price, AnwisMode = mode, InstallationMode = im } }, null);
         }
 
-        private static AnwisSizeMode ParseAnwisModeString(string s) => s.ToLowerInvariant() switch
-        {
-            "бб60" or "bb60" or "брусбокс60" or "брусбокс 60" => AnwisSizeMode.Брусбокс60,
-            "бб70" or "bb70" or "брусбокс70" or "брусбокс 70" => AnwisSizeMode.Брусбокс70,
-            "пп" or "pp" or "профипласт" => AnwisSizeMode.Профипласт,
-            "проём" or "проем" or "размер проёма" => AnwisSizeMode.РазмерПроёма,
-            "габарит" or "габаритный" => AnwisSizeMode.Габаритный,
-            _ => AnwisSizeService.DefaultMode
-        };
+        private static AnwisSizeMode ParseAnwisModeString(string s) => AiKeywordLexicon.ParseAnwisModeString(s);
 
         private static (AiCommand? Command, string? ReplyOverride) ParseUpdateItems(JsonElement root)
         {
@@ -180,32 +172,20 @@ namespace MosquitoNetCalculator.Services
             if (!hasAny) return (null, "⚠ Укажите, что нужно изменить: installation_mode (0/1/2), price, installation_amount или anwis_mode.");
 
             return (new AiCommand { Type = AiCommandType.UpdateItems, Params = new AiCommandParams { TargetProduct = target, UpdateInstallationMode = installMode, UpdatePrice = price, UpdateInstallationAmount = installAmount, UpdateAnwisMode = anwisMode, UpdateColor = updateColor } }, null);
-        }
-
-        private static int? ParseInstallationModeField(JsonElement v)
-        {
-            if (v.ValueKind == JsonValueKind.Number) return v.TryGetInt32(out int n) && n >= 0 && n <= 2 ? n : null;
-            if (v.ValueKind == JsonValueKind.String)
-                return v.GetString()?.Trim().ToLowerInvariant() switch { "2" or "в конструкцию" or "в конструцию" or "конструкция" => 2, "1" or "без монтажа" or "без установки" or "без" or "не нужно" => 1, "0" or "монтаж включён" or "монтаж включен" or "включён" or "включен" or "с монтажом" or "с монтажём" or "монтаж" => 0, _ => null };
-            return null;
-        }
+        }        private static int? ParseInstallationModeField(JsonElement v) => AiKeywordLexicon.ParseInstallationModeField(v);
 
         private static int ParseInstallationMode(JsonElement p) => !p.TryGetProperty("installation_mode", out var v) ? -1 : ParseInstallationModeField(v) ?? -1;
 
         /// <summary>
         /// Catalog fallback price used when the model doesn't supply one.
         /// Public so the clarification form can price items the same way.
+        /// Delegates to <see cref="AiFactsProvider.GetPrice"/> — the single
+        /// source of truth that reads from <c>PriceService.DefaultPrices</c>;
+        /// keeping the thin facade here preserves the public API for any
+        /// caller that still asks for this name.
         /// </summary>
-        public static double GetDefaultPrice(string type, string color) => type switch
-        {
-            "Anwis" when color.Contains("Коричневый", StringComparison.OrdinalIgnoreCase) => 1900, "Anwis" => 1800,
-            "На навесах" when color.Contains("Коричневый", StringComparison.OrdinalIgnoreCase) => 3000, "На навесах" => 2900,
-            "Оконная на метал. крепл." when color.Contains("Коричневый", StringComparison.OrdinalIgnoreCase) => 3300, "Оконная на метал. крепл." => 3200,
-            "Дверная сетка" => 3000, "Отлив" when color.Contains("Золотой", StringComparison.OrdinalIgnoreCase) => 2650, "Отлив" => 2150,
-            "Козырёк" when color.Contains("Золотой", StringComparison.OrdinalIgnoreCase) => 2650, "Козырёк" => 2150,
-            "Короб" when color.Contains("Золотой", StringComparison.OrdinalIgnoreCase) => 2650, "Короб" => 2150,
-            "ПСУЛ" => 100, "Уплотнение" => 250, _ => 0
-        };
+        public static double GetDefaultPrice(string type, string color)
+            => AiFactsProvider.GetPrice(type, color);
 
         // ── JSON extraction ──────────────────────────────────────
 
@@ -255,7 +235,7 @@ namespace MosquitoNetCalculator.Services
             return $"✅ Обновлено ({t}): {string.Join(", ", parts)}";
         }
 
-        internal static string AnwisModeLabel(AnwisSizeMode m) => m switch { AnwisSizeMode.Брусбокс60 => "ББ60", AnwisSizeMode.Брусбокс70 => "ББ70", AnwisSizeMode.Профипласт => "ПП", AnwisSizeMode.РазмерПроёма => "Проём", AnwisSizeMode.Габаритный => "Габарит", _ => m.ToString() };
+        internal static string AnwisModeLabel(AnwisSizeMode m) => AiKeywordLexicon.AnwisModeLabel(m);
 
         // ── Helpers ───────────────────────────────────────────────
 

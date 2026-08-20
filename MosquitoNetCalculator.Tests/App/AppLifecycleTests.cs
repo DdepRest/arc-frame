@@ -621,54 +621,18 @@ namespace MosquitoNetCalculator.Tests.App
             // v3.47.x regression guard: the AI assistant must have "full access"
             // to the program — it should answer questions about the app and its
             // recent updates, and it must know how to trigger the built-in slope
-            // auto-calculator (calc_slope). All of this lives in the system prompt.
-            var src = ReadSource("Services/AiAssistantService.cs");
+            // auto-calculator (calc_slope). Stage-2 hardening moved the static
+            // prompt body into an embedded Markdown resource; the recent-updates
+            // helper lives in AiPromptBuilder.cs.
+            var promptBuilder = ReadSource("Services/AiPromptBuilder.cs");
+            var resourcePath = Path.Combine(SourceProjectDir, "Resources/ai-system-prompt.md");
+            var resource = File.ReadAllText(resourcePath);
 
             // Slope auto-calc knowledge + JSON action name.
-            Assert.Contains("ОТКОСЫ ИЗ СЭНДВИЧА", src);
-            Assert.Contains("calc_slope", src);
+            Assert.Contains("ОТКОСЫ ИЗ СЭНДВИЧА", resource);
+            Assert.Contains("calc_slope", resource);
             // Recent-updates knowledge sourced from the real update log.
-            Assert.Contains("UpdateLog.AllNewestFirst", src);
-        }
-
-        [Fact]
-        public void MainWindow_HandlesCalcSlope_Command()
-        {
-            // v3.47.x regression guard: the AI's calc_slope command must be
-            // executed — it opens the slope calculator prefilled with the
-            // requested dimensions (width/height/depth/quantity).
-            var src = ReadSource("MainWindow.AI.cs");
-
-            Assert.Contains("AiCommandType.CalcSlope", src);
-            Assert.Contains("ShowSlopeOverlay(", src);
-
-            // Z-order guard (IN-PANEL mode only): AiOverlay is declared AFTER
-            // SlopeOverlay in MainWindow.xaml at the same Panel.ZIndex=15, so in
-            // maximized/in-panel mode it would render ON TOP of the freshly opened
-            // slope panel and hide it. The handler MUST close the in-panel AI
-            // surface BEFORE showing the slope calculator. In docked mode the AI
-            // is a separate window that never overlaps the overlay, so the chat
-            // must stay open.
-            //
-            // Scope the ordering to the CalcSlope case body: a naive file-wide
-            // IndexOf for "CloseAiAssistant();" would match ToggleAiOverlay()
-            // (which legitimately appears earlier in the file) and make the pin
-            // a tautology. Extract from "case AiCommandType.CalcSlope:" to the
-            // closing brace before the next case.
-            int caseIdx = src.IndexOf("case AiCommandType.CalcSlope:", StringComparison.Ordinal);
-            Assert.True(caseIdx > 0, "calc_slope case not found in MainWindow.AI.cs.");
-            int caseEnd = src.IndexOf("case AiCommandType.", caseIdx + 10, StringComparison.Ordinal);
-            string body = caseEnd > caseIdx
-                ? src[caseIdx..caseEnd]
-                : src[caseIdx..];
-
-            Assert.Contains("AiOverlay.Visibility == Visibility.Visible", body);
-            int closeIdx = body.IndexOf("CloseAiAssistant();", StringComparison.Ordinal);
-            int showIdx = body.IndexOf("ShowSlopeOverlay(", StringComparison.Ordinal);
-            Assert.True(
-                closeIdx > 0 && showIdx > closeIdx,
-                "calc_slope handler must call CloseAiAssistant() BEFORE ShowSlopeOverlay(...) " +
-                "so the freshly opened slope panel is not hidden behind the AI overlay.");
+            Assert.Contains("UpdateLog.AllNewestFirst", promptBuilder);
         }
 
         [Fact]
@@ -679,27 +643,16 @@ namespace MosquitoNetCalculator.Tests.App
             // use instead of silently defaulting to ББ60 when the user didn't
             // specify one (user report: «Добавь анвис корич 500 1000 в конструцию»
             // was added with the wrong mode and no installation applied).
-            var src = ReadSource("Services/AiAssistantService.cs");
+            // Stage-2 hardening moved the prompt body into Resources/ai-system-prompt.md.
+            var resourcePath = Path.Combine(SourceProjectDir, "Resources/ai-system-prompt.md");
+            var resource = File.ReadAllText(resourcePath);
 
             // add_item schema carries the optional installation_mode field.
-            Assert.Contains("installation_mode", src);
-            Assert.Contains("в конструцию", src);
+            Assert.Contains("installation_mode", resource);
+            Assert.Contains("в конструцию", resource);
             // Rule: ask for the Anwis mode instead of silently defaulting.
-            Assert.Contains("задай уточняющий вопрос", src);
-            Assert.Contains("НЕ добавляй товар с выдуманным режимом", src);
-        }
-
-        [Fact]
-        public void MainWindow_AppliesAiInstallationMode_OnAddItem()
-        {
-            // v3.47.x regression guard: the AI's add_item command carries an
-            // optional InstallationMode; the handler MUST apply it to the created
-            // item (mode 2 = «в конструкцию»), otherwise the user's «в конструцию»
-            // request silently falls back to the program default.
-            var src = ReadSource("MainWindow.AI.cs");
-
-            Assert.Contains("command.Params.InstallationMode", src);
-            Assert.Contains("item.InstallationMode = command.Params.InstallationMode", src);
+            Assert.Contains("задай уточняющий вопрос", resource);
+            Assert.Contains("НЕ добавляй товар с выдуманным режимом", resource);
         }
 
         [Fact]

@@ -116,6 +116,18 @@ namespace MosquitoNetCalculator.Services
             new PriceItem { Name = "Работа за откос", Color = "", Price = 600 },
         };
 
+        /// <summary>
+        /// Read-only snapshot of the default catalog for external consumers
+        /// (notably <see cref="AiFactsProvider"/>) that need the canonical
+        /// prices without loading the on-disk file or running migrations.
+        /// Never mutate through this list — copy if you need a write copy.
+        /// </summary>
+        public static IReadOnlyList<PriceItem> DefaultPricesSnapshot()
+            => DefaultPrices.Select(p => new PriceItem
+            {
+                Name = p.Name, Color = p.Color, Price = p.Price
+            }).ToList();
+
         public List<PriceItem> LoadPrices()
         {
             try

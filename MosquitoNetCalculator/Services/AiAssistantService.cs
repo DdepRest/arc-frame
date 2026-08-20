@@ -8,6 +8,7 @@ using System.Net.Http.Json;
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
 using MosquitoNetCalculator.Models;
@@ -43,7 +44,7 @@ namespace MosquitoNetCalculator.Services
         internal static int RetryDelayMs { get; set; } = 300;
 
         // ── Provider endpoints ─────────────────────────────────
-        private const string DefaultModel = "google/gemma-3-27b-it:free";
+        private const string DefaultModel = "google/gemma-4-31b-it:free";
         private const string ApiUrl = "https://openrouter.ai/api/v1/chat/completions";
         private const string ModelsUrl = "https://openrouter.ai/api/v1/models";
         private const string NvidiaApiUrl = "https://integrate.api.nvidia.com/v1/chat/completions";
@@ -71,18 +72,21 @@ namespace MosquitoNetCalculator.Services
         /// </summary>
         public static IReadOnlyList<AiModelOption> FreeModels { get; } = new List<AiModelOption>
         {
-            new("google/gemma-3-27b-it:free", "Google Gemma 3 27B (free)"),
-            new("google/gemini-2.5-pro-exp-03-25:free", "Google Gemini 2.5 Pro (free)"),
-            new("google/gemini-2.5-flash-preview:free", "Google Gemini 2.5 Flash (free)"),
-            new("meta-llama/llama-4-scout:free", "Meta Llama 4 Scout (free)"),
-            new("mistralai/mistral-7b-instruct:free", "Mistral 7B Instruct (free)"),
-            new("deepseek/deepseek-chat:free", "DeepSeek V3 Chat (free)"),
-            new("nvidia/llama-3.1-nemotron-70b-instruct:free", "NVIDIA Nemotron 70B (free)"),
-            new("qwen/qwen-2.5-72b-instruct:free", "Qwen 2.5 72B (free)"),
+            // Curated snapshot of OpenRouter zero-price chat models. The live
+            // runtime list is auto-analyzed from /models on each refresh; this
+            // list is only the offline fallback when the catalog can't load.
+            new("google/gemma-4-31b-it:free", "Google Gemma 4 31B (free)"),
+            new("google/gemma-4-26b-a4b-it:free", "Google Gemma 4 26B (free)"),
+            new("nvidia/nemotron-3-super-120b-a12b:free", "NVIDIA Nemotron 3 Super 120B (free)"),
+            new("nvidia/nemotron-3-nano-30b-a3b:free", "NVIDIA Nemotron 3 Nano 30B (free)"),
+            new("nvidia/nemotron-nano-9b-v2:free", "NVIDIA Nemotron Nano 9B (free)"),
+            new("z-ai/glm-5.2:free", "Z.AI GLM 5.2 (free)"),
+            new("openai/gpt-oss-20b:free", "OpenAI GPT-OSS 20B (free)"),
+            new("liquid/lfm-2.5-2.6b:free", "Liquid LFM 2.5 (free)"),
+            new("nvidia/nemotron-3.5-lightning:free", "NVIDIA Nemotron 3.5 Lightning (free)"),
 
-            // NVIDIA free-tier models (endpoint: integrate.api.nvidia.com)
-            new("deepseek-ai/deepseek-v4-flash", "DeepSeek V4 Flash (NVIDIA, free)", AiProvider.Nvidia),
-            new("deepseek-ai/deepseek-v4-pro", "DeepSeek V4 Pro (NVIDIA, free)", AiProvider.Nvidia)
+            // NVIDIA free-tier model (endpoint: integrate.api.nvidia.com)
+            new("deepseek-ai/deepseek-v4-flash-0731", "DeepSeek V4 Flash (NVIDIA, free)", AiProvider.Nvidia)
         };
 
         private static readonly JsonSerializerOptions JsonOptions = new()
@@ -91,9 +95,26 @@ namespace MosquitoNetCalculator.Services
             DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull
         };
 
+        // Models that cannot process an image part often answer with padding or
+        // special tokens instead of text (e.g. a wall of <pad><pad>…). Strip them
+        // before they reach the chat bubble.
+        private static readonly Regex SpecialTokenRegex = new(
+            @"<\|[^>]*\|>|<pad>|</?s>|<bos>|<eos>|<eot>|<unk>",
+            RegexOptions.IgnoreCase | RegexOptions.Compiled);
+
         // Updated after a successful catalog load so provider routing also works
         // for models which were not present in the original fallback list.
         private static IReadOnlyList<AiModelOption> _availableModels = FreeModels;
+
+        // In-memory availability cache (id → probe result). Seeded lazily from the
+        // persisted ai-settings.json and refreshed by AnalyzeAvailableModelsAsync or
+        // by send-path failures. Only "unavailable" entries older than
+        // AvailabilityTtl are allowed to expire so a dead model can recover later.
+        private static readonly object AvailabilityLock = new();
+        private static readonly Dictionary<string, AiModelAvailability> _availability =
+            new(StringComparer.OrdinalIgnoreCase);
+        private static bool _availabilityLoaded;
+        private static readonly TimeSpan AvailabilityTtl = TimeSpan.FromMinutes(30);
 
         /// <summary>
         /// Current catalog used for provider routing. It is refreshed automatically
@@ -209,6 +230,227 @@ namespace MosquitoNetCalculator.Services
             AppSettingsServiceAi.SaveAiFallbackModels(valid);
         }
 
+        /// <summary>
+        /// Auto-analyzes which candidate models are actually usable right now by
+        /// sending a minimal 1-token chat probe to each. Only free/chat candidates
+        /// should be passed in (the catalog fetchers already enforce that). Results
+        /// are persisted and the verified-available set replaces
+        /// <see cref="AvailableModels"/> so auto-routing prefers models that answer.
+        /// </summary>
+        public static async Task<IReadOnlyList<AiModelAvailability>> AnalyzeAvailableModelsAsync(
+            IReadOnlyList<AiModelOption> candidates,
+            string? openRouterApiKey = null,
+            string? nvidiaApiKey = null,
+            int maxModelsPerProvider = 6,
+            CancellationToken ct = default)
+        {
+            if (candidates == null || candidates.Count == 0)
+                return Array.Empty<AiModelAvailability>();
+
+            var orKey = string.IsNullOrWhiteSpace(openRouterApiKey)
+                ? GetApiKey(AiProvider.OpenRouter)
+                : openRouterApiKey.Trim();
+            var nvKey = string.IsNullOrWhiteSpace(nvidiaApiKey)
+                ? GetApiKey(AiProvider.Nvidia)
+                : nvidiaApiKey.Trim();
+
+            var probeList = new List<(string Id, AiProvider Provider, string Key)>();
+            foreach (var model in candidates)
+            {
+                if (string.IsNullOrWhiteSpace(model.Id)) continue;
+                if (model.Provider == AiProvider.Nvidia)
+                {
+                    if (probeList.Count(p => p.Provider == AiProvider.Nvidia) < Math.Max(0, maxModelsPerProvider))
+                        probeList.Add((model.Id, AiProvider.Nvidia, nvKey));
+                }
+                else
+                {
+                    if (probeList.Count(p => p.Provider == AiProvider.OpenRouter) < Math.Max(0, maxModelsPerProvider))
+                        probeList.Add((model.Id, AiProvider.OpenRouter, orKey));
+                }
+            }
+
+            var tasks = probeList
+                .Select(p => ProbeModelAsync(p.Id, p.Provider, p.Key, ct))
+                .ToArray();
+            var results = (await Task.WhenAll(tasks)).ToList();
+
+            ApplyAvailabilityResults(results);
+            return results;
+        }
+
+        /// <summary>
+        /// Sends a minimal "ping" chat request to a single model and reports whether
+        /// it answered. A 401/403 means the key is invalid or exhausted, 404 means
+        /// the model is unavailable for this account, and a 2xx with a non-empty
+        /// reply means the model is usable.
+        /// </summary>
+        internal static async Task<AiModelAvailability> ProbeModelAsync(
+            string modelId,
+            AiProvider provider,
+            string apiKey,
+            CancellationToken ct)
+        {
+            var result = new AiModelAvailability
+            {
+                Id = modelId,
+                Provider = provider,
+                IsAvailable = false,
+                CheckedAt = DateTime.UtcNow
+            };
+
+            try
+            {
+                var probeRequest = new ChatCompletionRequest
+                {
+                    Model = modelId,
+                    Messages = new List<ChatMessage>
+                    {
+                        new() { Role = "user", Content = "ping" }
+                    },
+                    Temperature = 0,
+                    MaxTokens = 1
+                };
+
+                using var httpRequest = new HttpRequestMessage(HttpMethod.Post, GetApiUrl(provider))
+                {
+                    Content = JsonContent.Create(probeRequest, options: JsonOptions)
+                };
+                httpRequest.Headers.Add("Authorization", $"Bearer {apiKey}");
+                httpRequest.Headers.Add("HTTP-Referer", "https://arcframe.app");
+                httpRequest.Headers.Add("X-Title", "A.R.C. Frame");
+
+                using var response = await HttpClient.SendAsync(httpRequest, HttpCompletionOption.ResponseContentRead, ct);
+                result.StatusCode = (int)response.StatusCode;
+
+                if (response.IsSuccessStatusCode)
+                {
+                    var body = await response.Content.ReadAsStringAsync(ct);
+                    var completion = JsonSerializer.Deserialize<ChatCompletionResponse>(body, JsonOptions);
+                    var content = GetTextContent(completion?.Choices?.FirstOrDefault()?.Message?.Content);
+                    result.IsAvailable = !string.IsNullOrWhiteSpace(content);
+                    result.Detail = result.IsAvailable ? "OK" : "пустой ответ";
+                }
+                else
+                {
+                    result.Detail = DescribeProbeFailure((int)response.StatusCode);
+                }
+            }
+            catch (OperationCanceledException) when (ct.IsCancellationRequested)
+            {
+                throw;
+            }
+            catch (Exception ex)
+            {
+                result.Detail = $"ошибка сети: {ex.GetType().Name}";
+            }
+
+            return result;
+        }
+
+        private static string DescribeProbeFailure(int statusCode) => statusCode switch
+        {
+            401 => "неверный ключ",
+            403 => "ключ исчерпан или заблокирован",
+            404 => "модель недоступна для этого ключа",
+            429 => "превышен лимит запросов",
+            400 => "модель не принимает запрос",
+            >= 500 => "сервер провайдера недоступен",
+            _ => $"HTTP {statusCode}"
+        };
+
+        /// <summary>
+        /// Persists probe results and, when at least one model answered, narrows the
+        /// routing catalog to the verified-available set. A fully-failed probe (e.g.
+        /// network down during the check) keeps the previous catalog untouched.
+        /// </summary>
+        private static void ApplyAvailabilityResults(IReadOnlyList<AiModelAvailability> results)
+        {
+            if (results == null || results.Count == 0) return;
+
+            foreach (var result in results)
+                RecordModelAvailability(result);
+
+            AppSettingsServiceAi.SaveModelAvailability(GetAvailability().Values);
+
+            var available = results
+                .Where(r => r.IsAvailable)
+                .Select(r => new AiModelOption(r.Id, r.Id, r.Provider))
+                .ToList();
+            if (available.Count > 0)
+                SetAvailableModels(available);
+        }
+
+        /// <summary>
+        /// Records a per-model availability observation in the in-memory cache
+        /// (used by both explicit probes and send-path failures).
+        /// </summary>
+        internal static void RecordModelAvailability(AiModelAvailability entry)
+        {
+            if (entry == null || string.IsNullOrWhiteSpace(entry.Id)) return;
+            lock (AvailabilityLock)
+            {
+                _availabilityLoaded = true;
+                _availability[entry.Id] = entry;
+            }
+        }
+
+        private static IReadOnlyDictionary<string, AiModelAvailability> GetAvailability()
+        {
+            lock (AvailabilityLock)
+            {
+                if (!_availabilityLoaded)
+                {
+                    foreach (var entry in AppSettingsServiceAi.LoadModelAvailability())
+                    {
+                        if (!string.IsNullOrWhiteSpace(entry.Id))
+                            _availability[entry.Id] = entry;
+                    }
+                    _availabilityLoaded = true;
+                }
+                return _availability;
+            }
+        }
+
+        /// <summary>
+        /// Clears the in-memory availability cache (used by tests to isolate state).
+        /// </summary>
+        internal static void ResetAvailabilityCache()
+        {
+            lock (AvailabilityLock)
+            {
+                _availability.Clear();
+                _availabilityLoaded = false;
+            }
+        }
+
+        /// <summary>
+        /// Restores the routing catalog to the curated free fallback (used by tests
+        /// to undo the narrowing performed by <see cref="AnalyzeAvailableModelsAsync"/>).
+        /// </summary>
+        internal static void ResetAvailableModelsCatalog()
+        {
+            _availableModels = FreeModels;
+        }
+
+        /// <summary>
+        /// Marks a model as unavailable after a fatal per-model failure (401/403/404).
+        /// The entry lives in the session cache so subsequent requests in the same run
+        /// skip the model; explicit probes persist it to disk.
+        /// </summary>
+        internal static void RecordModelUnavailable(string modelId, int statusCode)
+        {
+            RecordModelAvailability(new AiModelAvailability
+            {
+                Id = modelId,
+                Provider = GetProviderForModel(modelId),
+                IsAvailable = false,
+                StatusCode = statusCode,
+                Detail = DescribeProbeFailure(statusCode),
+                CheckedAt = DateTime.UtcNow
+            });
+        }
+
         private static void SetAvailableModels(IEnumerable<AiModelOption> models)
         {
             _availableModels = models
@@ -237,12 +479,16 @@ namespace MosquitoNetCalculator.Services
                 var parsed = JsonSerializer.Deserialize<OpenRouterModelsResponse>(body, JsonOptions);
                 var models = parsed?.Data?
                     .Where(m => IsZeroPrice(m.Pricing?.Prompt)
-                                && IsZeroPrice(m.Pricing?.Completion))
+                                && IsZeroPrice(m.Pricing?.Completion)
+                                && IsGeneralChatModel(m))
                     .OrderBy(m => m.Name, StringComparer.OrdinalIgnoreCase)
                     .Select(m => new AiModelOption(
                         m.Id,
                         string.IsNullOrWhiteSpace(m.Name) ? m.Id : m.Name,
-                        AiProvider.OpenRouter))
+                        AiProvider.OpenRouter)
+                    {
+                        SupportsVision = HasImageInput(m)
+                    })
                     .ToList() ?? new List<AiModelOption>();
 
                 return models.Count > 0
@@ -286,6 +532,11 @@ namespace MosquitoNetCalculator.Services
                     var id = idElement.GetString();
                     if (string.IsNullOrWhiteSpace(id)) continue;
 
+                    // NVIDIA's catalog includes embedding, code, vision, safety and
+                    // reward models. Only keep chat-capable entries so auto-select
+                    // never routes a chat request to a model that returns garbage.
+                    if (!IsChatModel(id)) continue;
+
                     string displayName = id;
                     foreach (var property in new[] { "name", "display_name", "displayName" })
                     {
@@ -321,6 +572,23 @@ namespace MosquitoNetCalculator.Services
                && price == 0m;
 
         /// <summary>
+        /// True when the OpenRouter catalog reports the model accepts image input
+        /// (<c>architecture.input_modalities</c> contains "image").
+        /// </summary>
+        private static bool HasImageInput(OpenRouterModel? model)
+        {
+            if (model?.Architecture?.InputModalities == null)
+                return false;
+            foreach (var modality in model.Architecture.InputModalities)
+            {
+                if (!string.IsNullOrWhiteSpace(modality)
+                    && modality.Equals("image", StringComparison.OrdinalIgnoreCase))
+                    return true;
+            }
+            return false;
+        }
+
+        /// <summary>
         /// Sends a user message and returns an AI response with optional action.
         /// Tries each selected fallback model in order. Built-in keys are used
         /// when the user has not configured their own.
@@ -328,6 +596,7 @@ namespace MosquitoNetCalculator.Services
         public async Task<AiResponse> SendMessageAsync(
             string userMessage,
             List<(string Role, string Content)> history,
+            IReadOnlyList<string>? imageDataUrls = null,
             string? orderContext = null, CancellationToken ct = default)
         {
             if (!HasEmbeddedKeys)
@@ -338,7 +607,7 @@ namespace MosquitoNetCalculator.Services
                 };
             }
 
-            var fallbackModels = ResolveFallbackModels(userMessage);
+            var fallbackModels = ResolveFallbackModels(userMessage, imageDataUrls is { Count: > 0 });
 
             // Build messages
             var messages = new List<ChatMessage>
@@ -357,7 +626,7 @@ namespace MosquitoNetCalculator.Services
                 });
             }
 
-            messages.Add(new ChatMessage { Role = "user", Content = userMessage });
+            messages.Add(new ChatMessage { Role = "user", Content = BuildUserContent(userMessage, imageDataUrls) });
 
             var request = new ChatCompletionRequest
             {
@@ -408,6 +677,7 @@ namespace MosquitoNetCalculator.Services
             Action<string> onChunk,
             Action<string> onDone,
             Action<string> onError,
+            IReadOnlyList<string>? imageDataUrls = null,
             Action<string>? onModelUsed = null,
             string? orderContext = null,
             CancellationToken ct = default,
@@ -419,9 +689,9 @@ namespace MosquitoNetCalculator.Services
                 return;
             }
 
-            var fallbackModels = ResolveFallbackModels(userMessage);
+            var fallbackModels = ResolveFallbackModels(userMessage, imageDataUrls is { Count: > 0 });
 
-            var messages = BuildMessages(userMessage, history, orderContext);
+            var messages = BuildMessages(userMessage, history, orderContext, imageDataUrls);
 
             var request = new ChatCompletionRequest
             {
@@ -451,6 +721,9 @@ namespace MosquitoNetCalculator.Services
                     bool modelAnnounced = false;
                     var fullText = new StringBuilder();
                     bool transientFailure = false;
+                    // Padding-only / empty response: skip to the next model instead
+                    // of retrying (e.g. an image sent to a text-only model).
+                    bool skipModel = false;
 
                     try
                     {
@@ -475,6 +748,9 @@ namespace MosquitoNetCalculator.Services
                             // fixed by another model. A 404 from NVIDIA means "model not
                             // available for this account": try the next fallback model
                             // instead of aborting the whole request.
+                            if (statusCode is 401 or 403 or 404 or 400)
+                                RecordModelUnavailable(request.Model, statusCode);
+
                             if (statusCode is 401 or 403)
                             {
                                 onError($"⚠ Ошибка авторизации у провайдера «{ProviderName(provider)}» (код {statusCode}).\nПроверьте API-ключ в настройках.");
@@ -504,34 +780,37 @@ namespace MosquitoNetCalculator.Services
 
                                 var data = line.Substring(6);
                                 if (data == "[DONE]")
-                                {
-                                    var text = fullText.ToString();
-                                    onDone(text);
-                                    return;
-                                }
+                                    break;
 
                                 try
                                 {
                                     var chunk = JsonSerializer.Deserialize<ChatCompletionResponse>(data, JsonOptions);
                                     var content = chunk?.Choices?.FirstOrDefault()?.Delta?.Content;
-                                    if (!string.IsNullOrEmpty(content))
+                                    if (string.IsNullOrEmpty(content))
+                                        continue;
+
+                                    // A text-only model that received an image part
+                                    // answers with <pad>/<|…|> tokens — drop them before
+                                    // they reach the chat bubble.
+                                    var clean = StripSpecialTokens(content);
+                                    if (clean.Length == 0)
+                                        continue;
+
+                                    gotFirstToken = true;
+                                    if (!modelAnnounced)
                                     {
-                                        gotFirstToken = true;
-                                        if (!modelAnnounced)
+                                        modelAnnounced = true;
+                                        onModelUsed?.Invoke($"{FormatModelName(modelId)} · {ProviderName(provider)}");
+                                        onStreamInfo?.Invoke(new AiStreamInfo
                                         {
-                                            modelAnnounced = true;
-                                            onModelUsed?.Invoke($"{FormatModelName(modelId)} · {ProviderName(provider)}");
-                                            onStreamInfo?.Invoke(new AiStreamInfo
-                                            {
-                                                ModelLabel = $"{FormatModelName(modelId)} · {ProviderName(provider)}",
-                                                Provider = provider,
-                                                Attempt = attempt,
-                                                FallbackUsed = modelsTried > 1
-                                            });
-                                        }
-                                        fullText.Append(content);
-                                        onChunk(content);
+                                            ModelLabel = $"{FormatModelName(modelId)} · {ProviderName(provider)}",
+                                            Provider = provider,
+                                            Attempt = attempt,
+                                            FallbackUsed = modelsTried > 1
+                                        });
                                     }
+                                    fullText.Append(clean);
+                                    onChunk(clean);
                                 }
                                 catch (JsonException)
                                 {
@@ -539,15 +818,15 @@ namespace MosquitoNetCalculator.Services
                                 }
                             }
 
-                            // Stream ended without [DONE]
-                            var endedText = fullText.ToString();
-                            if (endedText.Length > 0)
+                            // Stream finished ([DONE] or EOF).
+                            var text = fullText.ToString();
+                            if (text.Length > 0)
                             {
-                                onDone(endedText);
+                                onDone(text);
                                 return;
                             }
-                            // Empty stream — transient, retry the same model.
-                            transientFailure = true;
+                            // Padding-only / empty response — skip this model.
+                            skipModel = true;
                         }
                     }
                     catch (OperationCanceledException) when (ct.IsCancellationRequested)
@@ -579,6 +858,9 @@ namespace MosquitoNetCalculator.Services
                         }
                     }
 
+                    if (skipModel)
+                        break;
+
                     if (transientFailure && attempt < MaxAttemptsPerModel)
                         continue; // retry same model
 
@@ -596,7 +878,7 @@ namespace MosquitoNetCalculator.Services
         /// models automatically, merging with user-selected models as top priority.
         /// When auto-mode is off, returns the user's manual selection.
         /// </summary>
-        private static IReadOnlyList<string> ResolveFallbackModels(string userMessage)
+        private static IReadOnlyList<string> ResolveFallbackModels(string userMessage, bool hasImages = false)
         {
             var userSelected = AppSettingsServiceAi.LoadAiFallbackModels();
             bool autoMode = AppSettingsServiceAi.LoadAutoSelectModel();
@@ -620,6 +902,23 @@ namespace MosquitoNetCalculator.Services
                 resolved = merged.Count == 0
                     ? new[] { DefaultModel }
                     : merged;
+            }
+
+            // Auto-analysis: drop models that a recent probe or send-path failure
+            // already marked dead (401/403/404). Never return an empty chain — a
+            // stale cache must not break the request.
+            resolved = ExcludeUnavailable(resolved);
+
+            // When the user attached images, prefer vision-capable models first so
+            // a text-only model does not waste the request (and the user's patience).
+            if (hasImages)
+            {
+                var visionFirst = resolved.Where(IsVisionCapable)
+                    .Concat(resolved.Where(m => !IsVisionCapable(m)))
+                    .Distinct(StringComparer.OrdinalIgnoreCase)
+                    .ToList();
+                if (visionFirst.Count > 0)
+                    resolved = visionFirst;
             }
 
             // Even a manual OpenRouter-only selection must not die when OpenRouter
@@ -650,12 +949,143 @@ namespace MosquitoNetCalculator.Services
         }
 
         /// <summary>
+        /// Removes models that were recently probed as unavailable. The cache only
+        /// affects entries marked dead within <see cref="AvailabilityTtl"/> so a
+        /// temporary outage cannot ban a model forever.
+        /// </summary>
+        private static IReadOnlyList<string> ExcludeUnavailable(IEnumerable<string> models)
+        {
+            var list = models?.ToList() ?? new List<string>();
+            if (list.Count == 0) return list;
+
+            var availability = GetAvailability();
+            var fresh = list.Where(id => !IsRecentlyUnavailable(availability, id)).ToList();
+            return fresh.Count > 0 ? fresh : list;
+        }
+
+        private static bool IsRecentlyUnavailable(
+            IReadOnlyDictionary<string, AiModelAvailability> availability,
+            string modelId)
+        {
+            if (!availability.TryGetValue(modelId, out var entry)) return false;
+            if (entry.IsAvailable) return false;
+            return entry.CheckedAt == null
+                   || DateTime.UtcNow - entry.CheckedAt.Value < AvailabilityTtl;
+        }
+
+        // Heuristic markers for models that accept image inputs. Used only to
+        // prioritize vision models when an image is attached; the full fallback
+        // chain is kept as a safety net (non-vision models still try last).
+        private static readonly string[] VisionModelMarkers =
+        {
+            "gemma-4", "gemma-3", "gemini", "llama-4", "llama-3.2", "qwen2.5-vl",
+            "qwen-vl", "gpt-4o", "gpt-5", "gpt-oss", "claude", "pixtral", "llava",
+            "vision", "omni", "glm", "-vl"
+        };
+
+        private static bool IsVisionCapable(string modelId)
+        {
+            // Prefer the catalog's authoritative modality metadata when known;
+            // fall back to name heuristics for entries without it (NVIDIA catalog
+            // and cached models saved by older builds).
+            foreach (var option in AvailableModels)
+            {
+                if (string.Equals(option.Id, modelId, StringComparison.OrdinalIgnoreCase))
+                {
+                    if (option.SupportsVision is bool vision)
+                        return vision;
+                    break;
+                }
+            }
+
+            var id = modelId.ToLowerInvariant();
+            foreach (var marker in VisionModelMarkers)
+            {
+                if (id.Contains(marker, StringComparison.Ordinal))
+                    return true;
+            }
+            return false;
+        }
+
+        // Markers for NVIDIA catalog entries that are NOT general chat models
+        // (embeddings, code completion, image/diffusion, safety, reward, parse…).
+        private static readonly string[] NonChatModelMarkers =
+        {
+            "embed", "starcoder", "codegemma", "deepseek-coder", "code-instruct",
+            "deplot", "diffusion", "safety", "guard", "reward", "parse", "bge-",
+            "nomic-", "e5-", "rerank", "recurrentgemma", "fuyu", "dall-e", "flux",
+            "imagen", "midjourney", "sdxl"
+        };
+
+        internal static bool IsChatModel(string modelId)
+        {
+            if (string.IsNullOrWhiteSpace(modelId)) return false;
+            var id = modelId.ToLowerInvariant();
+            foreach (var marker in NonChatModelMarkers)
+            {
+                if (id.Contains(marker, StringComparison.Ordinal))
+                    return false;
+            }
+
+            // Keep only instruction/chat-tuned entries; bare base models (e.g.
+            // "google/gemma-2b") would answer chat prompts with garbage.
+            return id.Contains("instruct", StringComparison.Ordinal)
+                   || id.Contains("chat", StringComparison.Ordinal)
+                   || id.Contains("-it", StringComparison.Ordinal)
+                   || id.Contains("flash", StringComparison.Ordinal)
+                   || id.Contains("-pro", StringComparison.Ordinal)
+                   || id.Contains("nemotron", StringComparison.Ordinal)
+                   || id.Contains("yi-large", StringComparison.Ordinal)
+                   || id.Contains("jamba", StringComparison.Ordinal)
+                   || id.Contains("dbrx", StringComparison.Ordinal)
+                   || id.Contains("sea-lion", StringComparison.Ordinal);
+        }
+
+        /// <summary>
+        /// Determines whether an OpenRouter catalog entry is a general chat model.
+        /// The free catalog also lists embeddings, image/audio/video generators and
+        /// code-completion models — those must never be offered as chat fallbacks.
+        /// Unlike <see cref="IsChatModel"/> (NVIDIA-oriented), this does not require
+        /// an "-it"/"instruct" suffix: OpenRouter free chat models use varied IDs.
+        /// </summary>
+        internal static bool IsGeneralChatModel(OpenRouterModel model)
+        {
+            if (model == null || string.IsNullOrWhiteSpace(model.Id))
+                return false;
+
+            var id = model.Id.ToLowerInvariant();
+            foreach (var marker in NonChatModelMarkers)
+            {
+                if (id.Contains(marker, StringComparison.Ordinal))
+                    return false;
+            }
+
+            // When the API reports the architecture modality, keep only text-in /
+            // text-out models and reject embeddings and non-text generators.
+            var modality = model.Architecture?.Modality?.ToLowerInvariant();
+            if (!string.IsNullOrWhiteSpace(modality))
+            {
+                if (modality.Contains("embedding", StringComparison.Ordinal)
+                    || modality.Contains("->image", StringComparison.Ordinal)
+                    || modality.Contains("->audio", StringComparison.Ordinal)
+                    || modality.Contains("->video", StringComparison.Ordinal)
+                    || modality.Contains("->speech", StringComparison.Ordinal))
+                {
+                    return false;
+                }
+            }
+
+            return true;
+        }
+
+        /// <summary>
         /// Builds the messages list shared between streaming and non-streaming paths.
         /// </summary>
         private static List<ChatMessage> BuildMessages(
             string userMessage,
             List<(string Role, string Content)> history,
-            string? orderContext)
+            string? orderContext,
+            IReadOnlyList<string>? imageDataUrls)
         {
             var messages = new List<ChatMessage>
             {
@@ -672,8 +1102,72 @@ namespace MosquitoNetCalculator.Services
                 });
             }
 
-            messages.Add(new ChatMessage { Role = "user", Content = userMessage });
+            messages.Add(new ChatMessage { Role = "user", Content = BuildUserContent(userMessage, imageDataUrls) });
             return messages;
+        }
+
+        /// <summary>
+        /// Builds the user message content: a plain string when no images are
+        /// attached, or an OpenAI-compatible multimodal parts array when they are.
+        /// </summary>
+        private static object BuildUserContent(
+            string userMessage,
+            IReadOnlyList<string>? imageDataUrls)
+        {
+            if (imageDataUrls == null || imageDataUrls.Count == 0)
+                return userMessage;
+
+            var parts = new List<object>(imageDataUrls.Count + 1);
+            if (!string.IsNullOrWhiteSpace(userMessage))
+                parts.Add(new ChatContentTextPart { Text = userMessage });
+
+            foreach (var url in imageDataUrls)
+            {
+                if (string.IsNullOrWhiteSpace(url)) continue;
+                parts.Add(new ChatContentImagePart
+                {
+                    ImageUrl = new ChatContentImageUrl { Url = url }
+                });
+            }
+
+            return parts.Count == 0 ? userMessage : parts;
+        }
+
+        /// <summary>
+        /// Extracts the plain text from message content (string or multimodal parts).
+        /// Used for parsing/plan context that only needs the textual part.
+        /// </summary>
+        internal static string GetTextContent(object? content)
+        {
+            switch (content)
+            {
+                case null:
+                    return string.Empty;
+                case string s:
+                    return s;
+                case IEnumerable<object> parts:
+                    var sb = new StringBuilder();
+                    foreach (var part in parts)
+                    {
+                        if (part is ChatContentTextPart text)
+                            sb.Append(text.Text);
+                    }
+                    return sb.ToString();
+                default:
+                    return content.ToString() ?? string.Empty;
+            }
+        }
+
+        /// <summary>
+        /// Removes padding/special tokens that some models emit verbatim — most
+        /// often a text-only model that received an image part and answers with
+        /// a wall of <c>&lt;pad&gt;</c> / <c>&lt;|image|&gt;</c> tokens instead of text.
+        /// </summary>
+        internal static string StripSpecialTokens(string? text)
+        {
+            if (string.IsNullOrWhiteSpace(text))
+                return string.Empty;
+            return SpecialTokenRegex.Replace(text, string.Empty).Trim();
         }
 
         /// <summary>
@@ -858,8 +1352,8 @@ namespace MosquitoNetCalculator.Services
                     if (httpResponse.IsSuccessStatusCode)
                     {
                         var completion = JsonSerializer.Deserialize<ChatCompletionResponse>(body, JsonOptions);
-                        var content = completion?.Choices?.FirstOrDefault()?.Message?.Content ?? "";
-                        var (parsed, isValid) = AiCommandParser.TryParse(content, request.Messages[^1].Content);
+                        var content = GetTextContent(completion?.Choices?.FirstOrDefault()?.Message?.Content);
+                        var (parsed, isValid) = AiCommandParser.TryParse(content, GetTextContent(request.Messages[^1].Content));
 
                         if (isValid)
                             return (parsed, false, false);
@@ -873,6 +1367,9 @@ namespace MosquitoNetCalculator.Services
                     lastStatusCode = (int)httpResponse.StatusCode;
                     lastBody = body;
 
+                    if (lastStatusCode is 401 or 403 or 404 or 400)
+                        RecordModelUnavailable(request.Model, lastStatusCode.Value);
+
                     // Fatal only for auth errors (401/403) — a wrong key helps no
                     // model. Other 4xx (400/404: model unavailable for account),
                     // 429 and 5xx should try the next fallback model.
@@ -880,6 +1377,12 @@ namespace MosquitoNetCalculator.Services
                     {
                         return (BuildErrorResponse(lastStatusCode, lastBody, null, request.Model), false, false);
                     }
+
+                    // 404/400 mean the model is unavailable for this account/request
+                    // and can never succeed on retry — stop retrying the same model
+                    // and let the caller try the next fallback.
+                    if (lastStatusCode is 404 or 400)
+                        break;
                 }
                 catch (OperationCanceledException) when (ct.IsCancellationRequested)
                 {
@@ -909,176 +1412,19 @@ namespace MosquitoNetCalculator.Services
         /// <summary>
         /// Builds the system prompt with full product catalog and app knowledge.
         /// </summary>
-        private static string BuildSystemPrompt(string? orderContext)
-        {
-            var sb = new StringBuilder();
-            if (!string.IsNullOrWhiteSpace(orderContext))
-            {
-                sb.AppendLine(orderContext);
-                sb.AppendLine();
-            }
-            sb.AppendLine("Ты — AI-ассистент программы A.R.C. Frame (калькулятор сеток и откосов из сэндвича).");
-            sb.AppendLine("Твоя задача — помогать менеджерам работать с программой через текстовые запросы.");
-            sb.AppendLine();
-            sb.AppendLine("## О ПРОГРАММЕ");
-            sb.AppendLine("A.R.C. Frame — настольная программа для расчёта москитных сеток, отливов, козырьков и откосов.");
-            sb.AppendLine("Возможности:");
-            sb.AppendLine("• Расчёт заказа: добавление товаров (сетки, отливы, козырьки, ручные позиции), итоги, монтаж (вкл./без/в конструкцию), вычеты и надбавки.");
-            sb.AppendLine("• Заказы: история, статусы, экспорт/импорт, копирование, смена статуса.");
-            sb.AppendLine("• Откосы из сэндвича: АВТО-просчёт материалов (сэндвич, пена, герметик, скотч, Старт, F-планка, пеноплекс, работа) по ширине/высоте/глубине окна; режим экономии раскроя.");
-            sb.AppendLine("• Цены: редактируемый каталог цен, сброс к значениям по умолчанию.");
-            sb.AppendLine("• Печать КП (коммерческое предложение) и экспорт в PDF, кол-во копий, выбор принтера.");
-            sb.AppendLine("• Примечания с лёгкой разметкой (**жирный**, *курсив*, [color=#RRGGBB], маркированные списки).");
-            sb.AppendLine("• Обновления: проверка новых версий, журнал изменений, авто-обновление.");
-            sb.AppendLine();
-            sb.AppendLine("## КАТАЛОГ ТОВАРОВ");
-            sb.AppendLine();
-            sb.AppendLine("### Сеточные изделия (Anwis, измеряются в м²):");
-            sb.AppendLine("| Товар | Цвета | Цена (₽/м²) | Anwis режим |");
-            sb.AppendLine("|-------|-------|-------------|-------------|");
-            sb.AppendLine("| Anwis | Белый, Коричневый | 1800/1900 | ББ60, ББ70, ПП, Проём, Габарит |");
-            sb.AppendLine("| На навесах | Белый, Коричневый | 2900/3000 | — |");
-            sb.AppendLine("| Оконная на метал. крепл. | Белый, Коричневый | 3200/3300 | — |");
-            sb.AppendLine("| Дверная сетка | Белый | 3000 | — |");
-            sb.AppendLine();
-            sb.AppendLine("### Per-linear-meter (измеряются в м.п.):");
-            sb.AppendLine("| Товар | Цвета | Цена (₽/м.п.) |");
-            sb.AppendLine("|-------|-------|---------------|");
-            sb.AppendLine("| Отлив | Белый, Коричневый, Антрацит, Золотой дуб | 2150/2650 |");
-            sb.AppendLine("| Козырёк | Белый, Коричневый, Антрацит, Золотой дуб | 2150/2650 |");
-            sb.AppendLine();
-            sb.AppendLine("### Ручные позиции (цена вводится вручную):");
-            sb.AppendLine("Работа, Брус, Пояс, Доставка, Материал — без цвета, цена 0 по умолчанию.");
-            sb.AppendLine();
-            sb.AppendLine("### Прочее:");
-            sb.AppendLine("ПСУЛ — 100 ₽/м.п., Уплотнение — 250 ₽/м.п. (Серый/Чёрный), Короб — 2150/2650 ₽/м².");
-            sb.AppendLine();
-            sb.AppendLine("## РЕЖИМЫ ANWIS (только для товара «Anwis»):");
-            sb.AppendLine("• ББ60 (Брусбокс 60): W+2, H−30. По умолчанию.");
-            sb.AppendLine("• ББ70 (Брусбокс 70): W−2, H−30.");
-            sb.AppendLine("• ПП (Профипласт): без изменений.");
-            sb.AppendLine("• Проём (Размер проёма): W+20, H+20.");
-            sb.AppendLine("• Габарит (Габаритный): без изменений.");
-            sb.AppendLine();
-            sb.AppendLine("## ПРАВИЛА ОТВЕТОВ");
-            sb.AppendLine();
-            sb.AppendLine("Если пользователь просит ДОБАВИТЬ ТОВАР в расчёт — ответь JSON-блоком ```json с полем \"action\".");
-            sb.AppendLine("Примеры запросов на добавление:");
-            sb.AppendLine("• «Сделай сетку Anwis 500×500 бб60 белую» → add_item: Anwis, Белый, 500, 500, 1, 1800, anwis_mode=ББ60");
-            sb.AppendLine("• «Сделай сетку Anwis 500×500 белую» (режим НЕ указан) → задай уточняющий вопрос: ББ60, ББ70, ПП, Проём или Габарит?");
-            sb.AppendLine("• «Добавь анвис корич 500 1000 в конструцию» → add_item: Anwis, Коричневый, 500, 1000, 1, 1900, anwis_mode + installation_mode=2");
-            sb.AppendLine("• «Отлив 200×1500 коричневый» → add_item: Отлив, Коричневый, 200, 1500, 1, 2150");
-            sb.AppendLine("• «Козырёк 350×2300, 2 штуки, антрацит» → add_item: Козырёк, Антрацит, 350, 2300, 2, 2150");
-            sb.AppendLine("• «Работа 5000» → add_item: Работа, \"\", 0, 0, 1, 5000");
-            sb.AppendLine("• «Доставка 500» → add_item: Доставка, \"\", 0, 0, 1, 500");
-            sb.AppendLine();
-            sb.AppendLine("Формат action \"add_item\":");
-            sb.AppendLine("```json");
-            sb.AppendLine("{");
-            sb.AppendLine("  \"action\": \"add_item\",");
-            sb.AppendLine("  \"params\": {");
-            sb.AppendLine("    \"type\": \"Anwis\",");
-            sb.AppendLine("    \"color\": \"Белый\",");
-            sb.AppendLine("    \"width\": 500,");
-            sb.AppendLine("    \"height\": 500,");
-            sb.AppendLine("    \"quantity\": 1,");
-            sb.AppendLine("    \"price\": 1800,");
-            sb.AppendLine("    \"anwis_mode\": \"ББ60\",");
-            sb.AppendLine("    \"installation_mode\": 2");
-            sb.AppendLine("  }");
-            sb.AppendLine("}");
-            sb.AppendLine("```");
-            sb.AppendLine("Монтаж передавай ТОЛЬКО если пользователь его упомянул: «в конструцию»/«в конструкцию» → 2, «без монтажа» → 1, «с монтажом»/«монтаж включён» → 0. Иначе поле пропускай.");
-            sb.AppendLine();
-            sb.AppendLine("Другие действия:");
-            sb.AppendLine("• «Удали последний» → {\"action\": \"delete_last\"}");
-            sb.AppendLine("• «Удали все сетки» / «Удали козырёк» → {\"action\": \"delete_items\", \"params\": {\"product\": \"Козырёк\"}} — удаляет ВСЕ позиции, по названию товара или категории (сетки/фасадные/комплектующие/услуги/откосы).");
-            sb.AppendLine("• «Очисти расчёт» → {\"action\": \"clear_all\"}");
-            sb.AppendLine("• «Покажи товары» → {\"action\": \"list_products\"}");
-            sb.AppendLine();
-            sb.AppendLine("## ИЗМЕНЕНИЕ СУЩЕСТВУЮЩИХ ПОЗИЦИЙ (update_items)");
-            sb.AppendLine("Если пользователь просит ИЗМЕНИТЬ УЖЕ ДОБАВЛЕННЫЕ товары (монтаж, цену) — используй action \"update_items\".");
-            sb.AppendLine("НЕ добавляй новый товар, если речь о существующих позициях!");
-            sb.AppendLine();
-            sb.AppendLine("Формат \"update_items\":");
-            sb.AppendLine("```json");
-            sb.AppendLine("{");
-            sb.AppendLine("  \"action\": \"update_items\",");
-            sb.AppendLine("  \"params\": {");
-            sb.AppendLine("    \"product\": \"Козырёк\",");
-            sb.AppendLine("    \"installation_mode\": 0,");
-            sb.AppendLine("    \"price\": 900");
-            sb.AppendLine("    \"installation_amount\": 750");
-            sb.AppendLine("  }");
-            sb.AppendLine("}");
-            sb.AppendLine("```");
-            sb.AppendLine("• product — название товара (\"Козырёк\", \"Anwis\", \"Отлив\" и т.д.) ИЛИ категория (\"сетки\", \"фасадные\", \"комплектующие\", \"услуги\", \"откосы\").");
-            sb.AppendLine("  Если product не указан или \"all\" — применить ко ВСЕМ позициям.");
-            sb.AppendLine("  Категории: сетки=Anwis/На навесах/Оконная на метал. крепл./Дверная сетка; фасадные=Отлив/Козырёк/Короб; комплектующие=ПСУЛ/Уплотнение/Брус/Пояс/Материал; услуги=Работа/Доставка; откосы=Откос/Работа за откос.");
-            sb.AppendLine("• installation_mode (необязательно) — 0=монтаж включён, 1=без монтажа, 2=в конструкцию.");
-            sb.AppendLine("• installation_amount (необязательно) — сумма монтажа в рублях (₽/шт. или ₽/м.п.). «с монтажом по 750» → installation_amount=750.");
-            sb.AppendLine("• anwis_mode (необязательно) — только для Anwis. «смени с бб60 на бб70» → anwis_mode=\"ББ70\". Варианты: ББ60, ББ70, ПП, Проём, Габарит.");
-            sb.AppendLine("• color (необязательно) — цвет товара. «смени цвет на коричневый» → color=\"Коричневый\".");
-            sb.AppendLine("• price (необязательно) — новая цена в рублях.");
-            sb.AppendLine("• Можно менять и монтаж, и цену одновременно.");
-            sb.AppendLine();
-            sb.AppendLine("Примеры:");
-            sb.AppendLine("• «Козырёк с монтажом 900р» → update_items: product=Козырёк, installation_mode=0, price=900");
-            sb.AppendLine("• «Все сетки без монтажа» → update_items: product=сетки, installation_mode=1");
-            sb.AppendLine("• «Смени Anwis с бб60 на бб70» → update_items: product=Anwis, anwis_mode=\"ББ70\"");
-            sb.AppendLine("• «Смени цвет Anwis на коричневый» → update_items: product=Anwis, color=\"Коричневый\"");
-            sb.AppendLine("• «Сделай все позиции с монтажом» → update_items: installation_mode=0 (без product — все)");
-            sb.AppendLine("• «Поменяй цену на отливах на 2500» → update_items: product=Отлив, price=2500");
-            sb.AppendLine();
-            sb.AppendLine("## ОТКОСЫ ИЗ СЭНДВИЧА (АВТО-ПРОСЧЁТ)");
-            sb.AppendLine("«Откосы из сэндвича» — это отдельная встроенная функция АВТО-просчёта, НЕ товар из каталога.");
-            sb.AppendLine("Когда пользователь просит просчитать откосы (например: «сделай просчёт откосы из сэндвича, в 1500 ш 700 г 300»,");
-            sb.AppendLine("«откос 1500х700, глубина 300», «просчитай откосы для окна 1200×1400 глубиной 200»):");
-            sb.AppendLine("• width = ширина окна (мм), height = высота окна (мм), depth = глубина откоса (мм), quantity = количество откосов/окон (по умолчанию 1).");
-            sb.AppendLine("• Верни JSON-блок с action \"calc_slope\":");
-            sb.AppendLine("```json");
-            sb.AppendLine("{");
-            sb.AppendLine("  \"action\": \"calc_slope\",");
-            sb.AppendLine("  \"params\": {");
-            sb.AppendLine("    \"width\": 1500,");
-            sb.AppendLine("    \"height\": 700,");
-            sb.AppendLine("    \"depth\": 300,");
-            sb.AppendLine("    \"quantity\": 1");
-            sb.AppendLine("  }");
-            sb.AppendLine("}");
-            sb.AppendLine("```");
-            sb.AppendLine("Это откроет панель откосов с уже подставленными размерами — менеджер увидит расчёт материалов и сможет добавить его в КП.");
-            sb.AppendLine("Если не хватает хотя бы одного размера (ширина/высота/глубина) — задай уточняющий вопрос, НЕ выдумывай.");
-            sb.AppendLine();
-            sb.AppendLine("Если запрос НЕ требует действия (вопрос, справка) — отвечай обычным текстом БЕЗ JSON.");
-            sb.AppendLine("Если запрос неоднозначен — задай уточняющий вопрос.");
-            sb.AppendLine();
-            sb.AppendLine("ВАЖНО: для Anwis, если пользователь НЕ указал режим (ББ60/ББ70/ПП/Проём/Габарит) — задай уточняющий вопрос, какой режим использовать (перечисли варианты), и НЕ добавляй товар с выдуманным режимом.");
-            sb.AppendLine("ВАЖНО: если не указан цвет — используй «Белый» для товаров с цветом.");
-            sb.AppendLine("ВАЖНО: если не указано количество — используй 1.");
-            sb.AppendLine("ВАЖНО: если не указана цена — используй стандартную цену из каталога.");
-
-            return sb.ToString();
-        }
-
-        /// <summary>
-        /// Собирает ПОЛНУЮ историю обновлений из <see cref="UpdateLog"/>
-        /// (встроенный update-log.json) — ВСЕ версии со ВСЕМИ изменениями,
-        /// чтобы ассистент мог ответить на вопросы о ЛЮБОЙ версии программы,
-        /// а не только о последних пяти. При любой ошибке — безопасный no-op
-        /// (история недоступна), чтобы system prompt никогда не падал.
+                /// <summary>
+        /// Stage-2 hardening: thin delegate to <see cref="AiPromptBuilder"/>.
+        /// The prompt body lives in <c>Resources/ai-system-prompt.md</c> and
+        /// the catalog/prices are sourced from <see cref="AiFactsProvider"/>
+        /// via <c>PriceService.DefaultPrices</c> — this method stays here for
+        /// binary compatibility with any caller that referenced it directly.
         /// </summary>
-        private static string AppendRecentUpdates()
-        {
-            try
-            {
-                return FormatUpdateHistory(UpdateLog.AllNewestFirst());
-            }
-            catch
-            {
-                return "(история обновлений недоступна)";
-            }
-        }
+        private static string BuildSystemPrompt(string? orderContext)
+            => AiPromptBuilder.BuildSystemPrompt(orderContext);
+
+
+
+
 
         /// <summary>
         /// Форматирует полную историю обновлений в компактный список для system
@@ -1164,8 +1510,36 @@ namespace MosquitoNetCalculator.Services
         [JsonPropertyName("role")]
         public string Role { get; set; } = "";
 
+        /// <summary>
+        /// Text (string) or multimodal parts (list of <see cref="ChatContentTextPart"/>
+        /// / <see cref="ChatContentImagePart"/>) for image-aware requests.
+        /// </summary>
         [JsonPropertyName("content")]
-        public string Content { get; set; } = "";
+        public object? Content { get; set; }
+    }
+
+    internal sealed class ChatContentTextPart
+    {
+        [JsonPropertyName("type")]
+        public string Type { get; } = "text";
+
+        [JsonPropertyName("text")]
+        public string Text { get; set; } = "";
+    }
+
+    internal sealed class ChatContentImagePart
+    {
+        [JsonPropertyName("type")]
+        public string Type { get; } = "image_url";
+
+        [JsonPropertyName("image_url")]
+        public ChatContentImageUrl ImageUrl { get; set; } = new();
+    }
+
+    internal sealed class ChatContentImageUrl
+    {
+        [JsonPropertyName("url")]
+        public string Url { get; set; } = "";
     }
 
     internal sealed class ChatCompletionRequest
@@ -1229,6 +1603,19 @@ namespace MosquitoNetCalculator.Services
 
         [JsonPropertyName("pricing")]
         public OpenRouterPricing? Pricing { get; set; }
+
+        [JsonPropertyName("architecture")]
+        public OpenRouterArchitecture? Architecture { get; set; }
+    }
+
+    internal sealed class OpenRouterArchitecture
+    {
+        [JsonPropertyName("modality")]
+        public string? Modality { get; set; }
+
+        /// <summary>Modern OpenRouter field: e.g. ["text", "image"].</summary>
+        [JsonPropertyName("input_modalities")]
+        public List<string>? InputModalities { get; set; }
     }
 
     internal sealed class OpenRouterPricing
