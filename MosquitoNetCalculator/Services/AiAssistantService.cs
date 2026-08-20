@@ -20,7 +20,7 @@ namespace MosquitoNetCalculator.Services
     /// and parses structured JSON responses into <see cref="AiCommand"/> objects.
     /// </summary>
     /// <summary>
-    /// Result of a single API-key ping. Returned by <see cref="AiAssistantService.TestApiKeyAsync"/>.
+    /// Result of a single API-key ping. Returned by <see cref="AiAssistantService.TestApiKeyAsync(AiProvider, string, CancellationToken)"/>.
     /// </summary>
     public sealed record AiApiKeyTestResult(
         bool IsOk,
@@ -44,14 +44,34 @@ namespace MosquitoNetCalculator.Services
         internal static int RetryDelayMs { get; set; } = 300;
 
         // ── Provider endpoints ─────────────────────────────────
+        // Stage-3 hardening: URL constants now live in the dedicated helper
+        // classes — AiKeyValidator.OpenRouterApiUrl / NvidiaApiUrl /
+        // OpenRouterAuthKeyUrl and AiModelCatalogClient.OpenRouterModelsUrl /
+        // NvidiaModelsUrl. They are referenced through those classes' public
+        // API rather than via private const fields.
         private const string DefaultModel = "google/gemma-4-31b-it:free";
-        private const string ApiUrl = "https://openrouter.ai/api/v1/chat/completions";
-        private const string ModelsUrl = "https://openrouter.ai/api/v1/models";
-        private const string NvidiaApiUrl = "https://integrate.api.nvidia.com/v1/chat/completions";
-        private const string NvidiaModelsUrl = "https://integrate.api.nvidia.com/v1/models";
-        // OpenRouter exposes an auth probe that actually validates the key
-        // (unlike /v1/models, which returns the public catalog for everyone).
-        private const string OpenRouterAuthKeyUrl = "https://openrouter.ai/api/v1/auth/key";
+
+        /// <summary>
+        /// Stage-2 hardening: thin delegate to <see cref="AiPromptBuilder"/>.
+        /// The prompt body lives in <c>Resources/ai-system-prompt.md</c> and
+        /// the catalog/prices are sourced from <see cref="AiFactsProvider"/>
+        /// via <c>PriceService.DefaultPrices</c> — this method stays here for
+        /// binary compatibility with any caller that referenced it directly.
+        /// </summary>
+        private static string BuildSystemPrompt(string? orderContext)
+            => AiPromptBuilder.BuildSystemPrompt(orderContext);
+        /// <summary>
+        /// Thin overload that forwards to <see cref="AiKeyValidator.TestApiKeyAsync"/>
+        /// using the service's <see cref="HttpClient"/>. Kept here for binary
+        /// compatibility — existing UI callers can stay on this signature.
+        /// </summary>
+        public static Task<AiApiKeyTestResult> TestApiKeyAsync(
+            AiProvider provider,
+            string apiKey,
+            CancellationToken ct = default)
+            => AiKeyValidator.TestApiKeyAsync(provider, apiKey, HttpClient, ct);
+
+
 
         // ── Built-in API keys (free tier only) ────────────────
         // Embedded so the assistant works out of the box. Users can still
@@ -161,11 +181,11 @@ namespace MosquitoNetCalculator.Services
                 ? EmbeddedOpenRouterApiKey
                 : apiKey.Trim();
             var nvidiaKey = string.IsNullOrWhiteSpace(nvidiaApiKey)
-                ? GetApiKey(AiProvider.Nvidia)
+                ? AiKeyValidator.GetApiKey(AiProvider.Nvidia)
                 : nvidiaApiKey.Trim();
 
-            var openRouterTask = FetchOpenRouterModelsAsync(openRouterKey, ct);
-            var nvidiaTask = FetchNvidiaModelsAsync(nvidiaKey, ct);
+            var openRouterTask = AiModelCatalogClient.FetchOpenRouterModelsAsync(HttpClient, openRouterKey, ct);
+            var nvidiaTask = AiModelCatalogClient.FetchNvidiaModelsAsync(HttpClient, nvidiaKey, ct);
             await Task.WhenAll(openRouterTask, nvidiaTask);
 
             var openRouter = await openRouterTask;
@@ -188,7 +208,7 @@ namespace MosquitoNetCalculator.Services
                 // the failed provider look fresh for the next hour.
                 SetAvailableModels(merged);
                 AppSettingsServiceAi.SaveCachedModels(merged, DateTime.UtcNow);
-                ReconcileSavedModels(merged);
+                AiModelCatalogClient.ReconcileSavedModels(merged);
             }
             else
             {
@@ -200,7 +220,7 @@ namespace MosquitoNetCalculator.Services
 
         private static void AddProviderResult(
             List<AiModelOption> destination,
-            CatalogFetchResult fetched,
+            AiModelCatalogClient.CatalogFetchResult fetched,
             IReadOnlyList<AiModelOption> cached,
             AiProvider provider)
         {
@@ -219,16 +239,7 @@ namespace MosquitoNetCalculator.Services
             }
         }
 
-        private static void ReconcileSavedModels(IReadOnlyList<AiModelOption> models)
-        {
-            var availableIds = models.Select(m => m.Id)
-                .ToHashSet(StringComparer.OrdinalIgnoreCase);
-            var saved = AppSettingsServiceAi.LoadAiFallbackModels();
-            var valid = saved.Where(availableIds.Contains).ToList();
-            if (valid.Count == 0 && models.Count > 0)
-                valid.Add(models[0].Id);
-            AppSettingsServiceAi.SaveAiFallbackModels(valid);
-        }
+
 
         /// <summary>
         /// Auto-analyzes which candidate models are actually usable right now by
@@ -248,10 +259,10 @@ namespace MosquitoNetCalculator.Services
                 return Array.Empty<AiModelAvailability>();
 
             var orKey = string.IsNullOrWhiteSpace(openRouterApiKey)
-                ? GetApiKey(AiProvider.OpenRouter)
+                ? AiKeyValidator.GetApiKey(AiProvider.OpenRouter)
                 : openRouterApiKey.Trim();
             var nvKey = string.IsNullOrWhiteSpace(nvidiaApiKey)
-                ? GetApiKey(AiProvider.Nvidia)
+                ? AiKeyValidator.GetApiKey(AiProvider.Nvidia)
                 : nvidiaApiKey.Trim();
 
             var probeList = new List<(string Id, AiProvider Provider, string Key)>();
@@ -312,7 +323,7 @@ namespace MosquitoNetCalculator.Services
                     MaxTokens = 1
                 };
 
-                using var httpRequest = new HttpRequestMessage(HttpMethod.Post, GetApiUrl(provider))
+                using var httpRequest = new HttpRequestMessage(HttpMethod.Post, AiKeyValidator.GetApiUrl(provider))
                 {
                     Content = JsonContent.Create(probeRequest, options: JsonOptions)
                 };
@@ -443,7 +454,7 @@ namespace MosquitoNetCalculator.Services
             RecordModelAvailability(new AiModelAvailability
             {
                 Id = modelId,
-                Provider = GetProviderForModel(modelId),
+                Provider = AiKeyValidator.GetProviderForModel(modelId),
                 IsAvailable = false,
                 StatusCode = statusCode,
                 Detail = DescribeProbeFailure(statusCode),
@@ -452,218 +463,13 @@ namespace MosquitoNetCalculator.Services
         }
 
         private static void SetAvailableModels(IEnumerable<AiModelOption> models)
-        {
-            _availableModels = models
-                .Where(m => !string.IsNullOrWhiteSpace(m.Id))
-                .GroupBy(m => m.Id, StringComparer.OrdinalIgnoreCase)
-                .Select(g => g.First())
-                .ToList();
-        }
+            => _availableModels = AiModelCatalogClient.Deduplicate(models);
 
-        private static async Task<CatalogFetchResult> FetchOpenRouterModelsAsync(
-            string apiKey, CancellationToken ct)
-        {
-            try
-            {
-                using var request = new HttpRequestMessage(HttpMethod.Get, ModelsUrl);
-                request.Headers.Add("HTTP-Referer", "https://arcframe.app");
-                request.Headers.Add("X-Title", "A.R.C. Frame");
-                if (!string.IsNullOrWhiteSpace(apiKey))
-                    request.Headers.Add("Authorization", $"Bearer {apiKey}");
 
-                using var response = await HttpClient.SendAsync(request, ct);
-                var body = await response.Content.ReadAsStringAsync(ct);
-                if (!response.IsSuccessStatusCode)
-                    return CatalogFetchResult.Failed;
 
-                var parsed = JsonSerializer.Deserialize<OpenRouterModelsResponse>(body, JsonOptions);
-                var models = parsed?.Data?
-                    .Where(m => IsZeroPrice(m.Pricing?.Prompt)
-                                && IsZeroPrice(m.Pricing?.Completion)
-                                && IsGeneralChatModel(m))
-                    .OrderBy(m => m.Name, StringComparer.OrdinalIgnoreCase)
-                    .Select(m => new AiModelOption(
-                        m.Id,
-                        string.IsNullOrWhiteSpace(m.Name) ? m.Id : m.Name,
-                        AiProvider.OpenRouter)
-                    {
-                        SupportsVision = HasImageInput(m)
-                    })
-                    .ToList() ?? new List<AiModelOption>();
 
-                return models.Count > 0
-                    ? new CatalogFetchResult(models, true)
-                    : CatalogFetchResult.Failed;
-            }
-            catch (OperationCanceledException) when (ct.IsCancellationRequested)
-            {
-                throw;
-            }
-            catch (Exception ex)
-            {
-                System.Diagnostics.Debug.WriteLine($"[AiAssistantService] OpenRouter catalog failed: {ex.Message}");
-                return CatalogFetchResult.Failed;
-            }
-        }
 
-        private static async Task<CatalogFetchResult> FetchNvidiaModelsAsync(
-            string apiKey, CancellationToken ct)
-        {
-            try
-            {
-                using var request = new HttpRequestMessage(HttpMethod.Get, NvidiaModelsUrl);
-                if (!string.IsNullOrWhiteSpace(apiKey))
-                    request.Headers.Add("Authorization", $"Bearer {apiKey}");
 
-                using var response = await HttpClient.SendAsync(request, ct);
-                var body = await response.Content.ReadAsStringAsync(ct);
-                if (!response.IsSuccessStatusCode)
-                    return CatalogFetchResult.Failed;
-
-                using var document = JsonDocument.Parse(body);
-                if (!document.RootElement.TryGetProperty("data", out var data)
-                    || data.ValueKind != JsonValueKind.Array)
-                    return CatalogFetchResult.Failed;
-
-                var models = new List<AiModelOption>();
-                foreach (var item in data.EnumerateArray())
-                {
-                    if (!item.TryGetProperty("id", out var idElement)) continue;
-                    var id = idElement.GetString();
-                    if (string.IsNullOrWhiteSpace(id)) continue;
-
-                    // NVIDIA's catalog includes embedding, code, vision, safety and
-                    // reward models. Only keep chat-capable entries so auto-select
-                    // never routes a chat request to a model that returns garbage.
-                    if (!IsChatModel(id)) continue;
-
-                    string displayName = id;
-                    foreach (var property in new[] { "name", "display_name", "displayName" })
-                    {
-                        if (item.TryGetProperty(property, out var nameElement)
-                            && nameElement.ValueKind == JsonValueKind.String
-                            && !string.IsNullOrWhiteSpace(nameElement.GetString()))
-                        {
-                            displayName = nameElement.GetString()!;
-                            break;
-                        }
-                    }
-
-                    models.Add(new AiModelOption(id, displayName, AiProvider.Nvidia));
-                }
-
-                return models.Count > 0
-                    ? new CatalogFetchResult(models, true)
-                    : CatalogFetchResult.Failed;
-            }
-            catch (OperationCanceledException) when (ct.IsCancellationRequested)
-            {
-                throw;
-            }
-            catch (Exception ex)
-            {
-                System.Diagnostics.Debug.WriteLine($"[AiAssistantService] NVIDIA catalog failed: {ex.Message}");
-                return CatalogFetchResult.Failed;
-            }
-        }
-
-        private static bool IsZeroPrice(string? value)
-            => decimal.TryParse(value, NumberStyles.Float, CultureInfo.InvariantCulture, out var price)
-               && price == 0m;
-
-        /// <summary>
-        /// True when the OpenRouter catalog reports the model accepts image input
-        /// (<c>architecture.input_modalities</c> contains "image").
-        /// </summary>
-        private static bool HasImageInput(OpenRouterModel? model)
-        {
-            if (model?.Architecture?.InputModalities == null)
-                return false;
-            foreach (var modality in model.Architecture.InputModalities)
-            {
-                if (!string.IsNullOrWhiteSpace(modality)
-                    && modality.Equals("image", StringComparison.OrdinalIgnoreCase))
-                    return true;
-            }
-            return false;
-        }
-
-        /// <summary>
-        /// Sends a user message and returns an AI response with optional action.
-        /// Tries each selected fallback model in order. Built-in keys are used
-        /// when the user has not configured their own.
-        /// </summary>
-        public async Task<AiResponse> SendMessageAsync(
-            string userMessage,
-            List<(string Role, string Content)> history,
-            IReadOnlyList<string>? imageDataUrls = null,
-            string? orderContext = null, CancellationToken ct = default)
-        {
-            if (!HasEmbeddedKeys)
-            {
-                return new AiResponse
-                {
-                    Reply = "⚠ API-ключ не настроен.\n\nОткройте Настройки и введите ключ OpenRouter.\nПолучить бесплатно: https://openrouter.ai/keys"
-                };
-            }
-
-            var fallbackModels = ResolveFallbackModels(userMessage, imageDataUrls is { Count: > 0 });
-
-            // Build messages
-            var messages = new List<ChatMessage>
-            {
-                new() { Role = "system", Content = BuildSystemPrompt(orderContext) }
-            };
-
-            // Add conversation history (last 20 messages to stay in context)
-            int start = Math.Max(0, history.Count - 20);
-            for (int i = start; i < history.Count; i++)
-            {
-                messages.Add(new ChatMessage
-                {
-                    Role = history[i].Role,
-                    Content = history[i].Content
-                });
-            }
-
-            messages.Add(new ChatMessage { Role = "user", Content = BuildUserContent(userMessage, imageDataUrls) });
-
-            var request = new ChatCompletionRequest
-            {
-                Messages = messages,
-                Temperature = 0.3,
-                MaxTokens = 1024
-            };
-
-            // Try each fallback model in order
-            AiResponse? lastResponse = null;
-            bool lastFailureWasParseOrEmpty = false;
-            foreach (var modelId in fallbackModels)
-            {
-                request.Model = modelId;
-                var provider = GetProviderForModel(modelId);
-                var (response, continueToNext, isParseOrEmptyError) =
-                    await TrySendModelAsync(request, GetApiKey(provider), GetApiUrl(provider), ct);
-                lastResponse = response;
-                lastFailureWasParseOrEmpty = isParseOrEmptyError;
-
-                if (!continueToNext)
-                    return response;
-            }
-
-            if (lastFailureWasParseOrEmpty)
-            {
-                return new AiResponse
-                {
-                    Reply = "⚠ Все выбранные модели вернули пустой или нераспознанный ответ. Проверьте запрос или выберите другие модели в настройках."
-                };
-            }
-
-            return lastResponse ?? new AiResponse
-            {
-                Reply = "⚠ Все доступные модели недоступны.\n\nПроверьте интернет-соединение, API-ключ или выберите другие модели в настройках."
-            };
-        }
 
         /// <summary>
         /// Sends a user message with SSE streaming. Fires <paramref name="onChunk"/>
@@ -706,9 +512,9 @@ namespace MosquitoNetCalculator.Services
             {
                 modelsTried++;
                 request.Model = modelId;
-                var provider = GetProviderForModel(modelId);
-                var apiKey = GetApiKey(provider);
-                var apiUrl = GetApiUrl(provider);
+                var provider = AiKeyValidator.GetProviderForModel(modelId);
+                var apiKey = AiKeyValidator.GetApiKey(provider);
+                var apiUrl = AiKeyValidator.GetApiUrl(provider);
 
                 // Retry the same model a few times on transient failures (429/5xx/
                 // network hiccups) before moving to the next fallback model.
@@ -753,7 +559,7 @@ namespace MosquitoNetCalculator.Services
 
                             if (statusCode is 401 or 403)
                             {
-                                onError($"⚠ Ошибка авторизации у провайдера «{ProviderName(provider)}» (код {statusCode}).\nПроверьте API-ключ в настройках.");
+                                onError($"⚠ Ошибка авторизации у провайдера «{AiKeyValidator.ProviderName(provider)}» (код {statusCode}).\nПроверьте API-ключ в настройках.");
                                 return;
                             }
                             // Retry only transient errors: 429 (rate limit) and
@@ -800,10 +606,10 @@ namespace MosquitoNetCalculator.Services
                                     if (!modelAnnounced)
                                     {
                                         modelAnnounced = true;
-                                        onModelUsed?.Invoke($"{FormatModelName(modelId)} · {ProviderName(provider)}");
+                                        onModelUsed?.Invoke($"{FormatModelName(modelId)} · {AiKeyValidator.ProviderName(provider)}");
                                         onStreamInfo?.Invoke(new AiStreamInfo
                                         {
-                                            ModelLabel = $"{FormatModelName(modelId)} · {ProviderName(provider)}",
+                                            ModelLabel = $"{FormatModelName(modelId)} · {AiKeyValidator.ProviderName(provider)}",
                                             Provider = provider,
                                             Attempt = attempt,
                                             FallbackUsed = modelsTried > 1
@@ -933,7 +739,7 @@ namespace MosquitoNetCalculator.Services
         /// </summary>
         private static IReadOnlyList<string> EnsureNvidiaFallback(IReadOnlyList<string> models)
         {
-            if (models.Any(m => GetProviderForModel(m) == AiProvider.Nvidia))
+            if (models.Any(m => AiKeyValidator.GetProviderForModel(m) == AiProvider.Nvidia))
                 return models;
 
             var nvidiaDefaults = AvailableModels
@@ -1048,35 +854,7 @@ namespace MosquitoNetCalculator.Services
         /// Unlike <see cref="IsChatModel"/> (NVIDIA-oriented), this does not require
         /// an "-it"/"instruct" suffix: OpenRouter free chat models use varied IDs.
         /// </summary>
-        internal static bool IsGeneralChatModel(OpenRouterModel model)
-        {
-            if (model == null || string.IsNullOrWhiteSpace(model.Id))
-                return false;
 
-            var id = model.Id.ToLowerInvariant();
-            foreach (var marker in NonChatModelMarkers)
-            {
-                if (id.Contains(marker, StringComparison.Ordinal))
-                    return false;
-            }
-
-            // When the API reports the architecture modality, keep only text-in /
-            // text-out models and reject embeddings and non-text generators.
-            var modality = model.Architecture?.Modality?.ToLowerInvariant();
-            if (!string.IsNullOrWhiteSpace(modality))
-            {
-                if (modality.Contains("embedding", StringComparison.Ordinal)
-                    || modality.Contains("->image", StringComparison.Ordinal)
-                    || modality.Contains("->audio", StringComparison.Ordinal)
-                    || modality.Contains("->video", StringComparison.Ordinal)
-                    || modality.Contains("->speech", StringComparison.Ordinal))
-                {
-                    return false;
-                }
-            }
-
-            return true;
-        }
 
         /// <summary>
         /// Builds the messages list shared between streaming and non-streaming paths.
@@ -1195,263 +973,26 @@ namespace MosquitoNetCalculator.Services
         /// 2xx → success; 401/403 → bad key; other 4xx/5xx → partial; network error → false.
         /// Result is safe to consume from the UI thread (no exceptions thrown).
         /// </summary>
-        public static async Task<AiApiKeyTestResult> TestApiKeyAsync(
-            AiProvider provider,
-            string apiKey,
-            CancellationToken ct = default)
-        {
-            // OpenRouter: hit /auth/key so 401/403 really means "bad key".
-            // NVIDIA: /v1/models is the best probe available — it does not enforce
-            // auth, so "OK" only proves network reachability for NVIDIA. The
-            // dialog clearly tells the user so we are honest about the result.
-            var url = provider == AiProvider.Nvidia ? NvidiaModelsUrl : OpenRouterAuthKeyUrl;
-            var sw = System.Diagnostics.Stopwatch.StartNew();
 
-            try
-            {
-                using var request = new HttpRequestMessage(HttpMethod.Get, url);
-                if (!string.IsNullOrWhiteSpace(apiKey))
-                    request.Headers.Add("Authorization", $"Bearer {apiKey}");
-                using var cts = CancellationTokenSource.CreateLinkedTokenSource(ct);
-                cts.CancelAfter(TimeSpan.FromSeconds(8));
-
-                using var response = await HttpClient.SendAsync(request, cts.Token);
-                sw.Stop();
-
-                int statusCode = (int)response.StatusCode;
-                if (response.IsSuccessStatusCode)
-                {
-                    return new AiApiKeyTestResult(
-                        IsOk: true,
-                        StatusCode: statusCode,
-                        LatencyMs: (int)sw.ElapsedMilliseconds,
-                        Detail: "OK");
-                }
-
-                string snippet = statusCode is 401 or 403
-                    ? "неверный или просроченный ключ"
-                    : statusCode == 429
-                        ? "превышен лимит запросов"
-                        : $"HTTP {statusCode}";
-                return new AiApiKeyTestResult(
-                    IsOk: false,
-                    StatusCode: statusCode,
-                    LatencyMs: (int)sw.ElapsedMilliseconds,
-                    Detail: snippet);
-            }
-            catch (OperationCanceledException) when (ct.IsCancellationRequested)
-            {
-                throw;
-            }
-            catch (TaskCanceledException)
-            {
-                sw.Stop();
-                return new AiApiKeyTestResult(false, 0, (int)sw.ElapsedMilliseconds, "таймаут > 8 с");
-            }
-            catch (Exception ex)
-            {
-                sw.Stop();
-                return new AiApiKeyTestResult(false, 0, (int)sw.ElapsedMilliseconds, $"ошибка сети: {ex.GetType().Name}");
-            }
-        }
 
         /// <summary>Resolves the provider for a model ID (default: OpenRouter).</summary>
-        public static AiProvider GetProviderForModel(string modelId)
-        {
-            var model = AvailableModels.Concat(FreeModels)
-                .FirstOrDefault(m =>
-                    string.Equals(m.Id, modelId, StringComparison.OrdinalIgnoreCase));
-            if (model != null)
-                return model.Provider;
 
-            // The cache may have been written by a previous process before the
-            // current dialog was opened. Consult it lazily for correct routing.
-            var (cached, _) = AppSettingsServiceAi.LoadCachedModels();
-            return cached.FirstOrDefault(m =>
-                string.Equals(m.Id, modelId, StringComparison.OrdinalIgnoreCase))?.Provider
-                ?? AiProvider.OpenRouter;
-        }
 
         /// <summary>
         /// Returns the API key for a provider: the user's own key if configured,
         /// otherwise the embedded built-in key.
         /// </summary>
-        private static string GetApiKey(AiProvider provider)
-        {
-            if (provider == AiProvider.Nvidia)
-            {
-                var userKey = AppSettingsServiceAi.LoadAiNvidiaApiKey();
-                return string.IsNullOrWhiteSpace(userKey) ? EmbeddedNvidiaApiKey : userKey;
-            }
 
-            var orKey = AppSettingsServiceAi.LoadAiApiKey();
-            return string.IsNullOrWhiteSpace(orKey) ? EmbeddedOpenRouterApiKey : orKey;
-        }
 
         /// <summary>Returns the chat-completions endpoint for a provider.</summary>
-        private static string GetApiUrl(AiProvider provider)
-            => provider == AiProvider.Nvidia ? NvidiaApiUrl : ApiUrl;
 
-        /// <summary>User-friendly provider name for error messages.</summary>
-        private static string ProviderName(AiProvider provider)
-            => provider == AiProvider.Nvidia ? "NVIDIA" : "OpenRouter";
-
-        /// <summary>
-        /// Always merges the built-in NVIDIA free models into a model list — the
-        /// NVIDIA catalog does not expose pricing via /v1/models, so we keep a
-        /// curated list of known-free NVIDIA models instead of filtering the
-        /// API response. Applied both to fresh API results and cached lists.
-        /// </summary>
-        private sealed record CatalogFetchResult(
-            IReadOnlyList<AiModelOption> Models,
-            bool IsFromApi)
-        {
-            public static CatalogFetchResult Failed { get; } =
-                new(Array.Empty<AiModelOption>(), false);
-        }
-
-        /// <summary>
-        /// Tries to send a chat-completion request for a single model with retries.
-        /// On success or fatal client error returns the response and <c>false</c>.
-        /// On transient failure returns an error response and <c>true</c> so the caller
-        /// can try the next fallback model.
-        /// </summary>
-        private static async Task<(AiResponse Response, bool ContinueToNext, bool IsParseOrEmptyError)> TrySendModelAsync(
-            ChatCompletionRequest request,
-            string apiKey,
-            string apiUrl,
-            CancellationToken ct)
-        {
-            const int maxAttempts = 3;
-            int? lastStatusCode = null;
-            string lastBody = "";
-            Exception? lastException = null;
-            AiResponse? lastParseResponse = null;
-
-            for (int attempt = 0; attempt < maxAttempts; attempt++)
-            {
-                if (attempt > 0)
-                {
-                    var delay = TimeSpan.FromSeconds(Math.Pow(2, attempt - 1)); // 1s, 2s
-                    await Task.Delay(delay, ct);
-                }
-
-                try
-                {
-                    var httpRequest = new HttpRequestMessage(HttpMethod.Post, apiUrl)
-                    {
-                        Content = JsonContent.Create(request, options: JsonOptions)
-                    };
-                    httpRequest.Headers.Add("Authorization", $"Bearer {apiKey}");
-                    httpRequest.Headers.Add("HTTP-Referer", "https://arcframe.app");
-                    httpRequest.Headers.Add("X-Title", "A.R.C. Frame");
-
-                    var httpResponse = await HttpClient.SendAsync(httpRequest, ct);
-                    var body = await httpResponse.Content.ReadAsStringAsync(ct);
-
-                    if (httpResponse.IsSuccessStatusCode)
-                    {
-                        var completion = JsonSerializer.Deserialize<ChatCompletionResponse>(body, JsonOptions);
-                        var content = GetTextContent(completion?.Choices?.FirstOrDefault()?.Message?.Content);
-                        var (parsed, isValid) = AiCommandParser.TryParse(content, GetTextContent(request.Messages[^1].Content));
-
-                        if (isValid)
-                            return (parsed, false, false);
-
-                        // Empty or unparseable response is not a transient network error,
-                        // so don't waste retries on the same model.
-                        lastParseResponse = parsed;
-                        break;
-                    }
-
-                    lastStatusCode = (int)httpResponse.StatusCode;
-                    lastBody = body;
-
-                    if (lastStatusCode is 401 or 403 or 404 or 400)
-                        RecordModelUnavailable(request.Model, lastStatusCode.Value);
-
-                    // Fatal only for auth errors (401/403) — a wrong key helps no
-                    // model. Other 4xx (400/404: model unavailable for account),
-                    // 429 and 5xx should try the next fallback model.
-                    if (lastStatusCode is 401 or 403)
-                    {
-                        return (BuildErrorResponse(lastStatusCode, lastBody, null, request.Model), false, false);
-                    }
-
-                    // 404/400 mean the model is unavailable for this account/request
-                    // and can never succeed on retry — stop retrying the same model
-                    // and let the caller try the next fallback.
-                    if (lastStatusCode is 404 or 400)
-                        break;
-                }
-                catch (OperationCanceledException) when (ct.IsCancellationRequested)
-                {
-                    throw;
-                }
-                catch (TaskCanceledException tex) when (!ct.IsCancellationRequested)
-                {
-                    lastException = tex;
-                }
-                catch (Exception ex) when (ex is HttpRequestException or TimeoutException)
-                {
-                    lastException = ex;
-                }
-            }
-
-            // We got a parse/empty response from a successful HTTP call; let the caller try the next model.
-            if (lastParseResponse != null)
-            {
-                return (lastParseResponse, true, true);
-            }
-
-            // All retries for this model failed; caller may try the next fallback.
-            var errorResponse = BuildErrorResponse(lastStatusCode, lastBody, lastException, request.Model);
-            return (errorResponse, true, false);
-        }
-
-        /// <summary>
-        /// Builds the system prompt with full product catalog and app knowledge.
-        /// </summary>
-                /// <summary>
-        /// Stage-2 hardening: thin delegate to <see cref="AiPromptBuilder"/>.
-        /// The prompt body lives in <c>Resources/ai-system-prompt.md</c> and
-        /// the catalog/prices are sourced from <see cref="AiFactsProvider"/>
-        /// via <c>PriceService.DefaultPrices</c> — this method stays here for
-        /// binary compatibility with any caller that referenced it directly.
-        /// </summary>
-        private static string BuildSystemPrompt(string? orderContext)
-            => AiPromptBuilder.BuildSystemPrompt(orderContext);
-
-
-
-
-
-        /// <summary>
-        /// Форматирует полную историю обновлений в компактный список для system
-        /// prompt: «• Версия X.Y.Z (дд.ММ.гггг): Заголовок» + каждая правка
-        /// отдельной строкой «  — …». Возвращает ВСЕ записи без усечения —
-        /// ассистент должен уметь рассказать про любую версию.
-        /// Вынесено в internal-метод, чтобы unit-тест мог проверить, что
-        /// история не обрезается до последних пяти версий (InternalsVisibleTo).
-        /// </summary>
-        internal static string FormatUpdateHistory(IEnumerable<UpdateItem> entries)
-        {
-            var sb = new StringBuilder();
-            foreach (var e in entries)
-            {
-                sb.AppendLine($"• Версия {e.Version} ({e.Date:dd.MM.yyyy}): {e.Title}");
-                foreach (var change in e.Changes)
-                    sb.AppendLine($"  — {change}");
-            }
-            return sb.ToString();
-        }
 
         /// <summary>
         /// Builds a user-friendly error response based on the last API failure.
         /// </summary>
         private static AiResponse BuildErrorResponse(int? statusCode, string body, Exception? exception, string modelId)
         {
-            var providerName = ProviderName(GetProviderForModel(modelId));
+            var providerName = AiKeyValidator.ProviderName(AiKeyValidator.GetProviderForModel(modelId));
             var apiPrefix = $"⚠ Провайдер «{providerName}» недоступен.\n\n";
             var modelName = FormatModelName(modelId);
 
@@ -1585,45 +1126,4 @@ namespace MosquitoNetCalculator.Services
         public string? Content { get; set; }
     }
 
-    // ── OpenRouter /models endpoint response models ───────────────
-
-    internal sealed class OpenRouterModelsResponse
-    {
-        [JsonPropertyName("data")]
-        public List<OpenRouterModel>? Data { get; set; }
-    }
-
-    internal sealed class OpenRouterModel
-    {
-        [JsonPropertyName("id")]
-        public string Id { get; set; } = "";
-
-        [JsonPropertyName("name")]
-        public string Name { get; set; } = "";
-
-        [JsonPropertyName("pricing")]
-        public OpenRouterPricing? Pricing { get; set; }
-
-        [JsonPropertyName("architecture")]
-        public OpenRouterArchitecture? Architecture { get; set; }
-    }
-
-    internal sealed class OpenRouterArchitecture
-    {
-        [JsonPropertyName("modality")]
-        public string? Modality { get; set; }
-
-        /// <summary>Modern OpenRouter field: e.g. ["text", "image"].</summary>
-        [JsonPropertyName("input_modalities")]
-        public List<string>? InputModalities { get; set; }
-    }
-
-    internal sealed class OpenRouterPricing
-    {
-        [JsonPropertyName("prompt")]
-        public string Prompt { get; set; } = "";
-
-        [JsonPropertyName("completion")]
-        public string Completion { get; set; } = "";
-    }
 }

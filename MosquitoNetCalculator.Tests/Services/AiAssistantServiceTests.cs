@@ -27,7 +27,7 @@ namespace MosquitoNetCalculator.Tests.Services
                 });
             }
 
-            var text = AiAssistantService.FormatUpdateHistory(entries);
+            var text = AiPromptBuilder.FormatUpdateHistory(entries);
 
             for (int i = 1; i <= 8; i++)
             {
@@ -46,7 +46,7 @@ namespace MosquitoNetCalculator.Tests.Services
             for (int i = 1; i <= 11; i++)
                 changes.Add($"Изменение {i}");
 
-            var text = AiAssistantService.FormatUpdateHistory(new[]
+            var text = AiPromptBuilder.FormatUpdateHistory(new[]
             {
                 new UpdateItem
                 {
@@ -64,12 +64,12 @@ namespace MosquitoNetCalculator.Tests.Services
         [Fact]
         public void FormatUpdateHistory_Empty_ReturnsEmptyString()
         {
-            Assert.Equal("", AiAssistantService.FormatUpdateHistory(Array.Empty<UpdateItem>()));
+            Assert.Equal("", AiPromptBuilder.FormatUpdateHistory(Array.Empty<UpdateItem>()));
         }
         [Fact]
         public void FreeModels_ContainsDefaultGemmaModel()
         {
-            Assert.Contains(AiAssistantService.FreeModels, m => m.Id == "google/gemma-3-27b-it:free");
+            Assert.Contains(AiAssistantService.FreeModels, m => m.Id == "google/gemma-4-31b-it:free");
         }
 
         [Fact]
@@ -77,7 +77,7 @@ namespace MosquitoNetCalculator.Tests.Services
         {
             var first = AiAssistantService.FreeModels.FirstOrDefault();
             Assert.NotNull(first);
-            Assert.Equal("google/gemma-3-27b-it:free", first!.Id);
+            Assert.Equal("google/gemma-4-31b-it:free", first!.Id);
         }
 
         [Fact]
@@ -105,7 +105,7 @@ namespace MosquitoNetCalculator.Tests.Services
                 .ToList();
 
             Assert.NotEmpty(nvidiaModels);
-            Assert.Contains(nvidiaModels, m => m.Id == "deepseek-ai/deepseek-v4-flash");
+            Assert.Contains(nvidiaModels, m => m.Id == "deepseek-ai/deepseek-v4-flash-0731");
             Assert.All(nvidiaModels, m => Assert.Equal(AiProvider.Nvidia, m.Provider));
         }
 
@@ -113,21 +113,20 @@ namespace MosquitoNetCalculator.Tests.Services
         public void FreeModels_OpenRouterModels_HaveOpenRouterProvider()
         {
             Assert.Contains(AiAssistantService.FreeModels,
-                m => m.Id == "google/gemma-3-27b-it:free" && m.Provider == AiProvider.OpenRouter);
+                m => m.Id == "google/gemma-4-31b-it:free" && m.Provider == AiProvider.OpenRouter);
         }
 
         [Fact]
         public void GetProviderForModel_ReturnsNvidia_ForNvidiaModelId()
         {
-            Assert.Equal(AiProvider.Nvidia, AiAssistantService.GetProviderForModel("deepseek-ai/deepseek-v4-flash"));
-            Assert.Equal(AiProvider.Nvidia, AiAssistantService.GetProviderForModel("deepseek-ai/deepseek-v4-pro"));
+            Assert.Equal(AiProvider.Nvidia, AiKeyValidator.GetProviderForModel("deepseek-ai/deepseek-v4-flash-0731"));
         }
 
         [Fact]
         public void GetProviderForModel_ReturnsOpenRouter_ForOpenRouterOrUnknownModel()
         {
-            Assert.Equal(AiProvider.OpenRouter, AiAssistantService.GetProviderForModel("google/gemma-3-27b-it:free"));
-            Assert.Equal(AiProvider.OpenRouter, AiAssistantService.GetProviderForModel("unknown/model-xyz"));
+            Assert.Equal(AiProvider.OpenRouter, AiKeyValidator.GetProviderForModel("google/gemma-3-27b-it:free"));
+            Assert.Equal(AiProvider.OpenRouter, AiKeyValidator.GetProviderForModel("unknown/model-xyz"));
         }
 
         [Fact]
@@ -210,6 +209,102 @@ namespace MosquitoNetCalculator.Tests.Services
             Assert.Equal(200, r.StatusCode);
             Assert.Equal(123, r.LatencyMs);
             Assert.Equal("OK", r.Detail);
+        }
+
+        [Fact]
+        public void GetTextContent_ExtractsTextFromStringAndMultimodalParts()
+        {
+            Assert.Equal(string.Empty, AiAssistantService.GetTextContent(null));
+            Assert.Equal("привет", AiAssistantService.GetTextContent("привет"));
+
+            var parts = new List<object>
+            {
+                new ChatContentTextPart { Text = "Что " },
+                new ChatContentImagePart { ImageUrl = new ChatContentImageUrl { Url = "data:image/png;base64,AAAA" } },
+                new ChatContentTextPart { Text = "на картинке?" }
+            };
+
+            Assert.Equal("Что на картинке?", AiAssistantService.GetTextContent(parts));
+        }
+
+        [Theory]
+        [InlineData(null, "")]
+        [InlineData("Здравствуйте", "Здравствуйте")]
+        [InlineData("<pad>", "")]
+        [InlineData("<pad><pad><pad>", "")]
+        [InlineData("<PAD>текст", "текст")]
+        [InlineData("<|image|>текст<|eot_id|>", "текст")]
+        [InlineData("<s>Привет</s>", "Привет")]
+        [InlineData("<bos>Привет<eos>", "Привет")]
+        public void StripSpecialTokens_RemovesPaddingAndSpecialTokens(string? input, string expected)
+        {
+            Assert.Equal(expected, AiAssistantService.StripSpecialTokens(input));
+        }
+
+        [Fact]
+        public void FreeModels_OnlyContainFreeModels()
+        {
+            // The curated offline fallback must never reference a paid OpenRouter
+            // slug (no :free suffix → paid tier) — the assistant is free-only.
+            foreach (var model in AiAssistantService.FreeModels
+                         .Where(m => m.Provider == AiProvider.OpenRouter))
+            {
+                Assert.EndsWith(":free", model.Id, System.StringComparison.OrdinalIgnoreCase);
+            }
+        }
+
+        [Theory]
+        [InlineData("google/gemma-3-27b-it:free", true)]
+        [InlineData("openai/gpt-oss-20b:free", true)]
+        [InlineData("z-ai/glm-5.2:free", true)]
+        [InlineData("baai/bge-m3", false)]
+        [InlineData("openai/dall-e-3", false)]
+        [InlineData("stabilityai/stable-diffusion-xl", false)]
+        [InlineData("nvidia/llama-nemotron-embed-1b-v2", false)]
+        public void IsGeneralChatModel_ClassifiesOpenRouterEntries(string id, bool expected)
+        {
+            var model = new AiModelCatalogClient.OpenRouterModelDto { Id = id };
+            Assert.Equal(expected, AiModelCatalogClient.IsGeneralChatModel(model));
+        }
+
+        [Fact]
+        public void IsGeneralChatModel_RejectsNonTextModality()
+        {
+            var embedding = new AiModelCatalogClient.OpenRouterModelDto
+            {
+                Id = "some/embedding-model",
+                Architecture = new AiModelCatalogClient.OpenRouterArchitectureDto { Modality = "text->embedding" }
+            };
+            Assert.False(AiModelCatalogClient.IsGeneralChatModel(embedding));
+
+            var image = new AiModelCatalogClient.OpenRouterModelDto
+            {
+                Id = "some/image-model",
+                Architecture = new AiModelCatalogClient.OpenRouterArchitectureDto { Modality = "text->image" }
+            };
+            Assert.False(AiModelCatalogClient.IsGeneralChatModel(image));
+
+            var chat = new AiModelCatalogClient.OpenRouterModelDto
+            {
+                Id = "some/chat-model",
+                Architecture = new AiModelCatalogClient.OpenRouterArchitectureDto { Modality = "text->text" }
+            };
+            Assert.True(AiModelCatalogClient.IsGeneralChatModel(chat));
+        }
+
+        [Theory]
+        [InlineData("baai/bge-m3", false)]
+        [InlineData("bigcode/starcoder2-15b", false)]
+        [InlineData("google/codegemma-7b", false)]
+        [InlineData("nvidia/nemotron-parse", false)]
+        [InlineData("nvidia/llama-nemotron-embed-1b-v2", false)]
+        [InlineData("google/gemma-2b", false)]
+        [InlineData("google/gemma-3-12b-it", true)]
+        [InlineData("deepseek-ai/deepseek-v4-flash-0731", true)]
+        [InlineData("nvidia/llama-3.1-nemotron-70b-instruct", true)]
+        public void IsChatModel_ClassifiesCatalogEntries(string id, bool expected)
+        {
+            Assert.Equal(expected, AiAssistantService.IsChatModel(id));
         }
     }
 }
