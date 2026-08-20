@@ -462,6 +462,48 @@ if (Test-Path $controlPath11) {
 
 Write-Host ""
 
+# 12. GOTCHAS.md numbering — soft check (CONTROL#13, hardening stage 6)
+Write-Host "[12] GOTCHAS.md numbering consistency (soft)" -ForegroundColor Yellow
+$gotchasPath = Join-Path $projectRoot "agents\docs\GOTCHAS.md"
+if (-not (Test-Path $gotchasPath)) {
+    Write-Host "  SKIP: GOTCHAS.md not found" -ForegroundColor Gray
+} else {
+    $gotchasContent = Get-Content $gotchasPath -Raw -Encoding UTF8
+    # Collect all `### N.` markers (numbering of dangerous topics).
+    $gotchaMatches = [regex]::Matches($gotchasContent, '^### (\d+)\. ', [System.Text.RegularExpressions.RegexOptions]::Multiline)
+    $gotchaNumbers = @()
+    foreach ($m in $gotchaMatches) { $gotchaNumbers += [int]$m.Groups[1].Value }
+    if ($gotchaNumbers.Count -eq 0) {
+        Write-Host "  WARN: no numbered gotchas found" -ForegroundColor Yellow
+        $warnings++
+    } else {
+        # Detect gaps and duplicates. Soft = warning, not error.
+        $sorted = $gotchaNumbers | Sort-Object -Unique
+        $expected = 1..$sorted[-1]
+        $missing = $expected | Where-Object { $_ -notin $sorted }
+        $duplicates = $gotchaNumbers | Group-Object | Where-Object { $_.Count -gt 1 }
+        $allSeqOk = $true
+        for ($i = 1; $i -lt $sorted.Count; $i++) {
+            if ($sorted[$i] -ne $sorted[$i - 1] + 1) {
+                $allSeqOk = $false
+                break
+            }
+        }
+        if ($missing.Count -eq 0 -and $duplicates.Count -eq 0 -and $allSeqOk) {
+            Write-Host "  PASS: gotchas 1..$($sorted[-1]) are sequential with no gaps/duplicates" -ForegroundColor Green
+        } else {
+            $msg = "gotchas not sequential: "
+            if ($missing.Count -gt 0) { $msg += "missing [$($missing -join ',')] " }
+            if ($duplicates.Count -gt 0) { $msg += "duplicates [$($duplicates.Name -join ',')] " }
+            if (-not $allSeqOk) { $msg += "out-of-order" }
+            Write-Host "  WARN: $msg" -ForegroundColor Yellow
+            $warnings++
+        }
+    }
+}
+
+Write-Host ""
+
 # Summary
 Write-Host "====================================" -ForegroundColor Cyan
 if ($issues -eq 0 -and $warnings -eq 0) {

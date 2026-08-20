@@ -4,9 +4,11 @@
 >
 > Цель: превратить AI из текстового помощника в безопасного агента операционной работы с расчётом — от понимания запроса и уточнения параметров до предпросмотра, атомарного выполнения, отмены и объяснения результата.
 >
-> Статус: **РЕАЛИЗОВАНО (2026-08-04)** — все направления выполнены, сборка и тесты 1497/1497 pass. Ключевые модули: `AiActionPlan`/`AiActionStep`, `AiPlanBuilder`, `AiPlanValidator`, `AiPlanExecutor` (атомарный пакет с rollback), `AiLocalCommandRouter` (slash-команды), `AiOrderContextBuilder`, `AiExplanationContextBuilder`, `AiTelemetryService`, план-режим в `AiCommandParser`, карточка плана в `AiAssistantControl.xaml`, guarded undo в `MainWindow.AI.cs`.
+> Статус: **CORE реализован (2026-08-04)** — все направления этого плана выполнены, сборка и тесты 1497/1497 pass. Ключевые модули: `AiActionPlan`/`AiActionStep`, `AiPlanBuilder`, `AiPlanValidator`, `AiPlanExecutor` (атомарный пакет с rollback), `AiLocalCommandRouter` (slash-команды), `AiOrderContextBuilder`, `AiExplanationContextBuilder`, `AiTelemetryService`, план-режим в `AiCommandParser`, карточка плана в `AiAssistantControl.xaml`, guarded undo в `MainWindow.AI.cs`.
 >
 > Дата составления: 2026-08-04
+>
+> **Наследие этого плана:** пост-CORE улучшения (централизация предохранителя «не выдумывай», единый источник фактов, промпт из ресурса, разбиение God-классов) переехали в [`project-hardening-plan.md`](project-hardening-plan.md) — Этапы 1–3 (выполнены), Этапы 4–6 (документация/релиз/security hygiene). См. также [`agents/docs/AI_DEFAULTS_POLICY.md`](../agents/docs/AI_DEFAULTS_POLICY.md) для таблицы «silently default vs ask» решений.
 
 ---
 
@@ -1220,14 +1222,14 @@ powershell -ExecutionPolicy Bypass -File gensymbols.ps1
 При реализации обновлять:
 
 - `CHANGELOG.md`;
-- `docs/arc/CURRENT_STATE.md`;
-- `docs/arc/DOCUMENTATION_MATRIX.md` при добавлении новых файлов;
-- `docs/arc/documentation-matrix.json` как источник матрицы;
-- `docs/arc/SYMBOL_INDEX.md` после добавления классов;
-- `docs/arc/MODULES.md` после структурных изменений;
-- `docs/arc/DECISIONS.md` для архитектурных решений;
-- `docs/arc/CALCULATION_LOGIC.md` только если меняется фактическая логика расчёта;
-- `docs/arc/CALCULATION_TEST_CASES.md` только при изменении или добавлении расчётных сценариев.
+- `agents/docs/CURRENT_STATE.md`;
+- `agents/docs/DOCUMENTATION_MATRIX.md` при добавлении новых файлов;
+- `agents/docs/documentation-matrix.json` как источник матрицы;
+- `agents/docs/SYMBOL_INDEX.md` после добавления классов;
+- `agents/docs/MODULES.md` после структурных изменений;
+- `agents/docs/DECISIONS.md` для архитектурных решений;
+- `agents/docs/CALCULATION_LOGIC.md` только если меняется фактическая логика расчёта;
+- `agents/docs/CALCULATION_TEST_CASES.md` только при изменении или добавлении расчётных сценариев.
 
 Расчётная логика должна оставаться незатронутой. Если реализация потребует изменения формул, это отдельная задача с отдельным планом и подтверждением.
 

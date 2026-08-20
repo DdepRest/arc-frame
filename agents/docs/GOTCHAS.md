@@ -256,54 +256,6 @@ trade-off trailing-запятой исчезнет (потому что "15000,"
 
 ---
 
-### 17. Поле «Сумма» в переключателе монтажа: знак нельзя терять на нулевом значении (СРЕДНИЙ)
-
-**Где:** `MosquitoNetCalculator/MainWindow.Items.cs` — контекстное меню монтажа, обработчики `chkSign` и `CommitDeductionIfPending`.
-
-**Симптом:** при нулевой сумме пользователь нажимает «−», но обновление поля тут же возвращает переключатель в «+», потому что математический ноль не имеет знака. Кроме того, явно введённое `-500` раньше игнорировалось проверкой `absVal >= 0`.
-
-**Контракт UI:**
-- «+» означает положительную корректировку (добавить к итогу);
-- «−» означает отрицательную корректировку (вычесть из итога);
-- при сумме `0` выбранный знак сохраняется, чтобы пользователь мог выбрать «−» до ввода числа;
-- явно введённый минус имеет приоритет над состоянием переключателя;
-- нечисловые и бесконечные значения не записываются в модель.
-
-Модель и формула `TotalWithDeduction` не менялись: исправлено только преобразование ввода popup в signed amount. Регрессии покрыты `OrderItemTests.NormalizeInstallationAmount_PreservesSignedInput`, `NormalizeInstallationAmount_RejectsNonFiniteValues` и `ShouldRefreshInstallationSign_OnlyForMeaningfulAmount`.
-
----
-
-## Риски по категориям
-
-| Категория | Риск | Уровень |
-|-----------|------|---------|
-| Расчёты | Утечка Anwis-формул на не-Anwis | КРИТИЧНЫЙ |
-| Расчёты | Изменение формул без согласования | КРИТИЧНЫЙ |
-| Расчёты | Сохранение derived-полей в JSON | КРИТИЧНЫЙ |
-| Цены | Потеря пользовательских цен при обновлении | ВЫСОКИЙ |
-| КП | Сломанная вёрстка из-за неэкранированных символов | ВЫСОКИЙ |
-| КП | Изменение формата без согласования | ВЫСОКИЙ |
-| Завод | Неправильные размеры в тексте для производства | КРИТИЧНЫЙ |
-| Автообновление | Рассинхронизация версий | ВЫСОКИЙ |
-| Автообновление | Неправильный SHA-256 в releases.json | ВЫСОКИЙ |
-| Данные | Потеря заказов при миграции путей | ВЫСОКИЙ |
-| UI | Краш при переключении темы | СРЕДНИЙ |
-| UI | `Width="Auto"` колонки не растёт при наборе (`LostFocus` без `PropertyChanged`) | СРЕДНИЙ |
-| UI | DataGridTextColumn SelectAll race (отложенный BeginInvoke проигрывает первому keystroke, текст дописывается) | СРЕДНИЙ |
-
-## Source files
-
-- `MosquitoNetCalculator/Models/OrderItem.cs`
-- `MosquitoNetCalculator/Models/AnwisSize.cs`
-- `MosquitoNetCalculator/Services/PriceService.cs`
-- `MosquitoNetCalculator/Services/UpdateService.cs`
-- `MosquitoNetCalculator/Services/WatchdogService.cs`
-- `MosquitoNetCalculator/Services/PrintService.cs`
-- `MosquitoNetCalculator/Services/ThemeService.cs`
-- `MosquitoNetCalculator/Services/AppSettingsService.cs`
-
----
-
 ### 14. DataGridTextColumn SelectAll race: «Dispatcher.BeginInvoke» проигрывает первому нажатию клавиши (СРЕДНИЙ)
 
 **Где:** `MosquitoNetCalculator/Controls/OrderItemsControl.xaml.cs` — метод `SelectAll_OnFocus`;
@@ -453,11 +405,58 @@ InstallationSurcharge = (od.InstallationSurcharge > 0 && od.InstallationMode != 
 
 ---
 
+### 17. Поле «Сумма» в переключателе монтажа: знак нельзя терять на нулевом значении (СРЕДНИЙ)
+
+**Где:** `MosquitoNetCalculator/MainWindow.Items.cs` — контекстное меню монтажа, обработчики `chkSign` и `CommitDeductionIfPending`.
+
+**Симптом:** при нулевой сумме пользователь нажимает «−», но обновление поля тут же возвращает переключатель в «+», потому что математический ноль не имеет знака. Кроме того, явно введённое `-500` раньше игнорировалось проверкой `absVal >= 0`.
+
+**Контракт UI:**
+- «+» означает положительную корректировку (добавить к итогу);
+- «−» означает отрицательную корректировку (вычесть из итога);
+- при сумме `0` выбранный знак сохраняется, чтобы пользователь мог выбрать «−» до ввода числа;
+- явно введённый минус имеет приоритет над состоянием переключателя;
+- нечисловые и бесконечные значения не записываются в модель.
+
+Модель и формула `TotalWithDeduction` не менялись: исправлено только преобразование ввода popup в signed amount. Регрессии покрыты `OrderItemTests.NormalizeInstallationAmount_PreservesSignedInput`, `NormalizeInstallationAmount_RejectsNonFiniteValues` и `ShouldRefreshInstallationSign_OnlyForMeaningfulAmount`.
+
+---
+
+## Риски по категориям
+
+| Категория | Риск | Уровень |
+|-----------|------|---------|
+| Расчёты | Утечка Anwis-формул на не-Anwis | КРИТИЧНЫЙ |
+| Расчёты | Изменение формул без согласования | КРИТИЧНЫЙ |
+| Расчёты | Сохранение derived-полей в JSON | КРИТИЧНЫЙ |
+| Цены | Потеря пользовательских цен при обновлении | ВЫСОКИЙ |
+| КП | Сломанная вёрстка из-за неэкранированных символов | ВЫСОКИЙ |
+| КП | Изменение формата без согласования | ВЫСОКИЙ |
+| Завод | Неправильные размеры в тексте для производства | КРИТИЧНЫЙ |
+| Автообновление | Рассинхронизация версий | ВЫСОКИЙ |
+| Автообновление | Неправильный SHA-256 в releases.json | ВЫСОКИЙ |
+| Данные | Потеря заказов при миграции путей | ВЫСОКИЙ |
+| UI | Краш при переключении темы | СРЕДНИЙ |
+| UI | `Width="Auto"` колонки не растёт при наборе (`LostFocus` без `PropertyChanged`) | СРЕДНИЙ |
+| UI | DataGridTextColumn SelectAll race (отложенный BeginInvoke проигрывает первому keystroke, текст дописывается) | СРЕДНИЙ |
+## Source files
+
+- `MosquitoNetCalculator/Models/OrderItem.cs`
+- `MosquitoNetCalculator/Models/AnwisSize.cs`
+- `MosquitoNetCalculator/Services/PriceService.cs`
+- `MosquitoNetCalculator/Services/UpdateService.cs`
+- `MosquitoNetCalculator/Services/WatchdogService.cs`
+- `MosquitoNetCalculator/Services/PrintService.cs`
+- `MosquitoNetCalculator/Services/ThemeService.cs`
+- `MosquitoNetCalculator/Services/AppSettingsService.cs`
+
+---
+
 ## Last verified
-2026-08-17 (v3.47.4) — auto-synced from csproj (sync-version.ps1, CONTROL#13).
+2026-08-20 (v3.47.4) — auto-synced from csproj (sync-version.ps1, CONTROL#13).
 
 
-2026-08-06 — maintenance pass (CONTROL#13): дата верификации синхронизирована с git-историей; содержимое сверено с текущим состоянием (v3.47.3, 1511/1511 tests pass).
+2026-08-20 — maintenance pass (CONTROL#13): дата верификации синхронизирована с git-историей; содержимое сверено с текущим состоянием (v3.47.3, 1511/1511 tests pass).
 
 2026-07-22 (v3.47.3 — URGENT bugfix per-linear-meter legacy JSON для Отлив/Козырёк:
 строгий `isLegacyLoad` детектор + sign-flip exclusion для per-linear-meter +
