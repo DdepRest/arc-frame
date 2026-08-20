@@ -74,11 +74,11 @@ namespace MosquitoNetCalculator.Models
             // The model's already-parsed parameters are the most complete source:
             // apply them first so the card is never blank when the raw user text
             // doesn't spell out every field.
-            PreFillFromCommand(knownParams);
+            AiClarificationPrefill.FromCommand(this, knownParams);
             // Then the model's prose (it may have seen the photo itself), and
             // finally the user's own words — the user always wins.
-            PreFillFromReply(replyText);
-            PreFillFromRequest(userRequest);
+            AiClarificationPrefill.FromReply(this, replyText);
+            AiClarificationPrefill.FromRequest(this, userRequest);
         }
 
         public IReadOnlyList<string> ProductTypes => _productTypes;
@@ -210,118 +210,13 @@ namespace MosquitoNetCalculator.Models
             => AiKeywordLexicon.ContainsAny(text, keywords);
 
         /// <summary>
-        /// Fills the fields the user already gave in <paramref name="request"/>,
-        /// so the card needs only the still-missing parameter (e.g. the Anwis
-        /// mode) instead of making the user retype everything: «ПМС Anwis. бел
-        /// 4 739х1116» → Anwis + Белый + 739×1116 + 4 шт.
+        /// Stage-3 hardening: pre-fill helpers extracted to
+        /// <see cref="AiClarificationPrefill"/>. The form keeps INPC +
+        /// <see cref="TryBuildCommand"/> + <see cref="BuildSummaryText"/>
+        /// + the family filter; the regex-heavy prefill logic lives in
+        /// the dedicated service class so the form stays focused on state.
         /// </summary>
-        private void PreFillFromRequest(string? request)
-        {
-            if (string.IsNullOrWhiteSpace(request)) return;
-            var t = request.ToLowerInvariant();
-
-            var color = AiKeywordLexicon.DetectColor(t);
-            if (color != null && Colors.Contains(color))
-                SelectedColor = color;
-
-            var mode = AiKeywordLexicon.DetectAnwisMode(t);
-            if (mode != null && IsAnwis)
-                SelectedAnwisMode = mode;
-
-            // Pre-fill the installation choice the user already named
-            // («с монтажом»/«без монтажа»/«в конструкцию») so the card only
-            // asks for what's genuinely still unknown.
-            var installation = AiKeywordLexicon.DetectInstallationMode(request);
-            if (installation >= 0)
-                SelectedInstallation = AiKeywordLexicon.InstallationLabel(installation);
-
-            var dim = AiKeywordLexicon.DimensionRegex.Match(request);
-            if (!dim.Success) return;
-
-            WidthText = dim.Groups[1].Value;
-            HeightText = dim.Groups[2].Value;
-
-            // «4 шт 739х1116» wins over a bare leading number; otherwise a
-            // number right before the size («4 739х1116») is treated as count.
-            var q = AiKeywordLexicon.QuantityRegex.Match(request);
-            if (q.Success)
-            {
-                QuantityText = q.Groups[1].Value;
-            }
-            else
-            {
-                var beforeSize = request.Substring(0, dim.Index);
-                var leading = AiKeywordLexicon.LeadingNumberRegex.Match(beforeSize);
-                if (leading.Success)
-                    QuantityText = leading.Groups[1].Value;
-            }
-        }
-
-        /// <summary>
-        /// Pre-fills the card from the model's prose reply. A vision model often
-        /// reads parameters straight off an attached photo but answers with a
-        /// plain-text question («Вижу 700×1400, белый. Какой режим?») instead of
-        /// a structured add_item. Without this, a photo that the local OCR couldn't
-        /// read leaves the card blank even though the reply spells out the values.
-        /// Deliberately does NOT read the Anwis mode here — the reply's
-        /// «ББ60, ББ70, ПП…» is an options list, not a user choice, so the
-        /// profile stays «Выберите профиль».
-        /// </summary>
-        private void PreFillFromReply(string? reply)
-        {
-            if (string.IsNullOrWhiteSpace(reply)) return;
-            var t = reply.ToLowerInvariant();
-
-            // Narrow the selected product only when the reply names exactly one
-            // family (e.g. «Отлив»). Mesh requests resolve to several products,
-            // so the default selection stays untouched.
-            var family = FilterProductsForRequest(reply);
-            if (family.Count == 1 && ProductTypes.Contains(family[0]))
-                SelectedType = family[0];
-
-            var color = AiKeywordLexicon.DetectColor(t);
-            if (color != null && Colors.Contains(color))
-                SelectedColor = color;
-
-            var dim = AiKeywordLexicon.DimensionRegex.Match(reply);
-            if (dim.Success)
-            {
-                WidthText = dim.Groups[1].Value;
-                HeightText = dim.Groups[2].Value;
-            }
-
-            var q = AiKeywordLexicon.QuantityRegex.Match(reply);
-            if (q.Success)
-                QuantityText = q.Groups[1].Value;
-        }
-
-        /// <summary>
-        /// Pre-fills the card from an already-parsed AddItem command. The model
-        /// can recover size/color/quantity from earlier context or an attachment
-        /// even when the raw user text doesn't contain them — without this the
-        /// clarification card would come up blank despite the program already
-        /// knowing the values. The Anwis size mode is deliberately NOT copied:
-        /// the card exists precisely because that mode was guessed and must be
-        /// re-picked by the user.
-        /// </summary>
-        private void PreFillFromCommand(AiCommandParams? p)
-        {
-            if (p == null) return;
-
-            if (!string.IsNullOrWhiteSpace(p.Type) && ProductTypes.Contains(p.Type))
-                SelectedType = p.Type;
-
-            if (!string.IsNullOrWhiteSpace(p.Color) && Colors.Contains(p.Color))
-                SelectedColor = p.Color;
-
-            if (p.Width > 0)
-                WidthText = p.Width.ToString(CultureInfo.InvariantCulture);
-            if (p.Height > 0)
-                HeightText = p.Height.ToString(CultureInfo.InvariantCulture);
-
-            if (p.Quantity > 0)
-                QuantityText = FormatQuantity(p.Quantity);
-        }
+        // PreFillFromRequest/PreFillFromReply/PreFillFromCommand removed — see AiClarificationPrefill.
 
         private static string InstallationLabel(int mode) => mode switch
         {

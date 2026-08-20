@@ -13,7 +13,8 @@ namespace MosquitoNetCalculator.Tests.Controls
         {
             var xaml = File.ReadAllText(LocateSource("Controls/AiAssistantControl.xaml"));
             var codeBehind = File.ReadAllText(LocateSource("Controls/AiAssistantControl.xaml.cs"));
-            var viewModel = File.ReadAllText(LocateSource("ViewModels/AiAssistantViewModel.cs"));
+            var viewModelBase = File.ReadAllText(LocateSource("ViewModels/AiAssistantViewModel.cs"));
+            var viewModelStreaming = File.ReadAllText(LocateSource("ViewModels/AiAssistantViewModel.Streaming.cs"));
 
             // The overlay is bound straight to IsBusy — no code-behind timing
             // race can leave it hidden while a request is in flight.
@@ -24,9 +25,13 @@ namespace MosquitoNetCalculator.Tests.Controls
 
             // The single overlay indicator handles both phases: empty StatusText
             // with pulsing dots for «ожидание», then «Печатает…» after first token.
-            // No separate inline bubble indicator — one status, one place.
-            Assert.Contains("StatusText = \"Думает…\"", viewModel);
-            Assert.Contains("StatusText = \"Печатает…\"", viewModel);
+            // Stage-3 hardening moved the streaming lifecycle to a partial file —
+            // the «Думает…» / «Печатает…» strings now live in
+            // AiAssistantViewModel.Streaming.cs.
+            Assert.Contains("StatusText = \"Думает…\"", viewModelStreaming);
+            Assert.Contains("StatusText = \"Печатает…\"", viewModelStreaming);
+            // Sanity: the partial class itself still owns IsBusy in the base.
+            Assert.Contains("IsBusy", viewModelBase);
             Assert.Contains("AutomationProperties.LiveSetting=\"Polite\"", xaml);
             Assert.Contains("AutomationProperties.Name=\"Состояние ответа AI\"", xaml);
         }
@@ -88,6 +93,35 @@ namespace MosquitoNetCalculator.Tests.Controls
         }
 
         [Fact]
+        public void TypingIndicatorDotAnimations_StopWhenIndicatorHides()
+        {
+            var xaml = File.ReadAllText(LocateSource("Controls/AiAssistantControl.xaml"));
+
+            // The «Думает…» dots pulse via RepeatBehavior=Forever. Without an
+            // Unloaded stop they keep ticking after the indicator collapses (and
+            // can't be re-begun cleanly on the next request) — a permanent
+            // render-thread drain. Each Loaded begin must have an Unloaded stop.
+            Assert.Contains("StopStoryboard BeginStoryboardName=\"Dot1PulseBegin\"", xaml);
+            Assert.Contains("StopStoryboard BeginStoryboardName=\"Dot2PulseBegin\"", xaml);
+            Assert.Contains("StopStoryboard BeginStoryboardName=\"Dot3PulseBegin\"", xaml);
+            Assert.Contains("RoutedEvent=\"Unloaded\"", xaml);
+        }
+
+        [Fact]
+        public void Composer_PastesClipboardImageOnCtrlV()
+        {
+            var codeBehind = File.ReadAllText(LocateSource("Controls/AiAssistantControl.xaml.cs"));
+
+            // Ctrl+V must stage a raster image from the clipboard as a PNG
+            // attachment instead of the TextBox dropping the paste silently.
+            Assert.Contains("Key.V && Keyboard.Modifiers == ModifierKeys.Control", codeBehind);
+            Assert.Contains("TryPasteImageFromClipboard()", codeBehind);
+            Assert.Contains("Clipboard.ContainsImage()", codeBehind);
+            Assert.Contains("PngBitmapEncoder", codeBehind);
+            Assert.Contains("data:image/png", codeBehind);
+        }
+
+        [Fact]
         public void SlashAutocomplete_PopupIsWiredToCommandCatalog()
         {
             var xaml = File.ReadAllText(LocateSource("Controls/AiAssistantControl.xaml"));
@@ -106,23 +140,17 @@ namespace MosquitoNetCalculator.Tests.Controls
         }
 
         [Fact]
-        public void DevelopmentOverlay_LeavesPanelVisibleButCapturesAllInteraction()
+        public void AiControl_HasNoDevelopmentOverlay_AndFocusesComposerOnLoad()
         {
             var xaml = File.ReadAllText(LocateSource("Controls/AiAssistantControl.xaml"));
             var codeBehind = File.ReadAllText(LocateSource("Controls/AiAssistantControl.xaml.cs"));
 
-            // The feature is intentionally preview-only: the overlay must sit
-            // above the whole control and intercept input while keeping the
-            // existing chat layout visible underneath it.
-            Assert.Contains("x:Name=\"DevelopmentOverlay\"", xaml);
-            Assert.Contains("Grid.RowSpan=\"2\"", xaml);
-            Assert.Contains("Panel.ZIndex=\"100\"", xaml);
-            Assert.Contains("IsHitTestVisible=\"True\"", xaml);
-            Assert.Contains("Focusable=\"True\"", xaml);
-            Assert.Contains("KeyboardNavigation.TabNavigation=\"None\"", xaml);
-            Assert.Contains("DevelopmentOverlay.Focus()", codeBehind);
-            Assert.Contains("В РАЗРАБОТКЕ", xaml);
-            Assert.Contains("действия временно отключены", xaml);
+            // The AI surface is fully interactive: no blocking overlay may sit
+            // above the chat, and the caret must land in the composer on load.
+            Assert.DoesNotContain("DevelopmentOverlay", xaml);
+            Assert.DoesNotContain("В РАЗРАБОТКЕ", xaml);
+            Assert.DoesNotContain("DevelopmentOverlay.Focus()", codeBehind);
+            Assert.Contains("TxtInput.Focus()", codeBehind);
         }
 
         [Fact]
@@ -139,17 +167,17 @@ namespace MosquitoNetCalculator.Tests.Controls
         }
 
         [Fact]
-        public void ApiKeyMenu_RemainsVisibleButDoesNotOpenDialog()
+        public void ApiKeyMenu_IsEnabled_AndOpensDialog()
         {
             var xaml = File.ReadAllText(LocateSource("Controls/TitleBarControl.xaml"));
             var codeBehind = File.ReadAllText(LocateSource("Controls/TitleBarControl.xaml.cs"));
 
             Assert.Contains("AI Ассистент — API ключ", xaml);
             Assert.Contains("Click=\"MenuAiApiKey_Click\"", xaml);
-            Assert.Contains("IsEnabled=\"False\"", xaml);
-            Assert.Contains("ToolTip=\"AI Ассистент — в разработке\"", xaml);
-            Assert.DoesNotContain("new AiApiKeyDialog", codeBehind);
-            Assert.DoesNotContain("ShowDialog()", codeBehind);
+            Assert.DoesNotContain("IsEnabled=\"False\"", xaml);
+            Assert.DoesNotContain("AI Ассистент — в разработке", xaml);
+            Assert.Contains("new AiApiKeyDialog", codeBehind);
+            Assert.Contains("ShowDialog()", codeBehind);
         }
 
         [Fact]
@@ -194,6 +222,7 @@ namespace MosquitoNetCalculator.Tests.Controls
         {
             var xaml = File.ReadAllText(LocateSource("Controls/AiAssistantControl.xaml"));
             var viewModel = File.ReadAllText(LocateSource("ViewModels/AiAssistantViewModel.cs"));
+            var streamingPartial = File.ReadAllText(LocateSource("ViewModels/AiAssistantViewModel.Streaming.cs"));
 
             // Bubble text uses DisplayText (hides raw JSON), not raw Text.
             Assert.Contains("MarkdownRenderer.Text=\"{Binding DisplayText}\"", xaml);
@@ -203,8 +232,10 @@ namespace MosquitoNetCalculator.Tests.Controls
             Assert.Contains("ПОДТВЕРДИТЕ", xaml);
             // The ViewModel replaces the model's past-tense «Добавлено: …» reply
             // with a neutral lead-in while the action awaits confirmation.
+            // Stage-3 hardening: the streaming-side FinalizeStreamingMessage
+            // (and ConfirmationLead assignment) live in the Streaming partial.
             Assert.Contains("Проверьте параметры и нажмите «Выполнить»", viewModel);
-            Assert.Contains("msg.Text = ConfirmationLead(plan)", viewModel);
+            Assert.Contains("msg.Text = ConfirmationLead(plan)", streamingPartial);
         }
 
         private static string LocateSource(string relativePath)
