@@ -38,6 +38,13 @@ namespace MosquitoNetCalculator.Tests.Services
             [JsonPropertyName("expected_target")] public string? ExpectedTarget { get; set; }
             [JsonPropertyName("expected_steps")] public int? ExpectedSteps { get; set; }
             [JsonPropertyName("expected_confirmation")] public bool ExpectedConfirmation { get; set; }
+            /// <summary>
+            /// When set, locks the interception decision («execute vs clarify»)
+            /// via <see cref="AiClarificationForm.ShouldAskForMissingParams"/> on the
+            /// parsed commands + user text. Covers the монтаж / Anwis-mode /
+            /// dimensions guards that live above the plain plan validation.
+            /// </summary>
+            [JsonPropertyName("expected_clarification")] public bool? ExpectedClarification { get; set; }
         }
 
         private static IReadOnlyList<GoldenCase> Load()
@@ -88,6 +95,19 @@ namespace MosquitoNetCalculator.Tests.Services
             var validation = AiPlanValidator.Validate(plan);
             Assert.True(validation.IsValid, $"[{c.Id}] план должен проходить локальную валидацию: {string.Join("; ", validation.StepResults.SelectMany(r => r.Messages))}");
             Assert.Equal(c.ExpectedConfirmation, plan.RequiresConfirmation);
+
+            // Interception layer: lock the «execute vs clarify» decision so a plan
+            // can't silently run with missing монтаж / Anwis mode / dimensions.
+            // The «don't invent» policy now lives in <see cref="AiPlanSafetyPolicy"/>;
+            // the public AiClarificationForm.ShouldAskForMissingParams is the
+            // form-side helper restricted to AddItem, while safety policy is the
+            // full superset that also covers untargeted updates.
+            if (c.ExpectedClarification.HasValue)
+            {
+                var commands = plan.Steps.Select(s => s.ToCommand()).ToArray();
+                bool policyBlocks = AiPlanSafetyPolicy.NeedsClarification(commands, c.UserText);
+                Assert.Equal(c.ExpectedClarification.Value, policyBlocks);
+            }
 
             var first = plan.Steps[0];
             if (c.ExpectedAction != null)

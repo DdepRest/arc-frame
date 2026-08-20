@@ -32,6 +32,20 @@
     "expected_confirmation": false
   },
   {
+    "id": "add-anwis-missing-mode-question",
+    "user_text": "Добавь сетку Anwis белый 739×1116 4 шт",
+    "model_response": "Для добавления сетки Anwis мне всё ещё необходимо знать режим. Какой режим использовать? • ББ60 (Брусбокс 60) • ББ70 (Брусбокс 70) • ПП (Профипласт) • Проём (Размер проёма) • Габарит (Габаритный)",
+    "expected_mode": "clarification",
+    "expected_confirmation": false
+  },
+  {
+    "id": "add-anwis-missing-mode-json",
+    "user_text": "Добавь сетку Anwis белый 739×1116 4 шт",
+    "model_response": "{\"mode\":\"clarification\",\"reply\":\"Какой режим Anwis использовать? ББ60, ББ70, ПП, Проём или Габарит?\"}",
+    "expected_mode": "clarification",
+    "expected_confirmation": false
+  },
+  {
     "id": "add-otliv-brown-2pcs",
     "user_text": "Отлив 200×1500 коричневый, 2 штуки",
     "model_response": "{\"action\":\"add_item\",\"params\":{\"type\":\"Отлив\",\"color\":\"Коричневый\",\"width\":200,\"height\":1500,\"quantity\":2,\"price\":2150}}",
@@ -41,6 +55,69 @@
     "expected_width": 200,
     "expected_height": 1500,
     "expected_quantity": 2,
+    "expected_confirmation": true
+  },
+  {
+    "id": "add-otliv-missing-installation",
+    "user_text": "отлив бел 170 900",
+    "model_response": "{\"action\":\"add_item\",\"params\":{\"type\":\"Отлив\",\"color\":\"Белый\",\"width\":170,\"height\":900,\"quantity\":1}}",
+    "expected_action": "add_item",
+    "expected_type": "Отлив",
+    "expected_color": "Белый",
+    "expected_width": 170,
+    "expected_height": 900,
+    "expected_clarification": true,
+    "expected_confirmation": true
+  },
+  {
+    "id": "add-otliv-with-installation",
+    "user_text": "отлив бел 170 900 с монтажом",
+    "model_response": "{\"action\":\"add_item\",\"params\":{\"type\":\"Отлив\",\"color\":\"Белый\",\"width\":170,\"height\":900,\"quantity\":1,\"installation_mode\":0}}",
+    "expected_action": "add_item",
+    "expected_type": "Отлив",
+    "expected_color": "Белый",
+    "expected_width": 170,
+    "expected_height": 900,
+    "expected_installation_mode": 0,
+    "expected_clarification": false,
+    "expected_confirmation": true
+  },
+  {
+    "id": "add-otliv-without-installation",
+    "user_text": "отлив бел 170 900 без монтажа",
+    "model_response": "{\"action\":\"add_item\",\"params\":{\"type\":\"Отлив\",\"color\":\"Белый\",\"width\":170,\"height\":900,\"quantity\":1,\"installation_mode\":1}}",
+    "expected_action": "add_item",
+    "expected_type": "Отлив",
+    "expected_color": "Белый",
+    "expected_width": 170,
+    "expected_height": 900,
+    "expected_installation_mode": 1,
+    "expected_clarification": false,
+    "expected_confirmation": true
+  },
+  {
+    "id": "add-anwis-mode-without-installation",
+    "user_text": "Добавь сетку Anwis белый 739×1116 ПП",
+    "model_response": "{\"action\":\"add_item\",\"params\":{\"type\":\"Anwis\",\"color\":\"Белый\",\"width\":739,\"height\":1116,\"quantity\":1,\"anwis_mode\":\"ПП\"}}",
+    "expected_action": "add_item",
+    "expected_type": "Anwis",
+    "expected_color": "Белый",
+    "expected_width": 739,
+    "expected_height": 1116,
+    "expected_anwis_mode": "ПП",
+    "expected_clarification": true,
+    "expected_confirmation": true
+  },
+  {
+    "id": "add-korob-no-install-toggle",
+    "user_text": "Добавь короб белый 200×1500",
+    "model_response": "{\"action\":\"add_item\",\"params\":{\"type\":\"Короб\",\"color\":\"Белый\",\"width\":200,\"height\":1500,\"quantity\":1}}",
+    "expected_action": "add_item",
+    "expected_type": "Короб",
+    "expected_color": "Белый",
+    "expected_width": 200,
+    "expected_height": 1500,
+    "expected_clarification": false,
     "expected_confirmation": true
   },
   {
@@ -112,13 +189,21 @@
     "expected_mode": "plan",
     "expected_steps": 2,
     "expected_confirmation": true
-  },
-  {
+  },  {
     "id": "plan-batch-add-then-update",
     "user_text": "Добавь отлив и поставь монтаж на новые позиции",
     "model_response": "{\"mode\":\"plan\",\"reply\":\"Сначала добавлю, потом обновлю монтаж.\",\"requires_confirmation\":true,\"steps\":[{\"action\":\"add_item\",\"params\":{\"type\":\"Отлив\",\"color\":\"Белый\",\"width\":200,\"height\":1500,\"quantity\":1}},{\"action\":\"update_items\",\"params\":{\"product\":\"Отлив\",\"installation_mode\":0}}]}",
     "expected_mode": "plan",
     "expected_steps": 2,
     "expected_confirmation": true
+  },
+  {
+    "id": "plan-update-without-target-clarification",
+    "user_text": "поставь везде без монтажа",
+    "model_response": "{\"mode\":\"plan\",\"reply\":\"Нужно уточнить, к каким позициям применить.\",\"steps\":[{\"action\":\"update_items\",\"params\":{\"installation_mode\":1}}]}",
+    "expected_mode": "plan",
+    "expected_steps": 1,
+    "expected_confirmation": true,
+    "expected_clarification": true
   }
-]
+] 

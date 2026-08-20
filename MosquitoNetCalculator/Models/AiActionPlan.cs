@@ -96,6 +96,14 @@ namespace MosquitoNetCalculator.Models
         /// <summary>True when the plan never touches the order.</summary>
         public bool IsReadOnly { get; init; }
 
+        /// <summary>
+        /// True when the plan must surface a clarification card before
+        /// execution. Set by <see cref="AiPlanValidator.Validate"/> and
+        /// by the parsers (plan-mode + legacy single-action) so any
+        /// plan-building pipeline is consistent.
+        /// </summary>
+        public bool NeedsClarification { get; set; }
+
         public AiPlanStatus Status { get; set; } = AiPlanStatus.Draft;
 
         public DateTime CreatedAt { get; init; } = DateTime.Now;

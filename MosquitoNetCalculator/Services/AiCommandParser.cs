@@ -33,10 +33,15 @@ namespace MosquitoNetCalculator.Services
                     if (root.TryGetProperty("action", out var actionProp))
                     {
                         var (command, replyOverride) = ParseCommand(actionProp.GetString()!, root);
-                        if (replyOverride != null) return (new AiResponse { Reply = replyOverride }, true);
+                        if (replyOverride != null) return (new AiResponse { Reply = replyOverride, Mode = AiPlanMode.Clarification }, true);
                         if (command == null) return (new AiResponse { Reply = content.Trim() }, false);
                         var reply = ExtractReplyText(content);
                         if (string.IsNullOrWhiteSpace(reply)) reply = GenerateActionConfirmation(command);
+                        // Legacy single-action: stays as a bare Action. The
+                        // safety policy is enforced one layer up — both the
+                        // VM (FinalizeStreamingMessage) and the validator
+                        // (Validate) run AiPlanSafetyPolicy.Classify on the
+                        // candidate commands before any preview/confirm UI.
                         return (new AiResponse { Reply = reply, Action = command }, true);
                     }
                 }
@@ -86,7 +91,7 @@ namespace MosquitoNetCalculator.Services
 
                     var (command, replyOverride) = ParseCommand(actionType, stepEl);
                     if (replyOverride != null)
-                        return (new AiResponse { Reply = replyOverride }, true);
+                        return (new AiResponse { Reply = replyOverride, Mode = AiPlanMode.Clarification }, true);
                     if (command == null)
                         return (new AiResponse { Reply = content.Trim() }, false);
                     commands.Add(command);
@@ -103,16 +108,24 @@ namespace MosquitoNetCalculator.Services
                 reply = content.Trim();
 
             if (noActions)
-                return (new AiResponse { Reply = reply }, true);
+                return (new AiResponse { Reply = reply, Mode = mode }, true);
 
             bool requiresConfirmation = GetBool(root, "requires_confirmation")
                 || commands.Any(c => AiPlanBuilder.RequiresConfirmation(c));
             var plan = AiPlanBuilder.FromCommands(commands, userMessage, reply, mode);
             plan.RequiresConfirmation = requiresConfirmation;
-            plan.Status = requiresConfirmation
-                ? AiPlanStatus.ReadyForPreview
-                : AiPlanStatus.Draft;
-            return (new AiResponse { Reply = reply, Plan = plan }, true);
+            // «Don't invent»: even a plan the model shaped perfectly may still
+            // need a clarification card before it can run (e.g. Anwis without
+            // mode, dimensions never named). Check immediately so callers see
+            // the flag as soon as they receive the (Response, bool) tuple.
+            var missing = AiPlanSafetyPolicy.Classify(commands, userMessage);
+            plan.NeedsClarification = missing != AiPlanSafetyPolicy.MissingField.None;
+            plan.Status = plan.NeedsClarification
+                ? AiPlanStatus.NeedsClarification
+                : requiresConfirmation
+                    ? AiPlanStatus.ReadyForPreview
+                    : AiPlanStatus.Draft;
+            return (new AiResponse { Reply = reply, Plan = plan, Mode = mode }, true);
         }
 
         private static (AiCommand? Command, string? ReplyOverride) ParseCalcSlope(JsonElement root)
@@ -131,7 +144,7 @@ namespace MosquitoNetCalculator.Services
             var type = GetStr(p, "type") ?? "Anwis"; var color = GetStr(p, "color") ?? "";
             var w = GetInt(p, "width"); var h = GetInt(p, "height");
             var q = GetDouble(p, "quantity", 1); var price = GetDouble(p, "price");
-            var mode = AnwisSizeMode.Брусбокс60; var modeStr = GetStr(p, "anwis_mode");
+            var mode = AnwisSizeService.DefaultMode; var modeStr = GetStr(p, "anwis_mode");
             if (Services.AnwisSizeService.IsApplicable(type) && string.IsNullOrEmpty(modeStr))
                 return (null, "⚠ Для Anwis укажите режим: ББ60, ББ70, ПП, Проём или Габарит.");
             if (!string.IsNullOrEmpty(modeStr))
@@ -148,7 +161,7 @@ namespace MosquitoNetCalculator.Services
             "пп" or "pp" or "профипласт" => AnwisSizeMode.Профипласт,
             "проём" or "проем" or "размер проёма" => AnwisSizeMode.РазмерПроёма,
             "габарит" or "габаритный" => AnwisSizeMode.Габаритный,
-            _ => AnwisSizeMode.Брусбокс60
+            _ => AnwisSizeService.DefaultMode
         };
 
         private static (AiCommand? Command, string? ReplyOverride) ParseUpdateItems(JsonElement root)
@@ -203,7 +216,7 @@ namespace MosquitoNetCalculator.Services
             s = content.IndexOf("```\n"); if (s < 0) s = content.IndexOf("```\r\n");
             if (s >= 0) { s += 3; int e = content.IndexOf("```", s); if (e > s) { var c = content[s..e].Trim(); if (c.StartsWith("{")) return c; } }
             s = content.IndexOf('{');
-            if (s >= 0) { int d = 0; for (int i = s; i < content.Length; i++) { if (content[i] == '{') d++; else if (content[i] == '}') d--; if (d == 0) { var c = content[s..(i + 1)]; if (c.Contains("\"action\"")) return c; break; } } }
+            if (s >= 0) { int d = 0; for (int i = s; i < content.Length; i++) { if (content[i] == '{') d++; else if (content[i] == '}') d--; if (d == 0) { var c = content[s..(i + 1)]; if (c.Contains("\"action\"") || c.Contains("\"mode\"") || c.Contains("\"steps\"")) return c; break; } } }
             return null;
         }
 

@@ -20,6 +20,7 @@ namespace MosquitoNetCalculator.ViewModels
         private string _inputText = string.Empty;
         private bool _isBusy;
         private string _statusText = "Готов к работе";
+        private string? _ocrWarning;
         private bool _hasApiKey;
         private string _currentModel = "google/gemma-3-27b-it:free";
         private string _apiKeyStatusText = "API ключ не настроен";
@@ -31,6 +32,11 @@ namespace MosquitoNetCalculator.ViewModels
         private readonly object _planLock = new();
 
         public ObservableCollection<AiChatMessage> Messages { get; } = new();
+
+        /// <summary>Images staged in the composer for the next message (runtime-only).</summary>
+        public ObservableCollection<AiImageAttachment> Attachments { get; } = new();
+
+        public bool HasAttachments => Attachments.Count > 0;
 
         /// <summary>
         /// Optional provider that returns the structured current order
@@ -69,8 +75,75 @@ namespace MosquitoNetCalculator.ViewModels
             }
         }
 
-        public bool CanSend => !IsBusy && !string.IsNullOrWhiteSpace(InputText);
+        public bool CanSend => !IsBusy && (!string.IsNullOrWhiteSpace(InputText) || Attachments.Count > 0);
         public bool CanSendOrCancel => CanSend || IsBusy;
+
+        public void AddAttachment(AiImageAttachment attachment)
+        {
+            if (attachment == null) return;
+            Attachments.Add(attachment);
+            OnPropertyChanged(nameof(HasAttachments));
+            OnPropertyChanged(nameof(CanSend));
+            OnPropertyChanged(nameof(CanSendOrCancel));
+        }
+
+        /// <summary>
+        /// Stages an image and starts OCR immediately, so the composer warning
+        /// appears before the manager hits send (not after). The OCR result is
+        /// cached on the attachment and reused by <see cref="SendMessageAsync"/>.
+        /// </summary>
+        public void AddAttachmentWithOcr(AiImageAttachment attachment)
+        {
+            AddAttachment(attachment);
+            _ = RunOcrAsync(attachment);
+        }
+
+        public void RemoveAttachment(AiImageAttachment attachment)
+        {
+            if (attachment == null || !Attachments.Remove(attachment)) return;
+            OnPropertyChanged(nameof(HasAttachments));
+            OnPropertyChanged(nameof(CanSend));
+            OnPropertyChanged(nameof(CanSendOrCancel));
+            RecomputeOcrWarning();
+        }
+
+        /// <summary>
+        /// OCRs one staged image and refreshes the composer warning when done.
+        /// Kept on the calling (UI) thread so WinRT's BitmapDecoder can
+        /// initialise; a fire-and-forget await is safe because the send path
+        /// re-runs OCR for any image still pending.
+        /// </summary>
+        private async Task RunOcrAsync(AiImageAttachment attachment)
+        {
+            var bytes = AttachmentOcrService.TryDecodeDataUrl(attachment.DataUrl);
+            if (bytes == null)
+            {
+                attachment.OcrText = string.Empty;
+                attachment.OcrFailureReason = "Не удалось декодировать изображение.";
+            }
+            else
+            {
+                var result = await AttachmentOcrService.ExtractAsync(bytes);
+                attachment.OcrText = result.Text;
+                attachment.OcrFailureReason = result.FailureReason;
+            }
+            RecomputeOcrWarning();
+        }
+
+        /// <summary>
+        /// Warns when every staged photo has been OCR'd and none yielded text.
+        /// Null <see cref="AiImageAttachment.OcrText"/> means OCR is still
+        /// running — no warning until every image has a result.
+        /// </summary>
+        private void RecomputeOcrWarning()
+        {
+            if (Attachments.Count == 0 || Attachments.Any(a => a.OcrText == null))
+            {
+                OcrWarning = null;
+                return;
+            }
+            OcrWarning = BuildOcrWarning(Attachments.Select(a => a.OcrText ?? string.Empty).ToList());
+        }
 
         public string StatusText
         {
@@ -95,6 +168,21 @@ namespace MosquitoNetCalculator.ViewModels
             get => _apiKeyStatusText;
             private set { _apiKeyStatusText = value; OnPropertyChanged(); }
         }
+
+        /// <summary>Warning shown in the composer when local OCR couldn't read any attached photo.</summary>
+        public string? OcrWarning
+        {
+            get => _ocrWarning;
+            private set
+            {
+                if (_ocrWarning == value) return;
+                _ocrWarning = value;
+                OnPropertyChanged();
+                OnPropertyChanged(nameof(HasOcrWarning));
+            }
+        }
+
+        public bool HasOcrWarning => !string.IsNullOrWhiteSpace(OcrWarning);
 
         public event Action<AiCommand>? CommandReceived;
 
@@ -150,15 +238,64 @@ namespace MosquitoNetCalculator.ViewModels
             // «Думает…» fills the pre-token gap; switches to «Печатает…»
             // when the first token arrives.
             StatusText = "Думает…";
+            OcrWarning = null;
 
             var userText = InputText.Trim();
             InputText = string.Empty;
 
-            // The service appends userText itself to the request. Snapshot only
-            // the conversation that existed before this message to avoid sending
-            // the current user text twice in the prompt.
+            // Snapshot staged images; they travel with THIS message only
+            // (history keeps text, so past attachments are not re-sent).
+            var stagedAttachments = Attachments.ToList();
+            var imageDataUrls = stagedAttachments.Select(a => a.DataUrl).ToList();
+            // Filename capture: managers often paste a screenshot whose file
+            // name encodes the order («ПМС Anwis, бел. 1 619x1295.png») instead
+            // of typing anything. Pre-fill the clarification card from those
+            // labels so the form isn't empty. Kept runtime-only — past chats
+            // restored from disk don't carry labels (they were never persisted).
+            var attachmentLabels = stagedAttachments.Select(a => a.FileName).ToList();
+            // OCR already ran at attach time (AddAttachmentWithOcr). Reuse that
+            // result; only re-run for images still pending because the manager
+            // sent before the background OCR finished. Windows.Media.Ocr stays
+            // on the UI thread — offloading it to Task.Run would fail to
+            // initialise BitmapDecoder. The whole step collapses to empty
+            // strings if no OCR language pack is installed — the send pipeline
+            // must never blow up on OCR failure.
+            var ocrLines = new List<string>(stagedAttachments.Count);
+            foreach (var attachment in stagedAttachments)
+            {
+                if (attachment.OcrText != null)
+                {
+                    ocrLines.Add(attachment.OcrText);
+                    continue;
+                }
+                var bytes = AttachmentOcrService.TryDecodeDataUrl(attachment.DataUrl);
+                if (bytes == null) { ocrLines.Add(string.Empty); continue; }
+                var result = await AttachmentOcrService.ExtractAsync(bytes);
+                ocrLines.Add(result.Text);
+            }
+            OcrWarning = BuildOcrWarning(ocrLines);
+            Attachments.Clear();
+            OnPropertyChanged(nameof(HasAttachments));
+
+            // The model only receives the raw image bytes via image_url; a
+            // text-only fallback model (or a low-quality photo) would miss the
+            // intent entirely. Feed the filename and locally OCR'd text into
+            // the prompt too, so ANY model understands an order encoded in a
+            // picture — for every product, not just Anwis meshes.
+            var modelUserText = BuildModelUserText(userText, attachmentLabels, ocrLines);
+
+            // The service appends the current message (modelUserText) itself to
+            // the request. Snapshot only the conversation that existed before
+            // this message to avoid sending the current text twice in the prompt.
             var conversationHistory = GetConversationHistory();
-            Messages.Add(new AiChatMessage { Text = userText, IsUser = true });
+            Messages.Add(new AiChatMessage
+            {
+                Text = userText,
+                IsUser = true,
+                AttachmentCount = imageDataUrls.Count,
+                AttachmentLabels = attachmentLabels,
+                AttachmentOcr = ocrLines
+            });
 
             // Local slash commands: instant, offline, zero tokens.
             var orderContext = OrderContextProvider?.Invoke();
@@ -266,8 +403,9 @@ namespace MosquitoNetCalculator.ViewModels
                 // WPF's SynchronizationContext can resume the service on the UI
                 // thread and defeat the throttled UI buffer below.
                 await Task.Run(() => _aiService.SendStreamingAsync(
-                    userText,
+                    modelUserText,
                     conversationHistory,
+                    imageDataUrls: imageDataUrls.Count > 0 ? imageDataUrls : null,
                     onChunk: chunk =>
                     {
                         if (dispatcher == null || dispatcher.CheckAccess())
@@ -385,7 +523,35 @@ namespace MosquitoNetCalculator.ViewModels
                 return;
             }
 
-            var (parsed, isValid) = AiCommandParser.TryParse(fullText, fullText);
+            // Use the real user text (not the model's reply) as the plan source
+            // and for the local Anwis-mode safety check below. Recent consecutive
+            // user messages are merged: managers often send «ПМС Anwis. бел» and
+            // «4 739х1116» as two lines/messages.
+            var lastUserText = Messages.LastOrDefault(m => m.IsUser)?.Text ?? "";
+            var userRequest = GetRecentUserRequest();
+            var (parsed, isValid) = AiCommandParser.TryParse(fullText, userRequest);
+
+            // The model can answer an add request by silently inventing critical
+            // data — a guessed Anwis profile (ББ60) or dimensions it never saw.
+            // Never execute invented data (CONTROL): show the pre-filled
+            // clarification card instead, for every product type. The single
+            // source of truth for this policy lives in
+            // <see cref="AiPlanSafetyPolicy"/>; this VM no longer hard-codes
+            // the per-rule checks.
+            var parsedCommands = GetParsedCommands(parsed);
+            var missing = AiPlanSafetyPolicy.Classify(parsedCommands, userRequest);
+            if (isValid && missing != AiPlanSafetyPolicy.MissingField.None)
+            {
+                var addItem = parsedCommands.FirstOrDefault(c => c.Type == AiCommandType.AddItem);
+                msg.Text = AiPlanSafetyPolicy.MissingReasonText(missing);
+                // The model already produced concrete AddItem parameters — even
+                // when the raw user text doesn't spell them out, the card must
+                // come up pre-filled instead of blank. (The guessed Anwis mode
+                // is intentionally left out so the user picks it themselves.)
+                msg.ClarificationForm = new AiClarificationForm(userRequest, addItem?.Params);
+                StatusText = "Готово ✓";
+                return;
+            }
 
             if (isValid && parsed.Plan is { Steps.Count: > 0 } plan)
             {
@@ -422,7 +588,7 @@ namespace MosquitoNetCalculator.ViewModels
                 // so the confirmation policy is uniform (mutating actions always
                 // show a preview; read-only ones run immediately).
                 var legacyPlan = AiPlanBuilder.FromCommand(
-                    parsed.Action, Messages.LastOrDefault(m => m.IsUser)?.Text, parsed.Reply);
+                    parsed.Action, lastUserText, parsed.Reply);
                 msg.Text = parsed.Reply;
                 msg.ActionPlan = legacyPlan;
                 legacyPlan.SourceMessageId = msg.MessageId;
@@ -442,22 +608,114 @@ namespace MosquitoNetCalculator.ViewModels
             }
             else
             {
-                msg.Text = fullText;
+                // Prefer the parsed reply over the raw streamed text: it strips
+                // the ```json protocol block and surfaces validation overrides
+                // («⚠ Для Anwis укажите режим…») instead of the raw action JSON.
+                msg.Text = string.IsNullOrWhiteSpace(parsed.Reply) ? fullText : parsed.Reply;
+
                 // When the AI asks back for missing parameters («Сделай сетку» →
                 // «Уточните: тип, размеры…»), attach an interactive form card so
                 // the user can pick values with ComboBoxes instead of typing a
-                // second prompt.
-                if (AiClarificationForm.LooksLikeClarification(fullText))
+                // second prompt. An explicit mode=clarification, a clarifying
+                // reply text, or an incomplete Anwis add request all attach it.
+                if (parsed.Mode == AiPlanMode.Clarification
+                    || AiClarificationForm.ShouldShowForm(userRequest, msg.Text))
                 {
                     // Filter the offered products to the family the user asked for:
                     // «Сделай сетку» → only mesh products, not the whole catalog.
-                    var lastUserText = Messages.LastOrDefault(m => m.IsUser)?.Text;
-                    msg.ClarificationForm = new AiClarificationForm(lastUserText);
+                    // Pre-fill from any parsed AddItem params too, so values the
+                    // model recovered from an image/context aren't dropped.
+                    msg.ClarificationForm = new AiClarificationForm(
+                        userRequest, GetKnownAddItemParams(parsedCommands), msg.Text);
                 }
             }
 
             StatusText = "Готово ✓";
         }
+
+        /// <summary>Flattens a parsed response into commands (plan steps or legacy action).</summary>
+        private static IReadOnlyList<AiCommand> GetParsedCommands(AiResponse parsed)
+        {
+            if (parsed.Plan is { } plan)
+                return plan.Steps.Select(s => s.ToCommand()).ToList();
+            if (parsed.Action is { } action)
+                return new[] { action };
+            return Array.Empty<AiCommand>();
+        }
+
+        /// <summary>First AddItem command's params, or null — the richest pre-fill source.</summary>
+        private static AiCommandParams? GetKnownAddItemParams(IReadOnlyList<AiCommand> commands)
+            => commands.FirstOrDefault(c => c.Type == AiCommandType.AddItem)?.Params;
+
+        /// <summary>
+        /// Text of the current user turn: the last user message plus any user
+        /// messages typed immediately before it (no assistant reply between
+        /// them). Managers often split one request across two sends
+        /// («ПМС Anwis. бел» then «4 739х1116») — the clarification card must
+        /// pre-fill from all of them, not just the last one.
+        /// </summary>
+        private string GetRecentUserRequest()
+        {
+            int lastUser = -1;
+            for (int i = Messages.Count - 1; i >= 0; i--)
+            {
+                if (Messages[i].IsUser) { lastUser = i; break; }
+            }
+            if (lastUser < 0) return string.Empty;
+
+            // Walk back over consecutive user messages, merging typed text,
+            // attachment filenames, and OCR'd image text. This way pasting
+            // «Снимок.PNG» (no useful name, no caption) still opens the
+            // clarification card pre-filled from the pixels of the picture.
+            var parts = new List<string>();
+            for (int i = lastUser; i >= 0 && Messages[i].IsUser; i--)
+            {
+                parts.Add(Messages[i].Text);
+                foreach (var label in Messages[i].AttachmentLabels)
+                    parts.Add(label);
+                foreach (var ocr in Messages[i].AttachmentOcr)
+                    if (!string.IsNullOrWhiteSpace(ocr)) parts.Add(ocr);
+            }
+            parts.Reverse();
+            return string.Join("\n", parts.Where(p => !string.IsNullOrWhiteSpace(p)));
+        }
+
+        /// <summary>
+        /// Merges the typed text with attachment filenames and locally OCR'd
+        /// image text into the single prompt string the model sees. The image
+        /// bytes travel separately as an <c>image_url</c> part; this text form
+        /// guarantees even a text-only fallback model still understands the
+        /// order encoded in a picture.
+        /// </summary>
+        internal static string BuildModelUserText(
+            string userText,
+            IReadOnlyList<string> attachmentLabels,
+            IReadOnlyList<string> ocrLines)
+        {
+            var parts = new List<string>();
+            if (!string.IsNullOrWhiteSpace(userText))
+                parts.Add(userText);
+            if (attachmentLabels != null)
+                foreach (var label in attachmentLabels)
+                    if (!string.IsNullOrWhiteSpace(label))
+                        parts.Add($"Файл: {label}");
+            if (ocrLines != null)
+                foreach (var ocr in ocrLines)
+                    if (!string.IsNullOrWhiteSpace(ocr))
+                        parts.Add($"Текст с картинки: {ocr}");
+            return string.Join("\n", parts);
+        }
+
+        /// <summary>
+        /// Returns a composer warning when every attached photo came back with no
+        /// OCR text (no language pack, a real photo the engine can't read, etc.).
+        /// The vision model may still have seen the image, but the manager should
+        /// know the text fallback had nothing to work with.
+        /// </summary>
+        internal static string? BuildOcrWarning(IReadOnlyList<string> ocrLines)
+            => ocrLines is { Count: > 0 } && ocrLines.All(string.IsNullOrWhiteSpace)
+                ? "⚠ Не удалось распознать текст на фото — опишите параметры текстом."
+                : null;
 
         /// <summary>
         /// Handles streaming errors: removes the placeholder if no text was received,
@@ -517,6 +775,25 @@ namespace MosquitoNetCalculator.ViewModels
                 return;
             }
 
+            // «Don't invent» audit-trail: after the form succeeds the command
+            // is safe by construction, but we still run the safety policy
+            // exactly once through the central source so a regression in
+            // form validation cannot slip through silently. Lock the path
+            // with a test; if the assertion ever fires the form is leaking
+            // an unsafe command into the preview pipeline.
+            var builtCommands = new[] { command! };
+            var leftover = AiPlanSafetyPolicy.Classify(builtCommands, form.BuildSummaryText());
+            if (leftover != AiPlanSafetyPolicy.MissingField.None)
+            {
+                Messages.Add(new AiChatMessage
+                {
+                    Text = "⚠ Внутренняя проверка: форма выпустила небезопасную команду. " +
+                           AiPlanSafetyPolicy.MissingReasonText(leftover),
+                    IsUser = false
+                });
+                return;
+            }
+
             // Hide the form card — the plan preview bubble replaces it.
             msg.ClarificationForm = null;
 
@@ -533,6 +810,10 @@ namespace MosquitoNetCalculator.ViewModels
                 command!,
                 sourceUserText: Messages.LastOrDefault(m => m.IsUser)?.Text,
                 reply: "Проверьте параметры и нажмите «Выполнить».");
+            // Run the validator so NeedsClarification / MissingField flags are
+            // freshly computed on the just-built plan (third canonical path
+            // through the policy, alongside plan-mode and finalization).
+            AiPlanValidator.Validate(plan);
             var confirm = new AiChatMessage
             {
                 Text = plan.ReplyText,
@@ -672,7 +953,13 @@ namespace MosquitoNetCalculator.ViewModels
 
                 case RouteKind.ClearPlan when route.Commands.Count > 0:
                 {
+                    // Fourth canonical command-building path: the local slash
+                    // router («/очистить»). Run the validator before showing the
+                    // preview so NeedsClarification is set uniformly. Today
+                    // ClearAll is always safe but the policy is the same one
+                    // every other path uses.
                     var plan = AiPlanBuilder.FromCommands(route.Commands, userText, route.Message);
+                    AiPlanValidator.Validate(plan);
                     var msg = new AiChatMessage
                     {
                         Text = route.Message,

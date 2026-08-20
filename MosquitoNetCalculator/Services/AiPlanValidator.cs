@@ -16,6 +16,14 @@ namespace MosquitoNetCalculator.Services
     {
         public bool IsValid { get; init; }
         public bool RequiresConfirmation { get; init; }
+        /// <summary>
+        /// True when the plan must surface a clarification card before
+        /// execution (would invent Anwis mode / dimensions / монтаж /
+        /// untargeted update). Computed by <see cref="AiPlanSafetyPolicy"/>.
+        /// </summary>
+        public bool NeedsClarification { get; init; }
+        /// <summary>First failing safety guard (Anwis-mode > dimensions > монтаж > update-target).</summary>
+        public AiPlanSafetyPolicy.MissingField MissingField { get; init; } = AiPlanSafetyPolicy.MissingField.None;
         public List<string> Messages { get; } = new();
         public List<AiStepValidationResult> StepResults { get; } = new();
     }
@@ -61,10 +69,21 @@ namespace MosquitoNetCalculator.Services
             plan.RequiresConfirmation = AiPlanBuilder.RequiresConfirmation(
                 plan.Steps.Select(s => s.ToCommand()).ToArray());
 
+            // Safety policy: «don't invent» — single source of truth.
+            // The plan is structurally valid but may still need a clarification
+            // card before it can be confirmed. Propagate the flag both into
+            // the result (for the validator API) and onto the plan itself
+            // (for the parser / executor pipeline to read).
+            var commands = plan.Steps.Select(s => s.ToCommand()).ToArray();
+            var missing = AiPlanSafetyPolicy.Classify(commands, plan.SourceUserText);
+            plan.NeedsClarification = missing != AiPlanSafetyPolicy.MissingField.None;
+
             var result = new AiPlanValidationResult
             {
                 IsValid = valid,
-                RequiresConfirmation = plan.RequiresConfirmation
+                RequiresConfirmation = plan.RequiresConfirmation,
+                NeedsClarification = plan.NeedsClarification,
+                MissingField = missing
             };
             result.Messages.AddRange(messages);
             result.StepResults.AddRange(steps);
@@ -154,7 +173,7 @@ namespace MosquitoNetCalculator.Services
             return AiOrderContext.IsKnownProduct(t);
         }
 
-        /// <summary>Category keywords mirroring MainWindow.MatchesTarget.</summary>
+        /// <summary>Category keywords mirroring AiCommandExecutor.MatchesTarget.</summary>
         public static IReadOnlyDictionary<string, IReadOnlyList<string>> Categories { get; } =
             new Dictionary<string, IReadOnlyList<string>>
             {

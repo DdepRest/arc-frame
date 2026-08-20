@@ -167,5 +167,52 @@ namespace MosquitoNetCalculator.Tests.Services
             Assert.False(r.RequiresConfirmation);
             Assert.True(plan.IsReadOnly);
         }
+
+        /// <summary>
+        /// Stage-1 hardening (centralised safety policy): the validator
+        /// must propagate the NeedsClarification flag the safety policy
+        /// produces, both onto <see cref="AiPlanValidationResult"/> and
+        /// onto the plan itself, so all four command-building paths share
+        /// one answer.
+        /// </summary>
+        [Fact]
+        public void Validate_AnwisWithoutMode_PropagatesNeedsClarification()
+        {
+            var plan = AiPlanBuilder.FromCommand(
+                new AiCommand
+                {
+                    Type = AiCommandType.AddItem,
+                    Params = new AiCommandParams { Type = "Anwis", Color = "Белый", Width = 700, Height = 1400 }
+                },
+                sourceUserText: "Сделай сетку 700x1400 бел");
+
+            var r = AiPlanValidator.Validate(plan);
+
+            Assert.True(r.NeedsClarification);
+            Assert.Equal(AiPlanSafetyPolicy.MissingField.AnwisMode, r.MissingField);
+            Assert.True(plan.NeedsClarification);
+        }
+
+        [Fact]
+        public void Validate_FullySpecifiedPlan_DoesNotFlagClarification()
+        {
+            var plan = AiPlanBuilder.FromCommand(
+                new AiCommand
+                {
+                    Type = AiCommandType.AddItem,
+                    Params = new AiCommandParams
+                    {
+                        Type = "Anwis", Color = "Белый", Width = 700, Height = 1400,
+                        AnwisMode = AnwisSizeMode.Брусбокс60, InstallationMode = 0
+                    }
+                },
+                sourceUserText: "Сделай сетку Anwis 700x1400 бел ПП с монтажом");
+
+            var r = AiPlanValidator.Validate(plan);
+
+            Assert.False(r.NeedsClarification);
+            Assert.Equal(AiPlanSafetyPolicy.MissingField.None, r.MissingField);
+            Assert.False(plan.NeedsClarification);
+        }
     }
 }
