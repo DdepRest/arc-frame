@@ -200,8 +200,8 @@ namespace MosquitoNetCalculator.Services
             };
 
             double[] widths = {
-                0.04, 0.115, 0.12, 0.075, 0.07, 0.07,
-                0.07, 0.08, 0.05, 0.09, 0.13, 0.09
+                0.04, 0.145, 0.12, 0.07, 0.065, 0.065,
+                0.065, 0.075, 0.045, 0.09, 0.13, 0.09
             };
 
             var usableWidths = new double[widths.Length];

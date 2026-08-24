@@ -1,3 +1,4 @@
+using System;
 using System.Windows;
 using System.Windows.Controls;
 using MosquitoNetCalculator.Models;
@@ -27,23 +28,31 @@ namespace MosquitoNetCalculator.Controls
 
             double area = 0, total = 0;
             string unit = IsCustomProductType(type) ? "шт." : OrderItem.GetUnit(type);
+            // Calculated dimensions (Anwis: after mode correction; others — as entered).
+            double previewW = width, previewH = height;
 
             if (IsCustomProductType(type)) { total = price * qty; unit = "шт."; }
             else if (OrderItem.AmountOnlyProducts.Contains(type)) { total = price; }
             else if (OrderItem.ManualPieceProducts.Contains(type)) { total = price * qty; }
             else if (OrderItem.AreaBasedProducts.Contains(type))
             {
-                // For Anwis, show calc-adjusted dimensions in the preview.
-                // Other area-based products use raw width/height.
+                // For Anwis, show calc-adjusted dimensions in the preview — same
+                // rounding as OrderItem.Recalculate (3 decimals) so preview and
+                // the added row produce the SAME total.
                 var anwisSize = AnwisSize.ОтВвода(width, height, SelectedAnwisMode);
-                double previewW = Services.AnwisSizeService.IsApplicable(type)
+                previewW = Services.AnwisSizeService.IsApplicable(type)
                     ? anwisSize.ШиринаРасчёт
                     : width;
-                double previewH = Services.AnwisSizeService.IsApplicable(type)
+                previewH = Services.AnwisSizeService.IsApplicable(type)
                     ? anwisSize.ВысотаРасчёт
                     : height;
-                area = (previewW * previewH) / 1_000_000.0;
+                area = Math.Round((previewW * previewH) / 1_000_000.0, 3);
                 total = area * price * qty;
+
+                // Импост — by CALCULATED dimensions (previewW/previewH already
+                // Anwis-corrected), single helper shared with OrderItem.Recalculate.
+                if (OrderItem.ImpostApplies(type, previewW, previewH))
+                    total += OrderItem.ImpostSurchargeFor(previewW, qty);
             }
             else if (type == "ПСУЛ")
             {
@@ -55,10 +64,17 @@ namespace MosquitoNetCalculator.Controls
             else { area = (width * height) / 1_000_000.0; total = area * price * qty; }
 
             PreviewChip.Visibility = Visibility.Visible;
+            double impost = OrderItem.ImpostApplies(type, previewW, previewH)
+                ? OrderItem.ImpostSurchargeFor(previewW, qty)
+                : 0;
+
             if (OrderItem.AmountOnlyProducts.Contains(type))
                 TxtQuickPreview.Text = $"{price:N2} руб";
             else if (area > 0)
-                TxtQuickPreview.Text = $"{area:F2} {unit} × {price:N2} руб × {qty} = {total:N2} руб";
+            {
+                string impostPart = impost > 0 ? $" + Импост {impost:N2} руб" : "";
+                TxtQuickPreview.Text = $"{area:F2} {unit} × {price:N2} руб × {qty}{impostPart} = {total:N2} руб";
+            }
             else
                 TxtQuickPreview.Text = $"{price:N2} руб × {qty} = {total:N2} руб";
         }

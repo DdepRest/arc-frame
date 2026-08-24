@@ -162,6 +162,16 @@ namespace MosquitoNetCalculator.Models
 
             if (!totalOverridden)
                 _total = Math.Round(CalculatedValue * Price * Quantity, 2);
+            // v3.48.0: automatic impost surcharge — +200 RUB per linear meter of
+            // CALCULATED (расчётной) WIDTH, added to the row total like the
+            // anti-cat surcharge. HasImpost is derived from Name + CALCULATED
+            // dimensions (Anwis SizeMode adjustments included) and cannot be
+            // removed. Because the расчётная width changes with the mode
+            // (ББ60: W+2, ББ70: W-2, Проём: W+20), switching the mode on an
+            // existing row also recalculates the impost sum.
+            if (HasImpost)
+                _total = Math.Round(_total + ImpostSurchargeFor(Width, Quantity), 2);
+
 
             OnPropertyChanged(nameof(Unit));
             OnPropertyChanged(nameof(ШиринаВвод));
@@ -170,6 +180,13 @@ namespace MosquitoNetCalculator.Models
             OnPropertyChanged(nameof(CalculatedValueDisplay));
             OnPropertyChanged(nameof(PriceDisplay));
             OnPropertyChanged(nameof(TotalDisplay));
+            OnPropertyChanged(nameof(HasImpost));
+            OnPropertyChanged(nameof(ImpostSurchargeTotal));
+            OnPropertyChanged(nameof(ImpostToolTip));
+            OnPropertyChanged(nameof(AnticatSurchargeTotal));
+            OnPropertyChanged(nameof(AnticatToolTip));
+            OnPropertyChanged(nameof(DisplayName));
+
 
             OnPropertyChanged(nameof(IsInstallationApplicable));
             OnPropertyChanged(nameof(IsManualPiece));

@@ -52,6 +52,17 @@ namespace MosquitoNetCalculator.Models
 
         /// <summary>Fixed surcharge for anti-cat fabric (₽ per m²).</summary>
         public const double AnticatSurcharge = 2000;
+        /// <summary>Window screen products that participate in the automatic impost system.</summary>
+        public static readonly HashSet<string> ImpostApplicableProducts = new(ProductCatalog.ImpostApplicableProducts);
+
+        /// <summary>Fixed impost surcharge rate (RUB per linear meter of WIDTH).</summary>
+        public const double ImpostRatePerLinearMeter = 200;
+
+        /// <summary>Impost triggers when the ENTERED width reaches this threshold (mm).</summary>
+        public const double ImpostMinWidthMm = 500;
+
+        /// <summary>Impost triggers when the ENTERED height reaches this threshold (mm).</summary>
+        public const double ImpostMinHeightMm = 1500;
 
         /// <summary>
         /// Products that do not have color variants.
@@ -326,6 +337,8 @@ namespace MosquitoNetCalculator.Models
                     _isAnticat = value;
                     OnPropertyChanged();
                     OnPropertyChanged(nameof(DisplayName));
+                    OnPropertyChanged(nameof(AnticatSurchargeTotal));
+                    OnPropertyChanged(nameof(AnticatToolTip));
                 }
             }
         }
@@ -334,7 +347,77 @@ namespace MosquitoNetCalculator.Models
         /// Display name shown in the grid, КП and factory text.
         /// Appends "(Антикошка)" when <see cref="IsAnticat"/> is true.
         /// </summary>
-        public string DisplayName => IsAnticat ? $"{Name} (Антикошка)" : Name;
+        /// <summary>
+        /// Anti-cat fabric surcharge included in this row total:
+        /// 2000 RUB/m2 x area (CalculatedValue) x Quantity. 0 when anti-cat is off.
+        /// </summary>
+        public double AnticatSurchargeTotal => IsAnticat
+            ? Math.Round(AnticatSurcharge * CalculatedValue * Quantity, 2)
+            : 0;
+
+        /// <summary>
+        /// Tooltip for the "AK" badge in the order grid. Shows the rate, the
+        /// charged area and the total surcharge. Empty when anti-cat is off.
+        /// </summary>
+        public string AnticatToolTip => !IsAnticat
+            ? ""
+            : $"Антикошка: {AnticatSurcharge:0} ₽/м² × {(CalculatedValue * Quantity).ToString("F2", Services.MoneyFormatService.RuCulture)} м² = {Services.MoneyFormatService.Format(AnticatSurchargeTotal)} ₽ — учтена в сумме строки";
+
+        /// <summary>
+        /// Display name shown in the grid, КП and factory text.
+        /// Appends "(Антикошка)" when <see cref="IsAnticat"/> is true and
+        /// "(Импост)" when <see cref="HasImpost"/> is true.
+        /// </summary>
+        public string DisplayName =>
+            (IsAnticat ? $"{Name} (Антикошка)" : Name)
+            + (HasImpost ? " (Импост)" : "");
+
+        /// <summary>
+        /// True when the screen automatically receives an impost bar (импост).
+        /// Derived from Name + Width + Height (calculated for Anwis, entered
+        /// for the rest) — there is no way to remove the impost.
+        /// </summary>
+        public bool HasImpost =>
+            ImpostApplies(Name, Width, Height);
+
+        /// <summary>
+        /// True when an impost applies: product eligible AND (calculated width >= 500
+        /// mm OR calculated height >= 1500 mm). Single criterion helper used by both
+        /// the row and the QuickAdd preview.
+        /// </summary>
+        public static bool ImpostApplies(string? name, double calcWidthMm, double calcHeightMm) =>
+            ProductCatalog.IsImpostApplicable(name)
+            && (calcWidthMm >= ImpostMinWidthMm || calcHeightMm >= ImpostMinHeightMm);
+
+        /// <summary>
+        /// Linear meters used for the impost surcharge calculation.
+        /// Always based on WIDTH, regardless of which criterion (width or height)
+        /// triggered the impost.
+        /// </summary>
+        public double ImpostLinearMeters => Math.Round(Width / 1000.0, 3);
+
+        /// <summary>
+        /// Impost surcharge for CALCULATED dimensions and quantity — single formula
+        /// shared by Recalculate and the QuickAdd preview.
+        /// </summary>
+        public static double ImpostSurchargeFor(double calcWidthMm, double quantity) =>
+            Math.Round(ImpostRatePerLinearMeter * Math.Round(calcWidthMm / 1000.0, 3) * quantity, 2);
+
+        /// <summary>
+        /// Impost surcharge included in this row Total:
+        /// 200 RUB/m.p. x linear meters of CALCULATED WIDTH x Quantity. 0 when no impost.
+        /// </summary>
+        public double ImpostSurchargeTotal => HasImpost
+            ? ImpostSurchargeFor(Width, Quantity)
+            : 0;
+
+        /// <summary>
+        /// Tooltip for the "ИМ" badge in the order grid. Shows the calculated width,
+        /// linear meters, rate and the total surcharge. Empty when there is no impost.
+        /// </summary>
+        public string ImpostToolTip => !HasImpost
+            ? ""
+            : $"Импост: {Width.ToString("F0", Services.MoneyFormatService.RuCulture)} мм ({ImpostLinearMeters.ToString("F3", Services.MoneyFormatService.RuCulture)} м.п.) × {ImpostRatePerLinearMeter:0} ₽/м.п. × {Quantity.ToString("G", Services.MoneyFormatService.RuCulture)} = {Services.MoneyFormatService.Format(ImpostSurchargeTotal)} ₽ — учтён в сумме строки";
 
         public AnwisSizeMode AnwisSizeMode
         {

@@ -180,6 +180,27 @@ namespace MosquitoNetCalculator.Models
             !string.IsNullOrEmpty(name) && NoColorProducts.Contains(name);
 
         /// <summary>
+        /// Window screen products that automatically get an impost bar (импост)
+        /// when the screen is large enough (width >= 500 mm OR height >= 1500 mm).
+        /// The impost surcharge is +200 RUB per linear meter of WIDTH and is added
+        /// to the row total; it cannot be removed (HasImpost is derived from
+        /// Name + Width + Height and is never serialized).
+        /// <para/>
+        /// The door screen is deliberately EXCLUDED — the
+        /// impost system does not participate in its calculation at all.
+        /// </summary>
+        public static readonly HashSet<string> ImpostApplicableProducts = new()
+        {
+            "Anwis",
+            "На навесах",
+            "Оконная на метал. крепл."
+        };
+
+        /// <summary>True when the product participates in the automatic impost system.</summary>
+        public static bool IsImpostApplicable(string? name) =>
+            !string.IsNullOrEmpty(name) && ImpostApplicableProducts.Contains(name);
+
+        /// <summary>
         /// True when the product name exists in the fixed UX catalog
         /// (<see cref="UserGroups"/>). User-added / «Свой товар» names return
         /// false — those are manual sum rows (Total = Price × Qty), not

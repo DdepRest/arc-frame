@@ -116,7 +116,90 @@
                                             </TextBlock.Style>
                                         </TextBlock>
                                     </Border>
-                                </StackPanel>
+                                
+                                <!-- ИМ — автоматический импост. Клик — тёмный попап с деталями. -->
+                                <Border Background="{DynamicResource AccentLight}" CornerRadius="4"
+                                        Padding="7,2" Margin="6,0,0,0" Cursor="Hand"
+                                        Visibility="{Binding HasImpost, Converter={StaticResource BoolToVis}}"
+                                        PreviewMouseLeftButtonDown="BadgeInfo_Click">
+                                    <Border.Style>
+                                        <Style TargetType="Border">
+                                            <Style.Triggers>
+                                                <Trigger Property="IsMouseOver" Value="True">
+                                                    <Setter Property="Background" Value="{DynamicResource Accent}"/>
+                                                </Trigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </Border.Style>
+                                    <Grid>
+                                        <TextBlock Text="ИМ" FontSize="10" FontWeight="SemiBold">
+                                            <TextBlock.Style>
+                                                <Style TargetType="TextBlock">
+                                                    <Setter Property="Foreground" Value="{DynamicResource Accent}"/>
+                                                    <Style.Triggers>
+                                                        <DataTrigger Binding="{Binding IsMouseOver, RelativeSource={RelativeSource AncestorType=Border}}" Value="True">
+                                                            <Setter Property="Foreground" Value="{DynamicResource OnAccent}"/>
+                                                        </DataTrigger>
+                                                    </Style.Triggers>
+                                                </Style>
+                                            </TextBlock.Style>
+                                        </TextBlock>
+                                        <!-- Тёмный попап по клику: детали импоста (закрывается кликом вне). -->
+                                        <Popup Placement="Bottom" StaysOpen="False" AllowsTransparency="True"
+                                               PopupAnimation="Fade">
+                                            <Border Background="{DynamicResource Surface}"
+                                                    BorderBrush="{DynamicResource Border}" BorderThickness="1"
+                                                    CornerRadius="6" Padding="10,8" Margin="0,6,0,0" MaxWidth="340">
+                                                <TextBlock Text="{Binding ImpostToolTip}" FontSize="11.5"
+                                                           Foreground="{DynamicResource TextPrimary}"
+                                                           TextWrapping="Wrap"/>
+                                            </Border>
+                                        </Popup>
+                                    </Grid>
+                                </Border>
+
+                                <!-- АК — антикошка. Клик — тёмный попап с деталями. -->
+                                <Border Background="{DynamicResource AccentLight}" CornerRadius="4"
+                                        Padding="7,2" Margin="6,0,0,0" Cursor="Hand"
+                                        Visibility="{Binding IsAnticat, Converter={StaticResource BoolToVis}}"
+                                        PreviewMouseLeftButtonDown="BadgeInfo_Click">
+                                    <Border.Style>
+                                        <Style TargetType="Border">
+                                            <Style.Triggers>
+                                                <Trigger Property="IsMouseOver" Value="True">
+                                                    <Setter Property="Background" Value="{DynamicResource Accent}"/>
+                                                </Trigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </Border.Style>
+                                    <Grid>
+                                        <TextBlock Text="АК" FontSize="10" FontWeight="SemiBold">
+                                            <TextBlock.Style>
+                                                <Style TargetType="TextBlock">
+                                                    <Setter Property="Foreground" Value="{DynamicResource Accent}"/>
+                                                    <Style.Triggers>
+                                                        <DataTrigger Binding="{Binding IsMouseOver, RelativeSource={RelativeSource AncestorType=Border}}" Value="True">
+                                                            <Setter Property="Foreground" Value="{DynamicResource OnAccent}"/>
+                                                        </DataTrigger>
+                                                    </Style.Triggers>
+                                                </Style>
+                                            </TextBlock.Style>
+                                        </TextBlock>
+                                        <!-- Тёмный попап по клику: детали антикошки. -->
+                                        <Popup Placement="Bottom" StaysOpen="False" AllowsTransparency="True"
+                                               PopupAnimation="Fade">
+                                            <Border Background="{DynamicResource Surface}"
+                                                    BorderBrush="{DynamicResource Border}" BorderThickness="1"
+                                                    CornerRadius="6" Padding="10,8" Margin="0,6,0,0" MaxWidth="340">
+                                                <TextBlock Text="{Binding AnticatToolTip}" FontSize="11.5"
+                                                           Foreground="{DynamicResource TextPrimary}"
+                                                           TextWrapping="Wrap"/>
+                                            </Border>
+                                        </Popup>
+                                    </Grid>
+                                </Border>
+
+</StackPanel>
                             </DataTemplate>
                         </DataGridTemplateColumn.CellTemplate>
                     </DataGridTemplateColumn>

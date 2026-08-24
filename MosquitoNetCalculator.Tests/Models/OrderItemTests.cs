@@ -1,8 +1,14 @@
 using System;
 using System.Collections.Generic;
+using System.Windows;
+using System.Windows.Controls;
+using System.Windows.Controls.Primitives;
+using System.Windows.Input;
 using MosquitoNetCalculator;
+using MosquitoNetCalculator.Controls;
 using MosquitoNetCalculator.Models;
 using MosquitoNetCalculator.Services;
+using MosquitoNetCalculator.Tests.Helpers;
 using Xunit;
 
 namespace MosquitoNetCalculator.Tests.Models
@@ -14,18 +20,20 @@ namespace MosquitoNetCalculator.Tests.Models
         [Fact]
         public void Recalculate_AreaBasedProduct()
         {
+            // v3.48.0: dims below the impost thresholds (width < 500, height < 1500)
+            // so this recalc test stays focused on area math, not the impost surcharge.
             var item = new OrderItem
             {
                 Name = "Anwis",
-                Width = 1000,
-                Height = 2000,
+                Width = 400,
+                Height = 1000,
                 Quantity = 1,
                 Price = 1800
             };
-            // Width/Height are calc-adjusted values (1000×2000), area = 1000*2000/1M = 2.0 м²
-            Assert.Equal(2.0, item.CalculatedValue, 3);
-            // Total = 2.0 * 1800 * 1 = 3600
-            Assert.Equal(3600, item.Total, 2);
+            // Width/Height are calc-adjusted values (400×1000), area = 400*1000/1M = 0.4 м²
+            Assert.Equal(0.4, item.CalculatedValue, 3);
+            // Total = 0.4 * 1800 * 1 = 720
+            Assert.Equal(720, item.Total, 2);
         }
 
         [Fact]
@@ -87,16 +95,17 @@ namespace MosquitoNetCalculator.Tests.Models
         [Fact]
         public void Recalculate_QuantityMultiplier()
         {
+            // v3.48.0: below impost thresholds (width < 500, height < 1500).
             var item = new OrderItem
             {
                 Name = "Anwis",
-                Width = 1000,
+                Width = 400,
                 Height = 1000,
                 Quantity = 3,
                 Price = 1800
             };
-            // Width/Height are calc-adjusted (1000×1000), area = 1.0 м², Total = 1.0 * 1800 * 3 = 5400
-            Assert.Equal(5400, item.Total, 2);
+            // Width/Height are calc-adjusted (400×1000), area = 0.4 м², Total = 0.4 * 1800 * 3 = 2160
+            Assert.Equal(2160, item.Total, 2);
         }
 
         [Fact]
@@ -439,34 +448,36 @@ namespace MosquitoNetCalculator.Tests.Models
             // Regression for the bug as filed: «В конструкцию» with 3 pieces
             // must subtract 3 × 500 ₽, not just 500 ₽.
             // Use На навесах (identity-sized, no Anwis formula) for clean math.
+            // v3.48.0: below impost thresholds (width < 500, height < 1500).
             var item = new OrderItem
             {
                 Name = "На навесах",
-                Width = 1500, Height = 1000,
+                Width = 300, Height = 1000,
                 Quantity = 3,
                 Price = 3000,
                 InstallationMode = 2
             };
-            // CV = 1.5 м², Total = 1.5 × 3000 × 3 = 13500 ₽
-            Assert.Equal(13500, item.Total, 2);
-            // Post-fix: 13500 − 500×3 = 12000 ₽  (was 13000 ₽ pre-fix)
-            Assert.Equal(12000, item.TotalWithDeduction, 2);
+            // CV = 0.3 м², Total = 0.3 × 3000 × 3 = 2700 ₽
+            Assert.Equal(2700, item.Total, 2);
+            // Post-fix: 2700 − 500×3 = 1200 ₽  (was 1300 ₽ pre-fix)
+            Assert.Equal(1200, item.TotalWithDeduction, 2);
         }
 
         [Fact]
         public void TotalWithDeduction_Mode1_Quantity3_SubtractsPerPiece()
         {
             // Same fix applies to «Без монтажа» — deduction is per piece.
+            // v3.48.0: below impost thresholds (width < 500, height < 1500).
             var item = new OrderItem
             {
                 Name = "На навесах",
-                Width = 1500, Height = 1000,
+                Width = 300, Height = 1000,
                 Quantity = 3,
                 Price = 3000,
                 InstallationMode = 1
             };
-            Assert.Equal(13500, item.Total, 2);
-            Assert.Equal(12000, item.TotalWithDeduction, 2);
+            Assert.Equal(2700, item.Total, 2);
+            Assert.Equal(1200, item.TotalWithDeduction, 2);
         }
 
         [Fact]
@@ -490,17 +501,18 @@ namespace MosquitoNetCalculator.Tests.Models
         public void TotalWithDeduction_Mode2_CustomSurcharge_Quantity3_MultipliesPerPiece()
         {
             // v3.46.1: signed convention — negative surcharge subtracts per piece.
+            // v3.48.0: below impost thresholds (width < 500, height < 1500).
             var item = new OrderItem
             {
                 Name = "На навесах",
-                Width = 1500, Height = 1000,
+                Width = 300, Height = 1000,
                 Quantity = 3,
                 Price = 3000,
                 InstallationMode = 2,
                 InstallationSurcharge = -200
             };
-            // 13500 + (−200×3) = 12900 ₽
-            Assert.Equal(12900, item.TotalWithDeduction, 2);
+            // 2700 + (−200×3) = 2100 ₽
+            Assert.Equal(2100, item.TotalWithDeduction, 2);
         }
 
         [Fact]
@@ -508,18 +520,19 @@ namespace MosquitoNetCalculator.Tests.Models
         {
             // Same behaviour for Anwis. Use Профипласт mode (size identity
             // — no W+2/H−30 shift) so Width/Height stay user-typed = stored.
+            // v3.48.0: below impost thresholds (width < 500, height < 1500).
             var item = new OrderItem
             {
                 Name = "Anwis",
                 AnwisSizeMode = AnwisSizeMode.Профипласт,
-                Width = 1000, Height = 1000,
+                Width = 400, Height = 1000,
                 Quantity = 3,
                 Price = 1800,
                 InstallationMode = 2
             };
-            // CV = 1.0, Total = 5400, TotalWithDeduction = 5400 − 1500 = 3900
-            Assert.Equal(5400, item.Total, 2);
-            Assert.Equal(3900, item.TotalWithDeduction, 2);
+            // CV = 0.4, Total = 2160, TotalWithDeduction = 2160 − 1500 = 660
+            Assert.Equal(2160, item.Total, 2);
+            Assert.Equal(660, item.TotalWithDeduction, 2);
         }
 
         [Theory]
@@ -528,21 +541,22 @@ namespace MosquitoNetCalculator.Tests.Models
         [InlineData(5)]
         public void TotalWithDeduction_Mode2_QuantityScaling_IsLinearWithQ(int qty)
         {
+            // v3.48.0: below impost thresholds (width < 500, height < 1500).
             var item = new OrderItem
             {
                 Name = "На навесах",
-                Width = 1500, Height = 1000,
+                Width = 300, Height = 1000,
                 Quantity = qty,
                 Price = 3000,
                 InstallationMode = 2
             };
-            // CV = 1.5 м², Total = 1.5 × 3000 × qty = 4500 × qty
+            // CV = 0.3 м², Total = 0.3 × 3000 × qty = 900 × qty
             // deduction = 500 × qty
-            // TotalWithDeduction = (4500 − 500) × qty = 4000 × qty
+            // TotalWithDeduction = (900 − 500) × qty = 400 × qty
             // Linear-in-qty assertion: scaling is the proof that deduction
             // multiplies by Quality and not a flat fee.
-            double expectedTotal = 4500.0 * qty;
-            double expectedTotalWithDeduction = 4000.0 * qty;
+            double expectedTotal = 900.0 * qty;
+            double expectedTotalWithDeduction = 400.0 * qty;
             Assert.Equal(expectedTotal, item.Total, 2);
             Assert.Equal(expectedTotalWithDeduction, item.TotalWithDeduction, 2);
         }
@@ -771,59 +785,64 @@ namespace MosquitoNetCalculator.Tests.Models
         public void TotalWithDeduction_Mode0_PositiveAdjustment_Adds()
         {
             // v3.43.2.11: интуитивная конвенция — положительное значение добавляется к Total.
+            // v3.48.0: below impost thresholds (width < 500, height < 1500).
             var item = new OrderItem
             {
                 Name = "Anwis",
-                Width = 1000, Height = 1000, Price = 1800,
+                Width = 400, Height = 1000, Price = 1800,
                 InstallationMode = 0,
                 InstallationAdjustment = 500,
             };
-            // 1800 + 500×1 = 2300
-            Assert.Equal(2300, item.TotalWithDeduction, 2);
+            // Total = 0.4 × 1800 = 720; 720 + 500×1 = 1220
+            Assert.Equal(1220, item.TotalWithDeduction, 2);
         }
 
         [Fact]
         public void TotalWithDeduction_Mode0_NegativeAdjustment_Subtracts()
         {
             // v3.43.2.11: интуитивная конвенция — отрицательное значение вычитается из Total.
+            // v3.48.0: below impost thresholds (width < 500, height < 1500).
             var item = new OrderItem
             {
                 Name = "Anwis",
-                Width = 1000, Height = 1000, Price = 1800,
+                Width = 400, Height = 1000, Price = 1800,
                 InstallationMode = 0,
                 InstallationAdjustment = -200,
             };
-            // 1800 + (−200)×1 = 1600
-            Assert.Equal(1600, item.TotalWithDeduction, 2);
+            // Total = 0.4 × 1800 = 720; 720 + (−200)×1 = 520
+            Assert.Equal(520, item.TotalWithDeduction, 2);
         }
 
         [Fact]
         public void TotalWithDeduction_Mode0_ZeroAdjustment_ReturnsTotal()
         {
             // default case: no-op, Total passthrough.
+            // v3.48.0: below impost thresholds (width < 500, height < 1500).
             var item = new OrderItem
             {
                 Name = "Anwis",
-                Width = 1000, Height = 1000, Price = 1800,
+                Width = 400, Height = 1000, Price = 1800,
                 InstallationMode = 0,
             };
-            Assert.Equal(1800, item.TotalWithDeduction, 2);
+            // Total = 0.4 × 1800 = 720
+            Assert.Equal(720, item.TotalWithDeduction, 2);
         }
 
         [Fact]
         public void TotalWithDeduction_Mode0_AdjustmentScaledByQuantity()
         {
             // Per-piece × Qty: На навесах используем (identity sizing — никаких Anwis формул).
-            // Total = 1.5 × 1200 × 3 = 5400; Adjustment = -300 × 3 = -900;
-            // TotalWithDeduction = 5400 + (−900) = 4500.
+            // v3.48.0: below impost thresholds (width < 500, height < 1500).
+            // Total = 0.3 × 1200 × 3 = 1080; Adjustment = -300 × 3 = -900;
+            // TotalWithDeduction = 1080 + (−900) = 180.
             var item = new OrderItem
             {
                 Name = "На навесах",
-                Width = 1500, Height = 1000, Quantity = 3, Price = 1200,
+                Width = 300, Height = 1000, Quantity = 3, Price = 1200,
                 InstallationMode = 0,
                 InstallationAdjustment = -300,
             };
-            Assert.Equal(4500, item.TotalWithDeduction, 2);
+            Assert.Equal(180, item.TotalWithDeduction, 2);
         }
 
         [Fact]
@@ -857,18 +876,19 @@ namespace MosquitoNetCalculator.Tests.Models
         [Fact]
         public void TotalWithDeduction_Mode0_HugePositiveAdjustment_DoesNotClamp()
         {
+            // v3.48.0: below impost thresholds (width < 500, height < 1500).
             var item = new OrderItem
             {
                 Name = "На навесах",
-                Width = 1000, Height = 1000, Quantity = 1, Price = 100, // CV=1.0, Total=100
+                Width = 400, Height = 1000, Quantity = 1, Price = 100, // CV=0.4, Total=40
                 InstallationMode = 0,
                 InstallationAdjustment = 999999,
             };
-            // 100 + 999999×1 = 1000099 → Math.Round(1000099, 2) = 1000099 (no clamp).
-            // Both 1000099 (literal) and the computed value are exactly representable
+            // 40 + 999999×1 = 1000039 → Math.Round(1000039, 2) = 1000039 (no clamp).
+            // Both 1000039 (literal) and the computed value are exactly representable
             // integers in IEEE-754 double (≤ 2^53), so `Assert.Equal(int, double)`
             // (exact equality, no precision arg) is the right assertion here.
-            Assert.Equal(1000099, item.TotalWithDeduction);
+            Assert.Equal(1000039, item.TotalWithDeduction);
         }
 
         [Fact]
@@ -1293,9 +1313,10 @@ namespace MosquitoNetCalculator.Tests.Models
         public void Quantity_DecimalMultiplier_UsedInTotal()
         {
             // v3.47.0: decimal Quantity must multiply Total correctly.
-            var item = new OrderItem { Name = "Anwis", Width = 1000, Height = 1000, Price = 1800, Quantity = 2.5 };
-            // CV = 1.0, Total = 1.0 * 1800 * 2.5 = 4500
-            Assert.Equal(4500, item.Total, 2);
+            // v3.48.0: below impost thresholds (width < 500, height < 1500).
+            var item = new OrderItem { Name = "Anwis", Width = 400, Height = 1000, Price = 1800, Quantity = 2.5 };
+            // CV = 0.4, Total = 0.4 * 1800 * 2.5 = 1800
+            Assert.Equal(1800, item.Total, 2);
         }
 
         [Fact]
@@ -1560,16 +1581,17 @@ namespace MosquitoNetCalculator.Tests.Models
         public void TotalWithDeduction_Mode1_RoundedToTwoDecimals()
         {
             // v3.46.1: signed convention — negative deduction subtracts.
+            // v3.48.0: below impost thresholds (width < 500, height < 1500).
             var item = new OrderItem
             {
                 Name = "Anwis",
-                Width = 1000, Height = 1000,
+                Width = 400, Height = 1000,
                 Price = 1000,
                 InstallationMode = 1,
                 InstallationDeduction = -333.50
             };
-            // Total = 1000.0, 1000 + (−333.50) = 666.50
-            Assert.Equal(666.50, item.TotalWithDeduction, 2);
+            // Total = 400.0, 400 + (−333.50) = 66.50
+            Assert.Equal(66.50, item.TotalWithDeduction, 2);
         }
 
         // ─── AnwisSizeMode tests ────────────────────────────
@@ -2017,7 +2039,412 @@ namespace MosquitoNetCalculator.Tests.Models
             Assert.Equal(expected, OrderItem.AnticatApplicableProducts.Contains(name));
         }
 
-        // ─── Clone with AnwisSizeMode test ───────────────────
+        // ─── Impost tests (v3.48.0) ──────────────────────────
+
+        [Theory]
+        [InlineData("Anwis", true)]
+        [InlineData("На навесах", true)]
+        [InlineData("Оконная на метал. крепл.", true)]
+        [InlineData("Дверная сетка", false)]
+        [InlineData("Отлив", false)]
+        [InlineData("ПСУЛ", false)]
+        [InlineData("Работа", false)]
+        public void ImpostApplicableProducts_ContainsExpected(string name, bool expected)
+        {
+            Assert.Equal(expected, OrderItem.ImpostApplicableProducts.Contains(name));
+        }
+
+        // v3.48.0 fix: критерии импоста считаются по ВВОДНЫМ размерам.
+        // v3.48.x fix (владелец): импост — по РАСЧЁТНЫМ размерам (Width/Height
+        // после Anwis-коррекции режима), как цена и КП. «На навесах» —
+        // identity-товар (расчётные = хранимым = вводным), поэтому теория тут
+        // проверяет ровно границы расчёта; Anwis-строки проверяют ББ60-сдвиг
+        // (ширина +2, высота −30).
+        [Theory]
+        [InlineData("На навесах", 600, 800, true)]   // width criterion
+        [InlineData("На навесах", 400, 1600, true)]  // height criterion
+        [InlineData("На навесах", 600, 1600, true)]  // both criteria
+        [InlineData("На навесах", 400, 800, false)]  // neither criterion
+        [InlineData("На навесах", 500, 800, true)]   // width boundary 500 → impost
+        [InlineData("На навесах", 499, 800, false)]  // width boundary 499 → no impost
+        [InlineData("На навесах", 400, 1500, true)]  // height boundary 1500 → impost
+        [InlineData("На навесах", 400, 1499, false)] // height boundary 1499 → no impost
+        // Anwis (ББ6: расчёт = ввод +2/+−30): критерий по РАСЧЁТНЫМ размерам.
+        [InlineData("Anwis", 430, 1510, false)]  // расчёт 432×1480 — оба ниже порогов (высота 1480 < 1500) → нет импоста
+        [InlineData("Anwis", 498, 1540, true)]   // расчёт 500×1510 → ширина 500 ≥ 500 → импост (по вводу 498 < 500 было бы нет)
+        [InlineData("Anwis", 500, 1500, true)]   // расчёт 502×1470 → ширина 502 ≥ 500 → импост (эталон владельца: 502)
+        [InlineData("Anwis", 1400, 1460, true)]  // расчёт 1406×1430 → ширина-критерий → импост; высота 1430 < 1500 не мешает
+        [InlineData("Anwis", 400, 1529, false)]  // расчёт 402×1499 → высота 1499 < 1500 → нет импоста (ввод 1529 ≥ 1500 не играет роли)
+        public void HasImpost_WidthOrHeightCriterion(string name, double width, double height, bool expected)
+        {
+            // Клаём ВВОДНЫЕ размеры в хранимые через raw-сеттеры ШиринаВвод/ВысотаВвод,
+            // как это делает DataGrid-правка; вя Anwis они применят Anwis-формулу
+            // и лягут в расчётные Width/Height.
+            var item = new OrderItem { Name = name };
+            item.ШиринаВвод = width;
+            item.ВысотаВвод = height;
+            Assert.Equal(expected, item.HasImpost);
+        }
+
+        [Fact]
+        public void HasImpost_DvernayaSetka_AlwaysFalse_EvenWhenLarge()
+        {
+            // Door screen is excluded from the impost system entirely.
+            var item = new OrderItem { Name = "Дверная сетка", Width = 600, Height = 1600 };
+            Assert.False(item.HasImpost);
+        }
+
+        [Fact]
+        public void HasImpost_NonScreenProducts_AlwaysFalse()
+        {
+            Assert.False(new OrderItem { Name = "Отлив", Width = 600, Height = 1600 }.HasImpost);
+            Assert.False(new OrderItem { Name = "Короб", Width = 600, Height = 1600 }.HasImpost);
+            Assert.False(new OrderItem { Name = "Работа", Width = 600, Height = 1600 }.HasImpost);
+        }
+
+        [Fact]
+        public void ImpostLinearMeters_MeasuredFromCalcWidth()
+        {
+            // «На навесах» — identity: введённая ширина = расчётная.
+            var item = new OrderItem { Name = "На навесах" };
+            item.ШиринаВвод = 430;
+            item.ВысотаВвод = 1510;
+            Assert.Equal(0.43, item.ImpostLinearMeters);
+
+            // Anwis ББ6: ввод 500 → расчёт 502 → м.п. от 0,502, не 0,500.
+            var anwis = new OrderItem { Name = "Anwis" };
+            anwis.ШиринаВвод = 500;
+            anwis.ВысотаВвод = 1500;
+            Assert.Equal(502, anwis.Width, 0);
+            Assert.Equal(0.502, anwis.ImpostLinearMeters);
+        }
+
+        [Fact]
+        public void Total_AddsImpost_FromWidth_WhenHeightCriterionTriggered()
+        {
+            // 430×1510 — импост сработал по ВЫСОТЕ, но сумма от ШИРИНЫ (вводной):
+            // 200 × 0,43 = 86 ₽. Базовый Total — от расчётной площади (0.649 м²).
+            var item = new OrderItem { Name = "На навесах", Width = 430, Height = 1510, Price = 1000, Quantity = 1 };
+            double baseTotal = Math.Round(Math.Round(430.0 * 1510 / 1_000_000.0, 3) * 1000, 2); // 649
+            Assert.True(item.HasImpost);
+            Assert.Equal(Math.Round(baseTotal + 86, 2), item.Total); // 200 × 0.43 × 1
+        }
+
+        [Fact]
+        public void Total_AddsImpost_FromWidth_WhenWidthCriterionTriggered()
+        {
+            // 600×800 — ширина → 200 × 0.60.
+            var item = new OrderItem { Name = "На навесах", Width = 600, Height = 800, Price = 1800, Quantity = 1 };
+            double baseTotal = Math.Round(600.0 * 800 / 1_000_000.0 * 1800, 2); // 864
+            Assert.True(item.HasImpost);
+            Assert.Equal(Math.Round(baseTotal + 120, 2), item.Total); // 200 × 0.60
+        }
+
+        [Fact]
+        public void Total_AddsImpost_FromWidth_WhenBothCriteriaTriggered()
+        {
+            // Оба критерия → всё равно от ширины.
+            var item = new OrderItem { Name = "На навесах", Width = 600, Height = 1600, Price = 1800, Quantity = 1 };
+            double baseTotal = Math.Round(600.0 * 1600 / 1_000_000.0 * 1800, 2);
+            Assert.True(item.HasImpost);
+            Assert.Equal(Math.Round(baseTotal + 120, 2), item.Total);
+        }
+
+        [Fact]
+        public void Total_Anwis_Impost_FromCalcWidth_NotEnteredWidth()
+        {
+            // Anwis ББ60: ввод 500×1500 хранится как 502×1470.
+            // Критерий и сумма — по РАСЧЁТНЫМ: импост (502 ≥ 500), надбавка
+            // 200 × 0,502 = 100,40 (а не 100 от вводной 500).
+            var item = new OrderItem { Name = "Anwis" };
+            item.ШиринаВвод = 500;
+            item.ВысотаВвод = 1500;
+            Assert.Equal(502, item.Width, 0);
+            Assert.Equal(1470, item.Height, 0);
+            Assert.True(item.HasImpost);
+            Assert.Equal(100.4, item.ImpostSurchargeTotal, 2);
+
+            // Полный Total: расчётная площадь 0.738 м² (502×1470, CV=0.738)
+            // × 1000 + 100,40 = 838,40.
+            item.Price = 1000;
+            Assert.Equal(Math.Round(Math.Round(502.0 * 1470 / 1_000_000.0, 3) * 1000 + 100.4, 2), item.Total);
+        }
+
+        // Владелец (2026-08-24): смена режима сетки в уже добавленной строке
+        // ОБЯЗАНА пересчитывать сумму импоста — она считается от расчётной
+        // ширины, которая зависит от режима (ББ60: W+2 → 602; ББ70: W−2 → 598).
+        [Fact]
+        public void AnwisSizeMode_Change_RecalculatesImpostSurcharge()
+        {
+            var item = new OrderItem { Name = "Anwis" };
+            item.ШиринаВвод = 600;
+            item.ВысотаВвод = 1500;
+            Assert.Equal(AnwisSizeMode.Брусбокс60, item.AnwisSizeMode);
+            Assert.Equal(602, item.Width, 0);
+            Assert.True(item.HasImpost);
+            Assert.Equal(120.4, item.ImpostSurchargeTotal, 2); // 200 × 0,602
+
+            // Меняем режим через публичный сеттер (как клик по меню режима в строке).
+            item.AnwisSizeMode = AnwisSizeMode.Брусбокс70;
+            Assert.Equal(598, item.Width, 0);
+            Assert.True(item.HasImpost);
+            Assert.Equal(119.6, item.ImpostSurchargeTotal, 2); // 200 × 0,598
+        }
+
+
+        [Fact]
+        public void Total_NoImpost_WhenCriteriaNotMet()
+        {
+            var item = new OrderItem { Name = "На навесах", Width = 400, Height = 800, Price = 1800, Quantity = 1 };
+            Assert.False(item.HasImpost);
+            Assert.Equal(Math.Round(400.0 * 800 / 1_000_000.0 * 1800, 2), item.Total);
+        }
+
+        [Fact]
+        public void Total_NoImpost_ForDvernayaSetka()
+        {
+            var item = new OrderItem { Name = "Дверная сетка", Width = 600, Height = 1600, Price = 3000, Quantity = 1 };
+            Assert.False(item.HasImpost);
+            Assert.Equal(Math.Round(600.0 * 1600 / 1_000_000.0 * 3000, 2), item.Total);
+        }
+
+        [Fact]
+        public void TotalWithDeduction_IncludesImpost()
+        {
+            // Импост — часть Total, поэтому TotalWithDeduction (грид/КП/итоги) включает его.
+            var item = new OrderItem { Name = "На навесах", Width = 600, Height = 800, Price = 1800, Quantity = 1 };
+            Assert.Equal(item.Total, item.TotalWithDeduction); // монтаж mode 0, adjustment 0
+        }
+
+        [Fact]
+        public void DisplayName_AppendsSuffix_WhenHasImpost()
+        {
+            // «На навесах» — identity, поэтому 600×800 по вводу = импост.
+            var item = new OrderItem { Name = "На навесах", Width = 600, Height = 800 };
+            Assert.Equal("На навесах (Импост)", item.DisplayName);
+        }
+
+        [Fact]
+        public void DisplayName_AppendsBothSuffixes_WhenAnticatAndImpost()
+        {
+            var item = new OrderItem { Name = "На навесах", Width = 600, Height = 800, IsAnticat = true };
+            Assert.Equal("На навесах (Антикошка) (Импост)", item.DisplayName);
+        }
+
+        [Fact]
+        public void HasImpost_FiresPropertyChanged_WhenWidthChanges()
+        {
+            var item = new OrderItem { Name = "На навесах", Width = 400, Height = 800 };
+            bool fired = false;
+            item.PropertyChanged += (s, e) =>
+            {
+                if (e.PropertyName == nameof(OrderItem.HasImpost))
+                    fired = true;
+            };
+            item.Width = 600;
+            Assert.True(fired);
+        }
+
+        [Fact]
+        public void Clone_PreservesHasImpost()
+        {
+            var original = new OrderItem { Name = "Anwis", Width = 600, Height = 800 };
+            var clone = original.Clone();
+            Assert.True(clone.HasImpost);
+            Assert.Equal("Anwis (Импост)", clone.DisplayName);
+        }
+
+        // ─── Impost/Anti-cat badges (v3.48.0) ────────────────
+
+        [Fact]
+        public void ImpostSurchargeTotal_CalculatedFromCalcWidth_AndQuantity()
+        {
+            // Нет-импост товары вне сеток: надбавка 0.
+            var none = new OrderItem { Name = "На навесах", Width = 400, Height = 800, Price = 1000, Quantity = 2 };
+            Assert.False(none.HasImpost);
+            Assert.Equal(0, none.ImpostSurchargeTotal);
+
+            // 430×1510 («На навесах», identity) — сумма от расчётной ширины (0,43 м.п.), ×2 шт.
+            var item = new OrderItem { Name = "На навесах", Width = 430, Height = 1510, Price = 1000, Quantity = 2 };
+            Assert.True(item.HasImpost);
+            Assert.Equal(Math.Round(200 * 0.43 * 2, 2), item.ImpostSurchargeTotal);
+
+            // Дверная сетка исключена.
+            var door = new OrderItem { Name = "Дверная сетка", Width = 600, Height = 1600, Quantity = 1 };
+            Assert.Equal(0, door.ImpostSurchargeTotal);
+        }
+
+        [Fact]
+        public void ImpostToolTip_ContainsWidthMmSumAndConfirmed()
+        {
+            // «На навесах» — identity: 500×800 по вводу → импост, 0,500 м.п.
+            var item = new OrderItem { Name = "На навесах", Width = 500, Height = 800, Price = 1000, Quantity = 1 };
+            Assert.True(item.HasImpost);
+            var tip = item.ImpostToolTip;
+            Assert.Contains("Импост:", tip);
+            Assert.Contains("500 мм", tip);
+            Assert.Contains("0,500 м.п.", tip);
+            Assert.Contains("100,00", tip); // 200 × 0,500 м.п. = 100 ₽
+            Assert.Contains("учтён", tip);
+        }
+
+        [Fact]
+        public void ImpostToolTip_Empty_WhenNoImpost()
+        {
+            Assert.Equal("", new OrderItem { Name = "Anwis", Width = 400, Height = 800 }.ImpostToolTip);
+            Assert.Equal("", new OrderItem { Name = "Дверная сетка", Width = 600, Height = 1600 }.ImpostToolTip);
+        }
+
+        [Fact]
+        public void AnticatSurchargeTotal_CalculatedFromArea()
+        {
+            // 600×800 = 0,48 м² × 2000 ₽/м² = 960 ₽.
+            var item = new OrderItem { Name = "Anwis", Width = 600, Height = 800, IsAnticat = true, Quantity = 1 };
+            Assert.Equal(960, item.AnticatSurchargeTotal, 2);
+
+            var off = new OrderItem { Name = "Anwis", Width = 600, Height = 800, Quantity = 1 };
+            Assert.Equal(0, off.AnticatSurchargeTotal);
+        }
+
+        [Fact]
+        public void AnticatToolTip_ContainsAreaSumAndConfirmed()
+        {
+            var item = new OrderItem { Name = "Anwis", Width = 600, Height = 800, IsAnticat = true, Price = 1000, Quantity = 1 };
+            var tip = item.AnticatToolTip;
+            Assert.Contains("Антикошка:", tip);
+            Assert.Contains("м²", tip);
+            Assert.Contains("960,00", tip); // 2000 × 0,48 м² = 960
+            Assert.Contains("учтена", tip);
+        }
+
+        [Fact]
+        public void AnticatToolTip_Empty_WhenNotAnticat()
+        {
+            Assert.Equal("", new OrderItem { Name = "Anwis", Width = 600, Height = 800 }.AnticatToolTip);
+        }
+
+        [Fact]
+        public void ImpostToolTip_FiresPropertyChanged_WhenWidthChanges()
+        {
+            var item = new OrderItem { Name = "Anwis", Width = 400, Height = 800 };
+            bool fired = false;
+            item.PropertyChanged += (s, e) =>
+            {
+                if (e.PropertyName == nameof(OrderItem.ImpostToolTip))
+                    fired = true;
+            };
+            item.Width = 600;
+            Assert.True(fired);
+        }
+
+        [Fact]
+        public void AnticatToolTip_FiresPropertyChanged_WhenToggled()
+        {
+            var item = new OrderItem { Name = "Anwis", Width = 600, Height = 800 };
+            bool fired = false;
+            item.PropertyChanged += (s, e) =>
+            {
+                if (e.PropertyName == nameof(OrderItem.AnticatToolTip))
+                    fired = true;
+            };
+            item.IsAnticat = true;
+            Assert.True(fired);
+        }
+
+        // ─── Badge tooltips — culture & real entry points (v3.48.0) ──
+
+        [Fact]
+        public void ImpostToolTip_AlwaysUsesRussianDecimalSeparator()
+        {
+            // ru-RU formatting is forced regardless of the thread culture:
+            // meters and quantity use a comma, not a dot.
+            // «На навесах» — identity sizing, поэтому 0,430 ровно.
+            var item = new OrderItem { Name = "На навесах", Width = 430, Height = 1510, Quantity = 2.5 };
+            Assert.True(item.HasImpost);
+            var tip = item.ImpostToolTip;
+            Assert.Contains("0,430 м.п.", tip);
+            Assert.Contains("× 2,5 =", tip);
+            // «м.п.» содержит буквенные точки-аббревиатуры — их не трогаем;
+            // главное, что погонные метры и кол-во с запятой, а не с точкой.
+        }
+
+        // DataGrid-editing input point is ШиринаВвод (raw user input).
+        // «На навесах» has identity sizing — the stored Width equals the entered
+        // raw value, so the tooltip shows exactly 0,510. Crossing the 500 mm
+        // threshold must flip the «ИМ» badge and recalc immediately.
+        [Fact]
+        public void ImpostBadge_LiveFlips_WhenEditingWidthInGrid()
+        {
+            var item = new OrderItem { Name = "На навесах", Width = 400, Height = 800, Price = 1000, Quantity = 1 };
+            var changes = new List<string>();
+            item.PropertyChanged += (s, e) => { if (e.PropertyName is nameof(OrderItem.HasImpost) or nameof(OrderItem.ImpostToolTip)) changes.Add(e.PropertyName!); };
+
+            item.ШиринаВвод = 490;
+            Assert.False(item.HasImpost);
+
+            item.ШиринаВвод = 510;
+            Assert.True(item.HasImpost);
+            Assert.Contains("0,510 м.п.", item.ImpostToolTip);
+
+            item.ШиринаВвод = 480;
+            Assert.False(item.HasImpost);
+            Assert.Contains(nameof(OrderItem.HasImpost), changes);
+            Assert.Contains(nameof(OrderItem.ImpostToolTip), changes);
+        }
+
+            [Fact]
+            public void ImpostBadge_SurvivesDtoRoundTrip()
+            {
+                // Сохранение/загрузка заказа (ToOrderItemData → DTO → новый OrderItem):
+                // HasImpost производная от размеров, поэтому бейдж «ИМ» восстанавливается.
+                var item = new OrderItem { Name = "Anwis", Width = 600, Height = 800, Price = 1800 };
+                Assert.True(item.HasImpost);
+
+                var dto = item.ToOrderItemData();
+                var restored = new OrderItem
+                {
+                    Name = dto.Name,
+                    Width = dto.Width,
+                    Height = dto.Height,
+                    Quantity = dto.Quantity,
+                    Price = dto.Price
+                };
+                Assert.True(restored.HasImpost);
+                Assert.Equal(item.ImpostSurchargeTotal, restored.ImpostSurchargeTotal, 2);
+            }
+
+            // ─── Badge popup wiring (v3.48.0) ─────────────────
+            // Реальный entry point: клик по бейджу «ИМ»/«АК» открывает Popup
+            // с деталями. Проверяем через internal ToggleBadgeInfoPopup (логику
+            // без синтеза MouseButtonEventArgs — у него нет публичного
+            // конструктора). Headless-ограничение WPF: Popup.IsOpen не выставляется
+            // в true без Application root (popup-презентация), поэтому стабильно
+            // проверяем только FindLogicalPopup (поиск в логическом дереве)
+            // и no-op для null. WPF Popup требует STA.
+            [Fact]
+            public void BadgePopup_FoundByLogicalTree_ByToggleHelper()
+            {
+                WpfTestHelper.RunOnSta(() =>
+                {
+                    var popup = new Popup { StaysOpen = false };
+                    var grid = new Grid();
+                    grid.Children.Add(new TextBlock { Text = "ИМ" });
+                    grid.Children.Add(popup);
+                    var badge = new Border { Child = grid, Tag = "ИМ" };
+
+                    // Логический обход находит Popup в дереве бейджа.
+                    OrderItemsControl.ToggleBadgeInfoPopup(badge);
+
+                    // PlacementTarget выставляется только если найден Popup;
+                    // если обход не нашёл — остался бы null.
+                    Assert.Same(badge, popup.PlacementTarget);
+
+                    // null — no-op (без исключений).
+                    OrderItemsControl.ToggleBadgeInfoPopup(null);
+                });
+            }
+
+            // ─── Clone with AnwisSizeMode test ───────────────
 
         [Fact]
         public void GetDefaultInstallationDeduction_DvernayaSetka_Returns600()

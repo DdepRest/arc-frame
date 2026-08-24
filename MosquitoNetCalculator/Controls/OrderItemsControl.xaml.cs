@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Controls.Primitives;
 using System.Windows.Input;
 using System.Windows.Media;
 using MosquitoNetCalculator.Models;
@@ -72,6 +73,55 @@ namespace MosquitoNetCalculator.Controls
 
         private void AnwisModePill_PreviewRightClick(object sender, System.Windows.Input.MouseButtonEventArgs e) =>
             TryForwardToMain(nameof(AnwisModePill_PreviewRightClick), mw => mw.AnwisModePillRightClick(sender, e));
+
+        /// <summary>
+        /// v3.48.0: клик по бейджу «ИМ»/«АК» мгновенно показывает тёмный попап
+        /// с деталями (вместо системного тултипа с долгой задержкой). Повторный клик
+        /// или клик вне попапа закрывает его (StaysOpen=False).
+        /// </summary>
+        private void BadgeInfo_Click(object sender, MouseButtonEventArgs e)
+        {
+            ToggleBadgeInfoPopup(sender as DependencyObject);
+            e.Handled = true;
+        }
+
+        /// <summary>
+        /// Переключает попап деталей бейджа (открыт/закрыт). Отдельный статический
+        /// метод — чтобы юнит-тест мог проверить логику без синтеза
+        /// MouseButtonEventArgs (у него нет публичного конструктора) и без
+        /// конструирования контрола (InitializeComponent требует ресурс OrderRow).
+        /// </summary>
+        internal static void ToggleBadgeInfoPopup(DependencyObject? sender)
+        {
+            if (sender is not DependencyObject root) return;
+            var popup = FindLogicalPopup(root);
+            if (popup == null) return;
+
+            // Popup вне визуального дерева — RelativeSource из XAML его не найдёт;
+            // PlacementTarget выставляем явно относительно кликнутого бейджа.
+            if (popup.PlacementTarget == null && sender is UIElement badge)
+                popup.PlacementTarget = badge;
+
+            popup.IsOpen = !popup.IsOpen;
+        }
+
+        /// <summary>Ищет первый <see cref="Popup"/> в логическом дереве (Popup — не visual child).</summary>
+        private static Popup? FindLogicalPopup(DependencyObject root)
+        {
+            foreach (object child in LogicalTreeHelper.GetChildren(root))
+            {
+                if (child is Popup popup)
+                    return popup;
+                if (child is DependencyObject dep)
+                {
+                    var nested = FindLogicalPopup(dep);
+                    if (nested != null)
+                        return nested;
+                }
+            }
+            return null;
+        }
+
 
         /// <summary>
         /// v3.43.5: двойной клик по строке «Откос» открывает панель редактирования откоса.
