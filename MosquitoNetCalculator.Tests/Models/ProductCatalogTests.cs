@@ -92,6 +92,23 @@ namespace MosquitoNetCalculator.Tests.Models
         }
 
         [Fact]
+        public void IsKnownProduct_KnownNames_ReturnTrue()
+        {
+            Assert.True(ProductCatalog.IsKnownProduct("Anwis"));
+            Assert.True(ProductCatalog.IsKnownProduct("Отлив"));
+            Assert.True(ProductCatalog.IsKnownProduct("Работа"));
+        }
+
+        [Fact]
+        public void IsKnownProduct_CustomNames_ReturnFalse()
+        {
+            Assert.False(ProductCatalog.IsKnownProduct("Шуруп 4×30"));
+            Assert.False(ProductCatalog.IsKnownProduct("Герметик"));
+            Assert.False(ProductCatalog.IsKnownProduct(""));
+            Assert.False(ProductCatalog.IsKnownProduct(null));
+        }
+
+        [Fact]
         public void OrderItem_Proxies_DelegateToProductCatalog()
         {
             // Backward-compat: OrderItem static HashSets must reflect ProductCatalog.

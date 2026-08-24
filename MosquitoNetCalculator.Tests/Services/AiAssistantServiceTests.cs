@@ -73,11 +73,19 @@ namespace MosquitoNetCalculator.Tests.Services
         }
 
         [Fact]
+        public void FreeModels_ContainsFreeRouter()
+        {
+            Assert.Contains(AiAssistantService.FreeModels,
+                m => m.Id == AiAssistantService.OpenRouterFreeRouter
+                     && m.Provider == AiProvider.OpenRouter);
+        }
+
+        [Fact]
         public void FreeModels_FirstItem_IsDefaultModel()
         {
             var first = AiAssistantService.FreeModels.FirstOrDefault();
             Assert.NotNull(first);
-            Assert.Equal("google/gemma-4-31b-it:free", first!.Id);
+            Assert.Equal(AiAssistantService.OpenRouterFreeRouter, first!.Id);
         }
 
         [Fact]
@@ -246,11 +254,21 @@ namespace MosquitoNetCalculator.Tests.Services
         {
             // The curated offline fallback must never reference a paid OpenRouter
             // slug (no :free suffix → paid tier) — the assistant is free-only.
+            // The Free Models Router is the exception: a zero-price router that
+            // has no :free suffix by design (it routes to free models only).
             foreach (var model in AiAssistantService.FreeModels
-                         .Where(m => m.Provider == AiProvider.OpenRouter))
+                         .Where(m => m.Provider == AiProvider.OpenRouter)
+                         .Where(m => !AiAssistantService.IsRouterModel(m.Id)))
             {
                 Assert.EndsWith(":free", model.Id, System.StringComparison.OrdinalIgnoreCase);
             }
+        }
+
+        [Fact]
+        public void GetProviderForModel_ReturnsOpenRouter_ForFreeRouter()
+        {
+            Assert.Equal(AiProvider.OpenRouter,
+                AiKeyValidator.GetProviderForModel(AiAssistantService.OpenRouterFreeRouter));
         }
 
         [Theory]

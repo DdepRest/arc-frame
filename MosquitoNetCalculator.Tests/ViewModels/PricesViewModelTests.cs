@@ -99,6 +99,7 @@ namespace MosquitoNetCalculator.Tests.ViewModels
         {
             // Пользовательские товары (которых нет в фиксированных группах)
             // добавляются В КОНЕЦ, а не вклиниваются в иерархию.
+            // Note: «Свой товар» is appended last, after all products.
             var vm = new PricesViewModel();
             vm.LoadPrices();
             vm.Prices.Add(new PriceItem { Name = "Сетка Пользователя", Color = "", Price = 0 });
@@ -106,7 +107,9 @@ namespace MosquitoNetCalculator.Tests.ViewModels
             var names = vm.GetProductNames();
 
             Assert.Contains("Сетка Пользователя", names);
-            Assert.Equal(names.Count - 1, names.IndexOf("Сетка Пользователя"));
+            // User product is second-to-last — «Свой товар» is the final entry.
+            Assert.Equal(names.Count - 2, names.IndexOf("Сетка Пользователя"));
+            Assert.Equal(AiClarificationForm.CustomProductType, names[^1]);
         }
     }
 }

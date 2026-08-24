@@ -71,7 +71,7 @@
 | `DialogService.cs` | Fluent-диалоги (подтверждение, ввод, уведомления). | — |
 | `ToastService.cs` | Всплывающие тост-уведомления. | — |
 | `UndoRedoService.cs` | Undo/Redo через стек снимков. | — |
-| `AiAssistantService.cs` | Сетевые вызовы к OpenRouter/NVIDIA: стриминг, ретраи до 3 раз, гарантированный NVIDIA-фолбэк, колбэк `onStreamInfo` с метриками. | Ключи, URL провайдеров, попытки — влияют на доступность AI. |
+| `AiAssistantService.cs` | Сетевые вызовы к OpenRouter/NVIDIA: стриминг, ретраи до 3 раз, гарантированный NVIDIA-фолбэк, стандартная модель `openrouter/free` (Free Models Router, иммунитет к кэшу недоступности), авто-обновление каталога при старте и self-heal (второй проход после `forceRefresh` при полном отказе), колбэк `onStreamInfo` с метриками. | Ключи, URL провайдеров, попытки — влияют на доступность AI. |
 | `AiCommandParser.cs` | Парсинг JSON-ответа LLM: legacy-формат (single action) и plan-mode (`mode`/`steps`). | Контракт JSON — синхронизировать с промптом LLM. |
 | `AiPlanBuilder.cs` | Собирает `AiActionPlan` из команд (одиночной или пакета), строит preview-текст шагов, определяет `RequiresConfirmation`. | Preview должен показывать пользователю, что именно будет выполнено. |
 | `AiPlanValidator.cs` | Локальная проверка параметров команд до выполнения (каталог, цвет, размеры, цель обновления/удаления). | Валидация — последний рубеж перед мутацией заказа. |

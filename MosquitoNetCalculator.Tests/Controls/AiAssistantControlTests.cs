@@ -153,14 +153,19 @@ namespace MosquitoNetCalculator.Tests.Controls
             Assert.Contains("TxtInput.Focus()", codeBehind);
         }
 
+        /// <summary>
+        /// ModelLabel is shown in the assistant footer (via NonEmptyStringToVisibility)
+        /// so users know which free model answered. MetricsLabel (telemetry) and
+        /// provider-level bindings remain hidden from the user-facing panels.
+        /// </summary>
         [Fact]
         public void AiPanels_DoNotExposeModelOrProviderLabels()
         {
             var controlXaml = File.ReadAllText(LocateSource("Controls/AiAssistantControl.xaml"));
             var windowXaml = File.ReadAllText(LocateSource("Controls/AiAssistantWindow.xaml"));
 
-            Assert.DoesNotContain("{Binding ModelLabel}", controlXaml);
-            Assert.DoesNotContain("{Binding MetricsLabel}", controlXaml);
+            Assert.Contains("{Binding ModelLabel}", controlXaml);      // shown — user-visible model badge
+            Assert.DoesNotContain("{Binding MetricsLabel}", controlXaml);  // telemetry stays hidden
             Assert.DoesNotContain("{Binding CurrentModel}", windowXaml);
             Assert.DoesNotContain("{Binding ApiKeyStatusText}", windowXaml);
             Assert.DoesNotContain("Модель и провайдер", controlXaml);

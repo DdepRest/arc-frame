@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
 
@@ -177,6 +178,19 @@ namespace MosquitoNetCalculator.Models
         /// <summary>True when the product has no color variants.</summary>
         public static bool IsNoColor(string? name) =>
             !string.IsNullOrEmpty(name) && NoColorProducts.Contains(name);
+
+        /// <summary>
+        /// True when the product name exists in the fixed UX catalog
+        /// (<see cref="UserGroups"/>). User-added / «Свой товар» names return
+        /// false — those are manual sum rows (Total = Price × Qty), not
+        /// area-based products.
+        /// </summary>
+        public static bool IsKnownProduct(string? name)
+        {
+            if (string.IsNullOrEmpty(name)) return false;
+            return UserGroups.Any(g => g.Products.Any(p =>
+                string.Equals(p, name, StringComparison.OrdinalIgnoreCase)));
+        }
 
         // ─────────────────────────────────────────────────────────
         // Product grouping for the UX catalog (all groups visible)

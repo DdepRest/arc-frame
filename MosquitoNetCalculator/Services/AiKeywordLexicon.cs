@@ -154,6 +154,37 @@ namespace MosquitoNetCalculator.Services
             @"(\d+(?:[.,]\d+)?)\s*шт",
             RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
 
+        /// <summary>
+        /// Replaces a compact digit run («3711217») with an explicit pair
+        /// («371×1217») ONLY when the digit sequences match exactly — i.e. the
+        /// pair came from a trustworthy independent source (a second OCR engine,
+        /// a file name, the model's reply, or a parsed <c>add_item</c>). Never
+        /// splits a run when the pair is unknown: «400×1500» and «1500×400» are
+        /// both plausible and guessing an orientation would be wrong.
+        /// </summary>
+        public static string NormalizeCompactDimension(string? text, string? width, string? height)
+        {
+            if (string.IsNullOrWhiteSpace(text)) return text ?? string.Empty;
+            var w = new string((width ?? string.Empty).Where(char.IsDigit).ToArray());
+            var h = new string((height ?? string.Empty).Where(char.IsDigit).ToArray());
+            if (w.Length == 0 || h.Length == 0) return text;
+
+            var pattern = $"(?<!\\d){Regex.Escape(w)}\\s*{Regex.Escape(h)}(?!\\d)";
+            return Regex.Replace(text, pattern, $"{w}×{h}", RegexOptions.CultureInvariant);
+        }
+
+        /// <summary>
+        /// True when the OCR text contains a long digit run without any explicit
+        /// dimension separator — i.e. the engine likely glued width and height
+        /// together («3711217»). Such text must NOT be shown in the chat bubble:
+        /// splitting it would be a guess. Once the pair is confirmed, the bubble
+        /// is filled with the readable form.
+        /// </summary>
+        public static bool ShouldHideOcrFromBubble(string? text)
+            => !string.IsNullOrWhiteSpace(text)
+               && Regex.IsMatch(text, @"\d{6,}", RegexOptions.CultureInvariant)
+               && !DimensionRegex.IsMatch(text);
+
         /// <summary>A standalone number right before the size («4 739х1116» → 4).</summary>
         public static readonly Regex LeadingNumberRegex = new(
             @"(\d+(?:[.,]\d+)?)\s*$",

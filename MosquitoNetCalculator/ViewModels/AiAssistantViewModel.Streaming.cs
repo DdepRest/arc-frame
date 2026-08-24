@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Text;
@@ -27,6 +28,13 @@ namespace MosquitoNetCalculator.ViewModels
         /// initialise; a fire-and-forget await is safe because the send path
         /// re-runs OCR for any image still pending.
         /// </summary>
+        // True for the message currently being sent: an image was attached and
+        // local OCR produced text. When both are true, the clarification card is
+        // ALWAYS shown pre-filled from the OCR text — the model may answer with
+        // meaningless prose and the manager must not lose already-known data.
+        private bool _currentTurnHadImage;
+        private bool _currentTurnHadOcr;
+
         private async Task RunOcrAsync(AiImageAttachment attachment)
         {
             var bytes = AttachmentOcrService.TryDecodeDataUrl(attachment.DataUrl);
@@ -117,7 +125,7 @@ namespace MosquitoNetCalculator.ViewModels
         {
             _aiService = new Services.AiAssistantService();
 
-            CurrentModel = AppSettingsServiceAi.LoadAiModel() ?? "google/gemma-3-27b-it:free";
+            CurrentModel = AppSettingsServiceAi.LoadAiModel() ?? Services.AiAssistantService.OpenRouterFreeRouter;
             var apiKey = AppSettingsServiceAi.LoadAiApiKey();
             var nvidiaKey = AppSettingsServiceAi.LoadAiNvidiaApiKey();
             bool hasUserKey = !string.IsNullOrWhiteSpace(apiKey) || !string.IsNullOrWhiteSpace(nvidiaKey);
@@ -156,11 +164,16 @@ namespace MosquitoNetCalculator.ViewModels
 
             var userText = InputText.Trim();
             InputText = string.Empty;
+            // What actually appears in the user bubble. The OCR fallback below
+            // fills the model/prompt text, but the bubble must never show a raw
+            // glued OCR line («3711217») — see the OCR merge below.
+            var bubbleText = userText;
 
             // Snapshot staged images; they travel with THIS message only
             // (history keeps text, so past attachments are not re-sent).
             var stagedAttachments = Attachments.ToList();
             var imageDataUrls = stagedAttachments.Select(a => a.DataUrl).ToList();
+            _currentTurnHadImage = imageDataUrls.Count > 0;
             // Filename capture: managers often paste a screenshot whose file
             // name encodes the order («ПМС Anwis, бел. 1 619x1295.png») instead
             // of typing anything. Pre-fill the clarification card from those
@@ -188,6 +201,25 @@ namespace MosquitoNetCalculator.ViewModels
                 ocrLines.Add(result.Text);
             }
             OcrWarning = BuildOcrWarning(ocrLines);
+            _currentTurnHadOcr = ocrLines.Any(l => !string.IsNullOrWhiteSpace(l));
+
+            // When the manager pasted only a photo (no typed text) and OCR read
+            // it, both the prompt text and the user request must carry the OCR
+            // text so the clarification card is never blank and ANY model
+            // understands the order. The bubble, however, must not show raw
+            // glued digits («3711217»): until the exact pair is confirmed by an
+            // independent source, splitting it would be a guess, so the bubble
+            // shows nothing (the attachment glyph remains) until the readable
+            // form is known.
+            if (string.IsNullOrEmpty(userText) && _currentTurnHadOcr)
+            {
+                var joinedOcr = string.Join(", ", ocrLines.Where(l => !string.IsNullOrWhiteSpace(l)));
+                userText = joinedOcr;
+                bubbleText = AiKeywordLexicon.ShouldHideOcrFromBubble(joinedOcr)
+                    ? string.Empty
+                    : joinedOcr;
+            }
+
             Attachments.Clear();
             OnPropertyChanged(nameof(HasAttachments));
 
@@ -204,7 +236,7 @@ namespace MosquitoNetCalculator.ViewModels
             var conversationHistory = GetConversationHistory();
             Messages.Add(new AiChatMessage
             {
-                Text = userText,
+                Text = bubbleText,
                 IsUser = true,
                 AttachmentCount = imageDataUrls.Count,
                 AttachmentLabels = attachmentLabels,
@@ -320,6 +352,7 @@ namespace MosquitoNetCalculator.ViewModels
                     modelUserText,
                     conversationHistory,
                     imageDataUrls: imageDataUrls.Count > 0 ? imageDataUrls : null,
+                    hasOcrText: ocrLines.Any(l => !string.IsNullOrWhiteSpace(l)),
                     onChunk: chunk =>
                     {
                         if (dispatcher == null || dispatcher.CheckAccess())
@@ -462,7 +495,9 @@ namespace MosquitoNetCalculator.ViewModels
                 // when the raw user text doesn't spell them out, the card must
                 // come up pre-filled instead of blank. (The guessed Anwis mode
                 // is intentionally left out so the user picks it themselves.)
-                msg.ClarificationForm = new AiClarificationForm(userRequest, addItem?.Params);
+                // Pass parsed.Reply so FromReply can also harvest dimensions
+                // the model confirmed in prose («371×1217»).
+                msg.ClarificationForm = new AiClarificationForm(userRequest, addItem?.Params, parsed.Reply);
                 StatusText = "Готово ✓";
                 return;
             }
@@ -527,13 +562,17 @@ namespace MosquitoNetCalculator.ViewModels
                 // («⚠ Для Anwis укажите режим…») instead of the raw action JSON.
                 msg.Text = string.IsNullOrWhiteSpace(parsed.Reply) ? fullText : parsed.Reply;
 
-                // When the AI asks back for missing parameters («Сделай сетку» →
+                // When the AI asks for missing parameters («Сделай сетку» →
                 // «Уточните: тип, размеры…»), attach an interactive form card so
                 // the user can pick values with ComboBoxes instead of typing a
                 // second prompt. An explicit mode=clarification, a clarifying
-                // reply text, or an incomplete Anwis add request all attach it.
+                // reply, an incomplete Anwis add request, or ANY attached photo
+                // all attach it — local OCR pre-fills what it read; if OCR failed,
+                // the manager still gets the card and enters values manually
+                // instead of staring at a pointless AI question.
                 if (parsed.Mode == AiPlanMode.Clarification
-                    || AiClarificationForm.ShouldShowForm(userRequest, msg.Text))
+                    || AiClarificationForm.ShouldShowForm(userRequest, msg.Text)
+                    || _currentTurnHadImage)
                 {
                     // Filter the offered products to the family the user asked for:
                     // «Сделай сетку» → only mesh products, not the whole catalog.
@@ -542,8 +581,34 @@ namespace MosquitoNetCalculator.ViewModels
                     msg.ClarificationForm = new AiClarificationForm(
                         userRequest, GetKnownAddItemParams(parsedCommands), msg.Text);
                 }
+
+                // Stash the user request so the retry button on the clarification
+                // card can re-send it to a different model without retyping.
+                msg.RetryUserText = userRequest;
+
+                // When the assistant reply echoes raw OCR with glued digits
+                // («3711217») and no confirmed separator, replace the header with
+                // a clean clarification prompt. The interactive card below already
+                // carries the pre-filled known values (type/color/quantity); the
+                // raw digit soup must never surface in the chat header.
+                // Confirmed pairs («371×1217») are NOT affected — ShouldHideOcrFromBubble
+                // returns false when DimensionRegex matches.
+                if (AiKeywordLexicon.ShouldHideOcrFromBubble(msg.Text))
+                {
+                    msg.Text = "Уточните параметры:";
+                }
             }
 
+            // Raw OCR often glues width and height together («3711217»), while an
+            // independent source — the clarification form, a parsed add_item, or
+            // the reply text — already named the exact pair («371×1217»). When the
+            // digits match, replace the compact run in the visible user bubble so
+            // the manager reads a normal size, not a digit soup. Without a matching
+            // confirmed pair nothing is changed (no guessing orientation).
+            NormalizeUserBubbleDimensions(msg, parsed.Reply, fullText, parsedCommands);
+
+            _currentTurnHadImage = false;
+            _currentTurnHadOcr = false;
             StatusText = "Готово ✓";
         }
 
@@ -560,6 +625,82 @@ namespace MosquitoNetCalculator.ViewModels
         /// <summary>First AddItem command's params, or null — the richest pre-fill source.</summary>
         private static AiCommandParams? GetKnownAddItemParams(IReadOnlyList<AiCommand> commands)
             => commands.FirstOrDefault(c => c.Type == AiCommandType.AddItem)?.Params;
+
+        /// <summary>
+        /// OCR often answers with compact numbers («ПМС Anwis, бел. 1 3711217»)
+        /// when it misses the multiplication sign. The split must never be
+        /// guessed, but when an independent source confirms the exact width/height
+        /// pair (the clarification form, parsed <c>add_item</c> params, or the
+        /// assistant's reply text), the compact run is unambiguous — replace it
+        /// with read form «371×1217» in the user bubble and stored OCR text.
+        /// </summary>
+        private void NormalizeUserBubbleDimensions(
+            AiChatMessage assistantMsg,
+            string? parsedReply,
+            string? fullText,
+            IReadOnlyList<AiCommand> commands)
+        {
+            var candidates = new List<(string Width, string Height)>();
+
+            if (assistantMsg.ClarificationForm is { } form
+                && !string.IsNullOrWhiteSpace(form.WidthText)
+                && !string.IsNullOrWhiteSpace(form.HeightText))
+            {
+                candidates.Add((form.WidthText.Trim(), form.HeightText.Trim()));
+            }
+
+            var addItem = commands.FirstOrDefault(c => c.Type == AiCommandType.AddItem)?.Params;
+            if (addItem is { Width: > 0, Height: > 0 })
+            {
+                candidates.Add((
+                    addItem.Width.ToString(CultureInfo.InvariantCulture),
+                    addItem.Height.ToString(CultureInfo.InvariantCulture)));
+            }
+
+            foreach (var text in new[] { parsedReply, fullText })
+            {
+                if (string.IsNullOrWhiteSpace(text)) continue;
+                var dim = AiKeywordLexicon.DimensionRegex.Match(text);
+                if (dim.Success)
+                    candidates.Add((dim.Groups[1].Value, dim.Groups[2].Value));
+            }
+
+            if (candidates.Count == 0) return;
+
+            // Walk back over consecutive user messages (same bounds as
+            // GetRecentUserRequest) and normalize their bubble + OCR text. When
+            // the manager typed nothing and the bubble was suppressed because the
+            // OCR digits were glued, the confirmed pair now makes the text
+            // readable — surface it so the manager sees «371×1217», never a
+            // digit soup.
+            int i = Messages.Count - 1;
+            while (i >= 0 && !Messages[i].IsUser) i--;
+            for (; i >= 0 && Messages[i].IsUser; i--)
+            {
+                var userMsg = Messages[i];
+                bool normalizedAny = false;
+                foreach (var (width, height) in candidates)
+                {
+                    userMsg.Text = AiKeywordLexicon.NormalizeCompactDimension(
+                        userMsg.Text, width, height);
+                    for (int j = 0; j < userMsg.AttachmentOcr.Count; j++)
+                    {
+                        var before = userMsg.AttachmentOcr[j];
+                        var after = AiKeywordLexicon.NormalizeCompactDimension(
+                            before, width, height);
+                        userMsg.AttachmentOcr[j] = after;
+                        if (!string.Equals(before, after, StringComparison.Ordinal))
+                            normalizedAny = true;
+                    }
+                }
+
+                if (string.IsNullOrEmpty(userMsg.Text) && normalizedAny)
+                {
+                    userMsg.Text = string.Join(", ",
+                        userMsg.AttachmentOcr.Where(l => !string.IsNullOrWhiteSpace(l)));
+                }
+            }
+        }
 
         /// <summary>
         /// Text of the current user turn: the last user message plus any user

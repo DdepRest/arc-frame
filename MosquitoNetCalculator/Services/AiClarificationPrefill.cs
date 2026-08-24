@@ -43,11 +43,15 @@ namespace MosquitoNetCalculator.Services
             if (installation >= 0)
                 form.SelectedInstallation = AiKeywordLexicon.InstallationLabel(installation);
 
+            // Parse each field independently. OCR can lose a dimension separator,
+            // but that must not discard a reliable quantity («1»/«1 шт») or other
+            // fields already present in the same text.
             var dim = AiKeywordLexicon.DimensionRegex.Match(request);
-            if (!dim.Success) return;
-
-            form.WidthText = dim.Groups[1].Value;
-            form.HeightText = dim.Groups[2].Value;
+            if (dim.Success)
+            {
+                form.WidthText = dim.Groups[1].Value;
+                form.HeightText = dim.Groups[2].Value;
+            }
 
             // «4 шт 739х1116» wins over a bare leading number; otherwise a
             // number right before the size («4 739х1116») is treated as count.
@@ -56,7 +60,7 @@ namespace MosquitoNetCalculator.Services
             {
                 form.QuantityText = q.Groups[1].Value;
             }
-            else
+            else if (dim.Success)
             {
                 var beforeSize = request.Substring(0, dim.Index);
                 var leading = AiKeywordLexicon.LeadingNumberRegex.Match(beforeSize);
@@ -96,6 +100,8 @@ namespace MosquitoNetCalculator.Services
                 form.HeightText = dim.Groups[2].Value;
             }
 
+            // Keep quantity parsing independent from dimensions: a vision reply
+            // may reliably state «1 шт» even when it omitted or damaged the size.
             var q = AiKeywordLexicon.QuantityRegex.Match(reply);
             if (q.Success)
                 form.QuantityText = q.Groups[1].Value;

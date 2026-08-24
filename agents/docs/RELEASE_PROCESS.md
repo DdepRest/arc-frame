@@ -104,7 +104,7 @@ tools/release/update-releases-json.ps1
 
 **Asset:** `ARC-Frame-X.Y.Z-full.zip`
 
-Это ZIP, содержащий `MosquitoNetCalculator.exe` + зависимые DLL.
+Это ZIP, содержащий `MosquitoNetCalculator.exe` + зависимые DLL + папку `tessdata` (встроенный OCR-фолбэк Tesseract — rus/eng traineddata) + папки `x64`/`x86` (нативные библиотеки Tesseract — leptonica/tesseract50, single-file publish их НЕ встраивает). Если в релизе не будет `tessdata` или `x64`, локальный OCR на машинах без языкового пакета Windows перестанет работать.
 
 ---
 
@@ -187,8 +187,8 @@ tools/release/update-releases-json.ps1
 |---|----------|---------|
 | 2.1 | Очистить bin/obj, publish | `rmdir /s /q publish MosquitoNetCalculator\bin MosquitoNetCalculator\obj` |
 | 2.2 | Restore + publish single-file | `dotnet publish MosquitoNetCalculator/MosquitoNetCalculator.csproj -c Release -r win-x64 --self-contained -p:PublishSingleFile=true -p:EnableCompressionInSingleFile=true -o publish` |
-| 2.3 | Скопировать resources в publish | `cp MosquitoNetCalculator/prices.json MosquitoNetCalculator/Resources/app_icon.ico check-deps.bat publish/` + создать `publish/settings.json` |
-| 2.4 | Создать ZIP с .exe + DLL | `powershell -NoProfile -Command "Compress-Archive -Force -Path 'publish\MosquitoNetCalculator.exe','publish\*.dll' -DestinationPath 'publish\ARC-Frame-X.Y.Z-full.zip'"` |
+| 2.3 | Скопировать resources в publish | `cp MosquitoNetCalculator/prices.json MosquitoNetCalculator/Resources/app_icon.ico check-deps.bat publish/` + создать `publish/settings.json` + `mkdir publish/tessdata && cp MosquitoNetCalculator/Resources/tessdata/* publish/tessdata/` |
+| 2.4 | Создать ZIP с .exe + DLL + tessdata + x64/x86 | `powershell -NoProfile -Command "Compress-Archive -Force -Path 'publish\MosquitoNetCalculator.exe','publish\*.dll','publish\tessdata','publish\x64','publish\x86' -DestinationPath 'publish\ARC-Frame-X.Y.Z-full.zip'"` |
 | 2.5 | Вычислить SHA-256 | `certutil -hashfile 'publish\ARC-Frame-X.Y.Z-full.zip' SHA256` |
 | 2.6 | Вычислить размер файла | `(Get-Item 'publish\ARC-Frame-X.Y.Z-full.zip').Length` |
 | 2.7 | Вписать size+SHA-256 в `releases.json` | ручная правка |

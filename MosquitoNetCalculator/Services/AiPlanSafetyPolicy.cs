@@ -88,10 +88,12 @@ namespace MosquitoNetCalculator.Services
                 && AnwisSizeService.IsApplicable(c.Params.Type)
                 && !AiClarificationForm.AnwisModeSpecified(userText);
 
-        /// <summary>Sized (non-manual) product without width/height is unsafe.</summary>
+        /// <summary>Sized (non-manual) product without width/height is unsafe.
+        /// «Свой товар» is exempt — its dimensions (and quantity) are optional.</summary>
         public static bool IsMissingDimensions(AiCommand c)
             => c.Type == AiCommandType.AddItem
                 && !ProductCatalog.IsManualPiece(c.Params.Type)
+                && !c.Params.IsCustomProduct
                 && (c.Params.Width <= 0 || c.Params.Height <= 0);
 
         /// <summary>Installation-applicable product without a user-named mode is unsafe.</summary>

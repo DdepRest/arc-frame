@@ -1,6 +1,7 @@
 using System;
 using System.IO;
 using System.Linq;
+using MosquitoNetCalculator.Models;
 using MosquitoNetCalculator.Services;
 using Xunit;
 
@@ -46,6 +47,62 @@ namespace MosquitoNetCalculator.Tests.Services
         }
 
         [Fact]
+        public void SaveAndLoad_ModelAvailability_Roundtrip()
+        {
+            var items = new[]
+            {
+                new AiModelAvailability
+                {
+                    Id = "google/gemma-3-27b-it:free",
+                    Provider = AiProvider.OpenRouter,
+                    IsAvailable = true,
+                    StatusCode = 200,
+                    Detail = "OK",
+                    CheckedAt = new DateTime(2026, 8, 17, 12, 0, 0, DateTimeKind.Utc)
+                },
+                new AiModelAvailability
+                {
+                    Id = "deepseek-ai/deepseek-v4-flash-0731",
+                    Provider = AiProvider.Nvidia,
+                    IsAvailable = false,
+                    StatusCode = 403,
+                    Detail = "ключ исчерпан или заблокирован",
+                    CheckedAt = new DateTime(2026, 8, 17, 12, 1, 0, DateTimeKind.Utc)
+                }
+            };
+
+            AppSettingsServiceAi.SaveModelAvailability(items);
+            var loaded = AppSettingsServiceAi.LoadModelAvailability();
+
+            Assert.Equal(2, loaded.Count);
+            Assert.Contains(loaded, a => a.Id == "google/gemma-3-27b-it:free" && a.IsAvailable);
+            Assert.Contains(loaded, a => a.Id == "deepseek-ai/deepseek-v4-flash-0731" && !a.IsAvailable);
+        }
+
+        [Fact]
+        public void SaveModelAvailability_DeduplicatesByLatestCheck()
+        {
+            var older = new AiModelAvailability
+            {
+                Id = "google/gemma-3-27b-it:free",
+                IsAvailable = false,
+                CheckedAt = new DateTime(2026, 8, 17, 10, 0, 0, DateTimeKind.Utc)
+            };
+            var newer = new AiModelAvailability
+            {
+                Id = "google/gemma-3-27b-it:free",
+                IsAvailable = true,
+                CheckedAt = new DateTime(2026, 8, 17, 11, 0, 0, DateTimeKind.Utc)
+            };
+
+            AppSettingsServiceAi.SaveModelAvailability(new[] { older, newer });
+            var loaded = AppSettingsServiceAi.LoadModelAvailability();
+
+            var entry = Assert.Single(loaded);
+            Assert.True(entry.IsAvailable);
+        }
+
+        [Fact]
         public void Load_NvidiaApiKey_WithoutFile_ReturnsEmptyString()
         {
             Assert.Equal(string.Empty, AppSettingsServiceAi.LoadAiNvidiaApiKey());
@@ -75,7 +132,7 @@ namespace MosquitoNetCalculator.Tests.Services
         [Fact]
         public void Load_Model_WithoutFile_ReturnsDefaultModel()
         {
-            Assert.Equal("google/gemma-3-27b-it:free", AppSettingsServiceAi.LoadAiModel());
+            Assert.Equal(MosquitoNetCalculator.Services.AiAssistantService.OpenRouterFreeRouter, AppSettingsServiceAi.LoadAiModel());
         }
 
         [Fact]
@@ -102,7 +159,7 @@ namespace MosquitoNetCalculator.Tests.Services
         public void SaveModel_NullFallsBackToDefault()
         {
             AppSettingsServiceAi.SaveAiModel(null!);
-            Assert.Equal("google/gemma-3-27b-it:free", AppSettingsServiceAi.LoadAiModel());
+            Assert.Equal(MosquitoNetCalculator.Services.AiAssistantService.OpenRouterFreeRouter, AppSettingsServiceAi.LoadAiModel());
         }
 
         [Fact]
@@ -137,7 +194,7 @@ namespace MosquitoNetCalculator.Tests.Services
         {
             var loaded = AppSettingsServiceAi.LoadAiFallbackModels();
             Assert.Single(loaded);
-            Assert.Equal("google/gemma-3-27b-it:free", loaded[0]);
+            Assert.Equal(MosquitoNetCalculator.Services.AiAssistantService.OpenRouterFreeRouter, loaded[0]);
         }
 
         [Fact]
@@ -209,7 +266,7 @@ namespace MosquitoNetCalculator.Tests.Services
         public void Load_Model_HandlesCorruptedFile()
         {
             File.WriteAllText(AppSettingsServiceAi.AiSettingsPath, "corrupted");
-            Assert.Equal("google/gemma-3-27b-it:free", AppSettingsServiceAi.LoadAiModel());
+            Assert.Equal(MosquitoNetCalculator.Services.AiAssistantService.OpenRouterFreeRouter, AppSettingsServiceAi.LoadAiModel());
         }
 
         [Fact]

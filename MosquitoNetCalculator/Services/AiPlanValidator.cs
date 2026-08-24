@@ -133,13 +133,16 @@ namespace MosquitoNetCalculator.Services
 
         private static void ValidateAddItem(AiCommandParams p, List<string> errors)
         {
-            if (!AiOrderContext.IsKnownProduct(p.Type))
+            // «Свой товар» is the only free-form add: the user typed the name,
+            // dimensions and quantity are optional. Everything else must exist
+            // in the catalog.
+            if (!p.IsCustomProduct && !AiOrderContext.IsKnownProduct(p.Type))
             {
                 errors.Add($"Товар «{p.Type}» отсутствует в каталоге.");
                 return; // nothing else can be trusted
             }
 
-            bool manual = ProductCatalog.IsManualPiece(p.Type);
+            bool manual = ProductCatalog.IsManualPiece(p.Type) || p.IsCustomProduct;
             if (!manual && (p.Width <= 0 || p.Height <= 0))
                 errors.Add("Для этого товара нужны положительные ширина и высота (мм).");
             if (p.Quantity <= 0)

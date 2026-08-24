@@ -12,8 +12,10 @@ namespace MosquitoNetCalculator.Converters
     {
         public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
         {
+            // «Свой товар» rows start with quantity 0 (optional) — render the
+            // cell empty, not "0". An explicitly entered quantity still shows.
             if (value is double d)
-                return d.ToString("G", CultureInfo.InvariantCulture);
+                return d > 0 ? d.ToString("G", CultureInfo.InvariantCulture) : "";
             return value?.ToString() ?? "";
         }
 

@@ -1,4 +1,5 @@
 using System;
+using System.Threading.Tasks;
 using System.Windows;
 using MosquitoNetCalculator.Services;
 using MosquitoNetCalculator.ViewModels;
@@ -12,6 +13,11 @@ namespace MosquitoNetCalculator
     {
         internal AiAssistantViewModel? AiVm { get; private set; }
         private Controls.AiAssistantWindow? _aiWindow;
+        private Services.AiCommandExecutor? _aiCommandExecutor;
+
+        /// <summary>AI assistant and its settings are locked behind the admin password.
+        /// Once verified, the flag stays true for the session lifetime.</summary>
+        private bool _aiPasswordVerified;
 
         // Pre-batch snapshot + plan id of the last executed AI plan. The chat
         // «Отменить действие» button restores exactly this state (guarded so it
@@ -43,6 +49,18 @@ namespace MosquitoNetCalculator
                 ClientInfo.AdditionalKpsTotal);
             AiVm.OrderItemsProvider = () => CalcVM.OrderItems;
 
+            // Execute AI commands through the injectable, WPF-free executor so
+            // batch atomicity and toast suppression are unit-testable.
+            _aiCommandExecutor = new AiCommandExecutor(
+                CalcVM,
+                pushUndo: PushUndo,
+                markDirty: MarkDirty,
+                recalculateAndUpdateTotal: RecalculateAndUpdateTotal,
+                showToast: (message, type) => ToastService.ShowToast(message, type),
+                isAiOverlayVisible: () => AiOverlay.Visibility == Visibility.Visible,
+                closeAiAssistant: CloseAiAssistant,
+                openSlopeOverlay: ShowSlopeOverlay);
+
             // Bind the in-panel AI control to the shared ViewModel.
             AiAssistantControl.DataContext = AiVm;
 
@@ -55,6 +73,24 @@ namespace MosquitoNetCalculator
             // (in-panel resize comes through this SizeChanged already; the
             // docked window gets its own SizeChanged hooked in ShowDockedAiWindow).
             this.SizeChanged += (_, _) => ToastService.RepositionToasts(ToastService.AiScope);
+
+            // Refresh the AI model catalog at startup (fire-and-forget): free
+            // models rotate constantly, so the saved selection is reconciled
+            // with the live catalog (and the Free Models Router stays first)
+            // without the user opening settings. Failures never block start.
+            _ = Task.Run(async () =>
+            {
+                try
+                {
+                    await AiAssistantService.FetchAvailableModelsAsync(
+                        AiKeyValidator.GetApiKey(AiProvider.OpenRouter),
+                        nvidiaApiKey: AiKeyValidator.GetApiKey(AiProvider.Nvidia));
+                }
+                catch (Exception ex)
+                {
+                    System.Diagnostics.Debug.WriteLine($"[AI] startup catalog refresh failed: {ex.Message}");
+                }
+            });
         }
 
         /// <summary>
@@ -400,155 +436,19 @@ namespace MosquitoNetCalculator
         }
 
         /// <summary>
-        /// Executes one AI command against the real calculation. When
+        /// Executes one AI command through the injectable, WPF-free executor
+        /// (see <see cref="Services.AiCommandExecutor"/>). When
         /// <paramref name="pushUndo"/> is false (batch plan steps) the caller
         /// owns the single undo snapshot. Returns success + a user-facing error.
         /// </summary>
         private bool ExecuteAiCommandCore(AiCommand command, bool pushUndo, out string? error)
         {
-            error = null;
-            try
+            if (_aiCommandExecutor == null)
             {
-                switch (command.Type)
-                {
-                    case AiCommandType.AddItem:
-                    {
-                        if (pushUndo) PushUndo();
-                        var item = CalcVM.AddItem(
-                            command.Params.Type,
-                            command.Params.Color,
-                            command.Params.Width,
-                            command.Params.Height,
-                            command.Params.Quantity,
-                            command.Params.Price,
-                            command.Params.AnwisMode);
-                        if (item == null)
-                        {
-                            error = "Не удалось добавить позицию: неверные параметры.";
-                            return false;
-                        }
-
-                        // Apply the installation mode the user asked for
-                        // (0 = монтаж включён, 1 = без монтажа, 2 = в конструкцию).
-                        // −1 means the user didn't mention it — the program's
-                        // own default (from CalcVM.AddItem) is kept.
-                        if (command.Params.InstallationMode >= 0)
-                            item.InstallationMode = command.Params.InstallationMode;
-                        item.RecalculateRequested += RecalculateAndUpdateTotal;
-                        MarkDirty();
-                        ToastService.ShowToast($"✅ Добавлено: {item.Name} {item.Color}", ToastType.Success);
-                        RecalculateAndUpdateTotal();
-                        return true;
-                    }
-
-                    case AiCommandType.DeleteLast:
-                    {
-                        if (CalcVM.OrderItems.Count == 0)
-                        {
-                            error = "Заказ пуст — удалять нечего.";
-                            return false;
-                        }
-                        if (pushUndo) PushUndo();
-                        var last = CalcVM.OrderItems[^1];
-                        last.RecalculateRequested -= RecalculateAndUpdateTotal;
-                        CalcVM.DeleteItem(last);
-                        MarkDirty();
-                        ToastService.ShowToast("🗑 Последняя позиция удалена", ToastType.Info);
-                        RecalculateAndUpdateTotal();
-                        return true;
-                    }
-
-                    case AiCommandType.ClearAll:
-                    {
-                        if (pushUndo) PushUndo();
-                        CalcVM.UnsubscribeAll(RecalculateAndUpdateTotal);
-                        CalcVM.ClearAll();
-                        MarkDirty();
-                        ToastService.ShowToast("🗑 Расчёт очищен", ToastType.Info);
-                        RecalculateAndUpdateTotal();
-                        return true;
-                    }
-
-                    case AiCommandType.ListProducts:
-                        // The AI already listed products in its reply.
-                        return true;
-
-                    case AiCommandType.DeleteItems:
-                    {
-                        if (pushUndo) PushUndo();
-                        int deleted = 0;
-                        for (int i = CalcVM.OrderItems.Count - 1; i >= 0; i--)
-                        {
-                            var oi = CalcVM.OrderItems[i];
-                            if (!MatchesTarget(oi, command.Params.TargetProduct)) continue;
-                            oi.RecalculateRequested -= RecalculateAndUpdateTotal;
-                            CalcVM.DeleteItem(oi);
-                            deleted++;
-                        }
-                        MarkDirty();
-                        RecalculateAndUpdateTotal();
-                        ToastService.ShowToast($"🗑 Удалено позиций: {deleted}", ToastType.Info);
-                        return true;
-                    }
-
-                    case AiCommandType.CalcSlope:
-                    {
-                        // Z-order guard (IN-PANEL mode only): AiOverlay is declared
-                        // AFTER SlopeOverlay in MainWindow.xaml at the same
-                        // Panel.ZIndex=15, so in maximized/in-panel mode it would
-                        // render ON TOP of the freshly opened slope panel and hide
-                        // it. Close the in-panel surface first (chat history
-                        // persists in AiVm). In docked mode the AI is a SEPARATE
-                        // window to the right of the program — it never overlaps
-                        // the slope overlay, so the chat stays visible.
-                        if (AiOverlay.Visibility == Visibility.Visible)
-                            CloseAiAssistant();
-                        ShowSlopeOverlay(
-                            command.Params.Width,
-                            command.Params.Height,
-                            command.Params.Depth,
-                            (int)Math.Max(1, command.Params.Quantity));
-                        ToastService.ShowToast("🏗 Открыт просчёт откосов", ToastType.Info);
-                        return true;
-                    }
-
-                    case AiCommandType.UpdateItems:
-                    {
-                        if (pushUndo) PushUndo();
-                        int updatedCount = 0;
-                        foreach (var oi in CalcVM.OrderItems)
-                        {
-                            if (!MatchesTarget(oi, command.Params.TargetProduct))
-                                continue;
-                            if (command.Params.UpdateInstallationMode.HasValue)
-                                oi.InstallationMode = command.Params.UpdateInstallationMode.Value;
-                            if (command.Params.UpdatePrice.HasValue)
-                                oi.Price = command.Params.UpdatePrice.Value;
-                            if (command.Params.UpdateAnwisMode.HasValue)
-                                oi.AnwisSizeMode = command.Params.UpdateAnwisMode.Value;
-                            if (command.Params.UpdateColor != null)
-                                oi.Color = command.Params.UpdateColor;
-                            if (command.Params.UpdateInstallationAmount.HasValue)
-                                oi.SetCurrentInstallationAmount(command.Params.UpdateInstallationAmount.Value);
-                            updatedCount++;
-                        }
-                        MarkDirty();
-                        RecalculateAndUpdateTotal();
-                        ToastService.ShowToast($"🔄 Обновлено позиций: {updatedCount}", ToastType.Success);
-                        return true;
-                    }
-
-                    default:
-                        error = "Неизвестная команда AI.";
-                        return false;
-                }
-            }
-            catch (Exception ex)
-            {
-                System.Diagnostics.Debug.WriteLine($"[AI] Command execution failed: {ex}");
-                error = ex.Message;
+                error = "AI-исполнитель не инициализирован.";
                 return false;
             }
+            return _aiCommandExecutor.Execute(command, pushUndo, out error);
         }
 
         /// <summary>Restores a snapshot without touching the undo stack.</summary>
@@ -639,27 +539,15 @@ namespace MosquitoNetCalculator
 
         private void NavAi_Click(object sender, RoutedEventArgs e)
         {
+            if (!_aiPasswordVerified)
+            {
+                var enterDialog = new Controls.AdminPasswordWindow { Owner = this };
+                if (enterDialog.ShowDialog() != true)
+                    return;
+                _aiPasswordVerified = true;
+            }
             ToggleAiOverlay();
         }
 
-        /// <summary>
-        /// Matches an order item against a product/category filter for UpdateItems.
-        /// </summary>
-        private static bool MatchesTarget(OrderItem item, string target)
-        {
-            if (string.IsNullOrWhiteSpace(target) || target == "all")
-                return true;
-            var t = target.Trim().ToLowerInvariant();
-            var name = item.Name;
-            return t switch
-            {
-                "сетки" => name is "Anwis" or "На навесах" or "Оконная на метал. крепл." or "Дверная сетка",
-                "фасадные" => name is "Отлив" or "Козырёк" or "Короб",
-                "комплектующие" => name is "ПСУЛ" or "Уплотнение" or "Брус" or "Пояс" or "Материал",
-                "услуги" => name is "Работа" or "Доставка",
-                "откосы" => name is "Откос" or "Работа за откос",
-                _ => string.Equals(name, target, StringComparison.OrdinalIgnoreCase)
-            };
-        }
     }
 }

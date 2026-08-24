@@ -165,8 +165,8 @@ namespace MosquitoNetCalculator.Services
                                     t.Cell().Element(c2 => EDataCell(c2, bg)).Text(idx.ToString()).AlignCenter();
                                     t.Cell().Element(c2 => EDataCell(c2, bg)).Text(item.DisplayName ?? "").FontSize(8.5f);
                                     t.Cell().Element(c2 => EDataCell(c2, bg)).Text(item.Color ?? "").AlignCenter().FontSize(8.5f);
-                                    t.Cell().Element(c2 => EDataCell(c2, bg)).Text(item.Width.ToString("F0")).AlignCenter().FontSize(8.5f);
-                                    t.Cell().Element(c2 => EDataCell(c2, bg)).Text(item.Height.ToString("F0")).AlignCenter().FontSize(8.5f);
+                                    t.Cell().Element(c2 => EDataCell(c2, bg)).Text(item.Width > 0 ? item.Width.ToString("F0") : "").AlignCenter().FontSize(8.5f);
+                                    t.Cell().Element(c2 => EDataCell(c2, bg)).Text(item.Height > 0 ? item.Height.ToString("F0") : "").AlignCenter().FontSize(8.5f);
                                     t.Cell().Element(c2 => EDataCell(c2, bg)).Text(item.QuantityDisplay).AlignCenter().FontSize(8.5f);
                                     t.Cell().Element(c2 => EDataCell(c2, bg)).Text(item.KpInstallationDisplay ?? "").AlignCenter().FontSize(8.5f);
                                     if (item.IsAmountOnly || (item.IsQuantityOptional && item.Quantity <= 1))

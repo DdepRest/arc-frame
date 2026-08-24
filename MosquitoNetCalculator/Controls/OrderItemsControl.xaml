@@ -227,9 +227,17 @@
                                     <DataTrigger Binding="{Binding IsAmountOnly}" Value="True">
                                         <Setter Property="Visibility" Value="Collapsed"/>
                                     </DataTrigger>
-                                    <DataTrigger Binding="{Binding IsQuantityOptional}" Value="True">
+                                    <!-- «Свой товар» (IsCustomProduct) ALWAYS shows its qty cell:
+                                         the qty is optional to TYPE in the add form, but once
+                                         entered it must be visible in the row. Only catalog
+                                         optional-qty products (Материал) keep hiding the cell. -->
+                                    <MultiDataTrigger>
+                                        <MultiDataTrigger.Conditions>
+                                            <Condition Binding="{Binding IsQuantityOptional}" Value="True"/>
+                                            <Condition Binding="{Binding IsCustomProduct}" Value="False"/>
+                                        </MultiDataTrigger.Conditions>
                                         <Setter Property="Visibility" Value="Collapsed"/>
-                                    </DataTrigger>
+                                    </MultiDataTrigger>
                                 </Style.Triggers>
                             </Style>
                         </DataGridTextColumn.ElementStyle>
@@ -247,7 +255,7 @@
                         </DataGridTextColumn.EditingElementStyle>
                     </DataGridTextColumn>
 
-                    <!-- Площ./Дл. (hidden for amount-only products) -->
+                    <!-- Площ./Дл. (hidden for amount-only products; «Свой товар» keeps it visible) -->
                     <DataGridTextColumn Header="Площ./Дл." Width="Auto" MinWidth="70"
                                                             Binding="{Binding CalculatedValueDisplay}"
                                                             IsReadOnly="True">
@@ -258,9 +266,13 @@
                                     <DataTrigger Binding="{Binding IsAmountOnly}" Value="True">
                                         <Setter Property="Visibility" Value="Collapsed"/>
                                     </DataTrigger>
-                                    <DataTrigger Binding="{Binding IsQuantityOptional}" Value="True">
+                                    <MultiDataTrigger>
+                                        <MultiDataTrigger.Conditions>
+                                            <Condition Binding="{Binding IsQuantityOptional}" Value="True"/>
+                                            <Condition Binding="{Binding IsCustomProduct}" Value="False"/>
+                                        </MultiDataTrigger.Conditions>
                                         <Setter Property="Visibility" Value="Collapsed"/>
-                                    </DataTrigger>
+                                    </MultiDataTrigger>
                                 </Style.Triggers>
                             </Style>
                         </DataGridTextColumn.ElementStyle>

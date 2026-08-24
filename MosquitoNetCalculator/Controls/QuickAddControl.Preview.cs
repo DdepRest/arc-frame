@@ -18,16 +18,18 @@ namespace MosquitoNetCalculator.Controls
                 return;
             }
 
-            int.TryParse(TxtQuickWidth.Text, out int width);
-            int.TryParse(TxtQuickHeight.Text, out int height);
-            int.TryParse(TxtQuickQty.Text, out int qty);
+            TryParseQuickNumber(TxtQuickWidth.Text, out double width);
+            TryParseQuickNumber(TxtQuickHeight.Text, out double height);
+            double qty;
+            TryParseQuickNumber(TxtQuickQty.Text, out qty);
             if (qty <= 0) qty = 1;
-            double.TryParse(TxtQuickPrice.Text, out double price);
+            TryParseQuickNumber(TxtQuickPrice.Text, out double price);
 
             double area = 0, total = 0;
-            string unit = OrderItem.GetUnit(type);
+            string unit = IsCustomProductType(type) ? "шт." : OrderItem.GetUnit(type);
 
-            if (OrderItem.AmountOnlyProducts.Contains(type)) { total = price; }
+            if (IsCustomProductType(type)) { total = price * qty; unit = "шт."; }
+            else if (OrderItem.AmountOnlyProducts.Contains(type)) { total = price; }
             else if (OrderItem.ManualPieceProducts.Contains(type)) { total = price * qty; }
             else if (OrderItem.AreaBasedProducts.Contains(type))
             {

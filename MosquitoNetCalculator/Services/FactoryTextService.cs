@@ -176,7 +176,9 @@ namespace MosquitoNetCalculator.Services
 
                     foreach (var item in group)
                     {
-                        if (item.IsManualPiece)
+                        // «Свой товар» is a manual-sum row with optional dims/qty —
+                        // never print fake «Ш: 0 × В: 0», just the quantity.
+                        if (item.IsManualPiece || item.IsCustomProduct)
                         {
                             sb.AppendLine($"{item.Quantity} шт.");
                         }

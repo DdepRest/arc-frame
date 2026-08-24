@@ -40,6 +40,8 @@
             <conv:RussianDateConverter x:Key="RussianDateConv"/>
             <conv:UpdateTypeToBrushConverter x:Key="UpdateTypeBrush"/>
             <conv:UpdateTypeToIconConverter x:Key="UpdateTypeIcon"/>
+            <conv:OfficeStatusToBadgeBackgroundConverter x:Key="OfficeStatusBadgeBg"/>
+            <conv:OfficeStatusToBadgeForegroundConverter x:Key="OfficeStatusBadgeFg"/>
             <conv:InverseBoolConverter x:Key="InverseBool"/>
             <conv:BoolVisibilityConverter x:Key="BoolVisibility"/>
             <conv:InverseBoolVisibilityConverter x:Key="InverseBoolVisibility"/>

@@ -47,6 +47,11 @@ if %errorlevel% neq 0 (
 REM Copy prices.json to publish folder
 copy /y "MosquitoNetCalculator\prices.json" "publish\prices.json" >nul
 
+REM Copy bundled OCR data (tessdata) to publish folder — AttachmentOcrService
+REM falls back to Tesseract when Windows has no OCR language pack.
+if not exist "publish\tessdata" mkdir "publish\tessdata"
+copy /y "MosquitoNetCalculator\Resources\tessdata\*" "publish\tessdata\" >nul
+
 REM Copy icon to publish folder
 copy /y "MosquitoNetCalculator\Resources\app_icon.ico" "publish\app_icon.ico" >nul
 
@@ -69,8 +74,10 @@ for /f "tokens=*" %%i in ('dotnet msbuild MosquitoNetCalculator\MosquitoNetCalcu
 if "%APP_VERSION%"=="" set "APP_VERSION=0.0.0"
 echo   Version: %APP_VERSION%
 
-REM Create ZIP for GitHub Release (exe + dlls only — no settings/prices/orders)
-powershell -NoProfile -Command "Compress-Archive -Force -Path 'publish\MosquitoNetCalculator.exe','publish\*.dll' -DestinationPath 'publish\ARC-Frame-%APP_VERSION%-full.zip'" 2>nul
+REM Create ZIP for GitHub Release (exe + dlls + tessdata + x64/x86 native
+REM OCR libs — no settings/prices/orders). x64/x86 carry the Tesseract native
+REM DLLs that single-file publish does NOT embed.
+powershell -NoProfile -Command "Compress-Archive -Force -Path 'publish\MosquitoNetCalculator.exe','publish\*.dll','publish\tessdata','publish\x64','publish\x86' -DestinationPath 'publish\ARC-Frame-%APP_VERSION%-full.zip'" 2>nul
 
 if exist "publish\ARC-Frame-%APP_VERSION%-full.zip" (
     echo   ZIP created: publish\ARC-Frame-%APP_VERSION%-full.zip

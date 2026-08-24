@@ -34,8 +34,8 @@ namespace MosquitoNetCalculator.Models
             _ => "м²"
         };
 
-        /// <summary>Unit of measurement for this item.</summary>
-        public string Unit => GetUnit(Name);
+        /// <summary>Unit of measurement for this item (custom products are per piece).</summary>
+        public string Unit => IsCustomProduct ? "шт." : GetUnit(Name);
 
         /// <summary>Display string for the full calculated quantity with unit.</summary>
         public string CalculatedValueDisplay
@@ -58,8 +58,17 @@ namespace MosquitoNetCalculator.Models
         /// <summary>Display string for effective total (with installation deduction applied)</summary>
         public string TotalDisplay => TotalWithDeduction > 0 ? Services.MoneyFormatService.Format(TotalWithDeduction) : "";
 
-        /// <summary>Display string for quantity (empty when 0, amount-only product, or optional-quantity product with default quantity)</summary>
-        public string QuantityDisplay => Quantity > 0 && !IsAmountOnly && !(IsQuantityOptional && Quantity <= 1) ? Quantity.ToString("G") : "";
+        /// <summary>
+        /// Display string for quantity. Empty when quantity is 0 or the row is
+        /// amount-only. Catalog optional-quantity products (Материал) hide the
+        /// default qty (<= 1); «Свой товар» rows always show an explicitly
+        /// entered quantity (0 means «не указано», anything > 0 must be visible
+        /// in the grid AND on print).
+        /// </summary>
+        public string QuantityDisplay =>
+            Quantity > 0 && !IsAmountOnly && !(IsQuantityOptional && !IsCustomProduct && Quantity <= 1)
+                ? Quantity.ToString("G")
+                : "";
 
         /// <summary>
         /// v3.44.1: internal для принудительного пересчёта из внешних сервисов
@@ -127,9 +136,20 @@ namespace MosquitoNetCalculator.Models
                     CalculatedValue = Math.Round((Width + Height) * 2 / 1000.0, 3);
                 }
             }
-            else if (Name is "Откос" or "Работа за откос" or "Работа" or "Брус" or "Пояс" or "Доставка" or "Материал")
+            else if (Name is "Откос" or "Работа за откос" or "Работа" or "Брус" or "Пояс" or "Доставка" or "Материал"
+                     || IsCustomProduct)
             {
+                // Manual sum rows: Total = Price × Qty, CalculatedValue = 1 шт.
+                // Includes «Свой товар» custom products (order-item flag, not
+                // mere catalog absence — user-added price products stay area-based).
                 CalculatedValue = 1;
+                if (IsCustomProduct && Quantity <= 0)
+                {
+                    // Qty not specified (0/empty): the row shows the manually
+                    // entered sum — Price × 1, not Price × 0.
+                    _total = Math.Round(Price, 2);
+                    totalOverridden = true;
+                }
             }
             else if (!string.IsNullOrEmpty(Name))
             {

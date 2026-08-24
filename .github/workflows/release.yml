@@ -109,8 +109,11 @@ jobs:
         run: |
           $version = "${{ steps.version.outputs.VERSION }}"
           $zipPath = "publish/ARC-Frame-$version-full.zip"
+          # x64/x86 = Tesseract native OCR libs (leptonica/tesseract50) —
+          # they are NOT embedded in the single-file exe, so the ZIP must
+          # carry them next to it or the bundled OCR fallback won't load.
           Compress-Archive -Force `
-            -Path 'publish/MosquitoNetCalculator.exe','publish/*.dll' `
+            -Path 'publish/MosquitoNetCalculator.exe','publish/*.dll','publish/tessdata','publish/x64','publish/x86' `
             -DestinationPath $zipPath
           echo "ZIP_PATH=$zipPath" >> "$env:GITHUB_OUTPUT"
           echo "ZIP_SIZE=$((Get-Item $zipPath).Length)" >> "$env:GITHUB_OUTPUT"

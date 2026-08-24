@@ -22,7 +22,7 @@ namespace MosquitoNetCalculator.ViewModels
         private string _statusText = "Готов к работе";
         private string? _ocrWarning;
         private bool _hasApiKey;
-        private string _currentModel = "google/gemma-3-27b-it:free";
+        private string _currentModel = Services.AiAssistantService.OpenRouterFreeRouter;
         private string _apiKeyStatusText = "API ключ не настроен";
         private CancellationTokenSource? _cts;
 
@@ -209,6 +209,22 @@ namespace MosquitoNetCalculator.ViewModels
         {
             var historyToSave = Messages.ToList();
             Task.Run(() => AppSettingsServiceAi.SaveChatHistory(historyToSave));
+        }
+
+        /// <summary>
+        /// Called when the user clicks «Повторить с другой моделью» on a
+        /// clarification card whose dimensions couldn't be read. Re-sends the
+        /// original user request so a different free model gets a chance to
+        /// produce a better answer — no retyping needed.
+        /// </summary>
+        public async Task RetryClarification(AiChatMessage botMsg)
+        {
+            if (IsBusy) return;
+            var text = botMsg.RetryUserText;
+            if (string.IsNullOrWhiteSpace(text)) return;
+
+            InputText = text;
+            await SendMessageAsync();
         }
 
         public void Cancel() => _cts?.Cancel();

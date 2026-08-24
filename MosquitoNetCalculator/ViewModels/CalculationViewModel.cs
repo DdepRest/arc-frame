@@ -289,6 +289,7 @@ namespace MosquitoNetCalculator.ViewModels
                     InstallationAdjustment = od.InstallationAdjustment,
                     IsActive = od.IsActive,
                     IsAnticat = od.IsAnticat,
+                    IsCustomProduct = od.IsCustomProduct,
                     SlopeData = od.SlopeData?.ToSlopeCalculation()
                 };
                 // Use SetAnwisModeQuiet — Width/Height above are already-final stored

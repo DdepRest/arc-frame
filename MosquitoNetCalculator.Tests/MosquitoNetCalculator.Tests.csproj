@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>net8.0-windows</TargetFramework>
+    <TargetFramework>net8.0-windows10.0.17763.0</TargetFramework>
     <Nullable>enable</Nullable>
     <UseWPF>true</UseWPF>
     <EnableWindowsTargeting>true</EnableWindowsTargeting>
@@ -29,6 +29,8 @@
   <ItemGroup>
     <!-- Golden offline AI regression suite (real manager phrases + recorded model responses). -->
     <None Update="AI\golden-cases.json" CopyToOutputDirectory="PreserveNewest" />
+    <!-- Fixture for the bundled-Tesseract OCR smoke test (rendered text). -->
+    <None Update="fixtures\ocr-fixture.png" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 
 </Project>

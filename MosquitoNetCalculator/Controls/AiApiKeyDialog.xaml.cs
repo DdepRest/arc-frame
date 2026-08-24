@@ -57,6 +57,9 @@ namespace MosquitoNetCalculator.Controls
         {
             InitializeComponent();
             Loaded += OnLoaded;
+            // If the dialog closes mid-test, the pulsing "…" storyboards would
+            // otherwise run forever (static registry) — stop them on close.
+            Closed += (_, _) => StopAllDotPulses();
             TxtApiKey.GotFocus += PasswordBox_GotFocus;
             TxtNvidiaKey.GotFocus += PasswordBox_GotFocus;
             // Close on Escape at any time
@@ -148,6 +151,45 @@ namespace MosquitoNetCalculator.Controls
 
                 ApplyFilter();
                 UpdateModelStatus();
+
+                // On an explicit refresh, also probe which free models actually
+                // answer right now (auto-analysis). The catalog stays complete; the
+                // status line just reports how many models passed the live check.
+                if (forceRefresh)
+                {
+                    try
+                    {
+                        TxtModelStatus.Text += " • проверка доступности…";
+                        var availability = await AiAssistantService.AnalyzeAvailableModelsAsync(
+                            models,
+                            openRouterApiKey: apiKey,
+                            nvidiaApiKey: RealPassword(TxtNvidiaKey));
+                        int ok = availability.Count(a => a.IsAvailable);
+                        TxtModelStatus.Text = TxtModelStatus.Text.Replace(
+                            " • проверка доступности…",
+                            $" • доступно {ok}/{availability.Count}");
+
+                        // Surface an exhausted/invalid key explicitly instead of a
+                        // generic "models unavailable" message.
+                        var authBlocked = availability
+                            .Where(a => !a.IsAvailable && a.StatusCode is 401 or 403)
+                            .GroupBy(a => a.Provider)
+                            .Select(g =>
+                            {
+                                var providerName = g.Key == AiProvider.Nvidia ? "NVIDIA" : "OpenRouter";
+                                var detail = g.Select(a => a.Detail)
+                                    .FirstOrDefault(d => !string.IsNullOrWhiteSpace(d)) ?? "";
+                                return $"{providerName}: {detail}";
+                            })
+                            .ToList();
+                        if (authBlocked.Count > 0)
+                            TxtModelStatus.Text += " • ⚠ " + string.Join("; ", authBlocked);
+                    }
+                    catch (Exception ex)
+                    {
+                        TxtModelStatus.Text += $" • проверка не удалась: {ex.Message}";
+                    }
+                }
             }
             catch (Exception ex)
             {
@@ -367,6 +409,13 @@ namespace MosquitoNetCalculator.Controls
                 _dotPulses.Remove(dot);
             }
             dot.Opacity = 1.0;
+        }
+
+        private static void StopAllDotPulses()
+        {
+            // StopDotPulse mutates the dictionary — iterate over a snapshot.
+            foreach (var dot in _dotPulses.Keys.ToArray())
+                StopDotPulse(dot);
         }
 
         private async void BtnRefreshModels_Click(object sender, RoutedEventArgs e)

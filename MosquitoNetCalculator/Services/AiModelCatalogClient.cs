@@ -169,6 +169,15 @@ namespace MosquitoNetCalculator.Services
                 .ToHashSet(StringComparer.OrdinalIgnoreCase);
             var saved = AppSettingsServiceAi.LoadAiFallbackModels();
             var valid = saved.Where(availableIds.Contains).ToList();
+
+            // The Free Models Router must lead the fallback list — it works even
+            // when every concrete :free slug the user had checked was retired.
+            if (!valid.Any(id => string.Equals(
+                    id, AiAssistantService.OpenRouterFreeRouter, StringComparison.OrdinalIgnoreCase)))
+            {
+                valid.Insert(0, AiAssistantService.OpenRouterFreeRouter);
+            }
+
             if (valid.Count == 0 && models.Count > 0)
                 valid.Add(models[0].Id);
             AppSettingsServiceAi.SaveAiFallbackModels(valid);

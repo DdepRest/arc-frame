@@ -75,6 +75,8 @@
     <SolidColorBrush x:Key="BadgeWarningFg" Color="#D48C00"/>
     <SolidColorBrush x:Key="BadgeDangerBg" Color="#FDE7E9"/>
     <SolidColorBrush x:Key="BadgeDangerFg" Color="#C42B1C"/>
+    <SolidColorBrush x:Key="BadgeVisionBg" Color="#F0ECFA"/>
+    <SolidColorBrush x:Key="BadgeVisionFg" Color="#7A5AF8"/>
     <SolidColorBrush x:Key="TotalText" Color="#FFFFFF"/>
     <SolidColorBrush x:Key="TotalTextMuted" Color="#A0A0A0"/>
 

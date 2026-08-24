@@ -34,6 +34,12 @@ namespace MosquitoNetCalculator.Controls
             ? "Провайдер NVIDIA"
             : "Провайдер OpenRouter";
 
+        /// <summary>True when the catalog reported the model accepts photos.</summary>
+        public bool IsVisionCapable => Model.SupportsVision == true;
+
+        /// <summary>Tooltip for the vision badge.</summary>
+        public string VisionTooltip => "Поддерживает фото (vision)";
+
         public AiModelSelectionItem(AiModelOption model, bool isSelected = false)
         {
             Model = model;

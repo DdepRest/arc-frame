@@ -85,12 +85,18 @@ namespace MosquitoNetCalculator
         private OverlayManager.OverlayEntry? _updatesEntry;
         private OverlayManager.OverlayEntry? _sidebarEntry;
         private OverlayManager.OverlayEntry? _printEntry;
+        private OverlayManager.OverlayEntry? _adminEntry;
 
         // ─── Idle/periodic update check scheduler ───────────────────────────
         // Запускается в Loaded после startup-проверки. Триггерит CheckInBackgroundAsync
         // каждые CheckInterval (30 мин) или после IdleThreshold (10 мин) простоя.
         // Activity-tracker: PreviewMouseMove + PreviewKeyDown сбрасывают idle.
         private UpdateCheckScheduler? _updateCheckScheduler;
+
+        // ─── Периодическая отправка отчёта офиса (админ-панель) ──────────────
+        // Каждые 30 мин пока программа открыта шлёт свежий отчёт в gist;
+        // если панель открыта — заодно обновляет её данные (живые статусы/статистика).
+        private OfficeReportScheduler? _officeReportScheduler;
 
         public MainWindow()
         {
@@ -332,6 +338,7 @@ namespace MosquitoNetCalculator
                 ThemeService.ThemeChanged -= OnThemeChanged;
                 ThemeService.ThemeChanged -= ApplyMicaTitleBar;
                 _updateCheckScheduler?.Stop();
+                _officeReportScheduler?.Stop();
                 _navBadgeTimer?.Stop();
                 _navService?.Shutdown();
                 DetachAiAssistant();
@@ -377,9 +384,10 @@ namespace MosquitoNetCalculator
             _updatesEntry  = new OverlayManager.OverlayEntry(UpdatesOverlay,  UpdatesPanel,  UpdatesBackdrop,  UpdatesSlideTransform);
             _sidebarEntry  = new OverlayManager.OverlayEntry(SidebarOverlay,  SidebarPanel,  SidebarBackdrop,  SidebarSlideTransform);
             _printEntry    = new OverlayManager.OverlayEntry(PrintOverlay,    PrintPanel,    PrintBackdrop,    PrintSlideTransform);
+            _adminEntry    = new OverlayManager.OverlayEntry(AdminOverlay,    AdminPanel,    AdminBackdrop,    AdminSlideTransform);
             var slopeEntry = new OverlayManager.OverlayEntry(SlopeOverlay,    SlopePanel,    SlopeBackdrop,    SlopeSlideTransform);
 
-            var allOverlays = new[] { _ordersEntry, _pricesEntry, _updatesEntry, _sidebarEntry, slopeEntry, _printEntry };
+            var allOverlays = new[] { _ordersEntry, _pricesEntry, _updatesEntry, _sidebarEntry, slopeEntry, _printEntry, _adminEntry };
 
             _overlayManager = new OverlayManager(
                 allOverlays,
@@ -398,6 +406,8 @@ namespace MosquitoNetCalculator
         /// <summary>
         /// Called by OverlayManager.CloseAll before closing overlays.
         /// Saves print settings if PrintOverlay is visible.
+        /// Stops the admin-panel auto-refresh timer so it doesn't keep firing
+        /// after the panel is hidden.
         /// </summary>
         private void OnBeforeClosePrint()
         {
@@ -407,6 +417,9 @@ namespace MosquitoNetCalculator
                 LastPrintSettings = PrintPreviewControl.GetSettings();
             }
             PrintPreviewControl.Closed -= OnPrintPreviewClosed;
+
+            if (AdminOverlay.Visibility == Visibility.Visible)
+                AdminPanelControl.StopAutoRefresh();
         }
 
         private void MainWindow_Loaded(object sender, RoutedEventArgs e)
@@ -414,6 +427,26 @@ namespace MosquitoNetCalculator
             RefreshOrdersList();
             RecalculatePriceGridColumnWidths();
             _initialLoadDone = true;
+
+            // ── Тихий отчёт офиса в gist (админ-панель) ────────────
+            // Fire-and-forget: при любой ошибке просто молчим, старт не блокируем.
+            // Если токен не настроен — SendReportAsync сам вернёт false без действий.
+            _ = OfficeReportService.SendReportAsync();
+
+            // ── Периодическая отправка (живые статусы/статистика весь день) ──
+            _officeReportScheduler = new OfficeReportScheduler
+            {
+                // Панель открыта → RefreshAsync сам отправляет отчёт и обновляет
+                // данные; панель закрыта → шлём отчёт отдельно.
+                OnSendDue = async () =>
+                {
+                    if (AdminOverlay.Visibility == Visibility.Visible)
+                        await AdminPanelControl.RefreshInBackgroundAsync();
+                    else
+                        await OfficeReportService.SendReportAsync();
+                },
+            };
+            _officeReportScheduler.Start();
 
             // ── Запуск фонового планировщика проверок обновлений ────────
             // Создаём здесь (а не в ctor) — нам нужен реальный Window owner
@@ -424,6 +457,9 @@ namespace MosquitoNetCalculator
             _updateCheckScheduler = new UpdateCheckScheduler
             {
                 ShouldSkipCheck = () => UpdateService.IsChecking || UpdateService.IsDownloading,
+                // Отчёт офиса НЕ привязываем к фоновым 30-мин проверкам обновлений:
+                // считка идёт при запуске программы + раз в 2 ч (OfficeReportScheduler),
+                // а при ручной «Проверить обновления» отчёт шлёт TitleBarControl.
                 OnCheckDue = () => UpdateService.CheckInBackgroundAsync(),
                 GetSystemIdleTime = () => UpdateService.GetIdleTime(),
             };
@@ -537,6 +573,16 @@ namespace MosquitoNetCalculator
                 case "Updates":
                     _overlayManager!.Toggle(_updatesEntry!, "Updates");
                     break;
+                case "Admin":
+                    // Панель видна всем офисам, но вход — только по вшитому паролю.
+                    // Сам диалог AdminPasswordWindow проверяет пароль через
+                    // AppSettingsService.VerifyAdminPassword и при неверном — оставляет
+                    // окно открытым, показывая inline-ошибку. DialogResult=true = только
+                    // при верном пароле.
+                    var enterDialog = new AdminPasswordWindow { Owner = this };
+                    if (enterDialog.ShowDialog() == true)
+                        ShowAdminPanel();
+                    break;
                 case "Slope":
                     if (SlopeOverlay.Visibility == Visibility.Visible)
                         CloseAllOverlays();
@@ -550,6 +596,19 @@ namespace MosquitoNetCalculator
                         ShowPrintOverlay();
                     break;
             }
+        }
+
+        /// <summary>
+        /// Открывает оверлей админ-панели (после успешного ввода пароля —
+        /// вызов из меню настроек TitleBar) и запускает обновление данных:
+        /// отчёты офисов + последняя версия.
+        /// </summary>
+        internal void ShowAdminPanel()
+        {
+            _overlayManager!.Show(_adminEntry!, "Admin");
+            // StartAsync: первый рефреш + авто-таймер каждые 60 сек (пока панель открыта).
+            // CloseAll вызывает OnBeforeClosePrint, который останавливает таймер.
+            _ = AdminPanelControl.StartAsync();
         }
 
         // Keyboard shortcut handlers (Ctrl+1..5)

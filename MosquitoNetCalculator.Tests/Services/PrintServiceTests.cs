@@ -572,6 +572,15 @@ namespace MosquitoNetCalculator.Tests.Services
             Assert.Equal("10\u00A0000", result);
         }
 
+        [Fact]
+        public void FormatIntWithNbsp_Zero_ReturnsEmptyCell()
+        {
+            // «Свой товар» with empty dimensions (0×0) must print an EMPTY
+            // cell, never "0" — matches the on-screen converter.
+            Assert.Equal("", InvokeFormatIntWithNbsp(0));
+            Assert.Equal("", InvokeFormatIntWithNbsp(-5));
+        }
+
         // Access private static FormatIntWithNbsp via reflection
         private static string InvokeFormatIntWithNbsp(double value)
         {

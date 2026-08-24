@@ -25,10 +25,11 @@ namespace MosquitoNetCalculator.Services
         {
             public string ApiKey { get; set; } = "";
             public string NvidiaApiKey { get; set; } = "";
-            public string Model { get; set; } = "google/gemma-3-27b-it:free";
+            public string Model { get; set; } = AiAssistantService.OpenRouterFreeRouter;
             public List<string> FallbackModels { get; set; } = new();
             public List<AiModelOption> CachedModels { get; set; } = new();
             public DateTime? CachedModelsAt { get; set; }
+            public List<AiModelAvailability> ModelAvailability { get; set; } = new();
             public List<AiChatMessage> ChatHistory { get; set; } = new();
             public bool AutoSelectModel { get; set; } = true;
         }
@@ -128,7 +129,7 @@ namespace MosquitoNetCalculator.Services
             lock (SettingsLock)
             {
                 var settings = LoadAiSettingsCore();
-                settings.Model = model?.Trim() ?? "google/gemma-3-27b-it:free";
+                settings.Model = model?.Trim() ?? AiAssistantService.OpenRouterFreeRouter;
                 SaveAiSettingsCore(settings);
             }
         }
@@ -145,7 +146,7 @@ namespace MosquitoNetCalculator.Services
                 if (settings.FallbackModels == null || settings.FallbackModels.Count == 0)
                 {
                     var single = string.IsNullOrWhiteSpace(settings.Model)
-                        ? "google/gemma-3-27b-it:free"
+                        ? AiAssistantService.OpenRouterFreeRouter
                         : settings.Model;
                     return new List<string> { single };
                 }
@@ -169,7 +170,7 @@ namespace MosquitoNetCalculator.Services
                     .ToList() ?? new List<string>();
 
                 settings.Model = settings.FallbackModels.FirstOrDefault()
-                    ?? "google/gemma-3-27b-it:free";
+                    ?? AiAssistantService.OpenRouterFreeRouter;
 
                 SaveAiSettingsCore(settings);
             }
@@ -203,6 +204,37 @@ namespace MosquitoNetCalculator.Services
                     .DistinctBy(m => m.Id)
                     .ToList() ?? new List<AiModelOption>();
                 settings.CachedModelsAt = cachedAt;
+                SaveAiSettingsCore(settings);
+            }
+        }
+
+        /// <summary>
+        /// Loads the persisted model availability probe results.
+        /// </summary>
+        public static IReadOnlyList<AiModelAvailability> LoadModelAvailability()
+        {
+            lock (SettingsLock)
+            {
+                return (LoadAiSettingsCore().ModelAvailability
+                        ?? new List<AiModelAvailability>())
+                    .AsReadOnly();
+            }
+        }
+
+        /// <summary>
+        /// Persists model availability probe results, keeping the latest entry
+        /// per model id.
+        /// </summary>
+        public static void SaveModelAvailability(IEnumerable<AiModelAvailability>? items)
+        {
+            lock (SettingsLock)
+            {
+                var settings = LoadAiSettingsCore();
+                settings.ModelAvailability = items?
+                    .Where(a => !string.IsNullOrWhiteSpace(a.Id))
+                    .GroupBy(a => a.Id, StringComparer.OrdinalIgnoreCase)
+                    .Select(g => g.OrderByDescending(a => a.CheckedAt ?? DateTime.MinValue).First())
+                    .ToList() ?? new List<AiModelAvailability>();
                 SaveAiSettingsCore(settings);
             }
         }

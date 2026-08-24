@@ -23,9 +23,13 @@ namespace MosquitoNetCalculator.Models
     /// </summary>
     public sealed class AiClarificationForm : INotifyPropertyChanged
     {
-        /// <summary>All catalog product names in the UX order (Сетки → Доборы → …).</summary>
+        /// <summary>Custom product entry shown at the end of the type dropdown.</summary>
+        public const string CustomProductType = "Свой товар";
+
+        /// <summary>All catalog product names in the UX order (Сетки → Доборы → …), plus custom.</summary>
         public static IReadOnlyList<string> AllProductTypes { get; } =
-            ProductCatalog.UserGroups.SelectMany(g => g.Products).ToList();
+            ProductCatalog.UserGroups.SelectMany(g => g.Products)
+                .Append(CustomProductType).ToList();
         /// <summary>Anwis mode labels in enum order (ББ 60 … Габарит).</summary>
         public static IReadOnlyList<string> AllAnwisModes { get; } =
             new[] { "ББ 60", "ББ 70", "ПП", "Проём", "Габарит" };
@@ -52,6 +56,7 @@ namespace MosquitoNetCalculator.Models
         private string _widthText = string.Empty;
         private string _heightText = string.Empty;
         private string _quantityText = "1";
+        private string _customNameText = string.Empty;
 
         // Dimension / quantity / leading-number regexes moved to
         // AiKeywordLexicon (the single source of truth for AI keyword
@@ -100,9 +105,11 @@ namespace MosquitoNetCalculator.Models
                 OnPropertyChanged(nameof(IsAnwis));
                 OnPropertyChanged(nameof(ShowColor));
                 OnPropertyChanged(nameof(ShowInstallation));
+                OnPropertyChanged(nameof(IsCustom));
+                OnPropertyChanged(nameof(ShowCustomName));
                 OnPropertyChanged(nameof(Colors));
                 // Reset color to the first one available for the new product.
-                if (Colors.Count > 0 && !Colors.Contains(SelectedColor))
+                if (!IsCustom && Colors.Count > 0 && !Colors.Contains(SelectedColor))
                     SelectedColor = Colors[0];
             }
         }
@@ -143,14 +150,35 @@ namespace MosquitoNetCalculator.Models
             set { _quantityText = value; OnPropertyChanged(); }
         }
 
+        /// <summary>Custom product name entered by the user (only visible when IsCustom).</summary>
+        public string CustomNameText
+        {
+            get => _customNameText;
+            set { _customNameText = value; OnPropertyChanged(); }
+        }
+
+        /// <summary>True when the user selected «Свой товар» — a free-form manual entry.</summary>
+        public bool IsCustom => SelectedType == CustomProductType;
+
+        /// <summary>True when the custom name field should be visible.</summary>
+        public bool ShowCustomName => IsCustom;
+
         /// <summary>True when the selected product uses Anwis size modes (only «Anwis»).</summary>
         public bool IsAnwis => AnwisSizeService.IsApplicable(SelectedType);
 
-        /// <summary>True when the product has a color choice.</summary>
-        public bool ShowColor => !ProductCatalog.IsNoColor(SelectedType) && Colors.Count > 0;
+        /// <summary>True when the product has a color choice. Custom products never show colors.</summary>
+        public bool ShowColor => !IsCustom && !ProductCatalog.IsNoColor(SelectedType) && Colors.Count > 0;
 
-        /// <summary>True when the product supports the installation toggle.</summary>
-        public bool ShowInstallation => ProductCatalog.IsInstallationApplicable(SelectedType);
+        /// <summary>True when the product supports the installation toggle. Custom products always support it.</summary>
+        public bool ShowInstallation => IsCustom || ProductCatalog.IsInstallationApplicable(SelectedType);
+
+        /// <summary>
+        /// True when both width and height are empty — the OCR couldn't read
+        /// dimensions from the photo. The UI shows a «Повторить с другой моделью»
+        /// button so the user can try a different free model without retyping.
+        /// </summary>
+        public bool HasEmptyDimensions =>
+            string.IsNullOrWhiteSpace(WidthText) && string.IsNullOrWhiteSpace(HeightText);
 
         /// <summary>
         /// Filters the catalog to the product family the user asked for:
@@ -196,6 +224,9 @@ namespace MosquitoNetCalculator.Models
                 matched.Add("Материал");
 
             if (matched.Count == 0) return AllProductTypes;
+
+            // Always keep «Свой товар» as the last option.
+            matched.Add(CustomProductType);
 
             // Dedupe preserving the catalog order (Сетки → Доборы → …).
             return AllProductTypes.Where(matched.Contains).ToList();
@@ -366,7 +397,7 @@ namespace MosquitoNetCalculator.Models
                 var p = c.Params;
                 if (AnwisSizeService.IsApplicable(p.Type) && !AnwisModeSpecified(userRequest))
                     return true;
-                if (!ProductCatalog.IsManualPiece(p.Type) && (p.Width <= 0 || p.Height <= 0))
+                if (!p.IsCustomProduct && !ProductCatalog.IsManualPiece(p.Type) && (p.Width <= 0 || p.Height <= 0))
                     return true;
                 // Монтаж is price-affecting and must never be silently defaulted
                 // («Без монтажа» for Отлив/Козырёк, «Монтаж включён» for Anwis):
@@ -391,6 +422,47 @@ namespace MosquitoNetCalculator.Models
             {
                 error = "⚠ Выберите тип товара.";
                 return false;
+            }
+
+            // Custom products require a name, but dimensions are optional.
+            if (IsCustom)
+            {
+                if (string.IsNullOrWhiteSpace(CustomNameText))
+                {
+                    error = "⚠ Укажите название своего товара.";
+                    return false;
+                }
+                // Dimensions are OPTIONAL for custom products — parse what's given;
+                // empty cells stay empty (0), never substituted with 1×1.
+                TryParsePositiveInt(WidthText, out int customWidth);
+                TryParsePositiveInt(HeightText, out int customHeight);
+                // Quantity is OPTIONAL for «Свой товар»: empty → 0 → the row shows
+                // the manually-entered sum (Price). Only an INVALID number blocks.
+                double customQty = 0;
+                if (!string.IsNullOrWhiteSpace(QuantityText)
+                    && !TryParseQuantity(QuantityText, out customQty))
+                {
+                    error = "⚠ Количество должно быть положительным числом.";
+                    return false;
+                }
+                var customInstallation = ShowInstallation ? ParseInstallation(SelectedInstallation) : -1;
+                command = new AiCommand
+                {
+                    Type = AiCommandType.AddItem,
+                    Params = new AiCommandParams
+                    {
+                        Type = CustomNameText, // use the free-form name as the item type
+                        Color = "",
+                        Width = customWidth,
+                        Height = customHeight,
+                        Quantity = customQty,
+                        Price = 0, // price is entered manually in the order grid
+                        AnwisMode = AnwisSizeMode.Брусбокс60,
+                        InstallationMode = customInstallation,
+                        IsCustomProduct = true
+                    }
+                };
+                return true;
             }
 
             if (!TryParsePositiveInt(WidthText, out int width) || !TryParsePositiveInt(HeightText, out int height))
@@ -440,6 +512,23 @@ namespace MosquitoNetCalculator.Models
         /// <summary>Short user-visible summary of the chosen parameters.</summary>
         public string BuildSummaryText()
         {
+            if (IsCustom)
+            {
+                var cparts = new List<string> { CustomNameText };
+                if (!string.IsNullOrWhiteSpace(WidthText) || !string.IsNullOrWhiteSpace(HeightText))
+                    cparts.Add($"{WidthText}×{HeightText} мм");
+                if (TryParseQuantity(QuantityText, out var cqty) && cqty != 1)
+                    cparts.Add(FormatQuantity(cqty) + " шт.");
+                cparts.Add(SelectedInstallation switch
+                {
+                    "С монтажом" => "с монтажом",
+                    "Без монтажа" => "без монтажа",
+                    "В конструкцию" => "в конструкцию",
+                    _ => ""
+                });
+                return "Добавить: " + string.Join(", ", cparts.Where(p => p.Length > 0));
+            }
+
             var parts = new List<string> { SelectedType };
             if (ShowColor && !string.IsNullOrWhiteSpace(SelectedColor))
                 parts.Add(SelectedColor);

@@ -391,6 +391,9 @@ namespace MosquitoNetCalculator.Services
 
         private static string FormatIntWithNbsp(double value)
         {
+            // «Свой товар» with empty dimensions (0) must print as an empty
+            // cell — never "0". Same treatment as the on-screen converter.
+            if (value <= 0) return "";
             long v = (long)value;
             return v >= 10_000
                 ? v.ToString("N0", IntWithNbsp)

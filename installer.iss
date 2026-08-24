@@ -76,6 +76,12 @@ Source: "publish\MosquitoNetCalculator.exe"; DestDir: "{app}"; Flags: ignorevers
 Source: "publish\*.dll"; DestDir: "{app}"; Flags: ignoreversion
 Source: "publish\app_icon.ico"; DestDir: "{app}"; Flags: ignoreversion
 Source: "publish\runtimes\*"; DestDir: "{app}\runtimes"; Flags: ignoreversion recursesubdirs createallsubdirs
+; Bundled OCR data (Tesseract fallback engine) — must ship next to the exe.
+Source: "publish\tessdata\*"; DestDir: "{app}\tessdata"; Flags: ignoreversion recursesubdirs createallsubdirs
+; Tesseract native OCR libs (leptonica/tesseract50) — single-file publish
+; does NOT embed them, so the installer must place x64/x86 next to the exe.
+Source: "publish\x64\*"; DestDir: "{app}\x64"; Flags: ignoreversion recursesubdirs createallsubdirs
+Source: "publish\x86\*"; DestDir: "{app}\x86"; Flags: ignoreversion recursesubdirs createallsubdirs
 
 [Icons]
 Name: "{group}\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"; IconFilename: "{app}\app_icon.ico"; WorkingDir: "{app}"

@@ -214,6 +214,37 @@ namespace MosquitoNetCalculator.Tests.Services
             Assert.Equal(expected, m.Groups[1].Value);
         }
 
+        [Theory]
+        [InlineData("ПМС Anwis, бел. 1 3711217", "371", "1217", "ПМС Anwis, бел. 1 371×1217")]
+        [InlineData("ПМС Anwis, бел. 1 371 1217", "371", "1217", "ПМС Anwis, бел. 1 371×1217")]
+        [InlineData("3711217", "371", "1217", "371×1217")]
+        [InlineData("ПМС Anwis, бел. 1 371x1217", "371", "1217", "ПМС Anwis, бел. 1 371x1217")] // уже разделено
+        [InlineData("400x1500", "1500", "400", "400x1500")] // перевёрнутая пара не совпадает → не трогаем
+        [InlineData("Anwis 700×1400", "371", "1217", "Anwis 700×1400")] // чужая пара
+        [InlineData("", "371", "1217", "")]
+        [InlineData("   ", "371", "1217", "   ")]
+        public void NormalizeCompactDimension_OnlyReplacesWhenPairMatches(
+            string? text, string width, string height, string? expected)
+        {
+            Assert.Equal(expected, AiKeywordLexicon.NormalizeCompactDimension(text, width, height));
+        }
+
+        [Theory]
+        [InlineData("ПМС Anwis, бел. 1 3711217", true)]
+        [InlineData("ПМС Anwis 3711217", true)]
+        [InlineData("79991234567", true)]
+        [InlineData("ПМС Anwis, бел. 1 371×1217", false)] // явный разделитель есть
+        [InlineData("ПМС Anwis 371x1217", false)]
+        [InlineData("ПМС Anwis, бел.", false)]
+        [InlineData("", false)]
+        [InlineData("   ", false)]
+        [InlineData(null, false)]
+        public void ShouldHideOcrFromBubble_GluedDigitsWithoutSeparator_ReturnsTrue(
+            string? text, bool expected)
+        {
+            Assert.Equal(expected, AiKeywordLexicon.ShouldHideOcrFromBubble(text));
+        }
+
         [Fact]
         public void LeadingNumberRegex_CapturesTrailingNumber()
         {

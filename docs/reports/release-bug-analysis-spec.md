@@ -24,7 +24,7 @@
 
 ### 2.2. Подходы (все применяются)
 
-1. **Code review** — систематический обход известных опасных мест (`docs/arc/GOTCHAS.md`) + аудит нового/изменённого кода с момента v3.37.0.
+1. **Code review** — систематический обход известных опасных мест (`agents/docs/GOTCHAS.md`) + аудит нового/изменённого кода с момента v3.37.0.
 2. **Ручное функциональное тестирование** — пошаговая проверка UI и расчётов по сценариям использования.
 3. **Статический анализ** — проверка на dead code, неиспользуемые using'и, подозрительные паттерны, утечки событий, race conditions.
 4. **Документарный аудит A.R.C.** — актуальность `CURRENT_STATE.md`, синхронизация `CHANGELOG.md` ↔ `update-log.json`, версия в `.csproj`, консистентность `releases.json`.
@@ -96,7 +96,7 @@
 
 ## 4. Документарный аудит A.R.C.
 
-> **Решено в интервью:** Документация = часть качества релиза. Проверить все `docs/arc` файлы.
+> **Решено в интервью:** Документация = часть качества релиза. Проверить все `agents/docs` файлы.
 
 **Что проверить:**
 - `CURRENT_STATE.md` — актуальная версия (должна быть 3.37.2), статус последних изменений, открытые вопросы.
@@ -213,9 +213,9 @@
 - `MosquitoNetCalculator/Services/PriceService.cs` — миграции, DefaultPrices
 - `MosquitoNetCalculator/Services/OrderStorageService.cs` — сохранение/загрузка
 - `MosquitoNetCalculator/Themes/CardStyles.xaml` — эталонные стили карточек
-- `docs/arc/GOTCHAS.md` — все 15 грабель
-- `docs/arc/CALCULATION_TEST_CASES.md` — эталонные кейсы 1–16
-- `docs/arc/CURRENT_STATE.md` — текущее состояние
+- `agents/docs/GOTCHAS.md` — все 15 грабель
+- `agents/docs/CALCULATION_TEST_CASES.md` — эталонные кейсы 1–16
+- `agents/docs/CURRENT_STATE.md` — текущее состояние
 - `CHANGELOG.md` — история изменений
 - `TESTING_CHECKLIST.md` — ручной чек-лист (требует обновления)
 - `releases.json` — манифест релизов

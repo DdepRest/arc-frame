@@ -141,7 +141,13 @@
                     <ComboBox x:Name="CmbQuickType" Style="{DynamicResource QuickCombo}"
                               SelectionChanged="CmbQuickType_SelectionChanged"/>
                 </StackPanel>
-                <StackPanel Grid.Row="1" Grid.Column="2">
+                <!-- Custom name box — visible only when «Свой товар» is selected -->
+                <StackPanel Grid.Row="1" Grid.Column="2" x:Name="PanelCustomName" Visibility="Collapsed">
+                    <TextBlock Text="Название" Style="{DynamicResource FieldLabel}"/>
+                    <TextBox x:Name="TxtCustomName" Style="{DynamicResource QuickInput}"
+                             HorizontalContentAlignment="Left"/>
+                </StackPanel>
+                <StackPanel Grid.Row="1" Grid.Column="2" x:Name="PanelColor">
                     <TextBlock Text="Цвет" Style="{DynamicResource FieldLabel}"/>
                     <ComboBox x:Name="CmbQuickColor" Style="{DynamicResource QuickCombo}"
                               SelectionChanged="CmbQuickColor_SelectionChanged"/>
@@ -168,6 +174,7 @@
                     <TextBlock Text="Кол-во" Style="{DynamicResource FieldLabel}"/>
                     <TextBox x:Name="TxtQuickQty" Text="1" Style="{DynamicResource QuickInput}"
                              TextChanged="QuickField_TextChanged"
+                             KeyDown="QuickField_KeyDown"
                              GotFocus="SelectAll_OnFocus"
                              LostFocus="QuickField_LostFocus"
                              HorizontalContentAlignment="Right"/>
@@ -176,6 +183,7 @@
                     <TextBlock Text="Цена, руб." Style="{DynamicResource FieldLabel}"/>
                     <TextBox x:Name="TxtQuickPrice" Style="{DynamicResource QuickInput}"
                              TextChanged="QuickField_TextChanged"
+                             KeyDown="QuickField_KeyDown"
                              LostFocus="TxtQuickPrice_LostFocus"
                              GotFocus="SelectAll_OnFocus"
                              HorizontalContentAlignment="Right"/>

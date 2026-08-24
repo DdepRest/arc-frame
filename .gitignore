@@ -7,6 +7,8 @@ obj/
 *.sln.docstates
 *.userprefs
 publish/
+artifacts/
+validation-obj/
 
 ## Inno Setup installer output
 Output/
@@ -49,3 +51,13 @@ appsettings.Development.json
 settings.local.json
 prices.local.json
 prices-bak.json
+
+## Office-report gist token (админ-панель) — подставляется в сборку локально,
+## в git не попадает. Альтернатива: env var OFFICE_REPORT_TOKEN.
+.office-report-token
+
+## archive/ — корзина мусора (разбор владельцем; агентам не заходить, CHEATSHEET #22)
+archive/
+
+## Freebuff agent workspace (per-thread git worktrees — never commit)
+.freebuff/

@@ -89,8 +89,9 @@ namespace MosquitoNetCalculator.Services
             var p = c.Params;
             var parts = new List<string> { p.Type };
             if (!string.IsNullOrWhiteSpace(p.Color)) parts.Add(p.Color);
-            bool needsSizes = !ProductCatalog.IsManualPiece(p.Type);
-            if (needsSizes)
+            bool needsSizes = !ProductCatalog.IsManualPiece(p.Type) && !p.IsCustomProduct;
+            // «Свой товар»: only show sizes the user actually entered.
+            if (needsSizes && p.Width > 0 && p.Height > 0)
                 parts.Add($"{p.Width}×{p.Height} мм");
             parts.Add($"{FormatQty(p.Quantity)} шт.");
             if (ProductCatalog.IsAreaBased(p.Type) && needsSizes)

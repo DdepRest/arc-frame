@@ -1,3 +1,4 @@
+using System;
 using MosquitoNetCalculator.Models;
 using MosquitoNetCalculator.Services;
 using Xunit;
@@ -48,6 +49,37 @@ namespace MosquitoNetCalculator.Tests.Services
             Assert.Null(response.Plan);
             Assert.Null(response.Action);
             Assert.Contains("3900", response.Reply);
+        }
+
+        [Fact]
+        public void PlanMode_Clarification_SetsResponseMode()
+        {
+            var content = """{"mode":"clarification","reply":"Какой режим Anwis использовать? ББ60, ББ70, ПП, Проём или Габарит?"}""";
+
+            var (response, isValid) = AiCommandParser.TryParse(content, "Добавь сетку Anwis 739×1116");
+
+            Assert.True(isValid);
+            Assert.Null(response.Plan);
+            Assert.Null(response.Action);
+            Assert.Equal(AiPlanMode.Clarification, response.Mode);
+            Assert.Contains("Какой режим", response.Reply);
+        }
+
+        [Fact]
+        public void PlanMode_AddItemWithoutMode_SetsClarificationMode()
+        {
+            // The model produced an add_item for Anwis but omitted the mode —
+            // the parser answers with the validation override and must mark it
+            // as clarification so the UI attaches the parameter form.
+            var content = """{"mode":"plan","steps":[{"action":"add_item","params":{"type":"Anwis","color":"Белый","width":739,"height":1116,"quantity":4}}]}""";
+
+            var (response, isValid) = AiCommandParser.TryParse(content, "Добавь сетку Anwis белый 739×1116 4 шт");
+
+            Assert.True(isValid);
+            Assert.Null(response.Plan);
+            Assert.Null(response.Action);
+            Assert.Equal(AiPlanMode.Clarification, response.Mode);
+            Assert.Contains("укажите режим", response.Reply, StringComparison.OrdinalIgnoreCase);
         }
 
         [Fact]

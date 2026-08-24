@@ -96,11 +96,13 @@
 | Изменить AI-действия (план→подтверждение→выполнение) | `Models/AiActionPlan.cs`, `Services/AiPlanBuilder.cs`, `AiPlanValidator.cs`, `AiPlanExecutor.cs`, `AiCommandParser.cs` |
 | Изменить slash-команды AI (без LLM) | `Services/AiLocalCommandRouter.cs` (команды: /товары /цены /итоги /статус /объясни и др.) |
 | Изменить выбор модели AI | `Services/AiModelSelector.cs`, `Models/AiModelOption.cs`, `Controls/AiApiKeyDialog.*` |
+| Изменить список/доступность моделей (каталоги, free-фильтр, автоанализ) | `Services/AiAssistantService.cs` (FetchAvailableModelsAsync/IsGeneralChatModel/IsChatModel/AnalyzeAvailableModelsAsync/ProbeModelAsync), `Models/AiModelAvailability.cs`, `Services/AppSettingsService.Ai.cs` (SaveModelAvailability/LoadModelAvailability) |
 | Изменить контекст заказа для LLM | `Services/AiOrderContextBuilder.cs`, `Models/AiOrderContext.cs`, `Models/AiCalculationExplanationContext.cs` |
 | Изменить карточку уточнения параметров | `Models/AiClarificationForm.cs`, `AiAssistantControl.xaml` (XAML-карточка), `AiAssistantViewModel.SubmitClarificationForm` |
 | Изменить телеметрию AI | `Models/AiRequestMetrics.cs`, `Services/AiTelemetryService.cs` |
 | AI-регрессии (релиз) | `agents/scripts/what-to-update.ps1 -RunAiTests`; фильтр `AiGoldenCase|AiPlan|AiTelemetry` → CHEATSHEET#17b |
-| AI overlay (плашка «В РАЗРАБОТКЕ») | `tools/dev/insert-ai-overlay.ps1`, `tools/dev/insert_ai_overlay.py`, `MainWindow.AI.cs` (ToggleAiOverlay) |
+| Открыть/закрыть AI-панель (overlay) | `MainWindow.AI.cs` (ToggleAiOverlay/OpenAiAssistant/CloseAiAssistant), `MainWindow.xaml` (AiOverlay) |
+| Прикрепить/отправить картинку в AI | `Controls/AiAssistantControl.xaml(.cs)` (BtnAttach), `Models/AiImageAttachment.cs`, `ViewModels/AiAssistantViewModel.cs` (Attachments), `Services/AiAssistantService.cs` (image_url-части) |
 
 ## A.R.C. / автодокументирование
 

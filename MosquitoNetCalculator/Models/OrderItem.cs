@@ -68,8 +68,11 @@ namespace MosquitoNetCalculator.Models
         /// True for products where quantity is optional and hidden in the grid
         /// when it equals the default value (1). Only the sum is shown by default;
         /// if quantity is explicitly increased, both quantity and sum are displayed.
+        /// «Свой товар» rows are always quantity-optional (see
+        /// <see cref="IsQuantityOptional"/>).
         /// </summary>
-        public bool IsQuantityOptional => ProductCatalog.IsQuantityOptional(Name);
+        public bool IsQuantityOptional =>
+            IsCustomProduct || ProductCatalog.IsQuantityOptional(Name);
 
         /// <summary>
         /// True for ManualPiece products that additionally record Width as
@@ -77,6 +80,29 @@ namespace MosquitoNetCalculator.Models
         /// still blocking Color/Height (and Total remains 1 шт. × Price × Qty).
         /// </summary>
         public bool IsWidthOnly => ProductCatalog.IsWidthOnly(Name);
+
+        /// <summary>
+        /// True when this row is a user-added «Свой товар» (custom product):
+        /// a free-form name with optional dimensions and quantity. The total is
+        /// always Price × Quantity; an empty quantity treats the manual sum
+        /// (Price) as the row total. Persisted so saved orders keep the behavior.
+        /// Set once at creation — never toggled after.
+        /// </summary>
+        public bool IsCustomProduct
+        {
+            get => _isCustomProduct;
+            internal set
+            {
+                if (_isCustomProduct != value)
+                {
+                    _isCustomProduct = value;
+                    OnPropertyChanged(nameof(IsCustomProduct));
+                    OnPropertyChanged(nameof(IsQuantityOptional));
+                    OnPropertyChanged(nameof(Unit));
+                    Recalculate();
+                }
+            }
+        }
 
         /// <summary>True for products that support the installation toggle (Anwis, На навесах).</summary>
         public bool IsInstallationApplicable => ProductCatalog.IsInstallationApplicable(Name);
@@ -103,6 +129,7 @@ namespace MosquitoNetCalculator.Models
         private bool _isAnticat;
         private SlopeCalculation? _slopeData;
         private double _defaultPrice = -1;             // -1 = не зафиксирована (первая установка через SetDefaultPrice)
+        private bool _isCustomProduct;
 
         public int RowNumber
         {
@@ -226,7 +253,10 @@ namespace MosquitoNetCalculator.Models
             get => _quantity;
             set
             {
-                var clamped = Math.Max(0.001, value);
+                // «Свой товар» rows may carry quantity 0/empty, meaning «не указано»
+                // → the row shows the manually entered sum (Price × 1). All other
+                // products keep the strict 0.001 floor.
+                var clamped = Math.Max(IsCustomProduct ? 0 : 0.001, value);
                 if (Math.Abs(_quantity - clamped) > 0.0001)
                 {
                     _quantity = clamped;
@@ -433,6 +463,7 @@ namespace MosquitoNetCalculator.Models
                 InstallationAdjustment = InstallationAdjustment,
                 IsAnticat = IsAnticat,
                 _defaultPrice = _defaultPrice,
+                _isCustomProduct = _isCustomProduct,
             };
             // v3.43.3 (review fix #1): SlopeData идёт через property setter, чтобы
             // подписаться на PropertyChanged каскад (иначе клон не будет реагировать
@@ -521,7 +552,8 @@ namespace MosquitoNetCalculator.Models
                 InstallationAdjustment = InstallationAdjustment,
                 IsActive = IsActive,
                 AnwisSizeMode = (int)AnwisSizeMode,
-                IsAnticat = IsAnticat
+                IsAnticat = IsAnticat,
+                IsCustomProduct = IsCustomProduct
             };
             if (SlopeData != null)
                 data.SlopeData = SlopeCalculationData.FromSlopeCalculation(SlopeData);

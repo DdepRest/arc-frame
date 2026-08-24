@@ -86,7 +86,12 @@ namespace MosquitoNetCalculator.Services
             // ── Base capability by model family ─────────────────
             double capability = 40; // default
 
-            if (id.Contains("gemini-2.5-pro") || name.Contains("gemini 2.5 pro"))
+            // OpenRouter's Free Models Router resolves a working free model
+            // server-side per request — always rank it first; it outlives any
+            // single :free snapshot.
+            if (string.Equals(id, "openrouter/free", StringComparison.OrdinalIgnoreCase))
+                capability = 92;
+            else if (id.Contains("gemini-2.5-pro") || name.Contains("gemini 2.5 pro"))
                 capability = 95;
             else if (id.Contains("gemini-2.5-flash") || name.Contains("gemini 2.5 flash"))
                 capability = 80;
@@ -118,8 +123,11 @@ namespace MosquitoNetCalculator.Services
             // ── Instruction-following (JSON compliance) ────────
             double instructionScore = 50;
 
-            // Gemini family is strong at structured outputs
-            if (id.Contains("gemini") || id.Contains("gemma"))
+            // The router server-side picks chat-strong free models — treat it
+            // as highly reliable for structured outputs too.
+            if (string.Equals(id, "openrouter/free", StringComparison.OrdinalIgnoreCase))
+                instructionScore = 90;
+            else if (id.Contains("gemini") || id.Contains("gemma"))
                 instructionScore = 85;
             else if (id.Contains("nemotron"))
                 instructionScore = 78;
@@ -132,7 +140,10 @@ namespace MosquitoNetCalculator.Services
 
             // ── Speed proxy (smaller = faster heuristic) ───────
             double speedScore = 50;
-            if (capability >= 85)
+            // The router resolves the model server-side; keep it responsive.
+            if (string.Equals(id, "openrouter/free", StringComparison.OrdinalIgnoreCase))
+                speedScore = 70;
+            else if (capability >= 85)
                 speedScore = 30;   // big models are slower
             else if (capability >= 75)
                 speedScore = 50;

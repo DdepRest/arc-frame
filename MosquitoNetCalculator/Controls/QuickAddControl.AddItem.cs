@@ -13,6 +13,9 @@ namespace MosquitoNetCalculator.Controls
     {
         // UX#3: Show guidance toast after first successful item addition
         private bool _firstItemAdded;
+        private static bool IsCustomProductType(string? type)
+            => type == AiClarificationForm.CustomProductType;
+
         private void CmbQuickType_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
             if (_updatingQuickCombo) return;
@@ -22,60 +25,84 @@ namespace MosquitoNetCalculator.Controls
             _updatingQuickCombo = true;
             try
             {
-                var colors = mw.PricesVM.GetColorsForProduct(type);
-                bool noColor = OrderItem.NoColorProducts.Contains(type);
-                CmbQuickColor.IsEnabled = !noColor;
-                CmbQuickColor.Items.Clear();
-                if (noColor)
+                bool isCustom = IsCustomProductType(type);
+                PanelColor.Visibility = isCustom ? Visibility.Collapsed : Visibility.Visible;
+                PanelCustomName.Visibility = isCustom ? Visibility.Visible : Visibility.Collapsed;
+
+                if (isCustom)
                 {
-                    UpdateQuickPrice(type, string.Empty, mw);
-                }
-                else if (colors.Any())
-                {
-                    foreach (var c in colors) CmbQuickColor.Items.Add(c);
-                    CmbQuickColor.SelectedIndex = 0;
-                    UpdateQuickPrice(type, colors[0], mw);
+                    // Custom product: no color, all numeric fields start EMPTY and
+                    // optional (dims, qty, price are manual). Don't let a previous
+                    // product's width/height/qty leak into the «Свой товар» row.
+                    CmbQuickColor.IsEnabled = false;
+                    CmbQuickColor.Items.Clear();
+                    TxtQuickPrice.Text = string.Empty;
+                    TxtQuickWidth.Text = string.Empty;
+                    TxtQuickHeight.Text = string.Empty;
+                    TxtQuickQty.Text = string.Empty;
+                    TxtQuickWidth.IsEnabled = true;
+                    TxtQuickHeight.IsEnabled = true;
+                    TxtQuickQty.IsEnabled = true;
+                    ToggleAnwisModePanel(false);
+                    UpdateAnticatToggleState(type, TbtnAnticat);
+                    if (string.IsNullOrWhiteSpace(TxtCustomName.Text))
+                        TxtCustomName.Focus();
                 }
                 else
                 {
-                    UpdateQuickPrice(type, string.Empty, mw);
-                }
+                    var colors = mw.PricesVM.GetColorsForProduct(type);
+                    bool noColor = OrderItem.NoColorProducts.Contains(type);
+                    CmbQuickColor.IsEnabled = !noColor;
+                    CmbQuickColor.Items.Clear();
+                    if (noColor)
+                    {
+                        UpdateQuickPrice(type, string.Empty, mw);
+                    }
+                    else if (colors.Any())
+                    {
+                        foreach (var c in colors) CmbQuickColor.Items.Add(c);
+                        CmbQuickColor.SelectedIndex = 0;
+                        UpdateQuickPrice(type, colors[0], mw);
+                    }
+                    else
+                    {
+                        UpdateQuickPrice(type, string.Empty, mw);
+                    }
 
-                bool isManualPiece = OrderItem.ManualPieceProducts.Contains(type);
-                bool isAmountOnly = OrderItem.AmountOnlyProducts.Contains(type);
-                bool isQuantityOptional = OrderItem.OptionalQuantityProducts.Contains(type);
-                bool widthEnabled = !isManualPiece || OrderItem.WidthOnlyProducts.Contains(type);
-                bool heightEnabled = !isManualPiece;
-                TxtQuickWidth.IsEnabled = widthEnabled;
-                TxtQuickHeight.IsEnabled = heightEnabled;
-                TxtQuickQty.IsEnabled = !isAmountOnly;
-                if (!widthEnabled)
-                {
-                    TxtQuickWidth.Text = string.Empty;
-                    ClearRequiredHighlight(TxtQuickWidth);
-                }
-                if (!heightEnabled)
-                {
-                    TxtQuickHeight.Text = string.Empty;
-                    ClearRequiredHighlight(TxtQuickHeight);
-                }
-                if (isAmountOnly)
-                    TxtQuickQty.Text = "1";
-                else if (isQuantityOptional && TxtQuickQty.Text == "1")
-                {
-                    // For optional-quantity products, default quantity is 1 and the user
-                    // may leave it unchanged; the grid will hide it when it equals 1.
-                    TxtQuickQty.Text = "1";
-                }
+                    bool isManualPiece = OrderItem.ManualPieceProducts.Contains(type);
+                    bool isAmountOnly = OrderItem.AmountOnlyProducts.Contains(type);
+                    bool isQuantityOptional = OrderItem.OptionalQuantityProducts.Contains(type);
+                    bool widthEnabled = !isManualPiece || OrderItem.WidthOnlyProducts.Contains(type);
+                    bool heightEnabled = !isManualPiece;
+                    TxtQuickWidth.IsEnabled = widthEnabled;
+                    TxtQuickHeight.IsEnabled = heightEnabled;
+                    TxtQuickQty.IsEnabled = !isAmountOnly;
+                    if (!widthEnabled)
+                    {
+                        TxtQuickWidth.Text = string.Empty;
+                        ClearRequiredHighlight(TxtQuickWidth);
+                    }
+                    if (!heightEnabled)
+                    {
+                        TxtQuickHeight.Text = string.Empty;
+                        ClearRequiredHighlight(TxtQuickHeight);
+                    }
+                    if (isAmountOnly)
+                        TxtQuickQty.Text = "1";
+                    else if (isQuantityOptional && TxtQuickQty.Text == "1")
+                    {
+                        TxtQuickQty.Text = "1";
+                    }
 
-                // v3.35.0: show/hide Anwis mode pill panel with animation.
-                ToggleAnwisModePanel(AnwisSizeService.IsApplicable(type));
+                    // v3.35.0: show/hide Anwis mode pill panel with animation.
+                    ToggleAnwisModePanel(AnwisSizeService.IsApplicable(type));
 
-                // Anti-cat toggle button visibility
-                UpdateAnticatToggleState(type, TbtnAnticat);
+                    // Anti-cat toggle button visibility
+                    UpdateAnticatToggleState(type, TbtnAnticat);
 
-                // Anwis mode ToolTip on the Type dropdown — 0 px of workspace.
-                UpdateAnwisModeToolTip();
+                    // Anwis mode ToolTip on the Type dropdown — 0 px of workspace.
+                    UpdateAnwisModeToolTip();
+                }
             }
             finally { _updatingQuickCombo = false; }
             HighlightRequiredIfEmpty();
@@ -133,7 +160,7 @@ namespace MosquitoNetCalculator.Controls
 
         private void TxtQuickPrice_LostFocus(object sender, RoutedEventArgs e)
         {
-            if (double.TryParse(TxtQuickPrice.Text, out double price))
+            if (TryParseQuickNumber(TxtQuickPrice.Text, out double price))
                 TxtQuickPrice.Text = MoneyFormatService.Format(price);
             // Also re-apply required-field highlight on Price
             SetRequiredHighlight(TxtQuickPrice);
@@ -152,12 +179,59 @@ namespace MosquitoNetCalculator.Controls
                 return;
             }
 
+            bool isCustom = IsCustomProductType(type);
+            if (isCustom)
+            {
+                string customName = TxtCustomName.Text.Trim();
+                if (string.IsNullOrWhiteSpace(customName))
+                {
+                    ToastService.ShowToast("Введите название своего товара.", ToastType.Info);
+                    TxtCustomName.Focus();
+                    return;
+                }
+                TryParseQuickNumber(TxtQuickWidth.Text, out double cw);
+                TryParseQuickNumber(TxtQuickHeight.Text, out double ch);
+                // Qty is OPTIONAL for «Свой товар»: empty field → 0 (no default 1),
+                // the row shows the manual sum (Price) instead of Price × 0.
+                TryParseQuickNumber(TxtQuickQty.Text, out double cqty);
+                TryParseQuickNumber(TxtQuickPrice.Text, out double cprice);
+
+                // Dimensions are OPTIONAL and left empty (0) when not entered —
+                // never substituted with 1×1. Calculation is qty × price only.
+                var item = mw.CalcVM.AddItem(customName, string.Empty, (int)cw, (int)ch, cqty, cprice, SelectedAnwisMode);
+                if (item != null)
+                {
+                    item.IsCustomProduct = true;
+                    if (cqty <= 0) item.Quantity = 0; // re-assert 0 so the flag-aware setter keeps it
+                    item.RecalculateRequested += mw.RecalculateAndUpdateTotal;
+                    mw.RecalculateAndUpdateTotal();
+                    mw.MarkDirty();
+                }
+
+                TxtCustomName.Text = string.Empty;
+                TxtQuickWidth.Text = string.Empty;
+                TxtQuickHeight.Text = string.Empty;
+                TxtQuickQty.Text = "";
+                TxtQuickPrice.Text = string.Empty;
+                CmbQuickType.Focus();
+                UpdateQuickPreview();
+
+                if (!_firstItemAdded && mw.OrderItems.Count >= 1)
+                {
+                    _firstItemAdded = true;
+                    ToastService.ShowToast("\u2705  Отлично! Заполните данные заказчика (кнопка \u00ABЗаказчик\u00BB) и нажмите Сохранить (Ctrl+S)", ToastType.Success, durationMs: 5000);
+                }
+                _ = AnimateAddSuccess();
+                return;
+            }
+
             string? color = CmbQuickColor.SelectedItem as string;
-            int.TryParse(TxtQuickWidth.Text, out int width);
-            int.TryParse(TxtQuickHeight.Text, out int height);
-            int.TryParse(TxtQuickQty.Text, out int qty);
+            TryParseQuickNumber(TxtQuickWidth.Text, out double width);
+            TryParseQuickNumber(TxtQuickHeight.Text, out double height);
+            double qty;
+            TryParseQuickNumber(TxtQuickQty.Text, out qty);
             if (qty <= 0) qty = 1;
-            double.TryParse(TxtQuickPrice.Text, out double price);
+            TryParseQuickNumber(TxtQuickPrice.Text, out double price);
 
             if (!OrderItem.ManualPieceProducts.Contains(type))
             {
@@ -175,20 +249,20 @@ namespace MosquitoNetCalculator.Controls
                 return;
             }
 
-            var item = mw.CalcVM.AddItem(type, color ?? string.Empty, width, height, qty, price, SelectedAnwisMode);
-            if (item != null)
+            var item2 = mw.CalcVM.AddItem(type, color ?? string.Empty, (int)width, (int)height, qty, price, SelectedAnwisMode);
+            if (item2 != null)
             {
                 bool isAnticatApplicable = OrderItem.AnticatApplicableProducts.Contains(type);
-                item.IsAnticat = isAnticatApplicable && TbtnAnticat.IsChecked == true;
+                item2.IsAnticat = isAnticatApplicable && TbtnAnticat.IsChecked == true;
 
                 // Record the catalog price (with surcharge if applicable) so
                 // IsPriceOverridden can detect manual edits correctly.
                 double defaultPrice = mw.PricesVM.GetPrice(type, color ?? string.Empty);
-                if (item.IsAnticat)
+                if (item2.IsAnticat)
                     defaultPrice += OrderItem.AnticatSurcharge;
-                item.SetDefaultPrice(defaultPrice);
+                item2.SetDefaultPrice(defaultPrice);
 
-                item.RecalculateRequested += mw.RecalculateAndUpdateTotal;
+                item2.RecalculateRequested += mw.RecalculateAndUpdateTotal;
                 mw.RecalculateAndUpdateTotal();
                 mw.MarkDirty();
             }

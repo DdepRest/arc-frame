@@ -99,8 +99,10 @@ namespace MosquitoNetCalculator.Services
             => string.Equals(productName, "Anwis", StringComparison.OrdinalIgnoreCase);
 
         /// <summary>
-        /// Возвращает значение AnwisSizeMode по умолчанию для новых позиций Anwis.
+        /// Режим Anwis по умолчанию для новых позиций: ПП (Профипласт).
+        /// Используется как начальный выбор в QuickAdd и при сбросе режима
+        /// (StartNewOrder / OpenSelectedOrder).
         /// </summary>
-        public const AnwisSizeMode DefaultMode = AnwisSizeMode.Брусбокс60;
+        public const AnwisSizeMode DefaultMode = AnwisSizeMode.Профипласт;
     }
 }

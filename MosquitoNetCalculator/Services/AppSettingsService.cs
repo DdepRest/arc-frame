@@ -1,6 +1,7 @@
 using System;
 using System.IO;
 using System.Text.Json;
+using System.Threading;
 
 namespace MosquitoNetCalculator.Services
 {
@@ -43,6 +44,12 @@ namespace MosquitoNetCalculator.Services
             public string LastColor { get; set; } = "";
             public string UpdateUrl { get; set; } = "";
             public string? PendingUpdateVersion { get; set; }
+            // Админ-панель офисов: переопределение токена/ID gist (отладка, миграция).
+            public string? OfficeReportToken { get; set; }
+            public string? OfficeReportGistId { get; set; }
+            // Стабильный ID устройства (один ПК = один отчёт в gist). Генерируется
+            // один раз при первом запуске — см. LoadOrCreateDeviceId.
+            public string DeviceId { get; set; } = "";
         }
 
         private static Settings LoadSettings()
@@ -323,6 +330,161 @@ namespace MosquitoNetCalculator.Services
             }
         }
 
+        // ─────────────────────────────────────────────────────────
+        //  Админ-панель офисов (отчёты через GitHub Gist).
+        //  Токен/ID gist в settings.json — ТОЛЬКО для отладки и тестов;
+        //  в релизе токен встраивается компиляцией (OfficeReportService).
+        // ─────────────────────────────────────────────────────────
+
+        /// <summary>
+        /// Возвращает токен для gist из settings.json (пустая строка = не задан,
+        /// используется скомпилированная константа OfficeReportService.CompiledToken).
+        /// </summary>
+        public static string LoadOfficeReportToken()
+        {
+            lock (_lock)
+            {
+                var settings = LoadSettings();
+                return settings.OfficeReportToken?.Trim() ?? "";
+            }
+        }
+
+        /// <summary>
+        /// Сохраняет (или очищает при null) токен gist в settings.json.
+        /// </summary>
+        public static void SaveOfficeReportToken(string? token)
+        {
+            lock (_lock)
+            {
+                var settings = LoadSettings();
+                settings.OfficeReportToken = string.IsNullOrWhiteSpace(token) ? null : token.Trim();
+                SaveSettings(settings);
+            }
+        }
+
+        /// <summary>
+        /// Возвращает ID gist из settings.json (пустая строка = используется константа).
+        /// Позволяет сменить хранилище без пересборки.
+        /// </summary>
+        public static string LoadOfficeReportGistId()
+        {
+            lock (_lock)
+            {
+                var settings = LoadSettings();
+                return settings.OfficeReportGistId?.Trim() ?? "";
+            }
+        }
+
+        /// <summary>
+        /// Сохраняет (или очищает при null) ID gist в settings.json.
+        /// </summary>
+        public static void SaveOfficeReportGistId(string? gistId)
+        {
+            lock (_lock)
+            {
+                var settings = LoadSettings();
+                settings.OfficeReportGistId = string.IsNullOrWhiteSpace(gistId) ? null : gistId.Trim();
+                SaveSettings(settings);
+            }
+        }
+
+        // ─────────────────────────────────────────────────────────
+        //  Пароль админ-панели — ВШИТЫЙ (одинаковый во всех офисах,
+        //  офисам ничего настраивать не нужно). Владелец меняет при желании.
+        //  Панель показывает только версии/статистику — данные не секретные,
+        //  пароль лишь ограничивает доступ к админ-интерфейсу.
+        // ─────────────────────────────────────────────────────────
+
+        /// <summary>Вшитый пароль входа в админ-панель.</summary>
+        public const string EmbeddedAdminPassword = "AZ123123Az";
+
+        /// <summary>
+        /// Проверяет введённый пароль против вшитого.
+        /// </summary>
+        public static bool VerifyAdminPassword(string? password)
+            => password == EmbeddedAdminPassword;
+
+        // ─────────────────────────────────────────────────────────
+        //  Стабильный ID устройства (админ-панель, отчёты офисов).
+        //  В одном офисе может быть несколько ПК — каждый получает свой
+        //  GUID при первом запуске и хранит его в settings.json, чтобы
+        //  не перетирать отчёты других устройств того же офиса.
+        // ─────────────────────────────────────────────────────────
+
+        /// <summary>
+        /// Возвращает стабильный ID этого устройства (GUID). При первом вызове
+        /// генерирует, сохраняет в settings.json и возвращает; при повторных
+        /// вызовах — возвращает сохранённый. Потокобезопасен.
+        ///
+        /// Генерация дополнительно защищена КРОСС-ПРОЦЕССНО: рядом с settings.json
+        /// атомарно создаётся файл <c>device-id</c> (FileMode.CreateNew — победит
+        /// только один процесс, остальные прочитают его ID). Это гарантирует, что
+        /// две одновременно запущенные копии программы (обычная + dev) на одном ПК
+        /// получат ОДИНАКОВЫЙ deviceId и не создадут два отчёта в gist.
+        /// </summary>
+        public static string LoadOrCreateDeviceId()
+        {
+            lock (_lock)
+            {
+                var settings = LoadSettings();
+                if (!string.IsNullOrWhiteSpace(settings.DeviceId))
+                    return settings.DeviceId;
+
+                var id = TryCreateOrReadDeviceIdFile() ?? Guid.NewGuid().ToString("N");
+                settings.DeviceId = id;
+                SaveSettings(settings);
+                return id;
+            }
+        }
+
+        /// <summary>
+        /// Атомарная кросс-процессная генерация ID: первый процесс создаёт файл
+        /// <c>device-id</c>, остальные (чьё CreateNew упало) читают его же.
+        /// Возвращает null, если файл создать/прочитать не удалось — тогда
+        /// вызывающий использует случайный GUID.
+        /// </summary>
+        private static string? TryCreateOrReadDeviceIdFile()
+        {
+            try
+            {
+                var dir = Path.GetDirectoryName(SettingsPath);
+                if (string.IsNullOrWhiteSpace(dir))
+                    return null;
+
+                Directory.CreateDirectory(dir);
+                var file = Path.Combine(dir, "device-id");
+                try
+                {
+                    using var fs = new FileStream(file, FileMode.CreateNew, FileAccess.Write, FileShare.Read);
+                    using var writer = new StreamWriter(fs);
+                    var id = Guid.NewGuid().ToString("N");
+                    writer.Write(id);
+                    return id;
+                }
+                catch (IOException)
+                {
+                    // Файл уже создан другим процессом — читаем его ID, дожидаясь
+                    // завершения записи (окно записи ~микросекунды, ретраи дешёвые).
+                    for (int attempt = 0; attempt < 10; attempt++)
+                    {
+                        try
+                        {
+                            var text = File.ReadAllText(file).Trim();
+                            if (!string.IsNullOrWhiteSpace(text))
+                                return text;
+                        }
+                        catch (IOException) { /* другой процесс ещё пишет — повторим */ }
+                        if (attempt < 9) Thread.Sleep(100);
+                    }
+                    return null;
+                }
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"[AppSettings] device-id file failed: {ex.Message}");
+                return null;
+            }
+        }
 
     }
 }

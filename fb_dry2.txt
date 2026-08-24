@@ -1,0 +1,157 @@
+bundle: index-OC28VIMe.js
+=== single-word keys: 59 ===
+'Latest' -> '?????????'  occurrences: 1
+      'ildren:a.length})]}),x&&b.jsx(Ou,{label:"Latest",value:X0e(x)})]})]})]})]})}func'
+'Security' -> '????????????'  occurrences: 1
+      'n-writer",22741)]},{id:"security",label:"Security",skills:[Ne("getsentry/skills"'
+'Light' -> '???????'  occurrences: 1
+      'onst nq=[{pref:"light",icon:"sun",label:"Light"},{pref:"dark",icon:"moon",label:'
+'Draft' -> '????????'  occurrences: 1
+      'P.status)==="open",w=i?[]:[...l?[{label:"Draft",icon:"edit"}]:[],...(t.pendingWo'
+'Pinned' -> '????????????'  occurrences: 1
+      'e"&&Ue.pinned.length>0&&b.jsx(j1,{title:"Pinned",count:Ue.pinned.length,tone:"pi'
+'Images' -> '???????????'  occurrences: 1
+      'imodal&&{cls:"images",icon:"image",text:"Images"},Ee?{cls:"muted",text:tt}:H!=="'
+'Uncommitted' -> '?????????????'  occurrences: 1
+      ' uncommitted)"},{id:"uncommitted",label:"Uncommitted",tooltip:"Working-tree chan'
+'Input' -> '????'  occurrences: 1
+      ':gs(s.totalTokens)})]}),b.jsx(Ou,{label:"Input",value:gs(s.inputTokens)}),s.cach'
+'Archived' -> '?????'  occurrences: 1
+      '",count:Ke.active},{id:"archived",label:"Archived",count:Ke.archived}].map((G,ge'
+'Thinking' -> '????????'  occurrences: 2
+      'assName:"fold-reasoning-label",children:"Thinking"}),b.jsx("div",{className:"fol'
+      '{className:"reasoning-label",children:i?"Thinking":"Thinking?"})]}),n!=="hidden"'
+'Finished' -> '?????????'  occurrences: 2
+      'FinishedAt??0,t.createdAt),aC={finished:"Finished",failed:"Turn failed",stopped:'
+      'elaunch"},Fie={done:{icon:"check",label:"Finished"},stopped:{icon:"stop",label:"'
+'Notes' -> '???????'  occurrences: 1
+      'nal",icon:"terminal"},{id:"notes",label:"Notes",icon:"notes"}],xre=440,qC=320,$S'
+'Save' -> '?????????'  occurrences: 3
+      '(),children:f?"Saving?":e?x?"Save copy":"Save":"Create skill"})]})]}),_&&e&&b.js'
+      '("span",{children:E?"Added":T?"Saving?":"Save"})]})]},P.id)})]})]})]})}const _3='
+      's||!f||!d,onClick:()=>void m(),children:"Save"})]})]})]})}function E3(){const t='
+'Compactions' -> '?????? ???????'  occurrences: 1
+      'ing",children:[b.jsx("strong",{children:"Compactions"}),b.jsx("span",{children:a'
+'Cloud' -> '??????'  occurrences: 1
+      't-practices",49869)]},{id:"cloud",label:"Cloud",skills:[Ne("microsoft/azure-skil'
+'Dark' -> '??????'  occurrences: 1
+      '"Light"},{pref:"dark",icon:"moon",label:"Dark"},{pref:"system",icon:"display",la'
+'Done' -> '??????'  occurrences: 4
+      'ing in the background.",buttons:[{label:"Done",action:"later",style:"save"}]};ca'
+      'est automatic updates.",buttons:[{label:"Done",action:"later",style:"save"}]};ca'
+      '{pending:"Adding?",queued:"Queued",done:"Done"};function pve({suggestions:t,thre'
+      'ing:"Pending",active:"In progress",done:"Done"},C_e=t=>t.completed===!0||t.statu'
+'Queue' -> '???????'  occurrences: 2
+      'span",{className:"queue-title",children:"Queue"}),i&&b.jsxs("button",{type:"butt'
+      ',onBlur:n})}const Ld=[{id:"queue",label:"Queue",icon:"list"},{id:"files",label:"'
+'Terminal' -> '????????'  occurrences: 1
+      'w",icon:"preview"},{id:"terminal",label:"Terminal",icon:"terminal"},{id:"notes",'
+'Workflow' -> '??????? ???????'  occurrences: 1
+      '-builder",86100)]},{id:"workflow",label:"Workflow",skills:[Ne("vercel-labs/agent'
+'Name' -> '????????'  occurrences: 1
+      '-name",children:[b.jsx("span",{children:"Name"}),b.jsx("input",{autoFocus:!0,val'
+'Other' -> '??????'  occurrences: 2
+      'rror, or UI problem"},{id:"other",label:"Other",description:"An idea, question, '
+      'Word",t[t.Space=1]="Space",t[t.Other=2]="Other",t})(an||(an={}));const moe=/[\\u0'
+'Premium' -> '???????'  occurrences: 3
+      'emium&&{cls:"premium",icon:"spark",text:"Premium"},de.multimodal&&{cls:"images",'
+      'ium",children:[b.jsx(ue,{name:"spark"}),"Premium"]}),M5=t=>{var n;const e=t.reas'
+      'um-model":"model",Q0e=(t,e)=>{const n=t?"Premium":"Unlimited",i=Math.min(e.used,'
+'Preview' -> '????????????'  occurrences: 1
+      'ges",icon:"branch"},{id:"preview",label:"Preview",icon:"preview"},{id:"terminal"'
+'Retry' -> '?????????'  occurrences: 3
+      ':"btn changes-retry",onClick:n,children:"Retry"})]})}const fI=12;function mee(t,'
+      's-retry",onClick:()=>l(x=>x+1),children:"Retry"})]}):e===null?b.jsxs("div",{clas'
+      's-retry",onClick:()=>s(j=>j+1),children:"Retry"})]}):n.kind==="loading"?b.jsx("d'
+'All' -> '???'  occurrences: 2
+      'll,refresh:u}}const Cd=[{id:"all",label:"All",tooltip:"Everything since this thr'
+      'd==="all",onClick:()=>f("all"),children:"All"}),ww.map(P=>b.jsx("button",{type:"'
+'Remove' -> '??????'  occurrences: 1
+      ',"aria-label":"Remove comment",children:"Remove"})]})]})};return b.jsxs(b.Fragme'
+'Reload' -> '?????????????'  occurrences: 1
+      'k:()=>window.location.reload(),children:"Reload"})]})})}}const jy="M4 2.2a1.4 1.'
+'Isolated' -> '?????????????'  occurrences: 2
+      'cal"?m==null?void 0:m.branch:r,B=[n,j,H?"Isolated":null].filter(Boolean).join(" '
+      'ldren:u?"?":""}),b.jsx("span",{children:"Isolated"}),o&&b.jsx("span",{className:'
+'Never' -> '???????'  occurrences: 1
+      ',b.jsx("option",{value:"never",children:"Never"})]})]}),(ae==null?void 0:ae.getU'
+'Projects' -> '???????'  occurrences: 1
+      '{className:"home-projects","aria-label":"Projects",children:[ee.map(G=>b.jsxs("b'
+'Skills' -> '??????'  occurrences: 2
+      ':"queue-title",children:g?"Edit skills":"Skills"}),b.jsxs("span",{className:"ski'
+      'Ke&&b.jsx(z5,{id:"composer-slash",label:"Skills",items:He,selected:ui,onSelect:c'
+'Delete' -> '???????'  occurrences: 14
+      'Right:"ArrowRight",Down:"ArrowDown",Del:"Delete",Win:"OS",Menu:"ContextMenu",App'
+      'rowRight",40:"ArrowDown",45:"Insert",46:"Delete",112:"F1",113:"F2",114:"F3",115:'
+      'diff-comment-danger",onClick:r,children:"Delete"}),b.jsx("button",{type:"button"'
+      '"delete"?E():P()),children:_==="delete"?"Delete":"Restore"})]})]})]})}const Ne=('
+'Changes' -> '?????????'  occurrences: 1
+      'les",icon:"folder"},{id:"changes",label:"Changes",icon:"branch"},{id:"preview",l'
+'Files' -> '?????'  occurrences: 3
+      ':"Queue",icon:"list"},{id:"files",label:"Files",icon:"folder"},{id:"changes",lab'
+      ',l=u=>!!u&&Array.from(u.types).includes("Files");return a("dragenter",u=>{l(u.da'
+      'e.dataTransfer)!=null&&n.types.includes("Files")&&e.preventDefault()};return win'
+'Minimize' -> '????????'  occurrences: 1
+      'label":"Minimize window","data-tooltip":"Minimize",onClick:()=>{var n;return voi'
+'Open' -> '???????'  occurrences: 1
+      'list"}]:[],...t.status==="open"?[{label:"Open",icon:"dot"}]:[],..._?[{label:"Ope'
+'Project' -> '??????'  occurrences: 1
+      '-project-menu",role:"menu","aria-label":"Project",children:[d.map(g=>b.jsxs("but'
+'Stopped' -> '???????????'  occurrences: 2
+      '"Finished",failed:"Turn failed",stopped:"Stopped","auto-stopped":"Auto stopped",'
+      ':"Finished"},stopped:{icon:"stop",label:"Stopped"},error:{icon:"alert",label:"En'
+'Ad' -> '???????'  occurrences: 1
+      'an",{className:"ad-disclosure",children:"Ad"})]}),b.jsxs("span",{className:"ad-d'
+'Context' -> '????????'  occurrences: 3
+      'rn"Portal";case C:return c.displayName||"Context";case k:return(c._context.displ'
+      '";case k:return(c._context.displayName||"Context")+".Consumer";case P:var h=c.re'
+      'ing",children:[b.jsx("strong",{children:"Context"}),b.jsxs("span",{children:[gs('
+'Design' -> '??????'  occurrences: 1
+      'with-files",36491)]},{id:"design",label:"Design",skills:[Ne("anthropics/skills",'
+'Close' -> '???????'  occurrences: 3
+      'tn",onClick:v,disabled:l,"data-tooltip":"Close","aria-label":"Close feedback",ch'
+      'ame:"head-btn",onClick:e,"data-tooltip":"Close","aria-label":"Close project sett'
+      'ia-label":"Close window","data-tooltip":"Close",onClick:()=>{var n;return void(('
+'Branch' -> '?????'  occurrences: 1
+      'me:"workspace-panel-row-label",children:"Branch"}),b.jsx(F0e,{projectPath:e,bran'
+'Edit' -> '????????'  occurrences: 6
+      'ber:A.lineNumber,text:A.text}),children:"Edit"}),b.jsx("button",{type:"button",o'
+      'tribute("aria-label",`${this.hasComment?"Edit":"Add"} comment on line ${this.lin'
+      'nClick:()=>i.onInput(t,n.text),children:"Edit"}),b.jsx("button",{type:"button",c'
+      'files",code_search:"Search",str_replace:"Edit",write_file:"Write",run_terminal_c'
+'Reasoning' -> '???????????'  occurrences: 1
+      'assName:"effort-trigger-label",children:"Reasoning"}),b.jsx("span",{className:"e'
+'Restart' -> '?????????????'  occurrences: 1
+      'button",{onClick:()=>m(g=>g+1),children:"Restart"})})]}),b.jsxs("div",{className'
+'Cancel' -> '??????'  occurrences: 7
+      'tton",{type:"button",onClick:i,children:"Cancel"}),b.jsx("button",{type:"button"'
+      'on",{className:"btn",onClick:n,children:"Cancel"}),b.jsx("button",{className:"bt'
+      'disabled:f,onClick:()=>w(null),children:"Cancel"}),b.jsx("button",{className:"bt'
+      'ame:"btn",onClick:v,disabled:l,children:"Cancel"}),b.jsx("button",{type:"submit"'
+'Appearance' -> '??????????'  occurrences: 3
+      'theme-switch",role:"group","aria-label":"Appearance",children:nq.map(({pref:n,ic'
+      'b.jsxs("div",{role:"group","aria-label":"Appearance",children:[b.jsx("div",{clas'
+      'nu-label","aria-hidden":"true",children:"Appearance"}),nq.map(({pref:i,icon:r,la'
+'Documents' -> '?????????'  occurrences: 1
+      'ability",98228)]},{id:"documents",label:"Documents",skills:[Ne("anthropics/skill'
+'Languages' -> '?????'  occurrences: 1
+      'kerfile",17348)]},{id:"languages",label:"Languages",skills:[Ne("wshobson/agents"'
+'Quality' -> '????????'  occurrences: 1
+      'shadcn-ui",42149)]},{id:"quality",label:"Quality",skills:[Ne("mattpocock/skills"'
+'Recommended' -> '?????????????'  occurrences: 2
+      'L0e([de.id===B&&{cls:"recommended",text:"Recommended"},H==="full"&&De?{cls:de.sl'
+      'hreads run directly in the folder.",T=C?"Recommended":P?"Needs repo root":"Requi'
+'Command' -> '???????'  occurrences: 1
+      '",{className:"elevation-label",children:"Command"}),b.jsx("pre",{className:"elev'
+'Output' -> '?????'  occurrences: 1
+      '(s.cachedInputTokens)}),b.jsx(Ou,{label:"Output",value:gs(s.outputTokens)}),(s.r'
+'Recent' -> '????????'  occurrences: 1
+      'e"&&Ue.recent.length>0&&b.jsx(j1,{title:"Recent",count:Ue.recent.length,children'
+'Deny' -> '?????????'  occurrences: 1
+      'abled:n,onClick:()=>void r(!1),children:"Deny"}),b.jsx("button",{className:"btn '
+'Discover' -> '?????'  occurrences: 1
+      't,installs:n}),ww=[{id:"discover",label:"Discover",skills:[Ne("vercel-labs/skill'
+'Active' -> '????????'  occurrences: 1
+      'd catalog",children:[{id:"active",label:"Active",count:Ke.active},{id:"archived"'
+=== multi-word keys: 211 ===
+NO-MATCH 'Showing the first 512 KB' -> '???????????? ?????? 512 ??'

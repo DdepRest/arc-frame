@@ -68,7 +68,10 @@ namespace MosquitoNetCalculator.ViewModels
             // Order by the UX catalog hierarchy (Сетки → Доборы → Комплектующие →
             // Откосы → Услуги), NOT alphabetically — alphabetical sorting would
             // push «Anwis» to the end and destroy the approved group order.
-            return ProductCatalog.OrderProductNames(visible);
+            var ordered = ProductCatalog.OrderProductNames(visible);
+            // Append the custom product option at the very end.
+            ordered.Add(AiClarificationForm.CustomProductType);
+            return ordered;
         }
 
         public List<string> GetColorsForProduct(string productName) => _priceService.GetColorsForProduct(Prices.ToList(), productName);

@@ -309,6 +309,8 @@ namespace MosquitoNetCalculator.Services
             ["BadgeWarningFg"]  = "#D48C00",
             ["BadgeDangerBg"]   = "#FDE7E9",
             ["BadgeDangerFg"]   = "#C42B1C",
+            ["BadgeVisionBg"]   = "#F0ECFA",
+            ["BadgeVisionFg"]   = "#7A5AF8",
             // Install toggle
             ["InstallGreen"]  = "#0F7B3F",
             ["InstallRed"]    = "#C42B1C",
@@ -402,6 +404,8 @@ namespace MosquitoNetCalculator.Services
             ["BadgeWarningFg"]  = "#FFB347",
             ["BadgeDangerBg"]   = "#2A1820",
             ["BadgeDangerFg"]   = "#FF6B6B",
+            ["BadgeVisionBg"]   = "#241A35",
+            ["BadgeVisionFg"]   = "#B49AFF",
             // Install toggle
             ["InstallGreen"]  = "#4CC97D",
             ["InstallRed"]    = "#FF6B6B",

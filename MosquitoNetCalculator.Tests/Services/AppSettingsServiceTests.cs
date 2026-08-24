@@ -134,5 +134,48 @@ namespace MosquitoNetCalculator.Tests.Services
             AppSettingsService.SaveContractPrefix(null!);
             Assert.Equal("1", AppSettingsService.LoadContractPrefix());
         }
+
+        [Fact]
+        public void LoadOrCreateDeviceId_GeneratesOnce_StableAfterwards()
+        {
+            var first = AppSettingsService.LoadOrCreateDeviceId();
+            Assert.False(string.IsNullOrWhiteSpace(first));
+            Assert.Equal(32, first.Length); // GUID N-формат
+
+            var second = AppSettingsService.LoadOrCreateDeviceId();
+            Assert.Equal(first, second);
+        }
+
+        [Fact]
+        public void LoadOrCreateDeviceId_DifferentSettingsDirectory_DifferentDevice()
+        {
+            var a = AppSettingsService.LoadOrCreateDeviceId();
+
+            // Другой каталог настроек = «другое устройство» (другой ПК): ID живёт
+            // рядом с settings.json (файл device-id), поэтому устройство = каталог.
+            AppSettingsService.SettingsPath = Path.Combine(_tempDir, "device2", "settings.json");
+            var b = AppSettingsService.LoadOrCreateDeviceId();
+
+            Assert.NotEqual(a, b);
+            AppSettingsService.SettingsPath = Path.Combine(_tempDir, "settings.json");
+        }
+
+        [Fact]
+        public void LoadOrCreateDeviceId_SameSettingsDirectory_SameDevice_EvenWithoutSavedId()
+        {
+            // Два «процесса» на одном ПК: settings.json ещё без DeviceId, но файл
+            // device-id уже создан первым запуском → второй получает тот же ID
+            // (кросс-процессная защита от дублей).
+            var first = AppSettingsService.LoadOrCreateDeviceId();
+
+            // Сбросим settings.json (останется только файл device-id): «второй запуск»
+            // не увидит DeviceId в настройках и возьмёт ID из файла.
+            var file = Path.Combine(_tempDir, "device-id");
+            Assert.True(File.Exists(file));
+            File.Delete(AppSettingsService.SettingsPath);
+
+            var second = AppSettingsService.LoadOrCreateDeviceId();
+            Assert.Equal(first, second); // тот же ID из файла device-id
+        }
     }
 }

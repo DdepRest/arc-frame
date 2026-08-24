@@ -43,13 +43,30 @@ namespace MosquitoNetCalculator.Services
         /// <summary>Base backoff in ms between retries of the same model.</summary>
         internal static int RetryDelayMs { get; set; } = 300;
 
+        /// <summary>
+        /// First-token watchdog for streaming responses (ms). If a model accepts
+        /// the request (HTTP 200) but emits no text token within this window, the
+        /// attempt is treated as a transient failure and the chain moves on — a
+        /// hot free vision model can otherwise leave «Думает…» hanging for minutes.
+        /// </summary>
+        internal static int FirstTokenTimeoutMs { get; set; } = 20_000;
+
         // ── Provider endpoints ─────────────────────────────────
         // Stage-3 hardening: URL constants now live in the dedicated helper
         // classes — AiKeyValidator.OpenRouterApiUrl / NvidiaApiUrl /
         // OpenRouterAuthKeyUrl and AiModelCatalogClient.OpenRouterModelsUrl /
         // NvidiaModelsUrl. They are referenced through those classes' public
         // API rather than via private const fields.
-        private const string DefaultModel = "google/gemma-4-31b-it:free";
+        /// <summary>
+        /// OpenRouter's «Free Models Router» (<c>openrouter/free</c>): OpenRouter
+        /// resolves a currently-working free model server-side for each request
+        /// (filtering by capabilities like vision and structured outputs). Kept as
+        /// the standard OpenRouter model so catalog reshuffles can never strand
+        /// the app on one dead <c>:free</c> slug.
+        /// </summary>
+        internal const string OpenRouterFreeRouter = "openrouter/free";
+
+        private const string DefaultModel = OpenRouterFreeRouter;
 
         /// <summary>
         /// Stage-2 hardening: thin delegate to <see cref="AiPromptBuilder"/>.
@@ -92,6 +109,10 @@ namespace MosquitoNetCalculator.Services
         /// </summary>
         public static IReadOnlyList<AiModelOption> FreeModels { get; } = new List<AiModelOption>
         {
+            // OpenRouter's Free Models Router — the standard default. It needs
+            // no snapshot: OpenRouter picks a working free model per request.
+            new(OpenRouterFreeRouter, "Free Models Router", AiProvider.OpenRouter),
+
             // Curated snapshot of OpenRouter zero-price chat models. The live
             // runtime list is auto-analyzed from /models on each refresh; this
             // list is only the offline fallback when the catalog can't load.
@@ -200,6 +221,10 @@ namespace MosquitoNetCalculator.Services
             if (merged.Count == 0)
                 merged = FreeModels.ToList();
 
+            // The router must always lead the catalog, no matter what the live
+            // endpoints returned this minute.
+            EnsureFreeRouterFirst(merged);
+
             if (openRouter.IsFromApi && nvidia.IsFromApi)
             {
                 // The cache is a merged catalog, so only advance its timestamp
@@ -237,6 +262,23 @@ namespace MosquitoNetCalculator.Services
                     !string.Equals(existing.Id, model.Id, StringComparison.OrdinalIgnoreCase)))
                     destination.Add(model);
             }
+        }
+
+        /// <summary>
+        /// Guarantees the Free Models Router (<c>openrouter/free</c>) is present
+        /// and first in the catalog. OpenRouter resolves a currently-working
+        /// free model server-side per request, so this entry survives catalog
+        /// reshuffles and stays the standard default even when individual
+        /// :free slugs appear or disappear.
+        /// </summary>
+        private static void EnsureFreeRouterFirst(List<AiModelOption> models)
+        {
+            var existing = models.FirstOrDefault(m =>
+                string.Equals(m.Id, OpenRouterFreeRouter, StringComparison.OrdinalIgnoreCase));
+            if (existing != null)
+                models.Remove(existing);
+            models.Insert(0, existing ?? new AiModelOption(
+                OpenRouterFreeRouter, "Free Models Router", AiProvider.OpenRouter));
         }
 
 
@@ -476,6 +518,10 @@ namespace MosquitoNetCalculator.Services
         /// for each text delta and <paramref name="onDone"/> with the full accumulated
         /// text when streaming completes. Tries fallback models only if streaming fails
         /// BEFORE the first token is received (mid-stream failures don't fall back).
+        /// When every model in the chain fails, the free catalog is refreshed once
+        /// (free models rotate server-side — the router needs no stale snapshot) and
+        /// the updated chain gets a second pass before the aggregated per-provider
+        /// error is reported.
         /// </summary>
         public async Task SendStreamingAsync(
             string userMessage,
@@ -487,7 +533,8 @@ namespace MosquitoNetCalculator.Services
             Action<string>? onModelUsed = null,
             string? orderContext = null,
             CancellationToken ct = default,
-            Action<AiStreamInfo>? onStreamInfo = null)
+            Action<AiStreamInfo>? onStreamInfo = null,
+            bool hasOcrText = false)
         {
             if (!HasEmbeddedKeys)
             {
@@ -495,7 +542,8 @@ namespace MosquitoNetCalculator.Services
                 return;
             }
 
-            var fallbackModels = ResolveFallbackModels(userMessage, imageDataUrls is { Count: > 0 });
+            bool hasImages = imageDataUrls is { Count: > 0 };
+            var fallbackFailures = new Dictionary<AiProvider, string>();
 
             var messages = BuildMessages(userMessage, history, orderContext, imageDataUrls);
 
@@ -507,6 +555,60 @@ namespace MosquitoNetCalculator.Services
                 Stream = true
             };
 
+            // Pass 1: current chain. If it fully fails, refresh the catalog and
+            // give the updated chain one more chance before reporting failure.
+            if (await TrySendWithChainAsync(
+                    request,
+                    ResolveFallbackModels(userMessage, hasImages, hasOcrText),
+                    fallbackFailures,
+                    onChunk, onDone, onError, onModelUsed, onStreamInfo, ct))
+            {
+                return;
+            }
+
+            // Self-heal: free catalogs reshuffle constantly (models are added,
+            // renamed, retired). A forced refresh + second pass costs one extra
+            // catalog request and fixes the «все модели умерли разом» case.
+            await FetchAvailableModelsAsync(
+                AiKeyValidator.GetApiKey(AiProvider.OpenRouter),
+                forceRefresh: true,
+                ct: ct,
+                nvidiaApiKey: AiKeyValidator.GetApiKey(AiProvider.Nvidia));
+
+            if (await TrySendWithChainAsync(
+                    request,
+                    ResolveFallbackModels(userMessage, hasImages, hasOcrText),
+                    fallbackFailures,
+                    onChunk, onDone, onError, onModelUsed, onStreamInfo, ct))
+            {
+                return;
+            }
+
+            // All models failed on both passes — report per provider so the user
+            // sees which side is actually down instead of a generic message.
+            onError(BuildTotalFailureMessage(fallbackFailures));
+        }
+
+        /// <summary>
+        /// Tries every model in <paramref name="fallbackModels"/> (with per-model
+        /// retries on transient failures) until a stream completes. Returns true
+        /// when a response was delivered or the failure was already surfaced to
+        /// the user (auth error, cancellation, mid-stream loss); returns false
+        /// only when every model failed up-front, so the caller may refresh the
+        /// catalog and retry once. Per-provider failure reasons are collected
+        /// into <paramref name="fallbackFailures"/> for the final summary.
+        /// </summary>
+        private async Task<bool> TrySendWithChainAsync(
+            ChatCompletionRequest request,
+            IReadOnlyList<string> fallbackModels,
+            Dictionary<AiProvider, string> fallbackFailures,
+            Action<string> onChunk,
+            Action<string> onDone,
+            Action<string> onError,
+            Action<string>? onModelUsed,
+            Action<AiStreamInfo>? onStreamInfo,
+            CancellationToken ct)
+        {
             int modelsTried = 0;
             foreach (var modelId in fallbackModels)
             {
@@ -557,10 +659,18 @@ namespace MosquitoNetCalculator.Services
                             if (statusCode is 401 or 403 or 404 or 400)
                                 RecordModelUnavailable(request.Model, statusCode);
 
-                            if (statusCode is 401 or 403)
+                            fallbackFailures[provider] = DescribeProbeFailure(statusCode);
+
+                            // 401 = genuinely bad key -> abort (no key can fix it).
+                            // 403 = forbidden (guardrail/block/moderation/account
+                            // scope on THIS model) — NOT a bad key: message the next
+                            // fallback model/provider instead. The key itself is fine
+                            // (the dialog's /auth/key probe proves it), so blaming
+                            // the key here would mislead the user.
+                            if (statusCode == 401)
                             {
-                                onError($"⚠ Ошибка авторизации у провайдера «{AiKeyValidator.ProviderName(provider)}» (код {statusCode}).\nПроверьте API-ключ в настройках.");
-                                return;
+                                onError($"⚠ Ошибка авторизации у провайдера «{AiKeyValidator.ProviderName(provider)}» (код 401).\nПроверьте API-ключ в настройках.");
+                                return true;
                             }
                             // Retry only transient errors: 429 (rate limit) and
                             // 5xx. Other 4xx (400/404: model unavailable for this
@@ -575,11 +685,13 @@ namespace MosquitoNetCalculator.Services
                             // or malformed stream and must not leave a false model badge.
                             using var stream = await httpResponse.Content.ReadAsStreamAsync(ct);
                             using var reader = new StreamReader(stream);
+                            using var firstTokenCts = CancellationTokenSource.CreateLinkedTokenSource(ct);
+                            firstTokenCts.CancelAfter(TimeSpan.FromMilliseconds(FirstTokenTimeoutMs));
 
                             while (!reader.EndOfStream)
                             {
-                                ct.ThrowIfCancellationRequested();
-                                var line = await reader.ReadLineAsync(ct);
+                                firstTokenCts.Token.ThrowIfCancellationRequested();
+                                var line = await reader.ReadLineAsync(firstTokenCts.Token);
 
                                 if (string.IsNullOrEmpty(line)) continue;
                                 if (!line.StartsWith("data: ")) continue;
@@ -603,6 +715,9 @@ namespace MosquitoNetCalculator.Services
                                         continue;
 
                                     gotFirstToken = true;
+                                    // First token arrived — disable the watchdog so a long
+                                    // but ACTIVE stream is never cut mid-answer.
+                                    firstTokenCts.CancelAfter(Timeout.InfiniteTimeSpan);
                                     if (!modelAnnounced)
                                     {
                                         modelAnnounced = true;
@@ -629,16 +744,26 @@ namespace MosquitoNetCalculator.Services
                             if (text.Length > 0)
                             {
                                 onDone(text);
-                                return;
+                                return true;
                             }
                             // Padding-only / empty response — skip this model.
+                            fallbackFailures[provider] = "модели вернули пустой ответ";
                             skipModel = true;
                         }
+                    }
+                    catch (OperationCanceledException) when (!ct.IsCancellationRequested)
+                    {
+                        // First-token watchdog expired: the model answered 200 OK but
+                        // never started streaming (hot free vision queue). This is NOT
+                        // a user cancel — degrade this attempt as transient so a retry
+                        // or the next fallback model takes over instead of hanging.
+                        transientFailure = true;
+                        fallbackFailures[provider] = "нет первого токена (таймаут)";
                     }
                     catch (OperationCanceledException) when (ct.IsCancellationRequested)
                     {
                         onError("stream_cancelled");
-                        return;
+                        return true;
                     }
                     catch (Exception ex) when (ex is HttpRequestException or IOException or TaskCanceledException)
                     {
@@ -647,6 +772,7 @@ namespace MosquitoNetCalculator.Services
                             // Transient network failure before the first token:
                             // retry the same model (up to MaxAttemptsPerModel).
                             transientFailure = true;
+                            fallbackFailures[provider] = "ошибка сети";
                         }
                         else
                         {
@@ -660,7 +786,7 @@ namespace MosquitoNetCalculator.Services
                             {
                                 onError($"⚠ Не удалось подключиться к модели «{FormatModelName(modelId)}». Проверьте интернет-соединение.");
                             }
-                            return;
+                            return true;
                         }
                     }
 
@@ -674,8 +800,26 @@ namespace MosquitoNetCalculator.Services
                 }
             }
 
-            // All models failed
-            onError("⚠ Все доступные модели недоступны.\n\nПроверьте интернет-соединение, API-ключ или выберите другие модели в настройках.");
+            // Every model failed up-front — the caller may refresh and retry.
+            return false;
+        }
+
+        /// <summary>
+        /// Builds the final user-facing error after both passes failed: keeps the
+        /// classic first line (compat) and appends the per-provider summary so
+        /// the user sees whether OpenRouter, NVIDIA or both are down.
+        /// </summary>
+        private static string BuildTotalFailureMessage(Dictionary<AiProvider, string> fallbackFailures)
+        {
+            var sb = new StringBuilder("⚠ Все доступные модели недоступны.\n\n");
+            if (fallbackFailures != null && fallbackFailures.Count > 0)
+            {
+                foreach (var kv in fallbackFailures)
+                    sb.AppendLine($"{AiKeyValidator.ProviderName(kv.Key)}: {kv.Value}.");
+                sb.AppendLine();
+            }
+            sb.Append("Проверьте интернет-соединение, API-ключ или выберите другие модели в настройках.");
+            return sb.ToString();
         }
 
         /// <summary>
@@ -684,7 +828,7 @@ namespace MosquitoNetCalculator.Services
         /// models automatically, merging with user-selected models as top priority.
         /// When auto-mode is off, returns the user's manual selection.
         /// </summary>
-        private static IReadOnlyList<string> ResolveFallbackModels(string userMessage, bool hasImages = false)
+        private static IReadOnlyList<string> ResolveFallbackModels(string userMessage, bool hasImages = false, bool hasOcrText = false)
         {
             var userSelected = AppSettingsServiceAi.LoadAiFallbackModels();
             bool autoMode = AppSettingsServiceAi.LoadAutoSelectModel();
@@ -715,16 +859,18 @@ namespace MosquitoNetCalculator.Services
             // stale cache must not break the request.
             resolved = ExcludeUnavailable(resolved);
 
-            // When the user attached images, prefer vision-capable models first so
-            // a text-only model does not waste the request (and the user's patience).
-            if (hasImages)
+            // Attached images no longer promote slow vision catalog entries:
+            // the Free Models Router (openrouter/free) filters for vision-capable
+            // free models server-side when the request carries image parts, and it
+            // is by far the fastest-to-start entry — promoting individual vision
+            // models made image requests minutes-long while often failing with
+            // padded junk. Local OCR text is merged into the prompt separately.
+            if (autoMode)
             {
-                var visionFirst = resolved.Where(IsVisionCapable)
-                    .Concat(resolved.Where(m => !IsVisionCapable(m)))
+                resolved = new[] { OpenRouterFreeRouter }
+                    .Concat(resolved.Where(m => !IsRouterModel(m)))
                     .Distinct(StringComparer.OrdinalIgnoreCase)
                     .ToList();
-                if (visionFirst.Count > 0)
-                    resolved = visionFirst;
             }
 
             // Even a manual OpenRouter-only selection must not die when OpenRouter
@@ -757,7 +903,10 @@ namespace MosquitoNetCalculator.Services
         /// <summary>
         /// Removes models that were recently probed as unavailable. The cache only
         /// affects entries marked dead within <see cref="AvailabilityTtl"/> so a
-        /// temporary outage cannot ban a model forever.
+        /// temporary outage cannot ban a model forever. The Free Models Router is
+        /// never excluded: it resolves a working free model server-side per request,
+        /// so a stale ban (a single dead <c>:free</c> slug) must not lock it out
+        /// for the TTL window.
         /// </summary>
         private static IReadOnlyList<string> ExcludeUnavailable(IEnumerable<string> models)
         {
@@ -765,9 +914,15 @@ namespace MosquitoNetCalculator.Services
             if (list.Count == 0) return list;
 
             var availability = GetAvailability();
-            var fresh = list.Where(id => !IsRecentlyUnavailable(availability, id)).ToList();
+            var fresh = list
+                .Where(id => !IsRouterModel(id) && !IsRecentlyUnavailable(availability, id))
+                .ToList();
             return fresh.Count > 0 ? fresh : list;
         }
+
+        /// <summary>True when the id is the Free Models Router (<c>openrouter/free</c>).</summary>
+        internal static bool IsRouterModel(string modelId)
+            => string.Equals(modelId, OpenRouterFreeRouter, StringComparison.OrdinalIgnoreCase);
 
         private static bool IsRecentlyUnavailable(
             IReadOnlyDictionary<string, AiModelAvailability> availability,
@@ -943,9 +1098,13 @@ namespace MosquitoNetCalculator.Services
         /// </summary>
         internal static string StripSpecialTokens(string? text)
         {
-            if (string.IsNullOrWhiteSpace(text))
+            // Only a truly empty chunk is dropped. Whitespace-only chunks are
+            // PRESERVED: tokenizers stream the space before the next word as
+            // its own chunk (or as the leading char of the next word), so any
+            // whitespace-based filter would glue the words together client-side.
+            if (string.IsNullOrEmpty(text))
                 return string.Empty;
-            return SpecialTokenRegex.Replace(text, string.Empty).Trim();
+            return SpecialTokenRegex.Replace(text, string.Empty);
         }
 
         /// <summary>

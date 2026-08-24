@@ -15,6 +15,14 @@ namespace MosquitoNetCalculator.Services
         /// pipeline instead of executing <see cref="Action"/> directly.
         /// </summary>
         public AiActionPlan? Plan { get; init; }
+
+        /// <summary>
+        /// High-level mode the model signalled (answer / clarification / plan /
+        /// explanation). Defaults to <see cref="AiPlanMode.Answer"/>; validation
+        /// overrides that ask the user for missing data are marked as
+        /// clarification so the UI can attach the interactive parameter form.
+        /// </summary>
+        public AiPlanMode Mode { get; init; } = AiPlanMode.Answer;
     }
 
     public sealed class AiCommand
@@ -37,8 +45,10 @@ namespace MosquitoNetCalculator.Services
         public int Depth { get; init; }
         public double Quantity { get; init; } = 1;
         public double Price { get; init; }
-        public AnwisSizeMode AnwisMode { get; init; } = AnwisSizeMode.Брусбокс60;
+        public AnwisSizeMode AnwisMode { get; init; } = AnwisSizeService.DefaultMode;
         public int InstallationMode { get; init; } = -1;
+        /// <summary>True when this add originates from the «Свой товар» flow (user-entered name).</summary>
+        public bool IsCustomProduct { get; init; }
 
         public string TargetProduct { get; init; } = "";
         public int? UpdateInstallationMode { get; init; }

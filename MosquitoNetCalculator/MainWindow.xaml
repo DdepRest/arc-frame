@@ -354,6 +354,42 @@
                 </Grid>
 
                 <!-- ═══════════════════════════════════════ -->
+                <!-- OVERLAY: АДМИН-ПАНЕЛЬ                  -->
+                <!-- ═══════════════════════════════════════ -->
+                <Grid x:Name="AdminOverlay" Visibility="Collapsed" Panel.ZIndex="15">
+                    <Border x:Name="AdminBackdrop" Background="#80000000" Opacity="0"
+                            MouseLeftButtonDown="Backdrop_MouseLeftButtonDown" Cursor="Hand"/>
+                    <Border x:Name="AdminPanel"
+                            Background="{DynamicResource Surface}"
+                            HorizontalAlignment="Right" Width="760"
+                            BorderBrush="{DynamicResource Border}" BorderThickness="1,0,0,0">
+                        <Border.RenderTransform>
+                            <TranslateTransform x:Name="AdminSlideTransform" X="0"/>
+                        </Border.RenderTransform>
+                        <Grid>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="*"/>
+                            </Grid.RowDefinitions>
+                            <Border Grid.Row="0" Background="{DynamicResource HeaderBg}"
+                                    Padding="16,10" BorderBrush="{DynamicResource Border}" BorderThickness="0,0,0,1">
+                                <Grid>
+                                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                        <TextBlock Text="&#xE8C8;" FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets" FontSize="16"
+                                                   Foreground="{DynamicResource Accent}" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                                        <TextBlock Text="Админ-панель" FontSize="14" FontWeight="SemiBold"
+                                                   Foreground="{DynamicResource TextPrimary}" VerticalAlignment="Center"/>
+                                    </StackPanel>
+                                    <Button Style="{StaticResource OverlayCloseButton}"
+                                            HorizontalAlignment="Right" Click="CloseOverlay_Click"/>
+                                </Grid>
+                            </Border>
+                            <controls:AdminPanelControl x:Name="AdminPanelControl" Grid.Row="1"/>
+                        </Grid>
+                    </Border>
+                </Grid>
+
+                <!-- ═══════════════════════════════════════ -->
                 <!-- OVERLAY: ОТКОСЫ                        -->
                 <!-- ═══════════════════════════════════════ -->
                 <Grid x:Name="SlopeOverlay" Visibility="Collapsed" Panel.ZIndex="15">
@@ -528,8 +564,11 @@
                                     <ColumnDefinition Width="*"/>
                                 </Grid.ColumnDefinitions>
                                 <Grid Width="30" Height="28">
-                                    <TextBlock Text="☰" FontSize="17"
-                                               HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                    <!-- Segoe MDL2 Assets: GlobalNavigationButton. The literal ☰
+                                         rendered as a missing-glyph square on some Windows font setups. -->
+                                    <TextBlock Text="&#xE700;" FontFamily="Segoe MDL2 Assets" FontSize="17"
+                                               HorizontalAlignment="Center" VerticalAlignment="Center"
+                                               SnapsToDevicePixels="True"/>
                                 </Grid>
                                 <TextBlock x:Name="NavToggleLabel" Grid.Column="1" Text="Свернуть" Margin="10,0,0,0"
                                            FontSize="12" VerticalAlignment="Center" FontFamily="Segoe UI"/>
@@ -670,6 +709,7 @@
                                            FontFamily="Segoe UI"/>
                             </Grid>
                         </Button>
+
                     </StackPanel>
                 </Border>
             </Grid>

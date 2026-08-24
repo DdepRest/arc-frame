@@ -1152,10 +1152,10 @@ if (!AppSettingsService.GetBool(UseNativePrintKey, defaultValue: true))
 > В v2.0 9-шаговый план завершался после тестов. В v2.1 добавлен **отдельный шаг** для A.R.C. compliance — иначе забываем про docs.
 
 - Запустить `what-to-update.ps1 $(git diff --name-only)` после Шага 9
-- Обновить `docs/arc/DECISIONS.md` — решение #11 (HTML → FlowDocument + QuestPDF, обоснование license)
-- Обновить `docs/arc/MODULES.md` — новые файлы `PrintService.{FlowDocument,Drawings,Pdf}.cs` и `Helpers/PrintPaginator.cs`
-- Обновить `docs/arc/CURRENT_STATE.md` — пункт «Последние изменения»
-- Обновить `docs/arc/CHEATSHEET.md` — lastVerified до текущей версии
+- Обновить `agents/docs/DECISIONS.md` — решение #11 (HTML → FlowDocument + QuestPDF, обоснование license)
+- Обновить `agents/docs/MODULES.md` — новые файлы `PrintService.{FlowDocument,Drawings,Pdf}.cs` и `Helpers/PrintPaginator.cs`
+- Обновить `agents/docs/CURRENT_STATE.md` — пункт «Последние изменения»
+- Обновить `agents/docs/CHEATSHEET.md` — lastVerified до текущей версии
 - `what-to-update.ps1` в `documentation-matrix.json` — + `native-print.md` сам становится источником истины (ослабляем?)
 - `validate-docs.ps1` — все 8 проверок ОК
 - Если были удалены файлы — `gensymbols.ps1` для обновления `SYMBOL_INDEX.md`

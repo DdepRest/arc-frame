@@ -131,9 +131,9 @@ namespace MosquitoNetCalculator.Tests.Services
         }
 
         [Fact]
-        public void DefaultMode_IsBrusbox60()
+        public void DefaultMode_IsProfilplast()
         {
-            Assert.Equal(AnwisSizeMode.Брусбокс60, AnwisSizeService.DefaultMode);
+            Assert.Equal(AnwisSizeMode.Профипласт, AnwisSizeService.DefaultMode);
         }
     }
 }

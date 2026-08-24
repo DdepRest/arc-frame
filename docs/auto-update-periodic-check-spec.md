@@ -409,6 +409,6 @@ public class UpdateCheckScheduler
 - `MosquitoNetCalculator/App.xaml.cs`
 - `MosquitoNetCalculator/MainWindow.xaml.cs`
 - `MosquitoNetCalculator.Tests/Services/UpdateServiceTests.cs`
-- `docs/arc/AUTO_UPDATE.md`
-- `docs/arc/CHANGELOG.md`
-- `docs/arc/CURRENT_STATE.md`
+- `agents/docs/AUTO_UPDATE.md`
+- `agents/docs/CHANGELOG.md`
+- `agents/docs/CURRENT_STATE.md`

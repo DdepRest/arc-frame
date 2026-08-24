@@ -238,6 +238,15 @@
                                                                   Height="28" FontSize="12" Margin="0,0,0,7"
                                                                   AutomationProperties.Name="Тип товара"/>
 
+                                                        <!-- Название (только для «Свой товар») -->
+                                                        <TextBlock Text="Название" FontSize="10"
+                                                                   Foreground="{DynamicResource TextMuted}" Margin="0,0,0,2"
+                                                                   Visibility="{Binding ClarificationForm.ShowCustomName, Converter={StaticResource BoolToVisibility}}"/>
+                                                        <TextBox Text="{Binding ClarificationForm.CustomNameText, UpdateSourceTrigger=PropertyChanged}"
+                                                                 Height="28" FontSize="12" Margin="0,0,0,7"
+                                                                 Visibility="{Binding ClarificationForm.ShowCustomName, Converter={StaticResource BoolToVisibility}}"
+                                                                 AutomationProperties.Name="Название своего товара"/>
+
                                                         <!-- Размеры -->
                                                         <TextBlock Text="Размеры, мм" FontSize="10"
                                                                    Foreground="{DynamicResource TextMuted}" Margin="0,0,0,2"/>
@@ -302,6 +311,15 @@
                                                                 Click="BtnSubmitClarification_Click"
                                                                 Style="{StaticResource PrimaryButton}"
                                                                 AutomationProperties.Name="Добавить в расчёт"/>
+
+                                                        <Button Content="🔄 Повторить с другой моделью"
+                                                                Height="28" FontSize="11"
+                                                                Margin="0,6,0,0"
+                                                                Click="BtnRetryClarification_Click"
+                                                                Style="{StaticResource DialogOutlineButton}"
+                                                                Visibility="{Binding ClarificationForm.HasEmptyDimensions, Converter={StaticResource BoolToVisibility}}"
+                                                                ToolTip="Повторно отправить запрос — другая бесплатная модель может прочитать размеры иначе"
+                                                                AutomationProperties.Name="Повторить с другой моделью"/>
                                                     </StackPanel>
                                                 </Border>
 
@@ -400,15 +418,25 @@
                                                                Foreground="{DynamicResource TextMuted}"/>
                                                 </Border>
 
-                                                <!-- Keep only the message timestamp visible. Provider/model
-                                                     labels and request telemetry are intentionally hidden from
-                                                     the user-facing AI panel. -->
-                                                <TextBlock Text="{Binding Timestamp, StringFormat='{}{0:HH:mm}'}"
-                                                           FontSize="10.5"
-                                                           Foreground="{DynamicResource TextMuted}"
-                                                           HorizontalAlignment="Right"
-                                                           VerticalAlignment="Center"
-                                                           Margin="0,6,0,0"/>
+                                                <!-- Footer row: model label (left) and timestamp (right).
+                                                     The model label helps users understand which free model
+                                                     answered and why replies sometimes vary in quality. -->
+                                                <Grid Margin="0,6,0,0">
+                                                    <Grid.ColumnDefinitions>
+                                                        <ColumnDefinition Width="*"/>
+                                                        <ColumnDefinition Width="Auto"/>
+                                                    </Grid.ColumnDefinitions>
+                                                    <TextBlock Text="{Binding ModelLabel}"
+                                                               FontSize="10.5"
+                                                               Foreground="{DynamicResource TextMuted}"
+                                                               VerticalAlignment="Center"
+                                                               TextTrimming="CharacterEllipsis"
+                                                               Visibility="{Binding ModelLabel, Converter={StaticResource NonEmptyStringToVisibility}}"/>
+                                                    <TextBlock Grid.Column="1" Text="{Binding Timestamp, StringFormat='{}{0:HH:mm}'}"
+                                                               FontSize="10.5"
+                                                               Foreground="{DynamicResource TextMuted}"
+                                                               VerticalAlignment="Center"/>
+                                                </Grid>
                                             </StackPanel>
                                         </Border>
 
@@ -491,6 +519,12 @@
                                                 Background="{DynamicResource Accent}"
                                                 CornerRadius="12,12,3,12">
                                             <StackPanel>
+                                                <TextBlock Visibility="{Binding HasAttachments, Converter={StaticResource BoolToVisibility}}"
+                                                           Text="{Binding AttachmentCount, StringFormat='📎 {0} изображ.'}"
+                                                           Margin="0,0,0,4"
+                                                           FontSize="11.5"
+                                                           Foreground="{DynamicResource OnAccent}"
+                                                           Opacity="0.85"/>
                                                 <TextBlock Text="{Binding Text}"
                                                            TextWrapping="Wrap"
                                                            FontSize="14"
@@ -596,17 +630,32 @@
                 <StackPanel Orientation="Horizontal">
                     <Ellipse Width="5" Height="5" Fill="{DynamicResource Accent}" Margin="0,0,3,0" Opacity="0.45">
                         <Ellipse.Triggers>
-                            <EventTrigger RoutedEvent="Loaded"><BeginStoryboard Storyboard="{StaticResource DotPulse}"/></EventTrigger>
+                            <EventTrigger RoutedEvent="Loaded">
+                                <BeginStoryboard Name="Dot1PulseBegin" Storyboard="{StaticResource DotPulse}"/>
+                            </EventTrigger>
+                            <EventTrigger RoutedEvent="Unloaded">
+                                <StopStoryboard BeginStoryboardName="Dot1PulseBegin"/>
+                            </EventTrigger>
                         </Ellipse.Triggers>
                     </Ellipse>
                     <Ellipse Width="5" Height="5" Fill="{DynamicResource Accent}" Margin="3,0" Opacity="0.45">
                         <Ellipse.Triggers>
-                            <EventTrigger RoutedEvent="Loaded"><BeginStoryboard Storyboard="{StaticResource DotPulse2}"/></EventTrigger>
+                            <EventTrigger RoutedEvent="Loaded">
+                                <BeginStoryboard Name="Dot2PulseBegin" Storyboard="{StaticResource DotPulse2}"/>
+                            </EventTrigger>
+                            <EventTrigger RoutedEvent="Unloaded">
+                                <StopStoryboard BeginStoryboardName="Dot2PulseBegin"/>
+                            </EventTrigger>
                         </Ellipse.Triggers>
                     </Ellipse>
                     <Ellipse Width="5" Height="5" Fill="{DynamicResource Accent}" Margin="3,0,8,0" Opacity="0.45">
                         <Ellipse.Triggers>
-                            <EventTrigger RoutedEvent="Loaded"><BeginStoryboard Storyboard="{StaticResource DotPulse3}"/></EventTrigger>
+                            <EventTrigger RoutedEvent="Loaded">
+                                <BeginStoryboard Name="Dot3PulseBegin" Storyboard="{StaticResource DotPulse3}"/>
+                            </EventTrigger>
+                            <EventTrigger RoutedEvent="Unloaded">
+                                <StopStoryboard BeginStoryboardName="Dot3PulseBegin"/>
+                            </EventTrigger>
                         </Ellipse.Triggers>
                     </Ellipse>
                     <TextBlock x:Name="BusyStatusText"
@@ -624,14 +673,99 @@
                     Background="{DynamicResource SectionBg}"
                     CornerRadius="0,0,10,10">
                 <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                    </Grid.RowDefinitions>
                     <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto"/>
                         <ColumnDefinition Width="Auto"/>
                         <ColumnDefinition Width="*"/>
                         <ColumnDefinition Width="Auto"/>
                     </Grid.ColumnDefinitions>
 
+                    <!-- Staged image attachments (shown above the composer). -->
+                    <ItemsControl Grid.Row="0" Grid.ColumnSpan="4"
+                                  ItemsSource="{Binding Attachments}"
+                                  Visibility="{Binding HasAttachments, Converter={StaticResource BoolToVisibility}}"
+                                  Margin="0,0,0,6">
+                        <ItemsControl.ItemsPanel>
+                            <ItemsPanelTemplate>
+                                <WrapPanel/>
+                            </ItemsPanelTemplate>
+                        </ItemsControl.ItemsPanel>
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <Border Margin="0,0,6,4" Padding="8,4"
+                                        Background="{DynamicResource Surface}"
+                                        BorderBrush="{DynamicResource Border}"
+                                        BorderThickness="1" CornerRadius="8">
+                                    <StackPanel Orientation="Horizontal">
+                                        <TextBlock Text="&#xE722;"
+                                                   FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets"
+                                                   FontSize="12"
+                                                   Foreground="{DynamicResource Accent}"
+                                                   VerticalAlignment="Center"/>
+                                        <TextBlock Text="{Binding FileName}"
+                                                   Margin="6,0,0,0"
+                                                   MaxWidth="200"
+                                                   TextTrimming="CharacterEllipsis"
+                                                   FontSize="12"
+                                                   Foreground="{DynamicResource TextPrimary}"
+                                                   VerticalAlignment="Center"/>
+                                        <TextBlock Text="{Binding SizeLabel}"
+                                                   Margin="6,0,0,0"
+                                                   FontSize="11"
+                                                   Foreground="{DynamicResource TextMuted}"
+                                                   VerticalAlignment="Center"/>
+                                        <TextBlock Text="{Binding OcrStatusGlyph}"
+                                                   ToolTip="{Binding OcrStatusToolTip}"
+                                                   Margin="6,0,0,0"
+                                                   FontSize="11"
+                                                   VerticalAlignment="Center">
+                                            <TextBlock.Style>
+                                                <Style TargetType="TextBlock">
+                                                    <Setter Property="Foreground" Value="{DynamicResource TextMuted}"/>
+                                                    <Style.Triggers>
+                                                        <DataTrigger Binding="{Binding OcrStatus}" Value="ok">
+                                                            <Setter Property="Foreground" Value="{DynamicResource Success}"/>
+                                                        </DataTrigger>
+                                                        <DataTrigger Binding="{Binding OcrStatus}" Value="empty">
+                                                            <Setter Property="Foreground" Value="{DynamicResource Warning}"/>
+                                                        </DataTrigger>
+                                                    </Style.Triggers>
+                                                </Style>
+                                            </TextBlock.Style>
+                                        </TextBlock>
+                                        <Button Content="&#xE711;"
+                                                FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets"
+                                                FontSize="10" Margin="6,0,0,0" Padding="0"
+                                                Width="18" Height="18"
+                                                Background="Transparent" BorderThickness="0"
+                                                Cursor="Hand" Foreground="{DynamicResource TextMuted}"
+                                                Tag="{Binding}" Click="RemoveAttachment_Click"
+                                                ToolTip="Убрать изображение"
+                                                AutomationProperties.Name="Убрать изображение"/>
+                                    </StackPanel>
+                                </Border>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+
+                    <!-- Shown when local OCR couldn't read any attached photo — the
+                         model may still have seen the image, but the manager should
+                         know the text fallback had nothing to work with. -->
+                    <TextBlock Grid.Row="2" Grid.ColumnSpan="4"
+                               Margin="0,6,0,0"
+                               Text="{Binding OcrWarning}"
+                               TextWrapping="Wrap"
+                               FontSize="12"
+                               Foreground="{DynamicResource Warning}"
+                               Visibility="{Binding HasOcrWarning, Converter={StaticResource BoolToVisibility}}"/>
+
                     <Button x:Name="BtnClearChat"
-                            Grid.Column="0"
+                            Grid.Row="1" Grid.Column="0"
                             Width="36" Height="36"
                             Margin="0,0,5,0"
                             Background="Transparent"
@@ -729,8 +863,48 @@
                         </Button.Template>
                     </Button>
 
+                    <Button x:Name="BtnAttach"
+                            Grid.Row="1" Grid.Column="1"
+                            Width="36" Height="36"
+                            Margin="0,0,5,0"
+                            Background="Transparent"
+                            BorderThickness="0"
+                            Cursor="Hand"
+                            Click="BtnAttach_Click"
+                            ToolTip="Прикрепить изображение"
+                            AutomationProperties.Name="Прикрепить изображение"
+                            Foreground="{DynamicResource TextMuted}"
+                            FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets"
+                            FontSize="15"
+                            Content="&#xE723;"
+                            FocusVisualStyle="{StaticResource AiAssistantFocusVisual}">
+                        <Button.Style>
+                            <Style TargetType="Button">
+                                <Setter Property="Template">
+                                    <Setter.Value>
+                                        <ControlTemplate TargetType="Button">
+                                            <Border x:Name="AttachBorder" Background="Transparent" CornerRadius="8"
+                                                    RenderTransformOrigin="0.5,0.5">
+                                                <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                            </Border>
+                                            <ControlTemplate.Triggers>
+                                                <Trigger Property="IsMouseOver" Value="True">
+                                                    <Setter TargetName="AttachBorder" Property="Background" Value="{DynamicResource RowHover}"/>
+                                                    <Setter Property="Foreground" Value="{DynamicResource Accent}"/>
+                                                </Trigger>
+                                                <Trigger Property="IsPressed" Value="True">
+                                                    <Setter TargetName="AttachBorder" Property="Background" Value="{DynamicResource AccentLight}"/>
+                                                </Trigger>
+                                            </ControlTemplate.Triggers>
+                                        </ControlTemplate>
+                                    </Setter.Value>
+                                </Setter>
+                            </Style>
+                        </Button.Style>
+                    </Button>
+
                     <Border x:Name="InputBorder"
-                            Grid.Column="1"
+                            Grid.Row="1" Grid.Column="2"
                             MinHeight="40"
                             Background="{DynamicResource Surface}"
                             BorderThickness="1"
@@ -884,7 +1058,7 @@
                     </Popup>
 
                     <Button x:Name="BtnSend"
-                            Grid.Column="2"
+                            Grid.Row="1" Grid.Column="3"
                             Width="36" Height="36"
                             Margin="5,0,0,0"
                             Click="BtnSendOrCancel_Click"
@@ -1018,57 +1192,6 @@
                   HorizontalAlignment="Stretch"
                   VerticalAlignment="Stretch"/>
 
-            <!-- The AI surface remains visible for preview, but all interaction is
-                 intentionally intercepted while the feature is under development.
-                 The close button belongs to the hosting window, outside this
-                 control, so the user can always close the panel. -->
-            <Grid x:Name="DevelopmentOverlay"
-                  Grid.Row="0"
-                  Grid.RowSpan="2"
-                  Panel.ZIndex="100"
-                  Focusable="True"
-                  KeyboardNavigation.IsTabStop="True"
-                  KeyboardNavigation.TabNavigation="None"
-                  IsHitTestVisible="True"
-                  Background="#CC151821"
-                  AutomationProperties.Name="AI Ассистент — в разработке">
-                <Border HorizontalAlignment="Center"
-                        VerticalAlignment="Center"
-                        MaxWidth="300"
-                        Margin="24"
-                        Padding="24,20"
-                        CornerRadius="14"
-                        Background="{DynamicResource Surface}"
-                        BorderBrush="{DynamicResource Accent}"
-                        BorderThickness="1"
->
-                    <StackPanel>
-                        <TextBlock Text="AI Ассистент"
-                                   HorizontalAlignment="Center"
-                                   FontSize="16"
-                                   FontWeight="SemiBold"
-                                   Foreground="{DynamicResource TextPrimary}"/>
-                        <Border HorizontalAlignment="Center"
-                                Margin="0,12,0,10"
-                                Padding="10,4"
-                                CornerRadius="8"
-                                Background="{DynamicResource BadgeWarningBg}"
-                                BorderBrush="{DynamicResource BadgeWarningFg}"
-                                BorderThickness="1">
-                            <TextBlock Text="В РАЗРАБОТКЕ"
-                                       FontSize="11"
-                                       FontWeight="Bold"
-                                       Foreground="{DynamicResource BadgeWarningFg}"/>
-                        </Border>
-                        <TextBlock Text="Раздел пока недоступен. Интерфейс можно открыть для просмотра, но действия временно отключены."
-                                   TextWrapping="Wrap"
-                                   TextAlignment="Center"
-                                   FontSize="12"
-                                   LineHeight="18"
-                                   Foreground="{DynamicResource TextSecondary}"/>
-                    </StackPanel>
-                </Border>
-            </Grid>
         </Grid>
     </Border>
 </UserControl>

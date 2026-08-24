@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Collections.Specialized;
 using System.Diagnostics.CodeAnalysis;
+using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices;
 using System.Text.RegularExpressions;
@@ -10,7 +11,9 @@ using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Animation;
+using System.Windows.Media.Imaging;
 using System.Windows.Threading;
+using Microsoft.Win32;
 using MosquitoNetCalculator.Models;
 using MosquitoNetCalculator.Services;
 using MosquitoNetCalculator.ViewModels;
@@ -56,10 +59,7 @@ namespace MosquitoNetCalculator.Controls
             // Put the caret in the composer right away so the user can start
             // typing without an extra click — both in the docked window and the
             // in-panel overlay (Loaded fires every time the control is shown).
-            // Keep focus on the development notice rather than the disabled
-            // composer. The hosting window's close button remains outside this
-            // control and therefore stays reachable.
-            Dispatcher.BeginInvoke(() => DevelopmentOverlay.Focus(), DispatcherPriority.Input);
+            Dispatcher.BeginInvoke(() => TxtInput.Focus(), DispatcherPriority.Input);
         }
 
         private void OnUnloaded(object sender, RoutedEventArgs e)
@@ -253,6 +253,18 @@ namespace MosquitoNetCalculator.Controls
             _vm?.SubmitClarificationForm(msg);
         }
 
+        /// <summary>
+        /// «Повторить с другой моделью» on the clarification card → re-sends the
+        /// original user request to a different free model without retyping.
+        /// </summary>
+        private async void BtnRetryClarification_Click(object sender, RoutedEventArgs e)
+        {
+            if (sender is not FrameworkElement fe) return;
+            if (fe.DataContext is not AiChatMessage msg) return;
+            if (_vm == null) return;
+            await _vm.RetryClarification(msg);
+        }
+
         /// <summary>«Выполнить» on the plan card → confirm and fire PlanReceived.</summary>
         private void BtnConfirmPlan_Click(object sender, RoutedEventArgs e)
         {
@@ -291,6 +303,14 @@ namespace MosquitoNetCalculator.Controls
 
         private async void TxtInput_PreviewKeyDown(object sender, KeyEventArgs e)
         {
+            // Ctrl+V with an image on the clipboard stages it as an attachment
+            // instead of the TextBox swallowing the paste into thin air.
+            if (e.Key == Key.V && Keyboard.Modifiers == ModifierKeys.Control && TryPasteImageFromClipboard())
+            {
+                e.Handled = true;
+                return;
+            }
+
             // While the slash-command popup is open, keyboard drives it:
             // Up/Down move the selection, Enter/Tab insert the highlighted
             // command, Esc closes without sending.
@@ -412,6 +432,130 @@ namespace MosquitoNetCalculator.Controls
         private void BtnClearChat_Click(object sender, RoutedEventArgs e)
         {
             _vm?.ClearChat();
+        }
+
+        private const long MaxAttachmentBytes = 5 * 1024 * 1024; // 5 MB per image
+
+        /// <summary>
+        /// Reads a raster image from the system clipboard (Ctrl+V) and stages it
+        /// as a PNG attachment. Returns true when the paste was consumed (image
+        /// added or rejected as too large), false to fall through to the normal
+        /// text paste.
+        /// </summary>
+        private bool TryPasteImageFromClipboard()
+        {
+            if (DataContext is not AiAssistantViewModel vm) return false;
+
+            BitmapSource image;
+            try
+            {
+                if (!Clipboard.ContainsImage()) return false;
+                // Copies from Word/HTML often carry BOTH text and an image —
+                // keep the text paste in that case instead of dropping it.
+                if (!string.IsNullOrWhiteSpace(Clipboard.GetText())) return false;
+                image = Clipboard.GetImage();
+            }
+            catch (COMException) { return false; }
+            catch (ExternalException) { return false; }
+
+            if (image == null) return false;
+
+            byte[] bytes;
+            try
+            {
+                // Normalize to BGRA so PngBitmapEncoder accepts any clipboard
+                // source (indexed palette, CMYK, 16-bit, …).
+                var normalized = new FormatConvertedBitmap(image, PixelFormats.Bgra32, null, 0);
+                var encoder = new PngBitmapEncoder();
+                encoder.Frames.Add(BitmapFrame.Create(normalized));
+                using var ms = new MemoryStream();
+                encoder.Save(ms);
+                bytes = ms.ToArray();
+            }
+            catch (Exception ex)
+            {
+                ToastService.ShowToast($"Не удалось вставить изображение: {ex.Message}", ToastType.Error);
+                return true;
+            }
+
+            if (bytes.Length > MaxAttachmentBytes)
+            {
+                ToastService.ShowToast("Изображение больше 5 МБ — не добавлено.", ToastType.Error);
+                return true;
+            }
+
+            vm.AddAttachmentWithOcr(new AiImageAttachment
+            {
+                FileName = $"Из буфера {vm.Attachments.Count + 1}.png",
+                DataUrl = $"data:image/png;base64,{Convert.ToBase64String(bytes)}",
+                SizeLabel = FormatBytes(bytes.Length)
+            });
+            return true;
+        }
+
+        private void BtnAttach_Click(object sender, RoutedEventArgs e)
+        {
+            if (DataContext is not AiAssistantViewModel vm) return;
+
+            var dialog = new OpenFileDialog
+            {
+                Title = "Выберите изображения",
+                Filter = "Изображения|*.png;*.jpg;*.jpeg;*.gif;*.webp;*.bmp|Все файлы|*.*",
+                Multiselect = true
+            };
+
+            if (dialog.ShowDialog() != true) return;
+
+            foreach (var path in dialog.FileNames)
+            {
+                try
+                {
+                    var info = new FileInfo(path);
+                    if (info.Length > MaxAttachmentBytes)
+                    {
+                        ToastService.ShowToast($"«{info.Name}» больше 5 МБ — пропущено.", ToastType.Error);
+                        continue;
+                    }
+                    if (info.Length == 0) continue;
+
+                    var bytes = File.ReadAllBytes(path);
+                    var mime = GetImageMime(info.Extension);
+                    vm.AddAttachmentWithOcr(new AiImageAttachment
+                    {
+                        FileName = info.Name,
+                        DataUrl = $"data:{mime};base64,{Convert.ToBase64String(bytes)}",
+                        SizeLabel = FormatBytes(info.Length)
+                    });
+                }
+                catch (Exception ex)
+                {
+                    ToastService.ShowToast(
+                        $"Не удалось загрузить «{Path.GetFileName(path)}»: {ex.Message}", ToastType.Error);
+                }
+            }
+        }
+
+        private void RemoveAttachment_Click(object sender, RoutedEventArgs e)
+        {
+            if (DataContext is not AiAssistantViewModel vm) return;
+            if (sender is FrameworkElement { Tag: AiImageAttachment attachment })
+                vm.RemoveAttachment(attachment);
+        }
+
+        private static string GetImageMime(string extension) => extension.ToLowerInvariant() switch
+        {
+            ".jpg" or ".jpeg" => "image/jpeg",
+            ".gif" => "image/gif",
+            ".webp" => "image/webp",
+            ".bmp" => "image/bmp",
+            _ => "image/png"
+        };
+
+        private static string FormatBytes(long bytes)
+        {
+            if (bytes < 1024) return $"{bytes} Б";
+            if (bytes < 1024 * 1024) return $"{bytes / 1024.0:0.#} КБ";
+            return $"{bytes / (1024.0 * 1024.0):0.#} МБ";
         }
 
         private void TxtInput_TextChanged(object sender, TextChangedEventArgs e)

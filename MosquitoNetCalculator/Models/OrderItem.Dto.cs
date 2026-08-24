@@ -28,6 +28,8 @@ namespace MosquitoNetCalculator.Models
         public bool IsActive { get; set; } = true;
         public int AnwisSizeMode { get; set; }
         public bool IsAnticat { get; set; }
+        // «Свой товар» marker — keeps manual-sum semantics after save/load.
+        public bool IsCustomProduct { get; set; }
         public SlopeCalculationData? SlopeData { get; set; }
     }
 }

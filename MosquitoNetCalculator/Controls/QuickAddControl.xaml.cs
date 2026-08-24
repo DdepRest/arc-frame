@@ -30,7 +30,7 @@ namespace MosquitoNetCalculator.Controls
         public Border Preview => PreviewChip;
         public TextBlock PreviewText => TxtQuickPreview;
         /// <summary>Currently selected AnwisSizeMode — persisted across «Добавить» clicks, reset on new order.</summary>
-        public Models.AnwisSizeMode SelectedAnwisMode { get; private set; } = Models.AnwisSizeMode.Брусбокс60;
+        public Models.AnwisSizeMode SelectedAnwisMode { get; private set; } = AnwisSizeService.DefaultMode;
 
         public QuickAddControl()
         {
@@ -84,9 +84,35 @@ namespace MosquitoNetCalculator.Controls
 
         private void QuickField_TextChanged(object sender, TextChangedEventArgs e)
         {
-            UpdateQuickPreview();
-            // UX#2: Clear required-field highlight when user starts typing
-            if (sender is TextBox tb) ClearRequiredHighlight(tb);
+            if (sender is TextBox tb)
+            {
+                // Автозамена десятичной точки на запятую (0.65 → 0,65):
+                // русская раскладка/цифровой блок дают точку, а парсер ждёт запятую.
+                if (tb.Text.Contains('.') && !tb.Text.Contains(','))
+                {
+                    int caret = tb.CaretIndex;
+                    tb.Text = tb.Text.Replace('.', ',');
+                    tb.CaretIndex = Math.Min(caret, tb.Text.Length);
+                }
+                UpdateQuickPreview();
+                // UX#2: Clear required-field highlight when user starts typing
+                ClearRequiredHighlight(tb);
+            }
+        }
+
+        /// <summary>
+        /// Парсит числовое поле панели добавления: допускает и точку, и запятую
+        /// как десятичный разделитель (вставка из буфера может не пройти через
+        /// автозамену в TextChanged). Пустая строка → 0 (true).
+        /// </summary>
+        private static bool TryParseQuickNumber(string? text, out double value)
+        {
+            text = (text ?? string.Empty).Trim().Replace('.', ',');
+            if (text.Length == 0) { value = 0; return true; }
+            return double.TryParse(text, System.Globalization.NumberStyles.Float,
+                       System.Globalization.CultureInfo.CurrentCulture, out value)
+                || double.TryParse(text, System.Globalization.NumberStyles.Float,
+                       System.Globalization.CultureInfo.InvariantCulture, out value);
         }
 
         private void QuickField_KeyDown(object sender, KeyEventArgs e)
@@ -101,74 +127,19 @@ namespace MosquitoNetCalculator.Controls
         }
 
         // UX#2: Re-apply required-field highlight when user leaves empty field
+        // Required-field red-border highlighting was removed on user request:
+        // no block/field should be painted red. The empty-field notices below
+        // are no-ops so any existing call site stays valid without visual effect.
         private void QuickField_LostFocus(object sender, RoutedEventArgs e)
         {
-            if (sender is TextBox tb)
-                SetRequiredHighlight(tb);
         }
 
-        // UX#2: Required field highlighting — per product type
-        /// <summary>
-        /// Highlights important empty fields with a red accent border so the user
-        /// immediately sees what to fill. Which fields are highlighted depends on
-        /// the selected product type:
-        /// 
-        ///  Regular (Anwis, На навесах, etc.):  Width + Height
-        ///  ПСУЛ / Уплотнение:                  Price
-        ///  ManualPiece (Работа, Работа за откос): Price + Qty
-        ///  AmountOnly (Брус, Пояс, Доставка):  Price
-        ///  WidthOnly (Откос):                  Width + Price
-        /// </summary>
         internal void HighlightRequiredIfEmpty()
         {
-            if (CmbQuickType.SelectedItem is not string type || string.IsNullOrWhiteSpace(type)) return;
-
-            bool isManualPiece = OrderItem.ManualPieceProducts.Contains(type);
-            bool isAmountOnly = OrderItem.AmountOnlyProducts.Contains(type);
-            bool isQuantityOptional = OrderItem.OptionalQuantityProducts.Contains(type);
-            bool isWidthOnly = OrderItem.WidthOnlyProducts.Contains(type);
-            bool isNoDimException = type == "ПСУЛ" || type == "Уплотнение";
-
-            if (isWidthOnly)
-            {
-                // Откос: Ширина + Цена
-                SetRequiredHighlight(TxtQuickWidth);
-                SetRequiredHighlight(TxtQuickPrice);
-            }
-            else if (isAmountOnly)
-            {
-                // Брус, Пояс, Доставка: только Цена
-                SetRequiredHighlight(TxtQuickPrice);
-            }
-            else if (isQuantityOptional)
-            {
-                // Материал: Цена обязательна, Кол-во опционально (по умолчанию 1)
-                SetRequiredHighlight(TxtQuickPrice);
-            }
-            else if (isManualPiece)
-            {
-                // Работа, Работа за откос: Цена + Кол-во
-                SetRequiredHighlight(TxtQuickPrice);
-                SetRequiredHighlight(TxtQuickQty);
-            }
-            else if (isNoDimException)
-            {
-                // ПСУЛ, Уплотнение: Цена
-                SetRequiredHighlight(TxtQuickPrice);
-            }
-            else
-            {
-                // Regular products: Width + Height
-                SetRequiredHighlight(TxtQuickWidth);
-                SetRequiredHighlight(TxtQuickHeight);
-            }
         }
 
         private void SetRequiredHighlight(TextBox tb)
         {
-            if (!tb.IsEnabled || !string.IsNullOrWhiteSpace(tb.Text)) return;
-            var danger = Application.Current?.TryFindResource("Danger") as SolidColorBrush;
-            if (danger != null) tb.BorderBrush = danger;
         }
 
         private void ClearRequiredHighlight(TextBox tb)

@@ -409,34 +409,56 @@
                                                    Foreground="{DynamicResource TextPrimary}"
                                                    TextTrimming="CharacterEllipsis"/>
                                     </StackPanel>
-                                    <Border Grid.Column="2" CornerRadius="4" Padding="6,3"
-                                            VerticalAlignment="Center" Margin="8,0,0,0"
-                                            ToolTip="{Binding ProviderTooltip}">
-                                        <Border.Style>
-                                            <Style TargetType="Border">
-                                                <Setter Property="Background" Value="{DynamicResource ChipBg}"/>
-                                                <Style.Triggers>
-                                                    <DataTrigger Binding="{Binding Model.Provider}" Value="Nvidia">
-                                                        <Setter Property="Background" Value="{DynamicResource BadgeSuccessBg}"/>
-                                                    </DataTrigger>
-                                                </Style.Triggers>
-                                            </Style>
-                                        </Border.Style>
-                                        <TextBlock FontSize="9" FontWeight="Bold">
-                                            <TextBlock.Style>
-                                                <Style TargetType="TextBlock">
-                                                    <Setter Property="Text" Value="OR"/>
-                                                    <Setter Property="Foreground" Value="{DynamicResource Accent}"/>
+                                    <StackPanel Grid.Column="2" Orientation="Horizontal"
+                                                VerticalAlignment="Center">
+                                        <!-- Vision badge: visible only for models the
+                                             catalog reported as image-capable. -->
+                                        <Border CornerRadius="4" Padding="6,3"
+                                                Margin="8,0,0,0"
+                                                ToolTip="{Binding VisionTooltip}">
+                                            <Border.Style>
+                                                <Style TargetType="Border">
+                                                    <Setter Property="Background" Value="{DynamicResource BadgeVisionBg}"/>
+                                                    <Setter Property="Visibility" Value="Collapsed"/>
                                                     <Style.Triggers>
-                                                        <DataTrigger Binding="{Binding Model.Provider}" Value="Nvidia">
-                                                            <Setter Property="Text" Value="NV"/>
-                                                            <Setter Property="Foreground" Value="{DynamicResource Success}"/>
+                                                        <DataTrigger Binding="{Binding IsVisionCapable}" Value="True">
+                                                            <Setter Property="Visibility" Value="Visible"/>
                                                         </DataTrigger>
                                                     </Style.Triggers>
                                                 </Style>
-                                            </TextBlock.Style>
-                                        </TextBlock>
-                                    </Border>
+                                            </Border.Style>
+                                            <TextBlock Text="📷" FontSize="9"
+                                                       Foreground="{DynamicResource BadgeVisionFg}"/>
+                                        </Border>
+                                        <Border CornerRadius="4" Padding="6,3"
+                                                Margin="8,0,0,0"
+                                                ToolTip="{Binding ProviderTooltip}">
+                                            <Border.Style>
+                                                <Style TargetType="Border">
+                                                    <Setter Property="Background" Value="{DynamicResource ChipBg}"/>
+                                                    <Style.Triggers>
+                                                        <DataTrigger Binding="{Binding Model.Provider}" Value="Nvidia">
+                                                            <Setter Property="Background" Value="{DynamicResource BadgeSuccessBg}"/>
+                                                        </DataTrigger>
+                                                    </Style.Triggers>
+                                                </Style>
+                                            </Border.Style>
+                                            <TextBlock FontSize="9" FontWeight="Bold">
+                                                <TextBlock.Style>
+                                                    <Style TargetType="TextBlock">
+                                                        <Setter Property="Text" Value="OR"/>
+                                                        <Setter Property="Foreground" Value="{DynamicResource Accent}"/>
+                                                        <Style.Triggers>
+                                                            <DataTrigger Binding="{Binding Model.Provider}" Value="Nvidia">
+                                                                <Setter Property="Text" Value="NV"/>
+                                                                <Setter Property="Foreground" Value="{DynamicResource Success}"/>
+                                                            </DataTrigger>
+                                                        </Style.Triggers>
+                                                    </Style>
+                                                </TextBlock.Style>
+                                            </TextBlock>
+                                        </Border>
+                                    </StackPanel>
                                 </Grid>
                             </Border>
                         </DataTemplate>

@@ -128,6 +128,118 @@ namespace MosquitoNetCalculator.Tests.Models
         }
 
         [Fact]
+        public void Recalculate_CustomProduct_TotalIsPriceTimesQty()
+        {
+            // «Свой товар» (flagged custom product, not in the catalog): the sum
+            // must be Price × Quantity, NOT area-based — otherwise an item with
+            // no dimensions shows 0 ₽.
+            var item = new OrderItem
+            {
+                Name = "Шуруп 4×30",
+                Width = 0,
+                Height = 0,
+                Quantity = 1,
+                Price = 350,
+                IsCustomProduct = true
+            };
+            Assert.Equal(1, item.CalculatedValue, 3);
+            Assert.Equal("шт.", item.Unit);
+            Assert.Equal(350, item.Total, 2);
+        }
+
+        [Fact]
+        public void Recalculate_CustomProduct_ScalesByQuantity()
+        {
+            var item = new OrderItem
+            {
+                Name = "Герметик",
+                Width = 0,
+                Height = 0,
+                Quantity = 3,
+                Price = 350,
+                IsCustomProduct = true
+            };
+            Assert.Equal(1, item.CalculatedValue, 3);
+            Assert.Equal(1050, item.Total, 2);
+        }
+
+        [Fact]
+        public void Recalculate_CustomProduct_IgnoresPointlessDimensions()
+        {
+            // Even if the user typed dimensions, a custom product is a manual sum.
+            var item = new OrderItem
+            {
+                Name = "Лента",
+                Width = 5000,
+                Height = 100,
+                Quantity = 2,
+                Price = 100,
+                IsCustomProduct = true
+            };
+            Assert.Equal(1, item.CalculatedValue, 3);
+            Assert.Equal(200, item.Total, 2);
+        }
+
+        [Fact]
+        public void GetUnit_CustomProduct_IsPerPiece()
+        {
+            // «Свой товар» rows report «шт.» via the instance property; a known
+            // catalog product keeps its own unit.
+            var custom = new OrderItem
+            {
+                Name = "Шуруп 4×30",
+                Price = 350,
+                IsCustomProduct = true
+            };
+            Assert.Equal("шт.", custom.Unit);
+            Assert.Equal("м²", OrderItem.GetUnit("Anwis"));
+        }
+
+        [Fact]
+        public void Recalculate_CustomProduct_ZeroQuantity_ShowsManualSum()
+        {
+            // User rule: qty defaults to 0 for «Свой товар» and may be omitted.
+            // A row with qty 0 must show the manually entered sum (Price × 1),
+            // not Price × 0.
+            var item = new OrderItem
+            {
+                Name = "Герметик",
+                Width = 0,
+                Height = 0,
+                Quantity = 1,
+                Price = 250,
+                IsCustomProduct = true
+            };
+            item.Quantity = 0; // flag-aware setter keeps 0
+            Assert.Equal(0, item.Quantity, 3);
+            Assert.Equal(1, item.CalculatedValue, 3);
+            Assert.Equal(250, item.Total, 2); // Total = Price × 1, not × 0
+        }
+
+        [Fact]
+        public void Recalculate_CustomProduct_NonZeroQuantity_ScalesTotal()
+        {
+            var item = new OrderItem
+            {
+                Name = "Герметик",
+                Quantity = 1,
+                Price = 250,
+                IsCustomProduct = true
+            };
+            item.Quantity = 4;
+            Assert.Equal(4, item.Quantity, 3);
+            Assert.Equal(1000, item.Total, 2); // Price × 4
+        }
+
+        [Fact]
+        public void Quantity_Setter_NonCustom_StillFloorsAt001()
+        {
+            // The 0.001 floor stays for everything except «Свой товар».
+            var item = new OrderItem { Name = "Anwis", Quantity = 0 };
+            Assert.Equal(0.001, item.Quantity, 3);
+        }
+
+        [Fact]
         public void Recalculate_AreaBasedProduct_Otliv()
         {
             var item = new OrderItem
@@ -1263,6 +1375,51 @@ namespace MosquitoNetCalculator.Tests.Models
             // Материал with quantity > 1 shows quantity in the grid.
             var item = new OrderItem { Name = "Материал", Quantity = 3, Price = 1000 };
             Assert.Equal("3", item.QuantityDisplay);
+        }
+
+        [Fact]
+        public void QuantityDisplay_CustomProduct_ExplicitOne_Visible()
+        {
+            // «Свой товар»: the user EXPLICITLY entered qty 1 → it must show
+            // in the grid AND on print (0 means «не указано», 1 is a real value).
+            var item = new OrderItem
+            {
+                Name = "Герметик",
+                Quantity = 1,
+                Price = 250,
+                IsCustomProduct = true
+            };
+            Assert.Equal("1", item.QuantityDisplay);
+        }
+
+        [Fact]
+        public void QuantityDisplay_CustomProduct_Zero_Hidden()
+        {
+            // Qty was not specified → cell stays empty (user requirement).
+            // Note: set IsCustomProduct BEFORE Quantity — the flag-aware setter
+            // allows 0 only when the flag is already on (matches production order).
+            var item = new OrderItem
+            {
+                Name = "Герметик",
+                Price = 250,
+                IsCustomProduct = true
+            };
+            item.Quantity = 0;
+            Assert.Equal(0, item.Quantity, 3);
+            Assert.Equal("", item.QuantityDisplay);
+        }
+
+        [Fact]
+        public void QuantityDisplay_CustomProduct_Multiple_Visible()
+        {
+            var item = new OrderItem
+            {
+                Name = "Герметик",
+                Quantity = 4,
+                Price = 250,
+                IsCustomProduct = true
+            };
+            Assert.Equal("4", item.QuantityDisplay);
         }
 
         [Fact]

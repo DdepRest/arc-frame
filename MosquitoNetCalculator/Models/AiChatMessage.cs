@@ -1,5 +1,7 @@
 using System;
+using System.Collections.Generic;
 using System.ComponentModel;
+using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Text.Json.Serialization;
 
@@ -21,6 +23,19 @@ namespace MosquitoNetCalculator.Models
         private bool _canUndo;
         private AiExecutionResult? _executionResult;
         private string? _metricsLabel;
+        private int _attachmentCount;
+        // Runtime-only labels of the images attached to this user message.
+        // Filenames like «ПМС Anwis, бел. 1 619x1295.png» carry the whole
+        // order inline — when the user pastes a screenshot and forgets to type
+        // a caption, PreFillFromRequest would otherwise see empty text and
+        // open a blank card. Chat history persists only Text + AttachmentCount;
+        // the labels are skipped from serialization ([JsonIgnore]).
+        private List<string>? _attachmentLabels;
+        // OCR'd text of each attached image. The same screenshot often has a
+        // generic file name but its pixels carry the actual order — running
+        // Windows.Media.Ocr at send time gives PreFillFromRequest something
+        // real to chew on.
+        private List<string>? _attachmentOcr;
 
         public string Text
         {
@@ -242,9 +257,55 @@ namespace MosquitoNetCalculator.Models
             set { if (_metricsLabel != value) { _metricsLabel = value; OnPropertyChanged(); } }
         }
 
+        /// <summary>
+        /// Number of images attached to this user message. Runtime-only — the
+        /// base64 payloads are never persisted, only a count for the bubble icon.
+        /// </summary>
+        [JsonIgnore]
+        public int AttachmentCount
+        {
+            get => _attachmentCount;
+            set
+            {
+                if (_attachmentCount == value) return;
+                _attachmentCount = value;
+                OnPropertyChanged();
+                OnPropertyChanged(nameof(HasAttachments));
+            }
+        }
+
+        /// <summary>True when this user message carried at least one image.</summary>
+        [JsonIgnore]
+        public bool HasAttachments => AttachmentCount > 0;
+
+        /// <summary>Filenames of images attached to this user message (runtime-only).</summary>
+        [JsonIgnore]
+        public List<string> AttachmentLabels
+        {
+            get => _attachmentLabels ??= new List<string>();
+            set => _attachmentLabels = value;
+        }
+
+        /// <summary>OCR'd text of each attached image (runtime-only).</summary>
+        [JsonIgnore]
+        public List<string> AttachmentOcr
+        {
+            get => _attachmentOcr ??= new List<string>();
+            set => _attachmentOcr = value;
+        }
+
         /// <summary>Plan id shortcut for the plan card bindings.</summary>
         [JsonIgnore]
         public string? PlanId => ActionPlan?.PlanId;
+
+        /// <summary>
+        /// Original user request text stored on the bot reply for retry.
+        /// When the clarification card has empty dimensions (OCR failed),
+        /// the retry button re-sends this exact text to a different model
+        /// without requiring the user to retype anything. Runtime-only.
+        /// </summary>
+        [JsonIgnore]
+        public string? RetryUserText { get; set; }
 
         /// <summary>Read-only shortcut: true when the message is an action that was confirmed and run.</summary>
         [JsonIgnore]
