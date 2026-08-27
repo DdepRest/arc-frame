@@ -51,7 +51,7 @@ namespace MosquitoNetCalculator.Models
         private readonly IReadOnlyList<string> _productTypes;
         private string _selectedType = "Anwis";
         private string _selectedColor = "Белый";
-        private string _selectedAnwisMode = UnspecifiedAnwisMode;
+        private string _selectedAnwisMode = "ББ 60";
         private string _selectedInstallation = "Не указывать";
         private string _widthText = string.Empty;
         private string _heightText = string.Empty;
@@ -87,8 +87,7 @@ namespace MosquitoNetCalculator.Models
         }
 
         public IReadOnlyList<string> ProductTypes => _productTypes;
-        public IReadOnlyList<string> AnwisModeOptions { get; } =
-            new[] { UnspecifiedAnwisMode, "ББ 60", "ББ 70", "ПП", "Проём", "Габарит" };
+        public IReadOnlyList<string> AnwisModeOptions { get; } = AllAnwisModes;
         public IReadOnlyList<string> InstallationOptions => AllInstallationOptions;
 
         /// <summary>Colors available for the currently selected product.</summary>

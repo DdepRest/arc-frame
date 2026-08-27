@@ -104,45 +104,18 @@ namespace MosquitoNetCalculator.Controls
             TryGetMainWindow()?.OpenWelcomeWindow();
         }
 
-        /// <summary>Запрашивает админ-пароль; true — если введён верный.</summary>
-        private bool PromptAdminPassword()
-        {
-            var win = GetParentWindow();
-            var enterDialog = new AdminPasswordWindow { Owner = win };
-            return enterDialog.ShowDialog() == true;
-        }
-
         private void MenuAiApiKey_Click(object sender, RoutedEventArgs e)
         {
-            // Настройки AI (ключи API, каталог моделей) защищены админ-паролем.
-            if (!PromptAdminPassword()) return;
-
-            var win = GetParentWindow();
-            var dialog = new AiApiKeyDialog { Owner = win };
-            if (dialog.ShowDialog() == true)
-            {
-                if (string.IsNullOrEmpty(dialog.ApiKey))
-                    ToastService.ShowToast("API-ключ AI-ассистента очищен.", ToastType.Info);
-                else
-                    ToastService.ShowToast("API-ключ AI-ассистента сохранён.", ToastType.Success);
-            }
-        }
-
-        private void MenuAdminPanel_Click(object sender, RoutedEventArgs e)
-        {
-            // Админ-панель переехала в настройки: вход по вшитому паролю,
-            // после успешного входа — оверлей панели в главном окне.
-            if (!PromptAdminPassword()) return;
-            TryGetMainWindow()?.ShowAdminPanel();
+            var owner = GetParentWindow();
+            if (owner == null) return;
+            var dialog = new AiApiKeyDialog { Owner = owner };
+            dialog.ShowDialog();
         }
 
         private async void MenuCheckUpdates_Click(object sender, RoutedEventArgs e)
         {
             var mw = TryGetMainWindow();
             if (mw == null) return;
-            // Ручная проверка обновлений заодно шлёт свежий отчёт офиса —
-            // данные уходят без входа в админ-панель.
-            _ = OfficeReportService.SendReportAsync();
             await UpdateService.CheckAndApplyAsync(mw);
             UpdateSettingsMenu();
         }
