@@ -300,7 +300,7 @@ git commit -m "release: update releases.json for vX.Y.Z"
 - `extract-release-notes.ps1`
 
 ## Last verified
-2026-08-17 (v3.47.4) — auto-synced from csproj (sync-version.ps1, CONTROL#13).
+2026-08-24 (v3.47.4) — auto-synced from csproj (sync-version.ps1, CONTROL#13).
 
 
 2026-08-03 (v3.47.3) — само-обновление (CONTROL#13): перепроверено при синхронизации версий; pipeline актуален для v3.47.3.

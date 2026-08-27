@@ -31,6 +31,7 @@ namespace MosquitoNetCalculator.Models
         /// <summary>
         /// Default installation adjustment for mode 0 (Монтаж включён).
         /// For per-linear-meter products (Отлив, Козырёк) the rate is in ₽/м.п.
+        /// длины изделия (v3.48.2: большая сторона, НЕ периметр).
         /// </summary>
         private static readonly Dictionary<string, double> DefaultInstallationAdjustments = new()
         {
@@ -38,8 +39,8 @@ namespace MosquitoNetCalculator.Models
             ["Козырёк"] = 750,
         };
 
-        // Per-linear-meter product list is owned by ProductCatalog.PerLinearMeterProducts.
-        // No local HashSet is needed — IsInstallationPerLinearMeter delegates directly.
+        // Ставки Отлив/Козырёк — ₽/м.п. ДЛИНЫ изделия (большая сторона; до v3.48.2
+        // был периметр). Цена товара по-прежнему площадная — см. Recalculate.
 
         /// <summary>
         /// Returns the default installation deduction for a given product name.
@@ -49,7 +50,7 @@ namespace MosquitoNetCalculator.Models
 
         /// <summary>
         /// Returns the default installation adjustment for mode 0 (Монтаж включён).
-        /// For per-linear-meter products returns the rate in ₽/м.п.; otherwise 0.
+        /// For per-linear-meter products returns the rate in ₽/м.п. длины; otherwise 0.
         /// </summary>
         public static double GetDefaultInstallationAdjustment(string productName) =>
             DefaultInstallationAdjustments.GetValueOrDefault(productName, 0);
@@ -63,16 +64,22 @@ namespace MosquitoNetCalculator.Models
         public static double GetDefaultInstallationSurcharge(string productName) =>
             GetDefaultInstallationDeduction(productName);
 
-        /// <summary>True when installation for this product is priced per linear meter.</summary>
+        /// <summary>
+        /// True when installation for this product is priced per linear meter
+        /// of the product LENGTH (longer side): Отлив/Козырёк.
+        /// v3.48.2: метры монтажа считаются по длине изделия (большая сторона),
+        /// а не по периметру как в v3.47.0–v3.48.1: козырёк 350×1000 → 1,0 м.п.,
+        /// монтаж 750 ₽/м.п. = ровно 750 ₽. Остальные товары — поштучно.
+        /// </summary>
         public bool IsInstallationPerLinearMeter => ProductCatalog.IsPerLinearMeter(Name);
 
         /// <summary>
         /// Linear meters used for installation cost calculation.
-        /// For per-linear-meter products this is the perimeter in meters;
-        /// for per-piece products it is 1.
+        /// v3.48.2: для Отлив/Козырёк это ДЛИНА изделия — большая из сторон в метрах
+        /// (НЕ периметр, как было в v3.47.0–v3.48.1); для остальных товаров 1.
         /// </summary>
         public double InstallationLinearMeters => IsInstallationPerLinearMeter
-            ? Math.Round((Width + Height) * 2 / 1000.0, 3)
+            ? Math.Round(Math.Max(Width, Height) / 1000.0, 3)
             : 1.0;
 
         /// <summary>
@@ -202,11 +209,37 @@ namespace MosquitoNetCalculator.Models
             };
 
         /// <summary>
+        /// v3.48.3: money value of installation for the whole ROW:
+        /// per-mode amount × linear meters (Отлив/Козырёк — длина изделия) × Quantity.
+        /// 0 when installation is not applicable or the per-mode amount is zero.
+        /// Informational only — TotalWithDeduction already includes it.
+        /// </summary>
+        public double InstallationRowTotal => !IsInstallationApplicable || Math.Abs(CurrentInstallationAmount) < 0.01
+            ? 0
+            : CurrentInstallationAmount * InstallationLinearMeters * Quantity;
+
+        /// <summary>
+        /// Compact signed amount for the «Монтаж» cell (grid sub-line and КП print):
+        /// "+750" / "−500" / "+2 025". Empty when not applicable or zero,
+        /// so cells without installation look exactly as before v3.48.3.
+        /// </summary>
+        public string InstallationAmountDisplay => InstallationRowTotal == 0
+            ? ""
+            : InstallationRowTotal > 0
+                ? "+" + Services.MoneyFormatService.FormatWhole(InstallationRowTotal)
+                : "−" + Services.MoneyFormatService.FormatWhole(-InstallationRowTotal);
+
+        /// <summary>Single-line text of the КП print column: glyph + row amount ("✓ +750");
+        /// bare glyph when amount is 0; "—" when not applicable.</summary>
+        public string KpInstallationCellText => InstallationAmountDisplay == ""
+            ? KpInstallationDisplay
+            : $"{KpInstallationDisplay} {InstallationAmountDisplay}";
+
+        /// <summary>
         /// The effective total after applying the installation adjustment.
         /// All three modes use the same signed convention: positive value adds,
-        /// negative subtracts. Formula: Total + value × InstallationLinearMeters × Quantity.
-        /// For per-piece products InstallationLinearMeters is 1; for Отлив/Козырёк
-        /// it is the perimeter in meters.
+        /// negative subtracts. Formula: Total + value × InstallationLinearMeters × Quantity,
+        /// где InstallationLinearMeters = длина изделия (м) для Отлив/Козырёк (v3.48.2), иначе 1.
         /// See GOTCHAS.md#12 for the historical per-piece scaling bug.
         /// </summary>
         public double TotalWithDeduction

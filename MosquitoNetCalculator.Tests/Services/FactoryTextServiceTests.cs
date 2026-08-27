@@ -126,7 +126,9 @@ namespace MosquitoNetCalculator.Tests.Services
 
             var text = FactoryTextService.Generate("", selectable);
 
-            Assert.Contains("Anwis, размер проёма (ББ 60):", text);
+            // v3.48.0: к DisplayName добавляется суффикс «(Импост)»
+            // (расчётная ширина 1002 ≥ 500 мм).
+            Assert.Contains("Anwis (Импост), размер проёма (ББ 60):", text);
             Assert.DoesNotContain("\nAnwis:", text); // plain header without mode
         }
 
@@ -154,8 +156,8 @@ namespace MosquitoNetCalculator.Tests.Services
             var text = FactoryTextService.Generate("", selectable);
 
             // Different modes → separate sections with short mode labels.
-            Assert.Contains("Anwis, размер проёма (ББ 60):", text);
-            Assert.Contains("Anwis, размер проёма (ПП):", text);
+            Assert.Contains("Anwis (Импост), размер проёма (ББ 60):", text);
+            Assert.Contains("Anwis (Импост), размер проёма (ПП):", text);
         }
 
         [Fact]
@@ -181,7 +183,7 @@ namespace MosquitoNetCalculator.Tests.Services
 
             // Same mode → one section header with short mode label.
             int headerCount = text.Split('\n').Count(
-                l => l.Trim() == "Anwis, размер проёма (ББ 60):");
+                l => l.Trim() == "Anwis (Импост), размер проёма (ББ 60):");
             Assert.Equal(1, headerCount);
         }
 
@@ -241,7 +243,7 @@ namespace MosquitoNetCalculator.Tests.Services
             var selectable = FactoryTextService.BuildSelectableItems(items, new List<AdditionalKpItem>());
 
             Assert.Single(selectable);
-            Assert.Equal("Anwis", selectable[0].DisplayName);
+            Assert.Equal("Anwis (Импост)", selectable[0].DisplayName); // v3.48.0: + суффикс импоста
         }
 
         [Fact]
@@ -258,7 +260,7 @@ namespace MosquitoNetCalculator.Tests.Services
             var selectable = FactoryTextService.BuildSelectableItems(items, new List<AdditionalKpItem>());
 
             Assert.Single(selectable);
-            Assert.Equal("Anwis", selectable[0].DisplayName);
+            Assert.Equal("Anwis (Импост)", selectable[0].DisplayName); // v3.48.0: + суффикс импоста
             // Detail shows stored (calc-adjusted) sizes: 998×1170
             Assert.Contains("998", selectable[0].Detail);
             Assert.Contains("1170", selectable[0].Detail);
@@ -350,7 +352,7 @@ namespace MosquitoNetCalculator.Tests.Services
             var selectable = FactoryTextService.BuildSelectableItems(items, new List<AdditionalKpItem>());
 
             Assert.Single(selectable);
-            Assert.Equal("Anwis (Антикошка)", selectable[0].DisplayName);
+            Assert.Equal("Anwis (Антикошка) (Импост)", selectable[0].DisplayName); // v3.48.0: + суффикс импоста
         }
 
         [Fact]
@@ -370,7 +372,7 @@ namespace MosquitoNetCalculator.Tests.Services
 
             var text = FactoryTextService.Generate("", selectable);
 
-            Assert.Contains("Anwis (Антикошка), размер проёма (ББ 60):", text);
+            Assert.Contains("Anwis (Антикошка) (Импост), размер проёма (ББ 60):", text);
         }
 
         [Fact]
@@ -397,8 +399,8 @@ namespace MosquitoNetCalculator.Tests.Services
             var text = FactoryTextService.Generate("", selectable);
 
             // Different DisplayName → separate sections.
-            Assert.Contains("Anwis, размер проёма (ББ 60):", text);
-            Assert.Contains("Anwis (Антикошка), размер проёма (ББ 60):", text);
+            Assert.Contains("Anwis (Импост), размер проёма (ББ 60):", text);
+            Assert.Contains("Anwis (Антикошка) (Импост), размер проёма (ББ 60):", text);
         }
     }
 }

@@ -1,6 +1,7 @@
 <UserControl x:Class="MosquitoNetCalculator.Controls.OrderItemsControl"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
-             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:conv="clr-namespace:MosquitoNetCalculator.Converters">
     <Grid>
         <Border x:Name="CardTable" Background="{DynamicResource Surface}" CornerRadius="10"
                 BorderBrush="{DynamicResource Border}" BorderThickness="1"
@@ -36,6 +37,8 @@
                         <Setter Property="HorizontalAlignment" Value="Center"/>
                         <Setter Property="VerticalAlignment" Value="Center"/>
                     </Style>
+                    <!-- v3.48.3: сумма монтажа под глифом в ячейке «Монтаж» -->
+                    <conv:NonEmptyStringToVisibilityConverter x:Key="NonEmptyToVis"/>
                 </DataGrid.Resources>
 
                 <DataGrid.Columns>
@@ -283,17 +286,28 @@
                                 <!-- v3.47.1: FlatIconButton — без WPF-овского «хрома» (фон-кнопка),
                                      только глиф V/X/B. Не-applicable товары затемняются
                                      через IsEnabled=False в стиле. -->
-                                <Button Content="{Binding InstallationButtonLabel}"
-                                        Style="{DynamicResource FlatIconButton}"
-                                        FontSize="14"
-                                        FontWeight="Bold"
-                                        Width="34"
-                                        Height="26"
-                                        HorizontalAlignment="Center"
-                                        Foreground="{Binding InstallationForegroundColor}"
-                                        Click="BtnToggleInstallation_Click"
-                                        ToolTip="{Binding InstallationToolTip}"
-                                        IsEnabled="{Binding IsInstallationApplicable}"/>
+                                <StackPanel>
+                                    <Button Content="{Binding InstallationButtonLabel}"
+                                            Style="{DynamicResource FlatIconButton}"
+                                            FontSize="14"
+                                            FontWeight="Bold"
+                                            Width="34"
+                                            Height="26"
+                                            HorizontalAlignment="Center"
+                                            Foreground="{Binding InstallationForegroundColor}"
+                                            Click="BtnToggleInstallation_Click"
+                                            ToolTip="{Binding InstallationToolTip}"
+                                            IsEnabled="{Binding IsInstallationApplicable}"/>
+                                    <!-- v3.48.3: сумма монтажа за строку мелким текстом
+                                         под глифом (скрыта для «—» и нулевой суммы) -->
+                                    <TextBlock Text="{Binding InstallationAmountDisplay}"
+                                               Visibility="{Binding InstallationAmountDisplay,
+                                                                            Converter={StaticResource NonEmptyToVis}}"
+                                               FontSize="10"
+                                               Margin="0,-1,0,0"
+                                               HorizontalAlignment="Center"
+                                               Foreground="{DynamicResource TextSecondary}"/>
+                                </StackPanel>
                             </DataTemplate>
                         </DataGridTemplateColumn.CellTemplate>
                     </DataGridTemplateColumn>

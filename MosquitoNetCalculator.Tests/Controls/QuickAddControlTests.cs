@@ -172,5 +172,38 @@ namespace MosquitoNetCalculator.Tests.Controls
                 Assert.False(btn.IsChecked);
             });
         }
+
+        // ---- TryParseQuickNumber (regression: «2 150,00» must parse to 2150) ----
+
+        [Theory]
+        [InlineData("2 150,00", 2150.0)]
+        [InlineData("2 150", 2150.0)]
+        [InlineData("2150", 2150.0)]
+        [InlineData("2150,5", 2150.5)]
+        [InlineData("2150.50", 2150.5)]
+        [InlineData("1 360", 1360.0)]
+        [InlineData("\u00A02150,00\u00A0", 2150.0)] // non-breaking spaces
+        public void TryParseQuickNumber_CatalogFormatWithThousandsSeparator_Parses(string text, double expected)
+        {
+            // Regression: the price field is auto-filled with MoneyFormatService.Format,
+            // e.g. «2 150,00». NumberStyles.Float does not allow the group separator,
+            // so the old parse produced 0 and the row was added with a zero price.
+            bool ok = QuickAddControl.TryParseQuickNumber(text, out double value);
+
+            Assert.True(ok);
+            Assert.Equal(expected, value, 2);
+        }
+
+        [Theory]
+        [InlineData("")]
+        [InlineData("   ")]
+        [InlineData(null)]
+        public void TryParseQuickNumber_Empty_ReturnsZeroTrue(string? value)
+        {
+            bool ok = QuickAddControl.TryParseQuickNumber(value, out double result);
+
+            Assert.True(ok);
+            Assert.Equal(0, result);
+        }
     }
 }

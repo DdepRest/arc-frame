@@ -3,6 +3,7 @@ using System.Text.RegularExpressions;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
+using MosquitoNetCalculator.Services;
 
 namespace MosquitoNetCalculator.Controls
 {
@@ -130,7 +131,7 @@ namespace MosquitoNetCalculator.Controls
         private void ValueTextBox_LostFocus(object sender, RoutedEventArgs e)
         {
             if (string.IsNullOrWhiteSpace(ValueTextBox.Text) ||
-                !int.TryParse(ValueTextBox.Text, out int result) ||
+                !MoneyFormatService.TryParseInt(ValueTextBox.Text, out int result) ||
                 result < 1)
             {
                 UpdateTextBox(Value);
@@ -142,7 +143,8 @@ namespace MosquitoNetCalculator.Controls
         private void ValueTextBox_TextChanged(object sender, TextChangedEventArgs e)
         {
             if (_isUpdatingText) return;
-            if (int.TryParse(ValueTextBox.Text, out int result) && result >= 1)
+            // Единый парсер: «2 150» с пробелом-разделителем тоже распознаётся.
+            if (MoneyFormatService.TryParseInt(ValueTextBox.Text, out int result) && result >= 1)
                 Value = result;
         }
     }

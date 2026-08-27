@@ -579,12 +579,11 @@ namespace MosquitoNetCalculator.Tests.Models
         }
 
         [Fact]
-        public void TotalWithDeduction_Otliv_Mode0_PerLinearMeter()
+        public void TotalWithDeduction_Otliv_Mode0_PerMeterLength()
         {
-            // v3.47.0: Отлив installation is 500 ₽/м.п.
-            // Perimeter = (1500 + 100) * 2 / 1000 = 3.2 м.п.
-            // Installation cost = 500 * 3.2 = 1600 ₽
-            // Total = 0.15 * 2150 = 322.5; TotalWithDeduction = 322.5 + 1600 = 1922.5
+            // v3.48.2: монтаж Отлив — 500 ₽/м.п. ДЛИНЫ изделия (большая сторона,
+            // не периметр): max(1500, 100) = 1,5 м.п. → 500 × 1,5 = 750 ₽.
+            // Total = 0.15 * 2150 = 322.5; TotalWithDeduction = 322.5 + 750 = 1072.5
             var item = new OrderItem
             {
                 Name = "Отлив",
@@ -594,34 +593,90 @@ namespace MosquitoNetCalculator.Tests.Models
                 InstallationMode = 0,
                 InstallationAdjustment = 500
             };
-            Assert.Equal(1922.5, item.TotalWithDeduction, 2);
+            Assert.Equal(1072.5, item.TotalWithDeduction, 2);
         }
 
         [Fact]
-        public void TotalWithDeduction_Kozyrek_Mode0_PerLinearMeter()
+        public void TotalWithDeduction_Kozyrek_Mode0_PerMeterLength_UserCase350x1000()
         {
-            // v3.47.0: Козырёк installation is 750 ₽/м.п.
-            // Perimeter = (1200 + 200) * 2 / 1000 = 2.8 м.п.
-            // Installation cost = 750 * 2.8 = 2100 ₽
-            // Total = 0.24 * 3000 = 720; TotalWithDeduction = 720 + 2100 = 2820
+            // Regression guard (репорт пользователя): «Монтаж включён» на козырьке
+            // 350×1000 должен добавить ровно 750 ₽ = 750 ₽/м.п. × 1,0 м.п. длины
+            // (max(350, 1000) = 1000 мм), а не 750 × 2,7 м.п. периметра = 2025 ₽
+            // (формула v3.47.0–v3.48.1).
+            // Total = 0.35 * 1.0 * 2150 = 752.5; TotalWithDeduction = 752.5 + 750 = 1502.5
             var item = new OrderItem
             {
                 Name = "Козырёк",
-                Width = 1200, Height = 200,
+                Width = 350, Height = 1000,
                 Quantity = 1,
-                Price = 3000,
+                Price = 2150,
                 InstallationMode = 0,
                 InstallationAdjustment = 750
             };
-            Assert.Equal(2820, item.TotalWithDeduction, 2);
+            Assert.Equal(1502.5, item.TotalWithDeduction, 2);
+        }
+        [Fact]
+        public void InstallationRowTotal_Kozyrek_UserCase350x1000_ShowsPlus750()
+        {
+            // v3.48.3: сумма монтажа всей строки = ставка × м.п. длины × Кол-во.
+            // Козырёк 350×1000: 1,0 м.п. × 750 = ровно 750 ₽.
+            var item = new OrderItem
+            {
+                Name = "Козырёк",
+                Width = 350, Height = 1000,
+                Quantity = 1,
+                Price = 2150,
+                InstallationMode = 0,
+                InstallationAdjustment = 750
+            };
+            Assert.Equal(750, item.InstallationRowTotal, 2);
+            Assert.Equal("+750", item.InstallationAmountDisplay);
+            Assert.StartsWith("✓", item.KpInstallationCellText);
+            Assert.Contains("+750", item.KpInstallationCellText);
         }
 
         [Fact]
-        public void TotalWithDeduction_Otliv_Mode0_QuantityMultiplier_AppliesToLinearMeters()
+        public void InstallationAmountDisplay_Empty_WhenNotApplicableOrZero()
         {
-            // v3.47.0: per-linear-meter installation also scales with Quantity.
-            // Perimeter = 3.2 м.п., Qty = 2 → linear factor = 6.4
-            // Installation = 500 * 6.4 = 3200 ₽
+            // ПСУЛ — монтаж не предусмотрен: пусто и только глиф «—» в КП.
+            var psul = new OrderItem { Name = "ПСУЛ", Quantity = 1 };
+            Assert.Equal(0, psul.InstallationRowTotal);
+            Assert.Equal("", psul.InstallationAmountDisplay);
+            Assert.Equal("—", psul.KpInstallationCellText);
+
+            // Anwis по умолчанию (mode 0, ставка 0): ячейка КП как раньше — голый глиф.
+            var anwis = new OrderItem { Name = "Anwis", Width = 599, Height = 1216, Price = 1800 };
+            Assert.Equal(0, anwis.InstallationRowTotal);
+            Assert.Equal("", anwis.InstallationAmountDisplay);
+            Assert.Equal("✓", anwis.KpInstallationCellText);
+        }
+
+        [Fact]
+        public void InstallationAmountDisplay_NegativeDeduction_ScalesWithQuantity()
+        {
+            // «Без монтажа» на Anwis ×2: −500 ₽/шт → строка −1000 ₽ со знаком минус.
+            var item = new OrderItem
+            {
+                Name = "Anwis",
+                Width = 1000, Height = 1000,
+                Price = 1800,
+                Quantity = 2,
+                InstallationMode = 1
+            };
+            Assert.Equal(-1000, item.InstallationRowTotal, 2);
+            Assert.StartsWith("−", item.InstallationAmountDisplay);
+            Assert.Contains("000", item.InstallationAmountDisplay);
+            Assert.StartsWith("✗", item.KpInstallationCellText);
+            Assert.True(item.KpInstallationCellText.Contains(" −"),
+                $"cell=[{item.KpInstallationCellText}]");
+        }
+
+
+        [Fact]
+        public void TotalWithDeduction_Otliv_Mode0_QuantityMultiplier_AppliesPerMeterLength()
+        {
+            // v3.48.2: монтаж по длине изделия масштабируется по м.п. и Кол-ву:
+            // длина 1,5 м.п., Qty = 2 → Installation = 500 × 1,5 × 2 = 1500 ₽.
             var item = new OrderItem
             {
                 Name = "Отлив",
@@ -632,7 +687,7 @@ namespace MosquitoNetCalculator.Tests.Models
                 InstallationAdjustment = 500
             };
             double expectedTotal = 0.15 * 2150 * 2; // 645
-            double expected = expectedTotal + 500 * 3.2 * 2; // 645 + 3200 = 3845
+            double expected = expectedTotal + 500 * 1.5 * 2; // 645 + 1500 = 2145
             Assert.Equal(expected, item.TotalWithDeduction, 2);
         }
 

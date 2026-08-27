@@ -203,6 +203,9 @@ namespace MosquitoNetCalculator.Models
             OnPropertyChanged(nameof(InstallationButtonLabel));
             OnPropertyChanged(nameof(InstallationForegroundColor));
             OnPropertyChanged(nameof(InstallationToolTip));
+            OnPropertyChanged(nameof(InstallationRowTotal));   // v3.48.3
+            OnPropertyChanged(nameof(InstallationAmountDisplay)); // v3.48.3
+            OnPropertyChanged(nameof(KpInstallationCellText));    // v3.48.3
 
             RecalculateRequested?.Invoke();
         }

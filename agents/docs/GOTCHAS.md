@@ -343,7 +343,7 @@ GotFocus прибывает после `PreviewMouseLeftButtonDown` (котор�
 заказы, сохранённые до этого момента, содержат только DTO defaults
 (`mode=0, ded=-500, sur=-500, adj=0`) потому что для них товар был
 **не** installation-aware. v3.47.0+ формула итого для per-linear-meter:
-`Total + value × InstallationLinearMeters × Quantity` (₽/м.п.)
+`Total + value × InstallationLinearMeters × Quantity` (₽/м.п.; с v3.48.2 метры = ДЛИНА изделия — большая сторона, не периметр)
 
 С legacy defaults:
 - `Max(0, 1075 + (-500)×3×1) = Max(0, −425) = 0` — режим X или B показывает 0.
@@ -472,7 +472,7 @@ InstallationSurcharge = (od.InstallationSurcharge > 0 && od.InstallationMode != 
 ---
 
 ## Last verified
-2026-08-20 (v3.47.4) — auto-synced from csproj (sync-version.ps1, CONTROL#13).
+2026-08-27 (v3.47.4) — auto-synced from csproj (sync-version.ps1, CONTROL#13).
 
 
 2026-08-20 — maintenance pass (CONTROL#13): дата верификации синхронизирована с git-историей; содержимое сверено с текущим состоянием (v3.47.3, 1511/1511 tests pass).

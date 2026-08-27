@@ -49,7 +49,7 @@ namespace MosquitoNetCalculator.Services
         /// attempt is treated as a transient failure and the chain moves on — a
         /// hot free vision model can otherwise leave «Думает…» hanging for minutes.
         /// </summary>
-        internal static int FirstTokenTimeoutMs { get; set; } = 20_000;
+        internal static int FirstTokenTimeoutMs { get; set; } = 8_000;
 
         // ── Provider endpoints ─────────────────────────────────
         // Stage-3 hardening: URL constants now live in the dedicated helper

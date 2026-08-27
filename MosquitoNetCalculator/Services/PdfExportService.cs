@@ -127,11 +127,11 @@ namespace MosquitoNetCalculator.Services
                                 {
                                     cd.ConstantColumn(20);
                                     cd.RelativeColumn(3);
-                                    cd.RelativeColumn(1.5f);
+                                    cd.RelativeColumn(1.2f);
                                     cd.RelativeColumn(1.3f);
                                     cd.RelativeColumn(1.3f);
                                     cd.RelativeColumn(1.4f);
-                                    cd.RelativeColumn(1.5f);
+                                    cd.RelativeColumn(1.9f);
                                     cd.RelativeColumn(1.8f);
                                     cd.ConstantColumn(25);
                                     cd.RelativeColumn(1.9f);
@@ -168,7 +168,7 @@ namespace MosquitoNetCalculator.Services
                                     t.Cell().Element(c2 => EDataCell(c2, bg)).Text(item.Width > 0 ? item.Width.ToString("F0") : "").AlignCenter().FontSize(8.5f);
                                     t.Cell().Element(c2 => EDataCell(c2, bg)).Text(item.Height > 0 ? item.Height.ToString("F0") : "").AlignCenter().FontSize(8.5f);
                                     t.Cell().Element(c2 => EDataCell(c2, bg)).Text(item.QuantityDisplay).AlignCenter().FontSize(8.5f);
-                                    t.Cell().Element(c2 => EDataCell(c2, bg)).Text(item.KpInstallationDisplay ?? "").AlignCenter().FontSize(8.5f);
+                                    t.Cell().Element(c2 => EDataCell(c2, bg)).Text(item.KpInstallationCellText ?? "").AlignCenter().FontSize(8.5f); // v3.48.3
                                     if (item.IsAmountOnly || (item.IsQuantityOptional && item.Quantity <= 1))
                                         t.Cell().Element(c2 => EDataCell(c2, bg)).Text("").AlignCenter();
                                     else

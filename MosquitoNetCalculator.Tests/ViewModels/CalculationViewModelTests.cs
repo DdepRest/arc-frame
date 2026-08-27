@@ -155,7 +155,8 @@ namespace MosquitoNetCalculator.Tests.ViewModels
             _vm.AddItem("Anwis", "Белый", 1000, 1000, 1, 1800); // 0.972 * 1800 = 1749.6 (ББ60 default)
             _vm.AddItem("Отлив", "Белый", 1000, 500, 1, 2150);  // 0.5 * 2150 = 1075
             var total = _vm.CalculateTotal(0);
-            Assert.Equal(2824.6, total.Total, 2);
+            // v3.48.0: + импост 200.4 (200 ₽ × 1.002 м.п. расчётной ширины ББ60).
+            Assert.Equal(3025.0, total.Total, 2);
             Assert.Equal(2, total.Count);
         }
 
@@ -174,7 +175,8 @@ namespace MosquitoNetCalculator.Tests.ViewModels
         {
             _vm.AddItem("Anwis", "Белый", 1000, 1000, 1, 1800);
             var total = _vm.CalculateTotal(500);
-            Assert.Equal(2249.6, total.Total, 2);
+            // v3.48.0: 1749.6 + импост 200.4 + 500 КП = 2450.
+            Assert.Equal(2450.0, total.Total, 2);
         }
 
         [Fact]
@@ -336,7 +338,8 @@ namespace MosquitoNetCalculator.Tests.ViewModels
             _vm.LoadFromOrderData(order, () => { });
             Assert.Single(_vm.OrderItems);
             Assert.True(_vm.OrderItems[0].IsAnticat);
-            Assert.Equal("Anwis (Антикошка)", _vm.OrderItems[0].DisplayName);
+            // v3.48.0: ширина 1000 ≥ 500 мм → к имени добавляется «(Импост)».
+            Assert.Equal("Anwis (Антикошка) (Импост)", _vm.OrderItems[0].DisplayName);
         }
 
         // ─── LoadFromOrderData tests ─────────────────────────
@@ -409,7 +412,7 @@ namespace MosquitoNetCalculator.Tests.ViewModels
         // recompute paths in one test.
 
         [Theory]
-        [InlineData("Anwis", 1000, 1500, 2, 1800, 1.5, 5400)]   // LoadFromOrderData uses stored values directly: W*H/1M = 1.5 м²
+        [InlineData("Anwis", 1000, 1500, 2, 1800, 1.5, 5800)]   // stored: 1.5 м² × 1800 × 2 = 5400 + импост 200×1.0×2 = 400 (v3.48.0)
         [InlineData("ПСУЛ", 1500, 2000, 3, 100, 7.0, 2100)]     // (W+H)*2/1000 = 7.0 м.п., * P * Q = 2100
         public void LoadFromOrderData_RecomputesCalculatedValueAndTotal_FromDtoFields(
             string name, int width, int height, int qty, double price,

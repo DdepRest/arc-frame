@@ -141,7 +141,7 @@ Intake phase: user describes intent
 
 ## Last verified
 
-2026-08-17 (v3.47.4) — добавлена секция «AI Agent Mode»: mapping намерений на AI-файлы (AiAssistant*, AiPlan*, AiCommandParser, AiLocalCommandRouter, AiModelSelector, AiOrderContextBuilder, AiClarificationForm, AiRequestMetrics, AI-регрессии, overlay-скрипты).
+2026-08-24 (v3.47.4) — добавлена секция «AI Agent Mode»: mapping намерений на AI-файлы (AiAssistant*, AiPlan*, AiCommandParser, AiLocalCommandRouter, AiModelSelector, AiOrderContextBuilder, AiClarificationForm, AiRequestMetrics, AI-регрессии, overlay-скрипты).
 
 2026-08-03 (v3.47.3) — добавлены mapping'и структурных изменений (разбивка/переименование/новые классы/сигнатуры/бизнес-логика/процессы/сама система документации) согласно CONTROL#13.
 

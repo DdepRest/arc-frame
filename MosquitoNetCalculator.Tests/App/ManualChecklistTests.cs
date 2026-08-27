@@ -134,7 +134,7 @@ namespace MosquitoNetCalculator.Tests.App
         // ═══════════════════════════════════════════════════════════════════
 
         [Theory]
-        [InlineData("Anwis", "Белый", 1000, 1000, 1, 1800, 0.972, 1749.60)]     // ББ60: calcW=1002, H=970 → 0.972 м² × 1800
+        [InlineData("Anwis", "Белый", 1000, 1000, 1, 1800, 0.972, 1950.00)]     // ББ60: calcW=1002, H=970 → 0.972×1800 = 1749.6 + импост 200×1.002 = 200.4 (v3.48.0)
         [InlineData("ПСУЛ", "", 1000, 2000, 1, 100, 6.000, 600.00)]                // 6 м.п. × 100
         [InlineData("Уплотнение", "Серый", 1000, 2000, 1, 250, 6.000, 1500.00)]    // 6 м.п. × 250
         [InlineData("Работа", "", 0, 0, 1, 5000, 1.0, 5000.00)]                    // 1 шт. × 5000
@@ -154,15 +154,15 @@ namespace MosquitoNetCalculator.Tests.App
         public void Check2_Aggregate_Total_Is_Sum_Of_All_Active_Rows()
         {
             // §2.5 — "Итоговая сумма внизу = сумма всех активных строк".
-            // 1749.6 + 600 + 1500 + 5000 = 8849.60 ₽.
+            // 1749.6 + импост 200.4 + 600 + 1500 + 5000 = 9050.00 ₽ (v3.48.0).
             var calc = new CalculationViewModel();
             calc.AddItem("Anwis", "Белый", 1000, 1000, 1, 1800);
             calc.AddItem("ПСУЛ", "", 1000, 2000, 1, 100);
             calc.AddItem("Уплотнение", "Серый", 1000, 2000, 1, 250);
             calc.AddItem("Работа", "", 0, 0, 1, 5000);
             var total = calc.CalculateTotal(additionalKpTotal: 0);
-            // Anwis ББ60 default: 0.972 м² × 1800 = 1749.6. Total: 1749.6+600+1500+5000 = 8849.6.
-            Assert.Equal(8849.60, total.Total, 2);
+            // Anwis ББ60 default: 0.972×1800 = 1749.6 + импост 200.4. Итог 9050.0.
+            Assert.Equal(9050.00, total.Total, 2);
             // Cast to int so we don't trigger xUnit2013 (Assert.Equal on .Count)
             int count = total.Count;
             Assert.Equal(4, count);
@@ -179,7 +179,8 @@ namespace MosquitoNetCalculator.Tests.App
             {
                 Name = "Anwis", Width = 1000, Height = 1000, Quantity = 1, Price = 1800, InstallationMode = 0
             };
-            Assert.Equal(1800.00, item.TotalWithDeduction, 2);
+            // v3.48.0: + импост 200 (ширина 1000 мм = 1.0 м.п. × 200 ₽).
+            Assert.Equal(2000.00, item.TotalWithDeduction, 2);
         }
 
         [Fact]
@@ -191,7 +192,8 @@ namespace MosquitoNetCalculator.Tests.App
                 Name = "Anwis", Width = 1000, Height = 1000, Quantity = 1, Price = 1800
             };
             item.InstallationMode = 1;
-            Assert.Equal(1300.00, item.TotalWithDeduction, 2);
+            // v3.48.0: 1800 + импост 200 − 500 = 1500.
+            Assert.Equal(1500.00, item.TotalWithDeduction, 2);
         }
 
         [Fact]
@@ -205,7 +207,8 @@ namespace MosquitoNetCalculator.Tests.App
                 Name = "Anwis", Width = 1000, Height = 1000, Quantity = 1, Price = 1800
             };
             item.InstallationMode = 2;
-            Assert.Equal(1300.00, item.TotalWithDeduction, 2);
+            // v3.48.0: 1800 + импост 200 − 500 = 1500.
+            Assert.Equal(1500.00, item.TotalWithDeduction, 2);
             Assert.Equal("В конструкцию", item.InstallationLabel);
             Assert.Equal("В", item.KpInstallationDisplay); // печатный глиф «В»
         }
@@ -250,11 +253,11 @@ namespace MosquitoNetCalculator.Tests.App
             };
             item.InstallationMode = 1;
             item.SetCurrentInstallationAmount(-1000);
-            Assert.Equal(800.00, item.TotalWithDeduction, 2);   // 1800 + (−1000)
+            Assert.Equal(1000.00, item.TotalWithDeduction, 2);  // 1800 + импост 200 + (−1000) (v3.48.0)
 
             item.InstallationMode = 2;
             item.SetCurrentInstallationAmount(-250);
-            Assert.Equal(1550.00, item.TotalWithDeduction, 2);  // 1800 + (−250)
+            Assert.Equal(1750.00, item.TotalWithDeduction, 2);  // 1800 + импост 200 + (−250) (v3.48.0)
         }
 
         // ═══════════════════════════════════════════════════════════════════
@@ -493,9 +496,10 @@ namespace MosquitoNetCalculator.Tests.App
                 new() { Name = "Anwis", Color = "Белый", Width = 1000, Height = 1000, Quantity = 1, Price = 1800, InstallationMode = 2 }
             };
             var text = BuildAndExtract(items, SampleClient(), 1300, "Одна тысяча триста рублей");
-            // FlowDocument table uses KpInstallationDisplay (short print glyph "В"),
-            // not InstallationLabel ("В конструкцию"). "В" is the mode-2 glyph.
-            Assert.Contains(" В ", text);  // standalone token, not substring of another word
+            // Print column uses KpInstallationCellText: short glyph "В" (mode 2).
+            // v3.48.3: к глифу добавлена сумма монтажа строки — для дефолтной
+            // ставки режима «В конструкцию» это "В −500"; голый глиф был до v3.48.3.
+            Assert.Contains("В −500", text);
         }
 
         // ═══════════════════════════════════════════════════════════════════
@@ -739,7 +743,8 @@ namespace MosquitoNetCalculator.Tests.App
             var selectables = FactoryTextService.BuildSelectableItems(items, Enumerable.Empty<AdditionalKpItem>());
             selectables.ForEach(s => s.IsSelected = true);
             var text = FactoryTextService.Generate("", selectables);
-            Assert.Contains("Anwis, размер проёма (ББ 60):", text);
+            // v3.48.0: ширина 1002 ≥ 500 мм → в заголовок добавляется «(Импост)».
+            Assert.Contains("Anwis (Импост), размер проёма (ББ 60):", text);
         }
 
         [Fact]

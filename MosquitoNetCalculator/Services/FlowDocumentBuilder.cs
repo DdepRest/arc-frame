@@ -199,9 +199,14 @@ namespace MosquitoNetCalculator.Services
                 TextAlignment = TextAlignment.Left
             };
 
+            // v3.48.3: «Монтаж» расширен (0.065→0.095) под «✓ +750»;
+            // компенсация: Наименование −0.01 (переносится по дизайну),
+            // Площ./Дл. −0.01 и Сумма −0.01 (короткие числа). «Цвет» не трогаем:
+            // длинные названия («Коричневый») обязаны рендериться без шринка.
+            // Сумма долей = 1.0.
             double[] widths = {
-                0.04, 0.145, 0.12, 0.07, 0.065, 0.065,
-                0.065, 0.075, 0.045, 0.09, 0.13, 0.09
+                0.04, 0.135, 0.12, 0.07, 0.065, 0.065,
+                0.095, 0.065, 0.045, 0.09, 0.12, 0.09
             };
 
             var usableWidths = new double[widths.Length];
@@ -300,7 +305,7 @@ namespace MosquitoNetCalculator.Services
                 row.Cells.Add(MakeCenteredCell(FormatIntWithNbsp(item.Width), bodyFontSize, usableWidths[3]));
                 row.Cells.Add(MakeCenteredCell(FormatIntWithNbsp(item.Height), bodyFontSize, usableWidths[4]));
                 row.Cells.Add(MakeCenteredCell(item.QuantityDisplay, bodyFontSize, usableWidths[5]));
-                row.Cells.Add(MakeCenteredCell(item.KpInstallationDisplay ?? "", bodyFontSize, usableWidths[6]));
+                row.Cells.Add(MakeCenteredCell(item.KpInstallationCellText ?? "", bodyFontSize, usableWidths[6])); // v3.48.3
                 if (item.IsAmountOnly || (item.IsQuantityOptional && item.Quantity <= 1))
                     row.Cells.Add(MakeCenteredCell("", bodyFontSize, usableWidths[7]));
                 else

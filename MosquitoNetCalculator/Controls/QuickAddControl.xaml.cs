@@ -102,17 +102,14 @@ namespace MosquitoNetCalculator.Controls
 
         /// <summary>
         /// Парсит числовое поле панели добавления: допускает и точку, и запятую
-        /// как десятичный разделитель (вставка из буфера может не пройти через
-        /// автозамену в TextChanged). Пустая строка → 0 (true).
+        /// как десятичный разделитель, и пробел как разделитель тысяч (поле
+        /// цены авто-заполняется через MoneyFormatService.Format → «2 150,00»,
+        /// а NumberStyles.Float такой текст не распознаёт). Пустая строка → 0 (true).
         /// </summary>
-        private static bool TryParseQuickNumber(string? text, out double value)
+        internal static bool TryParseQuickNumber(string? text, out double value)
         {
-            text = (text ?? string.Empty).Trim().Replace('.', ',');
-            if (text.Length == 0) { value = 0; return true; }
-            return double.TryParse(text, System.Globalization.NumberStyles.Float,
-                       System.Globalization.CultureInfo.CurrentCulture, out value)
-                || double.TryParse(text, System.Globalization.NumberStyles.Float,
-                       System.Globalization.CultureInfo.InvariantCulture, out value);
+            if (string.IsNullOrWhiteSpace(text)) { value = 0; return true; }
+            return MoneyFormatService.TryParse(text, out value);
         }
 
         private void QuickField_KeyDown(object sender, KeyEventArgs e)

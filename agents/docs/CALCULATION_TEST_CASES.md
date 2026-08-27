@@ -504,7 +504,7 @@ AI должен сверяться с ними перед любыми изме�
 - `MosquitoNetCalculator/Services/PrintService.cs`
 
 ## Last verified
-2026-08-17 (v3.47.4) — auto-synced from csproj (sync-version.ps1, CONTROL#13).
+2026-08-24 (v3.47.4) — auto-synced from csproj (sync-version.ps1, CONTROL#13).
 
 
 2026-08-06 — maintenance pass (CONTROL#13): эталонные кейсы перепроверены в рамках полного набора (v3.47.3, 1511/1511 tests pass); дата синхронизирована с git-историей.

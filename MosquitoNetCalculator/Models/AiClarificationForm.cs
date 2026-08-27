@@ -548,8 +548,8 @@ namespace MosquitoNetCalculator.Models
         }
 
         private static bool TryParsePositiveInt(string s, out int value)
-            => int.TryParse(s?.Trim(), NumberStyles.Integer, CultureInfo.InvariantCulture, out value) && value > 0
-               || int.TryParse(s?.Trim(), NumberStyles.Integer, CultureInfo.CurrentCulture, out value) && value > 0;
+            // Единый парсер: «1 500» с пробелом-разделителем тоже распознаётся.
+            => MoneyFormatService.TryParseInt(s, out value) && value > 0;
 
         private static bool TryParseQuantity(string s, out double value)
         {
@@ -558,8 +558,8 @@ namespace MosquitoNetCalculator.Models
                 value = 1;
                 return true;
             }
-            return double.TryParse(s.Trim(), NumberStyles.Float, CultureInfo.InvariantCulture, out value) && value > 0
-                || double.TryParse(s.Trim(), NumberStyles.Float, CultureInfo.CurrentCulture, out value) && value > 0;
+            // Единый парсер: «2 150,00», «5,75», «5.75» — при любой локали ОС.
+            return MoneyFormatService.TryParse(s, out value) && value > 0;
         }
 
         private static string FormatQuantity(double q)

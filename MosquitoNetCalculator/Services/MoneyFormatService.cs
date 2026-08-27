@@ -47,9 +47,12 @@ namespace MosquitoNetCalculator.Services
 
         /// <summary>
         /// Parses a user-entered string that may contain spaces, dots, or commas.
+        /// Single source of truth for ALL user-facing numeric input in the app
+        /// (QuickAdd, grid converters, AI-карточка, откосы, монтаж) — «2 150,00»
+        /// никогда не должно превращаться в 0 из-за локали или разделителей.
         /// Returns true on success and outputs the parsed value.
         /// </summary>
-        public static bool TryParse(string input, out double result)
+        public static bool TryParse(string? input, out double result)
         {
             if (string.IsNullOrWhiteSpace(input))
             {
@@ -57,13 +60,41 @@ namespace MosquitoNetCalculator.Services
                 return false;
             }
 
-            // Remove spaces and normalize separators
-            var normalized = input
+            // Remove all space variants used as thousand separators:
+            // regular, non-breaking (U+00A0), thin (U+2009), narrow NBSP (U+202F)
+            var compact = input
                 .Replace(" ", "")
-                .Replace("\u00A0", "") // non-breaking space
-                .Replace(".", ",");
+                .Replace("\u00A0", "")
+                .Replace("\u2009", "")
+                .Replace("\u202F", "");
 
-            return double.TryParse(normalized, NumberStyles.Any, RuNumberFormat, out result);
+            // Единый ru-формат: «2 150,00», «2150,5», «2150.50» (точка → запятая).
+            // Сознательно БЕЗ invariant-фолбэка: он трактовал бы «15000,5,»
+            // как 15005 (запятая — разделитель тысяч), ломая контракт
+            // GOTCHAS#13 — кривые варианты обязаны возвращать false.
+            return double.TryParse(compact.Replace('.', ','), NumberStyles.Any, RuNumberFormat, out result);
+        }
+
+        /// <summary>
+        /// Parses a user-entered integer that may contain space thousand
+        /// separators («1 360» → 1360). Companion to <see cref="TryParse"/>
+        /// for целых полей (ширина/высота/количество). Returns true on success.
+        /// </summary>
+        public static bool TryParseInt(string? input, out int result)
+        {
+            if (string.IsNullOrWhiteSpace(input))
+            {
+                result = 0;
+                return false;
+            }
+
+            var compact = input
+                .Replace(" ", "")
+                .Replace("\u00A0", "")
+                .Replace("\u2009", "")
+                .Replace("\u202F", "");
+
+            return int.TryParse(compact, NumberStyles.Integer, RuCulture, out result);
         }
     }
 }

@@ -159,7 +159,9 @@ int    totalPieces = validItems.Where(i => i.Unit == "шт.").Sum(i => i.Quantit
 | **Козырёк** | **Без монтажа** | **750 ₽/м.п.** |
 
 Для Anwis, На навесах, Дверной сетки и Оконной на метал. крепл. вычет/надбавка указывается **за штуку**.
-Для **Отлива** и **Козырька** ставка указывается **за метр погонный** (периметр изделия).
+Для **Отлива** и **Козырька** ставка указывается **за метр погонный ДЛИНЫ изделия**
+(большая сторона; до v3.48.2 метры считались по периметру — исправлено по репорту владельца:
+козырёк 350×1000 → 1,0 м.п., монтаж 750 ₽).
 
 ### Формула
 
@@ -167,8 +169,8 @@ int    totalPieces = validItems.Where(i => i.Unit == "шт.").Sum(i => i.Quantit
 // Для штучных товаров:
 TotalWithDeduction = Total + amount × Quantity
 
-// Для Отлива/Козырька (периметр в метрах):
-linearMeters = (Width + Height) × 2 / 1000
+// Для Отлива/Козырька (v3.48.2: метры = длина изделия, большая сторона):
+linearMeters = Max(Width, Height) / 1000
 TotalWithDeduction = Total + amount × linearMeters × Quantity
 ```
 
@@ -800,7 +802,7 @@ double perWindowSum = SlopeData.Sandwich.Sum + SlopeData.Foam.Sum
 - `MosquitoNetCalculator/Models/OrderItem.cs` (Width/Height setter'ы, ШиринаВвод/ВысотаВвод)
 
 ## Last verified
-2026-08-17 (v3.47.4) — auto-synced from csproj (sync-version.ps1, CONTROL#13).
+2026-08-27 (v3.47.4) — auto-synced from csproj (sync-version.ps1, CONTROL#13).
 
 
 2026-08-06 — maintenance pass (CONTROL#13): дата верификации синхронизирована с git-историей; содержимое сверено с текущим состоянием (v3.47.3, 1511/1511 tests pass).

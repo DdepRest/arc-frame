@@ -234,8 +234,8 @@ namespace MosquitoNetCalculator.Controls
             if (sender is not TextBox tb) return;
             if (_currentCalculation == null) return;
 
-            var text = (tb.Text ?? "").Trim().Replace(',', '.');
-            if (!double.TryParse(text, NumberStyles.Any, CultureInfo.InvariantCulture, out double newVal))
+            // Единый парсер: «2 150,00»/«5,75» — при любой локали ОС.
+            if (!MoneyFormatService.TryParse(tb.Text, out double newVal))
                 return; // пусто или невалидно — WPF сам откатил к старому значению
 
             var m = ResolveSlopeMaterial(tb);
@@ -304,8 +304,9 @@ namespace MosquitoNetCalculator.Controls
             // Guard: XAML-парсер может вызвать TextChanged во время InitializeComponent.
             if (!IsInitialized) return;
 
-            int.TryParse(TxtHeight.Text, out int height);
-            int.TryParse(TxtWidth.Text, out int width);
+            // Единый парсер: «1 360» с пробелом-разделителем тоже распознаётся.
+            MoneyFormatService.TryParseInt(TxtHeight.Text, out int height);
+            MoneyFormatService.TryParseInt(TxtWidth.Text, out int width);
             // v3.43.4: NumericUpDown.Value — int, гарантированно ≥ 1 (min clamp в контроле).
             int windowCount = NumWindowCount.Value;
 

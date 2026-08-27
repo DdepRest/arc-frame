@@ -1,6 +1,7 @@
 using System;
 using System.Globalization;
 using System.Windows.Data;
+using MosquitoNetCalculator.Services;
 
 namespace MosquitoNetCalculator.Converters
 {
@@ -28,9 +29,8 @@ namespace MosquitoNetCalculator.Converters
             {
                 string suffix = parameter as string ?? "";
                 s = s.Replace(suffix, "").Trim();
-                if (double.TryParse(s, NumberStyles.Any, CultureInfo.InvariantCulture, out double result))
-                    return result;
-                if (double.TryParse(s, out result))
+                // Единый парсер: «1 360», «1360,5», «1360.50» — при любой локали ОС.
+                if (MoneyFormatService.TryParse(s, out double result))
                     return result;
             }
             return 0.0;

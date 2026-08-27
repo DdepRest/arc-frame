@@ -73,17 +73,16 @@ namespace MosquitoNetCalculator.Services
 
             if (input.StartsWith("0."))
             {
-                // Парсим как метры
-                if (double.TryParse(input, System.Globalization.NumberStyles.Any,
-                        System.Globalization.CultureInfo.InvariantCulture, out double meters))
+                // Парсим как метры — единый парсер («0,65»/«0.65» — при любой локали)
+                if (MoneyFormatService.TryParse(input, out double meters))
                 {
                     return (meters, $"{meters:F2} м");
                 }
             }
             else
             {
-                // Парсим как мм
-                if (int.TryParse(input, out int mm))
+                // Парсим как мм — единый парсер («2 700» с пробелом тоже распознаётся)
+                if (MoneyFormatService.TryParseInt(input, out int mm))
                 {
                     double meters = mm / 1000.0;
                     return (meters, $"{mm} мм → {meters:F2} м");

@@ -186,7 +186,8 @@ namespace MosquitoNetCalculator
             void CommitDeductionIfPending()
             {
                 if (!txtDeduction.IsEnabled) return;
-                if (double.TryParse(txtDeduction.Text, out double rawVal)
+                // Единый парсер: «1 000,00» с разделителями — при любой локали ОС.
+                if (MoneyFormatService.TryParse(txtDeduction.Text, out double rawVal)
                     && double.IsFinite(rawVal))
                 {
                     // v3.46.1: all modes use signed convention (+ = add, − = subtract).

@@ -58,6 +58,39 @@ namespace MosquitoNetCalculator.Tests.Services
             Assert.Equal(1000, value, 2);
         }
 
+        [Theory]
+        [InlineData("2 150,00", 2150.0)]   // авто-заполнение поля цены (Format)
+        [InlineData("2 150", 2150.0)]
+        [InlineData("2150.50", 2150.5)]    // точка → запятая
+        [InlineData("1\u2009000", 1000.0)] // thin space (U+2009)
+        [InlineData("1\u202F000", 1000.0)] // narrow NBSP (U+202F)
+        [InlineData("-500", -500.0)]        // отрицательные суммы монтажа
+        public void TryParse_ThousandsSeparator_NeverZeroes(string input, double expected)
+        {
+            // Регрессия «2 150,00» → 0: NumberStyles.Float не пускал разделитель тысяч.
+            bool ok = MoneyFormatService.TryParse(input, out double value);
+            Assert.True(ok);
+            Assert.Equal(expected, value, 2);
+        }
+
+        [Theory]
+        [InlineData("1 360", true, 1360)]
+        [InlineData("1360", true, 1360)]
+        [InlineData("2 150", true, 2150)]
+        [InlineData("1\u00A0000", true, 1000)]
+        [InlineData("-500", true, -500)]
+        [InlineData("", false, 0)]
+        [InlineData(null, false, 0)]
+        [InlineData("abc", false, 0)]
+        [InlineData("1360,5", false, 0)]   // строгое целое — дробь не принимается
+        public void TryParseInt_HandlesSpaceSeparator(string? input, bool expectedSuccess, int expected)
+        {
+            bool ok = MoneyFormatService.TryParseInt(input, out int value);
+            Assert.Equal(expectedSuccess, ok);
+            if (expectedSuccess)
+                Assert.Equal(expected, value);
+        }
+
         [Fact]
         public void TryParse_HandlesMultipleSpaces()
         {
