@@ -164,7 +164,7 @@ namespace MosquitoNetCalculator.Tests.Controls
             var controlXaml = File.ReadAllText(LocateSource("Controls/AiAssistantControl.xaml"));
             var windowXaml = File.ReadAllText(LocateSource("Controls/AiAssistantWindow.xaml"));
 
-            Assert.Contains("{Binding ModelLabel}", controlXaml);      // shown — user-visible model badge
+            Assert.DoesNotContain("{Binding ModelLabel}", controlXaml);      // technical model label stays hidden
             Assert.DoesNotContain("{Binding MetricsLabel}", controlXaml);  // telemetry stays hidden
             Assert.DoesNotContain("{Binding CurrentModel}", windowXaml);
             Assert.DoesNotContain("{Binding ApiKeyStatusText}", windowXaml);

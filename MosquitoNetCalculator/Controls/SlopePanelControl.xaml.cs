@@ -411,33 +411,19 @@ namespace MosquitoNetCalculator.Controls
             // ─── ВСЕГО за все откосы ───
             int n = calc.WindowCount;
 
-            // v3.43.6 (fix): calc.GrandTotal уже содержит оптимизированные количества
-            // герметика и скотча (sharedSum для всего заказа). Старая формула
-            // `calc.GrandTotal * n` умножала shared-материалы на N, «отменяя» экономию
-            // и показывая завышенную сумму. Теперь считаем 1-в-1 как OrderItem.Calculations.cs:
-            // per-window материалы × N + shared (герметик/скотч) + работа × N.
-            double perWindowSum = calc.Sandwich.Sum + calc.Foam.Sum + calc.Penoplex.Sum + calc.Laminatina.Sum;
-            if (!calc.IsProfileEconomyApplied)
-            {
-                perWindowSum += calc.StartProfile.Sum + calc.FProfile.Sum;
-            }
-            double sharedSum = calc.Sealant.Sum + calc.Tape.Sum;
-            if (calc.IsProfileEconomyApplied)
-            {
-                sharedSum += calc.StartProfile.Sum + calc.FProfile.Sum;
-            }
-            double realOrderTotal = (perWindowSum * n) + sharedSum + (calc.TotalLabor * n);
+            double realOrderTotal = ComputePanelTotal(calc, TotalWindowCountInOrder);
 
-            // v3.43.6: сумма БЕЗ экономии — sealant/tape считаются per-window (×N),
-            // а не как shared-материалы для всего заказа.
-            // v3.44.1: без экономии Старт/F-планка тоже per-window.
-            double fullTotal = perWindowSum * n + (calc.Sealant.Price * n) + (calc.Tape.Price * n) + (calc.TotalLabor * n);
-            if (calc.IsProfileEconomyApplied)
-            {
-                int startNoEconQty = SlopeCalculatorService.OptimizeStripsForMultipleWindows3Sides((int)calc.WidthMm, (int)calc.HeightMm, n);
-                int fNoEconQty = SlopeCalculatorService.OptimizeStripsForMultipleWindows3Sides((int)calc.WidthMm + 100, (int)calc.HeightMm + 100, n);
-                fullTotal += (startNoEconQty * calc.StartProfile.Price) + (fNoEconQty * calc.FProfile.Price);
-            }
+            // Baseline without economy: each window consumes one sealant/tape
+            // unit and its own three-sided profile cut.
+            double fullTotal = Math.Round(
+                (calc.Sandwich.Sum + calc.Foam.Sum + calc.Penoplex.Sum + calc.Laminatina.Sum) * n
+                + calc.Sealant.Price * n
+                + calc.Tape.Price * n
+                + calc.TotalLabor * n
+                + (calc.IsProfileEconomyApplied
+                    ? SlopeCalculatorService.OptimizeStripsForMultipleWindows3Sides((int)calc.WidthMm, (int)calc.HeightMm, n) * calc.StartProfile.Price
+                      + SlopeCalculatorService.OptimizeStripsForMultipleWindows3Sides((int)calc.WidthMm + 100, (int)calc.HeightMm + 100, n) * calc.FProfile.Price
+                    : calc.StartProfile.Sum * n + calc.FProfile.Sum * n), 2);
 
             bool apply = ChkApplyEconomy.IsChecked.GetValueOrDefault(true);
             double orderTotal = apply ? realOrderTotal : fullTotal;
@@ -592,7 +578,7 @@ namespace MosquitoNetCalculator.Controls
             {
                 Owner = Window.GetWindow(this)
             };
-            window.LoadData(activeSlopes);
+            window.LoadData(activeSlopes, ChkApplyEconomy.IsChecked.GetValueOrDefault(true));
             window.ShowDialog();
         }
 
@@ -734,11 +720,35 @@ namespace MosquitoNetCalculator.Controls
         }
 
         /// <summary>
-        /// v3.44.7: чистая функция для расчёта общей экономии.
-        /// Используется в юнит-тестах и может быть использована для tooltip'ов.
+        /// v3.44.11: полная стоимость откоса (материалы + работа), как она
+        /// попадёт в заказ. Per-window материалы умножаются на WindowCount;
+        /// общие материалы (герметик/скотч, при экономии — Старт/F-планка)
+        /// распределяются по доле окон, зеркально
+        /// RecalculateSealantAndTape/DistributedSharedSum.
         /// </summary>
+        internal static double ComputePanelTotal(SlopeCalculation calc, int windowCountInOrder)
+        {
+            int n = calc.WindowCount;
+
+            double perWindowMaterials = calc.Sandwich.Sum + calc.Foam.Sum
+                                      + calc.Penoplex.Sum + calc.Laminatina.Sum;
+            if (!calc.IsProfileEconomyApplied)
+                perWindowMaterials += calc.StartProfile.Sum + calc.FProfile.Sum;
+
+            double sharedMaterials = calc.Sealant.Sum + calc.Tape.Sum;
+            if (calc.IsProfileEconomyApplied)
+                sharedMaterials += calc.StartProfile.Sum + calc.FProfile.Sum;
+
+            int totalWindowCount = windowCountInOrder + n;
+            double sharedShare = totalWindowCount > 0
+                ? Math.Round(sharedMaterials * n / totalWindowCount, 2)
+                : 0.0;
+
+            return Math.Round(perWindowMaterials * n + sharedShare + calc.TotalLabor * n, 2);
+        }
+
         internal static double ComputeTotalSavings(double fullTotal, double realOrderTotal)
-            => Math.Max(0, fullTotal - realOrderTotal);
+            => Math.Max(0, Math.Round(fullTotal - realOrderTotal, 2));
 
         /// <summary>
         /// v3.43.5: строит сводку расхода материалов на все откосы.

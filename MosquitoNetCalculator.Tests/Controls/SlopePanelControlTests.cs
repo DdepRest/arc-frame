@@ -1,6 +1,7 @@
 using System.Linq;
 using MosquitoNetCalculator.Controls;
 using MosquitoNetCalculator.Services;
+using MosquitoNetCalculator.ViewModels;
 using Xunit;
 
 namespace MosquitoNetCalculator.Tests.Controls
@@ -216,5 +217,36 @@ namespace MosquitoNetCalculator.Tests.Controls
             Assert.NotNull(fRow.EconomyTooltip);
             Assert.Contains("Было:", fRow.EconomyTooltip);
         }
+
+        [Theory]
+        [InlineData(false)]
+        [InlineData(true)]
+        public void ComputePanelTotal_MatchesOrderPair(bool economy)
+        {
+            // Regression v3.44.11: панель показывала полную стоимость общих
+            // материалов вместо доли откоса → сумма панели не совпадала с заказом.
+            var calc1 = SlopeCalculatorService.Calculate(2150, 1860, 0.30, 1, 3);
+            calc1.IsProfileEconomyApplied = economy;
+            var calc2 = SlopeCalculatorService.Calculate(1130, 1860, 0.30, 1, 3);
+            calc2.IsProfileEconomyApplied = economy;
+            var calc3 = SlopeCalculatorService.Calculate(1130, 1860, 0.30, 1, 3);
+            calc3.IsProfileEconomyApplied = economy;
+
+            var vm = new CalculationViewModel();
+            vm.AddSlope(calc1);
+            vm.AddSlope(calc2);
+            vm.AddSlope(calc3);
+            vm.RecalculateAllSlopes();
+
+            // Панель для 3-го откоса при уже 2 добавленных
+            double panelTotal = SlopePanelControl.ComputePanelTotal(calc3, 2);
+
+            var matRow = vm.OrderItems.First(i => i.Name == "Откос" && i.SlopeData == calc3);
+            int matIdx = vm.OrderItems.IndexOf(matRow);
+            double orderPair = matRow.Total + vm.OrderItems[matIdx + 1].Total;
+
+            Assert.Equal(panelTotal, orderPair, 0.02); // копеечное округление доли общих
+        }
+
     }
 }

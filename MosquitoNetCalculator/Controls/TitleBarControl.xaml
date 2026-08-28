@@ -89,6 +89,7 @@
                             <MenuItem x:Name="MenuThemeDark" Header="🌙  Тёмная тема" IsCheckable="True" Click="MenuThemeDark_Click"/>
                             <Separator/>
                             <MenuItem Header="📍 Сменить точку установки…" Click="MenuChangeLocation_Click"/>
+                            <MenuItem Header="🛡️ Админ-панель…" Click="MenuAdminPanel_Click"/>
                             <Separator/>
                             <MenuItem Header="🤖 AI Ассистент — API ключ…"
                                       Click="MenuAiApiKey_Click"/>

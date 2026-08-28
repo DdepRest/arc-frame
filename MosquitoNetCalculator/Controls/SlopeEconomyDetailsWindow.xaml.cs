@@ -22,8 +22,13 @@ namespace MosquitoNetCalculator.Controls
         /// Заполняет таблицу детализации экономии на основе активных откосов заказа.
         /// </summary>
         /// <param name="slopes">Активные расчёты откосов (Distinct по ссылке).</param>
-        public void LoadData(IEnumerable<SlopeCalculation> slopes)
+        public void LoadData(IEnumerable<SlopeCalculation> slopes, bool economyApplied = true)
         {
+            string label = economyApplied ? "Общая экономия:" : "Возможная экономия:";
+            TxtTotalSavedLabel.Text = label;
+            TxtTotalSavedPerSlopeLabel.Text = economyApplied
+                ? "Экономия на 1 откос:"
+                : "Возможная экономия на 1 откос:";
             var rows = SlopeEconomyCalculator.CalculateDetails(slopes);
             int totalWindowCount = slopes?.Where(s => s != null).Sum(s => s.WindowCount) ?? 0;
 

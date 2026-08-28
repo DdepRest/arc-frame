@@ -44,6 +44,9 @@ namespace MosquitoNetCalculator.Services
             public string LastColor { get; set; } = "";
             public string UpdateUrl { get; set; } = "";
             public string? PendingUpdateVersion { get; set; }
+            // Версия, для которой пользователь уже видел окно «Что нового»
+            // после обновления. Null = ещё не фиксировалась.
+            public string? LastSeenVersion { get; set; }
             // Админ-панель офисов: переопределение токена/ID gist (отладка, миграция).
             public string? OfficeReportToken { get; set; }
             public string? OfficeReportGistId { get; set; }
@@ -270,6 +273,32 @@ namespace MosquitoNetCalculator.Services
             {
                 var settings = LoadSettings();
                 settings.PendingUpdateVersion = version;
+                SaveSettings(settings);
+            }
+        }
+
+        /// <summary>
+        /// Версия, для которой пользователь уже видел окно «Что нового».
+        /// Null = ещё не фиксировалась (первый запуск нового механизма).
+        /// </summary>
+        public static string? LoadLastSeenVersion()
+        {
+            lock (_lock)
+            {
+                var settings = LoadSettings();
+                return settings.LastSeenVersion;
+            }
+        }
+
+        /// <summary>
+        /// Сохраняет версию, для которой окно «Что нового» уже показано.
+        /// </summary>
+        public static void SaveLastSeenVersion(string? version)
+        {
+            lock (_lock)
+            {
+                var settings = LoadSettings();
+                settings.LastSeenVersion = version;
                 SaveSettings(settings);
             }
         }

@@ -51,7 +51,7 @@ namespace MosquitoNetCalculator.Models
         private readonly IReadOnlyList<string> _productTypes;
         private string _selectedType = "Anwis";
         private string _selectedColor = "Белый";
-        private string _selectedAnwisMode = "ББ 60";
+        private string _selectedAnwisMode = UnspecifiedAnwisMode;
         private string _selectedInstallation = "Не указывать";
         private string _widthText = string.Empty;
         private string _heightText = string.Empty;

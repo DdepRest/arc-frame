@@ -104,10 +104,24 @@ namespace MosquitoNetCalculator.Controls
             TryGetMainWindow()?.OpenWelcomeWindow();
         }
 
+        private void MenuAdminPanel_Click(object sender, RoutedEventArgs e)
+        {
+            var mw = TryGetMainWindow();
+            if (mw == null) return;
+
+            var passwordDialog = new AdminPasswordWindow { Owner = mw };
+            if (passwordDialog.ShowDialog() == true)
+                mw.ShowAdminPanel();
+        }
+
         private void MenuAiApiKey_Click(object sender, RoutedEventArgs e)
         {
             var owner = GetParentWindow();
             if (owner == null) return;
+
+            var passwordDialog = new AdminPasswordWindow { Owner = owner };
+            if (passwordDialog.ShowDialog() != true) return;
+
             var dialog = new AiApiKeyDialog { Owner = owner };
             dialog.ShowDialog();
         }

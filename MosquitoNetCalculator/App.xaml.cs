@@ -190,6 +190,12 @@ namespace MosquitoNetCalculator
                 window.Closed += (_, _) => Shutdown();
                 window.Show();
 
+                // ── «Что нового» после обновления ──
+                // Если приложение обновилось с прошлого запуска — показываем
+                // список изменений, добавленных после последней виденной
+                // версии, и фиксируем текущую как виденную.
+                WhatsNewService.ShowIfNeeded(window);
+
                 // ── Background update check (silent, non-blocking) ──
                 // Fire-and-forget after the main window is visible so
                 // toast notifications have a valid owner.

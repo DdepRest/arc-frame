@@ -202,7 +202,7 @@
 
                     <!-- Общая экономия -->
                     <TextBlock Grid.Row="0" Grid.Column="0"
-                               Text="Общая экономия:"
+                               x:Name="TxtTotalSavedLabel" Text="Общая экономия:"
                                FontSize="12"
                                FontWeight="SemiBold"
                                Foreground="{DynamicResource EconomyGreen}"
@@ -216,7 +216,7 @@
 
                     <!-- Экономия на 1 откос -->
                     <TextBlock Grid.Row="1" Grid.Column="0"
-                               Text="Экономия на 1 откос:"
+                               x:Name="TxtTotalSavedPerSlopeLabel" Text="Экономия на 1 откос:"
                                FontSize="11"
                                Foreground="{DynamicResource EconomyGreen}"
                                VerticalAlignment="Center"
