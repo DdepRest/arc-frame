@@ -1,10 +1,10 @@
 {
-  "latest": "3.48.3",
+  "latest": "3.48.4",
   "minRequired": "",
   "releases": [
     {
-      "version": "3.48.3",
-      "date": "2026-08-27",
+      "version": "3.48.4",
+      "date": "2026-08-28",
       "type": "Улучшение",
       "title": "«Свой товар» и импост в сетках",
       "changes": [
@@ -13,9 +13,9 @@
         "Импост в сетках автоматически определяется по расчётной ширине и корректно учитывается в итоговой сумме, заказе и КП.",
         "При изменении режима Anwis расчёт импоста пересчитывается автоматически."
       ],
-      "url": "https://github.com/DdepRest/arc-frame/releases/download/v3.48.3/ARC-Frame-3.48.3-full.zip",
-      "size": 75384651,
-      "sha256": "204395d2a6e93ee904e7dacc6bdc30548c406faffd598647d31216dd04efc255"
+      "url": "https://github.com/DdepRest/arc-frame/releases/download/v3.48.4/ARC-Frame-3.48.4-full.zip",
+      "size": 90705577,
+      "sha256": "9c496f65963203d5932896db5645d3d68f92d555a1c67f5c18d61e48284fc68b"
     },
     {
       "version": "3.47.4",
