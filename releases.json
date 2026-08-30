@@ -11,9 +11,9 @@
         "Уточнены сообщения и подсказки в разделе обновлений.",
         "Исправлены небольшие ошибки, которые могли мешать установке обновления."
       ],
-      "url": "",
-      "size": 0,
-      "sha256": ""
+      "url": "https://github.com/DdepRest/arc-frame/releases/download/v3.48.6/ARC-Frame-3.48.6-full.zip",
+      "size": 85389062,
+      "sha256": "dc3a10f0c17fdb750a01231280bef720002f771e7c2cefb2cf59cd6112a665be"
     },
     {
       "version": "3.48.5",
