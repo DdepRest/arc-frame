@@ -176,7 +176,7 @@ tools/release/update-releases-json.ps1
 | 1.4 | Обновить `<Version>` в `.csproj` | `str_replace` |
 | 1.5 | Обновить `CHANGELOG.md` | секция `Unreleased` → `## X.Y.Z — YYYY-MM-DD` |
 | 1.6 | Обновить `update-log.json` (только пользовательские изменения, без техжаргона) | ручная правка |
-| 1.7 | Обновить `releases.json` (полная запись version+date+type+title+changes+url+size+sha256) | ручная правка |
+| 1.7 | Обновить `releases.json` (полная запись version+date+type+title+changes+url+size+sha256+mirrorUrl-плейсхолдер) | ручная правка |
 | 1.8 | Обновить `CURRENT_STATE.md` | версия+Last verified |
 | 1.9 | Запустить тесты | `dotnet test MosquitoNetCalculator.sln -c Release` |
 | 1.10 | Показать владельцу финальный отчёт | ждать явного подтверждения |
@@ -220,6 +220,10 @@ tools/release/update-releases-json.ps1
 
 **И только после этого** старые программы увидят новое обновление.
 
+### Зеркало ZIP (автоматически в CI, шаг «Publish mirror ZIP»)
+
+`.github/workflows/release.yml` публикует **байт-в-байт тот же ZIP** под rolling-тегом `mirror-latest`. Каждый успешный push создаёт новый orphan-коммит только с текущим ZIP и force-updates тег; URL имеет вид `https://raw.githubusercontent.com/DdepRest/arc-frame/mirror-latest/ARC-Frame-X.Y.Z-full.zip`. Если ZIP имеет размер **≥ 95 MiB**, зеркало пропускается, чтобы не приближаться к лимиту GitHub 100 MiB; релиз при этом продолжается. В манифест записывается пустой `mirrorUrl`, поэтому клиент не пытается использовать отсутствующее зеркало.
+
 ### Git push sequence (если remote отстаёт или есть конфликт)
 
 Частая ошибка: после коммита кода+документации `git push` падает с `error: failed to push some refs`. Это значит, что в remote main есть коммиты, которых нет локально (например, другой процесс влил что-то в main параллельно). Решение:
@@ -255,6 +259,7 @@ git commit -m "release: update releases.json for vX.Y.Z"
 - [ ] `releases.json` в remote main содержит sha256 = реальный
 - [ ] GitHub Release `vX.Y.Z` опубликован (не draft, не prerelease)
 - [ ] ZIP-asset скачивается через URL из `releases.json`
+- [ ] Зеркальный ZIP отвечает HTTP 200 (`mirrorUrl` из `releases.json` → тег vX.Y.Z-mirror)
 - [ ] Старая версия 3.40.4 (предыдущая) видит X.Y.Z через «Проверить обновления»
 
 ---

@@ -314,5 +314,45 @@ namespace MosquitoNetCalculator.Tests.Services
             Assert.NotNull(parsed);
             Assert.Equal("3.48.4", parsed!.Latest);
         }
+
+        // ─── mirrorUrl (запасной канал скачивания) ────────────────────
+
+        [Fact]
+        public void ReleaseInfo_MirrorUrl_RoundTripsThroughJson()
+        {
+            var manifest = new UpdateManifest
+            {
+                Latest = "3.48.4",
+                Releases = new()
+                {
+                    new ReleaseInfo
+                    {
+                        Version = "3.48.4",
+                        Url = "https://example.com/v.zip",
+                        Sha256 = "abc",
+                        MirrorUrl = "https://mirror.example.com/v.zip"
+                    }
+                }
+            };
+
+            var json = JsonSerializer.Serialize(manifest);
+            var parsed = JsonSerializer.Deserialize<UpdateManifest>(json)!;
+
+            Assert.Equal("https://mirror.example.com/v.zip", parsed.Releases[0].MirrorUrl);
+        }
+
+        [Fact]
+        public void ReleaseInfo_MissingMirrorUrl_DeserializesAsEmpty()
+        {
+            // Старые записи манифеста не содержат mirrorUrl — поле обязано
+            // разбираться в пустую строку, а не падать.
+            const string json =
+                @"{""latest"":""3.48.4"",""releases"":[{""version"":""3.48.4"",""url"":""https://example.com/v.zip""}]}";
+
+            var parsed = JsonSerializer.Deserialize<UpdateManifest>(json)!;
+
+            Assert.NotNull(parsed);
+            Assert.Equal("", parsed.Releases[0].MirrorUrl);
+        }
     }
 }

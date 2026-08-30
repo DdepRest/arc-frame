@@ -134,7 +134,8 @@
             "changes": ["..."],
             "url": "https://github.com/DdepRest/arc-frame/releases/download/v3.35.0/ARC-Frame-3.35.0-full.zip",
             "size": 66659897,
-            "sha256": "..."
+            "sha256": "...",
+            "mirrorUrl": "https://raw.githubusercontent.com/DdepRest/arc-frame/v3.35.0-mirror/ARC-Frame-3.35.0-full.zip"
         }
     ]
 }
@@ -179,7 +180,7 @@ if (release == null)
 2. `ParseSafe(manifest.Latest) != null`
 3. `latestVersion > currentVersion`
 
-Возвращает `manifest.Releases[0]` (новейший релиз, предполагается newest-first).
+Возвращает запись, у которой `version` явно совпадает с `manifest.Latest` и `url` — валидный абсолютный HTTP(S) (порядок массива не доверенный; фикс v3.48.5).
 
 `CurrentVersion` — это `UpdateService.TryResolveCurrentVersion()`, который читает `AssemblyInformationalVersionAttribute`.
 
@@ -247,6 +248,26 @@ if (release == null)
 
 **Zero-byte edge case (unreleased fix):**
 Если сервер возвращает `Content-Length: 0` или не возвращает заголовок, `DownloadWithProgressAsync` теперь корректно отчитывает 100% прогресс после завершения скачивания. Ранее полоска оставалась на 0%, потому что тело цикла `while` не выполнялось, а финальный `Report(100)` не вызывался.
+
+---
+
+## Запасной канал скачивания (mirrorUrl)
+
+Сценарий (подтверждён на машинах офисов 2026-08-30): детект обновления работает без VPN (цепочка манифеста raw→api→raw→jsDelivr), но скачивание ZIP падает — домен архивов GitHub (`release-assets.githubusercontent.com`) блокируется провайдером, тогда как `raw.githubusercontent.com` доступен (HTTP 200 в «Диагностике связи»). Раньше это означало «обновление видно, но установить нельзя без VPN».
+
+Решение:
+- CI (`release.yml`, шаг «Publish mirror ZIP») публикует **байт-в-байт тот же ZIP** под lightweight-тегом `vX.Y.Z-mirror` (orphan-коммит, содержащий только ZIP);
+- запись манифеста несёт опциональное поле `mirrorUrl` = `https://raw.githubusercontent.com/DdepRest/arc-frame/vX.Y.Z-mirror/ARC-Frame-X.Y.Z-full.zip`;
+- `UpdateService.TryDownloadAndVerifyAsync`: при сетевом сбое основного канала (после всех ретраев загрузчика) ИЛИ при несовпадении SHA-256 — повтор через `mirrorUrl` с той же проверкой SHA-256; при отсутствии хеша в манифесте установка отменяется сразу (зеркало не спасает — нечего проверять).
+
+Инварианты:
+- ZIP с зеркала идентичен Release-ассету → один и тот же `sha256` из манифеста защищает оба канала (зеркало — не новый «доверенный источник»).
+- Оба канала недоступны → сообщение «Не удалось скачать обновление: недоступны основной и запасной каналы (…)» — без технических доменов (`SanitizeDownloadError` + `BuildDownloadFailureReason`).
+- Основной канал работает → зеркало не запрашивается вовсе (e2e-тест `RunUpdateFlowAsync_PrimaryChannelWorks_MirrorIsNotRequested`).
+
+Ограничения:
+- GitHub не принимает файлы >100 МБ — потолок зеркала; при приближении ZIP к 100 МБ перейти на нарезку кусками (jsDelivr, лимит файла 20 МБ).
+- История репозитория растёт на ~размер ZIP за релиз (блобы остаются в истории даже после удаления старых зеркальных тегов).
 
 ---
 

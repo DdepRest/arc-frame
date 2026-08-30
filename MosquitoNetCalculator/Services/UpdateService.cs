@@ -441,31 +441,33 @@ namespace MosquitoNetCalculator.Services
                     return;
                 }
 
-                // Phase 3: Download with progress
+                // Phase 3+4: Download with progress (основной канал, при сбое —
+                // запасной mirrorUrl из манифеста) и проверка SHA-256.
+                // Целостность проверяется по одному и тому же хешу манифеста
+                // независимо от канала, поэтому файл с зеркала безопасен ровно
+                // так же, как и файл с основного адреса.
                 IsDownloading = true;
                 DownloadProgress = 0;
 
                 string tempZip = Path.Combine(Path.GetTempPath(),
                     $"arc-update-{manifest.Latest}-{Guid.NewGuid():N}.zip");
 
-                try
+                var (downloaded, downloadReason, mirrorTried) = await TryDownloadAndVerifyAsync(
+                    release, tempZip, new Progress<int>(p => DownloadProgress = p), httpClient)
+                    .ConfigureAwait(true);
+
+                if (!downloaded)
                 {
-                    await DownloadWithProgressAsync(release.Url, tempZip,
-                        new Progress<int>(p => DownloadProgress = p),
-                        httpClient).ConfigureAwait(true);
-                }
-                catch (Exception ex)
-                {
-                    IsDownloading = false;
                     TryDelete(tempZip);
+                    var reason = BuildDownloadFailureReason(mirrorTried, downloadReason);
                     if (isAutomatic)
                     {
-                        ToastService.ShowToast($"Не удалось скачать обновление: {ex.Message}", ToastType.Error);
+                        ToastService.ShowToast($"Не удалось скачать обновление: {reason}", ToastType.Error);
                     }
                     else
                     {
                         MessageBox.Show(
-                            $"Не удалось скачать обновление:\n{ex.Message}",
+                            $"Не удалось скачать обновление:\n{reason}",
                             "Ошибка скачивания",
                             MessageBoxButton.OK,
                             MessageBoxImage.Error);
@@ -475,38 +477,6 @@ namespace MosquitoNetCalculator.Services
 
                 IsDownloading = false;
                 DownloadProgress = 100;
-
-                // Phase 4: Verify SHA-256 (MANDATORY — skip releases without hash is unsafe)
-                ToastService.ShowToast("Проверка целостности архива...", ToastType.Info);
-
-                if (string.IsNullOrEmpty(release.Sha256))
-                {
-                    TryDelete(tempZip);
-                    var msg = "Не удалось проверить целостность обновления. Установка отменена.";
-                    if (isAutomatic)
-                        ToastService.ShowToast(msg, ToastType.Error);
-                    else
-                        MessageBox.Show(msg, "Ошибка проверки", MessageBoxButton.OK, MessageBoxImage.Error);
-                    return;
-                }
-
-                if (!UpdateVerifier.VerifyHash(tempZip, release.Sha256))
-                {
-                    TryDelete(tempZip);
-                    if (isAutomatic)
-                    {
-                        ToastService.ShowToast("Хеш-сумма архива не совпадает. Возможно, файл повреждён.", ToastType.Error);
-                    }
-                    else
-                    {
-                        MessageBox.Show(
-                            "Хеш-сумма архива не совпадает. Возможно, файл повреждён при скачивании.",
-                            "Ошибка проверки",
-                            MessageBoxButton.OK,
-                            MessageBoxImage.Error);
-                    }
-                    return;
-                }
 
                 // Phase 5: Stage update and restart
                 ToastService.ShowToast("Установка обновления...", ToastType.Info);
@@ -633,6 +603,84 @@ namespace MosquitoNetCalculator.Services
         // ─── Private helpers — delegated to extracted components (Phase 2) ──
 
         /// <summary>
+        /// Скачивает архив обновления и проверяет его целостность по SHA-256
+        /// из манифеста. При сбое основного канала (сеть недоступна) или при
+        /// повреждённом файле (хеш не совпал) попытка повторяется через
+        /// запасной канал <see cref="ReleaseInfo.MirrorUrl"/> — если манифест
+        /// его указывает. При отсутствии хеша в манифесте установка
+        /// отменяется сразу: без хеша нельзя проверить ни один канал.
+        /// Возвращает <c>true</c>, когда файл в <paramref name="tempZip"/>
+        /// готов к установке; иначе — понятную пользователю причину и
+        /// признак того, что запасной канал пробовался.
+        /// </summary>
+        private static async Task<(bool Success, string Reason, bool MirrorTried)> TryDownloadAndVerifyAsync(
+            ReleaseInfo release, string tempZip, IProgress<int> progress, HttpClient? httpClient)
+        {
+            const string HashEmpty = "Не удалось проверить целостность обновления. Установка отменена.";
+            const string HashMismatch = "Хеш-сумма архива не совпадает. Возможно, файл повреждён при скачивании.";
+
+            // Основной канал.
+            var downloadFailure = await TryDownloadAsync(release.Url, tempZip, progress, httpClient)
+                .ConfigureAwait(true);
+
+            if (downloadFailure == null && !string.IsNullOrEmpty(release.Sha256))
+            {
+                ToastService.ShowToast("Проверка целостности архива...", ToastType.Info);
+                if (UpdateVerifier.VerifyHash(tempZip, release.Sha256))
+                    return (true, "", false);
+            }
+
+            // Без хеша в манифесте установку не начинаем вовсе — ни один
+            // канал не проверяем, зеркалирование бессмысленно.
+            if (downloadFailure == null && string.IsNullOrEmpty(release.Sha256))
+                return (false, HashEmpty, false);
+
+            // Запасной канал имеет смысл только при сетевом сбое основного
+            // или при повреждённом файле с основного канала.
+            var reason = downloadFailure ?? HashMismatch;
+
+            if (string.IsNullOrWhiteSpace(release.MirrorUrl)
+                || !UpdateDownloader.IsSupportedUrl(release.MirrorUrl))
+                return (false, reason, false);
+
+            // Запасной канал: тот же архив по другому адресу, та же проверка.
+            var mirrorFailure = await TryDownloadAsync(release.MirrorUrl, tempZip, progress, httpClient)
+                .ConfigureAwait(true);
+            if (mirrorFailure != null)
+                return (false, mirrorFailure, true);
+
+            if (string.IsNullOrEmpty(release.Sha256))
+                return (false, HashEmpty, true);
+
+            ToastService.ShowToast("Проверка целостности архива...", ToastType.Info);
+            if (!UpdateVerifier.VerifyHash(tempZip, release.Sha256))
+                return (false, HashMismatch, true);
+
+            return (true, "", true);
+        }
+
+        /// <summary>
+        /// Одна попытка скачать архив по указанному URL. Возвращает null при
+        /// успехе либо понятную пользователю причину сбоя; частичный файл
+        /// при сбое удаляется.
+        /// </summary>
+        private static async Task<string?> TryDownloadAsync(
+            string url, string destinationPath, IProgress<int> progress, HttpClient? httpClient)
+        {
+            try
+            {
+                await DownloadWithProgressAsync(url, destinationPath, progress, httpClient)
+                    .ConfigureAwait(true);
+                return null;
+            }
+            catch (Exception ex)
+            {
+                TryDelete(destinationPath);
+                return SanitizeDownloadError(ex.Message);
+            }
+        }
+
+        /// <summary>
         /// Fetches and deserializes the releases.json manifest from GitHub.
         /// Delegates to <see cref="UpdateManifestClient.FetchManifestAsync"/>.
         /// </summary>
@@ -643,6 +691,34 @@ namespace MosquitoNetCalculator.Services
             if (error.Contains("таймаут", StringComparison.OrdinalIgnoreCase))
                 return "связь не отвечает вовремя";
             return "не удалось получить свежие данные";
+        }
+
+        /// <summary>
+        /// Формулирует причину сбоя скачивания для пользователя. Когда
+        /// пробовался запасной канал — упоминание обоих каналов; иначе —
+        /// только причина. Правило проекта: без технических деталей
+        /// (доменов, названий сервисов) в текстах для пользователя.
+        /// </summary>
+        internal static string BuildDownloadFailureReason(bool mirrorTried, string reason)
+            => mirrorTried
+                ? $"недоступны основной и запасной каналы ({reason})"
+                : reason;
+
+        /// <summary>
+        /// Готовит сообщение о сбое скачивания для пользователя: убирает
+        /// технический адрес сервера, который Windows дописывает к тексту
+        /// сетевой ошибки в квадратных скобках (например «[host:443]») —
+        /// правило проекта: в текстах для пользователя нет технических
+        /// деталей инфраструктуры. Само описание сбоя (по-русски) сохраняется.
+        /// </summary>
+        internal static string SanitizeDownloadError(string message)
+        {
+            if (string.IsNullOrWhiteSpace(message))
+                return "нет связи с сервером обновлений";
+
+            var cleaned = System.Text.RegularExpressions.Regex.Replace(
+                message, "\\s*\\[[^\\]]+\\]\\s*", " ").Trim();
+            return cleaned.Length == 0 ? "нет связи с сервером обновлений" : cleaned;
         }
 
         internal static Task<UpdateManifest?> FetchManifestAsync(HttpClient? httpClient = null)

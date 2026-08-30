@@ -20,6 +20,15 @@ namespace MosquitoNetCalculator.Services
         private static readonly TimeSpan RetryDelay = TimeSpan.FromSeconds(2);
 
         /// <summary>
+        /// True, если URL — абсолютный http(s). Это та же проверка, которую
+        /// загрузчик выполняет перед любым запросом; используется и для
+        /// решения, есть ли вообще смысл пробовать запасной канал.
+        /// </summary>
+        public static bool IsSupportedUrl(string? url)
+            => Uri.TryCreate(url, UriKind.Absolute, out var uri)
+                && (uri.Scheme == Uri.UriSchemeHttp || uri.Scheme == Uri.UriSchemeHttps);
+
+        /// <summary>
         /// Downloads a file from <paramref name="url"/> to <paramref name="destinationPath"/>,
         /// reporting progress 0–100 via <paramref name="progress"/>.
         /// <paramref name="httpClient"/> allows injection of a mock for testing.
@@ -27,9 +36,7 @@ namespace MosquitoNetCalculator.Services
         public static async Task DownloadWithProgressAsync(
             string url, string destinationPath, IProgress<int> progress, HttpClient? httpClient = null)
         {
-            if (!Uri.TryCreate(url, UriKind.Absolute, out var downloadUri)
-                || (downloadUri.Scheme != Uri.UriSchemeHttp
-                    && downloadUri.Scheme != Uri.UriSchemeHttps))
+            if (!IsSupportedUrl(url))
             {
                 throw new InvalidOperationException(
                     "В манифесте отсутствует корректная ссылка на архив обновления.");
@@ -44,7 +51,7 @@ namespace MosquitoNetCalculator.Services
                     try
                     {
                         using var response = await http.GetAsync(
-                            UpdateManifestClient.CacheBustUrl(downloadUri.AbsoluteUri),
+                            UpdateManifestClient.CacheBustUrl(url),
                             HttpCompletionOption.ResponseHeadersRead).ConfigureAwait(false);
 
                         response.EnsureSuccessStatusCode();

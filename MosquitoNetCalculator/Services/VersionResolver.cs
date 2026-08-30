@@ -177,7 +177,6 @@ namespace MosquitoNetCalculator.Services
         }
 
         private static bool IsDownloadUrlUsable(ReleaseInfo release)
-            => Uri.TryCreate(release.Url, UriKind.Absolute, out var uri)
-                && (uri.Scheme == Uri.UriSchemeHttp || uri.Scheme == Uri.UriSchemeHttps);
+            => UpdateDownloader.IsSupportedUrl(release.Url);
     }
 }

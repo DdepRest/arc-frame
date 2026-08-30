@@ -1,5 +1,6 @@
 using System;
 using System.IO;
+using System.Linq;
 using System.Net;
 using System.Net.Http;
 using System.Text;
@@ -718,6 +719,262 @@ namespace MosquitoNetCalculator.Tests.Services
                 if (File.Exists(tempSettingsPath)) File.Delete(tempSettingsPath);
                 try { if (Directory.Exists(tempWatchdogDir)) Directory.Delete(tempWatchdogDir, recursive: true); } catch { }
             }
+        }
+
+        // ─── v3.48.8: fallback download channel (primary → mirrorUrl) ─────
+        //
+        // The updater retries a failed download through the manifest's
+        // mirrorUrl — the byte-identical ZIP published on a separate ref.
+        // The same SHA-256 is verified regardless of channel, so the mirror
+        // adds availability, not a new trust anchor. These tests drive the
+        // production flow with a mock HTTP handler that makes the PRIMARY
+        // channel fail in different ways, then reuse the UAC-cancel seam
+        // (Win32Exception 1223) to stop cleanly after staging + cleanup —
+        // the same pattern as the v3.48.0 UAC e2e test above.
+        // Requested URLs are recorded so each test can assert which channels
+        // were actually exercised.
+
+        private sealed class MirrorFlowResult
+        {
+            public UpdateItem? CapturedItem;
+            public string? PendingAtEnd;
+            public System.Collections.Generic.List<string> RequestedUrls = new();
+
+            public bool AnyUrlContains(string fragment)
+                => RequestedUrls.Any(u => u.Contains(fragment, StringComparison.Ordinal));
+        }
+
+        /// <summary>
+        /// Shared e2e harness: the manifest fetch is mocked around the given
+        /// <paramref name="release"/>; every other request is routed through
+        /// <paramref name="downloadHandler"/>. The watchdog launch seam throws
+        /// Win32Exception(1223), so the flow ends after staging + cleanup
+        /// (no Application.Shutdown, no real install) — pending version is
+        /// saved for the next tick, exactly as in production.
+        /// </summary>
+        private static async Task<MirrorFlowResult> RunMirrorFlowWithWatchdogCancelAsync(
+            ReleaseInfo release,
+            Func<HttpRequestMessage, CancellationToken, Task<HttpResponseMessage>> downloadHandler)
+        {
+            var result = new MirrorFlowResult();
+
+            var originalSettingsPath = AppSettingsService.SettingsPath;
+            var tempSettingsPath = Path.Combine(Path.GetTempPath(),
+                $"arc-settings-mirror-{Guid.NewGuid():N}.json");
+            AppSettingsService.SettingsPath = tempSettingsPath;
+
+            var originalDataDir = WatchdogService.UpdateDataDir;
+            var tempWatchdogDir = Path.Combine(Path.GetTempPath(),
+                $"arc-watchdog-mirror-{Guid.NewGuid():N}");
+            Directory.CreateDirectory(tempWatchdogDir);
+            WatchdogService.UpdateDataDir = tempWatchdogDir;
+
+            var mockClient = CreateMockClient((req, ct) =>
+            {
+                var url = req.RequestUri?.ToString() ?? "";
+                result.RequestedUrls.Add(url);
+                if (url.Contains("releases.json", StringComparison.Ordinal))
+                {
+                    var manifest = new UpdateManifest
+                    {
+                        Latest = release.Version,
+                        Releases = new() { release }
+                    };
+                    return Task.FromResult(new HttpResponseMessage(HttpStatusCode.OK)
+                    {
+                        Content = new StringContent(JsonSerializer.Serialize(manifest))
+                    });
+                }
+                return downloadHandler(req, ct);
+            });
+
+            Action<UpdateItem> probe = item => result.CapturedItem = item;
+            UpdateService.UpdateDetected += probe;
+            UpdateService.ShowUpdateAvailableOverride = (_, _) => true; // user confirms
+            UpdateService.LaunchWatchdogForTest = _ =>
+                throw new System.ComponentModel.Win32Exception(
+                    1223, "ERROR_CANCELLED — mirror-flow test seam");
+
+            try
+            {
+                await UpdateService.RunUpdateFlowAsync(owner: null, isAutomatic: true, httpClient: mockClient);
+
+                result.PendingAtEnd = AppSettingsService.LoadPendingUpdateVersion();
+
+                // Flow-level invariants shared by all mirror tests.
+                Assert.False(UpdateService.IsChecking);
+                Assert.False(UpdateService.IsDownloading);
+                Assert.False(Directory.Exists(Path.Combine(tempWatchdogDir, "arc-update-stage")),
+                    "StageDir must be cleaned up after UAC-cancelled mirror flow");
+                Assert.False(File.Exists(Path.Combine(tempWatchdogDir, "arc-update-watchdog.bat")),
+                    "Watchdog .bat must be cleaned up after UAC-cancelled mirror flow");
+            }
+            finally
+            {
+                UpdateService.UpdateDetected -= probe;
+                UpdateService.ShowUpdateAvailableOverride = null;
+                UpdateService.LaunchWatchdogForTest = null;
+                AppSettingsService.SettingsPath = originalSettingsPath;
+                WatchdogService.UpdateDataDir = originalDataDir;
+                if (File.Exists(tempSettingsPath)) File.Delete(tempSettingsPath);
+                try { if (Directory.Exists(tempWatchdogDir)) Directory.Delete(tempWatchdogDir, recursive: true); } catch { }
+            }
+
+            return result;
+        }
+
+        [Fact]
+        public async Task RunUpdateFlowAsync_PrimaryChannelFails_FallsBackToMirror_AndCompletesFlow()
+        {
+            // Основной канал недоступен по сети (HttpRequestException —
+            // транзиентный, поэтому загрузчик делает все свои 4 попытки —
+            // ровно как при реальном таймауте/блокировке). Зеркало отдаёт
+            // корректный архив, и поток доходит до установки.
+            var zipBytes = UacTestHelpers.CreateMinimalZipBytes();
+            var zipSha = UacTestHelpers.ComputeSha256Hex(zipBytes);
+            const string TestVersion = "999.1.0";
+
+            var release = new ReleaseInfo
+            {
+                Version = TestVersion,
+                Url = "http://mock.test/primary.zip",
+                MirrorUrl = "http://mock.test/mirror.zip",
+                Sha256 = zipSha
+            };
+
+            var result = await RunMirrorFlowWithWatchdogCancelAsync(release, (req, ct) =>
+            {
+                var url = req.RequestUri?.ToString() ?? "";
+                if (url.Contains("/primary.zip", StringComparison.Ordinal))
+                    throw new HttpRequestException("Mock: primary channel unreachable");
+                if (url.Contains("/mirror.zip", StringComparison.Ordinal))
+                {
+                    return Task.FromResult(new HttpResponseMessage(HttpStatusCode.OK)
+                    {
+                        Content = new ByteArrayContent(zipBytes)
+                    });
+                }
+                throw new InvalidOperationException($"Unexpected URL: {url}");
+            });
+
+            Assert.True(result.AnyUrlContains("/mirror.zip"),
+                "Mirror channel must be requested after primary channel failures");
+            Assert.NotNull(result.CapturedItem);
+            Assert.Equal(TestVersion, result.CapturedItem!.Version);
+            Assert.Equal(TestVersion, result.PendingAtEnd);
+        }
+
+        [Fact]
+        public async Task RunUpdateFlowAsync_PrimaryReturnsCorruptedFile_FallsBackToMirror_AndCompletesFlow()
+        {
+            // Основной канал «отдал» повреждённый файл — по сети всё прошло,
+            // но SHA-256 не совпал. Зеркало отдаёт корректный архив.
+            var goodZip = UacTestHelpers.CreateMinimalZipBytes();
+            var goodSha = UacTestHelpers.ComputeSha256Hex(goodZip);
+            var badZip = System.Text.Encoding.UTF8.GetBytes("corrupted bytes — not a zip");
+            const string TestVersion = "999.1.1";
+
+            var release = new ReleaseInfo
+            {
+                Version = TestVersion,
+                Url = "http://mock.test/primary.zip",
+                MirrorUrl = "http://mock.test/mirror.zip",
+                Sha256 = goodSha
+            };
+
+            var result = await RunMirrorFlowWithWatchdogCancelAsync(release, (req, ct) =>
+            {
+                var url = req.RequestUri?.ToString() ?? "";
+                if (url.Contains("/primary.zip", StringComparison.Ordinal))
+                {
+                    return Task.FromResult(new HttpResponseMessage(HttpStatusCode.OK)
+                    {
+                        Content = new ByteArrayContent(badZip)
+                    });
+                }
+                if (url.Contains("/mirror.zip", StringComparison.Ordinal))
+                {
+                    return Task.FromResult(new HttpResponseMessage(HttpStatusCode.OK)
+                    {
+                        Content = new ByteArrayContent(goodZip)
+                    });
+                }
+                throw new InvalidOperationException($"Unexpected URL: {url}");
+            });
+
+            Assert.True(result.AnyUrlContains("/mirror.zip"),
+                "Mirror channel must be requested when primary download fails integrity check");
+            Assert.NotNull(result.CapturedItem);
+            Assert.Equal(TestVersion, result.PendingAtEnd);
+        }
+
+        [Fact]
+        public async Task RunUpdateFlowAsync_BothChannelsFail_FailsCleanly_AndTriesMirror()
+        {
+            const string TestVersion = "999.1.2";
+            var release = new ReleaseInfo
+            {
+                Version = TestVersion,
+                Url = "http://mock.test/primary.zip",
+                MirrorUrl = "http://mock.test/mirror.zip",
+                Sha256 = "abc"
+            };
+
+            var result = await RunMirrorFlowWithWatchdogCancelAsync(release, (req, ct) =>
+            {
+                var url = req.RequestUri?.ToString() ?? "";
+                if (url.Contains("/primary.zip", StringComparison.Ordinal)
+                    || url.Contains("/mirror.zip", StringComparison.Ordinal))
+                {
+                    // Не-транзиентная ошибка: мгновенный сбой без ретраев
+                    // загрузчика (сами ретраи покрыты в UpdateDownloaderTests).
+                    throw new InvalidOperationException("Mock: both channels down");
+                }
+                throw new InvalidOperationException($"Unexpected URL: {url}");
+            });
+
+            // Зеркало пробовалось после сбоя основного канала.
+            Assert.True(result.AnyUrlContains("/mirror.zip"),
+                "Mirror channel must still be attempted when primary fails");
+            // Пользователь подтвердил диалог (событие сработало до скачивания),
+            // но установка не началась: pending не записан — следующий tick
+            // повторит попытку, как и раньше при одном канале.
+            Assert.NotNull(result.CapturedItem);
+            Assert.Equal(TestVersion, result.CapturedItem!.Version);
+            Assert.Null(result.PendingAtEnd);
+        }
+
+        [Fact]
+        public async Task RunUpdateFlowAsync_PrimaryChannelWorks_MirrorIsNotRequested()
+        {
+            var zipBytes = UacTestHelpers.CreateMinimalZipBytes();
+            var zipSha = UacTestHelpers.ComputeSha256Hex(zipBytes);
+            const string TestVersion = "999.1.3";
+
+            var release = new ReleaseInfo
+            {
+                Version = TestVersion,
+                Url = "http://mock.test/primary.zip",
+                MirrorUrl = "http://mock.test/mirror.zip",
+                Sha256 = zipSha
+            };
+
+            var result = await RunMirrorFlowWithWatchdogCancelAsync(release, (req, ct) =>
+            {
+                var url = req.RequestUri?.ToString() ?? "";
+                if (url.Contains("/primary.zip", StringComparison.Ordinal))
+                {
+                    return Task.FromResult(new HttpResponseMessage(HttpStatusCode.OK)
+                    {
+                        Content = new ByteArrayContent(zipBytes)
+                    });
+                }
+                throw new InvalidOperationException($"Unexpected URL: {url}");
+            });
+
+            Assert.False(result.AnyUrlContains("/mirror.zip"),
+                "Mirror channel must NOT be requested when the primary channel succeeds");
+            Assert.Equal(TestVersion, result.PendingAtEnd);
         }
 
     }

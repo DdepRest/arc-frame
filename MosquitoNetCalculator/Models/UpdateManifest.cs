@@ -54,5 +54,15 @@ namespace MosquitoNetCalculator.Models
         /// <summary>SHA-256 хеш .zip в hex-формате (lowercase).</summary>
         [JsonPropertyName("sha256")]
         public string Sha256 { get; set; } = "";
+
+        /// <summary>
+        /// Запасной URL того же ZIP-архива (зеркало). CI публикует байт-в-байт
+        /// тот же архив под отдельным тегом vX.Y.Z-mirror, и клиент при сбое
+        /// основного канала повторяет скачивание отсюда. Поле опциональное:
+        /// старые записи манифеста его не содержат, и пустое значение
+        /// означает «запасного канала нет» — поведение прежнее.
+        /// </summary>
+        [JsonPropertyName("mirrorUrl")]
+        public string MirrorUrl { get; set; } = "";
     }
 }

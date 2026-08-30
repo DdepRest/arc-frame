@@ -147,6 +147,42 @@ jobs:
           echo "SHA256=$SHA" >> "$GITHUB_OUTPUT"
           echo "Computed SHA-256: $SHA"
 
+      # 9b. Publish the byte-identical ZIP to the rolling mirror-latest ref.
+      #     Some networks block the Release-assets CDN while raw.githubusercontent.com
+      #     stays reachable. The ref is force-updated to a fresh orphan commit
+      #     containing only the current ZIP. ZIPs >= 95 MiB are intentionally
+      #     skipped: GitHub's per-file limit is 100 MiB, and this guard leaves
+      #     operational headroom. Skipping the mirror must never fail the release.
+      - name: Publish mirror ZIP
+        id: mirror
+        shell: bash
+        run: |
+          set -euo pipefail
+          VERSION="${{ steps.version.outputs.VERSION }}"
+          ZIP="${{ steps.zip.outputs.ZIP_PATH }}"
+          MIRROR_TAG="mirror-latest"
+          ZIP_SIZE="${{ steps.zip.outputs.ZIP_SIZE }}"
+          MIRROR_URL=""
+
+          if (( ZIP_SIZE >= 95 * 1024 * 1024 )); then
+            echo "ZIP is ${ZIP_SIZE} bytes (>= 95 MiB); skipping mirror and continuing release."
+          else
+            MIRROR_DIR="$(mktemp -d)"
+            git init -q "$MIRROR_DIR"
+            cp "$ZIP" "$MIRROR_DIR/ARC-Frame-$VERSION-full.zip"
+            cd "$MIRROR_DIR"
+            git config user.email "github-actions[bot]@users.noreply.github.com"
+            git config user.name "github-actions[bot]"
+            git add "ARC-Frame-$VERSION-full.zip"
+            git commit -q -m "mirror: ARC-Frame-$VERSION-full.zip"
+            git remote add origin "https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git"
+            git push -q --force origin "HEAD:refs/tags/$MIRROR_TAG"
+            MIRROR_URL="https://raw.githubusercontent.com/${{ github.repository }}/$MIRROR_TAG/ARC-Frame-$VERSION-full.zip"
+            echo "Mirror published: $MIRROR_URL"
+          fi
+
+          echo "MIRROR_URL=$MIRROR_URL" >> "$GITHUB_OUTPUT"
+
       # 10. Update releases.json manifest — find the entry matching the
       #     current version and fill in runtime-computed fields (url, size,
       #     sha256, date). The type/title/changes are already hand-written
@@ -164,6 +200,7 @@ jobs:
           $size = [int]"${{ steps.zip.outputs.ZIP_SIZE }}"
           $sha = "${{ steps.hash.outputs.SHA256 }}"
           $url = "https://github.com/${{ github.repository }}/releases/download/v$version/ARC-Frame-$version-full.zip"
+          $mirror = "${{ steps.mirror.outputs.MIRROR_URL }}"
 
           # Defensive UTF-8 BOM check
           $bytes = [System.IO.File]::ReadAllBytes('releases.json')
@@ -182,6 +219,13 @@ jobs:
               $json.releases[$i].size   = $size
               $json.releases[$i].sha256 = $sha
               $json.releases[$i].date   = (Get-Date -Format 'yyyy-MM-dd')
+              # mirrorUrl may be absent on hand-prepped entries — PSCustomObject
+              # cannot assign a property that does not exist, so Add-Member first.
+              if (-not ($json.releases[$i].PSObject.Properties['mirrorUrl'])) {
+                $json.releases[$i] | Add-Member -NotePropertyName mirrorUrl -NotePropertyValue $mirror
+              } else {
+                $json.releases[$i].mirrorUrl = $mirror
+              }
               $found = $true
               break
             }
@@ -190,14 +234,15 @@ jobs:
           if (-not $found) {
             # Fallback: prepend a minimal entry (shouldn't happen if releases.json is prepped)
             $json.releases = @(@{
-              version = $version
-              date    = (Get-Date -Format 'yyyy-MM-dd')
-              type    = 'Исправление'
-              title   = "v$version release"
-              changes = @('Auto-published via .github/workflows/release.yml')
-              url     = $url
-              size    = $size
-              sha256  = $sha
+              version   = $version
+              date      = (Get-Date -Format 'yyyy-MM-dd')
+              type      = 'Исправление'
+              title     = "v$version release"
+              changes   = @('Auto-published via .github/workflows/release.yml')
+              url       = $url
+              size      = $size
+              sha256    = $sha
+              mirrorUrl = $mirror
             }) + @($json.releases)
           }
 

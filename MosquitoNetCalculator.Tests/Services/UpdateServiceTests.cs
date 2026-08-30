@@ -426,6 +426,57 @@ namespace MosquitoNetCalculator.Tests.Services
             Assert.Null(result);
         }
 
+        // ─── SanitizeDownloadError ───────────────────────────────────
+
+        [Fact]
+        public void SanitizeDownloadError_RemovesBracketedServerAddress()
+        {
+            var cleaned = UpdateService.SanitizeDownloadError(
+                "Попытка установить соединение была безуспешной, т.к. от другого компьютера " +
+                "за требуемое время не получен нужный отклик. [release-assets.githubusercontent.com:443]");
+
+            Assert.DoesNotContain("[", cleaned);
+            Assert.DoesNotContain("]", cleaned);
+            Assert.DoesNotContain("githubusercontent", cleaned);
+            Assert.StartsWith("Попытка установить соединение", cleaned);
+        }
+
+        [Fact]
+        public void SanitizeDownloadError_PlainMessage_PassesThrough()
+        {
+            Assert.Equal("нет связи", UpdateService.SanitizeDownloadError("нет связи"));
+        }
+
+        [Fact]
+        public void SanitizeDownloadError_Empty_ReturnsNeutralText()
+        {
+            Assert.Equal("нет связи с сервером обновлений", UpdateService.SanitizeDownloadError(""));
+        }
+
+        // ─── BuildDownloadFailureReason ──────────────────────────────
+
+        [Fact]
+        public void BuildDownloadFailureReason_BothChannelsTried_NamesBothWithoutTechnicalDetails()
+        {
+            var reason = UpdateService.BuildDownloadFailureReason(
+                mirrorTried: true, "нет ответа вовремя");
+
+            Assert.Contains("основной и запасной", reason);
+            Assert.Contains("нет ответа вовремя", reason);
+            // Правило проекта: в текстах для пользователя нет технических деталей.
+            Assert.DoesNotContain("github", reason, StringComparison.OrdinalIgnoreCase);
+            Assert.DoesNotContain("http", reason, StringComparison.OrdinalIgnoreCase);
+            Assert.DoesNotContain("cdn", reason, StringComparison.OrdinalIgnoreCase);
+        }
+
+        [Fact]
+        public void BuildDownloadFailureReason_SingleChannel_PassesReasonThrough()
+        {
+            Assert.Equal(
+                "нет связи с сервером обновлений",
+                UpdateService.BuildDownloadFailureReason(mirrorTried: false, "нет связи с сервером обновлений"));
+        }
+
         // ─── HasPendingUpdate ────────────────────────────────────────
 
         [Fact]

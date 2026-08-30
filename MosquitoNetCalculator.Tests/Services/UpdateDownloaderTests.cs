@@ -159,6 +159,27 @@ namespace MosquitoNetCalculator.Tests.Services
             UpdateDownloader.TryDelete(destination);
         }
 
+        // ─── IsSupportedUrl ──────────────────────────────────────────
+
+        [Theory]
+        [InlineData("https://example.com/update.zip", true)]
+        [InlineData("http://example.com/update.zip", true)]
+        [InlineData("", false)]
+        [InlineData("   ", false)]
+        [InlineData("/relative/update.zip", false)]
+        [InlineData("ftp://example.com/update.zip", false)]
+        [InlineData("not a url", false)]
+        public void IsSupportedUrl_AcceptsOnlyAbsoluteHttpUrls(string url, bool expected)
+        {
+            Assert.Equal(expected, UpdateDownloader.IsSupportedUrl(url));
+        }
+
+        [Fact]
+        public void IsSupportedUrl_Null_ReturnsFalse()
+        {
+            Assert.False(UpdateDownloader.IsSupportedUrl(null));
+        }
+
         private sealed class ImmediateProgress : IProgress<int>
         {
             private readonly System.Collections.Generic.List<int> _reports;
