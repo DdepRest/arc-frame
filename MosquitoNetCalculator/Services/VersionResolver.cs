@@ -1,5 +1,6 @@
 using System;
 using System.Diagnostics;
+using System.Linq;
 using System.Reflection;
 using MosquitoNetCalculator.Models;
 
@@ -165,7 +166,18 @@ namespace MosquitoNetCalculator.Services
             if (latestVersion <= currentVersion)
                 return null;
 
-            return manifest.Releases[0]; // newest first
+            // Do not trust array ordering alone: a stale or malformed manifest
+            // can advertise `latest` while its first entry is another release.
+            // Select the advertised version explicitly so the downloader does
+            // not receive an unrelated or empty-url entry.
+            return manifest.Releases
+                .Where(release => string.Equals(
+                    release.Version, manifest.Latest, StringComparison.OrdinalIgnoreCase))
+                .FirstOrDefault(IsDownloadUrlUsable);
         }
+
+        private static bool IsDownloadUrlUsable(ReleaseInfo release)
+            => Uri.TryCreate(release.Url, UriKind.Absolute, out var uri)
+                && (uri.Scheme == Uri.UriSchemeHttp || uri.Scheme == Uri.UriSchemeHttps);
     }
 }

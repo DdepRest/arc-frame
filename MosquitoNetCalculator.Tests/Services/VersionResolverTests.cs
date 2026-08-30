@@ -145,6 +145,56 @@ namespace MosquitoNetCalculator.Tests.Services
         }
 
         [Fact]
+        public void GetAvailableUpdate_MatchesAdvertisedLatest_NotFirstArrayItem()
+        {
+            var manifest = new UpdateManifest
+            {
+                Latest = "3.36.2",
+                Releases = new()
+                {
+                    new ReleaseInfo { Version = "3.36.1", Url = "https://example.com/old.zip" },
+                    new ReleaseInfo { Version = "3.36.2", Url = "https://example.com/latest.zip", Sha256 = "abc" }
+                }
+            };
+
+            var result = VersionResolver.GetAvailableUpdate(manifest, new Version(3, 36, 0));
+
+            Assert.NotNull(result);
+            Assert.Equal("3.36.2", result!.Version);
+            Assert.Equal("https://example.com/latest.zip", result.Url);
+        }
+
+        [Fact]
+        public void GetAvailableUpdate_NoEntryForAdvertisedLatest_ReturnsNull()
+        {
+            var manifest = new UpdateManifest
+            {
+                Latest = "3.36.2",
+                Releases = new()
+                {
+                    new ReleaseInfo { Version = "3.36.1", Url = "https://example.com/old.zip" }
+                }
+            };
+
+            Assert.Null(VersionResolver.GetAvailableUpdate(manifest, new Version(3, 36, 0)));
+        }
+
+        [Theory]
+        [InlineData("")]
+        [InlineData("/relative/update.zip")]
+        [InlineData("ftp://example.com/update.zip")]
+        public void GetAvailableUpdate_UnusableDownloadUrl_ReturnsNull(string url)
+        {
+            var manifest = new UpdateManifest
+            {
+                Latest = "3.36.2",
+                Releases = new() { new ReleaseInfo { Version = "3.36.2", Url = url, Sha256 = "abc" } }
+            };
+
+            Assert.Null(VersionResolver.GetAvailableUpdate(manifest, new Version(3, 36, 0)));
+        }
+
+        [Fact]
         public void GetAvailableUpdate_LatestEqualToCurrent_ReturnsNull()
         {
             var manifest = new UpdateManifest

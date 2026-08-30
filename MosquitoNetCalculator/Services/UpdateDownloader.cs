@@ -27,6 +27,14 @@ namespace MosquitoNetCalculator.Services
         public static async Task DownloadWithProgressAsync(
             string url, string destinationPath, IProgress<int> progress, HttpClient? httpClient = null)
         {
+            if (!Uri.TryCreate(url, UriKind.Absolute, out var downloadUri)
+                || (downloadUri.Scheme != Uri.UriSchemeHttp
+                    && downloadUri.Scheme != Uri.UriSchemeHttps))
+            {
+                throw new InvalidOperationException(
+                    "В манифесте отсутствует корректная ссылка на архив обновления.");
+            }
+
             var ownsClient = httpClient == null;
             var http = httpClient ?? UpdateManifestClient.CreateConfiguredHttpClient(TimeSpan.FromMinutes(10));
             try
@@ -35,7 +43,8 @@ namespace MosquitoNetCalculator.Services
                 {
                     try
                     {
-                        using var response = await http.GetAsync(UpdateManifestClient.CacheBustUrl(url),
+                        using var response = await http.GetAsync(
+                            UpdateManifestClient.CacheBustUrl(downloadUri.AbsoluteUri),
                             HttpCompletionOption.ResponseHeadersRead).ConfigureAwait(false);
 
                         response.EnsureSuccessStatusCode();

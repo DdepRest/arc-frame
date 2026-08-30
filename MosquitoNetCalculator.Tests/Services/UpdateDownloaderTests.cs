@@ -23,6 +23,24 @@ namespace MosquitoNetCalculator.Tests.Services
 
         // ─── DownloadWithProgressAsync ────────────────────────────────
 
+        [Theory]
+        [InlineData("")]
+        [InlineData("?t=abc")]
+        [InlineData("/relative/update.zip")]
+        [InlineData("ftp://example.com/update.zip")]
+        public async Task DownloadWithProgressAsync_InvalidUrl_ThrowsClearError(string url)
+        {
+            using var http = new HttpClient(new TestHttpMessageHandler(_ =>
+                throw new InvalidOperationException("HTTP must not be called for an invalid URL")));
+            string destination = GetTempPath();
+
+            var ex = await Assert.ThrowsAsync<InvalidOperationException>(() =>
+                UpdateDownloader.DownloadWithProgressAsync(url, destination, new Progress<int>(), http));
+
+            Assert.Equal("В манифесте отсутствует корректная ссылка на архив обновления.", ex.Message);
+            Assert.False(File.Exists(destination));
+        }
+
         [Fact]
         public async Task DownloadWithProgressAsync_WritesFileAndReportsProgress()
         {
