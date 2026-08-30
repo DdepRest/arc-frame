@@ -10,9 +10,9 @@
       "changes": [
         "Мелкие правки."
       ],
-      "url": "",
-      "size": 0,
-      "sha256": ""
+      "url": "https://github.com/DdepRest/arc-frame/releases/download/v3.48.7/ARC-Frame-3.48.7-full.zip",
+      "size": 85389193,
+      "sha256": "a71ccbb87e37630e0e475c3db7fb79b3e51f5362c7bdd4cf22e7cc2aab189ee6"
     },
     {
       "version": "3.48.6",
