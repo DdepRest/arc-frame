@@ -159,6 +159,8 @@
 - Вся структура `MosquitoNetCalculator/` и `MosquitoNetCalculator.Tests/`.
 
 ## Last verified
+2026-08-30 (v3.48.7) — auto-synced from csproj (sync-version.ps1, CONTROL#13).
+
 2026-08-30 (v3.48.6) — auto-synced from csproj (sync-version.ps1, CONTROL#13).
 
 2026-08-30 (v3.48.4) — AdminPanelControl: авто-рефреш 15 мин; OfficeReportService: автоочистка устаревших (>24 ч) дублей gist; release.yml: OFFICE_REPORT_TOKEN в Publish.
