@@ -38,7 +38,7 @@
 | TitleBarControl | class | Controls/TitleBarControl.xaml.cs | | Methods: RefreshUpdateBadge, UpdateSettingsMenu |
 | TotalCardControl | class | Controls/TotalCardControl.xaml.cs | |
 | UpdateAvailableWindow | class | Controls/UpdateAvailableWindow.xaml.cs | Props: Accepted |
-| UpdatesTabControl | class | Controls/UpdatesTabControl.xaml.cs | |
+| UpdatesTabControl | class | Controls/UpdatesTabControl.xaml.cs | | Methods: Mark | Static: M:Mark |
 | WhatsNewWindow | class | Controls/WhatsNewWindow.xaml.cs | |
 
 ### Converters
@@ -203,7 +203,7 @@
 | UndoRedoService | class | Services/UndoRedoService.cs | Props: CanRedo, CanUndo, IsDirty | Methods: Clear, MarkClean, MarkDirty, PushUndo, Redo, SetDirtyCallback, SuppressDirtyChanges, TryPeekTopSnapshot, Undo |
 | UpdateDownloader | static class | Services/UpdateDownloader.cs | | Methods: DownloadWithProgressAsync, IsTransient, TryDelete | Static: M:DownloadWithProgressAsync, M:IsTransient, M:TryDelete |
 | UpdateLog | static class | Services/UpdateLog.cs | | Methods: AllNewestFirst, GetChangesSince | Static: M:AllNewestFirst, M:GetChangesSince |
-| UpdateManifestClient | static class | Services/UpdateManifestClient.cs | | Methods: CacheBustUrl, CreateConfiguredHttpClient, FetchManifestAsync | Static: M:CacheBustUrl, M:CreateConfiguredHttpClient, M:FetchManifestAsync |
+| UpdateManifestClient | static class | Services/UpdateManifestClient.cs | | Methods: CacheBustUrl, CreateConfiguredHttpClient, FetchManifestAsync, FetchManifestDiagnosticsAsync, ManifestFetchResult, ManifestProbe, ParseApiEnvelope, ProbeApiAsync, ProbeJsDelivrAsync, ProbeRawAsync | Static: M:CacheBustUrl, M:CreateConfiguredHttpClient, M:FetchManifestAsync, M:FetchManifestDiagnosticsAsync, M:ParseApiEnvelope, M:ProbeApiAsync, M:ProbeJsDelivrAsync, M:ProbeRawAsync |
 | UpdateService | static class | Services/UpdateService.cs | | Methods: CheckAndApplyAsync, CheckInBackgroundAsync, CheckOnStartupAsync, CreateReleaseStub, DownloadWithProgressAsync, FetchManifestAsync, FireUpdateDetected, GetAvailableUpdate, GetIdleTime, HasPendingUpdate, IsCurrentVersionBrokenForAutoUpdate, ParseSafe, ResolveVersion, RunUpdateFlowAsync, StripVersionSuffix, TryResolveCurrentVersion | Static: M:CheckAndApplyAsync, M:CheckInBackgroundAsync, M:CheckOnStartupAsync, M:CreateReleaseStub, M:DownloadWithProgressAsync, M:FetchManifestAsync, M:FireUpdateDetected, M:GetAvailableUpdate, M:GetIdleTime, M:HasPendingUpdate, M:IsCurrentVersionBrokenForAutoUpdate, M:ParseSafe, M:ResolveVersion, M:RunUpdateFlowAsync, M:StripVersionSuffix, M:TryResolveCurrentVersion |
 | UpdateVerifier | static class | Services/UpdateVerifier.cs | | Methods: ComputeSha256, VerifyHash | Static: M:ComputeSha256, M:VerifyHash |
 | VersionResolver | static class | Services/VersionResolver.cs | | Methods: GetAvailableUpdate, IsBrokenForAutoUpdate, ParseSafe, ResolveVersion, StripVersionSuffix | Static: M:GetAvailableUpdate, M:IsBrokenForAutoUpdate, M:ParseSafe, M:ResolveVersion, M:StripVersionSuffix |

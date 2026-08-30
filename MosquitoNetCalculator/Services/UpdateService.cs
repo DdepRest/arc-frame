@@ -387,15 +387,24 @@ namespace MosquitoNetCalculator.Services
                 if (!isAutomatic)
                     ToastService.ShowToast("Проверка наличия обновлений...", ToastType.Info);
 
-                var manifest = await FetchManifestAsync(httpClient).ConfigureAwait(true);
+                // Диагностическая версия fetch: причины попыток (raw/api/таймаут)
+                // попадают в тост ручной проверки — раньше причина была видна
+                // только в Debug-логе, и на машинах пользователей сбой был
+                // обезличенным «Не удалось получить список обновлений».
+                var fetch = await UpdateManifestClient.FetchManifestDiagnosticsAsync(httpClient).ConfigureAwait(true);
+                var manifest = fetch.Manifest;
                 var release = GetAvailableUpdate(manifest, CurrentVersion);
 
                 if (release == null)
                 {
                     if (!isAutomatic)
                     {
-                        if (manifest == null || manifest.Releases.Count == 0)
-                            ToastService.ShowToast("Не удалось получить список обновлений.", ToastType.Warning);
+                        if (manifest == null)
+                            ToastService.ShowToast(
+                                $"Не удалось получить список обновлений: {fetch.Error ?? "нет связи с GitHub"}.",
+                                ToastType.Warning);
+                        else if (manifest.Releases.Count == 0)
+                            ToastService.ShowToast("Не удалось получить список обновлений: манифест пуст.", ToastType.Warning);
                         else if (ParseSafe(manifest.Latest) == null)
                             ToastService.ShowToast("Не удалось определить версию обновления.", ToastType.Warning);
                         else

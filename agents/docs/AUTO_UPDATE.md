@@ -100,9 +100,21 @@
 
 ## GitHub URL/API
 
-**Манифест (используется программой в runtime):** `https://raw.githubusercontent.com/DdepRest/arc-frame/main/releases.json`
+**Манифест (используется программой в runtime) — цепочка каналов:**
 
-> ⚠️ Этот URL кэшируется на GitHub CDN. После `git push` файла в `main` обновление видно на этом URL через **5-15 минут** (диапазон совпадает с `RELEASE_PROCESS.md`). Если нужна нулевая задержка диагностики — используйте `https://api.github.com/repos/DdepRest/arc-frame/contents/releases.json` (НЕ кэшируется, но требует авторизации для частых запросов).
+1. `https://raw.githubusercontent.com/DdepRest/arc-frame/main/releases.json` — основной (с cache-bust `?t=`);
+2. `https://api.github.com/repos/DdepRest/arc-frame/contents/releases.json` — запасной, base64-конверт contents API;
+3. повтор п.1 — на случай транзиентного сбоя;
+4. `https://cdn.jsdelivr.net/gh/DdepRest/arc-frame@main/releases.json` — последний рубеж: НЕ-GitHub CDN, работает при полной блокировке GitHub-доменов провайдером (сценарий «для обновлений нужен VPN»). Задержка кэша — см. примечание ниже.
+
+Первый успешный канал коротко замыкает цепочку; таймаут одной попытки 10 с. Реализация: `UpdateManifestClient.FetchManifestDiagnosticsAsync` (возвращает манифест + причины всех попыток).
+
+> ⚠️ URL п.1 кэшируется на GitHub CDN. После `git push` файла в `main` обновление видно на этом URL через **5-15 минут** (диапазон совпадает с `RELEASE_PROCESS.md`). Канал п.2 НЕ кэшируется edge-CDN — нулевая задержка диагностики.
+>
+> **Канал п.4 (jsDelivr) — измеренная задержка (замер 2026-08-30):**
+> - Заголовки CDN: `Cache-Control: public, max-age=604800, s-maxage=43200` → edge-кэш jsDelivr живёт до **12 ч** (worst case для конкретного PoP); браузерный max-age программе не мешает (`HttpClient` не кэширует).
+> - Замер: коммит `f786358` запушен в 07:28 UTC, а контент этого коммита (новая секция в CHANGELOG.md) jsDelivr уже отдавал в ~07:51 UTC (Age 649 с, X-Cache HIT) — **задержка ≤ ~23 мин** на наблюдавшемся PoP. Другие PoP могут отставать дольше — вплоть до 12 ч по TTL.
+> - Cache-bust `?t=` на jsDelivr **не работает**: CDN нормализует query (ETag/Age одинаковы с `?t=` и без) — в отличие от raw, где `?t=` обходит кэш. Поэтому jsDelivr не кэшируем-бустим и именно поэтому он ПОСЛЕДНИЙ в цепочке: используется, только когда raw и api недоступны — там даже 12-часовая задержка лучше полного отсутствия детекта.
 
 **Диагностический endpoint (НЕ кэшируется):** `https://api.github.com/repos/DdepRest/arc-frame/contents/releases.json`
 
@@ -132,7 +144,7 @@
 
 ## Как программа получает последний релиз
 
-1. Скачивает `releases.json` через `HttpClient` (таймаут 15 сек).
+1. Скачивает `releases.json` через `HttpClient` (цепочка raw → api.github.com → повтор raw → jsDelivr, таймаут попытки 10 с, короткое замыкание на первом успехе).
 2. Десериализует в `UpdateManifest`.
 3. Вызывает `GetAvailableUpdate(manifest, CurrentVersion)` — pure-метод, возвращает `ReleaseInfo?` если обновление доступно.
 4. Если `null` — приложение up-to-date или манифест невалиден.

@@ -40,6 +40,7 @@ namespace MosquitoNetCalculator.Controls
         // Состояние панели для шапки/напоминаний.
         private Version? _latestVersion;
         private string? _latestDownloadUrl;
+        private string? _latestFetchError;
         private DateTime _lastRefreshedAtLocal;
         private DispatcherTimer? _autoRefreshTimer;
         private bool _isRefreshing;
@@ -144,6 +145,7 @@ namespace MosquitoNetCalculator.Controls
                 var reports = reportsTask.Result;
                 _latestVersion = latestTask.Result.Version;
                 _latestDownloadUrl = latestTask.Result.Url;
+                _latestFetchError = latestTask.Result.FetchError;
 
                 // 3) Статусы (секция «Обновления»).
                 var currentPrefix = AppSettingsService.LoadContractPrefix();
@@ -179,10 +181,13 @@ namespace MosquitoNetCalculator.Controls
                     : "Всего заказов: — (отчётов ещё нет)";
                 TxtStatsTotalBadge.Text = reports.Count > 0 ? total.ToString() : string.Empty;
 
-                // 5) Строка последней версии.
+                // 5) Строка последней версии — при сбое показываем точную причину
+                //    (таймаут/HTTP-код/сеть), а не обезличенное «нет связи».
                 TxtLatestVersion.Text = _latestVersion != null
                     ? $"Последняя версия: v{_latestVersion}" + (_latestDownloadUrl != null ? "" : " · URL недоступен")
-                    : "Последняя версия: недоступна (нет связи с GitHub)";
+                    : "Последняя версия: недоступна" + (string.IsNullOrEmpty(_latestFetchError)
+                        ? " (нет связи с GitHub)"
+                        : $": {_latestFetchError}");
 
                 _lastRefreshedAtLocal = DateTime.Now;
                 UpdateEmptyStates();
@@ -270,17 +275,20 @@ namespace MosquitoNetCalculator.Controls
         {
             try
             {
-                var manifest = await UpdateManifestClient.FetchManifestAsync().ConfigureAwait(false);
+                // Диагностическая версия: даже при сбое известно, ПОЧЕМУ
+                // (таймаут/HTTP-код/сеть) — причина уходит в шапку панели.
+                var fetch = await UpdateManifestClient.FetchManifestDiagnosticsAsync().ConfigureAwait(false);
+                var manifest = fetch.Manifest;
                 if (manifest == null || string.IsNullOrWhiteSpace(manifest.Latest))
-                    return new LatestManifestResult(null, null);
+                    return new LatestManifestResult(null, null, fetch.Error);
 
                 var ver = Version.TryParse(manifest.Latest, out var v) ? v : null;
                 var release = manifest.Releases?.FirstOrDefault(r => r.Version == manifest.Latest);
-                return new LatestManifestResult(ver, release?.Url);
+                return new LatestManifestResult(ver, release?.Url, null);
             }
             catch (Exception)
             {
-                return new LatestManifestResult(null, null);
+                return new LatestManifestResult(null, null, null);
             }
         }
 
@@ -434,7 +442,7 @@ namespace MosquitoNetCalculator.Controls
             }
         }
 
-        /// <summary>Результат получения последней версии с GitHub (версия + download URL для напоминания).</summary>
-        private sealed record LatestManifestResult(Version? Version, string? Url);
+        /// <summary>Результат получения последней версии с GitHub (версия + download URL для напоминания + причина сбоя).</summary>
+        private sealed record LatestManifestResult(Version? Version, string? Url, string? FetchError);
     }
 }

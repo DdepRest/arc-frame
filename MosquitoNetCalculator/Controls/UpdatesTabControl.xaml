@@ -82,6 +82,7 @@
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="*"/>
                 <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition Width="Auto"/>
             </Grid.ColumnDefinitions>
 
             <StackPanel Grid.Column="0">
@@ -94,8 +95,23 @@
                            Margin="0,3,0,0"/>
             </StackPanel>
 
+            <!-- Диагностика связи: проверяет три канала обновлений (raw, api.github.com, jsDelivr) и показывает точные причины сбоя -->
+            <Button x:Name="BtnDiagnostics"
+                    Grid.Column="1"
+                    Style="{StaticResource GhostButton}"
+                    Margin="0,0,10,0"
+                    VerticalAlignment="Center"
+                    ToolTip="Проверить доступность каналов обновлений (raw, api.github.com, jsDelivr) и показать точные причины сбоя"
+                    Click="BtnDiagnostics_Click">
+                <StackPanel Orientation="Horizontal">
+                    <TextBlock Text="&#xE968;" FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets"
+                               FontSize="12" VerticalAlignment="Center" Margin="0,0,6,0"/>
+                    <TextBlock Text="Диагностика связи" VerticalAlignment="Center"/>
+                </StackPanel>
+            </Button>
+
             <!-- Счётчик версий справа -->
-            <Border Grid.Column="1"
+            <Border Grid.Column="2"
                     VerticalAlignment="Center"
                     Background="{DynamicResource ChipBg}"
                     CornerRadius="12"
