@@ -1,4 +1,5 @@
 using System;
+using System.IO;
 using System.Reflection;
 using System.Reflection.Emit;
 using MosquitoNetCalculator.Models;
@@ -15,7 +16,17 @@ namespace MosquitoNetCalculator.Tests.Services
     /// for <c>ResolveVersion(Assembly)</c> — covering each of the three
     /// fallback tiers (InformationalVersion → FileVersion → GetName().Version)
     /// with realistic and edge-case attribute shapes.
+    ///
+    /// [Collection("FileSystem")] — HasPendingUpdate_* tests write to
+    /// AppSettingsService.SettingsPath (static path). Without collection
+    /// membership xUnit runs them in parallel with FileSystem-collection
+    /// tests that redirect the same path to their own temp files, causing
+    /// a race where SavePendingUpdateVersion("9.99.9") lands in one file
+    /// while HasPendingUpdate() reads another (already cleared) — the test
+    /// fails intermittently in CI (stricter parallelism). The collection
+    /// serializes them with the other FileSystem tests.
     /// </summary>
+    [Collection("FileSystem")]
     public class UpdateServiceTests
     {
         // ─── StripVersionSuffix ──────────────────────────────────────
@@ -420,23 +431,39 @@ namespace MosquitoNetCalculator.Tests.Services
         [Fact]
         public void HasPendingUpdate_AfterSavingVersion_ReturnsTrue()
         {
-            AppSettingsService.SavePendingUpdateVersion("9.99.9");
+            var originalPath = AppSettingsService.SettingsPath;
+            var tempPath = Path.Combine(Path.GetTempPath(), $"arc-settings-has-{Guid.NewGuid():N}.json");
+            AppSettingsService.SettingsPath = tempPath;
             try
             {
+                AppSettingsService.SavePendingUpdateVersion("9.99.9");
                 Assert.True(UpdateService.HasPendingUpdate());
             }
             finally
             {
                 AppSettingsService.SavePendingUpdateVersion(null);
+                AppSettingsService.SettingsPath = originalPath;
+                if (File.Exists(tempPath)) File.Delete(tempPath);
             }
         }
 
         [Fact]
         public void HasPendingUpdate_AfterClearing_ReturnsFalse()
         {
-            AppSettingsService.SavePendingUpdateVersion("9.99.9");
-            AppSettingsService.SavePendingUpdateVersion(null);
-            Assert.False(UpdateService.HasPendingUpdate());
+            var originalPath = AppSettingsService.SettingsPath;
+            var tempPath = Path.Combine(Path.GetTempPath(), $"arc-settings-clear-{Guid.NewGuid():N}.json");
+            AppSettingsService.SettingsPath = tempPath;
+            try
+            {
+                AppSettingsService.SavePendingUpdateVersion("9.99.9");
+                AppSettingsService.SavePendingUpdateVersion(null);
+                Assert.False(UpdateService.HasPendingUpdate());
+            }
+            finally
+            {
+                AppSettingsService.SettingsPath = originalPath;
+                if (File.Exists(tempPath)) File.Delete(tempPath);
+            }
         }
 
         // ─── Test helpers ──────────────────────────────────────────

@@ -67,8 +67,24 @@ namespace MosquitoNetCalculator.Models
         /// </summary>
         public string QuantityDisplay =>
             Quantity > 0 && !IsAmountOnly && !(IsQuantityOptional && !IsCustomProduct && Quantity <= 1)
-                ? Quantity.ToString("G")
+                ? FormatQuantity(Quantity)
                 : "";
+
+        private static readonly System.Globalization.CultureInfo RuCulture =
+            System.Globalization.CultureInfo.GetCultureInfo("ru-RU");
+
+        /// <summary>
+        /// Форматирует количество в продакшен-локали ru-RU (запятая как
+        /// десятичный разделитель) — детерминированно, независимо от культуры
+        /// потока. Раньше использовался <c>ToString("G")</c>, который в CI
+        /// (en-US) давал точку вместо запятой — тесты падали, а в продакшене
+        /// это значило, что формат количества зависел от локали машины.
+        /// </summary>
+        private static string FormatQuantity(double quantity)
+        {
+            // G-формат: целые без дробной части (5), дробные с запятой (5,75).
+            return quantity.ToString("G", RuCulture);
+        }
 
         /// <summary>
         /// v3.44.1: internal для принудительного пересчёта из внешних сервисов
