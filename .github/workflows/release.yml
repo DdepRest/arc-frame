@@ -72,9 +72,11 @@ jobs:
       - name: Restore
         run: dotnet restore MosquitoNetCalculator.sln
 
-      # 5. Build (no-restore: rely on the step above).
+      # 5. Build the whole solution (no-restore: rely on the step
+      #    above). Must build BOTH projects — Test step below uses
+      #    --no-build and needs the test project's DLL too.
       - name: Build (Release)
-        run: dotnet build MosquitoNetCalculator/MosquitoNetCalculator.csproj -c Release --no-restore -v minimal
+        run: dotnet build MosquitoNetCalculator.sln -c Release --no-restore -v minimal
 
       # 6. Test — gate the publish step. If tests fail, the entire job
       #    aborts and no release is created on GitHub. This is the
