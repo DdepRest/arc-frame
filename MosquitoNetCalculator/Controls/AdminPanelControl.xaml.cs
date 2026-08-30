@@ -184,10 +184,10 @@ namespace MosquitoNetCalculator.Controls
                 // 5) Строка последней версии — при сбое показываем точную причину
                 //    (таймаут/HTTP-код/сеть), а не обезличенное «нет связи».
                 TxtLatestVersion.Text = _latestVersion != null
-                    ? $"Последняя версия: v{_latestVersion}" + (_latestDownloadUrl != null ? "" : " · URL недоступен")
+                    ? $"Последняя версия: v{_latestVersion}" + (_latestDownloadUrl != null ? "" : " · ссылка недоступна")
                     : "Последняя версия: недоступна" + (string.IsNullOrEmpty(_latestFetchError)
-                        ? " (нет связи с GitHub)"
-                        : $": {_latestFetchError}");
+                        ? " (свежие данные недоступны)"
+                        : $": {UserFacingUpdateError(_latestFetchError)}");
 
                 _lastRefreshedAtLocal = DateTime.Now;
                 UpdateEmptyStates();
@@ -271,6 +271,17 @@ namespace MosquitoNetCalculator.Controls
             TxtRefreshStatus.Text = $"обновлено {when}{autoPart}";
         }
 
+        private static string UserFacingUpdateError(string error)
+        {
+            if (error.Contains("таймаут", StringComparison.OrdinalIgnoreCase))
+                return "связь не отвечает вовремя";
+            if (error.StartsWith("HTTP ", StringComparison.OrdinalIgnoreCase)
+                || error.Contains("сеть:", StringComparison.OrdinalIgnoreCase)
+                || error.Contains("Exception", StringComparison.OrdinalIgnoreCase))
+                return "не удалось получить свежие данные";
+            return "свежие данные недоступны";
+        }
+
         private static async Task<LatestManifestResult> FetchLatestVersionAsync()
         {
             try
@@ -324,7 +335,7 @@ namespace MosquitoNetCalculator.Controls
                 int deleted = await OfficeReportService.CleanupDuplicatesAsync().ConfigureAwait(true);
                 if (deleted < 0)
                 {
-                    ToastService.ShowToast("Не удалось очистить дубли — нет связи с GitHub.", ToastType.Error);
+                    ToastService.ShowToast("Не удалось очистить дубли — не удалось связаться с хранилищем данных.", ToastType.Error);
                 }
                 else if (deleted == 0)
                 {

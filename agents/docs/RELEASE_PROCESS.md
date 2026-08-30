@@ -308,6 +308,8 @@ git commit -m "release: update releases.json for vX.Y.Z"
 - `extract-release-notes.ps1`
 
 ## Last verified
+2026-08-30 (v3.48.6) — auto-synced from csproj (sync-version.ps1, CONTROL#13).
+
 2026-08-30 (v3.48.4) — добавлен раздел про CI-релизы и секрет OFFICE_REPORT_TOKEN (release.yml: env в шаге Publish).
 
 

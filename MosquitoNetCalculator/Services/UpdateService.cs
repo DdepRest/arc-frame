@@ -399,12 +399,12 @@ namespace MosquitoNetCalculator.Services
                 {
                     if (!isAutomatic)
                     {
-                        if (manifest == null)
+                            if (manifest == null)
                             ToastService.ShowToast(
-                                $"Не удалось получить список обновлений: {fetch.Error ?? "нет связи с GitHub"}.",
+                                $"Не удалось получить список обновлений: {UserFacingUpdateError(fetch.Error)}.",
                                 ToastType.Warning);
                         else if (manifest.Releases.Count == 0)
-                            ToastService.ShowToast("Не удалось получить список обновлений: манифест пуст.", ToastType.Warning);
+                            ToastService.ShowToast("Не удалось получить список обновлений: свежие данные оказались неполными.", ToastType.Warning);
                         else if (ParseSafe(manifest.Latest) == null)
                             ToastService.ShowToast("Не удалось определить версию обновления.", ToastType.Warning);
                         else
@@ -482,7 +482,7 @@ namespace MosquitoNetCalculator.Services
                 if (string.IsNullOrEmpty(release.Sha256))
                 {
                     TryDelete(tempZip);
-                    var msg = "В манифесте отсутствует SHA-256 хеш для этой версии. Обновление отменено.";
+                    var msg = "Не удалось проверить целостность обновления. Установка отменена.";
                     if (isAutomatic)
                         ToastService.ShowToast(msg, ToastType.Error);
                     else
@@ -586,13 +586,13 @@ namespace MosquitoNetCalculator.Services
                     if (isAutomatic)
                     {
                         ToastService.ShowToast(
-                            "Установка обновления отменена. Запустите программу от имени администратора или установите ZIP вручную.",
+                            "Установка обновления отменена. Запустите программу с правами администратора или обратитесь к ответственному за установку.",
                             ToastType.Error);
                     }
                     else
                     {
                         MessageBox.Show(
-                            "Установка обновления отменена. Запустите программу от имени администратора или скачайте ZIP вручную с сайта.",
+                            "Установка обновления отменена. Запустите программу с правами администратора или обратитесь к ответственному за установку.",
                             "Отменено",
                             MessageBoxButton.OK,
                             MessageBoxImage.Warning);
@@ -636,6 +636,15 @@ namespace MosquitoNetCalculator.Services
         /// Fetches and deserializes the releases.json manifest from GitHub.
         /// Delegates to <see cref="UpdateManifestClient.FetchManifestAsync"/>.
         /// </summary>
+        private static string UserFacingUpdateError(string? error)
+        {
+            if (string.IsNullOrWhiteSpace(error))
+                return "свежие данные недоступны";
+            if (error.Contains("таймаут", StringComparison.OrdinalIgnoreCase))
+                return "связь не отвечает вовремя";
+            return "не удалось получить свежие данные";
+        }
+
         internal static Task<UpdateManifest?> FetchManifestAsync(HttpClient? httpClient = null)
             => UpdateManifestClient.FetchManifestAsync(httpClient);
 

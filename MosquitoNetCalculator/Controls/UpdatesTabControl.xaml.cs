@@ -74,7 +74,7 @@ namespace MosquitoNetCalculator.Controls
         }
 
         // ════════════════════════════════════════════════════════════════════
-        // Диагностика связи с GitHub
+        // Диагностика связи
         //
         // Проверка обновлений на части машин падала молча: один запрос к
         // raw.githubusercontent.com не переживал таймаут/блокировку провайдера.
@@ -95,7 +95,7 @@ namespace MosquitoNetCalculator.Controls
                 var jsDelivr = await UpdateManifestClient.ProbeJsDelivrAsync().ConfigureAwait(true);
 
                 new DialogBuilder<string>()
-                    .Title("Диагностика связи с GitHub")
+                    .Title("Диагностика связи")
                     .Message(BuildDiagnosticsText(raw, api, jsDelivr))
                     .WithButton("Понятно", "ok", isDefault: true, isCancel: true)
                     .ShowDialog(Window.GetWindow(this));
@@ -104,6 +104,17 @@ namespace MosquitoNetCalculator.Controls
             {
                 BtnDiagnostics.IsEnabled = true;
             }
+        }
+
+        private static string UserFacingProbeDetail(UpdateManifestClient.ManifestProbe probe)
+        {
+            if (probe.Ok)
+                return $"доступен ({probe.ElapsedMs} мс)";
+            if (probe.Detail.Contains("таймаут", StringComparison.OrdinalIgnoreCase))
+                return "нет ответа вовремя";
+            if (probe.Detail.StartsWith("HTTP ", StringComparison.OrdinalIgnoreCase))
+                return "сервис временно недоступен";
+            return "нет связи";
         }
 
         private static string BuildDiagnosticsText(
@@ -116,9 +127,9 @@ namespace MosquitoNetCalculator.Controls
             var sb = new StringBuilder();
             sb.AppendLine($"Проверка каналов обновлений — {DateTime.Now:HH:mm, dd.MM.yyyy}");
             sb.AppendLine();
-            sb.AppendLine($"{Mark(raw)} raw.githubusercontent.com — {raw.Detail}");
-            sb.AppendLine($"{Mark(api)} api.github.com — {api.Detail}");
-            sb.AppendLine($"{Mark(jsDelivr)} cdn.jsdelivr.net — {jsDelivr.Detail}");
+            sb.AppendLine($"{Mark(raw)} Основной способ связи — {UserFacingProbeDetail(raw)}");
+            sb.AppendLine($"{Mark(api)} Запасной способ связи — {UserFacingProbeDetail(api)}");
+            sb.AppendLine($"{Mark(jsDelivr)} Дополнительный способ связи — {UserFacingProbeDetail(jsDelivr)}");
             sb.AppendLine();
 
             if (raw.Ok)
@@ -127,21 +138,19 @@ namespace MosquitoNetCalculator.Controls
             }
             else if (api.Ok)
             {
-                sb.AppendLine("Вывод: основной канал raw недоступен, но обновления работают через запасной " +
-                              "канал api.github.com — детект новой версии сохранён.");
+                sb.AppendLine("Вывод: основной способ связи недоступен, но запасной работает — " +
+                              "обновления доступны.");
             }
             else if (jsDelivr.Ok)
             {
-                sb.AppendLine("Вывод: каналы GitHub (raw и api) недоступны — похоже, провайдер блокирует GitHub " +
-                              "(обычно это и есть причина «для обновлений нужен VPN»). Детект новой версии работает " +
-                              "через зеркало jsDelivr без VPN. Если установка архива упадёт — на время установки " +
-                              "понадобится VPN или ручное скачивание ZIP.");
+                sb.AppendLine("Вывод: основные способы связи недоступны, но дополнительный работает — " +
+                              "обновления доступны. Если установка не начнётся, попробуйте подключение " +
+                              "через другую сеть или обратитесь к ответственному за установку.");
             }
             else
             {
-                sb.AppendLine("Вывод: связи нет ни с GitHub, ни с jsDelivr — проверка обновлений работать не будет. " +
-                              "Причина — сеть этого ПК или провайдера (фильтрующий шлюз, тотальная блокировка). " +
-                              "Включите VPN и попробуйте снова.");
+                sb.AppendLine("Вывод: ни один способ связи недоступен — проверить обновления не удалось. " +
+                              "Проверьте интернет-соединение и попробуйте снова.");
             }
 
             return sb.ToString();

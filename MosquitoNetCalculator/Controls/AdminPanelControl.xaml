@@ -123,7 +123,7 @@
                     <TextBlock Text="&#xE7BA;" FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets"
                                FontSize="14" Foreground="{DynamicResource BadgeDangerFg}"
                                VerticalAlignment="Center" Margin="0,0,8,0"/>
-                    <TextBlock Text="Нет связи с GitHub — показаны последние известные данные. Проверьте интернет и попробуйте «Обновить»."
+                    <TextBlock Text="Не удалось получить свежие данные — показаны последние известные результаты. Проверьте подключение к интернету и попробуйте «Обновить»."
                                FontSize="12.5"
                                Foreground="{DynamicResource BadgeDangerFg}"
                                TextWrapping="Wrap"/>

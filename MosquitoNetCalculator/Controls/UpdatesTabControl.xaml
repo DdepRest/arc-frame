@@ -95,13 +95,13 @@
                            Margin="0,3,0,0"/>
             </StackPanel>
 
-            <!-- Диагностика связи: проверяет три канала обновлений (raw, api.github.com, jsDelivr) и показывает точные причины сбоя -->
+            <!-- Диагностика связи: проверяет доступность каналов обновлений и показывает точные причины сбоя -->
             <Button x:Name="BtnDiagnostics"
                     Grid.Column="1"
                     Style="{StaticResource GhostButton}"
                     Margin="0,0,10,0"
                     VerticalAlignment="Center"
-                    ToolTip="Проверить доступность каналов обновлений (raw, api.github.com, jsDelivr) и показать точные причины сбоя"
+                    ToolTip="Проверить доступность каналов обновлений и показать точные причины сбоя"
                     Click="BtnDiagnostics_Click">
                 <StackPanel Orientation="Horizontal">
                     <TextBlock Text="&#xE968;" FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets"
