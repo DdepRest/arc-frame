@@ -10,7 +10,7 @@
     <!-- Windows.Media.Ocr (System.WindowsRuntime) needs explicit TFM. Pin to
          the 17763 SDK that ships with .NET 8; the project compiles clean. -->
     <ApplicationIcon>Resources\app_icon.ico</ApplicationIcon>
-    <Version>3.48.4</Version>
+    <Version>3.48.5</Version>
     <RuntimeIdentifiers>win-x64</RuntimeIdentifiers>
     <!-- Treat every compiler / NuGet warning as an error so the build fails
          closed if any future change reintroduces a warning. The current
