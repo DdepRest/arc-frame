@@ -227,6 +227,102 @@ namespace MosquitoNetCalculator.Tests.Services
             Assert.Contains("office-1-b.json", toDelete);
             Assert.Contains("office-2-d.json", toDelete);
         }
+
+        // ─── Автоочистка: только УСТАРЕВШИЕ дубли ────────────────────────────
+
+        [Fact]
+        public void ComputeStaleDuplicateFilesToDelete_StaleDuplicateOlderThan24h_Deleted()
+        {
+            // Старый файл того же ПК (deviceId сменился) — молчит двое суток.
+            var files = new[]
+            {
+                File("office-1-new.json", "1", "guidB", "PK-1", "2026-08-29T10:00:00Z"),
+                File("office-1-dup.json", "1", "guidA", "PK-1", "2026-08-27T09:00:00Z"),
+            };
+            var now = DateTimeOffset.Parse("2026-08-30T10:00:00Z");
+
+            var toDelete = OfficeReportService.ComputeStaleDuplicateFilesToDelete(files, now, TimeSpan.FromHours(24));
+
+            Assert.Equal(new[] { "office-1-dup.json" }, toDelete);
+        }
+
+        [Fact]
+        public void ComputeStaleDuplicateFilesToDelete_FreshDuplicate_Kept()
+        {
+            // Две живые копии на одном ПК: оба файла свежие (<24 ч) — не трогаем,
+            // иначе живая копия воссоздаст файл → пинг-понг в истории gist.
+            var files = new[]
+            {
+                File("office-1-new.json", "1", "guidB", "PK-1", "2026-08-30T09:00:00Z"),
+                File("office-1-dup.json", "1", "guidA", "PK-1", "2026-08-30T08:00:00Z"),
+            };
+            var now = DateTimeOffset.Parse("2026-08-30T10:00:00Z");
+
+            Assert.Empty(OfficeReportService.ComputeStaleDuplicateFilesToDelete(files, now, TimeSpan.FromHours(24)));
+        }
+
+        [Fact]
+        public void ComputeStaleDuplicateFilesToDelete_Exactly24hOld_Kept()
+        {
+            // Ровно на границе порога файл ещё живой (как в OfficeStatusCalculator:
+            // устарел = СТРОГО старше порога).
+            var files = new[]
+            {
+                File("office-1-new.json", "1", "guidB", "PK-1", "2026-08-30T10:00:00Z"),
+                File("office-1-dup.json", "1", "guidA", "PK-1", "2026-08-29T10:00:00Z"),
+            };
+            var now = DateTimeOffset.Parse("2026-08-30T10:00:00Z");
+
+            Assert.Empty(OfficeReportService.ComputeStaleDuplicateFilesToDelete(files, now, TimeSpan.FromHours(24)));
+        }
+
+        [Fact]
+        public void ComputeStaleDuplicateFilesToDelete_StaleLegacyDuplicate_Deleted_KeptFileUntouched()
+        {
+            // Легаси-файл при наличии именованных устройств — дубль; он старше
+            // 24 ч → удаляется. Kept-файл (новейший) в список не попадает.
+            var files = new[]
+            {
+                File("office-1.json", "1", "", "", "2026-08-14T10:00:00Z"),
+                File("office-1-guidA.json", "1", "guidA", "PK-1", "2026-08-13T11:00:00Z"),
+            };
+            var now = DateTimeOffset.Parse("2026-08-30T10:00:00Z");
+
+            var toDelete = OfficeReportService.ComputeStaleDuplicateFilesToDelete(files, now, TimeSpan.FromHours(24));
+
+            Assert.Equal(new[] { "office-1.json" }, toDelete);
+        }
+
+        [Fact]
+        public void ComputeStaleDuplicateFilesToDelete_DuplicateWithoutReadableTime_TreatedStale()
+        {
+            // Отчёт без читаемой даты (пустая заглушка) — мёртвый по определению.
+            var files = new[]
+            {
+                File("office-2-new.json", "2", "guidC", "PK-9", "2026-08-30T09:00:00Z"),
+                File("office-2.json", "2", "", "", ""),
+            };
+            var now = DateTimeOffset.Parse("2026-08-30T10:00:00Z");
+
+            var toDelete = OfficeReportService.ComputeStaleDuplicateFilesToDelete(files, now, TimeSpan.FromHours(24));
+
+            Assert.Equal(new[] { "office-2.json" }, toDelete);
+        }
+
+        [Fact]
+        public void ComputeStaleDuplicateFilesToDelete_NoDuplicates_ReturnsEmpty()
+        {
+            // Легаси офиса 1 — единственная запись (НЕ дубль): не трогаем, даже
+            // если он старый — иначе теряются последние данные офиса в статистике.
+            var files = new[]
+            {
+                File("office-1.json", "1", "", "", "2026-08-14T10:00:00Z"),
+                File("office-2-b.json", "2", "guidB", "PK-2", "2026-08-14T10:00:00Z"),
+            };
+            var now = DateTimeOffset.Parse("2026-08-30T10:00:00Z");
+
+            Assert.Empty(OfficeReportService.ComputeStaleDuplicateFilesToDelete(files, now, TimeSpan.FromHours(24)));
+        }
     }
 
     /// <summary>
@@ -459,6 +555,102 @@ namespace MosquitoNetCalculator.Tests.Services
             using var http = new HttpClient(handler);
 
             int deleted = await OfficeReportService.CleanupDuplicatesAsync(http);
+
+            Assert.Equal(-1, deleted);
+        }
+
+        // ─── Автоочистка (CleanupStaleDuplicatesAsync): только молчащие >24 ч ──
+
+        [Fact]
+        public async Task CleanupStaleDuplicatesAsync_PatchesOnlyStaleDuplicate()
+        {
+            string? patchBody = null;
+            int patchCount = 0;
+            // Даты — относительно РЕАЛЬНОГО now: свежая копия молчит 1 ч, дубль 30 ч.
+            var now = DateTimeOffset.UtcNow;
+            string fresh = now.AddHours(-1).ToString("o");
+            string stale = now.AddHours(-30).ToString("o");
+            var gistJson = $$"""
+            {
+              "files": {
+                "office-1-new.json": { "content": "{\"prefix\":\"1\",\"deviceId\":\"guidB\",\"deviceName\":\"PK-1\",\"version\":\"3.47.4\",\"reportedAt\":\"{{fresh}}\"}" },
+                "office-1-dup.json": { "content": "{\"prefix\":\"1\",\"deviceId\":\"guidA\",\"deviceName\":\"PK-1\",\"version\":\"3.47.4\",\"reportedAt\":\"{{stale}}\"}" }
+              }
+            }
+            """;
+            var handler = new TestHttpMessageHandler(req =>
+            {
+                if (req.Method == HttpMethod.Patch)
+                {
+                    patchCount++;
+                    patchBody = req.Content?.ReadAsStringAsync().GetAwaiter().GetResult();
+                    return new HttpResponseMessage(HttpStatusCode.OK);
+                }
+                return new HttpResponseMessage(HttpStatusCode.OK) { Content = new StringContent(gistJson) };
+            });
+            using var http = new HttpClient(handler);
+
+            int deleted = await OfficeReportService.CleanupStaleDuplicatesAsync(http);
+
+            Assert.Equal(1, deleted);
+            Assert.Equal(1, patchCount);
+            Assert.NotNull(patchBody);
+            // PATCH удаляет ТОЛЬКО устаревший дубль; свежая копия не трогается.
+            Assert.Contains("\"office-1-dup.json\":null", patchBody!);
+            Assert.DoesNotContain("office-1-new.json", patchBody);
+        }
+
+        [Fact]
+        public async Task CleanupStaleDuplicatesAsync_FreshDuplicate_NoPatch()
+        {
+            int patchCount = 0;
+            // Обе копии живые (<24 ч) — автоочистка молчит, PATCH не отправляется.
+            var now = DateTimeOffset.UtcNow;
+            string freshA = now.AddHours(-1).ToString("o");
+            string freshB = now.AddHours(-2).ToString("o");
+            var gistJson = $$"""
+            {
+              "files": {
+                "office-1-new.json": { "content": "{\"prefix\":\"1\",\"deviceId\":\"guidB\",\"deviceName\":\"PK-1\",\"version\":\"3.47.4\",\"reportedAt\":\"{{freshA}}\"}" },
+                "office-1-dup.json": { "content": "{\"prefix\":\"1\",\"deviceId\":\"guidA\",\"deviceName\":\"PK-1\",\"version\":\"3.47.4\",\"reportedAt\":\"{{freshB}}\"}" }
+              }
+            }
+            """;
+            var handler = new TestHttpMessageHandler(req =>
+            {
+                if (req.Method == HttpMethod.Patch) patchCount++;
+                return new HttpResponseMessage(HttpStatusCode.OK) { Content = new StringContent(gistJson) };
+            });
+            using var http = new HttpClient(handler);
+
+            int deleted = await OfficeReportService.CleanupStaleDuplicatesAsync(http);
+
+            Assert.Equal(0, deleted);
+            Assert.Equal(0, patchCount);
+        }
+
+        [Fact]
+        public async Task CleanupStaleDuplicatesAsync_ServerError_ReturnsMinusOne()
+        {
+            // В gist есть устаревший дубль (иначе PATCH не отправляется и нечему падать).
+            var now = DateTimeOffset.UtcNow;
+            string fresh = now.AddHours(-1).ToString("o");
+            string stale = now.AddHours(-30).ToString("o");
+            var gistJson = $$"""
+            {
+              "files": {
+                "office-1-new.json": { "content": "{\"prefix\":\"1\",\"deviceId\":\"guidB\",\"deviceName\":\"PK-1\",\"reportedAt\":\"{{fresh}}\"}" },
+                "office-1-dup.json": { "content": "{\"prefix\":\"1\",\"deviceId\":\"guidA\",\"deviceName\":\"PK-1\",\"reportedAt\":\"{{stale}}\"}" }
+              }
+            }
+            """;
+            var handler = new TestHttpMessageHandler(req =>
+                req.Method == HttpMethod.Patch
+                    ? new HttpResponseMessage(HttpStatusCode.InternalServerError)
+                    : new HttpResponseMessage(HttpStatusCode.OK) { Content = new StringContent(gistJson) });
+            using var http = new HttpClient(handler);
+
+            int deleted = await OfficeReportService.CleanupStaleDuplicatesAsync(http);
 
             Assert.Equal(-1, deleted);
         }

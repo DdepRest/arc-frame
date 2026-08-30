@@ -20,24 +20,26 @@
 | AiAssistantControl | class | Controls/AiAssistantControl.xaml.cs | |
 | AiAssistantWindow | class | Controls/AiAssistantWindow.xaml.cs | | Methods: PositionNextTo, PositionNextToCore |
 | AnwisContextMenuBuilder | static class | Controls/AnwisContextMenuBuilder.cs | | Methods: Build | Static: M:Build |
+| ChangelogViewBuilder | static class | Controls/ChangelogViewBuilder.cs | | Methods: Build | Static: M:Build |
 | ChangeOrderStatusWindow | class | Controls/ChangeOrderStatusWindow.xaml.cs | Props: Saved, SelectedStatus |
 | EasterProUpsellWindow | class | Controls/EasterProUpsellWindow.xaml.cs | |
 | MarkdownRenderer | static class | Controls/MarkdownRenderer.cs | | Methods: GetText, ParseToInlines, SetText | Static: M:GetText, M:ParseToInlines, M:SetText |
 | MessageDialogWindow | class | Controls/MessageDialogWindow.xaml.cs | Props: SelectedResult |
 | NumericUpDownControl | class | Controls/NumericUpDownControl.xaml.cs | |
-| OrderItemsControl | class | Controls/OrderItemsControl.xaml.cs | | Methods: PopulateProductChips |
+| OrderItemsControl | class | Controls/OrderItemsControl.xaml.cs | | Methods: PopulateProductChips, ToggleBadgeInfoPopup | Static: M:ToggleBadgeInfoPopup |
 | OrdersHistoryControl | class | Controls/OrdersHistoryControl.xaml.cs | | Methods: SetOrdersCount |
 | PricesControl | class | Controls/PricesControl.xaml.cs | |
 | PrintPreviewControl | class | Controls/PrintPreviewControl.xaml.cs | | Methods: CollectSettings, GetSettings, Initialize |
-| QuickAddControl | class | Controls/QuickAddControl.xaml.cs | | Methods: HighlightRequiredIfEmpty |
+| QuickAddControl | class | Controls/QuickAddControl.xaml.cs | | Methods: HighlightRequiredIfEmpty, TryParseQuickNumber | Static: M:TryParseQuickNumber |
 | SendToFactoryWindow | class | Controls/SendToFactoryWindow.xaml.cs | |
 | SidebarControl | class | Controls/SidebarControl.xaml.cs | |
 | SlopeEconomyDetailsWindow | class | Controls/SlopeEconomyDetailsWindow.xaml.cs | | Methods: LoadData |
-| SlopePanelControl | class | Controls/SlopePanelControl.xaml.cs | Props: TotalWindowCountInOrder | Methods: BuildMaterialSummaryRows, ComputeTotalSavings, LoadForEdit, PrefillDimensions, Reset, SetPriceService | Static: M:BuildMaterialSummaryRows, M:ComputeTotalSavings |
+| SlopePanelControl | class | Controls/SlopePanelControl.xaml.cs | Props: TotalWindowCountInOrder | Methods: BuildMaterialSummaryRows, ComputePanelTotal, ComputeTotalSavings, LoadForEdit, PrefillDimensions, Reset, SetPriceService | Static: M:BuildMaterialSummaryRows, M:ComputePanelTotal, M:ComputeTotalSavings |
 | TitleBarControl | class | Controls/TitleBarControl.xaml.cs | | Methods: RefreshUpdateBadge, UpdateSettingsMenu |
 | TotalCardControl | class | Controls/TotalCardControl.xaml.cs | |
 | UpdateAvailableWindow | class | Controls/UpdateAvailableWindow.xaml.cs | Props: Accepted |
 | UpdatesTabControl | class | Controls/UpdatesTabControl.xaml.cs | |
+| WhatsNewWindow | class | Controls/WhatsNewWindow.xaml.cs | |
 
 ### Converters
 
@@ -60,7 +62,7 @@
 ### Models
 
 | AdditionalKpItem | class | Models/AdditionalKpItem.cs | | Methods: Clone |
-| AiCommandType | enum | Models/AiCommand.cs | Props: AnwisMode, Color, Depth, Height, InstallationMode, Price, Quantity, TargetProduct, Type, UpdateAnwisMode, UpdateColor, UpdateInstallationAmount, UpdateInstallationMode, UpdatePrice, Width |
+| AiCommandType | enum | Models/AiCommand.cs | Props: AnwisMode, Color, Depth, Height, InstallationMode, IsCustomProduct, Price, Quantity, TargetProduct, Type, UpdateAnwisMode, UpdateColor, UpdateInstallationAmount, UpdateInstallationMode, UpdatePrice, Width |
 | AiPlanMode | enum | Models/AiActionPlan.cs | Props: CommandType, CreatedAt, Error, ExecutedAt, IsReadOnly, Mode, NeedsClarification, Params, PlanId, PreviewText, ProducedBy, ReplyText, RequestId, RequiresConfirmation, RolledBack, SourceMessageId, SourceUserText, Status, StepId, StepResults, Steps, Success, Summary, ValidationMessages | Methods: ToCommand |
 | AiProvider | enum | Models/AiModelOption.cs | Props: DisplayName, Id, Provider, SupportsVision |
 | AnwisSizeMode | enum | Models/AnwisSizeMode.cs | |
@@ -69,13 +71,13 @@
 | LocationOptions | static class | Models/LocationOptions.cs | Props: All | Methods: GetByPrefixOrDefault, IsValidPrefix | Static: M:GetByPrefixOrDefault, M:IsValidPrefix, P:All |
 | OfficeStatus | enum | Models/OfficeStatusRow.cs | Props: DeviceCount, Devices, IsCurrentOffice, LastReportAt, LocationName, Prefix, Status, Version |
 | OrderItem | class | Models/OrderItem.Installation.cs | | Methods: GetDefaultInstallationAdjustment, GetDefaultInstallationDeduction, GetDefaultInstallationSurcharge, SetCurrentInstallationAmount | Static: M:GetDefaultInstallationAdjustment, M:GetDefaultInstallationDeduction, M:GetDefaultInstallationSurcharge |
-| OrderItemData | class | Models/OrderItem.Dto.cs | Props: AnwisSizeMode, Color, HasInstallation, Height, InstallationAdjustment, InstallationDeduction, InstallationMode, InstallationSurcharge, IsActive, IsAnticat, Name, Price, Quantity, SlopeData, Width |
+| OrderItemData | class | Models/OrderItem.Dto.cs | Props: AnwisSizeMode, Color, HasInstallation, Height, InstallationAdjustment, InstallationDeduction, InstallationMode, InstallationSurcharge, IsActive, IsAnticat, IsCustomProduct, Name, Price, Quantity, SlopeData, Width |
 | OrderSnapshot | class | Models/OrderSnapshot.cs | Props: AdditionalKps, Items |
 | OrderStatuses | static class | Models/OrderData.cs | | Methods: GetRank | Static: M:GetRank |
 | PageMode | enum | Models/PageMode.cs | |
 | PriceItem | class | Models/PriceItem.cs | |
 | PrintResultType | enum | Models/PrintResult.cs | Props: DebugMessage, IsRetryable, Type, UserMessage | Methods: Ok | Static: M:Ok |
-| ProductCatalog | static class | Models/ProductCatalog.cs | | Methods: GetVisibleGroups, IsAmountOnly, IsAnticatApplicable, IsAreaBased, IsInstallationApplicable, IsManualPiece, IsNoColor, IsPerLinearMeter, IsQuantityOptional, IsWidthOnly, OrderProductNames | Static: M:GetVisibleGroups, M:IsAmountOnly, M:IsAnticatApplicable, M:IsAreaBased, M:IsInstallationApplicable, M:IsManualPiece, M:IsNoColor, M:IsPerLinearMeter, M:IsQuantityOptional, M:IsWidthOnly, M:OrderProductNames |
+| ProductCatalog | static class | Models/ProductCatalog.cs | | Methods: GetVisibleGroups, IsAmountOnly, IsAnticatApplicable, IsAreaBased, IsImpostApplicable, IsInstallationApplicable, IsKnownProduct, IsManualPiece, IsNoColor, IsPerLinearMeter, IsQuantityOptional, IsWidthOnly, OrderProductNames | Static: M:GetVisibleGroups, M:IsAmountOnly, M:IsAnticatApplicable, M:IsAreaBased, M:IsImpostApplicable, M:IsInstallationApplicable, M:IsKnownProduct, M:IsManualPiece, M:IsNoColor, M:IsPerLinearMeter, M:IsQuantityOptional, M:IsWidthOnly, M:OrderProductNames |
 | ReleaseInfo | class | Models/UpdateManifest.cs | Props: Changes, Date, Sha256, Size, Title, Type, Url, Version |
 | SlopeCalculationData | class | Models/SlopeCalculation.cs | Props: DepthM, FoamPrice, FoamQuantity, FProfilePrice, FProfileQuantity, HeightMm, IsManualOverride, IsProfileEconomyApplied, LaborPrice, LaborQuantity, LaminatinaLaborPrice, LaminatinaLaborQuantity, LaminatinaPrice, LaminatinaQuantity, PenoplexPrice, PenoplexQuantity, SandwichPrice, SandwichQuantity, SealantPrice, SealantQuantity, StartProfilePrice, StartProfileQuantity, TapePrice, TapeQuantity, WidthMm, WindowCount | Methods: FromSlopeCalculation, ToSlopeCalculation | Static: M:FromSlopeCalculation |
 | SlopeCalculationExtensions | static class | Models/SlopeCalculationExtensions.cs | | Methods: DeepClone | Static: M:DeepClone |
@@ -139,7 +141,7 @@
 
 ### MosquitoNetCalculator/MainWindow.xaml.cs
 
-| MainWindow | class | MainWindow.xaml.cs | Props: CurrentOrderId, IsNewOrder, LastPrintSettings, Sidebar, SuppressPrefixSave, ViewModel | Methods: CloseAllOverlays, CloseSlopeOverlay, EditSlopeItem, NavigateToCalculation, RefreshNavBadges, SelectProductFromChip, SetActiveNavButton, ShowPrintOverlay, ShowSlopeOverlay, ToggleSidebarOverlay, UpdateEmptyState |
+| MainWindow | class | MainWindow.xaml.cs | Props: CurrentOrderId, IsNewOrder, LastPrintSettings, Sidebar, SuppressPrefixSave, ViewModel | Methods: CloseAllOverlays, CloseSlopeOverlay, EditSlopeItem, NavigateToCalculation, RefreshNavBadges, SelectProductFromChip, SetActiveNavButton, ShowAdminPanel, ShowPrintOverlay, ShowSlopeOverlay, ToggleSidebarOverlay, UpdateEmptyState |
 
 ### MosquitoNetCalculator/PrintPreviewWindow.xaml.cs
 
@@ -156,7 +158,7 @@
 | AiExplanationContextBuilder | static class | Services/AiExplanationContextBuilder.cs | | Methods: Build, BuildText, BuildTextForAll, BuildTextForLast | Static: M:Build, M:BuildText, M:BuildTextForAll, M:BuildTextForLast |
 | AiFactsProvider | static class | Services/AiFactsProvider.cs | | Methods: GetColorsFor, GetDefaultColor, GetPrice, HasColors, IsAnwisApplicable, IsInstallationApplicable, IsKnownProduct, IsManualPiece | Static: M:GetColorsFor, M:GetDefaultColor, M:GetPrice, M:HasColors, M:IsAnwisApplicable, M:IsInstallationApplicable, M:IsKnownProduct, M:IsManualPiece |
 | AiKeyValidator | static class | Services/AiKeyValidator.cs | | Methods: GetApiKey, GetApiUrl, GetProviderForModel, ProviderName, TestApiKeyAsync | Static: M:GetApiKey, M:GetApiUrl, M:GetProviderForModel, M:ProviderName, M:TestApiKeyAsync |
-| AiKeywordLexicon | static class | Services/AiKeywordLexicon.cs | | Methods: AnwisModeLabel, AnwisModeSpecified, ContainsAny, DetectAnwisMode, DetectColor, DetectInstallationMode, InstallationLabel, InstallationModeSpecified, ParseAnwisModeString, ParseInstallationModeField | Static: M:AnwisModeLabel, M:AnwisModeSpecified, M:ContainsAny, M:DetectAnwisMode, M:DetectColor, M:DetectInstallationMode, M:InstallationLabel, M:InstallationModeSpecified, M:ParseAnwisModeString, M:ParseInstallationModeField |
+| AiKeywordLexicon | static class | Services/AiKeywordLexicon.cs | | Methods: AnwisModeLabel, AnwisModeSpecified, ContainsAny, DetectAnwisMode, DetectColor, DetectInstallationMode, InstallationLabel, InstallationModeSpecified, NormalizeCompactDimension, ParseAnwisModeString, ParseInstallationModeField, ShouldHideOcrFromBubble | Static: M:AnwisModeLabel, M:AnwisModeSpecified, M:ContainsAny, M:DetectAnwisMode, M:DetectColor, M:DetectInstallationMode, M:InstallationLabel, M:InstallationModeSpecified, M:NormalizeCompactDimension, M:ParseAnwisModeString, M:ParseInstallationModeField, M:ShouldHideOcrFromBubble |
 | AiLocalCommandRouter | static class | Services/AiLocalCommandRouter.cs | Props: Commands | Methods: TryRoute | Static: M:TryRoute, P:Commands |
 | AiModelCatalogClient | static class | Services/AiModelCatalogClient.cs | Props: Architecture, Completion, Data, Failed, Id, InputModalities, Modality, Name, Pricing, Prompt | Methods: CatalogFetchResult, Deduplicate, FetchNvidiaModelsAsync, FetchOpenRouterModelsAsync, HasImageInput, IsGeneralChatModel, IsZeroPrice, ReconcileSavedModels | Static: M:Deduplicate, M:FetchNvidiaModelsAsync, M:FetchOpenRouterModelsAsync, M:HasImageInput, M:IsGeneralChatModel, M:IsZeroPrice, M:ReconcileSavedModels, P:Failed |
 | AiModelSelector | static class | Services/AiModelSelector.cs | | Methods: MergeWithUserSelection, SelectForTask | Static: M:MergeWithUserSelection, M:SelectForTask |
@@ -169,7 +171,7 @@
 | AmountInWordsService | static class | Services/AmountInWordsService.cs | | Methods: Convert | Static: M:Convert |
 | AnwisSizeCalculator | static class | Services/AnwisSizeCalculator.cs | | Methods: ApplyCalcHeight, ApplyCalcWidth, ReverseCalcHeight, ReverseCalcWidth | Static: M:ApplyCalcHeight, M:ApplyCalcWidth, M:ReverseCalcHeight, M:ReverseCalcWidth |
 | AnwisSizeService | static class | Services/AnwisSizeService.cs | | Methods: GetSectionHeader, IsApplicable | Static: M:GetSectionHeader, M:IsApplicable |
-| AppSettingsService | static class | Services/AppSettingsService.cs | Props: ContractPrefix, DeviceId, FirstRunComplete, LastColor, LocationName, OfficeReportGistId, OfficeReportToken, PendingUpdateVersion, SettingsPath, SlopeBetaBannerHidden, SlopesProUpsellUnlocked, Theme, UpdateUrl | Methods: HideSlopeBetaBanner, IsFirstRun, IsSlopeBetaBannerHidden, IsSlopesProUpsellUnlocked, LoadContractPrefix, LoadLastColor, LoadLocationName, LoadOfficeReportGistId, LoadOfficeReportToken, LoadOrCreateDeviceId, LoadPendingUpdateVersion, LoadTheme, LoadUpdateUrl, MarkFirstRunComplete, MarkSlopesProUpsellUnlocked, SaveContractPrefix, SaveLastColor, SaveLocationName, SaveOfficeReportGistId, SaveOfficeReportToken, SavePendingUpdateVersion, SaveTheme, SaveUpdateUrl, VerifyAdminPassword | Static: M:HideSlopeBetaBanner, M:IsFirstRun, M:IsSlopeBetaBannerHidden, M:IsSlopesProUpsellUnlocked, M:LoadContractPrefix, M:LoadLastColor, M:LoadLocationName, M:LoadOfficeReportGistId, M:LoadOfficeReportToken, M:LoadOrCreateDeviceId, M:LoadPendingUpdateVersion, M:LoadTheme, M:LoadUpdateUrl, M:MarkFirstRunComplete, M:MarkSlopesProUpsellUnlocked, M:SaveContractPrefix, M:SaveLastColor, M:SaveLocationName, M:SaveOfficeReportGistId, M:SaveOfficeReportToken, M:SavePendingUpdateVersion, M:SaveTheme, M:SaveUpdateUrl, M:VerifyAdminPassword, P:SettingsPath |
+| AppSettingsService | static class | Services/AppSettingsService.cs | Props: ContractPrefix, DeviceId, FirstRunComplete, LastColor, LastSeenVersion, LocationName, OfficeReportGistId, OfficeReportToken, PendingUpdateVersion, SettingsPath, SlopeBetaBannerHidden, SlopesProUpsellUnlocked, Theme, UpdateUrl | Methods: HideSlopeBetaBanner, IsFirstRun, IsSlopeBetaBannerHidden, IsSlopesProUpsellUnlocked, LoadContractPrefix, LoadLastColor, LoadLastSeenVersion, LoadLocationName, LoadOfficeReportGistId, LoadOfficeReportToken, LoadOrCreateDeviceId, LoadPendingUpdateVersion, LoadTheme, LoadUpdateUrl, MarkFirstRunComplete, MarkSlopesProUpsellUnlocked, SaveContractPrefix, SaveLastColor, SaveLastSeenVersion, SaveLocationName, SaveOfficeReportGistId, SaveOfficeReportToken, SavePendingUpdateVersion, SaveTheme, SaveUpdateUrl, VerifyAdminPassword | Static: M:HideSlopeBetaBanner, M:IsFirstRun, M:IsSlopeBetaBannerHidden, M:IsSlopesProUpsellUnlocked, M:LoadContractPrefix, M:LoadLastColor, M:LoadLastSeenVersion, M:LoadLocationName, M:LoadOfficeReportGistId, M:LoadOfficeReportToken, M:LoadOrCreateDeviceId, M:LoadPendingUpdateVersion, M:LoadTheme, M:LoadUpdateUrl, M:MarkFirstRunComplete, M:MarkSlopesProUpsellUnlocked, M:SaveContractPrefix, M:SaveLastColor, M:SaveLastSeenVersion, M:SaveLocationName, M:SaveOfficeReportGistId, M:SaveOfficeReportToken, M:SavePendingUpdateVersion, M:SaveTheme, M:SaveUpdateUrl, M:VerifyAdminPassword, P:SettingsPath |
 | AttachmentOcrService | static class | Services/AttachmentOcrService.cs | Props: FailureReason, Text | Methods: CombineResults, ExtractAsync, TryDecodeDataUrl | Static: M:CombineResults, M:ExtractAsync, M:TryDecodeDataUrl |
 | DependencyCheckerService | static class | Services/DependencyCheckerService.cs | | Methods: IsVCRedistInstalled | Static: M:IsVCRedistInstalled |
 | DialogService | static class | Services/DialogService.cs | | Methods: CreateFluentCloseButton, ShowConfirm, ShowSaveDiscardCancel, ShowUpdateAvailable | Static: M:CreateFluentCloseButton, M:ShowConfirm, M:ShowSaveDiscardCancel, M:ShowUpdateAvailable |
@@ -179,11 +181,11 @@
 | FlowDocumentBuilder | class | Services/FlowDocumentBuilder.cs | | Methods: Build |
 | IdleDetector | static class | Services/IdleDetector.cs | | Methods: GetIdleTime | Static: M:GetIdleTime |
 | MissingField | enum | Services/AiPlanSafetyPolicy.cs | | Methods: Classify, IsMissingAnwisMode, IsMissingDimensions, IsMissingInstallation, IsUntargetedUpdate, MissingReasonText, NeedsClarification | Static: M:Classify, M:IsMissingAnwisMode, M:IsMissingDimensions, M:IsMissingInstallation, M:IsUntargetedUpdate, M:MissingReasonText, M:NeedsClarification |
-| MoneyFormatService | static class | Services/MoneyFormatService.cs | | Methods: Format, FormatWhole, TryParse | Static: M:Format, M:FormatWhole, M:TryParse |
+| MoneyFormatService | static class | Services/MoneyFormatService.cs | | Methods: Format, FormatWhole, TryParse, TryParseInt | Static: M:Format, M:FormatWhole, M:TryParse, M:TryParseInt |
 | NotesFormatter | static class | Services/NotesFormatter.cs | | Methods: Parse | Static: M:Parse |
 | NotesRenderer | static class | Services/NotesRenderer.cs | | Methods: ToInlines | Static: M:ToInlines |
 | OfficeDeviceGrouping | static class | Services/OfficeDeviceGrouping.cs | | Methods: DistinctDevices | Static: M:DistinctDevices |
-| OfficeReportService | static class | Services/OfficeReportService.cs | | Methods: CleanupDuplicatesAsync, ComputeDuplicateFilesToDelete, FetchReportFilesAsync, FetchReportsAsync, OfficeReportFile, ParseReportFiles, ParseReports, ReportFileName, SendReportAsync | Static: M:CleanupDuplicatesAsync, M:ComputeDuplicateFilesToDelete, M:FetchReportFilesAsync, M:FetchReportsAsync, M:ParseReportFiles, M:ParseReports, M:ReportFileName, M:SendReportAsync |
+| OfficeReportService | static class | Services/OfficeReportService.cs | | Methods: CleanupDuplicatesAsync, CleanupStaleDuplicatesAsync, ComputeDuplicateFilesToDelete, ComputeStaleDuplicateFilesToDelete, FetchReportFilesAsync, FetchReportsAsync, OfficeReportFile, ParseReportFiles, ParseReports, ReportFileName, SendReportAsync | Static: M:CleanupDuplicatesAsync, M:CleanupStaleDuplicatesAsync, M:ComputeDuplicateFilesToDelete, M:ComputeStaleDuplicateFilesToDelete, M:FetchReportFilesAsync, M:FetchReportsAsync, M:ParseReportFiles, M:ParseReports, M:ReportFileName, M:SendReportAsync |
 | OfficeStatsCalculator | static class | Services/OfficeStatsCalculator.cs | | Methods: BuildRows, SumOrderCounts | Static: M:BuildRows, M:SumOrderCounts |
 | OfficeStatusCalculator | static class | Services/OfficeStatusCalculator.cs | | Methods: BuildRows | Static: M:BuildRows |
 | OrderGridPresenter | static class | Services/OrderGridPresenter.cs | | Methods: ApplySortIndicators, GetColumnSortKey, IsHeaderClick, RefreshOrdersGrid | Static: M:ApplySortIndicators, M:GetColumnSortKey, M:IsHeaderClick, M:RefreshOrdersGrid |
@@ -206,6 +208,7 @@
 | UpdateVerifier | static class | Services/UpdateVerifier.cs | | Methods: ComputeSha256, VerifyHash | Static: M:ComputeSha256, M:VerifyHash |
 | VersionResolver | static class | Services/VersionResolver.cs | | Methods: GetAvailableUpdate, IsBrokenForAutoUpdate, ParseSafe, ResolveVersion, StripVersionSuffix | Static: M:GetAvailableUpdate, M:IsBrokenForAutoUpdate, M:ParseSafe, M:ResolveVersion, M:StripVersionSuffix |
 | WatchdogService | static class | Services/WatchdogService.cs | | Methods: CleanupOrphanedStageDirectories, CleanupStagedUpdate, ExtractWithRetry, HandleStartup, StageUpdate | Static: M:CleanupOrphanedStageDirectories, M:CleanupStagedUpdate, M:ExtractWithRetry, M:HandleStartup, M:StageUpdate |
+| WhatsNewService | static class | Services/WhatsNewService.cs | | Methods: GetChanges, ShouldShow, ShowIfNeeded | Static: M:GetChanges, M:ShouldShow, M:ShowIfNeeded |
 
 ### ViewModels
 
@@ -271,4 +274,4 @@ Context phase: grep SYMBOL_INDEX.md for the class/method you need
 
 ## Last generated
 
-2026-08-20 (gensymbols.ps1)
+2026-08-30 (gensymbols.ps1)

@@ -89,7 +89,22 @@ jobs:
       #    artifact to be zipped and released.
       #    Note: WebView2 was removed from the project; only QuestPDF
       #    remains as an external NuGet dependency.
+      #
+      #    OFFICE_REPORT_TOKEN: the admin panel's gist token is embedded
+      #    into the EXE at build time (csproj target GenerateOfficeReportToken
+      #    reads this env var, falling back to the gitignored local file
+      #    MosquitoNetCalculator/.office-report-token). WITHOUT the secret the
+      #    release builds tokenless — machines that install it NEVER report
+      #    to the admin panel (that was why offices went silent after an
+      #    auto-update to an official release). Add the secret once:
+      #    Settings → Secrets and variables → Actions → OFFICE_REPORT_TOKEN,
+      #    value = contents of MosquitoNetCalculator/.office-report-token.
+      #    Exposure is unchanged in practice: local tokenful builds were
+      #    already distributed to offices; the gist is secret and the panel
+      #    is password-gated for a single admin.
       - name: Publish (single-file, win-x64)
+        env:
+          OFFICE_REPORT_TOKEN: ${{ secrets.OFFICE_REPORT_TOKEN }}
         shell: pwsh
         run: |
           dotnet publish MosquitoNetCalculator/MosquitoNetCalculator.csproj `

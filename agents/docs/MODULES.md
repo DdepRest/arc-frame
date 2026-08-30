@@ -59,7 +59,7 @@
 | `UpdateLog.cs` | Загрузка истории обновлений из embedded update-log.json. | — |
 | `OrderStorageService.cs` | Сохранение/загрузка заказов в JSON в %AppData%. | JsonOptions, пути — влияет на сохранность данных клиентов. |
 | `AppSettingsService.cs` | Настройки (тема, префикс договора, точка установки, pending update, вшитый пароль админ-панели, переопределение токена/ID gist, стабильный deviceId через `LoadOrCreateDeviceId` — кросс-процессно безопасно через файл `device-id`). | Пути к %AppData%, формат settings.json — влияет на все пользователи. |
-| `OfficeReportService.cs` | Обмен отчётами через секретный GitHub Gist: PATCH своего файла (по устройству `office-{prefix}-{deviceId}.json`) при старте/проверках обновлений/по расписанию, чтение всего gist для панели, очистка дублей устройств (PATCH с content:null для лишних файлов). | Gist ID/токен — единственная «облачная» точка; токен встраивается в сборку при релизе. |
+| `OfficeReportService.cs` | Обмен отчётами через секретный GitHub Gist: PATCH своего файла (по устройству `office-{prefix}-{deviceId}.json`) при старте/проверках обновлений/по расписанию, чтение всего gist для панели, очистка дублей устройств (PATCH с content:null для лишних файлов) — вручную кнопкой и АВТОМАТОМ при каждом рефреше панели (`CleanupStaleDuplicatesAsync`: только дубли, молчащие >24 ч, `StaleDuplicateAfter`). | Gist ID/токен — единственная «облачная» точка; токен встраивается в сборку при релизе — в т.ч. в официальные CI-релизы (release.yml: env `OFFICE_REPORT_TOKEN` из секрета). |
 | `OfficeDeviceGrouping.cs` | Дедупликация устройств офиса: один ПК = одно устройство (по имени машины, иначе по deviceId), легаси-записи без имени отбрасываются при наличии именованных. | Идентичность устройства — поведение статусов и статистики при нескольких копиях программы на ПК. |
 | `OfficeStatusCalculator.cs` | Чистая логика статусов офисов: свежесть отчёта (порог 72ч) + сравнение версий по УСТРОЙСТВАМ (статус офиса агрегируется по свежим устройствам, `DeviceCount`/`Devices`). | Порог свежести и правила статусов — поведение панели. |
 | `OfficeStatsCalculator.cs` | Чистая логика секции «Статистика»: кол-во заказов по офисам (сумма по всем устройствам) из тех же отчётов. | — |
@@ -96,7 +96,7 @@
 | `OrdersHistoryControl` | Вкладка "Заказы" — список, поиск, импорт/экспорт. |
 | `PricesControl` | Вкладка "Цены" — редактирование прайс-листа. |
 | `UpdatesTabControl` | Вкладка "Обновления" — история версий. |
-| `AdminPanelControl` | Админ-панель — контейнер секций (вкладки): «Обновления» (статусы версий) и «Статистика» (кол-во заказов). Новые секции = новый TabItem + свой список строк. | Читает gist — без сети показывает "нет связи"; формат отчёта расширяется обратносовместимо. |
+| `AdminPanelControl` | Админ-панель — контейнер секций (вкладки): «Обновления» (статусы версий) и «Статистика» (кол-во заказов). Новые секции = новый TabItem + свой список строк. Авто-рефреш каждые 15 мин, пока панель открыта; каждый рефреш шлёт свой отчёт и тихо чистит устаревшие (>24 ч) дубли gist. | Читает gist — без сети показывает "нет связи"; формат отчёта расширяется обратносовместимо. |
 | `AdminPasswordWindow` | Окно ввода пароля админ-панели (вшитый пароль, единый для всех офисов). | — |
 | `SendToFactoryWindow` | Диалог "Отправить на завод" с чекбоксами. |
 | `AdditionalKpsControl` | Блок дополнительных КП. |
@@ -149,7 +149,7 @@
 | `AiCommandParserPlanModeTests.cs` | Парсинг plan-mode JSON (steps, batch). |
 | `AiGoldenCaseTests.cs` | Golden-кейсы реальных фраз менеджеров из `AI/golden-cases.json`. |
 | `OfficeStatusCalculatorTests.cs` | Логика статусов офисов (свежесть, сравнение версий, неизвестные офисы). |
-| `OfficeReportServiceTests.cs` | Парсинг ответа gist + HTTP-обмен (фейковый handler, Bearer-токен). |
+| `OfficeReportServiceTests.cs` | Парсинг ответа gist + HTTP-обмен (фейковый handler, Bearer-токен) + автоочистка устаревших дублей (`ComputeStaleDuplicateFilesToDelete`/`CleanupStaleDuplicatesAsync`). |
 | `OfficeAdminPasswordTests.cs` | Вшитый пароль админ-панели. |
 | `OfficeReportSchedulerTests.cs` | Периодическая отправка: интервалы, Start/Stop, fire-once контракт. |
 
@@ -158,7 +158,7 @@
 - Вся структура `MosquitoNetCalculator/` и `MosquitoNetCalculator.Tests/`.
 
 ## Last verified
-2026-08-24 (v3.47.4) — auto-synced from csproj (sync-version.ps1, CONTROL#13).
+2026-08-30 (v3.48.4) — AdminPanelControl: авто-рефреш 15 мин; OfficeReportService: автоочистка устаревших (>24 ч) дублей gist; release.yml: OFFICE_REPORT_TOKEN в Publish.
 
 
 2026-08-04 — AI Agent Mode: добавлены модули плана и сервисы AI-агентности (`AiActionPlan`, `AiPlanBuilder`/`AiPlanValidator`/`AiPlanExecutor`, `AiOrderContextBuilder`, `AiExplanationContextBuilder`, `AiTelemetryService`, `AiLocalCommandRouter`); карта модулей расширена моделями AI-контекста и тестами.

@@ -1,4 +1,4 @@
-# INTENTS.md — mapping намерений на файлы
+﻿# INTENTS.md — mapping намерений на файлы
 
 > How AI agents use this: On the Intake phase, after understanding the user's request, check this table to jump directly to relevant files instead of full codebase exploration.
 
@@ -140,6 +140,8 @@ Intake phase: user describes intent
 - `INTENTS.md` — this file
 
 ## Last verified
+2026-08-30 (v3.48.4) — auto-synced from csproj (sync-version.ps1, CONTROL#13).
+
 
 2026-08-24 (v3.47.4) — добавлена секция «AI Agent Mode»: mapping намерений на AI-файлы (AiAssistant*, AiPlan*, AiCommandParser, AiLocalCommandRouter, AiModelSelector, AiOrderContextBuilder, AiClarificationForm, AiRequestMetrics, AI-регрессии, overlay-скрипты).
 

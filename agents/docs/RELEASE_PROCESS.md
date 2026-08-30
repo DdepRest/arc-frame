@@ -289,6 +289,14 @@ git commit -m "release: update releases.json for vX.Y.Z"
 
 ---
 
+## CI-релизы (тег vX.Y.Z → release.yml) и секрет OFFICE_REPORT_TOKEN
+
+Параллельно с ручным pipeline выше работает автоматический: push тега `vX.Y.Z` → `.github/workflows/release.yml` собирает, тестирует, публикует GitHub Release и коммитит обновлённый `releases.json` в main.
+
+⚠️ **Секрет `OFFICE_REPORT_TOKEN`** (одна настройка): CI-сборка вшивает токен gist админ-панели в EXE из env `OFFICE_REPORT_TOKEN` (csproj-target `GenerateOfficeReportToken`). Добавьте его один раз — GitHub → Settings → Secrets and variables → Actions → New repository secret: имя `OFFICE_REPORT_TOKEN`, значение = содержимое `MosquitoNetCalculator/.office-report-token` (файл в git не коммитится). Без секрета релиз соберётся, но будет БЕЗ токена: программы, установленные/обновлённые с такого релиза, НЕ отправляют отчёты в админ-панель — офисы «молчат» (именно это происходило с CI-релизами до исправления). Локальные сборки (`build.bat`) берут токен из `.office-report-token` и репортят как раньше.
+
+---
+
 ## Source files
 
 - `MosquitoNetCalculator/MosquitoNetCalculator.csproj`
@@ -300,7 +308,7 @@ git commit -m "release: update releases.json for vX.Y.Z"
 - `extract-release-notes.ps1`
 
 ## Last verified
-2026-08-24 (v3.47.4) — auto-synced from csproj (sync-version.ps1, CONTROL#13).
+2026-08-30 (v3.48.4) — добавлен раздел про CI-релизы и секрет OFFICE_REPORT_TOKEN (release.yml: env в шаге Publish).
 
 
 2026-08-03 (v3.47.3) — само-обновление (CONTROL#13): перепроверено при синхронизации версий; pipeline актуален для v3.47.3.

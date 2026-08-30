@@ -24,8 +24,12 @@ namespace MosquitoNetCalculator.Controls
     ///   - иконки статусов рядом с цветом (✓ ⚠ ❓) — взгляд «цепляет» даже без цвета;
     ///   - клик на устаревший офис → копирует напоминание («поставьте vX.Y.Z — {URL}»)
     ///     и показывает тост «Напоминание скопировано»;
-    ///   - авто-рефреш раз в 2 ч, пока панель открыта (редкие считки); в шапке
-    ///     видно «обновлено 14:32 · авто каждые 2 ч»;
+    ///   - авто-рефреш каждые 15 мин, пока панель открыта — статусы, статистика
+    ///     и свой отчёт держатся свежими без кнопки «Обновить»; в шапке видно
+    ///     «обновлено 14:32 · авто через 12 мин»;
+    ///   - автоочистка gist при каждом рефреше: файлы-дубли, молчащие >24 ч
+    ///     (OfficeReportService.StaleDuplicateAfter), удаляются тихо; свежие
+    ///     дубли (две живые копии на одном ПК) не трогаются;
     ///   - пустые состояния для обеих вкладок (если отчётов ещё нет).
     /// </summary>
     public partial class AdminPanelControl : UserControl
@@ -40,11 +44,15 @@ namespace MosquitoNetCalculator.Controls
         private DispatcherTimer? _autoRefreshTimer;
         private bool _isRefreshing;
 
-        // Интервал авто-рефреша панели. Синхронизирован с интервалом отправки
-        // отчёта (OfficeReportScheduler.DefaultInterval = 2 ч): редкие считки,
-        // «живой» режим не нужен — актуальность даёт запуск программы + раз в 2 ч,
-        // а кнопка «Обновить» обновляет панель мгновенно по требованию.
-        private static readonly TimeSpan AutoRefreshInterval = OfficeReportScheduler.DefaultInterval;
+        // Интервал авто-рефреша панели: 15 мин. Раньше был 2 ч (синхронно с
+        // OfficeReportScheduler) — но админ-панель смотрит один человек, и
+        // устаревшие до 2 ч данные заставляли жать «Обновить» вручную. Теперь
+        // панель сама держит данные свежими (≤15 мин), и каждый рефреш заодно
+        // шлёт свежий отчёт этого ПК (SendReportAsync внутри RefreshAsync).
+        // Отправка отчётов при ЗАКРЫТОЙ панели остаётся редкой (запуск программы
+        // + раз в 2 ч, OfficeReportScheduler) — gist не «спамится», когда панель
+        // никто не смотрит.
+        private static readonly TimeSpan AutoRefreshInterval = TimeSpan.FromMinutes(15);
 
         public AdminPanelControl()
         {
@@ -178,6 +186,12 @@ namespace MosquitoNetCalculator.Controls
 
                 _lastRefreshedAtLocal = DateTime.Now;
                 UpdateEmptyStates();
+
+                // 6) Автоочистка хвостов gist: файлы-дубли, молчащие >24 ч (старый
+                //    deviceId того же ПК, легаси-записи при наличии именованных),
+                //    удаляются тихо и без UI. Fire-and-forget — чистка не задерживает
+                //    показ данных; свежие дубли не трогаются (StaleDuplicateAfter).
+                _ = CleanupStaleDuplicatesQuietlyAsync();
             }
             catch (Exception)
             {
@@ -212,7 +226,7 @@ namespace MosquitoNetCalculator.Controls
         }
 
         /// <summary>
-        /// Обновляет текст «обновлено HH:mm · авто через N сек» в шапке.
+        /// Обновляет текст «обновлено HH:mm · авто через N мин» в шапке.
         /// </summary>
         private void UpdateRefreshStatusText()
         {
@@ -236,6 +250,12 @@ namespace MosquitoNetCalculator.Controls
             {
                 // Для часовых интервалов обратный отсчёт в секундах бессмысленен.
                 autoPart = $" · авто каждые {AutoRefreshInterval.TotalHours:0} ч";
+            }
+            else if (AutoRefreshInterval.TotalMinutes >= 1)
+            {
+                // Минутные интервалы: отсчёт в секундах шумит — округляем до минут.
+                int nextTickMin = Math.Max(1, (int)Math.Ceiling(AutoRefreshInterval.TotalMinutes - secondsAgo / 60.0));
+                autoPart = $" · авто через {nextTickMin} мин";
             }
             else
             {
@@ -396,6 +416,23 @@ namespace MosquitoNetCalculator.Controls
         /// вызывается планировщиком OfficeReportScheduler, когда панель открыта.
         /// </summary>
         public Task RefreshInBackgroundAsync() => RefreshAsync(quiet: true, isInitial: false);
+
+        /// <summary>
+        /// Тихая автоочистка устаревших дублей gist (>24 ч без отчёта —
+        /// <see cref="OfficeReportService.StaleDuplicateAfter"/>). Best-effort:
+        /// любая ошибка — только строка в Debug, панель не страдает.
+        /// </summary>
+        private static async Task CleanupStaleDuplicatesQuietlyAsync()
+        {
+            try
+            {
+                await OfficeReportService.CleanupStaleDuplicatesAsync().ConfigureAwait(true);
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"[AdminPanel] stale-duplicate cleanup failed: {ex.Message}");
+            }
+        }
 
         /// <summary>Результат получения последней версии с GitHub (версия + download URL для напоминания).</summary>
         private sealed record LatestManifestResult(Version? Version, string? Url);

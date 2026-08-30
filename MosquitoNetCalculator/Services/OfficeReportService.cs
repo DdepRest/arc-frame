@@ -38,6 +38,16 @@ namespace MosquitoNetCalculator.Services
         public const string GistOwner = "DdepRest";
 
         /// <summary>
+        /// Порог «мёртвого» файла-дубля для АВТОочистки: если последний отчёт
+        /// файла старше этого срока, он удаляется автоматически при обновлении
+        /// админ-панели (<see cref="CleanupStaleDuplicatesAsync"/>). Свежие дубли
+        /// не трогаются: две живые копии программы на одном ПК (обычная + dev)
+        /// шлют отчёты в свои файлы, и удаление свежего файла дало бы пинг-понг
+        /// «удалил → воссоздал» в истории gist.
+        /// </summary>
+        public static readonly TimeSpan StaleDuplicateAfter = TimeSpan.FromHours(24);
+
+        /// <summary>
         /// Актуальный токен: переопределение из settings.json (для отладки/тестов)
         /// или токен, встроенный в сборку при компиляции (см. csproj target
         /// GenerateOfficeReportToken: env OFFICE_REPORT_TOKEN или локальный файл
@@ -305,32 +315,92 @@ namespace MosquitoNetCalculator.Services
                 var toDelete = ComputeDuplicateFilesToDelete(files);
                 if (toDelete.Count == 0) return 0;
 
-                // PATCH gist: файл со значением null удаляется, остальные не трогаются.
-                var body = JsonSerializer.Serialize(new
-                {
-                    files = toDelete.ToDictionary(name => name, _ => (object?)null),
-                });
-
-                var ownsClient = httpClient == null;
-                var http = httpClient ?? UpdateManifestClient.CreateConfiguredHttpClient(TimeSpan.FromSeconds(15));
-                try
-                {
-                    using var request = new HttpRequestMessage(HttpMethod.Patch, GistApiUrl);
-                    request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", GistToken);
-                    request.Headers.UserAgent.ParseAdd("MosquitoNetCalculator/3.0");
-                    request.Content = new StringContent(body, Encoding.UTF8, "application/json");
-                    var response = await http.SendAsync(request).ConfigureAwait(false);
-                    return response.IsSuccessStatusCode ? toDelete.Count : -1;
-                }
-                finally
-                {
-                    if (ownsClient) http.Dispose();
-                }
+                return await DeleteGistFilesAsync(toDelete, httpClient).ConfigureAwait(false);
             }
             catch (Exception ex)
             {
                 Debug.WriteLine($"[OfficeReport] cleanup duplicates failed: {ex.Message}");
                 return -1;
+            }
+        }
+
+        /// <summary>
+        /// Вычисляет, какие файлы-дубли устройств УСТАРЕЛИ и их можно удалить
+        /// автоматически: пересечение <see cref="ComputeDuplicateFilesToDelete"/>
+        /// (дубли, которых панель не показывает) с файлами, чей последний отчёт
+        /// старше <paramref name="staleAfter"/>. Отчёт без читаемой даты считается
+        /// устаревшим (мёртвая заглушка). Чистая функция — покрыта тестами.
+        /// </summary>
+        internal static IReadOnlyList<string> ComputeStaleDuplicateFilesToDelete(
+            IReadOnlyList<OfficeReportFile> files, DateTimeOffset nowUtc, TimeSpan staleAfter)
+        {
+            var staleCutoff = nowUtc - staleAfter;
+            var toDelete = new List<string>();
+            foreach (var fileName in ComputeDuplicateFilesToDelete(files))
+            {
+                var reportedAt = files.FirstOrDefault(f => f.FileName == fileName)?.Report.ReportedAtUtc;
+                if (reportedAt == null || reportedAt.Value < staleCutoff)
+                    toDelete.Add(fileName);
+            }
+            return toDelete;
+        }
+
+        /// <summary>
+        /// Тихая АВТОочистка gist при обновлении админ-панели: удаляет только
+        /// файлы-дубли, молчащие дольше <see cref="StaleDuplicateAfter"/> — старые
+        /// файлы устройств (deviceId сменился) и легаси-записи при наличии
+        /// именованных. Живые дубли (две копии на одном ПК) и не-дубли (например,
+        /// легаси-файл офиса без именованных устройств) не трогаются. Возвращает
+        /// количество удалённых файлов; -1 при ошибке (нет токена, нет связи,
+        /// ошибка API). Никогда не бросает исключений.
+        /// </summary>
+        public static async Task<int> CleanupStaleDuplicatesAsync(HttpClient? httpClient = null)
+        {
+            if (!IsConfigured) return -1;
+
+            try
+            {
+                var files = await FetchReportFilesAsync(httpClient);
+                var toDelete = ComputeStaleDuplicateFilesToDelete(files, DateTimeOffset.UtcNow, StaleDuplicateAfter);
+                if (toDelete.Count == 0) return 0;
+
+                return await DeleteGistFilesAsync(toDelete, httpClient).ConfigureAwait(false);
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"[OfficeReport] stale-duplicate cleanup failed: {ex.Message}");
+                return -1;
+            }
+        }
+
+        /// <summary>
+        /// PATCH gist с <c>content: null</c> для перечисленных имён — файлы
+        /// удаляются, остальные не трогаются. Возвращает количество удалённых
+        /// файлов; -1 при ошибке сети/API.
+        /// </summary>
+        private static async Task<int> DeleteGistFilesAsync(IReadOnlyList<string> fileNames, HttpClient? httpClient)
+        {
+            if (fileNames.Count == 0) return 0;
+
+            var body = JsonSerializer.Serialize(new
+            {
+                files = fileNames.ToDictionary(name => name, _ => (object?)null),
+            });
+
+            var ownsClient = httpClient == null;
+            var http = httpClient ?? UpdateManifestClient.CreateConfiguredHttpClient(TimeSpan.FromSeconds(15));
+            try
+            {
+                using var request = new HttpRequestMessage(HttpMethod.Patch, GistApiUrl);
+                request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", GistToken);
+                request.Headers.UserAgent.ParseAdd("MosquitoNetCalculator/3.0");
+                request.Content = new StringContent(body, Encoding.UTF8, "application/json");
+                var response = await http.SendAsync(request).ConfigureAwait(false);
+                return response.IsSuccessStatusCode ? fileNames.Count : -1;
+            }
+            finally
+            {
+                if (ownsClient) http.Dispose();
             }
         }
     }
