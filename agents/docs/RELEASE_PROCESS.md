@@ -224,6 +224,13 @@ tools/release/update-releases-json.ps1
 
 `.github/workflows/release.yml` публикует **байт-в-байт тот же ZIP** под rolling-тегом `mirror-latest`. Каждый успешный push создаёт новый orphan-коммит только с текущим ZIP и force-updates тег; URL имеет вид `https://raw.githubusercontent.com/DdepRest/arc-frame/mirror-latest/ARC-Frame-X.Y.Z-full.zip`. Если ZIP имеет размер **≥ 95 MiB**, зеркало пропускается, чтобы не приближаться к лимиту GitHub 100 MiB; релиз при этом продолжается. В манифест записывается пустой `mirrorUrl`, поэтому клиент не пытается использовать отсутствующее зеркало.
 
+#### Ограничения rolling-тега `mirror-latest`
+
+1. **В зеркале лежит только текущий релиз.** Тег при каждом релизе force-updates — старый ZIP под `mirror-latest` после этого недоступен, и `mirrorUrl` в записях манифеста **более старых** версий становится невалидным (404). Зеркало — запасной канал для актуальной версии, а не постоянный архив по версиям. Следствие: клиент, обновляющийся со старой версии после выхода следующего релиза, при обращении к зеркалу получит отказ — это ожидаемо; основной канал (GitHub Release Asset) от force-update тега не зависит.
+2. **ZIP ≥ 95 MiB → зеркала нет.** Релиз продолжается без запасного канала; `mirrorUrl` остаётся пустым, клиент пропускает fallback (поведение как до введения зеркала).
+3. **Рост репозитория.** Каждый mirror-push добавляет orphan-коммит (~размер ZIP); блобы остаются в git-истории, даже когда тег укатился дальше. Чистка — только через history-GC/filter, осторожно с зафиксированными тегами.
+4. **CDN-задержка.** Свежезапушенный тег `mirror-latest` подвержен тому же кэшу `raw.githubusercontent.com` (5-15 мин), что и `releases.json`. Проверка зеркала сразу после релиза может отдать старый ZIP или 404 — пункт чеклиста при необходимости повторить позже.
+
 ### Git push sequence (если remote отстаёт или есть конфликт)
 
 Частая ошибка: после коммита кода+документации `git push` падает с `error: failed to push some refs`. Это значит, что в remote main есть коммиты, которых нет локально (например, другой процесс влил что-то в main параллельно). Решение:
@@ -259,7 +266,7 @@ git commit -m "release: update releases.json for vX.Y.Z"
 - [ ] `releases.json` в remote main содержит sha256 = реальный
 - [ ] GitHub Release `vX.Y.Z` опубликован (не draft, не prerelease)
 - [ ] ZIP-asset скачивается через URL из `releases.json`
-- [ ] Зеркальный ZIP отвечает HTTP 200 (`mirrorUrl` из `releases.json` → тег vX.Y.Z-mirror)
+- [ ] Зеркальный ZIP отвечает HTTP 200 (`mirrorUrl` из `releases.json` → rolling-тег `mirror-latest`; при CDN-задержке проверку через 5-15 мин повторить)
 - [ ] Старая версия 3.40.4 (предыдущая) видит X.Y.Z через «Проверить обновления»
 
 ---
@@ -313,12 +320,13 @@ git commit -m "release: update releases.json for vX.Y.Z"
 - `extract-release-notes.ps1`
 
 ## Last verified
+2026-08-31 (v3.48.7) — задокументированы ограничения rolling-тега `mirror-latest` (только текущий релиз, skip при ≥95 MiB, рост репозитория, CDN-задержка); чеклист исправлен на `mirror-latest`.
+
 2026-08-30 (v3.48.7) — auto-synced from csproj (sync-version.ps1, CONTROL#13).
 
 2026-08-30 (v3.48.6) — auto-synced from csproj (sync-version.ps1, CONTROL#13).
 
 2026-08-30 (v3.48.4) — добавлен раздел про CI-релизы и секрет OFFICE_REPORT_TOKEN (release.yml: env в шаге Publish).
-
 
 2026-08-03 (v3.47.3) — само-обновление (CONTROL#13): перепроверено при синхронизации версий; pipeline актуален для v3.47.3.
 

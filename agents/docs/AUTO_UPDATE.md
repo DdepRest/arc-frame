@@ -135,7 +135,7 @@
             "url": "https://github.com/DdepRest/arc-frame/releases/download/v3.35.0/ARC-Frame-3.35.0-full.zip",
             "size": 66659897,
             "sha256": "...",
-            "mirrorUrl": "https://raw.githubusercontent.com/DdepRest/arc-frame/v3.35.0-mirror/ARC-Frame-3.35.0-full.zip"
+            "mirrorUrl": "https://raw.githubusercontent.com/DdepRest/arc-frame/mirror-latest/ARC-Frame-3.35.0-full.zip"
         }
     ]
 }
@@ -256,8 +256,8 @@ if (release == null)
 Сценарий (подтверждён на машинах офисов 2026-08-30): детект обновления работает без VPN (цепочка манифеста raw→api→raw→jsDelivr), но скачивание ZIP падает — домен архивов GitHub (`release-assets.githubusercontent.com`) блокируется провайдером, тогда как `raw.githubusercontent.com` доступен (HTTP 200 в «Диагностике связи»). Раньше это означало «обновление видно, но установить нельзя без VPN».
 
 Решение:
-- CI (`release.yml`, шаг «Publish mirror ZIP») публикует **байт-в-байт тот же ZIP** под lightweight-тегом `vX.Y.Z-mirror` (orphan-коммит, содержащий только ZIP);
-- запись манифеста несёт опциональное поле `mirrorUrl` = `https://raw.githubusercontent.com/DdepRest/arc-frame/vX.Y.Z-mirror/ARC-Frame-X.Y.Z-full.zip`;
+- CI (`release.yml`, шаг «Publish mirror ZIP») публикует **байт-в-байт тот же ZIP** под rolling-тегом `mirror-latest` (orphan-коммит, содержащий только ZIP; при каждом релизе force-updated);
+- запись манифеста несёт опциональное поле `mirrorUrl` = `https://raw.githubusercontent.com/DdepRest/arc-frame/mirror-latest/ARC-Frame-X.Y.Z-full.zip` (валидно только для актуальной версии — см. «Ограничения» ниже);
 - `UpdateService.TryDownloadAndVerifyAsync`: при сетевом сбое основного канала (после всех ретраев загрузчика) ИЛИ при несовпадении SHA-256 — повтор через `mirrorUrl` с той же проверкой SHA-256; при отсутствии хеша в манифесте установка отменяется сразу (зеркало не спасает — нечего проверять).
 
 Инварианты:
@@ -266,8 +266,11 @@ if (release == null)
 - Основной канал работает → зеркало не запрашивается вовсе (e2e-тест `RunUpdateFlowAsync_PrimaryChannelWorks_MirrorIsNotRequested`).
 
 Ограничения:
-- GitHub не принимает файлы >100 МБ — потолок зеркала; при приближении ZIP к 100 МБ перейти на нарезку кусками (jsDelivr, лимит файла 20 МБ).
-- История репозитория растёт на ~размер ZIP за релиз (блобы остаются в истории даже после удаления старых зеркальных тегов).
+- **В зеркале лежит только текущий релиз:** rolling-тег `mirror-latest` при каждом релизе force-updates. `mirrorUrl` в записях манифеста более старых версий после этого отдаёт 404; клиент тогда (при сбое и основного канала) сообщает «недоступны основной и запасной каналы». Зеркало — запасной канал для актуальной версии, а не постоянный архив по версиям.
+- **ZIP ≥ 95 MiB → зеркала нет:** CI пропускает публикацию зеркала (защита от лимита GitHub 100 MiB); `mirrorUrl` остаётся пустым, релиз продолжается без запасного канала.
+- GitHub не принимает файлы >100 MiB — жёсткий потолок; при ZIP близко к 100 MiB переходить на нарезку кусками (jsDelivr, лимит файла 20 MiB).
+- **Рост репозитория:** каждый mirror-push добавляет orphan-коммит (~размер ZIP); блобы остаются в git-истории.
+- **CDN-задержка:** свежезапушенный тег подвержен тому же кэшу `raw.githubusercontent.com` (5-15 мин), что и `releases.json` — проверка зеркала сразу после релиза может отдать 404.
 
 ---
 
@@ -423,6 +426,8 @@ Watchdog .bat запускает обновлённый `MosquitoNetCalculator.e
 - `MosquitoNetCalculator.Tests/Services/UpdateCheckSchedulerTests.cs` (NEW, 20+ tests)
 
 ## Last verified
+2026-08-31 (v3.48.7) — документация зеркала переведена на rolling-тег `mirror-latest` (vX.Y.Z-mirror удалён); ограничения консолидированы (только текущий релиз, skip при ≥95 MiB, рост репозитория, CDN-задержка).
+
 2026-08-30 (v3.48.7) — auto-synced from csproj (sync-version.ps1, CONTROL#13).
 
 2026-08-30 (v3.48.6) — auto-synced from csproj (sync-version.ps1, CONTROL#13).
@@ -433,7 +438,7 @@ Watchdog .bat запускает обновлённый `MosquitoNetCalculator.e
 
 2026-08-17 (v3.47.4) — auto-synced from csproj (sync-version.ps1, CONTROL#13).
 
-
 2026-08-03 (v3.47.3) — само-обновление (CONTROL#13): перепроверено при синхронизации версий; содержимое актуально (v3.47.2/v3.47.3 не меняли runtime автообновления).
 
 2026-07-20 (v3.47.1 — добавлен create-manual-update.ps1 для portable ZIP ручного обновления; v3.42.1 hotfix: watchdog files moved from BaseDirectory to %AppData% to fix E_ACCESSDENIED when app is installed under Program Files)
+
