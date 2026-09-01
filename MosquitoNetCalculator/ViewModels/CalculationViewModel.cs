@@ -23,6 +23,13 @@ namespace MosquitoNetCalculator.ViewModels
         public double TotalArea { get; init; }
         public double TotalLinear { get; init; }
         public double TotalPieces { get; init; }
+
+        /// <summary>
+        /// Display names of ACTIVE rows with Total ≤ 0 (нет цены/суммы) — они
+        /// исключены из <see cref="Count"/> и <see cref="Total"/>. UI показывает
+        /// предупреждение, чтобы строки не пропадали из итогов/КП молча.
+        /// </summary>
+        public IReadOnlyList<string> ZeroItemNames { get; init; } = Array.Empty<string>();
     }
 
     public class CalculationViewModel
@@ -188,6 +195,12 @@ namespace MosquitoNetCalculator.ViewModels
         public TotalInfo CalculateTotal(double additionalKpTotal)
         {
             var validItems = OrderItems.Where(i => !string.IsNullOrEmpty(i.Name) && i.IsActive && i.Total > 0).ToList();
+            // Active rows that fell out of the sum (no price / zero amount) —
+            // reported to the UI so they don't vanish silently from ИТОГО/КП.
+            var zeroItems = OrderItems
+                .Where(i => !string.IsNullOrEmpty(i.Name) && i.IsActive && i.Total <= 0)
+                .Select(i => i.DisplayName)
+                .ToList();
             double itemsTotal = validItems.Sum(i => i.TotalWithDeduction);
             int count = validItems.Count;
             double total = itemsTotal + additionalKpTotal;
@@ -204,7 +217,8 @@ namespace MosquitoNetCalculator.ViewModels
                 Count = count,
                 TotalArea = totalArea,
                 TotalLinear = totalLinear,
-                TotalPieces = totalPieces
+                TotalPieces = totalPieces,
+                ZeroItemNames = zeroItems
             };
         }
 

@@ -14,6 +14,10 @@ namespace MosquitoNetCalculator
         // → RecalculateRequested → RecalculateAndUpdateTotal() again.
         private bool _isRecalculatingAndUpdatingTotal;
 
+        // v3.48.1 UX: dedup key for the zero-price items warning toast, so the
+        // same set of names doesn't re-warn on every recalculation.
+        private String? _lastZeroItemsWarningKey;
+
         /// <summary>
         /// v3.44.1: пересчитывает общие материалы откосов и обновляет итоги.
         /// Используется как единый callback для RecalculateRequested.
@@ -89,6 +93,27 @@ namespace MosquitoNetCalculator
                 TotalCardControl.AmountWords.Text = info.Total > 0
                     ? AmountInWordsService.Convert(info.Total)
                     : "";
+
+            // v3.48.1 UX: active rows with no price silently drop out of the
+            // ИТОГО sum (CalculateTotal filters Total > 0). Surface them as a
+            // warning toast instead of letting them vanish silently. Warn once
+            // per identical set of names; clear the memory when the list is
+            // empty again so a recurring problem re-warns.
+            if (info.ZeroItemNames.Count > 0)
+            {
+                var key = string.Join("|", info.ZeroItemNames);
+                if (_lastZeroItemsWarningKey != key)
+                {
+                    _lastZeroItemsWarningKey = key;
+                    ToastService.ShowToast(
+                        $"⚠ {info.ZeroItemNames.Count} поз. без суммы исключены из ИТОГО: {string.Join(", ", info.ZeroItemNames)}",
+                        ToastType.Warning, durationMs: 5000);
+                }
+            }
+            else
+            {
+                _lastZeroItemsWarningKey = null;
+            }
         }
     }
 }

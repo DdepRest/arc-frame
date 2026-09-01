@@ -512,18 +512,20 @@ namespace MosquitoNetCalculator.Controls
         }
 
         private int GetPageCountForRange(int totalPages)
+            => PrintPageRangeCalculator.Count(
+                GetSelectedPageMode(),
+                totalPages,
+                PageFromControl.Value,
+                PageToControl.Value,
+                SinglePageControl.Value);
+
+        private PageMode GetSelectedPageMode()
         {
-            if (PageModeAll.IsChecked == true) return totalPages;
+            if (PageModeRange.IsChecked == true)
+                return PageMode.Range;
             if (PageModeSingle.IsChecked == true)
-            {
-                int sp = SinglePageControl.Value;
-                return (sp >= 1 && sp <= totalPages) ? 1 : 0;
-            }
-            int from = PageFromControl.Value;
-            int to = PageToControl.Value;
-            int f = Math.Max(1, Math.Min(from, to));
-            int t = Math.Min(totalPages, Math.Max(from, to));
-            return Math.Max(0, t - f + 1);
+                return PageMode.Single;
+            return PageMode.All;
         }
 
         // ═══════════════════════════════════════════════════════════════

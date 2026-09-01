@@ -231,7 +231,12 @@ namespace MosquitoNetCalculator.Controls
             double qty;
             TryParseQuickNumber(TxtQuickQty.Text, out qty);
             if (qty <= 0) qty = 1;
-            TryParseQuickNumber(TxtQuickPrice.Text, out double price);
+            // v3.48.1 bugfix: use ResolveQuickAddPrice instead of bare TryParseQuickNumber
+            // so catalog-priced products get a fallback to the catalog price when the
+            // field is blank/unparseable («2 150,00» under non-ru culture → 0).
+            double price = ResolveQuickAddPrice(
+                TxtQuickPrice.Text, type, color ?? string.Empty,
+                (t, c) => mw.PricesVM.GetPrice(t, c));
 
             if (!OrderItem.ManualPieceProducts.Contains(type))
             {
@@ -290,6 +295,32 @@ namespace MosquitoNetCalculator.Controls
             // Fluent success micro-interaction: briefly flash the Add button green
             // for peripheral confirmation — the user doesn't need to glance at the grid.
             _ = AnimateAddSuccess();
+        }
+
+        /// <summary>
+        /// Resolves the price for a quick-add item:
+        /// 1. when the field has a parseable positive number, uses it directly;
+        /// 2. when the field is empty/unparseable/zero AND the product is
+        ///    catalog-priced (not ManualPiece), falls back to the catalog price;
+        /// 3. otherwise returns 0 (no price — caller blocks or allows).
+        /// Pure (no WPF state) so the logic is unit-testable in isolation.
+        /// </summary>
+        internal static double ResolveQuickAddPrice(
+            string priceText, string type, string color,
+            Func<string, string, double> catalogPrice)
+        {
+            if (MoneyFormatService.TryParse(priceText, out double price) && price > 0)
+                return price;
+
+            // Catalog-priced products must never produce a silent 0-row: pull
+            // the price from the catalog (the field may legitimately be blank
+            // when the user only picked the type from search/chips).
+            if (!OrderItem.ManualPieceProducts.Contains(type))
+                return catalogPrice(type, color ?? string.Empty);
+
+            // Manual-piece products (Работа, Откос, Брус…) are priced by hand —
+            // 0 stays 0, the caller decides (optional-quantity check etc.).
+            return 0;
         }
 
         /// <summary>

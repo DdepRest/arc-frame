@@ -205,5 +205,76 @@ namespace MosquitoNetCalculator.Tests.Controls
             Assert.True(ok);
             Assert.Equal(0, result);
         }
+
+        // ── ResolveQuickAddPrice (v3.48.1 bugfix) ──────────────────────
+        // Pure static logic — no STA needed. Regression guard for the bug where
+        // a blank or ru-formatted price field («2 150,00») silently produced a
+        // row with Price=0 for catalog products (Отлив/Козырёк …), which then
+        // dropped out of the «ИТОГО» sum (CalculationViewModel filters Total > 0).
+
+        private static double CatalogPrice(string type, string color) => type switch
+        {
+            "Отлив" => 2150,
+            "Козырёк" => 2150,
+            "Anwis" => 1800,
+            _ => 0
+        };
+
+        [Fact]
+        public void ResolveQuickAddPrice_ParsesRuFormattedText()
+        {
+            // «2 150,00» was the exact failing shape under plain double.TryParse
+            // (non-ru culture). Now MoneyFormatService.TryParse normalizes it.
+            Assert.Equal(2150, QuickAddControl.ResolveQuickAddPrice("2 150,00", "Отлив", "Белый", CatalogPrice));
+        }
+
+        [Theory]
+        [InlineData("2150")]
+        [InlineData("2 150")]
+        [InlineData("2150,5")]
+        [InlineData(" 2 150,00 ")]
+        public void ResolveQuickAddPrice_ParsesPlainAndTrimmedText(string text)
+        {
+            double expected = text.Replace(" ", "").Contains(",5") ? 2150.5 : 2150;
+            Assert.Equal(expected, QuickAddControl.ResolveQuickAddPrice(text, "Отлив", "Белый", CatalogPrice));
+        }
+
+        [Fact]
+        public void ResolveQuickAddPrice_BlankText_FallsBackToCatalogPrice()
+        {
+            Assert.Equal(2150, QuickAddControl.ResolveQuickAddPrice("", "Отлив", "Белый", CatalogPrice));
+        }
+
+        [Fact]
+        public void ResolveQuickAddPrice_UnparseableText_FallsBackToCatalogPrice()
+        {
+            Assert.Equal(2150, QuickAddControl.ResolveQuickAddPrice("abc", "Козырёк", "Белый", CatalogPrice));
+        }
+
+        [Fact]
+        public void ResolveQuickAddPrice_ExplicitZero_FallsBackToCatalogPrice()
+        {
+            // A deliberate «0» for a catalog-priced product is still treated as
+            // missing — the row would otherwise silently vanish from ИТОГО.
+            Assert.Equal(1800, QuickAddControl.ResolveQuickAddPrice("0", "Anwis", "Белый", CatalogPrice));
+        }
+
+        [Fact]
+        public void ResolveQuickAddPrice_NoCatalogEntry_ReturnsZero()
+        {
+            Assert.Equal(0, QuickAddControl.ResolveQuickAddPrice("", "Работа", "", CatalogPrice));
+        }
+
+        [Fact]
+        public void ResolveQuickAddPrice_ManualPiece_KeepsUserPrice()
+        {
+            Assert.Equal(5000, QuickAddControl.ResolveQuickAddPrice("5 000", "Работа", "", CatalogPrice));
+        }
+
+        [Fact]
+        public void ResolveQuickAddPrice_ManualPieceBlank_ReturnsZero()
+        {
+            Assert.Equal(0, QuickAddControl.ResolveQuickAddPrice("", "Работа", "", CatalogPrice));
+        }
     }
 }

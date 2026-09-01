@@ -671,7 +671,8 @@ namespace MosquitoNetCalculator.Tests.App
             // The status labels may say whether a key is configured, but must not
             // expose any prefix or suffix of the secret.
             Assert.Contains("ваш ключ · скрыт", code);
-            Assert.Contains("встроенный ключ", code);
+            Assert.Contains("ключ не задан", code);
+            Assert.DoesNotContain("встроенный ключ", code);
             Assert.DoesNotContain("ваш ключ: {masked}", code);
             Assert.DoesNotContain("currentKey[..", code);
             Assert.DoesNotContain("currentNvidiaKey[..", code);

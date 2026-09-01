@@ -890,5 +890,59 @@ namespace MosquitoNetCalculator.Tests.ViewModels
             Assert.True(item!.Total > 0);
             Assert.True(item.TotalWithDeduction > 0);
         }
+
+        // ─── CalculateTotal.ZeroItemNames (v3.48.1: rows with no price must not vanish silently) ──
+
+        [Fact]
+        public void CalculateTotal_ZeroItemNames_ListsActiveRowsWithoutSum()
+        {
+            _vm.AddItem("Anwis", "Белый", 1000, 1000, 1, 1800);   // normal, counted
+            _vm.AddItem("Отлив", "Белый", 1000, 500, 1, 0);       // price 0 → excluded
+            _vm.AddItem("Козырёк", "Белый", 1000, 500, 1, 0);     // price 0 → excluded
+
+            var total = _vm.CalculateTotal(0);
+            Assert.Equal(1, total.Count);
+            Assert.Equal(2, total.ZeroItemNames.Count);
+            Assert.Contains("Отлив", total.ZeroItemNames);
+            Assert.Contains("Козырёк", total.ZeroItemNames);
+        }
+
+        [Fact]
+        public void CalculateTotal_ZeroItemNames_Empty_WhenAllRowsHaveSum()
+        {
+            _vm.AddItem("Anwis", "Белый", 1000, 1000, 1, 1800);
+            _vm.AddItem("Отлив", "Белый", 1000, 500, 1, 2150);
+
+            var total = _vm.CalculateTotal(0);
+            Assert.Empty(total.ZeroItemNames);
+        }
+
+        [Fact]
+        public void CalculateTotal_ZeroItemNames_ExcludesInactiveRows()
+        {
+            // Off rows (unchecked) legitimately contribute nothing — they must
+            // NOT be flagged as missing-price rows.
+            var item = _vm.AddItem("Отлив", "Белый", 1000, 500, 1, 0);
+            item!.IsActive = false;
+
+            var total = _vm.CalculateTotal(0);
+            Assert.Empty(total.ZeroItemNames);
+        }
+
+        [Fact]
+        public void CalculateTotal_ZeroItemNames_EmptyForEmptyOrder()
+        {
+            var total = _vm.CalculateTotal(0);
+            Assert.Empty(total.ZeroItemNames);
+        }
+
+        [Fact]
+        public void CalculateTotal_ZeroItemNames_IgnoresUnnamedEmptyRow()
+        {
+            // The legacy «empty row» (no name) must not be reported as a warning.
+            _vm.AddItem("", "", 0, 0, 1, 0);
+            var total = _vm.CalculateTotal(0);
+            Assert.Empty(total.ZeroItemNames);
+        }
     }
 }
