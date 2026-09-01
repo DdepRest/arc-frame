@@ -9,8 +9,8 @@
 </p>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/version-3.45.0-blue" alt="Version 3.45.0">
-  <img src="https://img.shields.io/badge/tests-1195%2F1195-brightgreen" alt="Tests 1195/1195">
+  <img src="https://img.shields.io/badge/version-3.48.7-blue" alt="Version 3.48.7">
+  <img src="https://img.shields.io/badge/tests-2118%2F2118-brightgreen" alt="Tests 2118/2118">
   <img src="https://img.shields.io/badge/platform-Windows%2010%2F11-blue" alt="Platform Windows 10/11">
   <img src="https://img.shields.io/badge/.NET-8.0-512BD4" alt=".NET 8.0">
 </p>
@@ -181,7 +181,7 @@ dotnet publish MosquitoNetCalculator/MosquitoNetCalculator.csproj ^
 
 ## Тестирование
 
-Проект покрыт юнит- и STA-тестами (1195 тестов, 100 % проходят).
+Проект покрыт юнит- и STA-тестами (2118 тестов, 100 % проходят).
 
 ```bat
 :: Запуск всех тестов

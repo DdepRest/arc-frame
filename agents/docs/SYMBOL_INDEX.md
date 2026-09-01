@@ -193,11 +193,13 @@
 | OrderStorageService | class | Services/OrderStorageService.cs | Props: OrdersDir | Methods: DeleteOrder, ExportOrders, GenerateContractNumber, GenerateCopyContractNumber, GetNextOrderNumber, LoadAllOrders, LoadOrder, SaveOrder | Static: P:OrdersDir |
 | PdfExportService | class | Services/PdfExportService.cs | | Methods: Export |
 | PriceService | class | Services/PriceService.cs | Props: PricesPath | Methods: DefaultPricesSnapshot, GetColorsForProduct, GetPrice, GetProductNames, LoadPrices, SavePrices | Static: M:DefaultPricesSnapshot, P:PricesPath |
+| PrintPageRangeCalculator | static class | Services/PrintPageRangeCalculator.cs | | Methods: Contains, Count | Static: M:Contains, M:Count |
 | PrintQueueManager | static class | Services/PrintQueueManager.cs | | Methods: GetDefaultPrinterName, GetInstalledPrinterNames, GetInstalledPrintQueues, ResolvePrintQueue, SendToQueue | Static: M:GetDefaultPrinterName, M:GetInstalledPrinterNames, M:GetInstalledPrintQueues, M:ResolvePrintQueue, M:SendToQueue |
 | PrintService | class | Services/PrintService.cs | | Methods: BuildFixedDocument, BuildFlowDocument, CreateDrawingImageElement, ExportPdf, GetDefaultPrinterName, GetInstalledPrinterNames, GetInstalledPrintQueues, ResolvePrintQueue, SendToQueue, WrapForCentering | Static: M:BuildFixedDocument, M:CreateDrawingImageElement, M:GetDefaultPrinterName, M:GetInstalledPrinterNames, M:GetInstalledPrintQueues, M:ResolvePrintQueue, M:SendToQueue, M:WrapForCentering |
 | SelectableItem | class | Services/FactoryTextService.cs | Props: AdditionalKp, Detail, DisplayName, IsSelected, OrderItem | Methods: BuildSelectableItems, Generate | Static: M:BuildSelectableItems, M:Generate |
 | SlopeCalculatorService | static class | Services/SlopeCalculatorService.cs | | Methods: Calculate, GetPenoplexSheets, OptimizeStrips, OptimizeStripsForMultipleWindows, OptimizeStripsForMultipleWindows3Sides, OptimizeStripsForPerimeter, RecalculateSealantAndTape, UpdateInPlace | Static: M:Calculate, M:GetPenoplexSheets, M:OptimizeStrips, M:OptimizeStripsForMultipleWindows, M:OptimizeStripsForMultipleWindows3Sides, M:OptimizeStripsForPerimeter, M:RecalculateSealantAndTape, M:UpdateInPlace |
 | SlopeEconomyCalculator | static class | Services/SlopeEconomyCalculator.cs | | Methods: CalculateDetails, CalculateTotalSaved | Static: M:CalculateDetails, M:CalculateTotalSaved |
+| SlopeSummaryCalculator | static class | Services/SlopeSummaryCalculator.cs | | Methods: BuildMaterialSummaryRows, ComputePanelTotal, ComputeTotalSavings | Static: M:BuildMaterialSummaryRows, M:ComputePanelTotal, M:ComputeTotalSavings |
 | ThemeService | static class | Services/ThemeService.cs | Props: IsDarkTheme, TransitionDuration | Methods: ApplyTheme, GetCurrentSurfaceColor, LoadTheme, ToggleTheme | Static: M:ApplyTheme, M:GetCurrentSurfaceColor, M:LoadTheme, M:ToggleTheme, P:IsDarkTheme, P:TransitionDuration |
 | ToastService | static class | Services/ToastService.cs | | Methods: Initialize, RegisterCanvas, RepositionToasts, ShowToast, ShowUpdateNotification, UnregisterCanvas | Static: M:Initialize, M:RegisterCanvas, M:RepositionToasts, M:ShowToast, M:ShowUpdateNotification, M:UnregisterCanvas |
 | UndoRedoService | class | Services/UndoRedoService.cs | Props: CanRedo, CanUndo, IsDirty | Methods: Clear, MarkClean, MarkDirty, PushUndo, Redo, SetDirtyCallback, SuppressDirtyChanges, TryPeekTopSnapshot, Undo |
@@ -230,7 +232,7 @@
 | $sym | Models/AiCommand.cs, Models/OrderItem.Dto.cs |
 | $sym | Models/OrderItem.Dto.cs, Services/AiModelCatalogClient.cs |
 | $sym | Models/AiCommand.cs, Models/OrderItem.Dto.cs |
-| $k | Controls/SlopePanelControl.xaml.cs |
+| $k | Controls/SlopePanelControl.xaml.cs, Services/SlopeSummaryCalculator.cs |
 | $k | Services/AiFactsProvider.cs |
 | $methKey | Models/ProductCatalog.cs, Services/AiFactsProvider.cs |
 | $methKey | Models/ProductCatalog.cs |
@@ -274,4 +276,4 @@ Context phase: grep SYMBOL_INDEX.md for the class/method you need
 
 ## Last generated
 
-2026-08-30 (gensymbols.ps1)
+2026-09-01 (gensymbols.ps1)

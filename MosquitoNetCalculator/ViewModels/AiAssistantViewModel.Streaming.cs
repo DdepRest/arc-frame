@@ -129,10 +129,10 @@ namespace MosquitoNetCalculator.ViewModels
             var apiKey = AppSettingsServiceAi.LoadAiApiKey();
             var nvidiaKey = AppSettingsServiceAi.LoadAiNvidiaApiKey();
             bool hasUserKey = !string.IsNullOrWhiteSpace(apiKey) || !string.IsNullOrWhiteSpace(nvidiaKey);
-            HasApiKey = hasUserKey || Services.AiAssistantService.HasEmbeddedKeys;
+            HasApiKey = hasUserKey;
             ApiKeyStatusText = hasUserKey
                 ? $"API ключ настроен\nМодель: {CurrentModel}"
-                : $"Встроенные ключи (бесплатные)\nМодель: {CurrentModel}";
+                : $"API ключ не задан\nМодель: {CurrentModel}";
 
             var history = AppSettingsServiceAi.LoadChatHistory();
             if (history.Count == 0)
@@ -372,7 +372,7 @@ namespace MosquitoNetCalculator.ViewModels
                             CurrentModel = modelLabel;
                             ApiKeyStatusText = HasApiKey
                                 ? $"API ключ настроен\nМодель: {modelLabel}"
-                                : $"Встроенные ключи (бесплатные)\nМодель: {modelLabel}";
+                                : $"API ключ не задан\nМодель: {modelLabel}";
                             // Keep the visible request indicator in a clear phase;
                             // provider/model details remain internal telemetry.
                             StatusText = "Печатает…";

@@ -244,7 +244,7 @@ if (release == null)
 
 Внутри ZIP:
 - `MosquitoNetCalculator.exe` (single-file)
-- Зависимые DLL (WebView2 и др.)
+- Зависимые DLL (QuestPDF и др.)
 
 **Zero-byte edge case (unreleased fix):**
 Если сервер возвращает `Content-Length: 0` или не возвращает заголовок, `DownloadWithProgressAsync` теперь корректно отчитывает 100% прогресс после завершения скачивания. Ранее полоска оставалась на 0%, потому что тело цикла `while` не выполнялось, а финальный `Report(100)` не вызывался.
