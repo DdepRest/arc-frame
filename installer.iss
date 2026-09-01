@@ -1,8 +1,7 @@
 ; MosquitoNetCalculator — Inno Setup Installer Script
 ; Полностью самодостаточный установщик.
 ; Автоматически проверяет и устанавливает ТОЛЬКО недостающие зависимости:
-;   - .NET 8 Desktop Runtime (опционально, для диагностики)
-;   - WebView2 Runtime (>= минимальная версия)
+;   - .NET 8 встроен в self-contained публикацию (только диагностика)
 ;   - Visual C++ Redistributable 2015-2022 (>= минимальная версия)
 ;   - Минимальная версия Windows 10 1809 / 11
 ;
@@ -31,7 +30,6 @@
 ; ============================================================
 ; Минимальные версии зависимостей (обновляйте при необходимости)
 ; ============================================================
-#define MinWebView2Version "100.0.0.0"
 #define MinVCRedistVersion "14.30.0.0"
 #define MinWindowsBuild "17763"   ; Windows 10 1809 / Server 2019
 
@@ -75,6 +73,8 @@ Name: "desktopicon"; Description: "Создать ярлык на &рабоче�
 Source: "publish\MosquitoNetCalculator.exe"; DestDir: "{app}"; Flags: ignoreversion
 Source: "publish\*.dll"; DestDir: "{app}"; Flags: ignoreversion
 Source: "publish\app_icon.ico"; DestDir: "{app}"; Flags: ignoreversion
+Source: "publish\check-deps.bat"; DestDir: "{app}"; Flags: ignoreversion
+Source: "publish\check-deps.ps1"; DestDir: "{app}"; Flags: ignoreversion
 Source: "publish\runtimes\*"; DestDir: "{app}\runtimes"; Flags: ignoreversion recursesubdirs createallsubdirs
 ; Bundled OCR data (Tesseract fallback engine) — must ship next to the exe.
 Source: "publish\tessdata\*"; DestDir: "{app}\tessdata"; Flags: ignoreversion recursesubdirs createallsubdirs
@@ -120,10 +120,6 @@ function URLDownloadToFile(
 external 'URLDownloadToFileW@urlmon.dll stdcall';
 
 const
-  // Реестр — WebView2 Runtime (Evergreen Bootstrapper)
-  WebView2RegKeyHKLM = 'SOFTWARE\WOW6432Node\Microsoft\EdgeUpdate\Clients\{F3017226-FE2A-4F95-ADA8-00C4A42566F8}';
-  WebView2RegKeyHKCU = 'Software\Microsoft\EdgeUpdate\Clients\{F3017226-FE2A-4F95-ADA8-00C4A42566F8}';
-  WebView2VersionValue = 'pv';
 
   // Реестр — Visual C++ Redistributable 2015-2022 (x64)
   VCRedistKey = 'SOFTWARE\Microsoft\VisualStudio\14.0\VC\Runtimes\x64';
@@ -137,11 +133,9 @@ const
   WindowsVersionKey = 'SOFTWARE\Microsoft\Windows NT\CurrentVersion';
 
   // URL для скачивания
-  WebView2URL = 'https://go.microsoft.com/fwlink/p/?LinkId=2124703';
   VCRedistURL = 'https://aka.ms/vs/17/release/vc_redist.x64.exe';
 
   // Минимальные версии
-  MinWebView2VersionStr = '{#MinWebView2Version}';
   MinVCRedistVersionStr = '{#MinVCRedistVersion}';
   MinWindowsBuildStr    = '{#MinWindowsBuild}';
 
@@ -332,85 +326,6 @@ begin
 end;
 
 // =====================================================================
-// Проверка WebView2 Runtime
-// =====================================================================
-
-/// Возвращает True, если WebView2 Runtime установлен и >= минимальной версии
-function GetInstalledWebView2Version(var VersionStr: String): Boolean;
-var
-  Wv2KeyMachine, Wv2KeyUser: String;
-begin
-  Result := False;
-  VersionStr := '';
-
-  Wv2KeyMachine := WebView2RegKeyHKLM;
-  Wv2KeyUser := WebView2RegKeyHKCU;
-
-  // HKLM (полное имя HKEY_LOCAL_MACHINE; короткие HKLM/HKCU — зарезерв. константы в IS)
-  if RegQueryStringValue(HKEY_LOCAL_MACHINE, Wv2KeyMachine, WebView2VersionValue, VersionStr) then
-  begin
-    Result := True;
-    Exit;
-  end;
-
-  // HKCU (per-user install)
-  if RegQueryStringValue(HKEY_CURRENT_USER, Wv2KeyUser, WebView2VersionValue, VersionStr) then
-  begin
-    Result := True;
-    Exit;
-  end;
-
-  // Ключ существует, но поле pv не читается (старая версия)
-  if RegKeyExists(HKEY_LOCAL_MACHINE, Wv2KeyMachine) or
-     RegKeyExists(HKEY_CURRENT_USER, Wv2KeyUser) then
-  begin
-    Result := True;
-    VersionStr := '';
-    Exit;
-  end;
-end;
-
-/// Проверяет, установлен ли WebView2 Runtime и достаточно ли новый.
-/// Если ключ есть, но версия неизвестна (VersionStr = '') — считаем устаревшим,
-/// чтобы установщик инициировал переустановку актуальной версии.
-function IsWebView2InstalledAndCurrent: Boolean;
-var
-  VersionStr: String;
-begin
-  Result := False;
-  if not GetInstalledWebView2Version(VersionStr) then
-    Exit;
-  if VersionStr = '' then
-    Exit;
-  // Проверяем минимальную версию
-  if not VersionMeetsMinimum(VersionStr, MinWebView2VersionStr) then
-    Exit;
-  Result := True;
-end;
-
-/// Проверяет статус WebView2 для отчёта
-function CheckWebView2Status(var StatusLine: String): Boolean;
-var
-  VersionStr: String;
-begin
-  Result := False;
-  if GetInstalledWebView2Version(VersionStr) then
-  begin
-    if VersionStr = '' then
-      StatusLine := 'WebView2 Runtime — установлен (версия неизвестна, рекомендуется >= ' + MinWebView2VersionStr + ')'
-    else if not VersionMeetsMinimum(VersionStr, MinWebView2VersionStr) then
-      StatusLine := 'WebView2 Runtime ' + VersionStr + ' — установлен, но устарел (требуется >= ' + MinWebView2VersionStr + ')'
-    else
-    begin
-      Result := True;
-      StatusLine := 'WebView2 Runtime ' + VersionStr + ' — установлен и актуален';
-    end;
-  end
-  else
-    StatusLine := 'WebView2 Runtime — не установлен (требуется для предпросмотра КП)';
-end;
-
-// =====================================================================
 // Проверка VC++ Redistributable
 // =====================================================================
 
@@ -544,43 +459,6 @@ begin
   WizardForm.FilenameLabel.Caption := '';
 end;
 
-/// Скачивает и тихо устанавливает WebView2 Runtime
-procedure InstallWebView2IfNeeded;
-var
-  LocalPath: String;
-  ResultCode: Integer;
-begin
-  if IsWebView2InstalledAndCurrent then
-    Exit;
-
-  LocalPath := ExpandConstant('{tmp}\MicrosoftEdgeWebview2Setup.exe');
-
-  WizardForm.StatusLabel.Caption := 'Загрузка WebView2 Runtime ...';
-  if not DownloadFile(WebView2URL, LocalPath, 'Загрузка WebView2 Runtime ...') then
-  begin
-    DependencyReportLines.Add('• WebView2 Runtime — ОШИБКА ЗАГРУЗКИ (проверьте интернет)');
-    Exit;
-  end;
-
-  WizardForm.StatusLabel.Caption := 'Установка WebView2 Runtime ...';
-  WizardForm.FilenameLabel.Caption := LocalPath;
-  WizardForm.ProgressGauge.Style := npbstNormal;
-
-  if Exec(LocalPath, '/silent /install', '', SW_SHOW, ewWaitUntilTerminated, ResultCode) then
-  begin
-    if (ResultCode = 0) or (ResultCode = 1638) then
-      DependencyReportLines.Add('• WebView2 Runtime — установлен')
-    else if ResultCode = 3010 then
-      DependencyReportLines.Add('• WebView2 Runtime — установлен (потребуется перезагрузка Windows)')
-    else
-      DependencyReportLines.Add('• WebView2 Runtime — код ошибки установки: ' + IntToStr(ResultCode));
-  end
-  else
-    DependencyReportLines.Add('• WebView2 Runtime — не удалось запустить установщик');
-
-  WizardForm.FilenameLabel.Caption := '';
-end;
-
 // =====================================================================
 // Хуки установщика
 // =====================================================================// Инициализация — проверка критичных зависимостей до начала установки
@@ -635,11 +513,9 @@ begin
   if MemoTasksInfo <> '' then
     Result := Result + MemoTasksInfo + NewLine;
 
-  // Делаем отчёт о статусе зависимостей
+  // Делаем отчёт о статусе оставшейся системной зависимости.
+  // Печать КП и PDF-экспорт нативные; WebView2 для приложения не нужен.
   ReportText := '=== Состояние системных зависимостей ===' + NewLine + NewLine;
-
-  CheckWebView2Status(StatusLine);
-  ReportText := ReportText + '* ' + StatusLine + NewLine;
 
   CheckVCRedistStatus(StatusLine);
   ReportText := ReportText + '* ' + StatusLine + NewLine;
@@ -647,9 +523,9 @@ begin
   CheckDotNetDesktop8Status(StatusLine);
   ReportText := ReportText + '* ' + StatusLine + NewLine + NewLine;
 
-  ReportText := ReportText + 'Если какой-то компонент отсутствует, установщик' + NewLine +
-                'автоматически скачает и установит его после копирования файлов.' + NewLine +
-                'Требуется подключение к интернету.';
+  ReportText := ReportText + 'Если Visual C++ Redistributable отсутствует или устарел,' + NewLine +
+                'установщик автоматически скачает и установит его после копирования файлов.' + NewLine +
+                'Программа содержит встроенный .NET 8 и не требует WebView2.';
 
   Result := Result + ReportText;
 end;
@@ -663,10 +539,8 @@ var
 begin
   if CurStep = ssPostInstall then
   begin
-    // VC++ Redistributable — критично для запуска .exe
+    // VC++ Redistributable нужен нативным библиотекам Tesseract/QuestPDF.
     InstallVCRedistIfNeeded;
-    // WebView2 Runtime — критично для предпросмотра КП
-    InstallWebView2IfNeeded;
 
     // ── Финал установки зависимостей ──
     WizardForm.StatusLabel.Caption := 'Установка завершена!';

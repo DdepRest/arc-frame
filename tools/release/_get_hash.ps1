@@ -1,16 +1,31 @@
-$exe = Join-Path $PSScriptRoot "publish" "MosquitoNetCalculator.exe"
-$zip = Join-Path $PSScriptRoot "publish" "ARC-Frame-3.34.4-full.zip"
+[CmdletBinding()]
+param(
+    [string]$PublishDir = "",
+    [string]$ZipName = ""
+)
 
-$exeSize = (Get-Item $exe).Length
-$exeHash = (Get-FileHash $exe -Algorithm SHA256).Hash
-Write-Host "EXE SHA256: $exeHash"
-Write-Host "EXE Size: $exeSize"
+$ErrorActionPreference = "Stop"
+$projectRoot = (Resolve-Path (Join-Path $PSScriptRoot "..\..")).Path
+if ([string]::IsNullOrWhiteSpace($PublishDir)) {
+    $PublishDir = Join-Path $projectRoot "publish"
+}
+$PublishDir = (Resolve-Path $PublishDir).Path
 
-if (Test-Path $zip) {
-    $zipSize = (Get-Item $zip).Length
-    $zipHash = (Get-FileHash $zip -Algorithm SHA256).Hash
-    Write-Host "ZIP SHA256: $zipHash"
-    Write-Host "ZIP Size: $zipSize"
+$exe = Join-Path $PublishDir "MosquitoNetCalculator.exe"
+if (Test-Path -LiteralPath $exe) {
+    $exeItem = Get-Item -LiteralPath $exe
+    Write-Host "EXE SHA256: $((Get-FileHash -LiteralPath $exe -Algorithm SHA256).Hash.ToLowerInvariant())"
+    Write-Host "EXE Size: $($exeItem.Length)"
+}
+
+if (-not [string]::IsNullOrWhiteSpace($ZipName)) {
+    $zip = Join-Path $PublishDir $ZipName
+    if (-not (Test-Path -LiteralPath $zip)) {
+        throw "ZIP not found: $zip"
+    }
+    $zipItem = Get-Item -LiteralPath $zip
+    Write-Host "ZIP SHA256: $((Get-FileHash -LiteralPath $zip -Algorithm SHA256).Hash.ToLowerInvariant())"
+    Write-Host "ZIP Size: $($zipItem.Length)"
 } else {
-    Write-Host "ZIP not found at $zip"
+    Write-Host "No ZipName supplied; EXE metadata only." -ForegroundColor Gray
 }

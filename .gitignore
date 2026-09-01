@@ -61,3 +61,6 @@ archive/
 
 ## Freebuff agent workspace (per-thread git worktrees — never commit)
 .freebuff/
+
+## Local release dry-run artifacts (ZIP/publish output; final ZIPs go to GitHub Releases)
+release-artifacts/

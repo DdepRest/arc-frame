@@ -36,7 +36,6 @@ REM Build and publish as single-file executable
 echo.
 echo Building...
 dotnet publish MosquitoNetCalculator/MosquitoNetCalculator.csproj -c Release -r win-x64 --self-contained -p:PublishSingleFile=true -p:EnableCompressionInSingleFile=true -o publish
-
 if %errorlevel% neq 0 (
     echo.
     echo BUILD FAILED! Check errors above.
@@ -46,17 +45,22 @@ if %errorlevel% neq 0 (
 
 REM Copy prices.json to publish folder
 copy /y "MosquitoNetCalculator\prices.json" "publish\prices.json" >nul
+if %errorlevel% neq 0 exit /b 1
 
 REM Copy bundled OCR data (tessdata) to publish folder — AttachmentOcrService
 REM falls back to Tesseract when Windows has no OCR language pack.
 if not exist "publish\tessdata" mkdir "publish\tessdata"
 copy /y "MosquitoNetCalculator\Resources\tessdata\*" "publish\tessdata\" >nul
+if %errorlevel% neq 0 exit /b 1
 
 REM Copy icon to publish folder
 copy /y "MosquitoNetCalculator\Resources\app_icon.ico" "publish\app_icon.ico" >nul
+if %errorlevel% neq 0 exit /b 1
 
-REM Copy dependency checker script to publish folder (so it ships with the installer)
+REM Copy dependency checker scripts to publish folder (they ship with the installer)
 copy /y "check-deps.bat" "publish\check-deps.bat" >nul
+copy /y "check-deps.ps1" "publish\check-deps.ps1" >nul
+if %errorlevel% neq 0 exit /b 1
 
 REM Create fresh settings.json
 copy /y NUL "publish\settings.json" >NUL
@@ -74,7 +78,7 @@ for /f "tokens=*" %%i in ('dotnet msbuild MosquitoNetCalculator\MosquitoNetCalcu
 if "%APP_VERSION%"=="" set "APP_VERSION=0.0.0"
 echo   Version: %APP_VERSION%
 
-REM Create ZIP for GitHub Release (exe + dlls + tessdata + x64/x86 native
+REM Create ZIP for GitHub Releases (exe + dlls + tessdata + x64/x86 native
 REM OCR libs — no settings/prices/orders). x64/x86 carry the Tesseract native
 REM DLLs that single-file publish does NOT embed.
 powershell -NoProfile -Command "Compress-Archive -Force -Path 'publish\MosquitoNetCalculator.exe','publish\*.dll','publish\tessdata','publish\x64','publish\x86' -DestinationPath 'publish\ARC-Frame-%APP_VERSION%-full.zip'" 2>nul
@@ -82,10 +86,11 @@ powershell -NoProfile -Command "Compress-Archive -Force -Path 'publish\MosquitoN
 if exist "publish\ARC-Frame-%APP_VERSION%-full.zip" (
     echo   ZIP created: publish\ARC-Frame-%APP_VERSION%-full.zip
     echo.
-    echo   Next step: run gh release upload v%APP_VERSION% publish\ARC-Frame-%%APP_VERSION%%-full.zip
-    echo   Or: run update-releases-json.ps1 to update the manifest
+    echo   Next step: run gh release upload v%APP_VERSION% publish\ARC-Frame-%APP_VERSION%-full.zip
+    echo   Or: run tools\release\update-releases-json.ps1 with the ZIP size and SHA-256
 ) else (
     echo   ZIP creation failed!
+    exit /b 1
 )
 
 echo.

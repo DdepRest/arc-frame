@@ -1,69 +1,66 @@
+[CmdletBinding()]
 param(
-    [Parameter(Mandatory)] [string] $Repository,
-    [Parameter(Mandatory)] [string] $Version,
-    [Parameter(Mandatory)] [long] $Size,
-    [Parameter(Mandatory)] [string] $Sha256
+    [string]$Repository = "DdepRest/arc-frame",
+    [Parameter(Mandatory = $true)]
+    [ValidatePattern('^\d+\.\d+\.\d+$')]
+    [string]$Version,
+    [Parameter(Mandatory = $true)]
+    [ValidateRange(1, [long]::MaxValue)]
+    [long]$Size,
+    [Parameter(Mandatory = $true)]
+    [ValidatePattern('^[0-9a-fA-F]{64}$')]
+    [string]$Sha256,
+    [string]$MirrorUrl = ""
 )
 
 $ErrorActionPreference = "Stop"
-$manifestPath = Join-Path $PSScriptRoot "releases.json"
+$projectRoot = (Resolve-Path (Join-Path $PSScriptRoot "..\..")).Path
+$manifestPath = Join-Path $projectRoot "releases.json"
+$updateLogPath = Join-Path $projectRoot "MosquitoNetCalculator\Resources\update-log.json"
 $manifestUrl = "https://github.com/$Repository/releases/download/v$Version/ARC-Frame-$Version-full.zip"
 $today = Get-Date -Format "yyyy-MM-dd"
 
-# Load existing manifest or create a new one
-if (Test-Path $manifestPath) {
-    $manifest = Get-Content $manifestPath -Raw -Encoding UTF8 | ConvertFrom-Json
+if (-not (Test-Path -LiteralPath $manifestPath)) {
+    throw "releases.json not found: $manifestPath"
+}
+
+$manifest = Get-Content -LiteralPath $manifestPath -Raw -Encoding UTF8 | ConvertFrom-Json
+if (-not $manifest.releases -or @($manifest.releases).Count -eq 0) {
+    throw "releases.json has no release entries to update. Add the hand-written release entry first."
+}
+
+$entry = @($manifest.releases | Where-Object { $_.version -eq $Version }) | Select-Object -First 1
+if ($null -eq $entry) {
+    throw "No hand-written release entry for v$Version. Add version/title/type/changes before publishing."
+}
+
+if (Test-Path -LiteralPath $updateLogPath) {
+    $allEntries = @(Get-Content -LiteralPath $updateLogPath -Raw -Encoding UTF8 | ConvertFrom-Json)
+    $logEntry = $allEntries | Where-Object { $_.version -eq $Version } | Select-Object -First 1
+    if ($null -ne $logEntry) {
+        # The generated log is a consistency check only; committed manifest text
+        # remains authoritative so CI never overwrites editorial release notes.
+        Write-Host "Found matching update-log entry for v$Version" -ForegroundColor Gray
+    }
+}
+
+$entry.url = $manifestUrl
+$entry.size = $Size
+$entry.sha256 = $Sha256.ToLowerInvariant()
+$entry.date = $today
+if (-not $entry.PSObject.Properties['mirrorUrl']) {
+    $entry | Add-Member -NotePropertyName mirrorUrl -NotePropertyValue $MirrorUrl
 } else {
-    $manifest = [PSCustomObject]@{
-        latest = ""
-        minRequired = ""
-        releases = @()
-    }
+    $entry.mirrorUrl = $MirrorUrl
 }
 
-# Remove existing entry for this version (idempotent re-run)
-$manifest.releases = @($manifest.releases | Where-Object { $_.version -ne $Version })
-
-# Extract release notes from update-log.json (single source of truth)
-$updateLogPath = Join-Path $PSScriptRoot "MosquitoNetCalculator\Resources\update-log.json"
-$changes = @()
-$type = "Улучшение"
-$title = "ARC-Frame $Version"
-
-# Read release info from the JSON file
-if (Test-Path $updateLogPath) {
-    $allEntries = Get-Content $updateLogPath -Raw -Encoding UTF8 | ConvertFrom-Json
-    $entry = $allEntries | Where-Object { $_.version -eq $Version } | Select-Object -First 1
-    if ($entry) {
-        $type   = $entry.type
-        $title  = $entry.title
-        $changes = @($entry.changes)
-    }
-}
-
-# Create new release entry
-$newRelease = [PSCustomObject]@{
-    version = $Version
-    date    = $today
-    type    = $type
-    title   = $title
-    changes = $changes
-    url     = $manifestUrl
-    size    = $Size
-    sha256  = $Sha256.ToLowerInvariant()
-}
-
-# Prepend new release (newest first)
-$manifest.releases = @($newRelease) + @($manifest.releases)
 $manifest.latest = $Version
-
-# Save with UTF-8 encoding (no BOM for raw.githubusercontent.com compatibility)
 $json = $manifest | ConvertTo-Json -Depth 10
-[System.IO.File]::WriteAllText($manifestPath, $json, [System.Text.UTF8Encoding]::new($false))
+$utf8NoBom = New-Object System.Text.UTF8Encoding($false)
+[System.IO.File]::WriteAllText($manifestPath, $json, $utf8NoBom)
 
-Write-Host "Updated releases.json manifest for v$Version"
-Write-Host "  Type: $type"
-Write-Host "  Title: $title"
-Write-Host "  Changes: $($changes.Count) items"
+Write-Host "Updated releases.json manifest for v$Version" -ForegroundColor Green
+Write-Host "  URL: $manifestUrl"
 Write-Host "  Size: $Size bytes"
-Write-Host "  SHA256: $Sha256"
+Write-Host "  SHA256: $($Sha256.ToLowerInvariant())"
+Write-Host "  Mirror: $(if ($MirrorUrl) { $MirrorUrl } else { 'none' })"

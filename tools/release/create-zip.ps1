@@ -1,17 +1,75 @@
-$src = "C:\Users\Asus\Desktop\A.R.C. Frame\gwga\publish"
-$zip = Join-Path $src "ARC-Frame-3.47.3-full.zip"
-if (Test-Path $zip) { Remove-Item $zip -Force }
+[CmdletBinding()]
+param(
+    [string]$Version = "",
+    [string]$PublishDir = "",
+    [string]$OutputPath = ""
+)
 
-Write-Host "Compressing publish files..."
-$sw = [System.Diagnostics.Stopwatch]::StartNew()
+$ErrorActionPreference = "Stop"
+$projectRoot = (Resolve-Path (Join-Path $PSScriptRoot "..\..")).Path
 
-# Exclude existing ZIPs, locale folders, fonts
-$exclude = @("ARC-Frame-*.zip", "ARC-Frame-*.txt", "LatoFont", "cs", "de", "es", "fr", "it", "ja", "ko", "pl", "pt-BR", "ru", "tr", "zh-Hans", "zh-Hant")
+if ([string]::IsNullOrWhiteSpace($PublishDir)) {
+    $PublishDir = Join-Path $projectRoot "publish"
+} else {
+    $PublishDir = (Resolve-Path $PublishDir).Path
+}
 
-Get-ChildItem $src -Exclude $exclude | Compress-Archive -DestinationPath $zip -CompressionLevel Optimal
+if (-not (Test-Path -LiteralPath (Join-Path $PublishDir "MosquitoNetCalculator.exe"))) {
+    throw "MosquitoNetCalculator.exe not found in $PublishDir. Run build/publish first."
+}
 
-$sw.Stop()
-$fi = Get-Item $zip
-$hash = (Get-FileHash $zip -Algorithm SHA256).Hash.ToLower()
-Write-Host "DONE: $($fi.Length) bytes in $($sw.Elapsed.TotalSeconds.ToString('N1'))s"
-Write-Host "SHA256: $hash"
+if ([string]::IsNullOrWhiteSpace($Version)) {
+    $csprojPath = Join-Path $projectRoot "MosquitoNetCalculator\MosquitoNetCalculator.csproj"
+    $Version = (& dotnet msbuild $csprojPath -getProperty:Version -nologo 2>$null | Select-Object -Last 1).Trim()
+}
+if ($Version -notmatch '^\d+\.\d+\.\d+$') {
+    throw "Could not resolve a valid version; got '$Version'."
+}
+
+if ([string]::IsNullOrWhiteSpace($OutputPath)) {
+    $OutputPath = Join-Path $PublishDir "ARC-Frame-$Version-full.zip"
+}
+$OutputPath = [System.IO.Path]::GetFullPath($OutputPath)
+
+if (Test-Path -LiteralPath $OutputPath) {
+    Remove-Item -LiteralPath $OutputPath -Force
+}
+
+$stage = Join-Path ([System.IO.Path]::GetTempPath()) "arc-frame-full-$([Guid]::NewGuid().ToString('N'))"
+New-Item -ItemType Directory -Path $stage -Force | Out-Null
+
+try {
+    $requiredFiles = @("MosquitoNetCalculator.exe")
+    foreach ($name in $requiredFiles) {
+        Copy-Item -LiteralPath (Join-Path $PublishDir $name) -Destination (Join-Path $stage $name) -Force
+    }
+
+    foreach ($dll in (Get-ChildItem -LiteralPath $PublishDir -Filter "*.dll" -File)) {
+        Copy-Item -LiteralPath $dll.FullName -Destination (Join-Path $stage $dll.Name) -Force
+    }
+
+    foreach ($directoryName in @("tessdata", "x64", "x86", "runtimes")) {
+        $source = Join-Path $PublishDir $directoryName
+        if (Test-Path -LiteralPath $source) {
+            Copy-Item -LiteralPath $source -Destination (Join-Path $stage $directoryName) -Recurse -Force
+        }
+    }
+
+    Add-Type -AssemblyName System.IO.Compression.FileSystem
+    [System.IO.Compression.ZipFile]::CreateFromDirectory(
+        $stage,
+        $OutputPath,
+        [System.IO.Compression.CompressionLevel]::Optimal,
+        $false)
+
+    $item = Get-Item -LiteralPath $OutputPath
+    $hash = (Get-FileHash -LiteralPath $OutputPath -Algorithm SHA256).Hash.ToLowerInvariant()
+    Write-Host "Created: $OutputPath" -ForegroundColor Green
+    Write-Host "Size: $($item.Length) bytes"
+    Write-Host "SHA256: $hash"
+}
+finally {
+    if (Test-Path -LiteralPath $stage) {
+        Remove-Item -LiteralPath $stage -Recurse -Force -ErrorAction SilentlyContinue
+    }
+}

@@ -1,27 +1,29 @@
-﻿# generate-update-log.ps1
+# generate-update-log.ps1
 # Генерирует MosquitoNetCalculator/Resources/update-log.json из CHANGELOG.md.
-# Запускать при релизе.
+# Запускать из любого каталога при подготовке релиза.
 #
 # Использование:
-#   powershell -ExecutionPolicy Bypass -File generate-update-log.ps1
+#   powershell -ExecutionPolicy Bypass -File tools/release/generate-update-log.ps1
+
+[CmdletBinding()]
+param()
 
 $ErrorActionPreference = "Stop"
-$projectRoot = $PSScriptRoot
+$projectRoot = (Resolve-Path (Join-Path $PSScriptRoot "..\..")).Path
 
 $changelogPath = Join-Path $projectRoot "CHANGELOG.md"
 $updateLogPath = Join-Path $projectRoot "MosquitoNetCalculator\Resources\update-log.json"
 
-if (-not (Test-Path $changelogPath)) {
-    Write-Host "FAIL: CHANGELOG.md not found" -ForegroundColor Red
+if (-not (Test-Path -LiteralPath $changelogPath)) {
+    Write-Error "CHANGELOG.md not found: $changelogPath"
     exit 1
 }
 
-$content = Get-Content $changelogPath -Raw -Encoding UTF8
+$content = [System.IO.File]::ReadAllText($changelogPath, [System.Text.Encoding]::UTF8)
 
 # Парсим секции версий: ## X.Y.Z — YYYY-MM-DD
 $versionPattern = '##\s+(\d+\.\d+\.\d+)\s*[—–-]\s*(\d{4}-\d{2}-\d{2})'
 $versionMatches = [regex]::Matches($content, $versionPattern)
-
 $updates = @()
 
 for ($i = 0; $i -lt $versionMatches.Count; $i++) {
@@ -29,17 +31,14 @@ for ($i = 0; $i -lt $versionMatches.Count; $i++) {
     $version = $v.Groups[1].Value
     $date = $v.Groups[2].Value
 
-    # Определяем границы текста этой версии
     $startIndex = $v.Index + $v.Length
-    if ($i -lt $versionMatches.Count - 1) {
-        $endIndex = $versionMatches[$i + 1].Index
+    $endIndex = if ($i -lt $versionMatches.Count - 1) {
+        $versionMatches[$i + 1].Index
     } else {
-        $endIndex = $content.Length
+        $content.Length
     }
-
     $section = $content.Substring($startIndex, $endIndex - $startIndex)
 
-    # Извлекаем заголовок (первая непустая строка после ### или текст до первого ###)
     $title = ""
     if ($section -match '###\s+(.+?)[\r\n]') {
         $title = $Matches[1].Trim()
@@ -47,63 +46,45 @@ for ($i = 0; $i -lt $versionMatches.Count; $i++) {
         $title = $Matches[1].Trim()
     }
 
-    # Собираем пункты изменений
     $changes = @()
-    $lines = $section -split "`n"
-    foreach ($line in $lines) {
+    foreach ($line in ($section -split "`n")) {
         $trimmed = $line.Trim()
-        # Skip ### subsection headers
-        if ($trimmed -match '^###\s') {
-            continue
-        }
-        # Bold list item: - **Text:** rest or - **Text** rest
+        if ($trimmed -match '^###\s') { continue }
+
         if ($trimmed -match '^[-*]\s+\*\*(.+?)\*\*[:\s]*(.*)') {
-            $text = $Matches[1].Trim()
+            $text = $Matches[1].Trim() -replace '\s*:\s*$', ''
             $rest = $Matches[2].Trim()
-            # Strip trailing colon from bold text if present (CHANGELOG already has it)
-            $text = $text -replace '\s*:\s*$', ''
-            if ($rest) {
-                $changes += "$text`: $rest"
-            } else {
-                $changes += $text
-            }
-        }
-        # Plain list item (no bold): - Text
-        elseif ($trimmed -match '^[-*]\s+(?!\*\*)(.+)') {
+            $changes += if ($rest) { "$text`: $rest" } else { $text }
+        } elseif ($trimmed -match '^[-*]\s+(?!\*\*)(.+)') {
             $text = $Matches[1].Trim()
             if ($text) { $changes += $text }
         }
     }
 
-    # Определяем тип релиза
     $type = "Исправление"
-    if ($section -match 'исправлен|фикс|fix|bug') { $type = "Исправление" }
-    if ($section -match 'добавлен|новая|новый|feat|feature') { $type = "Новая функция" }
+    if ($section -match 'добавлен|новая|новый|feat|feature') {
+        $type = "Новая функция"
+    }
 
-    $update = @{
+    $updates += [ordered]@{
         version = $version
         date = $date
         type = $type
         title = if ($title) { $title } else { "Версия $version" }
-        changes = $changes
+        changes = @($changes)
     }
-    $updates += $update
 }
 
-# Ограничиваем последними 15 версиями
-$updates = $updates | Select-Object -First 15
-
+$updates = @($updates | Select-Object -First 15)
 if ($updates.Count -eq 0) {
-    Write-Host "FAIL: No version entries found in CHANGELOG.md. Check format." -ForegroundColor Red
-    Write-Host "Expected: ## X.Y.Z - YYYY-MM-DD" -ForegroundColor Gray
+    Write-Error "No version entries found in CHANGELOG.md. Expected: ## X.Y.Z - YYYY-MM-DD"
     exit 1
 }
 
-$json = $updates | ConvertTo-Json -Depth 3
-Set-Content -Path $updateLogPath -Value $json -Encoding UTF8
+$json = ConvertTo-Json -InputObject $updates -Depth 5
+$utf8NoBom = New-Object System.Text.UTF8Encoding($false)
+[System.IO.File]::WriteAllText($updateLogPath, $json, $utf8NoBom)
 
 Write-Host "Generated: $updateLogPath" -ForegroundColor Green
 Write-Host "Versions: $($updates.Count)" -ForegroundColor Gray
-if ($updates.Count -gt 0) {
-    Write-Host "Latest: $($updates[0].version) ($($updates[0].date))" -ForegroundColor Gray
-}
+Write-Host "Latest: $($updates[0].version) ($($updates[0].date))" -ForegroundColor Gray
