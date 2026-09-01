@@ -124,13 +124,13 @@
                                    HorizontalAlignment="Center" VerticalAlignment="Center"/>
                     </Border>
                     <StackPanel Grid.Column="1" VerticalAlignment="Center">
-                        <TextBlock Text="Встроенные подключения готовы" FontSize="12" FontWeight="SemiBold"
+                        <TextBlock Text="Ключи AI настраиваются здесь" FontSize="12" FontWeight="SemiBold"
                                    Foreground="{DynamicResource BadgeSuccessFg}"/>
-                        <TextBlock Text="OpenRouter подтверждает ключ · NVIDIA проверяет доступность сервиса"
+                        <TextBlock Text="Введите ключ хотя бы одного провайдера; пустые поля не отправляются"
                                    FontSize="10" Foreground="{DynamicResource TextMuted}" Margin="0,2,0,0"
                                    TextTrimming="CharacterEllipsis"/>
                     </StackPanel>
-                    <TextBlock Grid.Column="2" Text="FREE" FontSize="9" FontWeight="Bold"
+                    <TextBlock Grid.Column="2" Text="USER" FontSize="9" FontWeight="Bold"
                                Foreground="{DynamicResource BadgeSuccessFg}" VerticalAlignment="Center"
                                Margin="10,0,2,0"/>
                 </Grid>
@@ -145,7 +145,7 @@
                 <StackPanel Grid.Column="0">
                     <TextBlock Text="API-КЛЮЧИ" FontSize="10" FontWeight="Bold"
                                Foreground="{DynamicResource TextMuted}"/>
-                    <TextBlock Text="Свои ключи необязательны · проверка без сохранения" FontSize="10"
+                    <TextBlock Text="Ключ нужен для работы AI · проверка без сохранения" FontSize="10"
                                Foreground="{DynamicResource TextMuted}" Margin="0,2,0,0"/>
                 </StackPanel>
                 <TextBlock Grid.Column="1" Text="2 сервиса" FontSize="10"
@@ -174,7 +174,7 @@
                                 <TextBlock Text="OpenRouter" FontSize="12" FontWeight="SemiBold"
                                            Foreground="{DynamicResource TextPrimary}" VerticalAlignment="Center"/>
                             </StackPanel>
-                            <TextBlock x:Name="TxtCurrentKey" Text="встроенный ключ"
+                            <TextBlock x:Name="TxtCurrentKey" Text="ключ не задан"
                                        FontSize="10" Foreground="{DynamicResource TextMuted}"
                                        Margin="24,3,0,0" TextTrimming="CharacterEllipsis"/>
                         </StackPanel>
@@ -279,7 +279,7 @@
                     <Button Grid.Column="1" x:Name="BtnTestKeys"
                             Content="Проверить подключение" Height="30" Click="BtnTestKeys_Click"
                             Style="{StaticResource DialogOutlineButton}"
-                            ToolTip="Параллельно проверить ключ OpenRouter и доступность NVIDIA"/>
+                            ToolTip="Параллельно проверить введённые ключи OpenRouter и NVIDIA"/>
                 </Grid>
             </Border>
 

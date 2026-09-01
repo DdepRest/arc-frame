@@ -39,6 +39,10 @@ namespace MosquitoNetCalculator.Tests.Services
 
             // Keep tests fast and deterministic.
             AiAssistantService.MaxAttemptsPerModel = 3;
+            // The production service now requires explicit user configuration;
+            // use harmless fixture values so these tests exercise HTTP routing.
+            AppSettingsServiceAi.SaveAiApiKey("test-openrouter-key");
+            AppSettingsServiceAi.SaveAiNvidiaApiKey("test-nvidia-key");
             AiAssistantService.RetryDelayMs = 1;
 
             // The availability cache and routing catalog are process-wide; isolate

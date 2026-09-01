@@ -41,6 +41,10 @@ namespace MosquitoNetCalculator.Tests.Services
             _originalRetryDelay = AiAssistantService.RetryDelayMs;
             _originalFirstTokenTimeout = AiAssistantService.FirstTokenTimeoutMs;
             AiAssistantService.RetryDelayMs = 1; // keep retry-chain tests fast
+            // The production service now requires explicit user configuration;
+            // use harmless fixture values so these tests exercise HTTP routing.
+            AppSettingsServiceAi.SaveAiApiKey("test-openrouter-key");
+            AppSettingsServiceAi.SaveAiNvidiaApiKey("test-nvidia-key");
             AiAssistantService.ResetAvailabilityCache();
             AiAssistantService.ResetAvailableModelsCatalog();
         }

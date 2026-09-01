@@ -110,20 +110,18 @@ namespace MosquitoNetCalculator.Services
         }
 
         /// <summary>
-        /// Returns the API key for a provider: the user's own key if configured,
-        /// otherwise the embedded built-in key.
+        /// Returns the API key configured by the user for a provider.
+        /// Empty means this provider is not configured.
         /// </summary>
         public static string GetApiKey(AiProvider provider)
-        {
-            if (provider == AiProvider.Nvidia)
-            {
-                var userKey = AppSettingsServiceAi.LoadAiNvidiaApiKey();
-                return string.IsNullOrWhiteSpace(userKey) ? AiAssistantService.EmbeddedNvidiaApiKey : userKey;
-            }
+            => provider == AiProvider.Nvidia
+                ? AppSettingsServiceAi.LoadAiNvidiaApiKey()
+                : AppSettingsServiceAi.LoadAiApiKey();
 
-            var orKey = AppSettingsServiceAi.LoadAiApiKey();
-            return string.IsNullOrWhiteSpace(orKey) ? AiAssistantService.EmbeddedOpenRouterApiKey : orKey;
-        }
+        /// <summary>True when at least one provider has a non-empty user key.</summary>
+        public static bool HasAnyConfiguredApiKey
+            => !string.IsNullOrWhiteSpace(GetApiKey(AiProvider.OpenRouter))
+               || !string.IsNullOrWhiteSpace(GetApiKey(AiProvider.Nvidia));
 
         /// <summary>Returns the chat-completions endpoint for a provider.</summary>
         public static string GetApiUrl(AiProvider provider)

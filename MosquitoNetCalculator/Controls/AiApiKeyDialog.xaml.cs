@@ -83,10 +83,10 @@ namespace MosquitoNetCalculator.Controls
             // Keep these summaries short enough for the narrow provider column;
             // the PasswordBox itself already communicates that the value is masked.
             TxtCurrentKey.Text = string.IsNullOrEmpty(_savedApiKey)
-                ? "встроенный ключ"
+                ? "ключ не задан"
                 : "ваш ключ · скрыт";
             TxtCurrentNvidiaKey.Text = string.IsNullOrEmpty(_savedNvidiaApiKey)
-                ? "встроенный ключ"
+                ? "ключ не задан"
                 : "ваш ключ · скрыт";
 
             // Always render the same fixed mask. The actual keys stay only in the
@@ -319,15 +319,8 @@ namespace MosquitoNetCalculator.Controls
 
             try
             {
-                var orFallback = string.IsNullOrWhiteSpace(orKey)
-                    ? AiAssistantService.EmbeddedOpenRouterApiKey
-                    : orKey;
-                var nvFallback = string.IsNullOrWhiteSpace(nvKey)
-                    ? AiAssistantService.EmbeddedNvidiaApiKey
-                    : nvKey;
-
-                var orTask = AiAssistantService.TestApiKeyAsync(AiProvider.OpenRouter, orFallback);
-                var nvTask = AiAssistantService.TestApiKeyAsync(AiProvider.Nvidia, nvFallback);
+                var orTask = AiAssistantService.TestApiKeyAsync(AiProvider.OpenRouter, orKey);
+                var nvTask = AiAssistantService.TestApiKeyAsync(AiProvider.Nvidia, nvKey);
                 await Task.WhenAll(orTask, nvTask);
 
                 ApplyTestResult(OrTestDot, TxtOrTestStatus, orTask.Result, AiProvider.OpenRouter);

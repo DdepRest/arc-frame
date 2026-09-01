@@ -90,18 +90,8 @@ namespace MosquitoNetCalculator.Services
 
 
 
-        // ── Built-in API keys (free tier only) ────────────────
-        // Embedded so the assistant works out of the box. Users can still
-        // override either key in Settings → AI Ассистент.
-        internal const string EmbeddedOpenRouterApiKey =
-            "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";
-        internal const string EmbeddedNvidiaApiKey =
-            "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";
-
-        /// <summary>True when at least one built-in key is available.</summary>
-        public static bool HasEmbeddedKeys =>
-            !string.IsNullOrWhiteSpace(EmbeddedOpenRouterApiKey) ||
-            !string.IsNullOrWhiteSpace(EmbeddedNvidiaApiKey);
+        // API credentials are intentionally never compiled into the application.
+        // They are read from the user's protected settings file by AiKeyValidator.
 
         /// <summary>
         /// Built-in fallback models used only when the remote catalogs cannot be fetched.
@@ -198,9 +188,7 @@ namespace MosquitoNetCalculator.Services
                 return cached;
             }
 
-            var openRouterKey = string.IsNullOrWhiteSpace(apiKey)
-                ? EmbeddedOpenRouterApiKey
-                : apiKey.Trim();
+            var openRouterKey = apiKey?.Trim() ?? string.Empty;
             var nvidiaKey = string.IsNullOrWhiteSpace(nvidiaApiKey)
                 ? AiKeyValidator.GetApiKey(AiProvider.Nvidia)
                 : nvidiaApiKey.Trim();
@@ -536,9 +524,9 @@ namespace MosquitoNetCalculator.Services
             Action<AiStreamInfo>? onStreamInfo = null,
             bool hasOcrText = false)
         {
-            if (!HasEmbeddedKeys)
+            if (!AiKeyValidator.HasAnyConfiguredApiKey)
             {
-                onError("⚠ API-ключ не настроен.\n\nОткройте Настройки и введите ключ OpenRouter.\nПолучить бесплатно: https://openrouter.ai/keys");
+                onError("⚠ API-ключ не настроен.\n\nОткройте Настройки → AI Ассистент и введите ключ OpenRouter или NVIDIA.\nПолучить ключ OpenRouter бесплатно: https://openrouter.ai/keys");
                 return;
             }
 
@@ -617,6 +605,15 @@ namespace MosquitoNetCalculator.Services
                 var provider = AiKeyValidator.GetProviderForModel(modelId);
                 var apiKey = AiKeyValidator.GetApiKey(provider);
                 var apiUrl = AiKeyValidator.GetApiUrl(provider);
+
+                // A fallback model from a provider without a configured key is
+                // unavailable by definition. Skip it without making an anonymous
+                // request or leaking an empty Bearer header.
+                if (string.IsNullOrWhiteSpace(apiKey))
+                {
+                    fallbackFailures[provider] = "API-ключ не настроен";
+                    continue;
+                }
 
                 // Retry the same model a few times on transient failures (429/5xx/
                 // network hiccups) before moving to the next fallback model.
@@ -1138,8 +1135,8 @@ namespace MosquitoNetCalculator.Services
 
 
         /// <summary>
-        /// Returns the API key for a provider: the user's own key if configured,
-        /// otherwise the embedded built-in key.
+        /// Returns the API key configured by the user for a provider.
+        /// Empty means this provider is not configured.
         /// </summary>
 
 

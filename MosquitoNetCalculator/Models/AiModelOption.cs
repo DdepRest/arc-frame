@@ -2,7 +2,7 @@ namespace MosquitoNetCalculator.Models
 {
     /// <summary>
     /// Identifies which API provider serves a model. Each provider has its own
-    /// endpoint and its own API key (user-configured or built-in).
+    /// endpoint and its own user-configured API key.
     /// </summary>
     public enum AiProvider
     {

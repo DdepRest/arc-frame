@@ -190,9 +190,13 @@ namespace MosquitoNetCalculator.Services
                 sb.AppendLine("Расчёт пуст.");
             if (!string.IsNullOrWhiteSpace(model))
                 sb.AppendLine($"Модель: {model}");
-            sb.AppendLine(AiAssistantService.HasEmbeddedKeys
-                ? "Провайдеры: встроенные ключи OpenRouter + NVIDIA (бесплатные)"
-                : "Провайдеры: используются пользовательские ключи");
+            var configuredProviders = new[] { AiProvider.OpenRouter, AiProvider.Nvidia }
+                .Where(provider => !string.IsNullOrWhiteSpace(AiKeyValidator.GetApiKey(provider)))
+                .Select(AiKeyValidator.ProviderName)
+                .ToList();
+            sb.AppendLine(configuredProviders.Count > 0
+                ? $"Провайдеры: {string.Join(" + ", configuredProviders)}"
+                : "Провайдеры: API-ключи не настроены");
             if (session is { Requests: > 0 })
                 sb.AppendLine(session.FormatBrief());
             else

@@ -1,14 +1,41 @@
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
+using System.Net;
+using System.Net.Http;
+using System.Threading.Tasks;
 using MosquitoNetCalculator.Models;
 using MosquitoNetCalculator.Services;
+using MosquitoNetCalculator.Tests.Helpers;
 using Xunit;
 
 namespace MosquitoNetCalculator.Tests.Services
 {
-    public class AiAssistantServiceTests
+    [Collection("FileSystem")]
+    public class AiAssistantServiceTests : System.IDisposable
     {
+        private readonly string _tempDir;
+        private readonly string _originalAiSettingsPath;
+        private readonly HttpClient _originalHttpClient;
+
+        public AiAssistantServiceTests()
+        {
+            _tempDir = Path.Combine(Path.GetTempPath(), "mnc_ai_service_test_" + Guid.NewGuid().ToString("N"));
+            Directory.CreateDirectory(_tempDir);
+            _originalAiSettingsPath = AppSettingsServiceAi.AiSettingsPath;
+            AppSettingsServiceAi.AiSettingsPath = Path.Combine(_tempDir, "ai-settings.json");
+            _originalHttpClient = AiAssistantService.HttpClient;
+        }
+
+        public void Dispose()
+        {
+            AppSettingsServiceAi.AiSettingsPath = _originalAiSettingsPath;
+            AiAssistantService.HttpClient = _originalHttpClient;
+            try { if (Directory.Exists(_tempDir)) Directory.Delete(_tempDir, recursive: true); }
+            catch { /* best-effort cleanup */ }
+        }
+
         [Fact]
         public void FormatUpdateHistory_IncludesAllVersions_NotJustTopFive()
         {
@@ -138,75 +165,81 @@ namespace MosquitoNetCalculator.Tests.Services
         }
 
         [Fact]
-        public void HasEmbeddedKeys_IsTrue()
+        public void ApiKeyConfiguration_IsEmptyWithoutUserSettings()
         {
-            Assert.True(AiAssistantService.HasEmbeddedKeys);
+            Assert.Equal(string.Empty, AiKeyValidator.GetApiKey(AiProvider.OpenRouter));
+            Assert.Equal(string.Empty, AiKeyValidator.GetApiKey(AiProvider.Nvidia));
+            Assert.False(AiKeyValidator.HasAnyConfiguredApiKey);
         }
 
         [Fact]
-        public async System.Threading.Tasks.Task TestApiKeyAsync_BadOpenRouterKey_ReturnsUnauthorized()
+        public void ApiKeyConfiguration_UsesSavedUserKeys()
         {
-            // Use an obviously invalid key — OpenRouter should respond with 401.
-            var result = await AiAssistantService.TestApiKeyAsync(
-                AiProvider.OpenRouter, "definitely-not-a-real-key-xxxxxxxxxxxxxxxx");
+            AppSettingsServiceAi.SaveAiApiKey("test-openrouter-key");
+            AppSettingsServiceAi.SaveAiNvidiaApiKey("test-nvidia-key");
 
-            Assert.False(result.IsOk);
-            Assert.Equal(401, result.StatusCode);
-            Assert.Contains("ключ", result.Detail, System.StringComparison.OrdinalIgnoreCase);
-            Assert.True(result.LatencyMs >= 0);
+            Assert.Equal("test-openrouter-key", AiKeyValidator.GetApiKey(AiProvider.OpenRouter));
+            Assert.Equal("test-nvidia-key", AiKeyValidator.GetApiKey(AiProvider.Nvidia));
+            Assert.True(AiKeyValidator.HasAnyConfiguredApiKey);
         }
 
         [Fact]
-        public async System.Threading.Tasks.Task TestApiKeyAsync_BadNvidiaKey_ReturnsFailure()
+        public async Task TestApiKeyAsync_UsesProvidedKey_WithoutNetwork()
         {
-            // NVIDIA's /v1/models is a public catalog (no auth required), so any
-            // request that reaches the endpoint returns 200. We can't use it to
-            // validate the key — but we can verify the method never misbehaves,
-            // even with a clearly invalid key. Either path is acceptable; the
-            // contract is: a result with valid LatencyMs and non-empty Detail.
-            var result = await AiAssistantService.TestApiKeyAsync(
-                AiProvider.Nvidia, "nvapi-not-a-real-key");
-
-            Assert.NotNull(result);
-            Assert.True(result.LatencyMs >= 0);
-            Assert.False(string.IsNullOrWhiteSpace(result.Detail));
-        }
-
-        [Fact]
-        public async System.Threading.Tasks.Task TestApiKeyAsync_Nvidia_EmbeddedKey_Reachable()
-        {
-            // Regression guard: the built-in NVIDIA key must continue to reach
-            // the catalog endpoint, OR fail with an honest network error.
-            // Either outcome proves the service responds without crashing.
-            var result = await AiAssistantService.TestApiKeyAsync(
-                AiProvider.Nvidia, AiAssistantService.EmbeddedNvidiaApiKey);
-
-            Assert.NotNull(result);
-            Assert.True(result.LatencyMs >= 0);
-            // When reachable: IsOk must be true with 200; otherwise: false with a non-empty Detail.
-            if (result.IsOk)
+            string? authorization = null;
+            AiAssistantService.HttpClient = new HttpClient(new TestHttpMessageHandler(request =>
             {
-                Assert.Equal(200, result.StatusCode);
-                Assert.Equal("OK", result.Detail);
-            }
-            else
-            {
-                Assert.False(string.IsNullOrWhiteSpace(result.Detail));
-            }
-        }
+                authorization = request.Headers.Authorization?.ToString();
+                return new HttpResponseMessage(HttpStatusCode.OK);
+            }));
 
-        [Fact]
-        public async System.Threading.Tasks.Task TestApiKeyAsync_GoodEmbeddedOpenRouterKey_ReturnsOk()
-        {
-            // Regression guard: the built-in key must continue to pass the ping,
-            // otherwise the dialog will show all built-in users a red dot.
             var result = await AiAssistantService.TestApiKeyAsync(
-                AiProvider.OpenRouter, AiAssistantService.EmbeddedOpenRouterApiKey);
+                AiProvider.OpenRouter, "test-openrouter-key");
 
             Assert.True(result.IsOk);
             Assert.Equal(200, result.StatusCode);
-            Assert.Equal("OK", result.Detail);
-            Assert.True(result.LatencyMs >= 0);
+            Assert.Equal("Bearer test-openrouter-key", authorization);
+        }
+
+        [Fact]
+        public async Task TestApiKeyAsync_EmptyKey_DoesNotSendAuthorizationHeader()
+        {
+            bool hasAuthorization = false;
+            AiAssistantService.HttpClient = new HttpClient(new TestHttpMessageHandler(request =>
+            {
+                hasAuthorization = request.Headers.Authorization != null;
+                return new HttpResponseMessage(HttpStatusCode.Unauthorized);
+            }));
+
+            var result = await AiAssistantService.TestApiKeyAsync(
+                AiProvider.OpenRouter, string.Empty);
+
+            Assert.False(result.IsOk);
+            Assert.Equal(401, result.StatusCode);
+            Assert.False(hasAuthorization);
+        }
+
+        [Fact]
+        public async Task SendStreamingAsync_WithoutConfiguredKey_ReportsActionableError()
+        {
+            bool requestSent = false;
+            AiAssistantService.HttpClient = new HttpClient(new TestHttpMessageHandler(_ =>
+            {
+                requestSent = true;
+                return new HttpResponseMessage(HttpStatusCode.OK);
+            }));
+
+            var errors = new List<string>();
+            await new AiAssistantService().SendStreamingAsync(
+                "привет",
+                new List<(string Role, string Content)>(),
+                _ => { },
+                _ => { },
+                errors.Add);
+
+            Assert.False(requestSent);
+            Assert.Single(errors);
+            Assert.Contains("API-ключ не настроен", errors[0]);
         }
 
         [Fact]

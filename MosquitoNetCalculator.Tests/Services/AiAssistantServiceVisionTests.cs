@@ -35,6 +35,10 @@ namespace MosquitoNetCalculator.Tests.Services
             AppSettingsServiceAi.AiSettingsPath = Path.Combine(_tempDir, "ai-settings.json");
 
             _originalHttpClient = AiAssistantService.HttpClient;
+            // The production service now requires explicit user configuration;
+            // use harmless fixture values so these tests exercise HTTP routing.
+            AppSettingsServiceAi.SaveAiApiKey("test-openrouter-key");
+            AppSettingsServiceAi.SaveAiNvidiaApiKey("test-nvidia-key");
             AiAssistantService.ResetAvailabilityCache();
             AiAssistantService.ResetAvailableModelsCatalog();
         }

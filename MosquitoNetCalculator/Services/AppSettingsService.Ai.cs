@@ -94,8 +94,8 @@ namespace MosquitoNetCalculator.Services
         }
 
         /// <summary>
-        /// Loads the user-configured NVIDIA API key (empty when not set — the
-        /// built-in embedded NVIDIA key is used in that case).
+        /// Loads the user-configured NVIDIA API key. Returns an empty string when
+        /// this provider has not been configured.
         /// </summary>
         public static string LoadAiNvidiaApiKey()
         {
