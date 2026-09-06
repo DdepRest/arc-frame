@@ -1,7 +1,20 @@
 {
-  "latest": "3.48.7",
+  "latest": "3.49.0",
   "minRequired": "",
   "releases": [
+    {
+      "version": "3.49.0",
+      "date": "2026-09-06",
+      "url": "https://github.com/DdepRest/arc-frame/releases/download/v3.49.0/ARC-Frame-3.49.0-full.zip",
+      "sha256": "1b9f679d6d3e7a946c577a18f01e3b656189079c893d35789a1541de0ee0335f",
+      "mirrorUrl": "https://raw.githubusercontent.com/DdepRest/arc-frame/mirror-latest/ARC-Frame-3.49.0-full.zip",
+      "size": 92690668,
+      "type": "Исправление",
+      "title": "v3.49.0 release",
+      "changes": [
+        "Auto-published via .github/workflows/release.yml"
+      ]
+    },
     {
       "version": "3.48.7",
       "date": "2026-08-30",
