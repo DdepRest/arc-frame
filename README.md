@@ -9,8 +9,8 @@
 </p>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/version-3.48.7-blue" alt="Version 3.48.7">
-  <img src="https://img.shields.io/badge/tests-2118%2F2118-brightgreen" alt="Tests 2118/2118">
+  <img src="https://img.shields.io/badge/version-3.49.0-blue" alt="Version 3.49.0">
+  <img src="https://img.shields.io/badge/tests-2132%2F2132-brightgreen" alt="Tests 2132/2132">
   <img src="https://img.shields.io/badge/platform-Windows%2010%2F11-blue" alt="Platform Windows 10/11">
   <img src="https://img.shields.io/badge/.NET-8.0-512BD4" alt=".NET 8.0">
 </p>
@@ -181,7 +181,7 @@ dotnet publish MosquitoNetCalculator/MosquitoNetCalculator.csproj ^
 
 ## Тестирование
 
-Проект покрыт юнит- и STA-тестами (2118 тестов, 100 % проходят).
+Проект покрыт юнит- и STA-тестами (2132 теста, 100 % проходят).
 
 ```bat
 :: Запуск всех тестов
@@ -249,7 +249,7 @@ gwga/
 
 | Фаза | Что выделено | Эффект |
 |---|---|---|
-| 1 | `NavigationService`, `OverlayManager`, `SlopeOverlayCoordinator`, `SlopesProUpsellGate` | `MainWindow.xaml.cs`: 1051 → 760 строк |
+| 1 | `NavigationService`, `OverlayManager`, `SlopeOverlayCoordinator` | `MainWindow.xaml.cs`: 1051 → 760 строк |
 | 2 | `VersionResolver`, `IdleDetector`, `UpdateVerifier`, `UpdateManifestClient`, `UpdateDownloader` | `UpdateService.cs`: 910 → 608 строк |
 | 3 | `DrawingService`, `FlowDocumentBuilder`, `FixedDocumentBuilder`, `PrintQueueManager`, `PdfExportService` | `PrintService.cs`: 632 → 81 строк |
 | 4 | XAML-шаблоны диалогов + `DialogBuilder` | `DialogService.cs`: 641 → ~250 строк |

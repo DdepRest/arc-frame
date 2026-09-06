@@ -261,6 +261,13 @@ namespace MosquitoNetCalculator.Services
             var body = new TableRowGroup();
             bool alt = false;
             int idx = 1;
+
+            // «С экономией» имеет смысл только когда в заказе БОЛЬШЕ ОДНОГО откоса —
+            // иначе оптимизировать нечего, и приписка вводит в заблуждение.
+            int totalSlopeWindows = validItems
+                .Where(i => i.IsSlope && i.SlopeData != null)
+                .Sum(i => i.SlopeData?.WindowCount ?? 0);
+
             foreach (var item in validItems)
             {
                 var row = new TableRow
@@ -281,9 +288,8 @@ namespace MosquitoNetCalculator.Services
                     slopeNamePara.Inlines.Add(new Run(item.DisplayName ?? ""));
                     slopeNamePara.Inlines.Add(new LineBreak());
                     int depthMm = (int)(item.SlopeData.DepthM * 1000);
-                    string economyNote = item.SlopeData.IsProfileEconomyApplied
-                        ? " (с экономией)"
-                        : "";
+                    bool showEconomy = totalSlopeWindows > 1 && item.SlopeData.IsProfileEconomyApplied;
+                    string economyNote = showEconomy ? " (с экономией)" : "";
                     var dimsRun = new Run($"В: {item.Height} Ш: {item.Width} Г: {depthMm}{economyNote}")
                     {
                         FontSize = bodyFontSize * 0.8,

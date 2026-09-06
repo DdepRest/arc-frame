@@ -45,6 +45,8 @@ if %errorlevel% neq 0 (
 
 REM Copy prices.json to publish folder
 copy /y "MosquitoNetCalculator\prices.json" "publish\prices.json" >nul
+REM Copy production stamp image to publish folder
+copy /y "docs\images\ВПРОИЗВОДСТВО.png" "publish\ВПРОИЗВОДСТВО.png" >nul
 if %errorlevel% neq 0 exit /b 1
 
 REM Copy bundled OCR data (tessdata) to publish folder — AttachmentOcrService

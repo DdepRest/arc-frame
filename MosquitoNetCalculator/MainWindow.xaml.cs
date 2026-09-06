@@ -77,7 +77,6 @@ namespace MosquitoNetCalculator
         private NavigationService? _navService;
         private OverlayManager? _overlayManager;
         private SlopeOverlayCoordinator? _slopeCoordinator;
-        private SlopesProUpsellGate _slopesProUpsellGate = new();
 
         // Cached overlay entries for direct access in NavButton_Click / ShowPrintOverlay
         private OverlayManager.OverlayEntry? _ordersEntry;
@@ -415,6 +414,9 @@ namespace MosquitoNetCalculator
             {
                 PrintPreviewControl.CollectSettings();
                 LastPrintSettings = PrintPreviewControl.GetSettings();
+                // Переносим последний выбор в глобальные настройки — он переживёт
+                // перезапуск и применится к следующему заказу.
+                AppSettingsService.SaveIncludeProductionCopy(LastPrintSettings.IncludeProductionCopy);
             }
             PrintPreviewControl.Closed -= OnPrintPreviewClosed;
 
@@ -691,21 +693,6 @@ namespace MosquitoNetCalculator
                 return;
             }
 
-            // EASTER-EGG v3.43.2.9 — шуточная «PRO подписка» в меню Откосы.
-            // Триггер ТОЛЬКО на menu-click (не на Ctrl+5/Print и не из
-            // EditSlopeItem — правка существующего откоса).
-            //
-            // Чтобы выпилить шутку: см. чеклист в SlopesProUpsellGate.cs
-            bool canOpenSlopes = _slopesProUpsellGate.ShouldOpenSlopes(this, () =>
-            {
-                ToastService.ShowToast(
-                    "Шуточная PRO-подписка не сработала — откосы всё равно бесплатны 😄",
-                    ToastType.Info,
-                    durationMs: 4000);
-            });
-
-            if (!canOpenSlopes) return;
-
             ShowSlopeOverlay();
         }
 
@@ -730,6 +717,10 @@ namespace MosquitoNetCalculator
 
             double total = validItems.Sum(i => i.TotalWithDeduction);
             string amountInWords = AmountInWordsService.Convert(total);
+
+            // Глобальная настройка «копия в производство»: подставляем последний выбор
+            // пользователя (хранится в settings.json), чтобы каждый заказ открывался с ним.
+            LastPrintSettings.IncludeProductionCopy = AppSettingsService.LoadIncludeProductionCopy();
 
             var document = PrintService.BuildFlowDocument(validItems, ClientInfo, total, amountInWords);
             if (document == null)

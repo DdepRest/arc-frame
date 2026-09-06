@@ -12,6 +12,9 @@ namespace MosquitoNetCalculator.Models
         /// <summary>Кол-во копий (≥ 1).</summary>
         public int Copies { get; set; } = 1;
 
+        /// <summary>Добавлять второй комплект с электронной печатью «В ПРОИЗВОДСТВО».</summary>
+        public bool IncludeProductionCopy { get; set; } = false;
+
         /// <summary>Разбивка по копиям (collation).</summary>
         public bool Collated { get; set; } = true;
 

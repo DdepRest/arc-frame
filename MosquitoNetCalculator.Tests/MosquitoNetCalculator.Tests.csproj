@@ -31,6 +31,9 @@
     <None Update="AI\golden-cases.json" CopyToOutputDirectory="PreserveNewest" />
     <!-- Fixture for the bundled-Tesseract OCR smoke test (rendered text). -->
     <None Update="fixtures\ocr-fixture.png" CopyToOutputDirectory="PreserveNewest" />
+    <!-- Электронная печать «В ПРОИЗВОДСТВО» — сцена в тестах FixedDocumentBuilder.
+         Копируется в output теста, чтобы ProductionStampImage находил файл. -->
+    <Content Include="..\docs\images\ВПРОИЗВОДСТВО.png" Link="ВПРОИЗВОДСТВО.png" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 
 </Project>

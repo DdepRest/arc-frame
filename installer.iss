@@ -73,6 +73,7 @@ Name: "desktopicon"; Description: "Создать ярлык на &рабоче�
 Source: "publish\MosquitoNetCalculator.exe"; DestDir: "{app}"; Flags: ignoreversion
 Source: "publish\*.dll"; DestDir: "{app}"; Flags: ignoreversion
 Source: "publish\app_icon.ico"; DestDir: "{app}"; Flags: ignoreversion
+Source: "publish\ВПРОИЗВОДСТВО.png"; DestDir: "{app}"; Flags: ignoreversion
 Source: "publish\check-deps.bat"; DestDir: "{app}"; Flags: ignoreversion
 Source: "publish\check-deps.ps1"; DestDir: "{app}"; Flags: ignoreversion
 Source: "publish\runtimes\*"; DestDir: "{app}\runtimes"; Flags: ignoreversion recursesubdirs createallsubdirs

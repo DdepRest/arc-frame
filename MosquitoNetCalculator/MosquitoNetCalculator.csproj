@@ -10,7 +10,7 @@
     <!-- Windows.Media.Ocr (System.WindowsRuntime) needs explicit TFM. Pin to
          the 17763 SDK that ships with .NET 8; the project compiles clean. -->
     <ApplicationIcon>Resources\app_icon.ico</ApplicationIcon>
-    <Version>3.48.7</Version>
+    <Version>3.49.0</Version>
     <RuntimeIdentifiers>win-x64</RuntimeIdentifiers>
     <!-- Treat every compiler / NuGet warning as an error so the build fails
          closed if any future change reintroduces a warning. The current
@@ -23,7 +23,7 @@
 
   <ItemGroup>
     <!-- QuestPDF — native PDF generation for КП export. -->
-    <PackageReference Include="QuestPDF" Version="2024.7.0" />
+    <PackageReference Include="QuestPDF" Version="2024.12.0" />
     <PackageReference Include="Tesseract" Version="5.2.0" />
   </ItemGroup>
 
@@ -65,6 +65,9 @@
 
   <ItemGroup>
     <Content Include="prices.json" CopyToOutputDirectory="PreserveNewest" />
+    <!-- Электронная печать «В ПРОИЗВОДСТВО» — копируется рядом с exe (флэт),
+         чтобы FixedDocumentBuilder и PdfExportService находили её одинаково. -->
+    <Content Include="..\docs\images\ВПРОИЗВОДСТВО.png" Link="ВПРОИЗВОДСТВО.png" CopyToOutputDirectory="PreserveNewest" />
     <!-- Bundled OCR language data (rus/eng, tessdata_fast). Flattened to
          <output>/tessdata/ so AttachmentOcrService finds it next to the exe;
          the ZIP and the installer ship the same folder. -->

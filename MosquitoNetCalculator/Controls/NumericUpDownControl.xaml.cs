@@ -34,6 +34,20 @@ namespace MosquitoNetCalculator.Controls
             set => SetValue(ValueProperty, value);
         }
 
+        public static readonly DependencyProperty MinimumProperty =
+            DependencyProperty.Register(
+                nameof(Minimum),
+                typeof(int),
+                typeof(NumericUpDownControl),
+                new FrameworkPropertyMetadata(1));
+
+        /// <summary>Минимально допустимое значение (по умолчанию 1). Для счётчика копий = 0.</summary>
+        public int Minimum
+        {
+            get => (int)GetValue(MinimumProperty);
+            set => SetValue(MinimumProperty, value);
+        }
+
         /// <summary>Событие изменения Value — позволяет подписчикам реагировать без TextBox.</summary>
         public event RoutedPropertyChangedEventHandler<int>? ValueChanged;
 
@@ -84,7 +98,7 @@ namespace MosquitoNetCalculator.Controls
 
         private void UpdateTextBox(int val)
         {
-            if (val < 1) val = 1;
+            if (val < Minimum) val = Minimum;
             _isUpdatingText = true;
             ValueTextBox.Text = val.ToString();
             _isUpdatingText = false;
@@ -94,7 +108,7 @@ namespace MosquitoNetCalculator.Controls
 
         private void Minus_Click(object sender, RoutedEventArgs e)
         {
-            if (Value > 1)
+            if (Value > Minimum)
                 Value--;
         }
 
@@ -132,7 +146,7 @@ namespace MosquitoNetCalculator.Controls
         {
             if (string.IsNullOrWhiteSpace(ValueTextBox.Text) ||
                 !MoneyFormatService.TryParseInt(ValueTextBox.Text, out int result) ||
-                result < 1)
+                result < Minimum)
             {
                 UpdateTextBox(Value);
             }
@@ -144,7 +158,7 @@ namespace MosquitoNetCalculator.Controls
         {
             if (_isUpdatingText) return;
             // Единый парсер: «2 150» с пробелом-разделителем тоже распознаётся.
-            if (MoneyFormatService.TryParseInt(ValueTextBox.Text, out int result) && result >= 1)
+            if (MoneyFormatService.TryParseInt(ValueTextBox.Text, out int result) && result >= Minimum)
                 Value = result;
         }
     }

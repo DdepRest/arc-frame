@@ -87,6 +87,7 @@ Or run: agents/scripts/what-to-update.ps1 (git diff --name-only) -- the script r
 | `Services/OfficeStatsCalculator.cs` | `CURRENT_STATE.md`, `CHANGELOG.md` (Админ-панель «Статистика»: чистая логика кол-ва заказов по офисам) |
 | `Services/OfficeDeviceGrouping.cs` | `CURRENT_STATE.md`, `CHANGELOG.md` (Админ-панель: дедупликация устройств офиса по имени машины (один ПК = одно устройство, легаси-записи)) |
 | `Services/OfficeReportScheduler.cs` | `CURRENT_STATE.md`, `CHANGELOG.md` (Админ-панель: периодическая отправка отчёта офиса каждые 30 мин (живые статусы/статистика)) |
+| `Services/ProductionStampImage.cs` | `CURRENT_STATE.md`, `CHANGELOG.md` (Электронная печать «В ПРОИЗВОДСТВО»: единый доступ к изображению для печати и PDF (позиция/размер/политика «нет файла»)) |
 
 ### Controls (WPF UI)
 
@@ -178,4 +179,4 @@ Use agents/scripts/what-to-update.ps1 to get the list of docs to update - the sc
 
 ## Last verified
 
-2026-08-17 (generated from JSON)
+2026-09-02 (generated from JSON)

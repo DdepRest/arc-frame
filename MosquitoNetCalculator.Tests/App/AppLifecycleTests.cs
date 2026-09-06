@@ -346,6 +346,40 @@ namespace MosquitoNetCalculator.Tests.App
             Assert.Contains("if (!IsInitialized) return;", match.Value);
         }
 
+        // ─────────────────────────────────────────────────────────
+        //  Regression guard: «Копии»=0 разрешено ТОЛЬКО с «В производство»
+        //  WPF raises Unchecked only when the value CHANGES. On initial load
+        //  with the flag already off, IsChecked=false fires no event, so
+        //  UpdateCopiesMinimum() was never called and Minimum stayed 0 —
+        //  letting the user drop copies to 0 with the flag off. The fix calls
+        //  it explicitly in RestoreSettings and normalizes in CollectSettingsInto.
+        // ─────────────────────────────────────────────────────────
+
+        [Fact]
+        public void PrintPreview_EnforcesCopiesMin_WithProductionCopyOff()
+        {
+            var src = ReadSource("Controls/PrintPreviewControl.xaml.cs");
+
+            var restore = Regex.Match(
+                src,
+                @"private\s+void\s+RestoreSettings\s*\(\s*\)\s*\{[\s\S]*?^\s{8}\}",
+                RegexOptions.Multiline);
+            Assert.True(restore.Success,
+                "RestoreSettings() method not found in PrintPreviewControl.xaml.cs. " +
+                "The method may have been renamed or removed.");
+            Assert.Contains("UpdateCopiesMinimum();", restore.Value);
+
+            var collect = Regex.Match(
+                src,
+                @"private\s+void\s+CollectSettingsInto\s*\([\s\S]*?^\s{8}\}",
+                RegexOptions.Multiline);
+            Assert.True(collect.Success,
+                "CollectSettingsInto() method not found in PrintPreviewControl.xaml.cs. " +
+                "The method may have been renamed or removed.");
+            Assert.Contains("if (!target.IncludeProductionCopy)", collect.Value);
+            Assert.Contains("Math.Max(1, target.Copies)", collect.Value);
+        }
+
         /// <summary>
         /// Pumps dispatcher messages on the calling thread until <paramref name="timeout"/>
         /// elapses or <see cref="DispatcherFrame.Continue"/> becomes false.

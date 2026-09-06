@@ -35,8 +35,9 @@ namespace MosquitoNetCalculator.Services
             List<OrderItem> items,
             ClientInfo clientInfo,
             double totalAmount,
-            string amountInWords)
-            => _pdfExportService.Export(filePath, items, clientInfo, totalAmount, amountInWords);
+            string amountInWords,
+            PrintSettings? attemptSettings = null)
+            => _pdfExportService.Export(filePath, items, clientInfo, totalAmount, amountInWords, attemptSettings);
 
         // Static proxies to specialized components (preserved for backward compatibility).
 

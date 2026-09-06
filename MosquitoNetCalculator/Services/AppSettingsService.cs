@@ -31,13 +31,6 @@ namespace MosquitoNetCalculator.Services
             public string Theme { get; set; } = "light";
             public string ContractPrefix { get; set; } = "1";
             public string LocationName { get; set; } = "";
-            // EASTER-EGG v3.43.2.9 — Slopes PRO upsell 'unlocked' flag.
-            // Semantics: true = user has clicked «Оплатить» + OK (unlocked permanently);
-            //            false = user has only seen the joke but not paid (loop forever).
-            // Safe to delete when joke is removed: JSON deserializer ignores
-            // unknown keys, so existing settings.json with this key stays valid
-            // even after we drop the backing field.
-            public bool SlopesProUpsellUnlocked { get; set; } = false;
             public bool FirstRunComplete { get; set; } = false;
             // BETA banner for slope auto-calculation. Once dismissed, stays hidden.
             public bool SlopeBetaBannerHidden { get; set; } = false;
@@ -53,6 +46,8 @@ namespace MosquitoNetCalculator.Services
             // Стабильный ID устройства (один ПК = один отчёт в gist). Генерируется
             // один раз при первом запуске — см. LoadOrCreateDeviceId.
             public string DeviceId { get; set; } = "";
+            // Глобальная настройка «добавить копию в производство» в окне печати.
+            public bool IncludeProductionCopy { get; set; } = false;
         }
 
         private static Settings LoadSettings()
@@ -140,47 +135,6 @@ namespace MosquitoNetCalculator.Services
             {
                 var settings = LoadSettings();
                 settings.FirstRunComplete = true;
-                SaveSettings(settings);
-            }
-        }
-
-        // ─────────────────────────────────────────────────────────
-        //  EASTER-EGG v3.43.2.9 — Slopes PRO upsell 'unlocked' flag.
-        //  Remove these two methods + the Settings.SlopesProUpsellUnlocked field
-        //  to disable the joke: no other call sites, no dependencies.
-        //  v3.43.2.8 had 'SlopesProUpsellSeen' (mark-before-show semantics,
-        //  loop-prevention).
-        //  v3.43.2.9 renames to 'Unlocked' (mark-after-Pay semantics, strict
-        //  loop until explicit Оплатить → OK).
-        //  Backward-compat: old key 'SlopesProUpsellSeen' is simply ignored by
-        //  System.Text.Json on read — user sees joke once more on first run after
-        //  upgrade, which is correct (they haven't actually unlocked it).
-        // ─────────────────────────────────────────────────────────
-
-        /// <summary>
-        /// Returns true if the user has UNLOCKED the Slopes panel by clicking
-        /// «Оплатить» → шутка → OK. Until unlocked, the joke dialog keeps
-        /// appearing every time the Slopes menu is clicked (strict loop).
-        /// </summary>
-        public static bool IsSlopesProUpsellUnlocked()
-        {
-            lock (_lock)
-            {
-                var settings = LoadSettings();
-                return settings.SlopesProUpsellUnlocked;
-            }
-        }
-
-        /// <summary>
-        /// Marks the Slopes panel as unlocked (joke dialog will never appear again).
-        /// Called only on the explicit «Оплатить» → OK happy-path.
-        /// </summary>
-        public static void MarkSlopesProUpsellUnlocked()
-        {
-            lock (_lock)
-            {
-                var settings = LoadSettings();
-                settings.SlopesProUpsellUnlocked = true;
                 SaveSettings(settings);
             }
         }
@@ -439,6 +393,32 @@ namespace MosquitoNetCalculator.Services
         //  GUID при первом запуске и хранит его в settings.json, чтобы
         //  не перетирать отчёты других устройств того же офиса.
         // ─────────────────────────────────────────────────────────
+
+        /// <summary>
+        /// Загружает глобальную настройку «добавить копию в производство».
+        /// По умолчанию false (копия не добавляется).
+        /// </summary>
+        public static bool LoadIncludeProductionCopy()
+        {
+            lock (_lock)
+            {
+                var settings = LoadSettings();
+                return settings.IncludeProductionCopy;
+            }
+        }
+
+        /// <summary>
+        /// Сохраняет глобальную настройку «добавить копию в производство».
+        /// </summary>
+        public static void SaveIncludeProductionCopy(bool value)
+        {
+            lock (_lock)
+            {
+                var settings = LoadSettings();
+                settings.IncludeProductionCopy = value;
+                SaveSettings(settings);
+            }
+        }
 
         /// <summary>
         /// Возвращает стабильный ID этого устройства (GUID). При первом вызове

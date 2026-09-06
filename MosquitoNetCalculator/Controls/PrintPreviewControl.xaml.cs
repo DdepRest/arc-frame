@@ -13,6 +13,7 @@ using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Threading;
 using Microsoft.Win32;
+using System.Windows.Media.Imaging;
 using MosquitoNetCalculator.Models;
 using MosquitoNetCalculator.Services;
 
@@ -349,7 +350,8 @@ namespace MosquitoNetCalculator.Controls
 
         private void RestoreSettings()
         {
-            CopiesControl.Value = Math.Max(1, _settings.Copies);
+            CopiesControl.Value = Math.Max(0, _settings.Copies);
+            ProductionCopyCheck.IsChecked = _settings.IncludeProductionCopy;
             CollatedCheck.IsChecked = _settings.Collated;
             ColorBtn.IsChecked = _settings.Color;
             BwBtn.IsChecked = !_settings.Color;
@@ -372,13 +374,24 @@ namespace MosquitoNetCalculator.Controls
             SinglePageControl.Value = Math.Max(1, _settings.SinglePage);
 
             UpdatePageModeVisibility();
+
+            // Если флажок «В производство» уже был выключен (и не менялся),
+            // WPF не поднимет Unchecked-событие при присваивании IsChecked=false,
+            // поэтому UpdateCopiesMinimum() не вызовется сам — вызываем явно,
+            // чтобы Minimum для «Копии» стал 1 (нельзя поставить 0 без печати).
+            UpdateCopiesMinimum();
         }
 
         private void CollectSettingsInto(PrintSettings target)
         {
             if (PrinterCombo.SelectedItem is PrintQueue selectedQueue && PrinterCombo.IsEnabled)
                 target.PrinterName = selectedQueue.FullName;
-            target.Copies = Math.Max(1, CopiesControl.Value);
+            target.Copies = Math.Max(0, CopiesControl.Value);
+            target.IncludeProductionCopy = ProductionCopyCheck.IsChecked == true;
+            // Нормализация: без копии «В производство» 0 копий недопустимы —
+            // печатать было бы нечего. Не даём сохранить такое состояние.
+            if (!target.IncludeProductionCopy)
+                target.Copies = Math.Max(1, target.Copies);
             target.Collated = CollatedCheck.IsChecked == true;
             target.Color = ColorBtn.IsChecked == true;
 
@@ -398,6 +411,80 @@ namespace MosquitoNetCalculator.Controls
                 (target.PageFrom, target.PageTo) = (target.PageTo, target.PageFrom);
 
             target.SinglePage = Math.Max(1, SinglePageControl.Value);
+        }
+
+        // ═══════════════════════════════════════════════════════════════
+        //  Доп. копия в производство — предпросмотр печати
+        //  Печать накладывается ОТДЕЛЬНЫМ слоем поверх страницы (StampOverlay),
+        //  поэтому НЕ сдвигает заголовок/таблицу вниз — попадает в уже
+        //  существующую свободную зону в верхнем левом углу.
+        // ═══════════════════════════════════════════════════════════════
+
+        private void ProductionCopyCheck_Changed(object sender, RoutedEventArgs e)
+        {
+            UpdateCopiesMinimum();
+            UpdateStampOverlay();
+        }
+
+        /// <summary>
+        /// «Копии» можно уменьшить до 0 ТОЛЬКО когда включена копия «В производство»
+        /// (0 = напечатать только лист со штампом). При выключенном флажке минимум = 1,
+        /// чтобы нельзя было получить «пустой» заказ на печать.
+        /// </summary>
+        private void UpdateCopiesMinimum()
+        {
+            if (CopiesControl == null) return;
+
+            bool allowZero = ProductionCopyCheck.IsChecked == true;
+            CopiesControl.Minimum = allowZero ? 0 : 1;
+            if (CopiesControl.Value < CopiesControl.Minimum)
+                CopiesControl.Value = CopiesControl.Minimum;
+        }
+
+        private void UpdateStampOverlay()
+        {
+            if (StampOverlay == null || StampImage == null) return;
+
+            if (ProductionCopyCheck.IsChecked == true
+                && StampImage.Source == null
+                && ProductionStampImage.TryGetPath(out var path))
+            {
+                StampImage.Source = new BitmapImage(new Uri(path, UriKind.Absolute));
+            }
+
+            ApplyStampScale();
+            GateStampToFirstPage();
+        }
+
+        /// <summary>
+        /// Печать ставится только на ПЕРВУЮ страницу производственной копии, поэтому
+        /// в предпросмотре overlay виден лишь на первом листе.
+        /// </summary>
+        private void GateStampToFirstPage()
+        {
+            if (StampOverlay == null) return;
+
+            bool includeStamp = ProductionCopyCheck.IsChecked == true;
+            int currentPage = _innerViewer != null ? _innerViewer.MasterPageNumber : 1;
+            StampOverlay.Visibility =
+                (includeStamp && currentPage == 1) ? Visibility.Visible : Visibility.Collapsed;
+        }
+
+        private void ApplyStampScale()
+        {
+            if (StampImage == null) return;
+
+            // Печать масштабируется вместе с документом (зум) и держится
+            // у верхнего левого угла страницы без сдвига контента.
+            double s = _currentZoom;
+            StampImage.Width = ProductionStampImage.WidthDip * s;
+            StampImage.Height = ProductionStampImage.HeightDip * s;
+            // Те же отступы, что и в печати/PDF: левый — на левой линии контента КП,
+            // верх — в свободной зоне над заголовком (единые константы ProductionStampImage).
+            StampImage.Margin = new Thickness(
+                ProductionStampImage.LeftOffsetDip * s,
+                ProductionStampImage.TopOffsetDip * s,
+                0, 0);
         }
 
         // ═══════════════════════════════════════════════════════════════
@@ -557,6 +644,8 @@ namespace MosquitoNetCalculator.Controls
                 PrevPageBtn.IsEnabled = _innerViewer.CanGoToPreviousPage;
             if (NextPageBtn != null)
                 NextPageBtn.IsEnabled = _innerViewer.CanGoToNextPage;
+
+            GateStampToFirstPage();
         }
 
         // ═══════════════════════════════════════════════════════════════
@@ -578,6 +667,18 @@ namespace MosquitoNetCalculator.Controls
                 if (result != MessageBoxResult.Yes)
                     return;
             }
+
+            if (attempt.Copies <= 0 && !attempt.IncludeProductionCopy)
+            {
+                MessageBox.Show(
+                    "Укажите хотя бы одну копию или включите копию «В производство».",
+                    "Печать",
+                    MessageBoxButton.OK,
+                    MessageBoxImage.Warning);
+                return;
+            }
+
+            WarnIfProductionStampMissing(attempt);
 
             PrintQueue? queue = PrinterCombo.SelectedItem as PrintQueue;
             if (queue == null)
@@ -668,7 +769,8 @@ namespace MosquitoNetCalculator.Controls
                 if (printResult.Type == PrintResultType.Success)
                 {
                     _settings = attempt;
-                    await SimulateProgressAsync(attempt.Copies);
+                    await SimulateProgressAsync(
+                        Math.Max(1, attempt.Copies + (attempt.IncludeProductionCopy ? 1 : 0)));
                     // Re-enable UI before closing — in overlay mode
                     // Closed may have no subscribers, leaving button disabled.
                     SetPrintingState(false);
@@ -813,9 +915,23 @@ namespace MosquitoNetCalculator.Controls
 
             if (dlg.ShowDialog() != true) return;
 
+            var currentSettings = CollectCurrentSettings();
+
+            if (currentSettings.Copies <= 0 && !currentSettings.IncludeProductionCopy)
+            {
+                MessageBox.Show(
+                    "Укажите хотя бы одну копию или включите копию «В производство».",
+                    "Экспорт PDF",
+                    MessageBoxButton.OK,
+                    MessageBoxImage.Warning);
+                return;
+            }
+
+            WarnIfProductionStampMissing(currentSettings);
+
             try
             {
-                _printService.ExportPdf(dlg.FileName, _items, _clientInfo, _totalAmount, _amountInWords);
+                _printService.ExportPdf(dlg.FileName, _items, _clientInfo, _totalAmount, _amountInWords, attemptSettings: currentSettings);
                 MessageBox.Show(
                     $"КП сохранён в PDF:\n{dlg.FileName}",
                     "Экспорт PDF",
@@ -839,6 +955,31 @@ namespace MosquitoNetCalculator.Controls
         /// <summary>
         /// Удаляет символы, недопустимые в именах файлов Windows.
         /// </summary>
+        private PrintSettings CollectCurrentSettings()
+        {
+            var current = _settings.Clone();
+            CollectSettingsInto(current);
+            return current;
+        }
+
+        /// <summary>
+        /// Если включена производственная копия, а изображение печати недоступно —
+        /// предупреждаем пользователя один раз (политика: продолжить, но без печати).
+        /// </summary>
+        private void WarnIfProductionStampMissing(PrintSettings settings)
+        {
+            if (settings.IncludeProductionCopy && !ProductionStampImage.TryGetPath(out _))
+            {
+                MessageBox.Show(
+                    "Изображение печати «В ПРОИЗВОДСТВО» не найдено.\n" +
+                    "Копия в производство будет сформирована БЕЗ печати.\n\n" +
+                    "Проверьте, что файл ВПРОИЗВОДСТВО.png находится рядом с программой.",
+                    "Печать «В производство»",
+                    MessageBoxButton.OK,
+                    MessageBoxImage.Warning);
+            }
+        }
+
         private static string SanitizeFileName(string name)
         {
             if (string.IsNullOrEmpty(name)) return string.Empty;
@@ -908,6 +1049,7 @@ namespace MosquitoNetCalculator.Controls
                 DocumentReader.Zoom = _currentZoom * 100;
                 UpdateZoomLabel();
                 CenterScrollViewer();
+                ApplyStampScale();
             }
             catch (Exception ex)
             {

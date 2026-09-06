@@ -2,6 +2,8 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Reflection;
+using System.Text;
+using System.Text.RegularExpressions;
 using MosquitoNetCalculator.Models;
 using MosquitoNetCalculator.Services;
 using Xunit;
@@ -40,6 +42,225 @@ namespace MosquitoNetCalculator.Tests.Services
             {
                 try { File.Delete(path); } catch { /* ignore cleanup errors */ }
             }
+        }
+
+        [Fact]
+        public void Export_WithProductionCopy_CreatesValidPdf()
+        {
+            var path = Path.Combine(Path.GetTempPath(), $"arc-test-{Guid.NewGuid()}.pdf");
+            try
+            {
+                var service = new PdfExportService();
+                var items = new List<OrderItem>
+                {
+                    new() { Name = "Anwis", Color = "Белый", Width = 1000, Height = 1000, Quantity = 1, Price = 1800, Total = 1800 }
+                };
+                var settings = new PrintSettings { IncludeProductionCopy = true };
+                service.Export(path, items, new ClientInfo { ContractNumber = "1-1" }, 1800, "", attemptSettings: settings);
+                Assert.True(File.Exists(path));
+                var fileInfo = new FileInfo(path);
+                Assert.True(fileInfo.Length > 0);
+                var header = File.ReadAllBytes(path).AsSpan(0, Math.Min(4, (int)fileInfo.Length));
+                Assert.True(header.SequenceEqual(new byte[] { 0x25, 0x50, 0x44, 0x46 }));
+            }
+            finally
+            {
+                try { File.Delete(path); } catch { /* ignore cleanup errors */ }
+            }
+        }
+
+        /// <summary>
+        /// Многостраничное КП + флажок «В производство»: штамп должен быть только на
+        /// ПЕРВОМ листе производственного комплекта (как в физической печати и в
+        /// предпросмотре), а не повторяться на каждой странице секции (баг page.Foreground()).
+        /// </summary>
+        [Fact]
+        public void Export_WithProductionCopy_Multipage_StampsOnlyFirstPageOfProductionSet()
+        {
+            var path = Path.Combine(Path.GetTempPath(), $"arc-test-{Guid.NewGuid()}.pdf");
+            try
+            {
+                var service = new PdfExportService();
+                var items = new List<OrderItem>();
+                for (int i = 0; i < 90; i++)
+                {
+                    items.Add(new()
+                    {
+                        Name = $"Окно {i} — длинное наименование для переноса",
+                        Color = "Белый", Width = 1000 + i, Height = 1000 + i,
+                        Quantity = 1, Price = 1800, Total = 1800
+                    });
+                }
+                var settings = new PrintSettings { IncludeProductionCopy = true, Copies = 1 };
+                service.Export(path, items, new ClientInfo { ContractNumber = "1-1" }, 1800 * 90, "", attemptSettings: settings);
+
+                var (totalPages, pagesWithImage) = CountPdfStructure(File.ReadAllBytes(path));
+                Assert.True(totalPages > 1, "КП из 90 позиций должен занимать больше одной страницы.");
+                Assert.True(pagesWithImage == 1, $"Штамп обязан быть ровно на одной странице, а найден на {pagesWithImage} из {totalPages}.");
+            }
+            finally
+            {
+                try { File.Delete(path); } catch { /* ignore cleanup errors */ }
+            }
+        }
+
+        /// <summary>
+        /// PDF-экспорт обязан учитывать режим «Страницы» (Single/Range) так же, как
+        /// физическая печать: выбор применяется к ЧИСТОМУ комплекту КП, копии повторяют
+        /// выбранный набор, производственная копия идёт целиком в конце.
+        /// </summary>
+        [Fact]
+        public void Export_SinglePage_ExportsOnlyThatCustomerPage_PlusProduction()
+        {
+            var path = Path.Combine(Path.GetTempPath(), $"arc-test-{Guid.NewGuid()}.pdf");
+            try
+            {
+                var service = new PdfExportService();
+                var items = MakeLongItemList(); // многостраничное КП
+                var settings = new PrintSettings
+                {
+                    Copies = 1,
+                    IncludeProductionCopy = true,
+                    Pages = PageMode.Single,
+                    SinglePage = 1,
+                };
+                service.Export(path, items, new ClientInfo { ContractNumber = "1-1" }, 100, "", attemptSettings: settings);
+
+                var (totalPages, _) = CountPdfStructure(File.ReadAllBytes(path));
+                int images = CountImageObjectsFileWide(File.ReadAllBytes(path));
+                // 1 чистая стр. (выбрана одна) + весь производственный комплект.
+                Assert.True(totalPages >= 2, $"Ожидалось >= 2 страниц (1 чистая + производственный комплект), получено {totalPages}.");
+                // Штамп пережил TakePages: image + /SMask = 2 XObject-картинки.
+                Assert.True(images >= 2, $"Штамп потерян при извлечении страниц: image-объектов {images}.");
+            }
+            finally
+            {
+                try { File.Delete(path); } catch { /* cleanup */ }
+            }
+        }
+
+        [Fact]
+        public void Export_PageRange_ExportsOnlyRange_PlusProduction()
+        {
+            var path = Path.Combine(Path.GetTempPath(), $"arc-test-{Guid.NewGuid()}.pdf");
+            try
+            {
+                var service = new PdfExportService();
+                var items = MakeLongItemList(); // многостраничное КП
+                var settings = new PrintSettings
+                {
+                    Copies = 1,
+                    IncludeProductionCopy = true,
+                    Pages = PageMode.Range,
+                    PageFrom = 1,
+                    PageTo = 2,
+                };
+                service.Export(path, items, new ClientInfo { ContractNumber = "1-1" }, 100, "", attemptSettings: settings);
+
+                var (totalPages, _) = CountPdfStructure(File.ReadAllBytes(path));
+                int stampImages = CountImageObjectsFileWide(File.ReadAllBytes(path));
+                // Сравниваем с полным экспортом того же КП: чистых страниц должно стать меньше.
+                var fullPath = Path.Combine(Path.GetTempPath(), $"arc-test-{Guid.NewGuid()}.pdf");
+                try
+                {
+                    var fullSettings = new PrintSettings { Copies = 1, IncludeProductionCopy = true, Pages = PageMode.All };
+                    service.Export(fullPath, items, new ClientInfo { ContractNumber = "1-1" }, 100, "", attemptSettings: fullSettings);
+                    var (fullPages, _) = CountPdfStructure(File.ReadAllBytes(fullPath));
+
+                    Assert.True(totalPages < fullPages,
+                        $"Range-экспорт ({totalPages} стр.) должен быть меньше полного ({fullPages} стр.).");
+                    // Штамп пережил TakePages: image + /SMask = 2 XObject-картинки.
+                    Assert.True(stampImages >= 2, $"Штамп потерян при извлечении страниц: image-объектов {stampImages}.");
+                }
+                finally
+                {
+                    try { File.Delete(fullPath); } catch { /* cleanup */ }
+                }
+            }
+            finally
+            {
+                try { File.Delete(path); } catch { /* cleanup */ }
+            }
+        }
+
+        [Fact]
+        public void Export_PageRange_ClampsOutOfRangeValues()
+        {
+            var path = Path.Combine(Path.GetTempPath(), $"arc-test-{Guid.NewGuid()}.pdf");
+            try
+            {
+                var service = new PdfExportService();
+                var items = new List<OrderItem>
+                {
+                    new() { Name = "Anwis", Color = "Белый", Width = 1000, Height = 1000, Quantity = 1, Price = 1800, Total = 1800 }
+                };
+                // Диапазон за пределами документа (999..1001) клэмпится к фактическому числу страниц.
+                var settings = new PrintSettings
+                {
+                    Copies = 1,
+                    Pages = PageMode.Range,
+                    PageFrom = 999,
+                    PageTo = 1001,
+                };
+                service.Export(path, items, new ClientInfo { ContractNumber = "1-1" }, 1800, "", attemptSettings: settings);
+
+                var (totalPages, _) = CountPdfStructure(File.ReadAllBytes(path));
+                Assert.True(totalPages >= 1, "Клэмпинг диапазона обязан дать хотя бы одну страницу.");
+            }
+            finally
+            {
+                try { File.Delete(path); } catch { /* cleanup */ }
+            }
+        }
+
+        private static List<OrderItem> MakeLongItemList()
+        {
+            var items = new List<OrderItem>();
+            for (int i = 0; i < 90; i++)
+            {
+                items.Add(new()
+                {
+                    Name = $"Окно {i} — длинное наименование для переноса",
+                    Color = "Белый", Width = 1000 + i, Height = 1000 + i,
+                    Quantity = 1, Price = 1800, Total = 1800
+                });
+            }
+            return items;
+        }
+
+        /// <summary>
+        /// Считает XObject-картинки (/Subtype /Image) ПО ВСЕМУ файлу.
+        /// PNG с прозрачностью даёт пары image + /SMask, поэтому штамп = 2.
+        /// После DocumentOperation ресурсы страницы живут в отдельных объектах —
+        /// постраничный подсчёт по блоку объекта страницы там не работает.
+        /// </summary>
+        private static int CountImageObjectsFileWide(byte[] pdfBytes)
+        {
+            string text = Encoding.Latin1.GetString(pdfBytes);
+            return System.Text.RegularExpressions.Regex.Matches(text, @"/Subtype\s*/Image").Count;
+        }
+
+        /// <summary>
+        /// Считает страницы и страницы с картинками, вырезая блок объекта
+        /// «N 0 obj … endobj»: окно не заезжает на соседние объекты PDF.
+        /// </summary>
+        private static (int totalPages, int pagesWithImage) CountPdfStructure(byte[] pdfBytes)
+        {
+            string text = Encoding.Latin1.GetString(pdfBytes);
+            int totalPages = 0;
+            int pagesWithImage = 0;
+            foreach (Match pm in Regex.Matches(text, @"/Type\s*/Page[\s>/]"))
+            {
+                int objStart = text.LastIndexOf("obj", pm.Index, Math.Min(pm.Index, text.Length));
+                int blockStart = objStart >= 0 ? text.LastIndexOf('\n', objStart) + 1 : 0;
+                int endObj = text.IndexOf("endobj", pm.Index);
+                int blockEnd = endObj >= 0 ? endObj : text.Length;
+                string block = text.Substring(blockStart, Math.Max(0, blockEnd - blockStart));
+                totalPages++;
+                if (Regex.IsMatch(block, @"/Subtype\s*/Image") || Regex.IsMatch(block, @"/XObject"))
+                    pagesWithImage++;
+            }
+            return (totalPages, pagesWithImage);
         }
 
         [Fact]

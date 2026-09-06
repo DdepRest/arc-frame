@@ -59,7 +59,6 @@ dotnet test MosquitoNetCalculator.Tests/MosquitoNetCalculator.Tests.csproj --no-
 | `NavigationService` | `Services/NavigationService.cs` | Управление активной кнопкой навигации, `SetActiveNavButton`, expand/collapse nav panel, hotkeys |
 | `OverlayManager` | `Services/OverlayManager.cs` | Открытие/закрытие оверлеев, анимации, `CloseAllOverlays`, `HideOverlayInstant`, ZIndex |
 | `SlopeOverlayCoordinator` | `Services/SlopeOverlayCoordinator.cs` | `ShowSlopeOverlay`, `EditSlopeItem`, загрузка цен откосов, поиск парной строки «Работа за откос» |
-| `SlopesProUpsellGate` | `Services/SlopesProUpsellGate.cs` | Easter-egg логика диалога PRO (или удаление по чеклисту CHANGELOG) |
 
 ### 3.3. Пошаговые действия
 
@@ -78,9 +77,8 @@ dotnet test MosquitoNetCalculator.Tests/MosquitoNetCalculator.Tests.csproj --no-
    - Инкапсулирует загрузку цен откосов из `PriceService`, создание/обновление `SlopeCalculation`, поиск парной строки «Работа за откос».
    - Устранить дублирование между `ShowSlopeOverlay` и `EditSlopeItem`.
 
-4. **(Опционально) удалить Easter-egg `EasterProUpsellWindow`**
-   - Если владелец согласен — удалить `EasterMenuService`, `EasterProUpsellWindow`, `SlopesProUpsellUnlocked` из настроек.
-   - Иначе вынести логику в `SlopesProUpsellGate`.
+4. Удалить устаревший Easter-egg PRO-подписки для откосов.
+   - Удалены устаревшие компоненты PRO-апселла и состояние upsell из настроек; навигация открывает автоматический расчёт откосов напрямую.
 
 5. **Обновить `MainWindow.xaml.cs`**
    - Оставить только делегирование событий XAML, инициализацию сервисов и высокоуровневую координацию.
@@ -420,4 +418,4 @@ powershell -ExecutionPolicy Bypass -File agents/scripts/validate-docs.ps1
 
 2026-07-12 — **Фаза 2 завершена.** `UpdateService.cs` 910→608 строк (−33%). 5 компонентов: `VersionResolver`, `IdleDetector`, `UpdateVerifier`, `UpdateManifestClient`, `UpdateDownloader`. +46 тестов. **978/978 tests pass.** Бизнес-логика не затронута.
 
-**Фаза 1 также завершена.** `MainWindow.xaml.cs` 1051→760 строк (−28%). 4 сервиса: `NavigationService`, `OverlayManager`, `SlopeOverlayCoordinator`, `SlopesProUpsellGate`. +26 тестов.
+**Фаза 1 также завершена.** `MainWindow.xaml.cs` 1051→760 строк (−28%). 3 сервиса: `NavigationService`, `OverlayManager`, `SlopeOverlayCoordinator`. +26 тестов.

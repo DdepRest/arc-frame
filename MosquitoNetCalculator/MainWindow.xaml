@@ -659,9 +659,7 @@
                                     <TextBlock x:Name="NavIconSlope" Text="&#xE790;"
                                                FontSize="20" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                                 </Grid>
-                                <!-- EASTER-EGG v3.43.2.8 — "Откосы" → "Авто · Откосы" (компактно: 13 chars,
-                                     умещается в 108px-ширину раскрытого nav menu; "Авто" сигнализирует,
-                                     что расчёт автоматический). Чтобы вернуть: заменить обратно на "Откосы". -->
+                                <!-- Автоматический просчёт откосов. -->
                                 <TextBlock x:Name="NavLabelSlope" Grid.Column="1" Text="Авто · Откосы" Opacity="1"
                                            Margin="10,0,0,0" FontSize="12" VerticalAlignment="Center"
                                            FontFamily="Segoe UI"/>
