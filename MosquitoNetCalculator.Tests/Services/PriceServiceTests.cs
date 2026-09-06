@@ -320,5 +320,27 @@ namespace MosquitoNetCalculator.Tests.Services
             Assert.Contains(prices, p => p.Name == "Короб");
             Assert.Contains(prices, p => p.Name == "Дверная сетка");
         }
+
+        // ─── Migration 6 (v3.49.0): «Работа за откос» 600 → 670 ₽/м.п. ─────
+        // Only the exact legacy default (600, no color) is bumped. User-
+        // customized prices (e.g. 650) must survive the upgrade untouched,
+        // and entries already at the new default must not be re-touched.
+        [Fact]
+        public void LoadPrices_Migration6_BumpsSlopeLaborDefault600To670()
+        {
+            var legacy = new List<PriceItem>
+            {
+                new() { Name = "Работа за откос", Color = "", Price = 600 }, // legacy default → 670
+                new() { Name = "Работа за откос", Color = "", Price = 650 }, // user-customized → stays
+                new() { Name = "Работа за откос", Color = "", Price = 670 }, // already new default → stays
+            };
+            File.WriteAllText(_pricesPath, JsonSerializer.Serialize(legacy));
+
+            var prices = _service.LoadPrices();
+
+            Assert.Contains(prices, p => p.Name == "Работа за откос" && p.Price == 670);
+            Assert.Contains(prices, p => p.Name == "Работа за откос" && p.Price == 650);
+            Assert.DoesNotContain(prices, p => p.Name == "Работа за откос" && p.Price == 600);
+        }
     }
 }

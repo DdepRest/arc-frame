@@ -43,7 +43,7 @@ namespace MosquitoNetCalculator.Services
             double startPrice = 135,
             double fProfilePrice = 250,
             double penoplexPrice = 450,
-            double laborPrice = 600)
+            double laborPrice = 670)
         {
             // v3.43.3: единый helper _ApplyDefaults покрывает все 10 материалов
             // и параметры размеров рамы. Calculate создаёт пустой SlopeCalculation,
@@ -281,7 +281,7 @@ namespace MosquitoNetCalculator.Services
             double startPrice = 135,
             double fProfilePrice = 250,
             double penoplexPrice = 450,
-            double laborPrice = 600)
+            double laborPrice = 670)
         {
             if (calc == null) throw new ArgumentNullException(nameof(calc));
             // v3.43.3: всё тело сведено в _ApplyDefaults — он же используется в Calculate.

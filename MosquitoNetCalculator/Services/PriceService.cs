@@ -40,7 +40,7 @@ namespace MosquitoNetCalculator.Services
         /// - Старт (откос): без цвета, 135 руб/полоса 3 м
         /// - F-планка (откос): без цвета, 250 руб/полоса 3 м
         /// - Пеноплекс (откос): без цвета, 450 руб/лист
-        /// - Работа за откос (цена за м.п.): без цвета, 600 руб/м.п.
+        /// - Работа за откос (цена за м.п.): без цвета, 670 руб/м.п.
         /// </summary>
         private static readonly List<PriceItem> DefaultPrices = new()
         {
@@ -113,7 +113,8 @@ namespace MosquitoNetCalculator.Services
             new PriceItem { Name = "Старт (откос)", Color = "", Price = 135 },
             new PriceItem { Name = "F-планка (откос)", Color = "", Price = 250 },
             new PriceItem { Name = "Пеноплекс (откос)", Color = "", Price = 450 },
-            new PriceItem { Name = "Работа за откос", Color = "", Price = 600 },
+            // Работа за откос — без цвета, цена за м.п. (v3.49.0: 600 → 670)
+            new PriceItem { Name = "Работа за откос", Color = "", Price = 670 },
         };
 
         /// <summary>
@@ -285,6 +286,18 @@ namespace MosquitoNetCalculator.Services
             int removedOtkos = prices.RemoveAll(p => p.Name == "Откос материал");
             if (removedOtkos > 0)
                 changed = true;
+
+            // ── Migration 6: bump "Работа за откос" 600 → 670 (v3.49.0) ──
+            // Only exact legacy default 600 is migrated; user-customized prices
+            // (e.g. 650) and entries that are already 670 are left untouched.
+            foreach (var p in prices)
+            {
+                if (p.Name == "Работа за откос" && string.IsNullOrEmpty(p.Color) && p.Price == 600)
+                {
+                    p.Price = 670;
+                    changed = true;
+                }
+            }
 
             return changed;
         }

@@ -426,6 +426,8 @@ Watchdog .bat запускает обновлённый `MosquitoNetCalculator.e
 - `MosquitoNetCalculator.Tests/Services/UpdateCheckSchedulerTests.cs` (NEW, 20+ tests)
 
 ## Last verified
+2026-09-06 (v3.49.0) — auto-synced from csproj (sync-version.ps1, CONTROL#13).
+
 2026-08-31 (v3.48.7) — документация зеркала переведена на rolling-тег `mirror-latest` (vX.Y.Z-mirror удалён); ограничения консолидированы (только текущий релиз, skip при ≥95 MiB, рост репозитория, CDN-задержка).
 
 2026-08-30 (v3.48.7) — auto-synced from csproj (sync-version.ps1, CONTROL#13).

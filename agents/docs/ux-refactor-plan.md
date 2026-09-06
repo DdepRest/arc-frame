@@ -211,6 +211,8 @@
 ---
 
 ## Last verified
+2026-09-06 (v3.49.0) — auto-synced from csproj (sync-version.ps1, CONTROL#13).
+
 2026-08-30 (v3.48.7) — auto-synced from csproj (sync-version.ps1, CONTROL#13).
 
 2026-08-30 (v3.48.6) — auto-synced from csproj (sync-version.ps1, CONTROL#13).

@@ -802,6 +802,8 @@ double perWindowSum = SlopeData.Sandwich.Sum + SlopeData.Foam.Sum
 - `MosquitoNetCalculator/Models/OrderItem.cs` (Width/Height setter'ы, ШиринаВвод/ВысотаВвод)
 
 ## Last verified
+2026-09-06 (v3.49.0, 2133/2133 tests pass) — цена «Работа за откос» повышена 600 → 670 ₽/м.п. (разрешение владельца): `DefaultPrices` + новая Migration 6 в `ApplyMigrations` (поднимает ТОЛЬКО точный legacy-дефолт 600, пользовательские цены не трогает), fallback-дефолты `SlopeCalculatorService.Calculate/UpdateInPlace`, `SlopeOverlayCoordinator.LoadSlopePrices`, `SlopePanelControl.Prices`. Тест: `LoadPrices_Migration6_BumpsSlopeLaborDefault600To670`.
+
 2026-08-30 (v3.48.7) — auto-synced from csproj (sync-version.ps1, CONTROL#13).
 
 2026-08-30 (v3.48.6) — auto-synced from csproj (sync-version.ps1, CONTROL#13).
