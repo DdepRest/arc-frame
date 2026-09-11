@@ -231,7 +231,7 @@
                                                                    Margin="0,0,0,8"/>
 
                                                         <!-- Тип -->
-                                                        <TextBlock Text="Тип" FontSize="10"
+                                                        <TextBlock Text="Тип" FontSize="11"
                                                                    Foreground="{DynamicResource TextMuted}" Margin="0,0,0,2"/>
                                                         <ComboBox ItemsSource="{Binding ClarificationForm.ProductTypes}"
                                                                   SelectedItem="{Binding ClarificationForm.SelectedType, UpdateSourceTrigger=PropertyChanged}"
@@ -239,7 +239,7 @@
                                                                   AutomationProperties.Name="Тип товара"/>
 
                                                         <!-- Размеры -->
-                                                        <TextBlock Text="Размеры, мм" FontSize="10"
+                                                        <TextBlock Text="Размеры, мм" FontSize="11"
                                                                    Foreground="{DynamicResource TextMuted}" Margin="0,0,0,2"/>
                                                         <Grid Margin="0,0,0,7">
                                                             <Grid.ColumnDefinitions>
@@ -260,7 +260,7 @@
                                                         </Grid>
 
                                                         <!-- Цвет -->
-                                                        <TextBlock Text="Цвет" FontSize="10"
+                                                        <TextBlock Text="Цвет" FontSize="11"
                                                                    Foreground="{DynamicResource TextMuted}" Margin="0,0,0,2"
                                                                    Visibility="{Binding ClarificationForm.ShowColor, Converter={StaticResource BoolToVisibility}}"/>
                                                         <ComboBox ItemsSource="{Binding ClarificationForm.Colors}"
@@ -270,7 +270,7 @@
                                                                   AutomationProperties.Name="Цвет"/>
 
                                                         <!-- Количество -->
-                                                        <TextBlock Text="Количество" FontSize="10"
+                                                        <TextBlock Text="Количество" FontSize="11"
                                                                    Foreground="{DynamicResource TextMuted}" Margin="0,0,0,2"/>
                                                         <TextBox Text="{Binding ClarificationForm.QuantityText, UpdateSourceTrigger=PropertyChanged}"
                                                                  Height="28" FontSize="12" Margin="0,0,0,7"
@@ -278,7 +278,7 @@
 
                                                         <!-- Anwis mode (only for Anwis products) -->
                                                         <StackPanel Visibility="{Binding ClarificationForm.IsAnwis, Converter={StaticResource BoolToVisibility}}">
-                                                            <TextBlock Text="Режим Anwis" FontSize="10"
+                                                            <TextBlock Text="Режим Anwis" FontSize="11"
                                                                        Foreground="{DynamicResource TextMuted}" Margin="0,0,0,2"/>
                                                             <ComboBox ItemsSource="{Binding ClarificationForm.AnwisModeOptions}"
                                                                       SelectedItem="{Binding ClarificationForm.SelectedAnwisMode, UpdateSourceTrigger=PropertyChanged}"
@@ -288,7 +288,7 @@
 
                                                         <!-- Монтаж (only for installation-eligible products) -->
                                                         <StackPanel Visibility="{Binding ClarificationForm.ShowInstallation, Converter={StaticResource BoolToVisibility}}">
-                                                            <TextBlock Text="Монтаж" FontSize="10"
+                                                            <TextBlock Text="Монтаж" FontSize="11"
                                                                        Foreground="{DynamicResource TextMuted}" Margin="0,0,0,2"/>
                                                             <ComboBox ItemsSource="{Binding ClarificationForm.InstallationOptions}"
                                                                       SelectedItem="{Binding ClarificationForm.SelectedInstallation, UpdateSourceTrigger=PropertyChanged}"
@@ -327,7 +327,7 @@
                                                             </Border>
                                                         </StackPanel>
                                                         <TextBlock Text="Действие ещё не выполнено — заказ не изменится, пока вы не нажмёте «Выполнить»."
-                                                                   FontSize="10"
+                                                                   FontSize="11"
                                                                    Foreground="{DynamicResource TextSecondary}"
                                                                    TextWrapping="Wrap"
                                                                    Margin="0,3,0,6"/>
@@ -404,7 +404,7 @@
                                                      labels and request telemetry are intentionally hidden from
                                                      the user-facing AI panel. -->
                                                 <TextBlock Text="{Binding Timestamp, StringFormat='{}{0:HH:mm}'}"
-                                                           FontSize="10.5"
+                                                           FontSize="11"
                                                            Foreground="{DynamicResource TextMuted}"
                                                            HorizontalAlignment="Right"
                                                            VerticalAlignment="Center"
@@ -499,7 +499,7 @@
                                                 <TextBlock Text="{Binding Timestamp, StringFormat='{}{0:HH:mm}'}"
                                                            Margin="0,5,0,0"
                                                            HorizontalAlignment="Right"
-                                                           FontSize="10.5"
+                                                           FontSize="11"
                                                            Foreground="{DynamicResource OnAccent}"
                                                            Opacity="0.72"/>
                                             </StackPanel>
@@ -795,7 +795,7 @@
                                  once a long message is being composed. -->
                             <Grid Grid.Row="1" Margin="9,1,9,3">
                                 <TextBlock Text="Enter — отправить · Shift+Enter — новая строка"
-                                           FontSize="10"
+                                           FontSize="11"
                                            Foreground="{DynamicResource TextMuted}"
                                            Opacity="0.72"
                                            VerticalAlignment="Center"

@@ -132,6 +132,19 @@ namespace MosquitoNetCalculator.Controls
         }
 
         /// <summary>
+        /// v3.50 split-button «Печать КП»: программный клик по кнопке экспорта PDF.
+        /// Публичный мост для ActionBar — переиспользует ВЕСЬ существующий путь
+        /// SavePdf_Click (диалог сохранения, настройки, QuestPDF), без дублирования.
+        /// </summary>
+        public void TriggerPdfExport() => SavePdf_Click(this, new RoutedEventArgs());
+
+        /// <summary>
+        /// v3.50 split-button «Печать КП»: программный вызов существующей печати
+        /// на принтер (Print_Click) — без дублирования диалогов и настроек.
+        /// </summary>
+        public void TriggerPrinterPrint() => Print_Click(this, new RoutedEventArgs());
+
+        /// <summary>
         /// Собирает текущие значения UI в объект настроек.
         /// Используется перед сохранением, чтобы ESC/закрытие оверлея
         /// не теряли изменения, внесённые пользователем после открытия.
@@ -659,22 +672,20 @@ namespace MosquitoNetCalculator.Controls
 
             if (attempt.Copies > 10)
             {
-                var result = MessageBox.Show(
-                    $"Количество копий ({attempt.Copies}) больше 10.\nВы точно хотите распечатать?",
-                    "Подтверждение",
-                    MessageBoxButton.YesNo,
-                    MessageBoxImage.Question);
-                if (result != MessageBoxResult.Yes)
+                // UX-06: fluent confirm instead of raw MessageBox.
+                if (!DialogService.ShowConfirm(
+                        $"Количество копий ({attempt.Copies}) больше 10.\nВы точно хотите распечатать?",
+                        "Печать",
+                        Window.GetWindow(this)))
                     return;
             }
 
             if (attempt.Copies <= 0 && !attempt.IncludeProductionCopy)
             {
-                MessageBox.Show(
+                DialogService.ShowMessage(
                     "Укажите хотя бы одну копию или включите копию «В производство».",
                     "Печать",
-                    MessageBoxButton.OK,
-                    MessageBoxImage.Warning);
+                    Window.GetWindow(this));
                 return;
             }
 
@@ -683,11 +694,10 @@ namespace MosquitoNetCalculator.Controls
             PrintQueue? queue = PrinterCombo.SelectedItem as PrintQueue;
             if (queue == null)
             {
-                MessageBox.Show(
+                DialogService.ShowMessage(
                     "Не удалось определить выбранный принтер.\nОбновите окно предпросмотра и попробуйте снова.",
                     "Ошибка печати",
-                    MessageBoxButton.OK,
-                    MessageBoxImage.Error);
+                    Window.GetWindow(this));
                 return;
             }
 
@@ -745,13 +755,12 @@ namespace MosquitoNetCalculator.Controls
                 // constructor / callsite throws. Surface it in error dialog.
                 string details = $"{ex.GetType().Name}: {ex.Message}\n\n{ex.StackTrace}";
                 Clipboard.SetText(details);
-                MessageBox.Show(
+                DialogService.ShowMessage(
                     $"Ошибка подготовки документа к печати:\n{ex.Message}\n\n" +
                     $"Тип: {ex.GetType().Name}\n" +
                     $"Полный stack trace скопирован в буфер обмена.",
                     "Ошибка печати",
-                    MessageBoxButton.OK,
-                    MessageBoxImage.Error);
+                    Window.GetWindow(this));
                 SetPrintingState(false);   // v3.43.2.6: re-enable button after failed build
                 return;
             }
@@ -779,31 +788,34 @@ namespace MosquitoNetCalculator.Controls
                 }
                 else if (printResult.IsRetryable)
                 {
-                    MessageBox.Show(
-                        printResult.UserMessage + "\n\nПовторить отправку на печать?",
-                        "Ошибка принтера",
-                        MessageBoxButton.YesNo,
-                        MessageBoxImage.Warning);
+                    // UX-06: fluent confirm; the answer is now honoured — "Да"
+                    // re-runs the print flow (the raw MessageBox previously
+                    // asked the same question and discarded the answer).
                     SetPrintingState(false);
+                    if (DialogService.ShowConfirm(
+                            printResult.UserMessage + "\n\nПовторить отправку на печать?",
+                            "Ошибка принтера",
+                            Window.GetWindow(this)))
+                    {
+                        Print_Click(sender, e);
+                    }
                 }
                 else
                 {
-                    MessageBox.Show(
+                    DialogService.ShowMessage(
                         printResult.UserMessage,
                         "Ошибка печати",
-                        MessageBoxButton.OK,
-                        MessageBoxImage.Error);
+                        Window.GetWindow(this));
                     SetPrintingState(false);
                 }
             }
             catch (Exception ex)
             {
                 Debug.WriteLine($"[PrintPreviewControl] Print_Click unexpected: {ex}");
-                MessageBox.Show(
+                DialogService.ShowMessage(
                     $"Неожиданная ошибка: {ex.Message}",
                     "Ошибка",
-                    MessageBoxButton.OK,
-                    MessageBoxImage.Error);
+                    Window.GetWindow(this));
                 SetPrintingState(false);
             }
         }
@@ -884,11 +896,10 @@ namespace MosquitoNetCalculator.Controls
         {
             if (_items.Count == 0)
             {
-                MessageBox.Show(
+                DialogService.ShowMessage(
                     "Нет позиций для экспорта в PDF.",
                     "Экспорт PDF",
-                    MessageBoxButton.OK,
-                    MessageBoxImage.Warning);
+                    Window.GetWindow(this));
                 return;
             }
 
@@ -919,11 +930,10 @@ namespace MosquitoNetCalculator.Controls
 
             if (currentSettings.Copies <= 0 && !currentSettings.IncludeProductionCopy)
             {
-                MessageBox.Show(
+                DialogService.ShowMessage(
                     "Укажите хотя бы одну копию или включите копию «В производство».",
                     "Экспорт PDF",
-                    MessageBoxButton.OK,
-                    MessageBoxImage.Warning);
+                    Window.GetWindow(this));
                 return;
             }
 
@@ -932,23 +942,21 @@ namespace MosquitoNetCalculator.Controls
             try
             {
                 _printService.ExportPdf(dlg.FileName, _items, _clientInfo, _totalAmount, _amountInWords, attemptSettings: currentSettings);
-                MessageBox.Show(
+                DialogService.ShowMessage(
                     $"КП сохранён в PDF:\n{dlg.FileName}",
                     "Экспорт PDF",
-                    MessageBoxButton.OK,
-                    MessageBoxImage.Information);
+                    Window.GetWindow(this));
             }
             catch (Exception ex)
             {
                 Debug.WriteLine($"[SavePdf_Click] ExportPdf failed: {ex}");
                 Clipboard.SetText(ex.ToString());
-                MessageBox.Show(
+                DialogService.ShowMessage(
                     $"Ошибка при сохранении PDF:\n{ex.Message}\n\n" +
                     $"Тип: {ex.GetType().Name}\n" +
                     $"Полный stack trace и QuestPDF layout tree скопированы в буфер обмена.",
                     "Экспорт PDF",
-                    MessageBoxButton.OK,
-                    MessageBoxImage.Error);
+                    Window.GetWindow(this));
             }
         }
 
@@ -970,13 +978,12 @@ namespace MosquitoNetCalculator.Controls
         {
             if (settings.IncludeProductionCopy && !ProductionStampImage.TryGetPath(out _))
             {
-                MessageBox.Show(
+                DialogService.ShowMessage(
                     "Изображение печати «В ПРОИЗВОДСТВО» не найдено.\n" +
                     "Копия в производство будет сформирована БЕЗ печати.\n\n" +
                     "Проверьте, что файл ВПРОИЗВОДСТВО.png находится рядом с программой.",
                     "Печать «В производство»",
-                    MessageBoxButton.OK,
-                    MessageBoxImage.Warning);
+                    Window.GetWindow(this));
             }
         }
 
@@ -1022,12 +1029,6 @@ namespace MosquitoNetCalculator.Controls
         private void ZoomOut_Click(object sender, RoutedEventArgs e) { _isUserZoom = true; ApplyZoom(_currentZoom - ZoomStep); }
         private void ZoomIn_Click(object sender, RoutedEventArgs e) { _isUserZoom = true; ApplyZoom(_currentZoom + ZoomStep); }
         private void ZoomReset_Click(object sender, RoutedEventArgs e) { _isUserZoom = false; ApplyZoom(ZoomDefault); }
-        private void ZoomFitPlus_Click(object sender, RoutedEventArgs e)
-        {
-            _isUserZoom = true;
-            double fitPlus = Math.Min(ZoomDefault, _fitZoom + 0.2);
-            ApplyZoom(fitPlus);
-        }
         private void ZoomFit_Click(object sender, RoutedEventArgs e) { _isUserZoom = false; FitToViewport(); }
 
         private void PreviewScroller_PreviewMouseWheel(object sender, MouseWheelEventArgs e)
@@ -1089,12 +1090,7 @@ namespace MosquitoNetCalculator.Controls
                 ZoomInBtn.IsEnabled = _currentZoom < ZoomMax - 0.05;
             if (ZoomResetBtn != null)
                 ZoomResetBtn.IsEnabled = Math.Abs(_currentZoom - ZoomDefault) > 0.05;
-            double fitPlusZoom = Math.Min(ZoomDefault, _fitZoom + 0.2);
-            if (ZoomFitPlusBtn != null)
-            {
-                ZoomFitPlusBtn.Content = $"{fitPlusZoom * 100:F0}%";
-                ZoomFitPlusBtn.IsEnabled = Math.Abs(_currentZoom - fitPlusZoom) > 0.05;
-            }
+            // UX-08: Fit+20% button removed — no per-button fit label needed.
             if (ZoomFitBtn != null)
             {
                 ZoomFitBtn.Content = $"{_fitZoom * 100:F0}%";

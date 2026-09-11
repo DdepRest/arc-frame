@@ -95,6 +95,28 @@ namespace MosquitoNetCalculator.Services
                 : $"office-{prefix}-{deviceId}.json";
 
         /// <summary>
+        /// Чистая функция: какие файлы удалить из gist при переезде устройства
+        /// из офиса <paramref name="lastPrefix"/> в <paramref name="currentPrefix"/>.
+        /// Удаляются именованный файл СТАРОГО офиса и его легаси-файл — устройство
+        /// обязано числиться ровно в одном офисе. Легаси-файл, который вёл ДРУГОЙ ПК
+        /// старого офиса, безопасно удалять: тот воссоздаст его своим следующим
+        /// отчётом (самоисцеление), а панель и так отбрасывает легаси при наличии
+        /// именованных устройств. Покрыта юнит-тестами.
+        /// </summary>
+        internal static IReadOnlyList<string> ComputeOldOfficeFilesToDelete(
+            string lastPrefix, string currentPrefix, string deviceId)
+        {
+            if (string.IsNullOrWhiteSpace(lastPrefix) || lastPrefix == currentPrefix)
+                return Array.Empty<string>();
+
+            return new[]
+            {
+                ReportFileName(lastPrefix, deviceId),   // office-{old}-{deviceId}.json
+                ReportFileName(lastPrefix, ""),         // легаси office-{old}.json
+            };
+        }
+
+        /// <summary>
         /// Кол-во заказов в программе на этом ПК (файлы *.json в папке заказов).
         /// При любой ошибке — 0 (отчёт всё равно уходит).
         /// </summary>
@@ -117,15 +139,23 @@ namespace MosquitoNetCalculator.Services
         /// программы, при каждой проверке обновлений и планировщиком каждые 30 мин —
         /// без входа в админ-панель. Всегда завершается без исключений —
         /// при любой ошибке просто возвращает false.
+        ///
+        /// АТОМАРНЫЙ ПЕРЕЕЗД УСТРОЙСТВА: если офис на этом ПК сменился
+        /// (LastReportedPrefix ≠ текущий), старый файл отчёта office-{old}-…json
+        /// удаляется ТЕМ ЖЕ PATCH, которым создаётся новый — устройство в любой
+        /// момент привязано ровно к одному офису (одна ревизия gist =
+        /// create+delete, частичное применение невозможно).
         /// </summary>
         public static async Task<bool> SendReportAsync(HttpClient? httpClient = null)
         {
             if (!IsConfigured) return false;
 
             var deviceId = AppSettingsService.LoadOrCreateDeviceId();
+            var currentPrefix = AppSettingsService.LoadContractPrefix();
+            var lastPrefix = AppSettingsService.LoadLastReportedPrefix();
             var report = new OfficeReport
             {
-                Prefix = AppSettingsService.LoadContractPrefix(),
+                Prefix = currentPrefix,
                 LocationName = AppSettingsService.LoadLocationName(),
                 DeviceId = deviceId,
                 DeviceName = SafeMachineName(),
@@ -134,13 +164,15 @@ namespace MosquitoNetCalculator.Services
                 OrderCount = CountOrders(),
             };
 
-            var body = JsonSerializer.Serialize(new
+            // Файл нового офиса + (при переезде) удаление старого — одним PATCH.
+            var files = new Dictionary<string, object?>
             {
-                files = new Dictionary<string, object>
-                {
-                    [ReportFileName(report.Prefix, report.DeviceId)] = new { content = JsonSerializer.Serialize(report) },
-                },
-            });
+                [ReportFileName(currentPrefix, report.DeviceId)] = new { content = JsonSerializer.Serialize(report) },
+            };
+            foreach (var old in ComputeOldOfficeFilesToDelete(lastPrefix, currentPrefix, report.DeviceId))
+                files[old] = null;
+
+            var body = JsonSerializer.Serialize(new { files });
 
             try
             {
@@ -153,6 +185,12 @@ namespace MosquitoNetCalculator.Services
                     request.Headers.UserAgent.ParseAdd("MosquitoNetCalculator/3.0");
                     request.Content = new StringContent(body, Encoding.UTF8, "application/json");
                     var response = await http.SendAsync(request).ConfigureAwait(false);
+
+                    // Префикс запоминаем ТОЛЬКО после успешного PATCH: сбой сети
+                    // сохраняет старую привязку — переезд повторится на следующем
+                    // цикле отчёта (старт / раз в 2 ч / рефреш панели).
+                    if (response.IsSuccessStatusCode)
+                        AppSettingsService.SaveLastReportedPrefix(currentPrefix);
                     return response.IsSuccessStatusCode;
                 }
                 finally
@@ -315,7 +353,7 @@ namespace MosquitoNetCalculator.Services
                 var toDelete = ComputeDuplicateFilesToDelete(files);
                 if (toDelete.Count == 0) return 0;
 
-                return await DeleteGistFilesAsync(toDelete, httpClient).ConfigureAwait(false);
+                return await DeleteReportFilesAsync(toDelete, httpClient).ConfigureAwait(false);
             }
             catch (Exception ex)
             {
@@ -346,13 +384,51 @@ namespace MosquitoNetCalculator.Services
         }
 
         /// <summary>
-        /// Тихая АВТОочистка gist при обновлении админ-панели: удаляет только
-        /// файлы-дубли, молчащие дольше <see cref="StaleDuplicateAfter"/> — старые
-        /// файлы устройств (deviceId сменился) и легаси-записи при наличии
-        /// именованных. Живые дубли (две копии на одном ПК) и не-дубли (например,
-        /// легаси-файл офиса без именованных устройств) не трогаются. Возвращает
-        /// количество удалённых файлов; -1 при ошибке (нет токена, нет связи,
-        /// ошибка API). Никогда не бросает исключений.
+        /// Чистая функция: ЗАБЫТЫЕ привязки устройств к ЧУЖИМ офисам, которые можно
+        /// удалить автоматически. Это «хвосты» до введения атомарного переезда
+        /// (устройство числится в нескольких офисах) и пропуски, если PATCH удаления
+        /// когда-то не дошёл. Для каждого устройства (группировка как в панели —
+        /// по имени машины/deviceId) берётся офис его НОВЕЙШЕГО отчёта; файлы того же
+        /// устройства в других офисах удаляются, если они молчат дольше
+        /// <paramref name="staleAfter"/> — свежий файл чужого офиса не трогается
+        /// (две живые копии на одном ПК не устраивают пинг-понг «удалил → воссоздал»
+        /// в истории gist). Отчёт без читаемой даты считается мёртвым. Легаси-файлы
+        /// (без deviceId/имени) не трогаются — их не к какой машине не привяжешь.
+        /// Покрыта юнит-тестами.
+        /// </summary>
+        internal static IReadOnlyList<string> ComputeStaleBindingsToDelete(
+            IReadOnlyList<OfficeReportFile> files, DateTimeOffset nowUtc, TimeSpan staleAfter)
+        {
+            var cutoff = nowUtc - staleAfter;
+            var toDelete = new List<string>();
+            foreach (var group in files
+                         .Where(f => !string.IsNullOrWhiteSpace(f.Report.DeviceName)
+                                  || !string.IsNullOrWhiteSpace(f.Report.DeviceId))
+                         .GroupBy(f => OfficeDeviceGrouping.DeviceKey(f.Report)))
+            {
+                var newest = group.OrderByDescending(f => f.Report.ReportedAtUtc ?? DateTimeOffset.MinValue).First();
+                foreach (var f in group)
+                {
+                    if (f.Report.Prefix == newest.Report.Prefix) continue;
+                    var at = f.Report.ReportedAtUtc;
+                    if (at == null || at.Value < cutoff)
+                        toDelete.Add(f.FileName);
+                }
+            }
+            return toDelete;
+        }
+
+        /// <summary>
+        /// Тихая АВТОочистка gist при обновлении админ-панели. Удаляет:
+        /// 1) файлы-дубли, молчащие дольше <see cref="StaleDuplicateAfter"/> — старые
+        ///    файлы устройств (deviceId сменился) и легаси-записи при наличии
+        ///    именованных (см. <see cref="ComputeStaleDuplicateFilesToDelete"/>);
+        /// 2) забытые привязки устройств к ЧУЖИМ офисам, молчащие столько же
+        ///    (см. <see cref="ComputeStaleBindingsToDelete"/> — «хвосты» переездов
+        ///    до введения атомарного удаления старого офиса).
+        /// Живые дубли (две копии на одном ПК) и свежие чужие офисы не трогаются.
+        /// Возвращает количество удалённых файлов; -1 при ошибке (нет токена,
+        /// нет связи, ошибка API). Никогда не бросает исключений.
         /// </summary>
         public static async Task<int> CleanupStaleDuplicatesAsync(HttpClient? httpClient = null)
         {
@@ -361,10 +437,12 @@ namespace MosquitoNetCalculator.Services
             try
             {
                 var files = await FetchReportFilesAsync(httpClient);
-                var toDelete = ComputeStaleDuplicateFilesToDelete(files, DateTimeOffset.UtcNow, StaleDuplicateAfter);
+                var toDelete = ComputeStaleDuplicateFilesToDelete(files, DateTimeOffset.UtcNow, StaleDuplicateAfter)
+                    .Union(ComputeStaleBindingsToDelete(files, DateTimeOffset.UtcNow, StaleDuplicateAfter))
+                    .ToList();
                 if (toDelete.Count == 0) return 0;
 
-                return await DeleteGistFilesAsync(toDelete, httpClient).ConfigureAwait(false);
+                return await DeleteReportFilesAsync(toDelete, httpClient).ConfigureAwait(false);
             }
             catch (Exception ex)
             {
@@ -374,9 +452,33 @@ namespace MosquitoNetCalculator.Services
         }
 
         /// <summary>
+        /// Ручное отвязывание устройств администратором (кнопка «Отвязать выбранные»
+        /// в панели): удаляет переданные файлы отчётов из gist одним PATCH.
+        /// Отвязанное устройство само вернётся своим следующим отчётом (старт
+        /// программы / раз в 2 ч) — уже под актуальным офисом. Возвращает количество
+        /// удалённых файлов; -1 при ошибке сети/API.
+        /// </summary>
+        public static async Task<int> DeleteReportFilesAsync(IReadOnlyList<string> fileNames, HttpClient? httpClient = null)
+        {
+            if (!IsConfigured) return -1;
+            if (fileNames.Count == 0) return 0;
+
+            try
+            {
+                return await DeleteGistFilesAsync(fileNames, httpClient).ConfigureAwait(false);
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"[OfficeReport] delete files failed: {ex.Message}");
+                return -1;
+            }
+        }
+
+        /// <summary>
         /// PATCH gist с <c>content: null</c> для перечисленных имён — файлы
-        /// удаляются, остальные не трогаются. Возвращает количество удалённых
-        /// файлов; -1 при ошибке сети/API.
+        /// удаляются, остальные не трогаются (все удаления одной ревизии —
+        /// атомарно). Возвращает количество удалённых файлов; -1 при ошибке
+        /// сети/API. Публичная обёртка — <see cref="DeleteReportFilesAsync"/>.
         /// </summary>
         private static async Task<int> DeleteGistFilesAsync(IReadOnlyList<string> fileNames, HttpClient? httpClient)
         {

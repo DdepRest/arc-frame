@@ -1153,6 +1153,25 @@ namespace MosquitoNetCalculator.Tests.Models
             Assert.Equal(expected, item.InstallationLabel);
         }
 
+        // ─── InstallationButtonLabel tests (UX-06: readable words in the grid cell) ───
+
+        [Theory]
+        [InlineData(0, "Вкл")]
+        [InlineData(1, "Без")]
+        [InlineData(2, "ВК")]
+        public void InstallationButtonLabel_ApplicableProduct_ReturnsReadableWord(int mode, string expected)
+        {
+            var item = new OrderItem { Name = "Anwis", InstallationMode = mode };
+            Assert.Equal(expected, item.InstallationButtonLabel);
+        }
+
+        [Fact]
+        public void InstallationButtonLabel_NonApplicable_ReturnsDash()
+        {
+            var item = new OrderItem { Name = "ПСУЛ" }; // не-applicable тип без монтажа
+            Assert.Equal("—", item.InstallationButtonLabel);
+        }
+
         [Fact]
         public void InstallationLabel_NonApplicableProduct_ReturnsNotSupported()
         {

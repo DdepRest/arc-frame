@@ -32,7 +32,7 @@
             </Border.Clip>
             <Grid>
                 <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                    <TextBlock Text="ЗАКАЗЫ" FontSize="10" FontWeight="SemiBold"
+                    <TextBlock Text="ЗАКАЗЫ" FontSize="11" FontWeight="SemiBold"
                                Foreground="{DynamicResource TextMuted}" VerticalAlignment="Center" Margin="0,0,14,0"/>
                     <Border Background="{DynamicResource ChipBg}" CornerRadius="10"
                             Padding="10,3" Margin="0,0,14,0">
@@ -75,15 +75,30 @@
                     <ColumnDefinition Width="Auto"/>
                     <ColumnDefinition Width="*"/>
                     <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="Auto"/>
                 </Grid.ColumnDefinitions>
                 <TextBlock Grid.Column="0" Text="&#xE721;"
                            FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets"
                            FontSize="14" Foreground="{DynamicResource TextMuted}"
                            VerticalAlignment="Center" Margin="0,0,8,0"/>
-                <TextBox x:Name="TxtSearchOrders" Grid.Column="1"
-                         Style="{DynamicResource QuickInput}"
-                         TextChanged="TxtSearchOrders_TextChanged"
-                         ToolTip="Фильтр по № КП, адресу или телефону"/>
+                <Grid Grid.Column="1">
+                    <TextBox x:Name="TxtSearchOrders"
+                             Style="{DynamicResource QuickInput}"
+                             TextChanged="TxtSearchOrders_TextChanged"
+                             GotKeyboardFocus="TxtSearchOrders_GotKeyboardFocus"
+                             LostKeyboardFocus="TxtSearchOrders_LostKeyboardFocus"
+                             ToolTip="Фильтр по № КП, адресу или телефону"/>
+                    <!-- UX-09: ghost hint — visible only while empty and unfocused
+                         (same rule as in the AI assistant input). -->
+                    <TextBlock x:Name="OrdersSearchPlaceholder"
+                               Text="Поиск: № КП, адрес или телефон"
+                               Margin="8,0,0,0"
+                               VerticalAlignment="Center"
+                               FontSize="13"
+                               Foreground="{DynamicResource TextMuted}"
+                               IsHitTestVisible="False"/>
+                </Grid>
                 <Button x:Name="BtnClearOrdersSearch" Grid.Column="2"
                         Style="{DynamicResource GhostButton}"
                         Content="&#xE711;" FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets"
@@ -91,6 +106,16 @@
                         Visibility="Collapsed"
                         Click="BtnClearOrdersSearch_Click"
                         ToolTip="Очистить поиск"/>
+                <!-- v3.50: status filter (prototype .dr-tools .inp) — view-only filter
+                     over the existing ItemsSource; no data changes -->
+                <ComboBox x:Name="CmbStatusFilter" Grid.Column="3" Margin="8,0,0,0" MinWidth="150"
+                          Style="{DynamicResource QuickCombo}"
+                          SelectionChanged="StatusFilter_SelectionChanged"
+                          ToolTip="Фильтр по статусу заказа"/>
+                <!-- v3.50: date filter — matches the exact contract date -->
+                <DatePicker x:Name="DpDateFilter" Grid.Column="4" Margin="8,0,0,0"
+                            SelectedDateChanged="DateFilter_SelectionChanged"
+                            ToolTip="Фильтр по дате договора"/>
             </Grid>
         </Border>
 
@@ -226,6 +251,29 @@
                             <TextBlock Text="Перейти к расчёту"/>
                         </StackPanel>
                     </Button>
+                </StackPanel>
+
+                <!-- UX-09: search no-results state — orders exist, none match the filter.
+                     The filtering happens in TxtSearchOrders_TextChanged, which also
+                     maintains NoSearchResults; keep this mutually exclusive with IsEmpty. -->
+                <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center"
+                            x:Name="OrdersNoResultsState"
+                            Visibility="{Binding NoSearchResults, RelativeSource={RelativeSource AncestorType=UserControl}, Converter={StaticResource BoolToVis}}"
+                            Margin="0,0,0,40" IsHitTestVisible="False">
+                    <TextBlock Text="&#xE721;" FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets"
+                               FontSize="44"
+                               Foreground="{DynamicResource TextMuted}"
+                               Opacity="0.30"
+                               HorizontalAlignment="Center"/>
+                    <TextBlock Text="Ничего не найдено"
+                               FontSize="14" FontWeight="SemiBold"
+                               Foreground="{DynamicResource TextMuted}"
+                               HorizontalAlignment="Center" Margin="0,10,0,2"/>
+                    <TextBlock Text="Попробуйте изменить запрос — поиск идёт по № КП, адресу и телефону"
+                               FontSize="11"
+                               Foreground="{DynamicResource TextMuted}"
+                               Opacity="0.75"
+                               HorizontalAlignment="Center" Margin="0,0,0,0"/>
                 </StackPanel>
             </Grid>
         </Border>

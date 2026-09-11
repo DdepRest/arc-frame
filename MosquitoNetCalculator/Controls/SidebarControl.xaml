@@ -68,7 +68,31 @@
                         <DatePicker x:Name="DpContractDate" Margin="0,0,0,10"
                                     SelectedDate="{Binding ClientInfo.ContractDate}"/>
                         <TextBlock Text="Статус" Style="{DynamicResource FieldLabel}"/>
-                        <ComboBox x:Name="CmbStatus" IsEditable="False" Margin="0,0,0,0"/>
+                        <!-- v3.50: status pill — colored dot + existing ComboBox
+                             (same ItemsSource/handling in MainWindow; only visuals).
+                             Dot color mirrors the badge colors of the chosen status. -->
+                        <Border Background="{DynamicResource SectionBg}"
+                                BorderBrush="{DynamicResource Border}" BorderThickness="1"
+                                CornerRadius="7" Padding="10,0" Height="34">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+                                <Ellipse x:Name="StatusDot" Grid.Column="0"
+                                         Width="9" Height="9" VerticalAlignment="Center"
+                                         Margin="0,0,8,0"
+                                         Fill="#5B7BB4"/>
+                                <ComboBox x:Name="CmbStatus" Grid.Column="1"
+                                          IsEditable="False"
+                                          Background="Transparent" BorderThickness="0"
+                                          VerticalContentAlignment="Center"
+                                          SelectionChanged="CmbStatus_SelectionChanged"/>
+                            </Grid>
+                        </Border>
+                        <TextBlock Text="Статус не блокирует редактирование заказа — справочная метка для менеджера и истории."
+                                   FontSize="10.5" Foreground="{DynamicResource TextMuted}"
+                                   TextWrapping="Wrap" Margin="0,6,0,0"/>
                         </StackPanel>
                 </StackPanel>
                 </Border>

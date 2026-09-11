@@ -59,6 +59,7 @@ namespace MosquitoNetCalculator.Controls
         {
             InitializeComponent();
             DataContext = this;
+            InitializeOfficesView();
 
             // Клик на любой элемент списка офисов → пробуем распознать устаревший ряд
             // и скопировать напоминание. Один обработчик на ItemsControl ловит клик
@@ -152,9 +153,7 @@ namespace MosquitoNetCalculator.Controls
                 var rows = OfficeStatusCalculator.BuildRows(
                     LocationOptions.All, reports, _latestVersion, DateTimeOffset.UtcNow, currentPrefix);
 
-                Rows.Clear();
-                foreach (var row in rows)
-                    Rows.Add(row);
+                ReplaceRows(rows);
 
                 // Сводка по УСТРОЙСТВАМ: в одном офисе может быть несколько ПК.
                 // Актуальность считаем по свежим устройствам; устаревшие офисы —
@@ -163,10 +162,12 @@ namespace MosquitoNetCalculator.Controls
                 int upToDateDevices = rows.Sum(r => r.Devices.Count(d => d.Status == OfficeStatus.UpToDate));
                 int outdatedRows = rows.Count(r => r.Status == OfficeStatus.Outdated);
                 TxtSummary.Text = $"{upToDateDevices} из {knownDevices} устройств актуальны";
-                TxtSummaryHint.Text = outdatedRows > 0
-                    ? $"Кликните на устаревший офис ({outdatedRows}) — скопируется напоминание об обновлении."
-                    : "Все устройства в актуальной версии.";
+                TxtSummaryHint.Text = AdminPanelLogic.SummaryHint(outdatedRows);
                 TxtSummaryBadge.Text = $"{upToDateDevices}/{knownDevices}";
+
+                // Прогресс-бар сводки + состояние быстрых действий.
+                UpdateSummaryProgress(upToDateDevices, knownDevices);
+                UpdateQuickActionsState();
 
                 // 4) Статистика.
                 var statsRows = OfficeStatsCalculator.BuildRows(LocationOptions.All, reports, currentPrefix);
@@ -218,57 +219,37 @@ namespace MosquitoNetCalculator.Controls
 
         /// <summary>
         /// Показывает/скрывает пустые состояния вкладок в зависимости от наличия данных.
+        /// Решения и фразы — <see cref="Services.AdminPanelLogic"/>; здесь только применение.
         /// </summary>
-        private void UpdateEmptyStates()
+        internal void UpdateEmptyStates()
         {
-            bool noData = Rows.Count == 0;
+            bool noData = AdminPanelLogic.IsNoData(Rows);
             UpdatesEmpty.Visibility = noData ? Visibility.Visible : Visibility.Collapsed;
             OfficesList.Visibility = noData ? Visibility.Collapsed : Visibility.Visible;
 
             bool noStats = StatsRows.Count == 0;
             StatsEmpty.Visibility = noStats ? Visibility.Visible : Visibility.Collapsed;
             StatsList.Visibility = noStats ? Visibility.Collapsed : Visibility.Visible;
+
+            // Пустой результат ФИЛЬТРА: есть данные, но ни одна строка не прошла
+            // поиск/фильтр — показываем подсказку вместо «отчётов нет».
+            bool filterNoMatch = !noData && GroupedRows != null
+                && AdminPanelLogic.IsFilterNoMatch(Rows, GroupedRows.Cast<object>().ToList());
+            if (filterNoMatch)
+                UpdatesEmpty.Visibility = Visibility.Visible;
+            UpdatesEmptyTitle.Text = AdminPanelLogic.EmptyTitle(filterNoMatch);
+            UpdatesEmptyHint.Text = AdminPanelLogic.EmptyHint(filterNoMatch);
         }
 
         /// <summary>
         /// Обновляет текст «обновлено HH:mm · авто через N мин» в шапке.
+        /// Вычисление строки — <see cref="Services.AdminPanelLogic.RefreshStatusText"/>.
         /// </summary>
         private void UpdateRefreshStatusText()
         {
-            if (_lastRefreshedAtLocal == default)
-            {
-                TxtRefreshStatus.Text = string.Empty;
-                return;
-            }
-
-            var secondsAgo = (int)Math.Floor((DateTime.Now - _lastRefreshedAtLocal).TotalSeconds);
-            string when = secondsAgo < 5 ? "только что" :
-                          secondsAgo < 60 ? $"{secondsAgo} сек назад" :
-                          $"{_lastRefreshedAtLocal:HH:mm}";
-
-            string autoPart;
-            if (_autoRefreshTimer == null)
-            {
-                autoPart = "";
-            }
-            else if (AutoRefreshInterval.TotalHours >= 1)
-            {
-                // Для часовых интервалов обратный отсчёт в секундах бессмысленен.
-                autoPart = $" · авто каждые {AutoRefreshInterval.TotalHours:0} ч";
-            }
-            else if (AutoRefreshInterval.TotalMinutes >= 1)
-            {
-                // Минутные интервалы: отсчёт в секундах шумит — округляем до минут.
-                int nextTickMin = Math.Max(1, (int)Math.Ceiling(AutoRefreshInterval.TotalMinutes - secondsAgo / 60.0));
-                autoPart = $" · авто через {nextTickMin} мин";
-            }
-            else
-            {
-                int nextTickSec = Math.Max(1, (int)Math.Ceiling(AutoRefreshInterval.TotalSeconds - secondsAgo));
-                autoPart = $" · авто через {nextTickSec} сек";
-            }
-
-            TxtRefreshStatus.Text = $"обновлено {when}{autoPart}";
+            TxtRefreshStatus.Text = AdminPanelLogic.RefreshStatusText(
+                _lastRefreshedAtLocal, DateTime.Now,
+                _autoRefreshTimer?.Interval);
         }
 
         private static string UserFacingUpdateError(string error)
@@ -311,6 +292,27 @@ namespace MosquitoNetCalculator.Controls
         /// <summary>
         /// «Очистить дубли»: удаляет из gist лишние файлы устройств — несколько
         /// записей одного ПК (обычная версия + dev) и легаси-файлы. Подтверждение
+        /// <summary>
+        /// UX-13: ⋯ overflow menu — редкое обслуживание («Очистить дубли») убрано
+        /// из постоянной шапки, чтобы не конкурировать с частой кнопкой «Обновить».
+        /// </summary>
+        private void BtnMoreActions_Click(object sender, RoutedEventArgs e)
+        {
+            var menu = new ContextMenu();
+
+            var cleanup = new MenuItem
+            {
+                Header = "Очистить дубли…",
+                ToolTip = "Удалить из хранилища лишние файлы устройств: несколько записей одного ПК (обычная версия + dev), легаси-файлы и забытые привязки к чужим офисам. Останутся новейшие записи каждого компьютера в его текущем офисе.",
+            };
+            cleanup.Click += (_, _) => BtnCleanupDuplicates_Click(sender, e);
+            menu.Items.Add(cleanup);
+
+            menu.PlacementTarget = sender as Button;
+            menu.Placement = System.Windows.Controls.Primitives.PlacementMode.Bottom;
+            menu.IsOpen = true;
+        }
+
         /// перед удалением, тост с результатом, после — обновление панели.
         /// </summary>
         private async void BtnCleanupDuplicates_Click(object sender, RoutedEventArgs e)
@@ -321,16 +323,18 @@ namespace MosquitoNetCalculator.Controls
                 return;
             }
 
-            bool confirmed = DialogService.ShowConfirm(
+            bool confirmed = DialogService.ShowConfirmDestructive(
                 "Удалить из хранилища отчётов лишние файлы устройств?\n\n" +
                 "Останутся только новейшие записи каждого компьютера офиса " +
                 "(убираются дубли от запуска обычной и dev-версии на одном ПК).",
+                "Удалить",
                 "Очистить дубли",
                 Window.GetWindow(this));
             if (!confirmed) return;
 
-            BtnCleanupDuplicates.IsEnabled = false;
-            try
+            // UX-13: кнопка переехала в ⋯-меню (BtnMoreActions); само действие и
+            // его подтверждение не изменились. Блокировка на время очистки не
+            // нужна — меню закрывается до запуска, повторный вызов защищён подтверждением.
             {
                 int deleted = await OfficeReportService.CleanupDuplicatesAsync().ConfigureAwait(true);
                 if (deleted < 0)
@@ -353,10 +357,6 @@ namespace MosquitoNetCalculator.Controls
                 // Панель показывает актуальное состояние gist после очистки.
                 await RefreshAsync(quiet: false, isInitial: false).ConfigureAwait(true);
             }
-            finally
-            {
-                BtnCleanupDuplicates.IsEnabled = true;
-            }
         }
 
         /// <summary>
@@ -366,11 +366,24 @@ namespace MosquitoNetCalculator.Controls
         /// </summary>
         private void OfficesList_PreviewMouseLeftButtonUp(object sender, MouseButtonEventArgs e)
         {
+            // Режим отвязки — работа с чекбоксами, а не «скопировать напоминание».
+            if (_isUnbindMode) return;
+
             // Поднимаемся по визуальному дереву от OriginalSource до карточки-ItemControl-Item.
             var dep = e.OriginalSource as DependencyObject;
             ContentPresenter? presenter = null;
             while (dep != null)
             {
+                // Preview-событие туннелирует РАНЬШЕ bubbling-пары: помечаем его
+                // Handled — WPF НЕ поднимет MouseLeftButtonUp у адресата, и тот
+                // навсегда останется с захваченной мышью (панель «зависает»).
+                // Поэтому клики по интерактивным элементам карточки (чекбоксы,
+                // кнопки, поля) — НЕ наши: пропускаем без пометки Handled.
+                if (dep is System.Windows.Controls.CheckBox
+                    || dep is System.Windows.Controls.Primitives.ButtonBase
+                    || dep is System.Windows.Controls.TextBox)
+                    return;
+
                 if (dep is ContentPresenter cp && OfficesList.ItemContainerGenerator.IndexFromContainer(cp) >= 0)
                 {
                     presenter = cp;
@@ -389,33 +402,34 @@ namespace MosquitoNetCalculator.Controls
 
         /// <summary>
         /// Копирует в буфер обмена напоминание об обновлении для конкретного офиса
-        /// и показывает тост «Напоминание скопировано».
+        /// и показывает тост «Напоминание скопировано». Текст —
+        /// <see cref="Services.AdminPanelLogic.SingleReminderText"/>; копирование+тост —
+        /// общий хелпер <see cref="CopyReminderTextToClipboard"/>.
         /// </summary>
         private void CopyReminder(OfficeStatusRow row)
         {
-            string version = _latestVersion != null ? _latestVersion.ToString() : "актуальную";
-            string url = _latestDownloadUrl ?? "(ссылка недоступна — см. последнюю версию в разделе «Обновления»)";
-
             // В офисе может быть несколько устройств — напоминание адресуем
             // конкретному устаревшему ПК (его версия из чипа устройства).
             var outdatedDevice = row.Devices.FirstOrDefault(d => d.Status == OfficeStatus.Outdated);
-            string currentLine = outdatedDevice != null
-                ? $"На устройстве «{outdatedDevice.DeviceLabel}» установлена v{outdatedDevice.Version}.\n"
-                : $"Текущая версия у вас: v{row.Version}.\n";
+            string text = AdminPanelLogic.SingleReminderText(
+                row.LocationName,
+                outdatedDevice?.DeviceLabel,
+                outdatedDevice?.Version ?? row.Version,
+                _latestVersion,
+                _latestDownloadUrl ?? AdminPanelLogic.FallbackDownloadUrl);
+            CopyReminderTextToClipboard(text, $"Напоминание для «{row.LocationName}». Можно вставить в чат/мессенджер.");
+        }
 
-            string text =
-                $"Здравствуйте! 👋\n\n" +
-                $"В программе «A.R.C. Frame» доступна новая версия v{version}.\n" +
-                $"Скачайте: {url}\n\n" +
-                currentLine +
-                $"После обновления программа сама отчитается — спасибо!";
-
+        /// <summary>Единый путь «текст → буфер → тост» для обоих напоминаний:
+        /// одна обработка капризного Clipboard, один формат тостов.</summary>
+        private void CopyReminderTextToClipboard(string text, string toastBody)
+        {
             try
             {
                 Clipboard.SetText(text);
                 ToastService.ShowToast(
                     "Напоминание скопировано",
-                    $"Версия v{version} для «{row.LocationName}». Можно вставить в чат/мессенджер.",
+                    toastBody,
                     ToastType.Success,
                     durationMs: 4000);
             }

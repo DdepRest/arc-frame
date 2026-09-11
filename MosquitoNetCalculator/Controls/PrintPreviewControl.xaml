@@ -37,7 +37,7 @@
                 </CheckBox>
                 <TextBlock x:Name="ProductionCopyHint"
                            Text="«Копии» — чистые листы заказчика (0 = только лист с печатью). Копия с печатью добавляется отдельно."
-                           Foreground="{DynamicResource TextMuted}" FontSize="10"
+                           Foreground="{DynamicResource TextMuted}" FontSize="11"
                            TextWrapping="Wrap" Margin="0,2,0,6"/>
 
                 <!-- Collation -->
@@ -112,7 +112,7 @@
 
                 <!-- Диапазон-подсказка -->
                 <TextBlock x:Name="RangeHint" Margin="0,8,0,0"
-                           Foreground="{DynamicResource TextMuted}" FontSize="10"
+                           Foreground="{DynamicResource TextMuted}" FontSize="11"
                            TextWrapping="Wrap"/>
 
                 <!-- Прогресс печати -->
@@ -189,13 +189,12 @@
                     <Button x:Name="ZoomInBtn" Content="+" Style="{DynamicResource GhostButton}"
                             Padding="6,2" Width="32" Height="28" Margin="0,0,8,0"
                             Click="ZoomIn_Click" ToolTip="Увеличить"/>
+                    <!-- UX-08: «Fit»/«Fit+20%» were cryptic and duplicated each
+                         other's job — one «Вписать» button is enough. -->
                     <Button x:Name="ZoomResetBtn" Content="100%" Style="{DynamicResource GhostButton}"
                             Padding="8,2" Height="28" Margin="0,0,4,0"
                             Click="ZoomReset_Click" ToolTip="100% — натуральная величина"/>
-                    <Button x:Name="ZoomFitPlusBtn" Content="Fit+20%" Style="{DynamicResource GhostButton}"
-                            Padding="8,2" Height="28" Margin="0,0,4,0"
-                            Click="ZoomFitPlus_Click" ToolTip="Вписать в окно + 20%"/>
-                    <Button x:Name="ZoomFitBtn" Content="Fit" Style="{DynamicResource GhostButton}"
+                    <Button x:Name="ZoomFitBtn" Content="Вписать" Style="{DynamicResource GhostButton}"
                             Padding="8,2" Height="28" Margin="0,0,8,0"
                             Click="ZoomFit_Click" ToolTip="Вписать в окно"/>
                 </StackPanel>

@@ -320,6 +320,8 @@ git commit -m "release: update releases.json for vX.Y.Z"
 - `extract-release-notes.ps1`
 
 ## Last verified
+2026-09-11 (v3.50.0) — auto-synced from csproj (sync-version.ps1, CONTROL#13).
+
 2026-09-06 (v3.49.0) — auto-synced from csproj (sync-version.ps1, CONTROL#13).
 
 2026-08-31 (v3.48.7) — задокументированы ограничения rolling-тега `mirror-latest` (только текущий релиз, skip при ≥95 MiB, рост репозитория, CDN-задержка); чеклист исправлен на `mirror-latest`.

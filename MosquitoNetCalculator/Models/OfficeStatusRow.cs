@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace MosquitoNetCalculator.Models
 {
@@ -46,6 +47,21 @@ namespace MosquitoNetCalculator.Models
         /// <summary>Детализация по устройствам офиса (версия и статус каждого ПК).</summary>
         public IReadOnlyList<OfficeDeviceRow> Devices { get; init; } = Array.Empty<OfficeDeviceRow>();
 
+        /// <summary>Сколько устройств офиса в актуальной версии (из свежих отчётов).</summary>
+        public int UpToDateCount => Devices.Count(d => d.Status == OfficeStatus.UpToDate);
+
+        /// <summary>Сколько устройств офиса устарели (из свежих отчётов).</summary>
+        public int OutdatedCount => Devices.Count(d => d.Status == OfficeStatus.Outdated);
+
+        /// <summary>
+        /// Доля актуальных устройств офиса (0..1); 0 при отсутствии устройств —
+        /// прогресс-бар карточки будет пустым (офис без отчётов и так приглушён).
+        /// </summary>
+        public double UpToDateRatio => DeviceCount > 0 ? (double)UpToDateCount / DeviceCount : 0.0;
+
+        /// <summary>«2/3» — компактная подпись прогресса устройств офиса.</summary>
+        public string ProgressText => $"{UpToDateCount}/{DeviceCount}";
+
         /// <summary>
         /// Русская форма счёта устройств для чипа: «1 устройство»,
         /// «2 устройства», «5 устройств»; пустая строка при 0.
@@ -75,15 +91,16 @@ namespace MosquitoNetCalculator.Models
         };
 
         /// <summary>
-        /// Юникод-глиф статуса для иконки в карточке: ✓ — актуальна,
-        /// ! — устарела, ? — нет данных. Рядом с цветом помогает глазу
-        /// быстро «цеплять» статус даже без цвета.
+        /// Юникод-глиф статуса для иконки в карточке (Segoe Fluent Icons —
+        /// рендерит TextBlock с FontFamily="Segoe Fluent Icons"): E73E ✓ —
+        /// актуальна, E7BA ⚠ — устарела, E9CE ? — нет данных. Рядом с цветом
+        /// помогает глазу быстро «цеплять» статус даже без цвета.
         /// </summary>
         public string StatusGlyph => Status switch
         {
-            OfficeStatus.UpToDate => "\u2713",   // ✓
-            OfficeStatus.Outdated => "\u26A0",   // ⚠
-            _ => "\u2753",                       // ❓
+            OfficeStatus.UpToDate => "\uE73E",   // CheckMark
+            OfficeStatus.Outdated => "\uE7BA",   // Warning
+            _ => "\uE9CE",                       // Unknown
         };
 
         /// <summary>

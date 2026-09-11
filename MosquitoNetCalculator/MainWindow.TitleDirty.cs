@@ -58,9 +58,20 @@ namespace MosquitoNetCalculator
 
             if (StatusDirtyIndicator != null)
                 StatusDirtyIndicator.Visibility = dirty ? Visibility.Visible : Visibility.Collapsed;
+            // UX-12: ActionBar dirty chip + undo/redo enable/disable bind to these.
+            OnPropertyChanged(nameof(IsDirty));
         }
 
         private void UpdateDirtyIndicator() => ApplyTitle();
+
+        /// <summary>UX-12: drives the dirty chip in the ActionBar (INPC-raised by ApplyTitle).</summary>
+        public bool IsDirty => ViewModel?.UndoRedo?.IsDirty ?? false;
+
+        /// <summary>UX-12: enables/disables the Undo button (INPC-raised by UpdateUndoRedoHint).</summary>
+        public bool CanUndo => ViewModel?.UndoRedo?.CanUndo ?? false;
+
+        /// <summary>UX-12: enables/disables the Redo button (INPC-raised by UpdateUndoRedoHint).</summary>
+        public bool CanRedo => ViewModel?.UndoRedo?.CanRedo ?? false;
 
         /// <summary>
         /// Updates the undo/redo hint in the status bar. Called after every undo/redo push.
@@ -72,6 +83,9 @@ namespace MosquitoNetCalculator
             bool canUndo = ViewModel.UndoRedo.CanUndo;
             UndoRedoHint.Visibility = canUndo ? Visibility.Visible : Visibility.Collapsed;
             UndoRedoHint.Text = canUndo ? "Ctrl+Z — отменить | Ctrl+Y — повторить" : "";
+            // UX-12: ActionBar Undo/Redo buttons track the stack state.
+            OnPropertyChanged(nameof(CanUndo));
+            OnPropertyChanged(nameof(CanRedo));
         }
 
         internal void MarkDirty()
@@ -109,7 +123,7 @@ namespace MosquitoNetCalculator
             UpdateUndoRedoHint();
         }
 
-        private void Undo()
+        internal void Undo()
         {
             if (!ViewModel.UndoRedo.CanUndo)
             {
@@ -120,7 +134,7 @@ namespace MosquitoNetCalculator
             if (prev != null) { RestoreFromSnapshot(prev); UpdateUndoRedoHint(); }
         }
 
-        private void Redo()
+        internal void Redo()
         {
             if (!ViewModel.UndoRedo.CanRedo)
             {

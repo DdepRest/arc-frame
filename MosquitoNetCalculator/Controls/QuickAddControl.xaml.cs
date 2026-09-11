@@ -123,26 +123,33 @@ namespace MosquitoNetCalculator.Controls
                 tb.Dispatcher.BeginInvoke(() => tb.SelectAll());
         }
 
-        // UX#2: Re-apply required-field highlight when user leaves empty field
-        // Required-field red-border highlighting was removed on user request:
-        // no block/field should be painted red. The empty-field notices below
-        // are no-ops so any existing call site stays valid without visual effect.
+        // UX#2 (restored): validation is attempt-driven. The red border appears
+        // only when «Добавить»/Enter fails on a field the selected product type
+        // actually requires, and clears as soon as the user types or switches
+        // the product type. No highlight on focus/blur; «Свой товар» stays
+        // border-free (its dims are optional by design).
         private void QuickField_LostFocus(object sender, RoutedEventArgs e)
         {
         }
 
+        // Intentional no-op: highlights must not appear on product-type selection
+        // (premature red borders before the user typed anything). Kept so the
+        // existing call site in CmbQuickType_SelectionChanged stays valid.
         internal void HighlightRequiredIfEmpty()
         {
         }
 
-        private void SetRequiredHighlight(TextBox tb)
+        // Marks the field invalid via Tag="Invalid" — consumed by the QuickInput
+        // template trigger (Themes/InputStyles.TextBox.xaml): border turns
+        // Danger-red and wins over focus/hover. No fill, no label.
+        internal static void SetRequiredHighlight(TextBox tb)
         {
+            if (tb != null) tb.Tag = "Invalid";
         }
 
-        private void ClearRequiredHighlight(TextBox tb)
+        internal static void ClearRequiredHighlight(TextBox tb)
         {
-            var border = Application.Current?.TryFindResource("Border") as SolidColorBrush;
-            if (border != null) tb.BorderBrush = border;
+            if (tb != null && tb.Tag as string == "Invalid") tb.Tag = null;
         }
 
     }

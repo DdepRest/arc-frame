@@ -46,6 +46,11 @@ namespace MosquitoNetCalculator.Services
             // Стабильный ID устройства (один ПК = один отчёт в gist). Генерируется
             // один раз при первом запуске — см. LoadOrCreateDeviceId.
             public string DeviceId { get; set; } = "";
+            // Префикс офиса, под которым устройство УСПЕШНО отчиталось последний раз.
+            // Пустая строка = ещё не отчитывалось. Позволяет при следующем отчёте найти
+            // и удалить свой файл в старом офисе — атомарный «переезд» устройства
+            // (OfficeReportService.SendReportAsync, ComputeOldOfficeFilesToDelete).
+            public string LastReportedPrefix { get; set; } = "";
             // Глобальная настройка «добавить копию в производство» в окне печати.
             public bool IncludeProductionCopy { get; set; } = false;
         }
@@ -367,6 +372,35 @@ namespace MosquitoNetCalculator.Services
             {
                 var settings = LoadSettings();
                 settings.OfficeReportGistId = string.IsNullOrWhiteSpace(gistId) ? null : gistId.Trim();
+                SaveSettings(settings);
+            }
+        }
+
+        /// <summary>
+        /// Префикс офиса последнего УСПЕШНОГО отчёта этого устройства
+        /// (пустая строка = ещё не отчитывалось). OfficeReportService
+        /// удаляет по нему файл отчёта в старом офисе при переезде устройства.
+        /// </summary>
+        public static string LoadLastReportedPrefix()
+        {
+            lock (_lock)
+            {
+                var settings = LoadSettings();
+                return settings.LastReportedPrefix ?? "";
+            }
+        }
+
+        /// <summary>
+        /// Запоминает префикс офиса последнего УСПЕШНОГО отчёта.
+        /// Вызывается ТОЛЬКО после успешного PATCH — сбой сети не теряет
+        /// старую привязку, переезд повторится на следующем цикле отчёта.
+        /// </summary>
+        public static void SaveLastReportedPrefix(string prefix)
+        {
+            lock (_lock)
+            {
+                var settings = LoadSettings();
+                settings.LastReportedPrefix = prefix ?? "";
                 SaveSettings(settings);
             }
         }

@@ -286,14 +286,17 @@ namespace MosquitoNetCalculator.Models
                 _ => "В конструкцию"
             };
 
-        /// <summary>Short glyph shown on the installation toggle button in the DataGrid.</summary>
+        /// <summary>Short readable label shown on the installation toggle button in the DataGrid.
+        /// UX-06: cryptic V/X/В glyphs forced users into tooltips; short words are
+        /// self-explanatory (print glyph in КП stays unchanged — KpInstallationDisplay).
+        /// «ВК» = «в конструкцию», disambiguated by tooltip + accent color.</summary>
         public string InstallationButtonLabel => !IsInstallationApplicable
             ? "—"
             : _installationMode switch
             {
-                0 => "V",
-                1 => "X",
-                _ => "В"
+                0 => "Вкл",
+                1 => "Без",
+                _ => "ВК"
             };
 
         /// <summary>Tooltip for the installation toggle button.

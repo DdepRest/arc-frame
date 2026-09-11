@@ -41,4 +41,28 @@
             <Setter Property="Foreground" Value="{DynamicResource TextSecondary}"/>
             <Setter Property="Margin" Value="0,0,0,4"/>
         </Style>
+
+        <!-- ═══════════════════════════════════════════════════════ -->
+        <!-- TYPOGRAPHY SCALE — UX-16                                -->
+        <!-- ═══════════════════════════════════════════════════════ -->
+        <!-- Minimum readable sizes: WPF renders at 96 DPI logical px; 10px
+             regular text is the practical floor for the audience (mostly
+             40+ installers). Use these tokens instead of raw FontSize
+             numbers so future screens stay consistent.
+
+             Floor rules (UX-16):
+             - 11px  — smallest allowed for real text (captions, hints)
+             - 10px  — allowed ONLY for ALL-CAPS section labels (SectionLabel
+                       above) and icon glyphs, never for sentences
+             - <10px — banned for text; badge letters (BETA/OR/NV/USER) keep
+                       their sizes as intentional monogram styling -->
+        <Style x:Key="CaptionText" TargetType="TextBlock">
+            <Setter Property="FontSize" Value="11"/>
+            <Setter Property="Foreground" Value="{DynamicResource TextSecondary}"/>
+        </Style>
+
+        <Style x:Key="HintText" TargetType="TextBlock" BasedOn="{StaticResource CaptionText}">
+            <Setter Property="Foreground" Value="{DynamicResource TextMuted}"/>
+            <Setter Property="TextWrapping" Value="Wrap"/>
+        </Style>
 </ResourceDictionary>

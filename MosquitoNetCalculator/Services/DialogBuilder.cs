@@ -14,6 +14,13 @@ namespace MosquitoNetCalculator.Services
         private string _message = "";
         private readonly List<DialogButton<T>> _buttons = new();
 
+        /// <summary>
+        /// Test seam: read-only view of the configured buttons, so tests can pin
+        /// the dialog contract (which button is default/cancel, which style)
+        /// without showing a modal window.
+        /// </summary>
+        internal IReadOnlyList<DialogButton<T>> Buttons => _buttons;
+
         /// <summary>Sets the dialog title.</summary>
         public DialogBuilder<T> Title(string title)
         {

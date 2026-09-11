@@ -105,8 +105,10 @@ Or run: agents/scripts/what-to-update.ps1 (git diff --name-only) -- the script r
 | `Controls/AnwisContextMenuBuilder.cs` | `CURRENT_STATE.md`, `CHANGELOG.md` |
 | `Controls/AiAssistantControl.*` | `CURRENT_STATE.md`, `CHANGELOG.md` (streaming chat UI, model badges, plan preview card with Выполнить/Отмена and Отменить действие) |
 | `Controls/AiApiKeyDialog.*` | `CURRENT_STATE.md`, `CHANGELOG.md` (AI keys, model catalog and auto-select UX) |
-| `Controls/AdminPanelControl.xaml` | `CURRENT_STATE.md`, `CHANGELOG.md` (Админ-панель: UI статусов офисов) |
+| `Controls/AdminPanelControl.xaml` | `CURRENT_STATE.md`, `CHANGELOG.md` (Админ-панель: UI статусов офисов (поиск, фильтры, прогресс, быстрые действия)) |
 | `Controls/AdminPanelControl.xaml.cs` | `CURRENT_STATE.md`, `CHANGELOG.md` (Админ-панель: RefreshAsync (отчёты + последняя версия)) |
+| `Controls/AdminPanelControl.Filter.cs` | `CURRENT_STATE.md`, `CHANGELOG.md` (Админ-панель: поиск + фильтры по статусу + группировка списка (чистая логика OfficeRowFilter)) |
+| `Controls/AdminPanelControl.Actions.cs` | `CURRENT_STATE.md`, `CHANGELOG.md` (Админ-панель: быстрые действия — напоминание по всем устаревшим, режим отвязки устройств, сводный прогресс) |
 | `Controls/AdminPasswordWindow.xaml` | `CURRENT_STATE.md`, `CHANGELOG.md` (Админ-панель: окно входа/установки пароля) |
 | `Controls/AdminPasswordWindow.xaml.cs` | `CURRENT_STATE.md`, `CHANGELOG.md` (Админ-панель: EnterMode/SetMode диалога пароля) |
 
@@ -165,6 +167,8 @@ Or run: agents/scripts/what-to-update.ps1 (git diff --name-only) -- the script r
 | `agents/docs/MULTI_AGENT_ARC_CALC_CONTROL.md` | `CHEATSHEET.md`, `CURRENT_STATE.md`, `AGENTS.md` (canonical source of truth; CONTROL#13 self-maintenance) |
 | `agents/scripts/sync-version.ps1` | `CHEATSHEET.md`, `MULTI_AGENT_ARC_CALC_CONTROL.md` (sync-version.ps1: auto-sync csproj version to all agents/docs Last verified) |
 | `MosquitoNetCalculator/Converters/OfficeStatusConverters.cs` | `CURRENT_STATE.md`, `CHANGELOG.md` (Админ-панель: бейджи статусов (BadgeSuccess/Warning/Danger)) |
+| `MosquitoNetCalculator/Converters/UppercaseHeaderTemplate.cs` | `CURRENT_STATE.md`, `CHANGELOG.md`, `GOTCHAS.md#19` (капс заголовков колонок; шаблон строится в коде — DynamicResource в Binding.Converter невозможен) |
+| `MosquitoNetCalculator/Converters/UppercaseConverter.cs` | `GOTCHAS.md#19`, `CURRENT_STATE.md` (капс-конвертер заголовков) |
 
 ---
 
@@ -179,4 +183,4 @@ Use agents/scripts/what-to-update.ps1 to get the list of docs to update - the sc
 
 ## Last verified
 
-2026-09-02 (generated from JSON)
+2026-09-06 (generated from JSON)

@@ -16,6 +16,19 @@
             </Setter>
         </Style>
         <!-- ═══════════════════════════════════════════════════════ -->
+        <!-- OVERLAY HEADER — shared chrome for all slide-over panels -->
+        <!-- ═══════════════════════════════════════════════════════ -->
+        <!-- UX-15: every MainWindow overlay (Заказы/Цены/Обновления/Админ/
+             Откосы/AI/Заказчик/Печать) used the same Border header with the
+             same five attributes copied inline. One keyed style keeps them
+             consistent; the title/icon/close button stay per-overlay. -->
+        <Style x:Key="OverlayHeader" TargetType="Border">
+            <Setter Property="Background" Value="{DynamicResource HeaderBg}"/>
+            <Setter Property="Padding" Value="16,10"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource Border}"/>
+            <Setter Property="BorderThickness" Value="0,0,0,1"/>
+        </Style>
+        <!-- ═══════════════════════════════════════════════════════ -->
         <!-- SEPARATOR — subtle, modern                              -->
         <!-- ═══════════════════════════════════════════════════════ -->
         <Style TargetType="Separator">

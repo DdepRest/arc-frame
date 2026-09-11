@@ -29,6 +29,7 @@ namespace MosquitoNetCalculator
             // delegated to the presenter. MainWindow only owns the
             // side-effects (count chip, nav badge).
             OrderGridPresenter.RefreshOrdersGrid(OrdersHistoryControl.OrdersGrid, orders);
+            OrdersHistoryControl.ReapplyFilters();
 
             if (OrdersHistoryControl?.OrdersCount != null)
                 OrdersHistoryControl.OrdersCount.Text = $"Заказов: {orders.Count}";
@@ -202,7 +203,7 @@ namespace MosquitoNetCalculator
         {
             if (OrdersHistoryControl.OrdersGrid.SelectedItem is not OrderData order) return;
 
-            if (DialogService.ShowConfirm($"Удалить заказ \u00AB{order.ContractNumber}\u00BB \u2014 {order.ClientName}?\n\nЭто действие нельзя отменить.", "Удалить заказ", this))
+            if (DialogService.ShowConfirmDestructive($"Удалить заказ \u00AB{order.ContractNumber}\u00BB \u2014 {order.ClientName}?\n\nЭто действие нельзя отменить.", "Удалить", "Удалить заказ", this))
             {
                 ViewModel.OrdersVM.DeleteOrder(order.Id);
                 RefreshOrdersList();

@@ -73,6 +73,12 @@
                             <Setter TargetName="Bd" Property="BorderBrush" Value="{DynamicResource Border}"/>
                             <Setter Property="Opacity" Value="0.5"/>
                         </Trigger>
+                        <!-- UX#2: validation state — QuickAddControl sets Tag="Invalid"
+                             on a failed add attempt; the border turns red and wins over
+                             focus/hover (last trigger). Cleared on typing / type change. -->
+                        <Trigger Property="Tag" Value="Invalid">
+                            <Setter TargetName="Bd" Property="BorderBrush" Value="{DynamicResource Danger}"/>
+                        </Trigger>
                     </ControlTemplate.Triggers>
                 </ControlTemplate>
             </Setter.Value>

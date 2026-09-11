@@ -21,7 +21,31 @@ namespace MosquitoNetCalculator.Controls
         public SidebarControl()
         {
             InitializeComponent();
+            // v3.50: initial dot color + live sync on user changes. Programmatic
+            // SelectedItem assignment (MainWindow ctor) also fires SelectionChanged,
+            // so the dot follows both paths.
+            CmbStatus.SelectionChanged += (_, _) => UpdateStatusDot();
         }
+
+        /// <summary>
+        /// v3.50: status pill dot — mirrors OrderStatuses.GetBadgeColors foreground
+        /// for the chosen status (pure UI; the badge colors are the existing
+        /// single source of truth used by the Orders grid).
+        /// </summary>
+        private void UpdateStatusDot()
+        {
+            if (StatusDot == null || CmbStatus == null) return;
+            string status = CmbStatus.SelectedItem?.ToString() ?? string.Empty;
+            var (_, fg) = Models.OrderStatuses.GetBadgeColors(status);
+            try
+            {
+                StatusDot.Fill = (Brush?)new BrushConverter().ConvertFromString(fg) ?? StatusDot.Fill;
+            }
+            catch { /* best-effort cosmetic — keep previous fill */ }
+        }
+
+        /// <summary>XAML SelectionChanged handler — refreshes the dot (no business logic).</summary>
+        private void CmbStatus_SelectionChanged(object sender, SelectionChangedEventArgs e) => UpdateStatusDot();
 
         /// <summary>
         /// Resolves the parent MainWindow from DataContext, logging a diagnostic if the

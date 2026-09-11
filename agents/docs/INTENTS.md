@@ -8,7 +8,7 @@
 |---|---|
 | Скрыть/показать колонку в таблице | `OrderItemsControl.xaml`, `OrderItem.Calculations.cs` (display свойства), `MainWindow.xaml.cs` (editing gates) |
 | Изменить панель быстрого ввода (QuickAdd) | `QuickAddControl.xaml`, `QuickAddControl.xaml.cs`, `OrderItem.cs` (продуктовые set'ы) |
-| Изменить таблицу заказов (DataGrid) | `OrderItemsControl.xaml`, `OrderItemsControl.xaml.cs`, `MainWindow.DataGrid.cs` |
+| Изменить таблицу заказов (DataGrid) | `OrderItemsControl.xaml`, `OrderItemsControl.xaml.cs`, `MainWindow.DataGrid.cs`, `GOTCHAS.md#19` (конвертер в шаблоне) |
 | Изменить боковую панель (клиент, договор) | `SidebarControl.xaml`, `SidebarControl.xaml.cs`, `ClientInfo.cs` |
 | Изменить итоговую карточку | `TotalCardControl.xaml`, `TotalCardControl.xaml.cs`, `CalculationViewModel.cs` |
 | Изменить панель действий | `ActionBarControl.xaml`, `ActionBarControl.xaml.cs` |
@@ -17,8 +17,10 @@
 | Изменить тему/цвета | `Themes/Brushes.xaml`, `ThemeService.cs`, `DECISIONS.md#10`, `GOTCHAS.md#7` |
 | Открыть/изменить админ-панель (вкладки «Обновления»/«Статистика», устройства офиса) | `Controls/AdminPanelControl.xaml(.cs)` (TabControl — новые секции добавляются сюда), `Services/OfficeReportService.cs` (gist-канал, per-device файлы), `Models/OfficeDeviceRow.cs` (устройство офиса), `Services/OfficeStatusCalculator.cs` (статусы по устройствам), `Services/OfficeStatsCalculator.cs` (статистика заказов, сумма по устройствам), `Services/OfficeReportScheduler.cs` (периодическая отправка каждые 30 мин), `MainWindow.xaml` (NavBtnAdmin/AdminOverlay; отчёт при фоновой проверке обновлений), `Controls/TitleBarControl.xaml.cs` (отчёт при ручной проверке), `Controls/AdminPasswordWindow.xaml(.cs)` (вход по паролю) |
 | Добавить новую секцию в админ-панель (например «Активность») | `Controls/AdminPanelControl.xaml` (новый TabItem) + `Models/OfficeReport.cs` (новое поле в отчёте, обратносовместимо) + при необходимости новый `*Calculator` (чистая логика) |
+| Устройство числится в двух офисах (дубль привязки) | `Services/OfficeReportService.cs` (`ComputeOldOfficeFilesToDelete` — атомарный переезд в `SendReportAsync`; `ComputeStaleBindingsToDelete` — самоисцеление при рефреше панели), `Services/AppSettingsService.cs` (`LastReportedPrefix`), `Controls/AdminPanelControl.Actions.cs` (ручная отвязка) |
+| Поиск/фильтр/группировка в админ-панели | `Controls/AdminPanelControl.Filter.cs` (чистая логика `OfficeRowFilter` + ICollectionView) |
 | Изменить хранилище отчётов офисов (gist, токен) | `Services/OfficeReportService.cs` (GistId/CompiledToken), `Services/AppSettingsService.cs` (OfficeReportToken/GistId в settings.json), `agents/docs/CURRENT_STATE.md` |
-| Изменить стили кнопок/карточек/таблиц | `Themes/*Styles.xaml`, `GOTCHAS.md#7` |
+| Изменить стили кнопок/карточек/таблиц | `Themes/*Styles.xaml`, `GOTCHAS.md#7`, `GOTCHAS.md#19` (DynamicResource в Binding.Converter запрещён) |
 
 ## Товары / добавление
 
@@ -140,6 +142,8 @@ Intake phase: user describes intent
 - `INTENTS.md` — this file
 
 ## Last verified
+2026-09-11 (v3.50.0) — auto-synced from csproj (sync-version.ps1, CONTROL#13).
+
 2026-09-06 (v3.49.0) — auto-synced from csproj (sync-version.ps1, CONTROL#13).
 
 2026-08-30 (v3.48.7) — auto-synced from csproj (sync-version.ps1, CONTROL#13).

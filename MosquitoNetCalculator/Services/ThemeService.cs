@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Text.Json;
@@ -237,6 +237,7 @@ namespace MosquitoNetCalculator.Services
         {
             // Backgrounds
             ["AppBg"]        = "#F5F5F7",
+            ["SidebarBg"]     = "#FFFFFF",
             ["Surface"]       = "#FFFFFF",
             ["QuickBg"]       = "#FCFCFD",
             ["RowHover"]      = "#F0F0F5",
@@ -255,7 +256,9 @@ namespace MosquitoNetCalculator.Services
             // Text
             ["TextPrimary"]   = "#1A1A24",
             ["TextSecondary"] = "#585868",
-            ["TextMuted"]     = "#90909C",
+            // UX-07: #90909C was ≈2.9:1 on white (below WCAG AA 4.5:1 for the
+            // 8-11px labels it's used on). #6E6E7A gives ≈5.0:1 on white.
+            ["TextMuted"]     = "#6E6E7A",
             // Borders
             ["Border"]        = "#E0E0E8",
             ["BorderHover"]   = "#C0C0CC",
@@ -273,6 +276,7 @@ namespace MosquitoNetCalculator.Services
             ["DangerGhostBorder"] = "#F0C6CA",
             // On-accent text
             ["OnAccent"]      = "#FFFFFF",
+            ["OnAccentPrimary"] = "#FFFFFF",
             ["OnSuccess"]     = "#FFFFFF",
             ["OnDanger"]      = "#FFFFFF",
             // Ghost button
@@ -295,6 +299,7 @@ namespace MosquitoNetCalculator.Services
             ["HeaderBg"]      = "#F9F9FC",
             ["HeaderBorder"]  = "#E8E8F0",
             ["HeaderText"]    = "#484858",
+            ["HeaderHover"]   = "#F0F0F6",
             ["HeaderPress"]   = "#E8E8EC",
             // Menu
             ["MenuItemPressed"] = "#E8EDF5",
@@ -318,98 +323,105 @@ namespace MosquitoNetCalculator.Services
         };
 
         // ─────────────────────────────────────────────────────────
-        // Dark theme — high-contrast modern card design
+        // Dark theme — v3.50 prototype palette
+        // (docs/prototype.html: bg #131417, panel #1E2025, accent #4EA1F7)
         //
         // Elevation system (4 visible levels):
-        //   L0  AppBg      #0F0F12  — deepest page background
-        //   L0.5 RowAlt    #16161A  — alternating row background
-        //   L1  Surface    #1C1C22  — cards, panels, tables
-        //   L2  QuickBg    #25252D  — elevated interactive cards
-        //   L3  HeaderBg   #2E2E38  — column headers, prominent panels
+        //   L0  AppBg      #131417  — deepest page background
+        //   L0.5 RowAlt    #17181C  — alternating row background
+        //   L1  Surface    #1E2025  — cards, panels, tables
+        //   L2  QuickBg    #23262C  — elevated interactive cards
+        //   L3  HeaderBg   #2A2D33  — column headers, prominent panels
         // ─────────────────────────────────────────────────────────
         private static readonly Dictionary<string, string> DarkColors = new()
         {
-            // Backgrounds — 4-level elevation
-            ["AppBg"]        = "#0F0F12",
-            ["Surface"]       = "#1C1C22",
-            ["QuickBg"]       = "#25252D",
-            ["RowAlt"]        = "#16161A",
-            ["RowHover"]      = "#2A2A35",
-            ["RowAltHover"]   = "#2A2A35",
-            ["RowAltSelected"] = "#1E3050",
+            // Backgrounds — 4-level elevation (prototype: --bg/--panel/--panel2/--field)
+            ["AppBg"]        = "#131417",
+            ["SidebarBg"]    = "#17181C",
+            ["Surface"]       = "#1E2025",
+            ["QuickBg"]       = "#23262C",
+            ["RowAlt"]        = "#17181C",
+            ["RowHover"]      = "#22252B",
+            ["RowAltHover"]   = "#22252B",
+            ["RowAltSelected"] = "#26384C",
             // Row-hover/select animation targets (Color)
-            ["RowHoverColor"]    = "#2A2A35",
-            ["AccentLightColor"] = "#1E3050",
-            // Accent — modern blue, stands out on dark
-            ["Accent"]        = "#5299E0",
-            ["AccentHover"]   = "#6BAFEF",
-            ["AccentPress"]   = "#4088CC",
-            ["AccentLight"]   = "#1A3050",
-            ["AccentShadowColor"] = "#5299E0",
-            // Text — bright, high-contrast
-            ["TextPrimary"]   = "#FFFFFF",
-            ["TextSecondary"] = "#C8C8D0",
-            ["TextMuted"]     = "#888896",
-            // Borders — visible but not aggressive
-            ["Border"]        = "#353540",
-            ["BorderHover"]   = "#505060",
-            ["SubtleBorder"]  = "#2A2A34",
-            ["GridLine"]      = "#22222C",
-            ["TrackBg"]       = "#30303A",
-            ["ScrollBarThumb"] = "#606070",
-            ["HeaderBorder"]  = "#3A3A48",
-            // Semantic
-            ["Success"]       = "#4CC97D",
-            ["SuccessHover"]  = "#5DE08F",
-            ["Danger"]        = "#FF6B6B",
-            ["DangerHover"]   = "#FF8585",
-            ["Warning"]       = "#FFB347",
-            ["DangerLight"]   = "#2A1820",
-            ["DangerGhostBorder"] = "#4A2838",
-            // On-accent text — dark text on bright buttons
+            ["RowHoverColor"]    = "#22252B",
+            ["AccentLightColor"] = "#26384C",
+            // Accent — prototype blue #4EA1F7 (--accent), darker steps for hover/press
+            ["Accent"]        = "#4EA1F7",
+            ["AccentHover"]   = "#6BB4F9",
+            ["AccentPress"]   = "#2B7FD4",
+            ["AccentLight"]   = "#26384C",
+            ["AccentShadowColor"] = "#4EA1F7",
+            // Text — prototype: --text #E8EAED, --muted #9AA0A8
+            ["TextPrimary"]   = "#E8EAED",
+            ["TextSecondary"] = "#C3C8CF",
+            // Prototype --dim #6D727B is ≈3.5:1 on Surface — below AA for 8-11px
+            // labels; #8B919A keeps the grayish hue at ≈5.4:1 (UX-07 rule).
+            ["TextMuted"]     = "#8B919A",
+            // Borders — prototype: --border #2C2F36, --border2 #383C44
+            ["Border"]        = "#2C2F36",
+            ["BorderHover"]   = "#454A53",
+            ["SubtleBorder"]  = "#26292F",
+            ["GridLine"]      = "#26292F",
+            ["TrackBg"]       = "#33363D",
+            ["ScrollBarThumb"] = "#606873",
+            ["HeaderBorder"]  = "#33363C",
+            // Semantic — prototype: --green #3ECF8E, --red #E5484D, --amber #F5A524
+            ["Success"]       = "#3ECF8E",
+            ["SuccessHover"]  = "#5EDDA4",
+            ["Danger"]        = "#E5484D",
+            ["DangerHover"]   = "#FF6B6F",
+            ["Warning"]       = "#F5A524",
+            ["DangerLight"]   = "#2E1B1E",
+            ["DangerGhostBorder"] = "#5A2629",
+            // On-accent text — dark text on bright buttons (prototype .btn.green uses #04180D)
             ["OnAccent"]      = "#FFFFFF",
-            ["OnSuccess"]     = "#0D1F14",
+            // v3.50.1: prototype .btn.blue color #06121F — dark text on accent fill
+            ["OnAccentPrimary"] = "#06121F",
+            ["OnSuccess"]     = "#04180D",
             ["OnDanger"]      = "#FFFFFF",
-            // Ghost button — elevated from surface
-            ["GhostBg"]       = "#2A2A34",
-            ["GhostBorder"]   = "#404050",
+            // Ghost button — prototype .btn.dark #2A2D33 with border #3A3E46
+            ["GhostBg"]       = "#2A2D33",
+            ["GhostBorder"]   = "#3A3E46",
             // Section card — sidebar sub-cards
-            ["SectionBg"]     = "#22222C",
-            ["SectionAccent"] = "#5299E0",
+            ["SectionBg"]     = "#22252B",
+            ["SectionAccent"] = "#4EA1F7",
             // Glow / shadow
-            ["GlowAccent"]    = "#5299E0",
-            ["SuccessShadow"] = "#4CC97D",
-            ["DangerShadow"]  = "#FF6B6B",
-            // Total bar
-            ["TotalBg"]       = "#141418",
-            ["TotalText"]     = "#FFFFFF",
-            ["TotalTextMuted"] = "#909098",
-            // Quick-add / chips — visible accent
-            ["ChipBg"]        = "#1A3050",
+            ["GlowAccent"]    = "#4EA1F7",
+            ["SuccessShadow"] = "#3ECF8E",
+            ["DangerShadow"]  = "#E5484D",
+            // Total bar — deeper than AppBg like prototype statusbar (--bg2 #17181C)
+            ["TotalBg"]       = "#17181C",
+            ["TotalText"]     = "#E8EAED",
+            ["TotalTextMuted"] = "#8B919A",
+            // Quick-add / chips — visible accent (accent at ~12% on surface)
+            ["ChipBg"]        = "#26384C",
             // DataGrid headers — elevated
-            ["HeaderBg"]      = "#2E2E38",
-            ["HeaderBorder"]  = "#3A3A48",
-            ["HeaderText"]    = "#D0D0D8",
-            ["HeaderPress"]   = "#22222A",
+            ["HeaderBg"]      = "#2A2D33",
+            ["HeaderBorder"]  = "#33363C",
+            ["HeaderText"]    = "#CFD3D9",
+            ["HeaderHover"]   = "#2F333A",
+            ["HeaderPress"]   = "#22252B",
             // Menu
-            ["MenuItemPressed"] = "#1E3050",
+            ["MenuItemPressed"] = "#26384C",
             // Shadow
             ["ShadowColor"]   = "#000000",
             // Badges
-            ["BadgeDefaultBg"]  = "#1A3050",
-            ["BadgeDefaultFg"]  = "#5299E0",
-            ["BadgeSuccessBg"]  = "#142820",
-            ["BadgeSuccessFg"]  = "#5BC98A",
-            ["BadgeWarningBg"]  = "#2A2014",
-            ["BadgeWarningFg"]  = "#FFB347",
-            ["BadgeDangerBg"]   = "#2A1820",
-            ["BadgeDangerFg"]   = "#FF6B6B",
-            ["BadgeVisionBg"]   = "#241A35",
-            ["BadgeVisionFg"]   = "#B49AFF",
+            ["BadgeDefaultBg"]  = "#26384C",
+            ["BadgeDefaultFg"]  = "#4EA1F7",
+            ["BadgeSuccessBg"]  = "#12291D",
+            ["BadgeSuccessFg"]  = "#3ECF8E",
+            ["BadgeWarningBg"]  = "#2E2415",
+            ["BadgeWarningFg"]  = "#F5A524",
+            ["BadgeDangerBg"]   = "#2E1B1E",
+            ["BadgeDangerFg"]   = "#E5484D",
+            ["BadgeVisionBg"]   = "#251E38",
+            ["BadgeVisionFg"]   = "#A78BFA",
             // Install toggle
-            ["InstallGreen"]  = "#4CC97D",
-            ["InstallRed"]    = "#FF6B6B",
-            ["InstallGray"]   = "#808090",
+            ["InstallGreen"]  = "#3ECF8E",
+            ["InstallRed"]    = "#E5484D",
+            ["InstallGray"]   = "#8A8A9A",
         };
     }
 }

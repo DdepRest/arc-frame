@@ -30,11 +30,61 @@ namespace MosquitoNetCalculator.Controls
             return false;
         }
 
-        private void BtnPrintKp_Click(object sender, RoutedEventArgs e)
+        // ─── v3.50 split-button «Печать КП» ───────────────────────────
+        // Main segment = PDF export in one click; caret opens the variants
+        // menu. Every route reuses an EXISTING print path:
+        //   PDF      → PrintPreviewControl.TriggerPdfExport (SavePdf_Click:
+        //              same save dialog, settings, QuestPDF pipeline)
+        //   Preview  → former BtnPrintKp_Click (ShowPrintOverlay)
+        //   Printer  → PrintPreviewControl.TriggerPrinterPrint (Print_Click)
+
+        private void BtnPrintPdf_Click(object sender, RoutedEventArgs e)
         {
-            if (!TryGetMainWindow(nameof(BtnPrintKp_Click), out var mw)) return;
-            // Navigate to Print tab — document is built and preview shown in PrintOverlay
+            if (!TryGetMainWindow(nameof(BtnPrintPdf_Click), out var mw)) return;
+            PrintMenuPopup.IsOpen = false;
+
+            var validItems = mw.OrderItems.Where(i => !string.IsNullOrEmpty(i.Name) && i.IsActive && i.Total > 0).ToList();
+            if (validItems.Count == 0)
+            {
+                ToastService.ShowToast("Добавьте хотя бы одну позицию.", ToastType.Warning);
+                return;
+            }
+
+            // Build+show the overlay (existing path) offscreen-equivalent: build the
+            // document exactly as ShowPrintOverlay does, then trigger the PDF save
+            // through the control's own button handler. The overlay stays closed —
+            // one-click export as the prototype describes.
             mw.ShowPrintOverlay();
+            mw.PrintPreviewControl.TriggerPdfExport();
+            mw.CloseAllOverlays();
+        }
+
+        private void BtnPrintCaret_Click(object sender, RoutedEventArgs e)
+        {
+            PrintMenuPopup.IsOpen = !PrintMenuPopup.IsOpen;
+        }
+
+        private void BtnPrintPreview_Click(object sender, RoutedEventArgs e)
+        {
+            if (!TryGetMainWindow(nameof(BtnPrintPreview_Click), out var mw)) return;
+            PrintMenuPopup.IsOpen = false;
+            mw.ShowPrintOverlay();
+        }
+
+        private void BtnPrinterDirect_Click(object sender, RoutedEventArgs e)
+        {
+            if (!TryGetMainWindow(nameof(BtnPrinterDirect_Click), out var mw)) return;
+            PrintMenuPopup.IsOpen = false;
+
+            var validItems = mw.OrderItems.Where(i => !string.IsNullOrEmpty(i.Name) && i.IsActive && i.Total > 0).ToList();
+            if (validItems.Count == 0)
+            {
+                ToastService.ShowToast("Добавьте хотя бы одну позицию.", ToastType.Warning);
+                return;
+            }
+
+            mw.ShowPrintOverlay();
+            mw.PrintPreviewControl.TriggerPrinterPrint();
         }
 
         internal void BtnSaveOrder_Click(object sender, RoutedEventArgs e)
@@ -126,18 +176,45 @@ namespace MosquitoNetCalculator.Controls
             mw.ToggleSidebarOverlay();
         }
 
+        private void BtnUndo_Click(object sender, RoutedEventArgs e)
+        {
+            if (!TryGetMainWindow(nameof(BtnUndo_Click), out var mw)) return;
+            mw.Undo();
+        }
+
+        private void BtnRedo_Click(object sender, RoutedEventArgs e)
+        {
+            if (!TryGetMainWindow(nameof(BtnRedo_Click), out var mw)) return;
+            mw.Redo();
+        }
+
+        private void DirtyChip_Click(object sender, System.Windows.Input.MouseButtonEventArgs e)
+        {
+            if (!TryGetMainWindow(nameof(DirtyChip_Click), out var mw)) return;
+            // Same path as Ctrl+S: save the order (no-op toast if nothing to save).
+            BtnSaveOrder_Click(sender, new RoutedEventArgs());
+        }
+
         private void BtnClearAll_Click(object sender, RoutedEventArgs e)
         {
             if (!TryGetMainWindow(nameof(BtnClearAll_Click), out var mw)) return;
             if (mw.OrderItems.Count == 0) return;
 
-            if (DialogService.ShowConfirm("Очистить все позиции расчёта?", "Подтверждение", mw))
+            if (DialogService.ShowConfirmDestructive("Очистить все позиции расчёта?", "Очистить", "Очистить всё", mw))
             {
                 mw.PushUndo();
                 mw.CalcVM.UnsubscribeAll(mw.UpdateTotal);
                 mw.CalcVM.ClearAll();
                 mw.UpdateTotal();
                 mw.UpdateEmptyState();
+
+                // v3.50: undo toast — PushUndo above makes the clear reversible
+                // through Undo (the prototype's «Отменить» action).
+                ToastService.ShowToast(
+                    "Заказ очищен",
+                    ToastType.Info,
+                    "Отменить",
+                    () => mw.Undo());
             }
         }
 

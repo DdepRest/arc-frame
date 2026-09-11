@@ -277,9 +277,9 @@ namespace MosquitoNetCalculator.Tests.Services
         }
 
         [Theory]
-        [InlineData(OfficeStatus.UpToDate, "\u2713")]   // ✓
-        [InlineData(OfficeStatus.Outdated, "\u26A0")]   // ⚠
-        [InlineData(OfficeStatus.NoData,    "\u2753")]   // ❓
+        [InlineData(OfficeStatus.UpToDate, "\uE73E")]   // Fluent CheckMark
+        [InlineData(OfficeStatus.Outdated, "\uE7BA")]   // Fluent Warning
+        [InlineData(OfficeStatus.NoData,    "\uE9CE")]   // Fluent Unknown
         public void StatusGlyph_MatchesStatus(OfficeStatus status, string expected)
         {
             var row = new OfficeStatusRow { Status = status };

@@ -7,7 +7,7 @@
         <!-- Primary — Windows 11 Fluent blue -->
         <Style x:Key="PrimaryButton" TargetType="Button">
             <Setter Property="Background" Value="{DynamicResource Accent}"/>
-            <Setter Property="Foreground" Value="{DynamicResource OnAccent}"/>
+            <Setter Property="Foreground" Value="{DynamicResource OnAccentPrimary}"/>
             <Setter Property="FontSize" Value="12"/>
             <Setter Property="FontWeight" Value="SemiBold"/>
             <Setter Property="Padding" Value="14,6"/>
@@ -181,7 +181,7 @@
         <!-- CompactAdd — Fluent "Add" button in Quick-Add -->
         <Style x:Key="CompactAddButton" TargetType="Button">
             <Setter Property="Background" Value="{DynamicResource Accent}"/>
-            <Setter Property="Foreground" Value="{DynamicResource OnAccent}"/>
+            <Setter Property="Foreground" Value="{DynamicResource OnAccentPrimary}"/>
             <Setter Property="FontSize" Value="12"/>
             <Setter Property="FontWeight" Value="SemiBold"/>
             <Setter Property="Padding" Value="16,6"/>
@@ -235,7 +235,7 @@
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsMouseOver" Value="True">
                                 <Setter TargetName="Bd" Property="Background" Value="{DynamicResource Accent}"/>
-                                <Setter Property="Foreground" Value="{DynamicResource OnAccent}"/>
+                                <Setter Property="Foreground" Value="{DynamicResource OnAccentPrimary}"/>
                                 <Setter TargetName="Bd" Property="Effect">
                                     <Setter.Value>
                                         <DropShadowEffect BlurRadius="12" ShadowDepth="0" Opacity="0.2" Color="#005FB8"/>
@@ -244,7 +244,7 @@
                             </Trigger>
                             <Trigger Property="IsPressed" Value="True">
                                 <Setter TargetName="Bd" Property="Background" Value="{DynamicResource AccentPress}"/>
-                                <Setter Property="Foreground" Value="{DynamicResource OnAccent}"/>
+                                <Setter Property="Foreground" Value="{DynamicResource OnAccentPrimary}"/>
                             </Trigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
@@ -322,7 +322,7 @@
              dictionary: StaticResource BasedOn needs the base defined first. -->
         <Style x:Key="DialogPrimaryButton" TargetType="Button" BasedOn="{StaticResource DialogOutlineButton}">
             <Setter Property="Background" Value="{DynamicResource Accent}"/>
-            <Setter Property="Foreground" Value="{DynamicResource OnAccent}"/>
+            <Setter Property="Foreground" Value="{DynamicResource OnAccentPrimary}"/>
             <Setter Property="BorderThickness" Value="0"/>
             <Setter Property="FontWeight" Value="SemiBold"/>
             <Setter Property="Padding" Value="18,0"/>
@@ -397,5 +397,40 @@
                     <Setter Property="Opacity" Value="0.35"/>
                 </Trigger>
             </Style.Triggers>
+        </Style>
+
+        <!-- ═══════════════════════════════════════════════════════ -->
+        <!-- DIALOG CLOSE BUTTON — shared chrome for all custom windows   -->
+        <!-- ═══════════════════════════════════════════════════════ -->
+        <!-- UX-14: previously ~10 windows each carried a private copy of this
+             60-line template (some with animated hover, some with instant —
+             visually inconsistent). One keyed style is now the single source;
+             dialogs reference it via Style="{StaticResource DialogCloseButton}".
+             Size stays consumer-set (Width/Height), Foreground follows the
+             window's TextPrimary and turns white over the red hover overlay. -->
+        <Style x:Key="DialogCloseButton" TargetType="Button">
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Foreground" Value="{DynamicResource TextPrimary}"/>
+            <Setter Property="ToolTip" Value="Закрыть (Escape)"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border Background="{TemplateBinding Background}" BorderThickness="0" CornerRadius="8" ClipToBounds="True">
+                            <Grid>
+                                <Border x:Name="HoverOverlay" Background="{DynamicResource Danger}" Opacity="0" CornerRadius="8"/>
+                                <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                            </Grid>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter Property="Foreground" Value="#FFFFFF"/>
+                                <Setter TargetName="HoverOverlay" Property="Opacity" Value="1"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
         </Style>
 </ResourceDictionary>

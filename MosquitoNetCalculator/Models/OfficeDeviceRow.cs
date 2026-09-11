@@ -25,6 +25,16 @@ namespace MosquitoNetCalculator.Models
         public OfficeStatus Status { get; init; }
 
         /// <summary>
+        /// Отметка администратора в режиме «Отвязать выбранные» (только UI-
+        /// состояние, не бизнес-данные). Живёт НА МОДЕЛИ, а не в отдельном
+        /// словаре панели: виртуализирующий список переиспользует контейнеры,
+        /// и TwoWay-биндинг при каждой подготовке контейнера перечитывает
+        /// актуальное значение — визуальное состояние не может разойтись
+        /// с тем, что реально будет отвязано (playtest поймал такой «ghost»).
+        /// </summary>
+        public bool IsChecked { get; set; }
+
+        /// <summary>
         /// Подпись устройства для чипа: имя ПК, иначе короткий ID,
         /// иначе обобщённое «устройство» (легаси-отчёты).
         /// </summary>
@@ -46,12 +56,14 @@ namespace MosquitoNetCalculator.Models
             _ => "Нет данных",
         };
 
-        /// <summary>Юникод-глиф статуса: ✓ — актуальна, ⚠ — устарела, ? — нет данных.</summary>
+        /// <summary>Юникод-глиф статуса (Segoe Fluent Icons, рендерится TextBlock'ом
+        /// с FontFamily="Segoe Fluent Icons"): E73E ✓ — актуальна, E7BA ⚠ — устарела,
+        /// E9CE ? — нет данных.</summary>
         public string StatusGlyph => Status switch
         {
-            OfficeStatus.UpToDate => "\u2713",   // ✓
-            OfficeStatus.Outdated => "\u26A0",   // ⚠
-            _ => "\u2753",                       // ❓
+            OfficeStatus.UpToDate => "\uE73E",   // CheckMark
+            OfficeStatus.Outdated => "\uE7BA",   // Warning
+            _ => "\uE9CE",                       // Unknown
         };
 
         /// <summary>
@@ -75,5 +87,14 @@ namespace MosquitoNetCalculator.Models
 
         /// <summary>Полная подпись для тултипа чипа устройства.</summary>
         public string ToolTipText => $"{DeviceLabel} · {StatusText} · последний отчёт: {LastReportDisplay}";
+
+        /// <summary>
+        /// Короткое «последняя связь» на чипе: «· сегодня 14:32» / «· вчера 09:10» /
+        /// «· 3 дн. назад» — чтобы отличить «ПК выключен неделю» от «отчитался
+        /// час назад» (аудит SPEC). Пусто для свежего (< StaleHintAfter) —
+        /// текущий статус и так правдив; чистая логика в
+        /// <see cref="MosquitoNetCalculator.Services.DeviceLastSeenHint"/>.
+        /// </summary>
+        public string LastSeenHint => Services.DeviceLastSeenHint.Text(LastReportAt, DateTimeOffset.Now);
     }
 }

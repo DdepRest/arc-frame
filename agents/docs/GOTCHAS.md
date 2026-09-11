@@ -439,6 +439,40 @@ InstallationSurcharge = (od.InstallationSurcharge > 0 && od.InstallationMode != 
 
 **Правило на будущее:** при добавлении нового товара-сетки решить, должен ли он участвовать в импосте, и добавить/не добавлять его в `ProductCatalog.ImpostApplicableProducts`. Регрессии покрыты `OrderItemTests.Impost*` / `HasImpost_*` / `Total_*Impost*`.
 
+### 19. DynamicResource в Binding.Converter — краш только в рантайме (СРЕДНИЙ/ВЫСОКИЙ)
+
+**Где:** любой XAML-шаблон с `{Binding Converter=...}`. Выявлено на заголовках колонок DataGrid
+(`Themes/DataGridStyles.xaml`); рабочий фикс — `Converters/UppercaseHeaderTemplate.cs`
++ вызовы `UppercaseHeaderTemplate.Apply(grid)` в конструкторах
+`OrderItemsControl` / `OrdersHistoryControl` / `PricesControl`.
+
+**Что может случиться:** `{Binding Converter={DynamicResource SomeConverter}}` компилируется
+без ошибок, но падает при построении шаблона ячейки/элемента:
+`DynamicResourceExtension невозможно задать в свойстве Converter типа Binding`
+(NotSupportedException из MarkupExtension). `Converter` — обычное CLR-свойство `Binding`,
+НЕ DependencyProperty, поэтому DynamicResource там недопустим.
+
+**Коварство:** компилятор XAML пропускает это — ошибка видна только в рантайме, обычно на
+первом рендере грида, с непонятным стеком в `MeasureOverride`/`ApplyTemplate`. Тесты,
+парсящие сырой XAML, тоже не ловят: пока шаблон реально не применён к элементу дерева,
+ничего не падает.
+
+**Решение (любой из вариантов):**
+- `StaticResource` — если конвертер гарантированно загружен до словаря с шаблоном
+  (см. порядок MergedDictionaries в App.xaml);
+- назначение шаблона/конвертера из code-behind (`FrameworkElementFactory` +
+  `new Binding { Converter = new ... }` — так сделан `UppercaseHeaderTemplate`);
+- конвертер как ресурс в App.xaml + XAML-ссылка там, где возможен статический поиск.
+
+**Правило:** В XAML `{Binding Converter={DynamicResource ...}}` запрещён. Если конвертер
+должен приходить из темы — строй шаблон в коде или используй StaticResource с проверкой
+порядка словарей.
+
+**Тесты:** `MosquitoNetCalculator.Tests.Converters.UppercaseHeaderTemplateTests`
+(STA-паттерн `RunOnStaThread`): фиксирует, что все колонки получают общий шаблон,
+а строки `Header` остаются точными («Ширина»/«Высота» — их сравнивает `BeginningEdit`,
+блокировка ячеек).
+
 ---
 
 ## Риски по категориям
@@ -458,6 +492,7 @@ InstallationSurcharge = (od.InstallationSurcharge > 0 && od.InstallationMode != 
 | UI | Краш при переключении темы | СРЕДНИЙ |
 | UI | `Width="Auto"` колонки не растёт при наборе (`LostFocus` без `PropertyChanged`) | СРЕДНИЙ |
 | UI | DataGridTextColumn SelectAll race (отложенный BeginInvoke проигрывает первому keystroke, текст дописывается) | СРЕДНИЙ |
+| UI | `{Binding Converter={DynamicResource ...}}` — компилируется, краш в рантайме (Converter не DP) | СРЕДНИЙ |
 ## Source files
 
 - `MosquitoNetCalculator/Models/OrderItem.cs`
@@ -472,6 +507,8 @@ InstallationSurcharge = (od.InstallationSurcharge > 0 && od.InstallationMode != 
 ---
 
 ## Last verified
+2026-09-11 (v3.50.0) — auto-synced from csproj (sync-version.ps1, CONTROL#13).
+
 2026-09-06 (v3.49.0) — auto-synced from csproj (sync-version.ps1, CONTROL#13).
 
 2026-08-30 (v3.48.7) — auto-synced from csproj (sync-version.ps1, CONTROL#13).

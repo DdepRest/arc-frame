@@ -1,9 +1,11 @@
 ﻿<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
                     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
         <!-- ═══════════════════════════════════════════════════════ -->
-        <!-- SCROLLBAR — ultra-thin overlay (auto-hide on hover)     -->
-        <!-- Track & thumb are invisible until the user hovers the  -->
-        <!-- ScrollBar area; everything fades in/out smoothly.       -->
+        <!-- SCROLLBAR — ultra-thin overlay (resting 0.35, full on hover) -->
+        <!-- UX-04: at rest the thumb is faintly visible (Opacity 0.35) so
+             users can tell the list scrolls and where they are; hovering
+             the scrollbar area fades track+thumb to full strength for
+             precise dragging. Everything still fades smoothly. -->
         <!-- ═══════════════════════════════════════════════════════ -->
         <Style TargetType="ScrollBar">
             <Setter Property="Width" Value="6"/>
@@ -13,7 +15,7 @@
                     <ControlTemplate TargetType="ScrollBar">
                         <Border x:Name="TrackBg"
                                 Background="{DynamicResource TrackBg}"
-                                Opacity="0" CornerRadius="3"
+                                Opacity="0.12" CornerRadius="3"
                                 HorizontalAlignment="Center" Width="6">
                             <Track x:Name="PART_Track" IsDirectionReversed="True">
                                 <Track.DecreaseRepeatButton>
@@ -23,7 +25,7 @@
                                 </Track.DecreaseRepeatButton>
                                 <Track.Thumb>
                                     <Thumb x:Name="ThumbBd"
-                                           Opacity="0"
+                                           Opacity="0.35"
                                            Margin="0,1">
                                         <Thumb.Template>
                                             <ControlTemplate TargetType="Thumb">
@@ -49,7 +51,7 @@
                                             <!-- Track fades in -->
                                             <DoubleAnimation Storyboard.TargetName="TrackBg"
                                                              Storyboard.TargetProperty="Opacity"
-                                                             To="0.25" Duration="0:0:0.2">
+                                                             To="0.3" Duration="0:0:0.2">
                                                 <DoubleAnimation.EasingFunction>
                                                     <CubicEase EasingMode="EaseOut"/>
                                                 </DoubleAnimation.EasingFunction>
@@ -71,7 +73,7 @@
                                             <!-- Track fades out -->
                                             <DoubleAnimation Storyboard.TargetName="TrackBg"
                                                              Storyboard.TargetProperty="Opacity"
-                                                             To="0" Duration="0:0:0.4">
+                                                             To="0.12" Duration="0:0:0.4">
                                                 <DoubleAnimation.EasingFunction>
                                                     <CubicEase EasingMode="EaseOut"/>
                                                 </DoubleAnimation.EasingFunction>
@@ -79,7 +81,7 @@
                                             <!-- Thumb fades out -->
                                             <DoubleAnimation Storyboard.TargetName="ThumbBd"
                                                              Storyboard.TargetProperty="Opacity"
-                                                             To="0" Duration="0:0:0.4">
+                                                             To="0.35" Duration="0:0:0.4">
                                                 <DoubleAnimation.EasingFunction>
                                                     <CubicEase EasingMode="EaseOut"/>
                                                 </DoubleAnimation.EasingFunction>

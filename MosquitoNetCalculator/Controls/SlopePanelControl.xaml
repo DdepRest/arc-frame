@@ -106,7 +106,7 @@
                                     <TextBox x:Name="TxtHeight" Style="{DynamicResource QuickInput}"
                                              TextChanged="Input_TextChanged"
                                              HorizontalContentAlignment="Right"/>
-                                    <TextBlock x:Name="TxtHeightHint" FontSize="9"
+                                    <TextBlock x:Name="TxtHeightHint" FontSize="11"
                                                Foreground="{DynamicResource TextMuted}"
                                                Margin="0,3,0,0"/>
                                 </StackPanel>
@@ -116,7 +116,7 @@
                                     <TextBox x:Name="TxtWidth" Style="{DynamicResource QuickInput}"
                                              TextChanged="Input_TextChanged"
                                              HorizontalContentAlignment="Right"/>
-                                    <TextBlock x:Name="TxtWidthHint" FontSize="9"
+                                    <TextBlock x:Name="TxtWidthHint" FontSize="11"
                                                Foreground="{DynamicResource TextMuted}"
                                                Margin="0,3,0,0"/>
                                 </StackPanel>
@@ -126,7 +126,7 @@
                                     <TextBox x:Name="TxtDepth" Style="{DynamicResource QuickInput}"
                                              TextChanged="Input_TextChanged"
                                              HorizontalContentAlignment="Right"/>
-                                    <TextBlock x:Name="TxtDepthHint" FontSize="9"
+                                    <TextBlock x:Name="TxtDepthHint" FontSize="11"
                                                Foreground="{DynamicResource TextMuted}"
                                                Margin="0,3,0,0"/>
                                 </StackPanel>
@@ -259,9 +259,9 @@
                                                         </Style>
                                                     </Border.Style>
                                                     <TextBlock Text="ручн."
-                                                               FontSize="9"
-                                                               FontWeight="SemiBold"
-                                                               Foreground="{DynamicResource Accent}"/>
+                                                           FontSize="11"
+                                                           FontWeight="SemiBold"
+                                                           Foreground="{DynamicResource Accent}"/>
                                                 </Border>
                                             </StackPanel>
 
@@ -325,7 +325,7 @@
                                             </Style>
                                         </Border.Style>
                                         <TextBlock Text="ручн."
-                                                   FontSize="9"
+                                                   FontSize="11"
                                                    FontWeight="SemiBold"
                                                    Foreground="{DynamicResource Accent}"/>
                                     </Border>
@@ -390,7 +390,7 @@
                                             </Style>
                                         </Border.Style>
                                         <TextBlock Text="ручн."
-                                                   FontSize="9"
+                                                   FontSize="11"
                                                    FontWeight="SemiBold"
                                                    Foreground="{DynamicResource Accent}"/>
                                     </Border>
@@ -492,7 +492,7 @@
                                                                    MaxWidth="280"/>
                                                     </ToolTipService.ToolTip>
                                                     <TextBlock Text="{Binding Note}"
-                                                               FontSize="9"
+                                                               FontSize="11"
                                                                FontWeight="SemiBold"
                                                                Foreground="{DynamicResource EconomyGreen}"
                                                                VerticalAlignment="Center"/>
@@ -656,7 +656,7 @@
                 <!-- Средняя сумма за откос -->
                 <TextBlock x:Name="TxtAvgWithEconomy"
                            Visibility="Collapsed"
-                           FontSize="10"
+                           FontSize="11"
                            Foreground="{DynamicResource EconomyGreen}"
                            Margin="0,0,0,8"
                            TextAlignment="Right"/>
@@ -677,7 +677,7 @@
                             VerticalAlignment="Center"
                             ToolTip="Подробный расчёт экономии по всем откосам в заказе">
                         <TextBlock Text="Детали экономии"
-                                   FontSize="10"
+                                   FontSize="11"
                                    Foreground="{DynamicResource Accent}"/>
                     </Button>
                 </StackPanel>

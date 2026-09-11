@@ -144,5 +144,65 @@ namespace MosquitoNetCalculator.Tests.Models
             info.ContractDate = new System.DateTime(2025, 1, 1);
             Assert.Equal("ContractDate", changed);
         }
+
+        // ─── IsClientInfoFilled tests (UX-07: «Заказчик» button fill state) ───
+
+        [Fact]
+        public void IsClientInfoFilled_False_WhenEmpty()
+        {
+            var info = new ClientInfo();
+            Assert.False(info.IsClientInfoFilled);
+        }
+
+        [Fact]
+        public void IsClientInfoFilled_False_WhenOnlyNameFilled()
+        {
+            var info = new ClientInfo { ClientName = "Иван" };
+            Assert.False(info.IsClientInfoFilled);
+        }
+
+        [Theory]
+        [InlineData("", "", "")]
+        [InlineData("   ", "   ", "   ")]
+        public void IsClientInfoFilled_False_WhenWhitespaceOnly(string name, string phone, string address)
+        {
+            var info = new ClientInfo
+            {
+                ClientName = name,
+                ClientPhone = phone,
+                ClientAddress = address,
+                ContractNumber = "1-2026",
+            };
+            Assert.False(info.IsClientInfoFilled);
+        }
+
+        [Fact]
+        public void IsClientInfoFilled_True_WhenAllRequiredFieldsSet()
+        {
+            var info = new ClientInfo
+            {
+                ClientName = "Иван Петров",
+                ClientPhone = "+7 900 123-45-67",
+                ClientAddress = "ул. Ленина, 1",
+                ContractNumber = "1-2026",
+            };
+            Assert.True(info.IsClientInfoFilled);
+        }
+
+        [Fact]
+        public void IsClientInfoFilled_InpcFires_OnNameChange()
+        {
+            var info = new ClientInfo();
+            bool? last = null;
+            info.PropertyChanged += (s, e) => { if (e.PropertyName == nameof(ClientInfo.IsClientInfoFilled)) last = info.IsClientInfoFilled; };
+
+            info.ClientName = "Иван";
+            Assert.False(last!.Value); // still missing phone/address/contract
+
+            info.ClientPhone = "+7 900 123-45-67";
+            info.ClientAddress = "ул. Ленина, 1";
+            info.ContractNumber = "1-2026";
+            Assert.True(last.Value); // last raise reflects the final state
+        }
     }
 }

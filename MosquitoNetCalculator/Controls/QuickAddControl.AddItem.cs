@@ -16,6 +16,85 @@ namespace MosquitoNetCalculator.Controls
         private static bool IsCustomProductType(string? type)
             => type == AiClarificationForm.CustomProductType;
 
+        // ─── v3.50 «Повторить» (F2) — snapshot of the last added position ───
+        // UI convenience only: re-fills QuickAdd fields with the last added
+        // row's values and routes the add through the EXISTING QuickAddItem
+        // pipeline (validation, catalog price fallback, anticat, undo push —
+        // all unchanged). No business logic.
+        internal sealed record QuickAddSnapshot(
+            string? Type, string? Color, string Width, string Height,
+            string Qty, string Price, bool Anticat, string? CustomName);
+
+        internal QuickAddSnapshot? LastAddedSnapshot { get; private set; }
+
+        internal QuickAddSnapshot CaptureSnapshot() => new(
+            CmbQuickType.SelectedItem as string,
+            CmbQuickColor.SelectedItem as string,
+            TxtQuickWidth.Text, TxtQuickHeight.Text,
+            TxtQuickQty.Text, TxtQuickPrice.Text,
+            TbtnAnticat.IsChecked == true,
+            TxtCustomName.Text);
+
+        private void StoreLastAdded()
+        {
+            string? type = CmbQuickType.SelectedItem as string;
+            if (string.IsNullOrWhiteSpace(type)) return;
+            LastAddedSnapshot = new QuickAddSnapshot(
+                type,
+                CmbQuickColor.SelectedItem as string,
+                // Note: captured BEFORE the fields are cleared below — the caller
+                // invokes StoreLastAdded() right after a successful AddItem but
+                // before the reset block, so the fields still hold entered values.
+                TxtQuickWidth.Text, TxtQuickHeight.Text,
+                TxtQuickQty.Text, TxtQuickPrice.Text,
+                TbtnAnticat.IsChecked == true,
+                TxtCustomName.Text);
+            BtnRepeat.IsEnabled = true;
+        }
+
+        private void RestoreSnapshot(QuickAddSnapshot s)
+        {
+            if (!TryGetMainWindow(nameof(RestoreSnapshot), out var mw)) return;
+
+            if (s.Type != null)
+            {
+                // Selecting the type fires CmbQuickType_SelectionChanged which
+                // repopulates colors and refreshes the price — the same path a
+                // manual pick uses.
+                int idx = -1;
+                for (int i = 0; i < CmbQuickType.Items.Count; i++)
+                    if (CmbQuickType.Items[i] is string t && t == s.Type) { idx = i; break; }
+                if (idx >= 0) CmbQuickType.SelectedIndex = idx;
+            }
+
+            if (IsCustomProductType(s.Type))
+                TxtCustomName.Text = s.CustomName ?? string.Empty;
+            else if (s.Color != null && CmbQuickColor.Items.Contains(s.Color))
+                CmbQuickColor.SelectedItem = s.Color;
+
+            TxtQuickWidth.Text = s.Width;
+            TxtQuickHeight.Text = s.Height;
+            TxtQuickQty.Text = string.IsNullOrWhiteSpace(s.Qty) ? "1" : s.Qty;
+            if (!string.IsNullOrWhiteSpace(s.Price))
+                TxtQuickPrice.Text = s.Price;
+            if (s.Anticat && TbtnAnticat.Visibility == Visibility.Visible)
+                TbtnAnticat.IsChecked = true;
+
+            TxtQuickWidth.Focus();
+        }
+
+        private void BtnRepeat_Click(object sender, RoutedEventArgs e)
+        {
+            if (LastAddedSnapshot is { } s) RestoreSnapshot(s);
+        }
+
+        /// <summary>F2 hotkey path (MainWindow InputBinding → this).</summary>
+        internal void RepeatLastItem()
+        {
+            if (BtnRepeat is { IsEnabled: true })
+                BtnRepeat_Click(this, new RoutedEventArgs());
+        }
+
         private void CmbQuickType_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
             if (_updatingQuickCombo) return;
@@ -25,6 +104,15 @@ namespace MosquitoNetCalculator.Controls
             _updatingQuickCombo = true;
             try
             {
+                // New product type = new validation context: drop any red border
+                // left by a previous failed add (attempt-driven highlights must
+                // not leak across types — width is required for «Отлив» but not
+                // for «ПСУЛ»/«Уплотнение»).
+                ClearRequiredHighlight(TxtQuickWidth);
+                ClearRequiredHighlight(TxtQuickHeight);
+                ClearRequiredHighlight(TxtQuickPrice);
+                ClearRequiredHighlight(TxtCustomName);
+
                 bool isCustom = IsCustomProductType(type);
                 PanelColor.Visibility = isCustom ? Visibility.Collapsed : Visibility.Visible;
                 PanelCustomName.Visibility = isCustom ? Visibility.Visible : Visibility.Collapsed;
@@ -162,8 +250,10 @@ namespace MosquitoNetCalculator.Controls
         {
             if (TryParseQuickNumber(TxtQuickPrice.Text, out double price))
                 TxtQuickPrice.Text = MoneyFormatService.Format(price);
-            // Also re-apply required-field highlight on Price
-            SetRequiredHighlight(TxtQuickPrice);
+            // No highlight here: validation is attempt-driven (QuickAddItem).
+            // The old no-op stub called SetRequiredHighlight on every blur —
+            // harmless while it did nothing, but it would paint the price field
+            // red on every tab-out now that highlighting is real.
         }
 
         private void BtnQuickAdd_Click(object sender, RoutedEventArgs e) => QuickAddItem();
@@ -206,6 +296,7 @@ namespace MosquitoNetCalculator.Controls
                     item.RecalculateRequested += mw.RecalculateAndUpdateTotal;
                     mw.RecalculateAndUpdateTotal();
                     mw.MarkDirty();
+                    StoreLastAdded();   // v3.50: «Повторить» snapshot (fields still filled)
                 }
 
                 TxtCustomName.Text = string.Empty;
@@ -238,20 +329,23 @@ namespace MosquitoNetCalculator.Controls
                 TxtQuickPrice.Text, type, color ?? string.Empty,
                 (t, c) => mw.PricesVM.GetPrice(t, c));
 
-            if (!OrderItem.ManualPieceProducts.Contains(type))
+            // UX#2: the decision matrix lives in the pure GetRequiredFieldError;
+            // here we only apply the outcome — toast + red border (Tag="Invalid"
+            // → QuickInput template trigger) + focus, so the cause is visible
+            // at the field, not only in the toast.
+            switch (GetRequiredFieldError(type, width, height, price))
             {
-                if (width <= 0 && type != "ПСУЛ" && type != "Уплотнение") { ToastService.ShowToast("Укажите ширину.", ToastType.Info); TxtQuickWidth.Focus(); return; }
-                if (height <= 0 && type != "ПСУЛ" && type != "Уплотнение") { ToastService.ShowToast("Укажите высоту.", ToastType.Info); TxtQuickHeight.Focus(); return; }
-            }
-
-            // Price (sum) is mandatory for manual-piece products where the user
-            // explicitly enters the total. Without it the row has no meaning.
-            if (OrderItem.OptionalQuantityProducts.Contains(type) && price <= 0)
-            {
-                ToastService.ShowToast("Укажите сумму.", ToastType.Info);
-                TxtQuickPrice.Focus();
-                SetRequiredHighlight(TxtQuickPrice);
-                return;
+                case QuickAddFieldError.Width:
+                    ToastService.ShowToast("Укажите ширину.", ToastType.Info);
+                    SetRequiredHighlight(TxtQuickWidth); TxtQuickWidth.Focus(); return;
+                case QuickAddFieldError.Height:
+                    ToastService.ShowToast("Укажите высоту.", ToastType.Info);
+                    SetRequiredHighlight(TxtQuickHeight); TxtQuickHeight.Focus(); return;
+                case QuickAddFieldError.Price:
+                    ToastService.ShowToast("Укажите сумму.", ToastType.Info);
+                    TxtQuickPrice.Focus();
+                    SetRequiredHighlight(TxtQuickPrice);
+                    return;
             }
 
             var item2 = mw.CalcVM.AddItem(type, color ?? string.Empty, (int)width, (int)height, qty, price, SelectedAnwisMode);
@@ -270,6 +364,7 @@ namespace MosquitoNetCalculator.Controls
                 item2.RecalculateRequested += mw.RecalculateAndUpdateTotal;
                 mw.RecalculateAndUpdateTotal();
                 mw.MarkDirty();
+                StoreLastAdded();   // v3.50: «Повторить» snapshot (fields still filled)
             }
 
             TxtQuickWidth.Text = string.Empty;
@@ -321,6 +416,45 @@ namespace MosquitoNetCalculator.Controls
             // Manual-piece products (Работа, Откос, Брус…) are priced by hand —
             // 0 stays 0, the caller decides (optional-quantity check etc.).
             return 0;
+        }
+
+        /// <summary>Which required QuickAdd field blocked the add attempt.</summary>
+        internal enum QuickAddFieldError { None, Width, Height, Price }
+
+        /// <summary>
+        /// UX#2 (restored): required-field decision matrix for QuickAdd, extracted
+        /// as a pure function so the rules are unit-testable in isolation (same
+        /// seam pattern as <see cref="ResolveQuickAddPrice"/>). QuickAddItem applies
+        /// the outcome (toast + Tag="Invalid" highlight + focus).
+        /// Rules, in user-facing priority order:
+        ///   1. Manual-piece products (Работа, Откос, Брус…) need neither width nor height;
+        ///   2. ПСУЛ / Уплотнение are area-based materials — dims optional too;
+        ///   3. Материал (OptionalQuantity) requires a positive price (manual sum);
+        ///   4. everything else needs width and height &gt; 0.
+        /// </summary>
+        internal static QuickAddFieldError GetRequiredFieldError(
+            string type, double width, double height, double price)
+        {
+            // «Свой товар» never reaches this matrix in QuickAddItem (early
+            // return — its dims/qty/price are optional by design); encoding the
+            // exemption here keeps the helper safe if the call flow is reordered.
+            if (type == AiClarificationForm.CustomProductType)
+                return QuickAddFieldError.None;
+
+            if (!OrderItem.ManualPieceProducts.Contains(type))
+            {
+                if (width <= 0 && type != "ПСУЛ" && type != "Уплотнение")
+                    return QuickAddFieldError.Width;
+                if (height <= 0 && type != "ПСУЛ" && type != "Уплотнение")
+                    return QuickAddFieldError.Height;
+            }
+
+            // Price (sum) is mandatory for optional-quantity products where the
+            // user explicitly enters the total. Without it the row has no meaning.
+            if (OrderItem.OptionalQuantityProducts.Contains(type) && price <= 0)
+                return QuickAddFieldError.Price;
+
+            return QuickAddFieldError.None;
         }
 
         /// <summary>

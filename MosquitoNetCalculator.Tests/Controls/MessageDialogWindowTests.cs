@@ -194,6 +194,64 @@ namespace MosquitoNetCalculator.Tests.Controls
             });
         }
 
+        [Fact]
+        public void MessageDialogWindow_DestructiveEnter_SelectsCancelNotConfirm()
+        {
+            WpfTestHelper.RunOnSta(() =>
+            {
+                var buttons = new List<DialogButton<object>>
+                {
+                    new("Отмена", false, isDefault: true, isCancel: true, styleResource: "GhostButton"),
+                    new("Удалить", true, isDefault: false, isCancel: false, styleResource: "DangerButton")
+                };
+
+                var window = new MessageDialogWindow("Удаление", "Удалить позицию?", buttons);
+                window.Show();
+                window.UpdateLayout();
+
+                window.RaiseEvent(new KeyEventArgs(
+                    Keyboard.PrimaryDevice,
+                    PresentationSource.FromVisual(window),
+                    0,
+                    Key.Enter)
+                {
+                    RoutedEvent = Keyboard.KeyDownEvent
+                });
+
+                Assert.False((bool)window.SelectedResult!);
+                Assert.False(window.IsVisible);
+            });
+        }
+
+        [Fact]
+        public void MessageDialogWindow_DestructiveEscape_SelectsCancel()
+        {
+            WpfTestHelper.RunOnSta(() =>
+            {
+                var buttons = new List<DialogButton<object>>
+                {
+                    new("Отмена", false, isDefault: true, isCancel: true, styleResource: "GhostButton"),
+                    new("Удалить", true, isDefault: false, isCancel: false, styleResource: "DangerButton")
+                };
+
+                var window = new MessageDialogWindow("Удаление", "Удалить позицию?", buttons);
+                window.Show();
+                window.UpdateLayout();
+
+                window.RaiseEvent(new KeyEventArgs(
+                    Keyboard.PrimaryDevice,
+                    PresentationSource.FromVisual(window),
+                    0,
+                    Key.Escape)
+                {
+                    RoutedEvent = Keyboard.KeyDownEvent
+                });
+
+                Assert.False((bool)window.SelectedResult!);
+                Assert.False(window.IsVisible);
+            });
+        }
+
         private static T? FindVisualChild<T>(DependencyObject? parent, Func<T, bool>? predicate = null) where T : DependencyObject
         {
             if (parent == null) return null;

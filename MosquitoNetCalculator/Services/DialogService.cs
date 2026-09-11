@@ -122,6 +122,54 @@ namespace MosquitoNetCalculator.Services
         }
 
         /// <summary>
+        /// UX-02: confirmation for destructive (irreversible) actions.
+        /// Differs from <see cref="ShowConfirm"/> in two safety-critical ways:
+        /// 1. Enter (default button) CANCELS, not confirms — a reflexive Enter
+        ///    can never trigger the destruction. The destructive verb button is
+        ///    still clickable and Escape also cancels.
+        /// 2. Buttons name the action ("Удалить"/"Отвязать"/…) instead of
+        ///    abstract "Да"/"Нет", so the user confirms what will actually happen.
+        /// The confirm button uses DangerButton styling to signal irreversibility.
+        /// </summary>
+        /// <param name="message">Dialog body text.</param>
+        /// <param name="confirmVerb">Verb for the destructive button, e.g. "Удалить".</param>
+        /// <param name="title">Dialog title.</param>
+        /// <param name="owner">Owner window for centering/modality.</param>
+        public static bool ShowConfirmDestructive(string message, string confirmVerb, string title = "Подтверждение", Window? owner = null)
+        {
+            return BuildConfirmDestructive(message, confirmVerb, title).ShowDialog(owner);
+        }
+
+        /// <summary>
+        /// Test seam: the exact button contract of <see cref="ShowConfirmDestructive"/>
+        /// without showing a modal. Pins UX-02: «Отмена» is BOTH default AND cancel
+        /// (reflexive Enter cancels; the destructive verb requires a deliberate click).
+        /// </summary>
+        internal static DialogBuilder<bool> BuildConfirmDestructive(string message, string confirmVerb, string title = "Подтверждение")
+        {
+            return new DialogBuilder<bool>()
+                .Title(title)
+                .Message(message)
+                .WithButton("Отмена", false, isCancel: true, isDefault: true, styleResource: "GhostButton")
+                .WithButton(confirmVerb, true, styleResource: "DangerButton");
+        }
+
+        /// <summary>
+        /// UX-06: fluent OK-only message dialog — replaces raw
+        /// System.Windows.MessageBox calls so warnings/errors/infos speak the
+        /// app's visual language (themed surfaces, Fluent buttons) instead of
+        /// OS chrome. Fire-and-forget: returns when the dialog closes.
+        /// </summary>
+        public static void ShowMessage(string message, string title = "Сообщение", Window? owner = null)
+        {
+            new DialogBuilder<bool>()
+                .Title(title)
+                .Message(message)
+                .WithButton("Ок", false, isDefault: true, isCancel: true, styleResource: "PrimaryButton")
+                .ShowDialog(owner);
+        }
+
+        /// <summary>
         /// Fluent-styled update-available dialog — replaces raw MessageBox
         /// for the "new version found" confirmation. Shows version, asks
         /// to download & restart. Returns true if user clicked "Скачать".

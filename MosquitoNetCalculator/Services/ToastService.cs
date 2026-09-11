@@ -121,16 +121,44 @@ namespace MosquitoNetCalculator.Services
             foreach (var b in orphans) _toastScopeMap.Remove(b);
         }
 
-        public static void ShowToast(string message, ToastType type = ToastType.Info, int durationMs = 3500)
+        public static void ShowToast(string message, ToastType type = ToastType.Info, int durationMs = 0)
             => ShowToast(MainScope, message, type, durationMs);
+
+        /// <summary>
+        /// v3.50: toast with an inline action («Отменить») and a close cross.
+        /// UI-only overload — the action callback is existing logic supplied by
+        /// the caller (e.g. Undo). The toast lives longer than auto (8 s) so
+        /// the user has time to react; hover-pause still applies.
+        /// </summary>
+        public static void ShowToast(string message, ToastType type, string actionLabel, Action onAction, int durationMs = 8000)
+            => ShowToast(MainScope, message, type, actionLabel, onAction, durationMs);
+
+        /// <summary>Scoped variant of the action toast (v3.50).</summary>
+        public static void ShowToast(string scope, string message, ToastType type, string actionLabel, Action onAction, int durationMs = 8000)
+        {
+            if (!_canvases.TryGetValue(scope, out var canvas) || canvas == null) return;
+            if (durationMs <= 0) durationMs = DefaultDurationMs(type);
+
+            var toast = BuildSimpleToast(message, type, actionLabel, onAction);
+            PositionToast(toast, canvas, scope);
+            canvas.Children.Add(toast);
+            TrackToast(toast, scope);
+            ScheduleToastRemoval(toast, durationMs);
+            AnimateToastIn(toast);
+        }
 
         /// <summary>
         /// Shows a short-lived toast on the canvas registered for the given scope.
         /// Silently no-ops if the scope has no registered canvas.
+        /// <para>UX-03: <paramref name="durationMs"/> &lt;= 0 means "auto": the
+        /// duration depends on severity — Warning/Error toasts live 6 s (they
+        /// carry information the user must read and act on), Success/Info 3.5 s.
+        /// Explicit positive values (legacy call sites) are honoured as-is.</para>
         /// </summary>
-        public static void ShowToast(string scope, string message, ToastType type = ToastType.Info, int durationMs = 3500)
+        public static void ShowToast(string scope, string message, ToastType type = ToastType.Info, int durationMs = 0)
         {
             if (!_canvases.TryGetValue(scope, out var canvas) || canvas == null) return;
+            if (durationMs <= 0) durationMs = DefaultDurationMs(type);
 
             var toast = BuildSimpleToast(message, type);
             PositionToast(toast, canvas, scope);
@@ -141,7 +169,7 @@ namespace MosquitoNetCalculator.Services
         }
 
         /// <summary>Builds the simple Border used by <see cref="ShowToast(string, string, ToastType, int)"/>. Extracted so scope- and persistent-toast code can share layout.</summary>
-        private static Border BuildSimpleToast(string message, ToastType type)
+        private static Border BuildSimpleToast(string message, ToastType type, string? actionLabel = null, Action? onAction = null)
         {
             var accentBrush = GetAccentBrush(type);
             var iconChar = GetIconChar(type);
@@ -191,6 +219,52 @@ namespace MosquitoNetCalculator.Services
             contentPanel.Children.Add(iconBorder);
             contentPanel.Children.Add(textBlock);
 
+            // v3.50: instance wire — close/action buttons capture this and
+            // dismiss the toast they live on. Assigned after the Border exists.
+            Border? toastRef = null;
+
+            // v3.50: inline action button («Отменить») — accent, clickable.
+            if (!string.IsNullOrEmpty(actionLabel) && onAction != null)
+            {
+                var actionBtn = new Button
+                {
+                    Content = actionLabel,
+                    FontSize = 11.5,
+                    FontWeight = FontWeights.SemiBold,
+                    Cursor = Cursors.Hand,
+                    Margin = new Thickness(10, 0, 0, 0),
+                    Padding = new Thickness(8, 3, 8, 3),
+                    Background = Brushes.Transparent,
+                    BorderThickness = new Thickness(0),
+                    Foreground = accentBrush,
+                    VerticalAlignment = VerticalAlignment.Center
+                };
+                actionBtn.Click += (_, _) =>
+                {
+                    RemoveToast(toastRef!);
+                    onAction();
+                };
+                contentPanel.Children.Add(actionBtn);
+            }
+
+            // v3.50: close cross — manual dismissal for readers who are done.
+            var closeBtn = new Button
+            {
+                Content = "\uE711",
+                FontFamily = new System.Windows.Media.FontFamily("Segoe Fluent Icons, Segoe MDL2 Assets"),
+                FontSize = 9,
+                Cursor = Cursors.Hand,
+                Margin = new Thickness(8, 0, 0, 0),
+                Padding = new Thickness(4, 2, 4, 2),
+                Background = Brushes.Transparent,
+                BorderThickness = new Thickness(0),
+                Foreground = (Brush?)Application.Current?.FindResource("TextMuted") ?? Brushes.Gray,
+                VerticalAlignment = VerticalAlignment.Center,
+                ToolTip = "Закрыть"
+            };
+            closeBtn.Click += (_, _) => RemoveToast(toastRef!);
+            contentPanel.Children.Add(closeBtn);
+
             var rootPanel = new DockPanel { LastChildFill = true };
             DockPanel.SetDock(accentBar, Dock.Left);
             rootPanel.Children.Add(accentBar);
@@ -207,6 +281,7 @@ namespace MosquitoNetCalculator.Services
             {
                 toast.Style = toastStyle;
             }
+            toastRef = toast;   // wire the close/action buttons to this instance
             return toast;
         }
 
@@ -528,14 +603,20 @@ namespace MosquitoNetCalculator.Services
             toast.BeginAnimation(Border.OpacityProperty, fadeIn);
         }
 
+        /// <summary>UX-03: auto-lifetime per severity — warnings/errors need reading time.</summary>
+        private static int DefaultDurationMs(ToastType type)
+            => type is ToastType.Warning or ToastType.Error ? 6000 : 3500;
+
         private static void ScheduleToastRemoval(Border toast, int durationMs)
         {
             var timer = new System.Windows.Threading.DispatcherTimer
             {
                 Interval = TimeSpan.FromMilliseconds(durationMs)
             };
+            bool fired = false;
             timer.Tick += (s, e) =>
             {
+                fired = true;
                 timer.Stop();
                 _toastTimers.Remove(toast);
                 var anim = new DoubleAnimation
@@ -550,6 +631,22 @@ namespace MosquitoNetCalculator.Services
             };
             _toastTimers[toast] = timer;
             timer.Start();
+
+            // UX-03: hovering a toast pauses its countdown so the user can read
+            // (or click nothing and just finish reading) without the message
+            // vanishing mid-sentence. `fired` guards against the tick already
+            // having happened — after the fade-out starts, hover must not
+            // resurrect the timer. MouseLeave restarts the FULL interval:
+            // partial credit would make the remaining lifetime unpredictable.
+            toast.MouseEnter += (_, _) =>
+            {
+                if (!fired) timer.Stop();
+            };
+            toast.MouseLeave += (_, _) =>
+            {
+                if (!fired && _toastTimers.TryGetValue(toast, out var t) && ReferenceEquals(t, timer))
+                    timer.Start();
+            };
         }
 
         private static void RemoveToast(Border toast)

@@ -81,5 +81,28 @@ namespace MosquitoNetCalculator.Tests.Services
 
             Assert.NotNull(builder);
         }
+
+        [Fact]
+        public void BuildConfirmDestructive_EnterTargetsCancelNotConfirm()
+        {
+            var builder = DialogService.BuildConfirmDestructive(
+                "Удалить позицию?", "Удалить", "Удаление");
+
+            Assert.Equal(2, builder.Buttons.Count);
+
+            var cancel = builder.Buttons[0];
+            Assert.Equal("Отмена", cancel.Content);
+            Assert.False(cancel.Result);
+            Assert.True(cancel.IsDefault);
+            Assert.True(cancel.IsCancel);
+            Assert.Equal("GhostButton", cancel.StyleResource);
+
+            var confirm = builder.Buttons[1];
+            Assert.Equal("Удалить", confirm.Content);
+            Assert.True(confirm.Result);
+            Assert.False(confirm.IsDefault);
+            Assert.False(confirm.IsCancel);
+            Assert.Equal("DangerButton", confirm.StyleResource);
+        }
     }
 }

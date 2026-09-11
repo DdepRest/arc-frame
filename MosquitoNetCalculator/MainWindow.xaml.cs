@@ -196,6 +196,8 @@ namespace MosquitoNetCalculator
             OrderItems.CollectionChanged += (s, e) =>
             {
                 UpdateEmptyState();
+                OrderItemsControl.UpdatePositionsCount(OrderItems.Count);   // v3.50 header chip
+                TotalCardControl.UpdatePositionsMeta(OrderItems.Count);     // v3.50 totals meta
                 RecalculateOrderGridColumnWidths();
                 MarkDirty();
             };
@@ -204,6 +206,8 @@ namespace MosquitoNetCalculator
             {
                 if (Keyboard.Modifiers == ModifierKeys.Control && args.Key == Key.Z) { Undo(); args.Handled = true; }
                 else if (Keyboard.Modifiers == ModifierKeys.Control && args.Key == Key.Y) { Redo(); args.Handled = true; }
+                // v3.50: F2 — повторить последнюю позицию (QuickAdd «Повторить»).
+                else if (args.Key == Key.F2 && !args.Handled) { QuickAddControl.RepeatLastItem(); args.Handled = true; }
             };
 
             // Global Escape — closes any open overlay panel. Backdrop click already
@@ -375,7 +379,8 @@ namespace MosquitoNetCalculator
             var navIcons = new[] { NavIconCalc, NavIconOrders, NavIconPrices, NavIconUpdates, NavIconSlope, NavIconPrint, NavIconAi };
             var navLabels = new[] { NavLabelCalc, NavLabelOrders, NavLabelPrices, NavLabelUpdates, NavLabelSlope, NavLabelPrint, NavLabelAi };
 
-            _navService = new NavigationService(navButtons, navIcons, navLabels, NavPanel, this);
+            _navService = new NavigationService(navButtons, navIcons, navLabels, NavPanel, this,
+                new[] { NavGroupMain, NavGroupService });
 
             // ── Overlay entries (shared between OverlayManager and coordinators) ──
             _ordersEntry   = new OverlayManager.OverlayEntry(OrdersOverlay,   OrdersPanel,   OrdersBackdrop,   OrdersSlideTransform);
@@ -510,6 +515,9 @@ namespace MosquitoNetCalculator
         {
             if (OrderItemsControl?.Empty == null || OrderItemsControl?.Grid == null) return;
             OrderItemsControl.Empty.Visibility = OrderItems.Count == 0 ? Visibility.Visible : Visibility.Collapsed;
+            // v3.50: header bar «Позиции заказа» only makes sense with rows —
+            // an empty grid already shows the illustrated empty state instead.
+            OrderItemsControl.SetTableHeadVisible(OrderItems.Count > 0);
         }
 
         /// <summary>
@@ -619,6 +627,8 @@ namespace MosquitoNetCalculator
         private void NavPrices_Click(object s, ExecutedRoutedEventArgs e)     { NavButton_Click(NavBtnPrices, new RoutedEventArgs()); }
         private void NavUpdates_Click(object s, ExecutedRoutedEventArgs e)    { NavButton_Click(NavBtnUpdates, new RoutedEventArgs()); }
         private void NavPrint_Click(object s, ExecutedRoutedEventArgs e)      { NavButton_Click(NavBtnPrint, new RoutedEventArgs()); }
+
+
 
         /// <summary>Thin delegate to NavigationService.SetActive.</summary>
         internal void SetActiveNavButton(string tag) => _navService?.SetActive(tag);

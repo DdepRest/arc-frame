@@ -83,6 +83,14 @@ namespace MosquitoNetCalculator
                 ViewModel.CalcVM.DeleteItem(item);
                 UpdateTotal();
                 UpdateEmptyState();
+
+                // v3.50: undo toast — the push above means Ctrl+Z/«Отменить» restores
+                // the row; the toast surfaces that path (prototype .toast with .tact).
+                ToastService.ShowToast(
+                    $"Позиция «{item.DisplayName}» удалена",
+                    ToastType.Info,
+                    "Отменить",
+                    () => Undo());
             }
         }
 

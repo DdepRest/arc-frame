@@ -19,6 +19,13 @@ namespace MosquitoNetCalculator.Services
         private readonly FrameworkElement _navPanel;
         private readonly FrameworkElement _resourceOwner;
 
+        /// <summary>
+        /// v3.50: group captions («ОСНОВНОЕ» / «СЛУЖЕБНОЕ») — faded together with
+        /// the button labels on collapse. Optional; null-safe for tests that
+        /// construct the service without them.
+        /// </summary>
+        private readonly TextBlock[]? _collapseFadeElements;
+
         public string ActiveTag { get; private set; } = "Calc";
         public bool IsExpanded { get; private set; } = true;
 
@@ -27,13 +34,15 @@ namespace MosquitoNetCalculator.Services
             TextBlock[] navIcons,
             TextBlock[] navLabels,
             FrameworkElement navPanel,
-            FrameworkElement resourceOwner)
+            FrameworkElement resourceOwner,
+            TextBlock[]? collapseFadeElements = null)
         {
             _navButtons = navButtons;
             _navIcons = navIcons;
             _navLabels = navLabels;
             _navPanel = navPanel;
             _resourceOwner = resourceOwner;
+            _collapseFadeElements = collapseFadeElements;
         }
 
         /// <summary>
@@ -45,6 +54,9 @@ namespace MosquitoNetCalculator.Services
             _navPanel.BeginAnimation(FrameworkElement.WidthProperty, null);
             foreach (var label in _navLabels)
                 label?.BeginAnimation(UIElement.OpacityProperty, null);
+            if (_collapseFadeElements != null)
+                foreach (var el in _collapseFadeElements)
+                    el?.BeginAnimation(UIElement.OpacityProperty, null);
         }
 
         public void SetActive(string tag)
@@ -110,6 +122,20 @@ namespace MosquitoNetCalculator.Services
                     EasingFunction = new CubicEase { EasingMode = easingMode }
                 };
                 label.BeginAnimation(UIElement.OpacityProperty, fade);
+            }
+
+            // v3.50: group captions follow the labels on collapse/expand.
+            if (_collapseFadeElements != null)
+            {
+                foreach (var el in _collapseFadeElements)
+                {
+                    if (el == null) continue;
+                    var fade = new DoubleAnimation(labelOpacity, TimeSpan.FromMilliseconds(durationMs - 50))
+                    {
+                        EasingFunction = new CubicEase { EasingMode = easingMode }
+                    };
+                    el.BeginAnimation(UIElement.OpacityProperty, fade);
+                }
             }
         }
 

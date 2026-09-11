@@ -500,23 +500,9 @@ namespace MosquitoNetCalculator.Controls
             Close();
         }
 
-        private void CloseBtn_MouseEnter(object sender, MouseEventArgs e)
-        {
-            if (sender is Button b)
-            {
-                b.Background = (System.Windows.Media.Brush)FindResource("RowHover");
-                b.Foreground = (System.Windows.Media.Brush)FindResource("Danger");
-            }
-        }
-
-        private void CloseBtn_MouseLeave(object sender, MouseEventArgs e)
-        {
-            if (sender is Button b)
-            {
-                b.Background = System.Windows.Media.Brushes.Transparent;
-                b.Foreground = (System.Windows.Media.Brush)FindResource("TextMuted");
-            }
-        }
+        // UX-14: the close button now uses the shared DialogCloseButton style —
+        // hover (red overlay + white glyph) is handled entirely by its template,
+        // so the old MouseEnter/MouseLeave handlers are gone.
 
         private void Window_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
         {

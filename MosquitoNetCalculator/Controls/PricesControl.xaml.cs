@@ -34,6 +34,9 @@ namespace MosquitoNetCalculator.Controls
         public PricesControl()
         {
             InitializeComponent();
+            // v3.50.1 (prototype parity): uppercase column captions, same as the
+            // order grid. Assigned in code — see helper docs.
+            Converters.UppercaseHeaderTemplate.Apply(PriceGrid);
             DataContextChanged += OnDataContextChanged;
         }
 
@@ -72,7 +75,7 @@ namespace MosquitoNetCalculator.Controls
         private void BtnResetPrices_Click(object sender, RoutedEventArgs e)
         {
             if (DataContext is not MainWindow mw) return;
-            if (DialogService.ShowConfirm("Сбросить все цены к значениям по умолчанию?", "Подтверждение", mw))
+            if (DialogService.ShowConfirmDestructive("Сбросить все цены к значениям по умолчанию?", "Сбросить", "Сброс цен", mw))
             {
                 // ResetPrices() deletes PriceService.PricesPath (AppData) and recreates
                 // defaults via LoadPrices (which auto-saves them). No extra SavePrices needed.

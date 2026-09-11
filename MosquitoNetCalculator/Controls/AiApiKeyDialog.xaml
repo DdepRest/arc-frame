@@ -74,16 +74,19 @@
                 <StackPanel Grid.Column="1" VerticalAlignment="Center" Margin="8,0,0,0">
                     <TextBlock Text="Настройки AI Ассистента" FontSize="15" FontWeight="SemiBold"
                                Foreground="{DynamicResource TextPrimary}"/>
-                    <TextBlock Text="Бесплатные модели · автовыбор · резервное подключение" FontSize="10"
+                    <TextBlock Text="Бесплатные модели · автовыбор · резервное подключение" FontSize="11"
                                Foreground="{DynamicResource TextMuted}" Margin="0,2,0,0"
                                TextTrimming="CharacterEllipsis"/>
                 </StackPanel>
-                <Button Grid.Column="2" x:Name="BtnClose" Content="✕"
+                <!-- UX-14: shared DialogCloseButton — same glyph/hover/close-chrome as
+                     every other dialog (was a custom ✕ with code-behind hover).
+                     DynamicResource so the window parses in tests without App themes. -->
+                <Button Grid.Column="2" x:Name="BtnClose"
                         Width="28" Height="28" Click="BtnClose_Click"
-                        Background="Transparent" BorderThickness="0"
-                        Foreground="{DynamicResource TextMuted}" Cursor="Hand" FontSize="14"
-                        ToolTip="Закрыть (Esc)" VerticalAlignment="Center"
-                        MouseEnter="CloseBtn_MouseEnter" MouseLeave="CloseBtn_MouseLeave"/>
+                        Style="{DynamicResource DialogCloseButton}"
+                        VerticalAlignment="Center">
+                    <TextBlock Text="&#xE8BB;" FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets" FontSize="10"/>
+                </Button>
             </Grid>
 
             <!-- All form content lives in a scrollable middle zone. The model
@@ -127,7 +130,7 @@
                         <TextBlock Text="Ключи AI настраиваются здесь" FontSize="12" FontWeight="SemiBold"
                                    Foreground="{DynamicResource BadgeSuccessFg}"/>
                         <TextBlock Text="Введите ключ хотя бы одного провайдера; пустые поля не отправляются"
-                                   FontSize="10" Foreground="{DynamicResource TextMuted}" Margin="0,2,0,0"
+                                   FontSize="11" Foreground="{DynamicResource TextMuted}" Margin="0,2,0,0"
                                    TextTrimming="CharacterEllipsis"/>
                     </StackPanel>
                     <TextBlock Grid.Column="2" Text="USER" FontSize="9" FontWeight="Bold"
@@ -145,10 +148,10 @@
                 <StackPanel Grid.Column="0">
                     <TextBlock Text="API-КЛЮЧИ" FontSize="10" FontWeight="Bold"
                                Foreground="{DynamicResource TextMuted}"/>
-                    <TextBlock Text="Ключ нужен для работы AI · проверка без сохранения" FontSize="10"
+                    <TextBlock Text="Ключ нужен для работы AI · проверка без сохранения" FontSize="11"
                                Foreground="{DynamicResource TextMuted}" Margin="0,2,0,0"/>
                 </StackPanel>
-                <TextBlock Grid.Column="1" Text="2 сервиса" FontSize="10"
+                <TextBlock Grid.Column="1" Text="2 сервиса" FontSize="11"
                            Foreground="{DynamicResource TextMuted}" VerticalAlignment="Center"/>
             </Grid>
 
@@ -175,7 +178,7 @@
                                            Foreground="{DynamicResource TextPrimary}" VerticalAlignment="Center"/>
                             </StackPanel>
                             <TextBlock x:Name="TxtCurrentKey" Text="ключ не задан"
-                                       FontSize="10" Foreground="{DynamicResource TextMuted}"
+                                       FontSize="11" Foreground="{DynamicResource TextMuted}"
                                        Margin="24,3,0,0" TextTrimming="CharacterEllipsis"/>
                         </StackPanel>
                         <StackPanel Grid.Column="1">
@@ -185,10 +188,9 @@
                                              Background="{DynamicResource Surface}" Foreground="{DynamicResource TextPrimary}"
                                              VerticalContentAlignment="Center"
                                              PasswordChanged="TxtApiKey_PasswordChanged"
-                                             ToolTip="Вставьте свой ключ OpenRouter, если хотите использовать собственный лимит"/>
-                                <TextBlock x:Name="ApiKeyPlaceholder"
+                                             ToolTip="Вставьте свой ключ OpenRouter, если хотите использовать собственный лимит"/>                                    <TextBlock x:Name="ApiKeyPlaceholder"
                                            Text="Вставьте ключ OpenRouter (необязательно)"
-                                           FontSize="10" Foreground="{DynamicResource TextMuted}"
+                                           FontSize="11" Foreground="{DynamicResource TextMuted}"
                                            Margin="10,0,8,0" VerticalAlignment="Center"
                                            IsHitTestVisible="False"/>
                             </Grid>
@@ -200,7 +202,7 @@
                                     <Border x:Name="OrTestDot" Width="8" Height="8" CornerRadius="4"
                                             Background="{DynamicResource TextMuted}" Margin="0,0,5,0"
                                             VerticalAlignment="Center"/>
-                                    <TextBlock x:Name="TxtOrTestStatus" Text="не проверено" FontSize="10"
+                                    <TextBlock x:Name="TxtOrTestStatus" Text="не проверено" FontSize="11"
                                                Foreground="{DynamicResource TextMuted}" VerticalAlignment="Center"/>
                                 </StackPanel>
                             </Border>
@@ -227,7 +229,7 @@
                                            Foreground="{DynamicResource TextPrimary}" VerticalAlignment="Center"/>
                             </StackPanel>
                             <TextBlock x:Name="TxtCurrentNvidiaKey" Text="ключ не задан"
-                                       FontSize="10" Foreground="{DynamicResource TextMuted}"
+                                       FontSize="11" Foreground="{DynamicResource TextMuted}"
                                        Margin="24,3,0,0" TextTrimming="CharacterEllipsis"/>
                         </StackPanel>
                         <StackPanel Grid.Column="1">
@@ -240,7 +242,7 @@
                                              ToolTip="Вставьте свой ключ NVIDIA, если он у вас есть"/>
                                 <TextBlock x:Name="NvidiaKeyPlaceholder"
                                            Text="Вставьте ключ NVIDIA (необязательно)"
-                                           FontSize="10" Foreground="{DynamicResource TextMuted}"
+                                           FontSize="11" Foreground="{DynamicResource TextMuted}"
                                            Margin="10,0,8,0" VerticalAlignment="Center"
                                            IsHitTestVisible="False"/>
                             </Grid>
@@ -252,7 +254,7 @@
                                     <Border x:Name="NvTestDot" Width="8" Height="8" CornerRadius="4"
                                             Background="{DynamicResource TextMuted}" Margin="0,0,5,0"
                                             VerticalAlignment="Center"/>
-                                    <TextBlock x:Name="TxtNvTestStatus" Text="не проверено" FontSize="10"
+                                    <TextBlock x:Name="TxtNvTestStatus" Text="не проверено" FontSize="11"
                                                Foreground="{DynamicResource TextMuted}" VerticalAlignment="Center"/>
                                 </StackPanel>
                             </Border>
@@ -304,7 +306,7 @@
                     </StackPanel>
                     <TextBlock x:Name="TxtModelDescription"
                                Text="Автовыбор подбирает модель под задачу; отмеченные — резерв"
-                               FontSize="10" Foreground="{DynamicResource TextMuted}" Margin="0,3,0,0"
+                               FontSize="11" Foreground="{DynamicResource TextMuted}" Margin="0,3,0,0"
                                TextTrimming="CharacterEllipsis"/>
                 </StackPanel>
                 <!-- Auto-select toggle -->
@@ -342,7 +344,7 @@
                             </Style>
                         </ToggleButton.Style>
                     </ToggleButton>
-                    <TextBlock x:Name="TxtAutoLabel" Text="Автовыбор" FontSize="10"
+                    <TextBlock x:Name="TxtAutoLabel" Text="Автовыбор" FontSize="11"
                                Foreground="{DynamicResource TextMuted}" VerticalAlignment="Center"
                                Margin="6,0,0,0"/>
                 </StackPanel>
@@ -472,15 +474,15 @@
                     <ColumnDefinition Width="*"/>
                     <ColumnDefinition Width="Auto"/>
                 </Grid.ColumnDefinitions>
-                <TextBlock Grid.Column="0" x:Name="TxtModelStatus" FontSize="10"
+                <TextBlock Grid.Column="0" x:Name="TxtModelStatus" FontSize="11"
                            Foreground="{DynamicResource TextMuted}" VerticalAlignment="Center"
                            TextTrimming="CharacterEllipsis"/>
                 <StackPanel Grid.Column="1" Orientation="Horizontal">
-                    <Button x:Name="BtnSelectAll" Content="Выбрать всё" Width="88" Height="27"
-                            Click="BtnSelectAll_Click" Style="{StaticResource DialogOutlineButton}" FontSize="10"
+                    <Button x:Name="BtnSelectAll" Content="Выбрать всё" Width="92" Height="27"
+                            Click="BtnSelectAll_Click" Style="{StaticResource DialogOutlineButton}" FontSize="11"
                             Padding="8,0" Margin="0,0,5,0"/>
-                    <Button x:Name="BtnClearAll" Content="Снять всё" Width="75" Height="27"
-                            Click="BtnClearAll_Click" Style="{StaticResource DialogOutlineButton}" FontSize="10"
+                    <Button x:Name="BtnClearAll" Content="Снять всё" Width="78" Height="27"
+                            Click="BtnClearAll_Click" Style="{StaticResource DialogOutlineButton}" FontSize="11"
                             Padding="8,0"/>
                 </StackPanel>
             </Grid>
@@ -488,7 +490,7 @@
             <!-- Help link -->
             <TextBlock Grid.Row="9" Margin="2,10,2,0"
                        Text="Бесплатные ключи OpenRouter → openrouter.ai/keys"
-                       FontSize="10" Foreground="{DynamicResource Accent}" Cursor="Hand"
+                       FontSize="11" Foreground="{DynamicResource Accent}" Cursor="Hand"
                        MouseLeftButtonDown="Link_MouseLeftButtonDown" TextDecorations="Underline"/>
                 </Grid>
             </ScrollViewer>

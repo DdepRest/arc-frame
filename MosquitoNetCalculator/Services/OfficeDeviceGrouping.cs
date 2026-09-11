@@ -43,7 +43,12 @@ namespace MosquitoNetCalculator.Services
                 : groups;
         }
 
-        private static string DeviceKey(OfficeReport r)
+        /// <summary>
+        /// Ключ идентичности устройства: имя машины (если есть), иначе deviceId,
+        /// иначе "legacy". Internal: используется также автоочисткой забытых
+        /// привязок (OfficeReportService.ComputeStaleBindingsToDelete).
+        /// </summary>
+        internal static string DeviceKey(OfficeReport r)
         {
             if (!string.IsNullOrWhiteSpace(r.DeviceName))
                 return "name:" + r.DeviceName.Trim().ToLowerInvariant();

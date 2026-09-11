@@ -8,6 +8,43 @@ using MosquitoNetCalculator.Models;
 namespace MosquitoNetCalculator.Converters
 {
     /// <summary>
+    /// Цвет полосы статуса СЛЕВА на карточке офиса в админ-панели. Возвращает живую
+    /// ссылку на кисть темы, поэтому полоса перекрашивается при смене темы.
+    /// </summary>
+    public class OfficeStatusToStripeBrushConverter : IValueConverter
+    {
+        public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
+        {
+            var key = value is OfficeStatus s
+                ? s switch
+                {
+                    OfficeStatus.UpToDate => "Success",
+                    OfficeStatus.Outdated => "Warning",
+                    _ => "TextMuted",
+                }
+                : "Border";
+            return Application.Current?.Resources[key] as Brush ?? Brushes.Transparent;
+        }
+
+        public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
+            => throw new NotSupportedException();
+    }
+
+    /// <summary>
+    /// Видимость чекбокса отвязки на чипе устройства админ-панели: значение —
+    /// Tag списка офисов ({Binding Tag, ElementName=OfficesList}); режим отвязки
+    /// помечается строкой "Unbind" (AdminPanelControl.Actions). Вне режима — Collapsed.
+    /// </summary>
+    public class UnbindModeToVisibilityConverter : IValueConverter
+    {
+        public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
+            => value as string == "Unbind" ? Visibility.Visible : Visibility.Collapsed;
+
+        public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
+            => throw new NotSupportedException();
+    }
+
+    /// <summary>
     /// Фон бейджа статуса офиса в админ-панели. Возвращает живую ссылку на
     /// кисть темы, поэтому бейдж перекрашивается при смене темы автоматически.
     /// </summary>

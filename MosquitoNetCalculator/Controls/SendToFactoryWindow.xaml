@@ -64,53 +64,11 @@
                                    Foreground="{DynamicResource TextPrimary}"
                                    VerticalAlignment="Center"/>
                     </StackPanel>
+                    <!-- UX-14: shared DialogCloseButton (was a private 60-line copy) -->
                     <Button Grid.Column="2" x:Name="BtnClose"
-                            Width="40" Height="40" Background="Transparent"
-                            BorderThickness="0" Cursor="Hand"
-                            Foreground="{DynamicResource TextPrimary}"
-                            ToolTip="Закрыть (Escape)"
+                            Width="40" Height="40"
+                            Style="{DynamicResource DialogCloseButton}"
                             Click="BtnClose_Click">
-                        <Button.Template>
-                            <ControlTemplate TargetType="Button">
-                                <Border Background="{TemplateBinding Background}" BorderThickness="0" CornerRadius="8" ClipToBounds="True">
-                                    <Grid>
-                                        <Border x:Name="HoverOverlay" Background="{DynamicResource Danger}" Opacity="0" CornerRadius="8"/>
-                                        <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                                    </Grid>
-                                </Border>
-                                <ControlTemplate.Triggers>
-                                    <Trigger Property="IsMouseOver" Value="True">
-                                        <Setter Property="Foreground" Value="#FFFFFF"/>
-                                        <Trigger.EnterActions>
-                                            <BeginStoryboard>
-                                                <Storyboard>
-                                                    <DoubleAnimation Storyboard.TargetName="HoverOverlay"
-                                                                     Storyboard.TargetProperty="Opacity"
-                                                                     To="1" Duration="0:0:0.15">
-                                                        <DoubleAnimation.EasingFunction>
-                                                            <CubicEase EasingMode="EaseOut"/>
-                                                        </DoubleAnimation.EasingFunction>
-                                                    </DoubleAnimation>
-                                                </Storyboard>
-                                            </BeginStoryboard>
-                                        </Trigger.EnterActions>
-                                        <Trigger.ExitActions>
-                                            <BeginStoryboard>
-                                                <Storyboard>
-                                                    <DoubleAnimation Storyboard.TargetName="HoverOverlay"
-                                                                     Storyboard.TargetProperty="Opacity"
-                                                                     To="0" Duration="0:0:0.15">
-                                                        <DoubleAnimation.EasingFunction>
-                                                            <CubicEase EasingMode="EaseOut"/>
-                                                        </DoubleAnimation.EasingFunction>
-                                                    </DoubleAnimation>
-                                                </Storyboard>
-                                            </BeginStoryboard>
-                                        </Trigger.ExitActions>
-                                    </Trigger>
-                                </ControlTemplate.Triggers>
-                            </ControlTemplate>
-                        </Button.Template>
                         <TextBlock Text="&#xE8BB;" FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets" FontSize="10"/>
                     </Button>
                 </Grid>

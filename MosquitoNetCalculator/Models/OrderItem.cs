@@ -364,6 +364,17 @@ namespace MosquitoNetCalculator.Models
             : $"Антикошка: {AnticatSurcharge:0} ₽/м² × {(CalculatedValue * Quantity).ToString("F2", Services.MoneyFormatService.RuCulture)} м² = {Services.MoneyFormatService.Format(AnticatSurchargeTotal)} ₽ — учтена в сумме строки";
 
         /// <summary>
+        /// UX-05: short self-explanatory label for the grid badge. Previously
+        /// the badge said just "АК" — an abbreviation the user had to learn;
+        /// now it names the surcharge directly ("АК +2000"), so the pill is
+        /// readable at a glance and the click-popup remains the details view.
+        /// Constant text (rate, not area) — needs no change notifications.
+        /// </summary>
+        public string AnticatBadgeLabel => IsAnticat
+            ? $"АК +{AnticatSurcharge:0}"
+            : "";
+
+        /// <summary>
         /// Display name shown in the grid, КП and factory text.
         /// Appends "(Антикошка)" when <see cref="IsAnticat"/> is true and
         /// "(Импост)" when <see cref="HasImpost"/> is true.

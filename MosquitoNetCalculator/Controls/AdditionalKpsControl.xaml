@@ -28,9 +28,9 @@
                                 <ColumnDefinition Width="2"/>
                                 <ColumnDefinition Width="Auto"/>
                             </Grid.ColumnDefinitions>
-                            <TextBlock Grid.Column="0" Text="Вкл." FontSize="9" Foreground="{DynamicResource TextMuted}" VerticalAlignment="Center" Width="48" TextAlignment="Center"/>
-                            <TextBlock Grid.Column="2" Text="№ КП" FontSize="9" Foreground="{DynamicResource TextMuted}" VerticalAlignment="Center" Width="60" TextAlignment="Center"/>
-                            <TextBlock Grid.Column="4" Text="Сумма, руб." FontSize="9" Foreground="{DynamicResource TextMuted}" HorizontalAlignment="Right" VerticalAlignment="Center"/>
+                            <TextBlock Grid.Column="0" Text="Вкл." FontSize="10" Foreground="{DynamicResource TextMuted}" VerticalAlignment="Center" Width="48" TextAlignment="Center"/>
+                            <TextBlock Grid.Column="2" Text="№ КП" FontSize="10" Foreground="{DynamicResource TextMuted}" VerticalAlignment="Center" Width="60" TextAlignment="Center"/>
+                            <TextBlock Grid.Column="4" Text="Сумма, руб." FontSize="10" Foreground="{DynamicResource TextMuted}" HorizontalAlignment="Right" VerticalAlignment="Center"/>
                         </Grid>
 
                         <ItemsControl ItemsSource="{Binding ClientInfo.AdditionalKps}">
@@ -133,7 +133,7 @@
 
                         <Button Content="+ Добавить КП"
                                 Click="BtnAddAdditionalKp_Click"
-                                FontSize="10" Foreground="{DynamicResource Accent}"
+                                FontSize="11" Foreground="{DynamicResource Accent}"
                                 Background="Transparent" BorderThickness="0"
                                 Cursor="Hand" Padding="2,2"
                                 HorizontalAlignment="Left" Margin="0,4,0,0">

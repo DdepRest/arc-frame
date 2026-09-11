@@ -1,5 +1,6 @@
 ﻿<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
                     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
         <!-- ═══════════════════════════════════════════════════════ -->
         <!-- ROW HOVER EASING — shared by all DataGridRow animations   -->
         <!-- ═══════════════════════════════════════════════════════ -->
@@ -25,16 +26,19 @@
             <Setter Property="ColumnHeaderHeight" Value="36"/>
             <Setter Property="Background" Value="{DynamicResource Surface}"/>
             <Setter Property="ScrollViewer.Padding" Value="0"/>
-            <!-- Hide scrollbar gutter completely: no layout space reserved,
-                 data uses full width. Mouse wheel scrolling still works. -->
-            <Setter Property="ScrollViewer.VerticalScrollBarVisibility" Value="Hidden"/>
+            <!-- UX-04 fix: Auto instead of Hidden — the scrollbar thumb is
+                 now always faintly visible (see ScrollViewerStyles.xaml), so
+                 users can tell when a grid has more rows below. Layout cost
+                 is zero: the ultra-thin 6px overlay style doesn't reserve a
+                 gutter column. -->
+            <Setter Property="ScrollViewer.VerticalScrollBarVisibility" Value="Auto"/>
         </Style>
 
         <Style TargetType="DataGridColumnHeader">
             <Setter Property="Background" Value="{DynamicResource HeaderBg}"/>
             <Setter Property="Foreground" Value="{DynamicResource HeaderText}"/>
             <Setter Property="FontWeight" Value="SemiBold"/>
-            <Setter Property="FontSize" Value="11"/>
+            <Setter Property="FontSize" Value="10.5"/>
             <Setter Property="HorizontalContentAlignment" Value="Center"/>
             <Setter Property="Padding" Value="10,6"/>
             <Setter Property="BorderBrush" Value="{DynamicResource HeaderBorder}"/>
@@ -49,15 +53,40 @@
                                 Padding="{Binding Padding, RelativeSource={RelativeSource TemplatedParent}}"
                                 CornerRadius="4"
                                 SnapsToDevicePixels="True">
-                            <ContentPresenter HorizontalAlignment="{Binding HorizontalContentAlignment, RelativeSource={RelativeSource TemplatedParent}}"
-                                              VerticalAlignment="Center"/>
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+                                <ContentPresenter Grid.Column="0"
+                                                  HorizontalAlignment="{Binding HorizontalContentAlignment, RelativeSource={RelativeSource TemplatedParent}}"
+                                                  VerticalAlignment="Center"/>
+                                <!-- UX-11: explicit sort indicator — the old template had
+                                     no glyph at all, so a sorted column was indistinguishable
+                                     from an unsorted one. Shown only while SortDirection > None. -->
+                                <TextBlock x:Name="SortGlyph" Grid.Column="1"
+                                           FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets"
+                                           FontSize="9"
+                                           Foreground="{DynamicResource Accent}"
+                                           VerticalAlignment="Center"
+                                           Margin="4,0,0,0"
+                                           Visibility="Collapsed"/>
+                            </Grid>
                         </Border>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="Bd" Property="Background" Value="{DynamicResource HeaderPress}"/>
+                                <Setter TargetName="Bd" Property="Background" Value="{DynamicResource HeaderHover}"/>
                             </Trigger>
                             <Trigger Property="IsPressed" Value="True">
                                 <Setter TargetName="Bd" Property="Background" Value="{DynamicResource HeaderPress}"/>
+                            </Trigger>
+                            <Trigger Property="SortDirection" Value="Ascending">
+                                <Setter TargetName="SortGlyph" Property="Visibility" Value="Visible"/>
+                                <Setter TargetName="SortGlyph" Property="Text" Value="&#xE70E;"/>
+                            </Trigger>
+                            <Trigger Property="SortDirection" Value="Descending">
+                                <Setter TargetName="SortGlyph" Property="Visibility" Value="Visible"/>
+                                <Setter TargetName="SortGlyph" Property="Text" Value="&#xE70D;"/>
                             </Trigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
@@ -84,24 +113,32 @@
                  which gives a fresh, mutable SolidColorBrush per row instance
                  and beats the style's frozen brush (local value > style).
 
-                 No IsSelected visual at all on purpose: the persistent
-                 AccentLight tint was unwanted, AND the WPF default
-                 DataGridRow ControlTemplate has its own IsSelected trigger
-                 that paints the row with SystemColors.HighlightBrush — in
-                 dark theme that resolves to a near-white bar that wipes
-                 out the row content. Template triggers beat style triggers
-                 in WPF's trigger precedence, so a plain Style.Trigger for
-                 IsSelected would NOT override it. The minimal Template
-                 below omits the default IsSelected trigger entirely, so
-                 the per-row Background brush (animated by the triggers
-                 below) is the only thing the user ever sees — selected
-                 rows look identical to unselected ones. -->
+                 IsSelected visual: the WPF default DataGridRow ControlTemplate
+                 paints selected rows with SystemColors.HighlightBrush — in
+                 dark theme that resolves to a near-white bar that wipes out
+                 the row content. Template triggers beat style triggers in
+                 WPF's trigger precedence, so a plain Style.Trigger for
+                 IsSelected would NOT override it — hence the custom Template.
+
+                 UX-01 fix: the template now DOES render selection, but with
+                 the design token RowAltSelected (muted blue tint) instead of
+                 SystemColors — visible in both themes, no white bar. The
+                 setter targets the Border's Background, NOT the row's
+                 Background property, so the code-behind hover animation
+                 (which animates the row's own mutable brush) keeps working:
+                 while selected the Border ignores the animated brush, and on
+                 deselect the TemplateBinding resumes. -->
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="DataGridRow">
                 <Border x:Name="DGR_RowBorder" Background="{TemplateBinding Background}" CornerRadius="4">
                     <DataGridCellsPresenter ItemsPanel="{TemplateBinding ItemsPanel}"/>
                 </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsSelected" Value="True">
+                                <Setter TargetName="DGR_RowBorder" Property="Background" Value="{DynamicResource RowAltSelected}"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
                     </ControlTemplate>
                 </Setter.Value>
             </Setter>
@@ -136,10 +173,10 @@
           "Заказы" tab. Same approach as OrderRow (custom Template + code- behind
           Opacity fade), but the per-row brush starts invisible so the
           alternating RowBackground / AlternatingRowBackground from the
-          DataGrid shows through when not hovered. Selected and unselected
-          rows look identical — the WPF default Template's IsSelected trigger
-          (SystemColors.HighlightBrush) is removed, so no "white bar" in
-          dark theme.
+          DataGrid shows through when not hovered. The WPF default Template's
+          IsSelected trigger (SystemColors.HighlightBrush — "white bar" in
+          dark theme) is replaced by a RowAltSelected tint (UX-01), same
+          pattern as OrderRow.
         -->
         <Style x:Key="OrdersRow" TargetType="DataGridRow">
             <!-- Same frozen-brush rationale as OrderRow: the per-row brush
@@ -150,6 +187,11 @@
                 <Border x:Name="DGR_RowBorder" Background="{TemplateBinding Background}" CornerRadius="4">
                     <DataGridCellsPresenter ItemsPanel="{TemplateBinding ItemsPanel}"/>
                 </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsSelected" Value="True">
+                                <Setter TargetName="DGR_RowBorder" Property="Background" Value="{DynamicResource RowAltSelected}"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
                     </ControlTemplate>
                 </Setter.Value>
             </Setter>
@@ -157,8 +199,9 @@
 
         <!--
           PriceRow — animated hover style for the PriceGrid in the
-          "Цены" tab. Same approach as OrdersRow: custom Template without
-          the WPF default IsSelected trigger (no "white bar" in dark theme),
+          "Цены" tab. Same approach as OrdersRow: custom Template whose
+          IsSelected trigger paints RowAltSelected instead of
+          SystemColors.HighlightBrush (no "white bar" in dark theme),
           code-behind Opacity fade via PriceGrid_LoadingRow / OrderRow_MouseEnter/
           _MouseLeave. The per-row brush starts at Opacity=0 (invisible) so
           the DataGrid's RowBackground / AlternatingRowBackground shows through.
@@ -172,6 +215,11 @@
                 <Border x:Name="DGR_RowBorder" Background="{TemplateBinding Background}" CornerRadius="4">
                     <DataGridCellsPresenter ItemsPanel="{TemplateBinding ItemsPanel}"/>
                 </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsSelected" Value="True">
+                                <Setter TargetName="DGR_RowBorder" Property="Background" Value="{DynamicResource RowAltSelected}"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
                     </ControlTemplate>
                 </Setter.Value>
             </Setter>

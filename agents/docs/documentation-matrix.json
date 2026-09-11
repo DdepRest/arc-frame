@@ -818,7 +818,7 @@
         "CURRENT_STATE.md",
         "CHANGELOG.md"
       ],
-      "note": "Админ-панель: UI статусов офисов"
+      "note": "Админ-панель: UI статусов офисов (поиск, фильтры, прогресс, быстрые действия)"
     },
     {
       "file": "Controls/AdminPanelControl.xaml.cs",
@@ -827,6 +827,22 @@
         "CHANGELOG.md"
       ],
       "note": "Админ-панель: RefreshAsync (отчёты + последняя версия)"
+    },
+    {
+      "file": "Controls/AdminPanelControl.Filter.cs",
+      "docs": [
+        "CURRENT_STATE.md",
+        "CHANGELOG.md"
+      ],
+      "note": "Админ-панель: поиск + фильтры по статусу + группировка списка (чистая логика OfficeRowFilter)"
+    },
+    {
+      "file": "Controls/AdminPanelControl.Actions.cs",
+      "docs": [
+        "CURRENT_STATE.md",
+        "CHANGELOG.md"
+      ],
+      "note": "Админ-панель: быстрые действия — напоминание по всем устаревшим, режим отвязки устройств, сводный прогресс"
     },
     {
       "file": "Controls/AdminPasswordWindow.xaml",
@@ -851,6 +867,23 @@
         "CHANGELOG.md"
       ],
       "note": "Админ-панель: бейджи статусов (BadgeSuccess/Warning/Danger)"
+    },
+    {
+      "file": "MosquitoNetCalculator/Converters/UppercaseHeaderTemplate.cs",
+      "docs": [
+        "CURRENT_STATE.md",
+        "CHANGELOG.md",
+        "GOTCHAS.md#19"
+      ],
+      "note": "Капс заголовков колонок DataGrid; шаблон строится в коде — DynamicResource в Binding.Converter невозможен (GOTCHAS#19)"
+    },
+    {
+      "file": "MosquitoNetCalculator/Converters/UppercaseConverter.cs",
+      "docs": [
+        "GOTCHAS.md#19",
+        "CURRENT_STATE.md"
+      ],
+      "note": "Капс-конвертер заголовков колонок"
     },
     {
       "file": "Models/OfficeStatsRow.cs",

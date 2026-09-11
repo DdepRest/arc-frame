@@ -25,29 +25,44 @@ namespace MosquitoNetCalculator.Models
             AdditionalKps.CollectionChanged += OnAdditionalKpsChanged;
         }
 
+        // Note: IsClientInfoFilled is raised BEFORE the source property so the
+        // LAST PropertyChanged event still carries the field's own name —
+        // existing listeners that record "the last event" (tests, diagnostics)
+        // keep observing the property they subscribed for.
         public string ClientName
         {
             get => _clientName;
-            set { if (string.Equals(_clientName, value)) return; _clientName = value; OnPropertyChanged(); }
+            set { if (string.Equals(_clientName, value)) return; _clientName = value; OnPropertyChanged(nameof(IsClientInfoFilled)); OnPropertyChanged(); }
         }
 
         public string ClientPhone
         {
             get => _clientPhone;
-            set { if (string.Equals(_clientPhone, value)) return; _clientPhone = value; OnPropertyChanged(); }
+            set { if (string.Equals(_clientPhone, value)) return; _clientPhone = value; OnPropertyChanged(nameof(IsClientInfoFilled)); OnPropertyChanged(); }
         }
 
         public string ClientAddress
         {
             get => _clientAddress;
-            set { if (string.Equals(_clientAddress, value)) return; _clientAddress = value; OnPropertyChanged(); }
+            set { if (string.Equals(_clientAddress, value)) return; _clientAddress = value; OnPropertyChanged(nameof(IsClientInfoFilled)); OnPropertyChanged(); }
         }
 
         public string ContractNumber
         {
             get => _contractNumber;
-            set { if (string.Equals(_contractNumber, value)) return; _contractNumber = value; OnPropertyChanged(); }
+            set { if (string.Equals(_contractNumber, value)) return; _contractNumber = value; OnPropertyChanged(nameof(IsClientInfoFilled)); OnPropertyChanged(); }
         }
+
+        /// <summary>
+        /// UX-07: whether the minimum client data for a print-ready order is filled
+        /// (name, phone, address, contract number). Drives the «Заказчик» button
+        /// fill state in the ActionBar — outline while empty, filled once complete.
+        /// </summary>
+        public bool IsClientInfoFilled =>
+            !string.IsNullOrWhiteSpace(ClientName) &&
+            !string.IsNullOrWhiteSpace(ClientPhone) &&
+            !string.IsNullOrWhiteSpace(ClientAddress) &&
+            !string.IsNullOrWhiteSpace(ContractNumber);
 
         public DateTime ContractDate
         {

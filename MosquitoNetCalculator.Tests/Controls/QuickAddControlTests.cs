@@ -1,6 +1,7 @@
 using System;
 using System.Threading;
 using System.Windows;
+using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
 using MosquitoNetCalculator.Controls;
 using Xunit;
@@ -275,6 +276,162 @@ namespace MosquitoNetCalculator.Tests.Controls
         public void ResolveQuickAddPrice_ManualPieceBlank_ReturnsZero()
         {
             Assert.Equal(0, QuickAddControl.ResolveQuickAddPrice("", "Работа", "", CatalogPrice));
+        }
+
+        // ── GetRequiredFieldError (UX#2 validation matrix) ─────────────
+        // Pure decision matrix behind the attempt-driven red border. Guards the
+        // exact per-type rules: which field blocks the add for which product.
+
+        [Theory]
+        [InlineData("Anwis")]
+        [InlineData("На навесах")]
+        [InlineData("Оконная на метал. крепл.")]
+        [InlineData("Дверная сетка")]
+        [InlineData("Отлив")]
+        [InlineData("Козырёк")]
+        [InlineData("Короб")]
+        public void GetRequiredFieldError_AreaProduct_MissingWidthBlocks(string type)
+        {
+            // width=0, height=0 → width is checked first (user-facing priority).
+            Assert.Equal(QuickAddControl.QuickAddFieldError.Width,
+                QuickAddControl.GetRequiredFieldError(type, width: 0, height: 0, price: 1000));
+        }
+
+        [Theory]
+        [InlineData("Anwis")]
+        [InlineData("Отлив")]
+        public void GetRequiredFieldError_AreaProduct_WidthSetMissingHeightBlocks(string type)
+        {
+            Assert.Equal(QuickAddControl.QuickAddFieldError.Height,
+                QuickAddControl.GetRequiredFieldError(type, width: 1200, height: 0, price: 1000));
+        }
+
+        [Fact]
+        public void GetRequiredFieldError_AreaProduct_DimsSet_NoError()
+        {
+            Assert.Equal(QuickAddControl.QuickAddFieldError.None,
+                QuickAddControl.GetRequiredFieldError("Anwis", width: 1200, height: 1500, price: 1800));
+        }
+
+        [Theory]
+        [InlineData("ПСУЛ")]
+        [InlineData("Уплотнение")]
+        public void GetRequiredFieldError_DimsOptionalProducts_NeverBlocksOnDims(string type)
+        {
+            // ПСУЛ/Уплотнение are cut-to-size materials: zero dims are valid.
+            Assert.Equal(QuickAddControl.QuickAddFieldError.None,
+                QuickAddControl.GetRequiredFieldError(type, width: 0, height: 0, price: 0));
+        }
+
+        [Theory]
+        [InlineData("Работа")]
+        [InlineData("Откос")]
+        [InlineData("Работа за откос")]
+        [InlineData("Брус")]
+        [InlineData("Пояс")]
+        [InlineData("Доставка")]
+        public void GetRequiredFieldError_ManualPiece_NeverBlocksOnDims(string type)
+        {
+            Assert.Equal(QuickAddControl.QuickAddFieldError.None,
+                QuickAddControl.GetRequiredFieldError(type, width: 0, height: 0, price: 5000));
+        }
+
+        [Fact]
+        public void GetRequiredFieldError_Material_MissingPriceBlocks()
+        {
+            // Материал is the one OptionalQuantity product: manual sum is required.
+            Assert.Equal(QuickAddControl.QuickAddFieldError.Price,
+                QuickAddControl.GetRequiredFieldError("Материал", width: 0, height: 0, price: 0));
+        }
+
+        [Fact]
+        public void GetRequiredFieldError_Material_PriceSet_NoError()
+        {
+            Assert.Equal(QuickAddControl.QuickAddFieldError.None,
+                QuickAddControl.GetRequiredFieldError("Материал", width: 0, height: 0, price: 3200));
+        }
+
+        [Fact]
+        public void GetRequiredFieldError_CustomProduct_NeverBlocks()
+        {
+            // «Свой товар»: dims/qty/price all optional by design.
+            Assert.Equal(QuickAddControl.QuickAddFieldError.None,
+                QuickAddControl.GetRequiredFieldError("Свой товар", width: 0, height: 0, price: 0));
+        }
+
+        [Fact]
+        public void GetRequiredFieldError_Worka_MissingPrice_DoesNotBlock()
+        {
+            // Manual-piece non-optional-quantity products (Работа…) do NOT
+            // require price in the matrix — the row is added with 0 and fixed
+            // in the grid. Only Материал demands the sum upfront.
+            Assert.Equal(QuickAddControl.QuickAddFieldError.None,
+                QuickAddControl.GetRequiredFieldError("Работа", width: 0, height: 0, price: 0));
+        }
+
+        [Fact]
+        public void SetRequiredHighlight_SetsInvalidTag()
+        {
+            RunOnStaThread(() =>
+            {
+                var textBox = new TextBox();
+
+                QuickAddControl.SetRequiredHighlight(textBox);
+
+                Assert.Equal("Invalid", textBox.Tag);
+            });
+        }
+
+        [Fact]
+        public void ClearRequiredHighlight_ClearsOnlyInvalidTag()
+        {
+            RunOnStaThread(() =>
+            {
+                var textBox = new TextBox { Tag = "Invalid" };
+
+                QuickAddControl.ClearRequiredHighlight(textBox);
+                Assert.Null(textBox.Tag);
+
+                textBox.Tag = "unrelated-state";
+                QuickAddControl.ClearRequiredHighlight(textBox);
+                Assert.Equal("unrelated-state", textBox.Tag);
+            });
+        }
+
+        // ─── v3.50: «Повторить» snapshot record ──────────────────────────
+
+        [Fact]
+        public void QuickAddSnapshot_Record_PreservesAllFieldValues()
+        {
+            RunOnStaThread(() =>
+            {
+                var snap = new QuickAddControl.QuickAddSnapshot(
+                    Type: "Anwis", Color: "Белый", Width: "1200", Height: "1500",
+                    Qty: "2", Price: "2 150,00", Anticat: true, CustomName: null);
+
+                Assert.Equal("Anwis", snap.Type);
+                Assert.Equal("Белый", snap.Color);
+                Assert.Equal("1200", snap.Width);
+                Assert.Equal("1500", snap.Height);
+                Assert.Equal("2", snap.Qty);
+                Assert.Equal("2 150,00", snap.Price);
+                Assert.True(snap.Anticat);
+                Assert.Null(snap.CustomName);
+            });
+        }
+
+        [Fact]
+        public void QuickAddSnapshot_ValueEquality_AllowsRepeatedRestore()
+        {
+            // The same snapshot may be restored repeatedly (RepeatLastItem has
+            // no consume-once semantics) — record equality keeps that safe.
+            RunOnStaThread(() =>
+            {
+                var a = new QuickAddControl.QuickAddSnapshot("Отлив", null, "2000", "", "1", "350,00", false, null);
+                var b = new QuickAddControl.QuickAddSnapshot("Отлив", null, "2000", "", "1", "350,00", false, null);
+
+                Assert.Equal(a, b);
+            });
         }
     }
 }

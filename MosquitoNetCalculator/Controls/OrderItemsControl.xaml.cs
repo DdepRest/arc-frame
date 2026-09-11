@@ -15,10 +15,49 @@ namespace MosquitoNetCalculator.Controls
         public Border CardTableBorder => CardTable;
         public DataGrid Grid => OrderGrid;
         public Border Empty => EmptyState;
+        /// <summary>v3.50: header bar above the grid («Позиции заказа» + count chip).</summary>
+        public Border TableHead => TableHeadBar;
+
+        /// <summary>v3.50: hides the «Позиции заказа» bar while the grid is empty —
+        /// the illustrated empty state fills the whole card instead (prototype rule).</summary>
+        internal void SetTableHeadVisible(bool visible)
+        {
+            if (TableHeadBar != null)
+                TableHeadBar.Visibility = visible ? Visibility.Visible : Visibility.Collapsed;
+        }
 
         public OrderItemsControl()
         {
             InitializeComponent();
+            // v3.50.1 (prototype parity): uppercase 10.5px captions, like the
+            // prototype's table headers. Assigned in code — see helper docs.
+            Converters.UppercaseHeaderTemplate.Apply(OrderGrid);
+        }
+
+        /// <summary>
+        /// v3.50: updates the «Позиций: N» chip in the table header bar.
+        /// UI mirror of OrderItems.Count — called from the existing
+        /// CollectionChanged hook in MainWindow. Zero positions → chip hidden
+        /// (empty chip next to the title is visual noise, same rule as the
+        /// orders-count badge).
+        /// </summary>
+        internal void UpdatePositionsCount(int count)
+        {
+            if (PosCountBadge == null || PosCountText == null) return;
+            if (count > 0)
+            {
+                int m100 = count % 100, m10 = count % 10;
+                string unit = (m100 >= 11 && m100 <= 14) ? "позиций"
+                    : m10 == 1 ? "позиция"
+                    : (m10 >= 2 && m10 <= 4) ? "позиции" : "позиций";
+                PosCountText.Text = $"{count} {unit}";
+                PosCountBadge.Visibility = Visibility.Visible;
+            }
+            else
+            {
+                PosCountText.Text = "";
+                PosCountBadge.Visibility = Visibility.Collapsed;
+            }
         }
 
         /// <summary>

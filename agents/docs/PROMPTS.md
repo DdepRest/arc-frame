@@ -239,6 +239,8 @@ powershell -ExecutionPolicy Bypass -File agents/scripts/validate-docs.ps1
 - `agents/docs/MULTI_AGENT_ARC_CALC_CONTROL.md` (исходные секции 9–13)
 
 ## Last verified
+2026-09-11 (v3.50.0) — auto-synced from csproj (sync-version.ps1, CONTROL#13).
+
 2026-09-06 (v3.49.0) — auto-synced from csproj (sync-version.ps1, CONTROL#13).
 
 2026-08-30 (v3.48.7) — auto-synced from csproj (sync-version.ps1, CONTROL#13).
