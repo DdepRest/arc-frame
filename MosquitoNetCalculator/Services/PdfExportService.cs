@@ -100,6 +100,13 @@ namespace MosquitoNetCalculator.Services
                 string sourcePath = Path.Combine(Path.GetTempPath(), $"arc-pdf-src-{Guid.NewGuid():N}.pdf");
                 try
                 {
+                    // Футер считает страницы одного экземпляра: исходник содержит
+                    // 1 чистый комплект + (опц.) производственный блок.
+                    int instancePages = CountCustomerPages(1, valid, clientInfo, totalAmount, amountInWords);
+                    InstanceFooterComponent.InstancePages = instancePages;
+                    InstanceFooterComponent.Copies = 1;
+                    InstanceFooterComponent.IncludeProduction = includeProductionStamp;
+
                     int stampTargetPage = -1;
                     if (includeProductionStamp)
                     {
@@ -148,6 +155,12 @@ namespace MosquitoNetCalculator.Services
                 }
                 return;
             }
+
+            // Футер считает страницы одного экземпляра (Copies чистых комплектов +
+            // опциональный производственный блок) — см. InstanceFooterComponent.
+            InstanceFooterComponent.InstancePages = CountCustomerPages(1, valid, clientInfo, totalAmount, amountInWords);
+            InstanceFooterComponent.Copies = copies;
+            InstanceFooterComponent.IncludeProduction = includeProductionStamp;
 
             var document = Document.Create(container =>
             {
@@ -223,22 +236,13 @@ namespace MosquitoNetCalculator.Services
                 c.AlignRight().Text($"Договор № {num}").FontSize(7).FontColor(Colors.Grey.Darken1).Italic();
             });
 
-            page.Footer().PaddingTop(6).Element(c =>
-            {
-                c.Row(r =>
-                {
-                    r.RelativeItem().Text(t =>
-                    {
-                        t.Span("Страница ").FontSize(7).FontColor(Colors.Grey.Darken1).Italic();
-                        t.CurrentPageNumber().FontSize(7).FontColor(Colors.Grey.Darken1).Italic();
-                        t.Span(" из ").FontSize(7).FontColor(Colors.Grey.Darken1).Italic();
-                        t.TotalPages().FontSize(7).FontColor(Colors.Grey.Darken1).Italic();
-                    });
-                    r.RelativeItem().AlignRight().Text(
-                        clientInfo.ContractDate.ToString("dd.MM.yyyy"))
-                        .FontSize(7).FontColor(Colors.Grey.Darken1).Italic();
-                });
-            });
+            // v3.50.3: «Страница X из Y» — внутри ОДНОГО экземпляра КП. QuestPDF считает
+            // страницы сквозь все секции документа, поэтому при «копии × N + производство»
+            // футер показывал «1..4 из 4» вместо «1..2 из 2» в каждом экземпляре.
+            // Динамический компонент получает сквозной номер, пересчитывает его в номер
+            // внутри экземпляра + метку копии («копия N из M» / «В производство») и рисует
+            // дату договора справа (один Footer() на страницу — QuestPDF не даёт двух).
+            page.Footer().PaddingTop(6).Dynamic(new InstanceFooterComponent(clientInfo.ContractDate));
 
             page.Content().Column(col =>
             {
@@ -403,6 +407,67 @@ namespace MosquitoNetCalculator.Services
 
             if (includeProductionStamp)
                 page.Foreground().Dynamic(new ProductionStampOnPageComponent(stampOnPageNumber, stampBytes));
+        }
+
+        /// <summary>
+        /// v3.50.3: футер «Страница X из Y» внутри одного экземпляра КП + метка копии.
+        /// Контракт с физической печатью (FixedDocumentBuilder): экземпляр = один комплект
+        /// КП; чистые копии идут блоками по instancePages страниц, затем один блок
+        /// «В производство». Сквозной номер страницы пересчитывается в позицию внутри
+        /// экземпляра, а метка различает копии. Числа страниц экземпляра передаются
+        /// при создании (для быстрого пути copies известны сразу; для Single/Range —
+        /// тоже, т.к. блок всегда полный комплект). Производственный блок помечается
+        /// «экземпляр «В производство»» — как на физической печати.
+        /// </summary>
+        private sealed class InstanceFooterComponent : IDynamicComponent
+        {
+            private readonly DateTime _contractDate;
+
+            // Параметры экземпляра задаются статикой перед генерацией: компонент
+            // создаётся на Document.Create-этапе, где число страниц экземпляра
+            // ещё не измерено, но уже известно из отдельного прохода CountCustomerPages.
+            internal static int InstancePages;
+            internal static int Copies;
+            internal static bool IncludeProduction;
+
+            public InstanceFooterComponent(DateTime contractDate)
+            {
+                _contractDate = contractDate;
+            }
+
+            public DynamicComponentComposeResult Compose(DynamicContext context)
+            {
+                int page = context.PageNumber;             // 1-based сквозной
+                int instancePages = Math.Max(1, InstancePages);
+                int copies = Math.Max(1, Copies);
+                int cleanTotal = instancePages * copies;
+                string label;
+                int inPage, inTotal;
+                if (IncludeProduction && page > cleanTotal)
+                {
+                    inPage = page - cleanTotal;
+                    inTotal = instancePages;
+                    label = " · экземпляр «В производство»";
+                }
+                else
+                {
+                    inPage = (page - 1) % instancePages + 1;
+                    inTotal = instancePages;
+                    label = copies > 1 ? $" · копия {(page - 1) / instancePages + 1} из {copies}" : "";
+                }
+
+                var content = context.CreateElement(c => c.Row(r =>
+                {
+                    r.RelativeItem().Text(t =>
+                    {
+                        t.Span($"Страница {inPage} из {inTotal}{label}")
+                            .FontSize(7).FontColor(Colors.Grey.Darken1).Italic();
+                    });
+                    r.RelativeItem().AlignRight().Text(_contractDate.ToString("dd.MM.yyyy"))
+                        .FontSize(7).FontColor(Colors.Grey.Darken1).Italic();
+                }));
+                return new DynamicComponentComposeResult { Content = content, HasMoreContent = false };
+            }
         }
 
         /// <summary>

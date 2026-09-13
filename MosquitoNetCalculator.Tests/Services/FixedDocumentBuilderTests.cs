@@ -260,6 +260,80 @@ namespace MosquitoNetCalculator.Tests.Services
             Assert.Equal(contentLeft, visibleLeft, precision: 1);
         }
 
+        /// <summary>Двухстраничный исходник — чтобы проверить нумерацию внутри комплекта.</summary>
+        private static FlowDocument CreateTwoPageSource()
+        {
+            var doc = new FlowDocument(new Paragraph(new Run("Page 1")))
+            {
+                PageWidth = 793.7,
+                PageHeight = 1122.5,
+                PagePadding = new System.Windows.Thickness(30)
+            };
+            doc.Blocks.Add(new Paragraph(new Run("Page 2")) { BreakPageBefore = true });
+            return doc;
+        }
+
+        private static List<string> BuildAndCollectFooters(PrintSettings settings)
+            => WpfTestHelper.RunOnSta(() =>
+            {
+                var doc = FixedDocumentBuilder.Build(CreateTwoPageSource(), settings, "1-1", DateTime.Now);
+                var list = new List<string>();
+                foreach (var pageObj in doc.Pages)
+                {
+                    var fp = Assert.IsType<FixedPage>(pageObj.Child);
+                    string? footer = null;
+                    foreach (var child in fp.Children)
+                        if (child is TextBlock tb && tb.Text.StartsWith("Страница "))
+                            footer = tb.Text;
+                    list.Add(footer ?? "");
+                }
+                return list;
+            });
+
+        [Fact]
+        public void Build_PageFooter_IsPerInstance_NotThroughTotal()
+        {
+            // v3.50.3: 2 чистых копии + производственный комплект = 6 листов, но
+            // колонтитул обязан показывать номер ВНУТРИ экземпляра, а не сквозной:
+            // [1,2 · копия 1] [1,2 · копия 2] [1,2 · «В производство»], не «1..6 из 6».
+            var footers = BuildAndCollectFooters(new PrintSettings { Pages = PageMode.All, Copies = 2, IncludeProductionCopy = true });
+
+            Assert.Equal(6, footers.Count);
+            Assert.Equal("Страница 1 из 2 · копия 1 из 2", footers[0]);
+            Assert.Equal("Страница 2 из 2 · копия 1 из 2", footers[1]);
+            Assert.Equal("Страница 1 из 2 · копия 2 из 2", footers[2]);
+            Assert.Equal("Страница 2 из 2 · копия 2 из 2", footers[3]);
+            Assert.Equal("Страница 1 из 2 · экземпляр «В производство»", footers[4]);
+            Assert.Equal("Страница 2 из 2 · экземпляр «В производство»", footers[5]);
+            Assert.DoesNotContain(footers, f => f.Contains("из 6"));
+        }
+
+        [Fact]
+        public void Build_PageFooter_SingleCopy_HasNoCopyLabel()
+        {
+            // Обычная печать одной копии без производства — колонтитул как раньше,
+            // без меток: «Страница 1 из 2», «Страница 2 из 2».
+            var footers = BuildAndCollectFooters(new PrintSettings { Pages = PageMode.All, Copies = 1 });
+
+            Assert.Equal(2, footers.Count);
+            Assert.Equal("Страница 1 из 2", footers[0]);
+            Assert.Equal("Страница 2 из 2", footers[1]);
+        }
+
+        [Fact]
+        public void Build_PageFooter_Uncollated_RepeatsNumberPerPage()
+        {
+            // Collated=false: [p0,p0,p1,p1] — сначала обе копии первой страницы,
+            // потом обе копии второй; номера комплектов не сбиваются.
+            var footers = BuildAndCollectFooters(new PrintSettings { Pages = PageMode.All, Copies = 2, Collated = false });
+
+            Assert.Equal(4, footers.Count);
+            Assert.Equal("Страница 1 из 2 · копия 1 из 2", footers[0]);
+            Assert.Equal("Страница 1 из 2 · копия 2 из 2", footers[1]);
+            Assert.Equal("Страница 2 из 2 · копия 1 из 2", footers[2]);
+            Assert.Equal("Страница 2 из 2 · копия 2 из 2", footers[3]);
+        }
+
         private static int CountStampImages(UIElementCollection children)
         {
             int count = 0;

@@ -116,10 +116,49 @@ namespace MosquitoNetCalculator.Services
                 }
 
                 var bitmap = sourceBitmaps[srcPageIdx];
+
+                // v3.50.3: колонтитул «Страница X из Y» — ВНУТРИ одного экземпляра
+                // (чистые копии и производственный комплект нумеруются отдельно):
+                // 2 чистых + 2 произв. печатаются как «1 из 2, 2 из 2, 1 из 2, 2 из 2»,
+                // а не как сквозные «1 из 4 … 4 из 4», которые вводили в заблуждение.
+                int instanceTotal = isProduction ? productionCount : selectedPages.Count;
+                int pagePos, copyNumber;
+                if (isProduction)
+                {
+                    pagePos = productionPageIdx;            // 0-based позиция в комплекте
+                    copyNumber = 1;
+                }
+                else if (collated)
+                {
+                    // [p0,p1, p0,p1] — копия = блок целиком.
+                    pagePos = outputIdx % selectedPages.Count;
+                    copyNumber = (outputIdx / selectedPages.Count) + 1;
+                }
+                else
+                {
+                    // [p0,p0, p1,p1] — копия = повтор одной страницы.
+                    pagePos = outputIdx / Math.Max(1, copies);
+                    copyNumber = (outputIdx % Math.Max(1, copies)) + 1;
+                }
+                // «Копия N из M» различает повторные экземпляры одного и того же комплекта.
+                string copyLabel;
+                if (isProduction)
+                {
+                    copyLabel = " · экземпляр «В производство»";
+                }
+                else if (copies > 1)
+                {
+                    copyLabel = $" · копия {copyNumber} из {copies}";
+                }
+                else
+                {
+                    copyLabel = "";
+                }
+
                 var fp = BuildFixedPage(
                     bitmap, pageSizeDip,
                     contractNumber ?? string.Empty, contractDate,
-                    outputIdx + 1, total,
+                    pagePos + 1, instanceTotal, copyLabel,
                     includeProductionStamp: isProduction && productionPageIdx == 0);
                 // БЕЗ Measure/Arrange XPS-сериализация (writer.Write в
                 // PrintQueueManager.SendToQueue) теряет позиции Canvas.Left/Top:
@@ -167,6 +206,7 @@ namespace MosquitoNetCalculator.Services
             DateTime contractDate,
             int currentPageNumber,
             int totalPageCount,
+            string copyLabel = "",
             bool includeProductionStamp = false)
         {
             double pageWidthDip = pageSizeDip.Width;
@@ -220,7 +260,7 @@ namespace MosquitoNetCalculator.Services
 
             var pageFooter = new TextBlock
             {
-                Text = $"Страница {currentPageNumber} из {totalPageCount}",
+                Text = $"Страница {currentPageNumber} из {totalPageCount}{copyLabel}",
                 FontFamily = new FontFamily("Segoe UI"),
                 FontSize = PtToDip(defaultFontSizeDip),
                 FontStyle = FontStyles.Italic,
