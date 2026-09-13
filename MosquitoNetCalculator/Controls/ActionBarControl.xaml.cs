@@ -191,13 +191,6 @@ namespace MosquitoNetCalculator.Controls
             mw.Redo();
         }
 
-        private void DirtyChip_Click(object sender, System.Windows.Input.MouseButtonEventArgs e)
-        {
-            if (!TryGetMainWindow(nameof(DirtyChip_Click), out var mw)) return;
-            // Same path as Ctrl+S: save the order (no-op toast if nothing to save).
-            BtnSaveOrder_Click(sender, new RoutedEventArgs());
-        }
-
         private void BtnClearAll_Click(object sender, RoutedEventArgs e)
         {
             if (!TryGetMainWindow(nameof(BtnClearAll_Click), out var mw)) return;

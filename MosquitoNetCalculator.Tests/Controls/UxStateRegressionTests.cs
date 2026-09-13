@@ -43,26 +43,40 @@ namespace MosquitoNetCalculator.Tests.Controls
         }
 
         [Fact]
-        public void DirtyChip_Visibility_IsOwnedBy_IsDirtyTrigger()
+        public void DirtyChip_IsGone_FromActionBar_OwnedByStatusBarOnly()
         {
+            // v3.50.2 owner request: the top action bar must not duplicate the
+            // status-bar «Есть изменения» indicator — one owner (StatusDirtyIndicator
+            // in MainWindow.xaml) instead of two chips showing the same state.
             var sourceDir = LocateSourceProject();
             var xaml = File.ReadAllText(Path.Combine(sourceDir, "Controls", "ActionBarControl.xaml"));
-            int chipStart = xaml.IndexOf("x:Name=\"DirtyChip\"", StringComparison.Ordinal);
-            Assert.True(chipStart >= 0, "DirtyChip was not found.");
+            var code = File.ReadAllText(Path.Combine(sourceDir, "Controls", "ActionBarControl.xaml.cs"));
 
-            int openingEnd = xaml.IndexOf('>', chipStart);
-            Assert.True(openingEnd > chipStart, "DirtyChip opening tag is malformed.");
-            string openingTag = xaml.Substring(chipStart, openingEnd - chipStart + 1);
+            Assert.DoesNotContain("x:Name=\"DirtyChip\"", xaml);
+            Assert.DoesNotContain("Есть изменения", xaml);
+            Assert.DoesNotContain("DirtyChip_Click", code);
 
-            // A local Visibility value would win over the Style/DataTrigger
-            // and keep the chip collapsed forever after IsDirty changes.
-            Assert.DoesNotContain("Visibility=", openingTag, StringComparison.OrdinalIgnoreCase);
+            // The status-bar indicator in MainWindow.xaml stays the single owner.
+            var mainWindowXaml = File.ReadAllText(Path.Combine(sourceDir, "MainWindow.xaml"));
+            Assert.Contains("x:Name=\"StatusDirtyIndicator\"", mainWindowXaml);
+        }
 
-            int styleEnd = xaml.IndexOf("</Border.Style>", openingEnd, StringComparison.Ordinal);
-            Assert.True(styleEnd > openingEnd, "DirtyChip style was removed.");
-            string style = xaml.Substring(openingEnd, styleEnd - openingEnd);
-            Assert.Contains("Binding=\"{Binding IsDirty}\"", style);
-            Assert.Contains("Value=\"Visible\"", style);
+        [Fact]
+        public void ClientInfoButton_IsPrimaryAccent_SameAsPrintButton()
+        {
+            // v3.50.2 owner request: «Заказчик» must always be the same solid
+            // accent blue as «Печать КП» (prototype .btn.blue) — no ghost or
+            // tinted intermediate states.
+            var sourceDir = LocateSourceProject();
+            var xaml = File.ReadAllText(Path.Combine(sourceDir, "Controls", "ActionBarControl.xaml"));
+            int styleStart = xaml.IndexOf("x:Key=\"ClientInfoButton\"", StringComparison.Ordinal);
+            Assert.True(styleStart >= 0, "ClientInfoButton style was not found.");
+            int styleEnd = xaml.IndexOf("/>", styleStart, StringComparison.Ordinal);
+            string style = xaml.Substring(styleStart, styleEnd - styleStart);
+
+            Assert.Contains("BasedOn=\"{StaticResource PrimaryButton}\"", style);
+            Assert.DoesNotContain("AccentLight", style);
+            Assert.DoesNotContain("IsClientInfoFilled", style);
         }
 
         [Fact]

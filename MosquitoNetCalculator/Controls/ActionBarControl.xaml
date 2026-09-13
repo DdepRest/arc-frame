@@ -3,22 +3,11 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:automation="http://schemas.microsoft.com/winfx/2006/xaml/presentation/navigation">
     <UserControl.Resources>
-        <!-- UX-07: «Заказчик» — accent outline while client data is missing,
-             filled accent once name/phone/address/contract are complete.
-             At-a-glance readiness without opening the sidebar. -->
-        <Style x:Key="ClientInfoButton" TargetType="Button" BasedOn="{StaticResource GhostButton}">
-            <Setter Property="Background" Value="{DynamicResource AccentLight}"/>
-            <Setter Property="BorderBrush" Value="{DynamicResource Accent}"/>
-            <Setter Property="BorderThickness" Value="1"/>
-            <Setter Property="Foreground" Value="{DynamicResource Accent}"/>
-            <Style.Triggers>
-                <DataTrigger Binding="{Binding ClientInfo.IsClientInfoFilled}" Value="True">
-                    <Setter Property="Background" Value="{DynamicResource Accent}"/>
-                    <Setter Property="BorderBrush" Value="{DynamicResource Accent}"/>
-                    <Setter Property="Foreground" Value="{DynamicResource OnAccentPrimary}"/>
-                </DataTrigger>
-            </Style.Triggers>
-        </Style>
+        <!-- UX-07 (v3.50.2, owner request): «Заказчик» — always the same solid
+             accent blue as «Печать КП» (PrimaryButton), matching the prototype's
+             .btn.blue. No separate unfilled/filled states: the client-readiness
+             signal is carried by the client panel itself, not by button color. -->
+        <Style x:Key="ClientInfoButton" TargetType="Button" BasedOn="{StaticResource PrimaryButton}"/>
 
         <!-- v3.50 split-button: caret segment glued to the main print button.
              No hover animation so the pair reads as ONE control (the main
@@ -219,29 +208,6 @@
 
             <!-- Cluster 3: Danger/Tertiary (right) -->
             <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center">
-                <!-- UX-12: dirty chip — mirrors StatusDirtyIndicator; click = save (Ctrl+S path). -->
-                <Border x:Name="DirtyChip"
-                        Background="{DynamicResource BadgeWarningBg}"
-                        CornerRadius="7" Padding="8,4" Margin="0,0,8,0"
-                        Cursor="Hand" MouseLeftButtonUp="DirtyChip_Click"
-                        ToolTip="Несохранённые изменения — нажмите, чтобы сохранить (Ctrl+S)">
-                    <Border.Style>
-                        <Style TargetType="Border">
-                            <Setter Property="Visibility" Value="Collapsed"/>
-                            <Style.Triggers>
-                                <DataTrigger Binding="{Binding IsDirty}" Value="True">
-                                    <Setter Property="Visibility" Value="Visible"/>
-                                </DataTrigger>
-                            </Style.Triggers>
-                        </Style>
-                    </Border.Style>
-                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                        <Ellipse Width="6" Height="6" Fill="{DynamicResource BadgeWarningFg}"
-                                 VerticalAlignment="Center" Margin="0,0,5,0"/>
-                        <TextBlock Text="Есть изменения" FontSize="11" FontWeight="SemiBold"
-                                   Foreground="{DynamicResource BadgeWarningFg}"/>
-                    </StackPanel>
-                </Border>
                 <Button Style="{DynamicResource DangerGhostButton}"
                         Click="BtnClearAll_Click"
                         ToolTip="Очистить все позиции из текущего расчёта">
