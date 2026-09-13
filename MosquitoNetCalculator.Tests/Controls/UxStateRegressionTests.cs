@@ -66,6 +66,34 @@ namespace MosquitoNetCalculator.Tests.Controls
         }
 
         [Fact]
+        public void PrintSplitButton_MainSegmentAndCaret_AreWiredConsistently()
+        {
+            var sourceDir = LocateSourceProject();
+            var xaml = File.ReadAllText(Path.Combine(sourceDir, "Controls", "ActionBarControl.xaml"));
+            var code = File.ReadAllText(Path.Combine(sourceDir, "Controls", "ActionBarControl.xaml.cs"));
+
+            // v3.50.2 regression: the caret segment shipped without a Click
+            // wiring once — a mouse click opened nothing while the main
+            // segment still worked, so the split button looked broken.
+            int caretStart = xaml.IndexOf("x:Name=\"BtnPrintCaret\"", StringComparison.Ordinal);
+            Assert.True(caretStart >= 0, "BtnPrintCaret was not found.");
+            int caretEnd = xaml.IndexOf(">", caretStart, StringComparison.Ordinal);
+            Assert.True(caretEnd > caretStart, "BtnPrintCaret opening tag is malformed.");
+            string caretTag = xaml.Substring(caretStart, caretEnd - caretStart + 1);
+            Assert.Contains("Click=\"BtnPrintCaret_Click\"", caretTag);
+
+            // The caret handler must exist and toggle the popup.
+            Assert.Contains("private void BtnPrintCaret_Click", code);
+            Assert.Contains("PrintMenuPopup.IsOpen = !PrintMenuPopup.IsOpen", code);
+
+            // The main segment and its variants menu must reuse the SAME PDF
+            // path (no second export route) — this is what makes the caret
+            // menu a menu, not an alternate feature.
+            Assert.Contains("Click=\"BtnPrintPdf_Click\"", xaml);
+            Assert.Contains("TriggerPdfExport()", code);
+        }
+
+        [Fact]
         public void HistoryFilter_ReappliesAfterItemsSourceRefresh()
         {
             RunOnStaWithThemes(() =>

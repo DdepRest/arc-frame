@@ -77,7 +77,7 @@
                              VerticalContentAlignment="Center"
                              TextChanged="TxtQuickSearch_TextChanged"
                              KeyDown="TxtQuickSearch_KeyDown"
-                             GotFocus="SelectAll_OnFocus"
+                             GotFocus="TxtQuickSearch_GotFocus"
                              LostFocus="TxtQuickSearch_LostFocus"/>
                     <Popup x:Name="SearchPopup" AllowsTransparency="True" IsOpen="False"
                            Placement="Bottom" PlacementTarget="{Binding ElementName=TxtQuickSearch}"

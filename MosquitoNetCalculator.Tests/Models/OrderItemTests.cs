@@ -2061,7 +2061,8 @@ namespace MosquitoNetCalculator.Tests.Models
         public void DisplayName_AppendsSuffix_WhenAnticat()
         {
             var item = new OrderItem { Name = "Anwis", IsAnticat = true };
-            Assert.Equal("Anwis (Антикошка)", item.DisplayName);
+            Assert.Equal("Anwis", item.DisplayName);
+            Assert.Equal("Anwis (Антикошка)", item.PrintDisplayName); // v3.50.2: суффиксы только в печати
         }
 
         [Fact]
@@ -2098,7 +2099,8 @@ namespace MosquitoNetCalculator.Tests.Models
             var original = new OrderItem { Name = "Anwis", IsAnticat = true };
             var clone = original.Clone();
             Assert.True(clone.IsAnticat);
-            Assert.Equal("Anwis (Антикошка)", clone.DisplayName);
+            Assert.Equal("Anwis", clone.DisplayName);
+            Assert.Equal("Anwis (Антикошка)", clone.PrintDisplayName);
         }
 
         [Theory]
@@ -2295,14 +2297,16 @@ namespace MosquitoNetCalculator.Tests.Models
         {
             // «На навесах» — identity, поэтому 600×800 по вводу = импост.
             var item = new OrderItem { Name = "На навесах", Width = 600, Height = 800 };
-            Assert.Equal("На навесах (Импост)", item.DisplayName);
+            Assert.Equal("На навесах", item.DisplayName);
+            Assert.Equal("На навесах (Импост)", item.PrintDisplayName);
         }
 
         [Fact]
         public void DisplayName_AppendsBothSuffixes_WhenAnticatAndImpost()
         {
             var item = new OrderItem { Name = "На навесах", Width = 600, Height = 800, IsAnticat = true };
-            Assert.Equal("На навесах (Антикошка) (Импост)", item.DisplayName);
+            Assert.Equal("На навесах", item.DisplayName);
+            Assert.Equal("На навесах (Антикошка) (Импост)", item.PrintDisplayName);
         }
 
         [Fact]
@@ -2325,7 +2329,8 @@ namespace MosquitoNetCalculator.Tests.Models
             var original = new OrderItem { Name = "Anwis", Width = 600, Height = 800 };
             var clone = original.Clone();
             Assert.True(clone.HasImpost);
-            Assert.Equal("Anwis (Импост)", clone.DisplayName);
+            Assert.Equal("Anwis", clone.DisplayName);
+            Assert.Equal("Anwis (Импост)", clone.PrintDisplayName);
         }
 
         // ─── Impost/Anti-cat badges (v3.48.0) ────────────────

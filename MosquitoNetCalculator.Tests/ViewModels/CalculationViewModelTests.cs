@@ -338,8 +338,9 @@ namespace MosquitoNetCalculator.Tests.ViewModels
             _vm.LoadFromOrderData(order, () => { });
             Assert.Single(_vm.OrderItems);
             Assert.True(_vm.OrderItems[0].IsAnticat);
-            // v3.48.0: ширина 1000 ≥ 500 мм → к имени добавляется «(Импост)».
-            Assert.Equal("Anwis (Антикошка) (Импост)", _vm.OrderItems[0].DisplayName);
+            // v3.48.0: ширина 1000 ≥ 500 мм → импост; v3.50.2: суффиксы только в PrintDisplayName.
+            Assert.Equal("Anwis", _vm.OrderItems[0].DisplayName);
+            Assert.Equal("Anwis (Антикошка) (Импост)", _vm.OrderItems[0].PrintDisplayName);
         }
 
         // ─── LoadFromOrderData tests ─────────────────────────

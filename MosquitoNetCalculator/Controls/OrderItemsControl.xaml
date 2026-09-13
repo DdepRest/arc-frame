@@ -476,7 +476,7 @@
         <Border x:Name="EmptyState" Grid.Row="1" Background="{DynamicResource Surface}" CornerRadius="10"
                 HorizontalAlignment="Stretch" VerticalAlignment="Stretch"
                 BorderBrush="{DynamicResource Border}" BorderThickness="1"
-                Opacity="0">
+                Opacity="0" Visibility="Collapsed">
             <Border.Style>
                 <Style TargetType="Border">
                     <Style.Triggers>

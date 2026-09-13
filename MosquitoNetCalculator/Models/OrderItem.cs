@@ -364,22 +364,30 @@ namespace MosquitoNetCalculator.Models
             : $"Антикошка: {AnticatSurcharge:0} ₽/м² × {(CalculatedValue * Quantity).ToString("F2", Services.MoneyFormatService.RuCulture)} м² = {Services.MoneyFormatService.Format(AnticatSurchargeTotal)} ₽ — учтена в сумме строки";
 
         /// <summary>
-        /// UX-05: short self-explanatory label for the grid badge. Previously
-        /// the badge said just "АК" — an abbreviation the user had to learn;
-        /// now it names the surcharge directly ("АК +2000"), so the pill is
-        /// readable at a glance and the click-popup remains the details view.
-        /// Constant text (rate, not area) — needs no change notifications.
+        /// UX-05: short self-explanatory label for the grid badge ("АК +2000")
+        /// plus the click-popup remain the screen explanation. Constant text
+        /// (rate, not area) — needs no change notifications.
         /// </summary>
         public string AnticatBadgeLabel => IsAnticat
             ? $"АК +{AnticatSurcharge:0}"
             : "";
 
         /// <summary>
-        /// Display name shown in the grid, КП and factory text.
-        /// Appends "(Антикошка)" when <see cref="IsAnticat"/> is true and
-        /// "(Импост)" when <see cref="HasImpost"/> is true.
+        /// v3.50.2: screen name WITHOUT the surcharge suffixes — the grid row
+        /// already shows the «АК +2000» / «ИМ» badges with click popups, so a
+        /// duplicated «(Антикошка)» / «(Импост)» label was visual noise.
+        /// Printed КП and «На завод» texts (FlowDocumentBuilder,
+        /// PdfExportService, FactoryTextService) take the opposite,
+        /// <see cref="PrintDisplayName"/>, which keeps the full annotation.
         /// </summary>
-        public string DisplayName =>
+        public string DisplayName => Name;
+
+        /// <summary>
+        /// Full display name for печатное КП and «На завод» — appends
+        /// "(Антикошка)" when <see cref="IsAnticat"/> is true and "(Импост)"
+        /// when <see cref="HasImpost"/> is true.
+        /// </summary>
+        public string PrintDisplayName =>
             (IsAnticat ? $"{Name} (Антикошка)" : Name)
             + (HasImpost ? " (Импост)" : "");
 

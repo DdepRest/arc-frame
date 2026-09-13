@@ -7,8 +7,10 @@
              filled accent once name/phone/address/contract are complete.
              At-a-glance readiness without opening the sidebar. -->
         <Style x:Key="ClientInfoButton" TargetType="Button" BasedOn="{StaticResource GhostButton}">
+            <Setter Property="Background" Value="{DynamicResource AccentLight}"/>
             <Setter Property="BorderBrush" Value="{DynamicResource Accent}"/>
             <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="Foreground" Value="{DynamicResource Accent}"/>
             <Style.Triggers>
                 <DataTrigger Binding="{Binding ClientInfo.IsClientInfoFilled}" Value="True">
                     <Setter Property="Background" Value="{DynamicResource Accent}"/>
@@ -32,8 +34,9 @@
                 <Setter.Value>
                     <ControlTemplate TargetType="Button">
                         <Border x:Name="Bd" Background="{TemplateBinding Background}"
-                                CornerRadius="0,6,6,0" Padding="7,0">
-                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                CornerRadius="0,7,7,0" Padding="7,0">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"
+                                              RecognizesAccessKey="True"/>
                         </Border>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsMouseOver" Value="True">
@@ -41,6 +44,9 @@
                             </Trigger>
                             <Trigger Property="IsPressed" Value="True">
                                 <Setter TargetName="Bd" Property="Background" Value="{DynamicResource AccentPress}"/>
+                            </Trigger>
+                            <Trigger Property="IsEnabled" Value="False">
+                                <Setter TargetName="Bd" Property="Opacity" Value="0.45"/>
                             </Trigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
@@ -95,7 +101,7 @@
                             Click="BtnPrintPdf_Click"
                             ToolTip="Экспорт PDF в один клик">
                         <StackPanel Orientation="Horizontal">
-                            <TextBlock Style="{DynamicResource FluentIconButton}" Text="&#xE2F6;"/>
+                            <TextBlock Style="{DynamicResource FluentIconButton}" Text="&#xE896;"/>
                             <TextBlock Text="Печать КП"/>
                         </StackPanel>
                     </Button>
@@ -104,6 +110,7 @@
                             Height="{Binding ActualHeight, ElementName=BtnPrintKpMain}"
                             Click="BtnPrintCaret_Click"
                             ToolTip="Другие варианты печати"
+                            AutomationProperties.Name="Другие варианты печати"
                             AutomationProperties.AutomationId="BtnPrintCaret">
                         <TextBlock Text="&#xE70D;" FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets" FontSize="10"/>
                     </Button>

@@ -61,6 +61,9 @@ namespace MosquitoNetCalculator.Controls
 
         private void BtnPrintCaret_Click(object sender, RoutedEventArgs e)
         {
+            // v3.50.2 bugfix: the XAML previously had no Click wiring on this
+            // caret segment — the variants menu could only be opened by pure
+            // luck (keyboard focus), while a real mouse click did nothing.
             PrintMenuPopup.IsOpen = !PrintMenuPopup.IsOpen;
         }
 

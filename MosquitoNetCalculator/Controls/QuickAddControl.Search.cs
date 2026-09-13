@@ -15,6 +15,11 @@ namespace MosquitoNetCalculator.Controls
             UpdateSearchSuggestions();
         }
 
+        private void TxtQuickSearch_GotFocus(object sender, RoutedEventArgs e)
+        {
+            UpdateSearchSuggestions();
+        }
+
         private void BtnClearQuickSearch_Click(object sender, RoutedEventArgs e)
         {
             TxtQuickSearch.Text = string.Empty;
@@ -81,6 +86,12 @@ namespace MosquitoNetCalculator.Controls
 
         private void UpdateSearchSuggestions()
         {
+            if (!IsKeyboardFocusWithin)
+            {
+                SearchPopup.IsOpen = false;
+                return;
+            }
+
             if (!TryGetMainWindow(nameof(UpdateSearchSuggestions), out var mw)) return;
 
             string searchText = TxtQuickSearch.Text?.Trim().ToLower() ?? "";

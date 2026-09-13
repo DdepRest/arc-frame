@@ -285,7 +285,7 @@ namespace MosquitoNetCalculator.Services
                         LineHeight = bodyFontSize * 1.4,
                         Margin = new Thickness(3, 4, 3, 4)
                     };
-                    slopeNamePara.Inlines.Add(new Run(item.DisplayName ?? ""));
+                    slopeNamePara.Inlines.Add(new Run(item.PrintDisplayName ?? ""));
                     slopeNamePara.Inlines.Add(new LineBreak());
                     int depthMm = (int)(item.SlopeData.DepthM * 1000);
                     bool showEconomy = totalSlopeWindows > 1 && item.SlopeData.IsProfileEconomyApplied;
@@ -300,7 +300,7 @@ namespace MosquitoNetCalculator.Services
                 }
                 else
                 {
-                    row.Cells.Add(MakeCell(new Paragraph(new Run(item.DisplayName ?? ""))
+                    row.Cells.Add(MakeCell(new Paragraph(new Run(item.PrintDisplayName ?? ""))
                     {
                         LineStackingStrategy = LineStackingStrategy.BlockLineHeight,
                         LineHeight = bodyFontSize * 1.4,
@@ -326,7 +326,7 @@ namespace MosquitoNetCalculator.Services
                     BorderThickness = new Thickness(1),
                     Padding = new Thickness(4, 5, 4, 5)
                 };
-                int estLines = item.IsSlope ? 2 : (item.DisplayName?.Length ?? 0) > 28 ? 2 : 1;
+                int estLines = item.IsSlope ? 2 : (item.PrintDisplayName?.Length ?? 0) > 28 ? 2 : 1;
                 double textRowHeight = estLines * bodyFontSize * 1.35 + 10;
                 double drawingImageHeight = 54.0 / 100.0 * 44.0;
                 double minGridHeight = Math.Max(drawingImageHeight, textRowHeight);

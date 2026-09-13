@@ -72,7 +72,10 @@ namespace MosquitoNetCalculator.Services
                 result.Add(new SelectableItem
                 {
                     OrderItem = item,
-                    DisplayName = item.DisplayName,
+                    // «На завод» travels to production — it must keep the
+                    // печатные суффиксы even though the on-screen grid row no
+                    // longer shows them.
+                    DisplayName = item.PrintDisplayName,
                     Detail = detail,
                     IsSelected = !notForProduction.Contains(item.Name)
                 });
@@ -156,7 +159,9 @@ namespace MosquitoNetCalculator.Services
                 var groups = selectedOrderItems
                     .GroupBy(item => new
                     {
-                        Name = item.DisplayName,
+                        // Печатные суффиксы: Антикошка/Импост не должны
+                        // схлопываться в одну секцию с обычными позициями.
+                        Name = item.PrintDisplayName,
                         Mode = AnwisSizeService.IsApplicable(item.Name)
                             ? item.AnwisSizeMode
                             : (AnwisSizeMode?)null
