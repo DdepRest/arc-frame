@@ -87,8 +87,8 @@
                     </Grid.ColumnDefinitions>
                     <Button x:Name="BtnPrintKpMain" Grid.Column="0"
                             Style="{DynamicResource PrimaryButton}"
-                            Click="BtnPrintPdf_Click"
-                            ToolTip="Экспорт PDF в один клик">
+                            Click="BtnPrintPreview_Click"
+                            ToolTip="Предпросмотр и печать">
                         <StackPanel Orientation="Horizontal">
                             <TextBlock Style="{DynamicResource FluentIconButton}" Text="&#xE896;"/>
                             <TextBlock Text="Печать КП"/>
@@ -102,41 +102,41 @@
                             AutomationProperties.Name="Другие варианты печати"
                             AutomationProperties.AutomationId="BtnPrintCaret">
                         <TextBlock Text="&#xE70D;" FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets" FontSize="10"/>
-                    </Button>
-                    <Popup x:Name="PrintMenuPopup" AllowsTransparency="True" IsOpen="False"
+                    </Button>                    <Popup x:Name="PrintMenuPopup" AllowsTransparency="True" IsOpen="False"
                            Placement="Bottom" PlacementTarget="{Binding ElementName=BtnPrintCaret}"
                            PopupAnimation="Fade" StaysOpen="False">
                         <Border Background="{DynamicResource Surface}" BorderBrush="{DynamicResource Border}"
                                 BorderThickness="1" CornerRadius="8" Padding="5" Margin="0,4,8,8"
-                                SnapsToDevicePixels="True" MinWidth="230">
+                                SnapsToDevicePixels="True" MinWidth="270">
                             <Border.Effect>
                                 <DropShadowEffect BlurRadius="18" ShadowDepth="5" Opacity="0.3"/>
                             </Border.Effect>
                             <StackPanel>
+                                <!-- v3.50.3: меню каретки — БЕЗ предпросмотра; предпросмотр
+                                     теперь главный сегмент кнопки. Каждый пункт — прямой
+                                     вызов существующего пайплайна печати. -->
+                                <Button Style="{DynamicResource PrintMenuItem}" Click="BtnPrinterDirect_Click">
+                                    <StackPanel Orientation="Horizontal">
+                                        <TextBlock Text="&#xE765;" FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets"
+                                                   FontSize="14" Margin="0,0,10,0" VerticalAlignment="Center"
+                                                   Foreground="{DynamicResource Accent}"/>
+                                        <TextBlock Text="Печать без предпросмотра" VerticalAlignment="Center"/>
+                                    </StackPanel>
+                                </Button>
+                                <Button Style="{DynamicResource PrintMenuItem}" Click="BtnPrinterProduction_Click">
+                                    <StackPanel Orientation="Horizontal">
+                                        <TextBlock Text="&#xE72E;" FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets"
+                                                   FontSize="14" Margin="0,0,10,0" VerticalAlignment="Center"
+                                                   Foreground="{DynamicResource Accent}"/>
+                                        <TextBlock Text="Печать «Чистая» + «В производство»" VerticalAlignment="Center"/>
+                                    </StackPanel>
+                                </Button>
                                 <Button Style="{DynamicResource PrintMenuItem}" Click="BtnPrintPdf_Click">
                                     <StackPanel Orientation="Horizontal">
                                         <TextBlock Text="&#xE896;" FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets"
                                                    FontSize="14" Margin="0,0,10,0" VerticalAlignment="Center"
                                                    Foreground="{DynamicResource Accent}"/>
-                                        <TextBlock Text="Экспорт PDF" VerticalAlignment="Center"/>
-                                        <TextBlock Text="1 клик" FontSize="10.5" Margin="10,0,0,0"
-                                                   Foreground="{DynamicResource TextMuted}" VerticalAlignment="Center"/>
-                                    </StackPanel>
-                                </Button>
-                                <Button Style="{DynamicResource PrintMenuItem}" Click="BtnPrintPreview_Click">
-                                    <StackPanel Orientation="Horizontal">
-                                        <TextBlock Text="&#xE7B3;" FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets"
-                                                   FontSize="14" Margin="0,0,10,0" VerticalAlignment="Center"
-                                                   Foreground="{DynamicResource Accent}"/>
-                                        <TextBlock Text="Предпросмотр и печать" VerticalAlignment="Center"/>
-                                    </StackPanel>
-                                </Button>
-                                <Button Style="{DynamicResource PrintMenuItem}" Click="BtnPrinterDirect_Click">
-                                    <StackPanel Orientation="Horizontal">
-                                        <TextBlock Text="&#xE765;" FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets"
-                                                   FontSize="14" Margin="0,0,10,0" VerticalAlignment="Center"
-                                   Foreground="{DynamicResource Accent}"/>
-                                        <TextBlock Text="Печать на принтере" VerticalAlignment="Center"/>
+                                        <TextBlock Text="Сохранить в PDF" VerticalAlignment="Center"/>
                                     </StackPanel>
                                 </Button>
                             </StackPanel>

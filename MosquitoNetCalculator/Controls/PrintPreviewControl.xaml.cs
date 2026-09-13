@@ -145,6 +145,18 @@ namespace MosquitoNetCalculator.Controls
         public void TriggerPrinterPrint() => Print_Click(this, new RoutedEventArgs());
 
         /// <summary>
+        /// v3.50.3 split-button «Печать КП»: прямая печать «Чистая» + «В производство» —
+        /// принудительно включает производственную копию (как если бы пользователь
+        /// поставил флажок в предпросмотре) и запускает существующую печать на
+        /// принтер (Print_Click). Никакого второго печатного пайплайна.
+        /// </summary>
+        public void TriggerPrinterPrintWithProductionCopy()
+        {
+            ProductionCopyCheck.IsChecked = true; // CollectSettingsInto читает флажок
+            TriggerPrinterPrint();
+        }
+
+        /// <summary>
         /// Собирает текущие значения UI в объект настроек.
         /// Используется перед сохранением, чтобы ESC/закрытие оверлея
         /// не теряли изменения, внесённые пользователем после открытия.

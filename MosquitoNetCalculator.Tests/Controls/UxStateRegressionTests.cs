@@ -85,6 +85,7 @@ namespace MosquitoNetCalculator.Tests.Controls
             var sourceDir = LocateSourceProject();
             var xaml = File.ReadAllText(Path.Combine(sourceDir, "Controls", "ActionBarControl.xaml"));
             var code = File.ReadAllText(Path.Combine(sourceDir, "Controls", "ActionBarControl.xaml.cs"));
+            var previewCode = File.ReadAllText(Path.Combine(sourceDir, "Controls", "PrintPreviewControl.xaml.cs"));
 
             // v3.50.2 regression: the caret segment shipped without a Click
             // wiring once — a mouse click opened nothing while the main
@@ -100,11 +101,31 @@ namespace MosquitoNetCalculator.Tests.Controls
             Assert.Contains("private void BtnPrintCaret_Click", code);
             Assert.Contains("PrintMenuPopup.IsOpen = !PrintMenuPopup.IsOpen", code);
 
-            // The main segment and its variants menu must reuse the SAME PDF
-            // path (no second export route) — this is what makes the caret
-            // menu a menu, not an alternate feature.
+            // v3.50.3 owner semantics: main segment = предпросмотр; the caret
+            // menu offers exactly three direct actions, none of which opens a
+            // preview. Every action must reuse the PrintPreviewControl
+            // pipeline (no second print route).
+            int mainStart = xaml.IndexOf("x:Name=\"BtnPrintKpMain\"", StringComparison.Ordinal);
+            Assert.True(mainStart >= 0, "BtnPrintKpMain was not found.");
+            int mainEnd = xaml.IndexOf(">", mainStart, StringComparison.Ordinal);
+            string mainTag = xaml.Substring(mainStart, mainEnd - mainStart + 1);
+            Assert.Contains("Click=\"BtnPrintPreview_Click\"", mainTag);
+
+            Assert.Contains("Click=\"BtnPrinterDirect_Click\"", xaml);
+            Assert.Contains("Click=\"BtnPrinterProduction_Click\"", xaml);
             Assert.Contains("Click=\"BtnPrintPdf_Click\"", xaml);
+            Assert.Contains("Печать без предпросмотра", xaml);
+            Assert.Contains("«Чистая» + «В производство»", xaml);
+            Assert.Contains("Сохранить в PDF", xaml);
+
+            Assert.Contains("TriggerPrinterPrint()", code);
+            Assert.Contains("TriggerPrinterPrintWithProductionCopy()", code);
             Assert.Contains("TriggerPdfExport()", code);
+
+            // The production-copy trigger must flip the existing checkbox and
+            // reuse Print_Click — not spawn a parallel pipeline.
+            Assert.Contains("public void TriggerPrinterPrintWithProductionCopy", previewCode);
+            Assert.Contains("TriggerPrinterPrint();", previewCode);
         }
 
         [Fact]

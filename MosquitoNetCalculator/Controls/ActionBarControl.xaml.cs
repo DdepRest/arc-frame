@@ -30,13 +30,18 @@ namespace MosquitoNetCalculator.Controls
             return false;
         }
 
-        // ─── v3.50 split-button «Печать КП» ───────────────────────────
-        // Main segment = PDF export in one click; caret opens the variants
-        // menu. Every route reuses an EXISTING print path:
-        //   PDF      → PrintPreviewControl.TriggerPdfExport (SavePdf_Click:
-        //              same save dialog, settings, QuestPDF pipeline)
-        //   Preview  → former BtnPrintKp_Click (ShowPrintOverlay)
-        //   Printer  → PrintPreviewControl.TriggerPrinterPrint (Print_Click)
+        // ─── v3.50.3 split-button «Печать КП» ─────────────────────────
+        // Main segment = предпросмотр (ShowPrintOverlay); caret menu =
+        // прямые действия БЕЗ предпросмотра. Every route reuses an EXISTING
+        // pipeline (no second print route anywhere).
+
+        // v3.50.3 split-button semantics (owner request):
+        //   main segment → ShowPrintOverlay (предпросмотр)
+        //   caret menu   → direct actions, NO preview:
+        //     Печать без предпросмотра        → TriggerPrinterPrint
+        //     «Чистая» + «В производство»     → TriggerPrinterPrintWithProductionCopy
+        //     Сохранить в PDF                 → TriggerPdfExport (save dialog)
+        // Every item reuses the PrintPreviewControl pipeline — no second route.
 
         private void BtnPrintPdf_Click(object sender, RoutedEventArgs e)
         {
@@ -88,6 +93,24 @@ namespace MosquitoNetCalculator.Controls
 
             mw.ShowPrintOverlay();
             mw.PrintPreviewControl.TriggerPrinterPrint();
+        }
+
+        private void BtnPrinterProduction_Click(object sender, RoutedEventArgs e)
+        {
+            if (!TryGetMainWindow(nameof(BtnPrinterProduction_Click), out var mw)) return;
+            PrintMenuPopup.IsOpen = false;
+
+            var validItems = mw.OrderItems.Where(i => !string.IsNullOrEmpty(i.Name) && i.IsActive && i.Total > 0).ToList();
+            if (validItems.Count == 0)
+            {
+                ToastService.ShowToast("Добавьте хотя бы одну позицию.", ToastType.Warning);
+                return;
+            }
+
+            mw.ShowPrintOverlay();
+            // Force the production copy ON for this attempt (customer set +
+            // stamped «В ПРОИЗВОДСТВО» set), then reuse the normal print path.
+            mw.PrintPreviewControl.TriggerPrinterPrintWithProductionCopy();
         }
 
         internal void BtnSaveOrder_Click(object sender, RoutedEventArgs e)
