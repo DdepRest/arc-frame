@@ -208,7 +208,7 @@ namespace MosquitoNetCalculator.Tests.Controls
             // скруглённый угол карточки. Теперь это ЛЕВАЯ ГРАНИЦА внутреннего
             // Border — рамка обводит скруглённый контур, поэтому полоса
             // повторяет радиус карточки (11 = 12 радиуса карточки минус 1px
-            // её рамки). Пиксели проверяет UpdateCardStripeTests.
+            // её рамки). Пиксели проверяет CardStripeCornerTests.
             Assert.Contains("ConverterParameter=strong", xaml);
             string cardMarkup = System.Text.RegularExpressions.Regex.Replace(xaml, @"\s+", " ");
             Assert.Contains("BorderThickness=\"4,0,0,0\" CornerRadius=\"11,0,0,11\"", cardMarkup);

@@ -481,15 +481,16 @@
                                                     </Style.Triggers>
                                                 </Style>
                                             </Border.Style>
-                                            <Grid>
-                                                <Grid.ColumnDefinitions>
-                                                    <ColumnDefinition Width="Auto"/>
-                                                    <ColumnDefinition Width="*"/>
-                                                </Grid.ColumnDefinitions>
-                                                <!-- Цветная полоса статуса слева -->
-                                                <Border Grid.Column="0" Width="4" Margin="0"
-                                                        Background="{Binding Status, Converter={StaticResource OfficeStatusStripeBrush}}"/>
-                                                <StackPanel Grid.Column="1" Margin="12,10,14,10">
+                                            <!-- Цветная полоса статуса слева (v3.52.0): ЛЕВАЯ ГРАНИЦА
+                                                 внутреннего Border — рамка Border обводит скруглённый контур,
+                                                 поэтому полоса повторяет радиус карточки (11 = 12 радиус
+                                                 карточки минус 1px её рамки). Квадратный прямоугольник Width=4
+                                                 торчал в скруглённом углу карточки — та же правка, что и в
+                                                 карточках «Истории обновлений» (CardStripeCornerTests). -->
+                                            <Border BorderThickness="4,0,0,0"
+                                                    CornerRadius="11,0,0,11"
+                                                    BorderBrush="{Binding Status, Converter={StaticResource OfficeStatusStripeBrush}}">
+                                                <StackPanel Margin="12,10,14,10">
                                                     <StackPanel Orientation="Horizontal">
                                                         <TextBlock Text="{Binding LocationName}"
                                                                    FontSize="14" FontWeight="SemiBold"
@@ -652,7 +653,7 @@
                                                         </ItemsControl>
                                                     </WrapPanel>
                                                 </StackPanel>
-                                            </Grid>
+                                            </Border>
                                         </Border>
                                     </DataTemplate>
                                 </ItemsControl.ItemTemplate>
