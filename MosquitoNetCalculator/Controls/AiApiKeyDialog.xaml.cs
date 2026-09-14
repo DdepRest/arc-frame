@@ -9,6 +9,7 @@ using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Animation;
+using MosquitoNetCalculator.Helpers;
 using MosquitoNetCalculator.Models;
 using MosquitoNetCalculator.Services;
 
@@ -382,7 +383,9 @@ namespace MosquitoNetCalculator.Controls
             {
                 From = 1.0,
                 To = 0.35,
-                Duration = TimeSpan.FromMilliseconds(600),
+                // v3.53: 600 мс — вдвое длиннее самого длинного шага шкалы
+                // (правило «ни одна анимация не длится дольше 320 мс»).
+                Duration = Motion.Emphasized,
                 AutoReverse = true,
                 RepeatBehavior = RepeatBehavior.Forever
             };

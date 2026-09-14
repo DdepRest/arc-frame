@@ -51,7 +51,7 @@
                                             <!-- Track fades in -->
                                             <DoubleAnimation Storyboard.TargetName="TrackBg"
                                                              Storyboard.TargetProperty="Opacity"
-                                                             To="0.3" Duration="0:0:0.2">
+                                                             To="0.3" Duration="{StaticResource Motion.Slow}">
                                                 <DoubleAnimation.EasingFunction>
                                                     <CubicEase EasingMode="EaseOut"/>
                                                 </DoubleAnimation.EasingFunction>
@@ -59,7 +59,7 @@
                                             <!-- Thumb fades in -->
                                             <DoubleAnimation Storyboard.TargetName="ThumbBd"
                                                              Storyboard.TargetProperty="Opacity"
-                                                             To="0.85" Duration="0:0:0.2">
+                                                             To="0.85" Duration="{StaticResource Motion.Slow}">
                                                 <DoubleAnimation.EasingFunction>
                                                     <CubicEase EasingMode="EaseOut"/>
                                                 </DoubleAnimation.EasingFunction>
@@ -73,7 +73,7 @@
                                             <!-- Track fades out -->
                                             <DoubleAnimation Storyboard.TargetName="TrackBg"
                                                              Storyboard.TargetProperty="Opacity"
-                                                             To="0.12" Duration="0:0:0.4">
+                                                             To="0.12" Duration="{StaticResource Motion.Emphasized}">
                                                 <DoubleAnimation.EasingFunction>
                                                     <CubicEase EasingMode="EaseOut"/>
                                                 </DoubleAnimation.EasingFunction>
@@ -81,7 +81,7 @@
                                             <!-- Thumb fades out -->
                                             <DoubleAnimation Storyboard.TargetName="ThumbBd"
                                                              Storyboard.TargetProperty="Opacity"
-                                                             To="0.35" Duration="0:0:0.4">
+                                                             To="0.35" Duration="{StaticResource Motion.Emphasized}">
                                                 <DoubleAnimation.EasingFunction>
                                                     <CubicEase EasingMode="EaseOut"/>
                                                 </DoubleAnimation.EasingFunction>

@@ -3,6 +3,7 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
 using System.Windows.Media.Animation;
+using MosquitoNetCalculator.Helpers;
 
 namespace MosquitoNetCalculator.Services
 {
@@ -97,13 +98,13 @@ namespace MosquitoNetCalculator.Services
             }
             entry.SlideTransform.X = panelWidth;
 
-            var slideAnim = new DoubleAnimation(0, TimeSpan.FromMilliseconds(280))
+            var slideAnim = new DoubleAnimation(0, Motion.Emphasized)
             {
                 EasingFunction = new CubicEase { EasingMode = EasingMode.EaseOut }
             };
             entry.SlideTransform.BeginAnimation(TranslateTransform.XProperty, slideAnim);
 
-            var fadeIn = new DoubleAnimation(1, TimeSpan.FromMilliseconds(200))
+            var fadeIn = new DoubleAnimation(1, Motion.Base)
             {
                 EasingFunction = new CubicEase { EasingMode = EasingMode.EaseOut }
             };
@@ -132,14 +133,14 @@ namespace MosquitoNetCalculator.Services
                 backdrop.BeginAnimation(UIElement.OpacityProperty, null);
 
                 double panelWidth = panel.ActualWidth > 0 ? panel.ActualWidth : 800;
-                var slideOut = new DoubleAnimation(panelWidth, TimeSpan.FromMilliseconds(220))
+                var slideOut = new DoubleAnimation(panelWidth, Motion.Slow)
                 {
                     EasingFunction = new CubicEase { EasingMode = EasingMode.EaseIn }
                 };
                 slideOut.Completed += (_, _) => { grid.Visibility = Visibility.Collapsed; };
                 slide.BeginAnimation(TranslateTransform.XProperty, slideOut);
 
-                var fadeOut = new DoubleAnimation(0, TimeSpan.FromMilliseconds(180))
+                var fadeOut = new DoubleAnimation(0, Motion.Base)
                 {
                     EasingFunction = new CubicEase { EasingMode = EasingMode.EaseOut }
                 };
@@ -164,14 +165,14 @@ namespace MosquitoNetCalculator.Services
             entry.Backdrop.BeginAnimation(UIElement.OpacityProperty, null);
 
             double panelWidth = entry.Panel.ActualWidth > 0 ? entry.Panel.ActualWidth : fallbackWidth;
-            var slideOut = new DoubleAnimation(panelWidth, TimeSpan.FromMilliseconds(220))
+            var slideOut = new DoubleAnimation(panelWidth, Motion.Slow)
             {
                 EasingFunction = new CubicEase { EasingMode = EasingMode.EaseIn }
             };
             slideOut.Completed += (_, _) => { entry.Grid.Visibility = Visibility.Collapsed; };
             entry.SlideTransform.BeginAnimation(TranslateTransform.XProperty, slideOut);
 
-            var fadeOut = new DoubleAnimation(0, TimeSpan.FromMilliseconds(180))
+            var fadeOut = new DoubleAnimation(0, Motion.Base)
             {
                 EasingFunction = new CubicEase { EasingMode = EasingMode.EaseOut }
             };

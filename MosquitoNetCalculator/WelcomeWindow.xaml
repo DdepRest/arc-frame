@@ -69,7 +69,7 @@
                                                 <Storyboard>
                                                     <DoubleAnimation Storyboard.TargetName="HoverOverlay"
                                                                      Storyboard.TargetProperty="Opacity"
-                                                                     To="1" Duration="0:0:0.15">
+                                                                     To="1" Duration="{StaticResource Motion.Base}">
                                                         <DoubleAnimation.EasingFunction>
                                                             <CubicEase EasingMode="EaseOut"/>
                                                         </DoubleAnimation.EasingFunction>
@@ -82,7 +82,7 @@
                                                 <Storyboard>
                                                     <DoubleAnimation Storyboard.TargetName="HoverOverlay"
                                                                      Storyboard.TargetProperty="Opacity"
-                                                                     To="0" Duration="0:0:0.15">
+                                                                     To="0" Duration="{StaticResource Motion.Base}">
                                                         <DoubleAnimation.EasingFunction>
                                                             <CubicEase EasingMode="EaseOut"/>
                                                         </DoubleAnimation.EasingFunction>
@@ -233,7 +233,7 @@
                                                 <DoubleAnimation Storyboard.TargetName="RadioIndicator"
                                                                  Storyboard.TargetProperty="RenderTransform.ScaleX"
                                                                  From="1.0" To="1.2"
-                                                                 Duration="0:0:0.15"
+                                                                 Duration="{StaticResource Motion.Base}"
                                                                  AutoReverse="True">
                                                     <DoubleAnimation.EasingFunction>
                                                         <CubicEase EasingMode="EaseOut"/>
@@ -242,7 +242,7 @@
                                                 <DoubleAnimation Storyboard.TargetName="RadioIndicator"
                                                                  Storyboard.TargetProperty="RenderTransform.ScaleY"
                                                                  From="1.0" To="1.2"
-                                                                 Duration="0:0:0.15"
+                                                                 Duration="{StaticResource Motion.Base}"
                                                                  AutoReverse="True">
                                                     <DoubleAnimation.EasingFunction>
                                                         <CubicEase EasingMode="EaseOut"/>

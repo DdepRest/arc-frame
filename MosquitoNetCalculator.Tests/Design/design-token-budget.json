@@ -79,10 +79,10 @@
     "WelcomeWindow.xaml": 4
   },
   "totals": {
-    "_comment": "Суммарные бюджеты для категорий, где разбивка по файлам ничего не даёт.",
+    "_comment": "Суммарные бюджеты для категорий, где разбивка по файлам ничего не даёт. rawAnimationDurationsXaml = 0: движение только через Motion.* (литеральный Duration= — сразу ошибка). rawAnimationDurationsCodeMs = 13: оставшиеся TimeSpan.FromMilliseconds — это интервалы таймеров, задержки повторов сети и ожидание первого токена, не движение; анимации в коде берут Helpers/Motion.",
     "rawHexColorsOutsideColorLayer": 0,
-    "rawAnimationDurationsXaml": 46,
-    "rawAnimationDurationsCodeMs": 42,
+    "rawAnimationDurationsXaml": 0,
+    "rawAnimationDurationsCodeMs": 13,
     "subElevenOrFractionalFontSizes": 98,
     "fractionalFontSizes": 46
   }

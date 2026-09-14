@@ -7,6 +7,7 @@ using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Animation;
 using MosquitoNetCalculator.Controls;
+using MosquitoNetCalculator.Helpers;
 using MosquitoNetCalculator.Models;
 
 namespace MosquitoNetCalculator.Services
@@ -63,7 +64,7 @@ namespace MosquitoNetCalculator.Services
             trigger.Setters.Add(new Setter(Button.ForegroundProperty, Brushes.White));
 
             var enterStoryboard = new Storyboard();
-            var enterAnim = new DoubleAnimation(1.0, new Duration(TimeSpan.FromMilliseconds(150)))
+            var enterAnim = new DoubleAnimation(1.0, new Duration(Motion.Fast))
             {
                 EasingFunction = new CubicEase { EasingMode = EasingMode.EaseOut }
             };
@@ -73,7 +74,7 @@ namespace MosquitoNetCalculator.Services
             trigger.EnterActions.Add(new BeginStoryboard { Storyboard = enterStoryboard });
 
             var exitStoryboard = new Storyboard();
-            var exitAnim = new DoubleAnimation(0.0, new Duration(TimeSpan.FromMilliseconds(150)))
+            var exitAnim = new DoubleAnimation(0.0, new Duration(Motion.Fast))
             {
                 EasingFunction = new CubicEase { EasingMode = EasingMode.EaseOut }
             };

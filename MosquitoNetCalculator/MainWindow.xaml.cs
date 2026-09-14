@@ -765,13 +765,13 @@ namespace MosquitoNetCalculator
             double panelWidth = PrintPanel.ActualWidth > 0 ? PrintPanel.ActualWidth : PrintPanel.Width;
             PrintSlideTransform.X = panelWidth;
 
-            var slideAnim = new DoubleAnimation(0, TimeSpan.FromMilliseconds(280))
+            var slideAnim = new DoubleAnimation(0, Motion.Emphasized)
             {
                 EasingFunction = new CubicEase { EasingMode = EasingMode.EaseOut }
             };
             PrintSlideTransform.BeginAnimation(TranslateTransform.XProperty, slideAnim);
 
-            var fadeIn = new DoubleAnimation(1, TimeSpan.FromMilliseconds(200))
+            var fadeIn = new DoubleAnimation(1, Motion.Base)
             {
                 EasingFunction = new CubicEase { EasingMode = EasingMode.EaseOut }
             };

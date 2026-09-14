@@ -4,6 +4,7 @@ using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Animation;
+using MosquitoNetCalculator.Helpers;
 using MosquitoNetCalculator.Models;
 using MosquitoNetCalculator.Services;
 
@@ -81,13 +82,13 @@ namespace MosquitoNetCalculator.Controls
                 PanelAnwisModes.Opacity = 0;
                 PanelAnwisModes.RenderTransform = new TranslateTransform(0, -8);
 
-                var fadeIn = new DoubleAnimation(1, TimeSpan.FromMilliseconds(250))
+                var fadeIn = new DoubleAnimation(1, Motion.Slow)
                 {
                     EasingFunction = new CubicEase { EasingMode = EasingMode.EaseOut }
                 };
                 PanelAnwisModes.BeginAnimation(OpacityProperty, fadeIn);
 
-                var slideDown = new DoubleAnimation(0, TimeSpan.FromMilliseconds(300))
+                var slideDown = new DoubleAnimation(0, Motion.Emphasized)
                 {
                     EasingFunction = new CubicEase { EasingMode = EasingMode.EaseOut }
                 };
@@ -102,7 +103,7 @@ namespace MosquitoNetCalculator.Controls
                 if (PanelAnwisModes.Visibility != Visibility.Visible)
                     return;
 
-                var fadeOut = new DoubleAnimation(0, TimeSpan.FromMilliseconds(200))
+                var fadeOut = new DoubleAnimation(0, Motion.Base)
                 {
                     EasingFunction = new CubicEase { EasingMode = EasingMode.EaseOut }
                 };
@@ -112,7 +113,7 @@ namespace MosquitoNetCalculator.Controls
                 };
                 PanelAnwisModes.BeginAnimation(OpacityProperty, fadeOut);
 
-                var slideUp = new DoubleAnimation(8, TimeSpan.FromMilliseconds(200))
+                var slideUp = new DoubleAnimation(8, Motion.Base)
                 {
                     EasingFunction = new CubicEase { EasingMode = EasingMode.EaseOut }
                 };

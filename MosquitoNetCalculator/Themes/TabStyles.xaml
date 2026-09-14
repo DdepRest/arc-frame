@@ -54,13 +54,13 @@
                                                                 <BeginStoryboard>
                                                                     <Storyboard>
                                                                         <DoubleAnimation Storyboard.TargetProperty="Width"
-                                                                                         From="0" To="24" Duration="0:0:0.25">
+                                                                                         From="0" To="24" Duration="{StaticResource Motion.Slow}">
                                                                             <DoubleAnimation.EasingFunction>
                                                                                 <CubicEase EasingMode="EaseOut"/>
                                                                             </DoubleAnimation.EasingFunction>
                                                                         </DoubleAnimation>
                                                                         <DoubleAnimation Storyboard.TargetProperty="Opacity"
-                                                                                         From="0" To="1" Duration="0:0:0.15">
+                                                                                         From="0" To="1" Duration="{StaticResource Motion.Base}">
                                                                             <DoubleAnimation.EasingFunction>
                                                                                 <CubicEase EasingMode="EaseOut"/>
                                                                             </DoubleAnimation.EasingFunction>
@@ -72,13 +72,13 @@
                                                                 <BeginStoryboard>
                                                                     <Storyboard>
                                                                         <DoubleAnimation Storyboard.TargetProperty="Width"
-                                                                                         From="24" To="0" Duration="0:0:0.2">
+                                                                                         From="24" To="0" Duration="{StaticResource Motion.Slow}">
                                                                             <DoubleAnimation.EasingFunction>
                                                                                 <CubicEase EasingMode="EaseOut"/>
                                                                             </DoubleAnimation.EasingFunction>
                                                                         </DoubleAnimation>
                                                                         <DoubleAnimation Storyboard.TargetProperty="Opacity"
-                                                                                         From="1" To="0" Duration="0:0:0.2">
+                                                                                         From="1" To="0" Duration="{StaticResource Motion.Slow}">
                                                                             <DoubleAnimation.EasingFunction>
                                                                                 <CubicEase EasingMode="EaseOut"/>
                                                                             </DoubleAnimation.EasingFunction>
@@ -107,7 +107,7 @@
                                             <!-- Background tint fades in -->
                                             <DoubleAnimation Storyboard.TargetName="HoverOverlay"
                                                              Storyboard.TargetProperty="Opacity"
-                                                             To="1" Duration="0:0:0.2">
+                                                             To="1" Duration="{StaticResource Motion.Slow}">
                                                 <DoubleAnimation.EasingFunction>
                                                     <CubicEase EasingMode="EaseOut"/>
                                                 </DoubleAnimation.EasingFunction>
@@ -115,14 +115,14 @@
                                             <!-- Micro-scale content up 3 % for a tactile feel -->
                                             <DoubleAnimation Storyboard.TargetName="TabScale"
                                                              Storyboard.TargetProperty="ScaleX"
-                                                             To="1.03" Duration="0:0:0.2">
+                                                             To="1.03" Duration="{StaticResource Motion.Slow}">
                                                 <DoubleAnimation.EasingFunction>
                                                     <CubicEase EasingMode="EaseOut"/>
                                                 </DoubleAnimation.EasingFunction>
                                             </DoubleAnimation>
                                             <DoubleAnimation Storyboard.TargetName="TabScale"
                                                              Storyboard.TargetProperty="ScaleY"
-                                                             To="1.03" Duration="0:0:0.2">
+                                                             To="1.03" Duration="{StaticResource Motion.Slow}">
                                                 <DoubleAnimation.EasingFunction>
                                                     <CubicEase EasingMode="EaseOut"/>
                                                 </DoubleAnimation.EasingFunction>
@@ -136,7 +136,7 @@
                                             <!-- Background tint fades out -->
                                             <DoubleAnimation Storyboard.TargetName="HoverOverlay"
                                                              Storyboard.TargetProperty="Opacity"
-                                                             To="0" Duration="0:0:0.2">
+                                                             To="0" Duration="{StaticResource Motion.Slow}">
                                                 <DoubleAnimation.EasingFunction>
                                                     <CubicEase EasingMode="EaseOut"/>
                                                 </DoubleAnimation.EasingFunction>
@@ -144,14 +144,14 @@
                                             <!-- Micro-scale content back to normal -->
                                             <DoubleAnimation Storyboard.TargetName="TabScale"
                                                              Storyboard.TargetProperty="ScaleX"
-                                                             To="1" Duration="0:0:0.2">
+                                                             To="1" Duration="{StaticResource Motion.Slow}">
                                                 <DoubleAnimation.EasingFunction>
                                                     <CubicEase EasingMode="EaseOut"/>
                                                 </DoubleAnimation.EasingFunction>
                                             </DoubleAnimation>
                                             <DoubleAnimation Storyboard.TargetName="TabScale"
                                                              Storyboard.TargetProperty="ScaleY"
-                                                             To="1" Duration="0:0:0.2">
+                                                             To="1" Duration="{StaticResource Motion.Slow}">
                                                 <DoubleAnimation.EasingFunction>
                                                     <CubicEase EasingMode="EaseOut"/>
                                                 </DoubleAnimation.EasingFunction>

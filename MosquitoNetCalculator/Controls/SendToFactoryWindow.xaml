@@ -13,7 +13,7 @@
         Icon="pack://application:,,,/Resources/app_icon.ico">
     <Window.Resources>
         <Storyboard x:Key="WindowOpenAnimation">
-            <DoubleAnimation From="0.0" To="1.0" Duration="0:0:0.25"
+            <DoubleAnimation From="0.0" To="1.0" Duration="{StaticResource Motion.Slow}"
                              Storyboard.TargetProperty="Opacity">
                 <DoubleAnimation.EasingFunction>
                     <CubicEase EasingMode="EaseOut"/>

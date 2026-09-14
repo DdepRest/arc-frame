@@ -2,6 +2,7 @@ using System;
 using System.Windows;
 using System.Windows.Media;
 using System.Windows.Media.Animation;
+using MosquitoNetCalculator.Helpers;
 
 namespace MosquitoNetCalculator
 {
@@ -41,8 +42,10 @@ namespace MosquitoNetCalculator
                 {
                     From = 0.0,
                     To = 1.0,
+                    // Ступенчатое появление карточек: задержка — доля шага шкалы,
+                    // сама анимация — самый длинный шаг (v3.53: было 400 мс).
                     BeginTime = TimeSpan.FromMilliseconds(delay),
-                    Duration = TimeSpan.FromMilliseconds(400),
+                    Duration = Motion.Emphasized,
                     EasingFunction = new CubicEase { EasingMode = EasingMode.EaseOut }
                 };
 

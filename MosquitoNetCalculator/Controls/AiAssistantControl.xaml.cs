@@ -12,6 +12,7 @@ using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Animation;
 using System.Windows.Threading;
+using MosquitoNetCalculator.Helpers;
 using MosquitoNetCalculator.Models;
 using MosquitoNetCalculator.Services;
 using MosquitoNetCalculator.ViewModels;
@@ -156,8 +157,7 @@ namespace MosquitoNetCalculator.Controls
                 if (container == null) return;
 
                 container.Opacity = 0;
-                var fade = new System.Windows.Media.Animation.DoubleAnimation(1,
-                    System.TimeSpan.FromMilliseconds(180))
+                var fade = new System.Windows.Media.Animation.DoubleAnimation(1, Motion.Base)
                 {
                     EasingFunction = new System.Windows.Media.Animation.CubicEase
                     {
@@ -250,7 +250,7 @@ namespace MosquitoNetCalculator.Controls
                 return;
 
             BtnScrollToBottom.Visibility = Visibility.Visible;
-            var fadeIn = new DoubleAnimation(BtnScrollToBottom.Opacity, 1, TimeSpan.FromMilliseconds(180))
+            var fadeIn = new DoubleAnimation(BtnScrollToBottom.Opacity, 1, Motion.Base)
             {
                 EasingFunction = new CubicEase { EasingMode = EasingMode.EaseOut }
             };
@@ -265,7 +265,7 @@ namespace MosquitoNetCalculator.Controls
                 return;
             }
 
-            var fadeOut = new DoubleAnimation(BtnScrollToBottom.Opacity, 0, TimeSpan.FromMilliseconds(150))
+            var fadeOut = new DoubleAnimation(BtnScrollToBottom.Opacity, 0, Motion.Fast)
             {
                 EasingFunction = new CubicEase { EasingMode = EasingMode.EaseOut }
             };

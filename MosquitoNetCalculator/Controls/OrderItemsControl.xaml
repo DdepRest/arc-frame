@@ -484,7 +484,7 @@
                                     <Storyboard>
                                         <DoubleAnimation Storyboard.TargetProperty="Opacity"
                                                          From="0" To="1"
-                                                         Duration="0:0:0.35">
+                                                         Duration="{StaticResource Motion.Emphasized}">
                                             <DoubleAnimation.EasingFunction>
                                                 <CubicEase EasingMode="EaseOut"/>
                                             </DoubleAnimation.EasingFunction>

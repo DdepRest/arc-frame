@@ -73,7 +73,9 @@ namespace MosquitoNetCalculator.Tests.Design
         private static readonly Regex CornerRadiusAttr = new("CornerRadius=\"[0-9]", RegexOptions.Compiled);
         private static readonly Regex CornerRadiusSetter = new("Property=\"CornerRadius\"\\s*Value=\"[0-9]", RegexOptions.Compiled);
         private static readonly Regex HexColor = new("#[0-9A-Fa-f]{6}(?:[0-9A-Fa-f]{2})?\\b", RegexOptions.Compiled);
-        private static readonly Regex XamlDuration = new("Duration=\"", RegexOptions.Compiled);
+        // v3.53: считаем только ЛИТЕРАЛЬНЫЕ длительности. Ссылка на токен
+        // (Duration="{StaticResource Motion.Base}") нарушением не является.
+        private static readonly Regex XamlDuration = new("Duration=\"[0-9:.]", RegexOptions.Compiled);
         private static readonly Regex CodeMilliseconds = new("TimeSpan\\.FromMilliseconds\\(", RegexOptions.Compiled);
 
         private static int Count(string text, params Regex[] patterns) =>
@@ -177,11 +179,16 @@ namespace MosquitoNetCalculator.Tests.Design
 
             int xaml = ProductXaml().Sum(f => Count(ReadWithoutComments(f), XamlDuration));
             Assert.True(xaml <= budget.GetProperty("rawAnimationDurationsXaml").GetInt32(),
-                $"Анимационных Duration= в XAML стало {xaml} — используй Motion.Fast/Base/Slow/Emphasized.");
+                $"Литеральных Duration= в XAML стало {xaml} — используй Motion.Fast/Base/Slow/Emphasized.");
 
+            // В коде остаются законные TimeSpan.FromMilliseconds: интервалы
+            // таймеров, задержки повторов сети, ожидание первого токена —
+            // это не движение. Бюджет фиксирует текущее число, чтобы новые
+            // АНИМАЦИИ не появились «числом на месте».
             int code = ProductCs().Sum(f => Count(File.ReadAllText(f), CodeMilliseconds));
             Assert.True(code <= budget.GetProperty("rawAnimationDurationsCodeMs").GetInt32(),
-                $"TimeSpan.FromMilliseconds в коде стало {code} — используй Helpers/Motion.");
+                $"TimeSpan.FromMilliseconds в коде стало {code} (бюджет {budget.GetProperty("rawAnimationDurationsCodeMs").GetInt32()}) — " +
+                "для анимаций используй Helpers/Motion, для нового таймера — осознанно подними бюджет.");
         }
 
         [Fact]

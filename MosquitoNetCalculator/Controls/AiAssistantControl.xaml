@@ -11,7 +11,7 @@
         <!-- Typing indicator: lightweight, staggered dot pulse. -->
         <Storyboard x:Key="DotPulse" RepeatBehavior="Forever">
             <DoubleAnimation Storyboard.TargetProperty="Opacity"
-                             From="0.3" To="1.0" Duration="0:0:0.6"
+                             From="0.3" To="1.0" Duration="{StaticResource Motion.Emphasized}"
                              AutoReverse="True" RepeatBehavior="Forever">
                 <DoubleAnimation.EasingFunction>
                     <SineEase EasingMode="EaseInOut"/>
@@ -20,7 +20,7 @@
         </Storyboard>
         <Storyboard x:Key="DotPulse2" RepeatBehavior="Forever">
             <DoubleAnimation Storyboard.TargetProperty="Opacity"
-                             From="0.3" To="1.0" Duration="0:0:0.6"
+                             From="0.3" To="1.0" Duration="{StaticResource Motion.Emphasized}"
                              AutoReverse="True" RepeatBehavior="Forever"
                              BeginTime="0:0:0.2">
                 <DoubleAnimation.EasingFunction>
@@ -30,7 +30,7 @@
         </Storyboard>
         <Storyboard x:Key="DotPulse3" RepeatBehavior="Forever">
             <DoubleAnimation Storyboard.TargetProperty="Opacity"
-                             From="0.3" To="1.0" Duration="0:0:0.6"
+                             From="0.3" To="1.0" Duration="{StaticResource Motion.Emphasized}"
                              AutoReverse="True" RepeatBehavior="Forever"
                              BeginTime="0:0:0.4">
                 <DoubleAnimation.EasingFunction>
@@ -668,14 +668,14 @@
                                                 <Storyboard>
                                                     <DoubleAnimation Storyboard.TargetName="ClearBorder"
                                                                      Storyboard.TargetProperty="(UIElement.RenderTransform).(ScaleTransform.ScaleX)"
-                                                                     To="1.12" Duration="0:0:0.12">
+                                                                     To="1.12" Duration="{StaticResource Motion.Fast}">
                                                         <DoubleAnimation.EasingFunction>
                                                             <CubicEase EasingMode="EaseOut"/>
                                                         </DoubleAnimation.EasingFunction>
                                                     </DoubleAnimation>
                                                     <DoubleAnimation Storyboard.TargetName="ClearBorder"
                                                                      Storyboard.TargetProperty="(UIElement.RenderTransform).(ScaleTransform.ScaleY)"
-                                                                     To="1.12" Duration="0:0:0.12">
+                                                                     To="1.12" Duration="{StaticResource Motion.Fast}">
                                                         <DoubleAnimation.EasingFunction>
                                                             <CubicEase EasingMode="EaseOut"/>
                                                         </DoubleAnimation.EasingFunction>
@@ -688,14 +688,14 @@
                                                 <Storyboard>
                                                     <DoubleAnimation Storyboard.TargetName="ClearBorder"
                                                                      Storyboard.TargetProperty="(UIElement.RenderTransform).(ScaleTransform.ScaleX)"
-                                                                     To="1.0" Duration="0:0:0.15">
+                                                                     To="1.0" Duration="{StaticResource Motion.Base}">
                                                         <DoubleAnimation.EasingFunction>
                                                             <CubicEase EasingMode="EaseOut"/>
                                                         </DoubleAnimation.EasingFunction>
                                                     </DoubleAnimation>
                                                     <DoubleAnimation Storyboard.TargetName="ClearBorder"
                                                                      Storyboard.TargetProperty="(UIElement.RenderTransform).(ScaleTransform.ScaleY)"
-                                                                     To="1.0" Duration="0:0:0.15">
+                                                                     To="1.0" Duration="{StaticResource Motion.Base}">
                                                         <DoubleAnimation.EasingFunction>
                                                             <CubicEase EasingMode="EaseOut"/>
                                                         </DoubleAnimation.EasingFunction>
@@ -712,14 +712,14 @@
                                                 <Storyboard>
                                                     <DoubleAnimation Storyboard.TargetName="ClearBorder"
                                                                      Storyboard.TargetProperty="(UIElement.RenderTransform).(ScaleTransform.ScaleX)"
-                                                                     To="0.92" Duration="0:0:0.08">
+                                                                     To="0.92" Duration="{StaticResource Motion.Fast}">
                                                         <DoubleAnimation.EasingFunction>
                                                             <CubicEase EasingMode="EaseOut"/>
                                                         </DoubleAnimation.EasingFunction>
                                                     </DoubleAnimation>
                                                     <DoubleAnimation Storyboard.TargetName="ClearBorder"
                                                                      Storyboard.TargetProperty="(UIElement.RenderTransform).(ScaleTransform.ScaleY)"
-                                                                     To="0.92" Duration="0:0:0.08">
+                                                                     To="0.92" Duration="{StaticResource Motion.Fast}">
                                                         <DoubleAnimation.EasingFunction>
                                                             <CubicEase EasingMode="EaseOut"/>
                                                         </DoubleAnimation.EasingFunction>
@@ -920,14 +920,14 @@
                                                             <Storyboard>
                                                                 <DoubleAnimation Storyboard.TargetName="SendBorder"
                                                                                  Storyboard.TargetProperty="(UIElement.RenderTransform).(ScaleTransform.ScaleX)"
-                                                                                 To="1.08" Duration="0:0:0.15">
+                                                                                 To="1.08" Duration="{StaticResource Motion.Base}">
                                                                     <DoubleAnimation.EasingFunction>
                                                                         <CubicEase EasingMode="EaseOut"/>
                                                                     </DoubleAnimation.EasingFunction>
                                                                 </DoubleAnimation>
                                                                 <DoubleAnimation Storyboard.TargetName="SendBorder"
                                                                                  Storyboard.TargetProperty="(UIElement.RenderTransform).(ScaleTransform.ScaleY)"
-                                                                                 To="1.08" Duration="0:0:0.15">
+                                                                                 To="1.08" Duration="{StaticResource Motion.Base}">
                                                                     <DoubleAnimation.EasingFunction>
                                                                         <CubicEase EasingMode="EaseOut"/>
                                                                     </DoubleAnimation.EasingFunction>
@@ -940,14 +940,14 @@
                                                             <Storyboard>
                                                                 <DoubleAnimation Storyboard.TargetName="SendBorder"
                                                                                  Storyboard.TargetProperty="(UIElement.RenderTransform).(ScaleTransform.ScaleX)"
-                                                                                 To="1.0" Duration="0:0:0.2">
+                                                                                 To="1.0" Duration="{StaticResource Motion.Slow}">
                                                                     <DoubleAnimation.EasingFunction>
                                                                         <CubicEase EasingMode="EaseOut"/>
                                                                     </DoubleAnimation.EasingFunction>
                                                                 </DoubleAnimation>
                                                                 <DoubleAnimation Storyboard.TargetName="SendBorder"
                                                                                  Storyboard.TargetProperty="(UIElement.RenderTransform).(ScaleTransform.ScaleY)"
-                                                                                 To="1.0" Duration="0:0:0.2">
+                                                                                 To="1.0" Duration="{StaticResource Motion.Slow}">
                                                                     <DoubleAnimation.EasingFunction>
                                                                         <CubicEase EasingMode="EaseOut"/>
                                                                     </DoubleAnimation.EasingFunction>
@@ -963,14 +963,14 @@
                                                             <Storyboard>
                                                                 <DoubleAnimation Storyboard.TargetName="SendBorder"
                                                                                  Storyboard.TargetProperty="(UIElement.RenderTransform).(ScaleTransform.ScaleX)"
-                                                                                 To="0.95" Duration="0:0:0.08">
+                                                                                 To="0.95" Duration="{StaticResource Motion.Fast}">
                                                                     <DoubleAnimation.EasingFunction>
                                                                         <CubicEase EasingMode="EaseOut"/>
                                                                     </DoubleAnimation.EasingFunction>
                                                                 </DoubleAnimation>
                                                                 <DoubleAnimation Storyboard.TargetName="SendBorder"
                                                                                  Storyboard.TargetProperty="(UIElement.RenderTransform).(ScaleTransform.ScaleY)"
-                                                                                 To="0.95" Duration="0:0:0.08">
+                                                                                 To="0.95" Duration="{StaticResource Motion.Fast}">
                                                                     <DoubleAnimation.EasingFunction>
                                                                         <CubicEase EasingMode="EaseOut"/>
                                                                     </DoubleAnimation.EasingFunction>

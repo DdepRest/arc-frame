@@ -4,6 +4,7 @@ using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Animation;
+using MosquitoNetCalculator.Helpers;
 using MosquitoNetCalculator.Models;
 
 namespace MosquitoNetCalculator
@@ -44,7 +45,7 @@ namespace MosquitoNetCalculator
             var btn = FindChildByName<Button>(row, "DelBtn");
             if (btn != null)
                 btn.BeginAnimation(UIElement.OpacityProperty,
-                    new System.Windows.Media.Animation.DoubleAnimation(1, TimeSpan.FromMilliseconds(120)));
+                    new System.Windows.Media.Animation.DoubleAnimation(1, Motion.Fast));
         }
 
         private static void RevealDeleteRow_MouseLeave(object sender, MouseEventArgs e)
@@ -53,7 +54,7 @@ namespace MosquitoNetCalculator
             var btn = FindChildByName<Button>(row, "DelBtn");
             if (btn != null && !btn.IsMouseOver)
                 btn.BeginAnimation(UIElement.OpacityProperty,
-                    new System.Windows.Media.Animation.DoubleAnimation(0, TimeSpan.FromMilliseconds(160)));
+                    new System.Windows.Media.Animation.DoubleAnimation(0, Motion.Base));
         }
 
         private static T? FindChildByName<T>(DependencyObject parent, string name) where T : class
@@ -77,7 +78,7 @@ namespace MosquitoNetCalculator
             var targetColor = (Color)Application.Current.Resources["RowHoverColor"];
             brush.Color = targetColor;
             brush.BeginAnimation(Brush.OpacityProperty,
-                new DoubleAnimation(1, TimeSpan.FromMilliseconds(180))
+                new DoubleAnimation(1, Motion.Base)
                 {
                     EasingFunction = new CubicEase { EasingMode = EasingMode.EaseOut }
                 });
@@ -88,7 +89,7 @@ namespace MosquitoNetCalculator
             if (sender is not DataGridRow row || row.Background is not SolidColorBrush brush)
                 return;
             brush.BeginAnimation(Brush.OpacityProperty,
-                new DoubleAnimation(0, TimeSpan.FromMilliseconds(220))
+                new DoubleAnimation(0, Motion.Slow)
                 {
                     EasingFunction = new CubicEase { EasingMode = EasingMode.EaseOut }
                 });

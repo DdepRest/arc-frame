@@ -51,7 +51,7 @@
             <DoubleAnimation Storyboard.TargetName="UpdateDownloadBar"
                              Storyboard.TargetProperty="Opacity"
                              From="0.0" To="1.0"
-                             Duration="0:0:0.2">
+                             Duration="{StaticResource Motion.Slow}">
                 <DoubleAnimation.EasingFunction>
                     <CubicEase EasingMode="EaseOut"/>
                 </DoubleAnimation.EasingFunction>
@@ -61,7 +61,7 @@
             <DoubleAnimation Storyboard.TargetName="UpdateDownloadBar"
                              Storyboard.TargetProperty="Opacity"
                              To="0.0"
-                             Duration="0:0:0.25">
+                             Duration="{StaticResource Motion.Slow}">
                 <DoubleAnimation.EasingFunction>
                     <CubicEase EasingMode="EaseIn"/>
                 </DoubleAnimation.EasingFunction>

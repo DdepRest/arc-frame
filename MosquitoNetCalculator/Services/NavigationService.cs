@@ -3,6 +3,7 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
 using System.Windows.Media.Animation;
+using MosquitoNetCalculator.Helpers;
 
 namespace MosquitoNetCalculator.Services
 {
@@ -94,21 +95,26 @@ namespace MosquitoNetCalculator.Services
         public void Expand()
         {
             IsExpanded = true;
-            AnimatePanel(160, 1.0, 250, EasingMode.EaseOut);
+            AnimatePanel(160, 1.0, Motion.Slow, EasingMode.EaseOut);
         }
 
         /// <summary>Collapses the panel to icons only.</summary>
         public void Collapse()
         {
             IsExpanded = false;
-            AnimatePanel(52, 0.0, 200, EasingMode.EaseIn);
+            AnimatePanel(52, 0.0, Motion.Base, EasingMode.EaseIn);
         }
 
-        private void AnimatePanel(double width, double labelOpacity, int durationMs, EasingMode easingMode)
+        /// <summary>Разворачивание/сворачивание панели. Длительность — из шкалы
+        /// движения (v3.53); подписи гаснут на один шаг быстрее панели, чтобы не
+        /// «залипать» в момент, когда ширина уже догоняет.</summary>
+        private void AnimatePanel(double width, double labelOpacity, TimeSpan duration, EasingMode easingMode)
         {
             if (_navPanel == null) return;
 
-            var widthAnim = new DoubleAnimation(width, TimeSpan.FromMilliseconds(durationMs))
+            TimeSpan fadeDuration = duration > Motion.Fast ? duration - Motion.Fast : duration;
+
+            var widthAnim = new DoubleAnimation(width, duration)
             {
                 EasingFunction = new CubicEase { EasingMode = easingMode }
             };
@@ -117,7 +123,7 @@ namespace MosquitoNetCalculator.Services
             foreach (var label in _navLabels)
             {
                 if (label == null) continue;
-                var fade = new DoubleAnimation(labelOpacity, TimeSpan.FromMilliseconds(durationMs - 50))
+                var fade = new DoubleAnimation(labelOpacity, fadeDuration)
                 {
                     EasingFunction = new CubicEase { EasingMode = easingMode }
                 };
@@ -130,7 +136,7 @@ namespace MosquitoNetCalculator.Services
                 foreach (var el in _collapseFadeElements)
                 {
                     if (el == null) continue;
-                    var fade = new DoubleAnimation(labelOpacity, TimeSpan.FromMilliseconds(durationMs - 50))
+                    var fade = new DoubleAnimation(labelOpacity, fadeDuration)
                     {
                         EasingFunction = new CubicEase { EasingMode = easingMode }
                     };

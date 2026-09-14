@@ -5,6 +5,7 @@ using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Animation;
+using MosquitoNetCalculator.Helpers;
 
 namespace MosquitoNetCalculator.Services
 {
@@ -559,7 +560,7 @@ namespace MosquitoNetCalculator.Services
                     {
                         From = toast.Margin,
                         To = new Thickness(0, 0, right, currentBottom),
-                        Duration = TimeSpan.FromMilliseconds(200),
+                        Duration = Motion.Base,
                         EasingFunction = new QuadraticEase { EasingMode = EasingMode.EaseOut }
                     };
                     toast.BeginAnimation(Border.MarginProperty, anim);
@@ -597,7 +598,7 @@ namespace MosquitoNetCalculator.Services
             {
                 From = 0.0,
                 To = 1.0,
-                Duration = TimeSpan.FromMilliseconds(200),
+                Duration = Motion.Base,
                 EasingFunction = new QuadraticEase { EasingMode = EasingMode.EaseOut }
             };
             toast.BeginAnimation(Border.OpacityProperty, fadeIn);
@@ -623,7 +624,7 @@ namespace MosquitoNetCalculator.Services
                 {
                     From = 1.0,
                     To = 0.0,
-                    Duration = TimeSpan.FromMilliseconds(250),
+                    Duration = Motion.Slow,
                     EasingFunction = new QuadraticEase { EasingMode = EasingMode.EaseOut }
                 };
                 anim.Completed += (s2, e2) => RemoveToast(toast);

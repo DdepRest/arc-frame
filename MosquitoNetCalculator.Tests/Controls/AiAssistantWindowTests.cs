@@ -10,13 +10,20 @@ namespace MosquitoNetCalculator.Tests.Controls
     /// <summary>
     /// STA tests for <see cref="AiAssistantWindow"/>.
     /// Covers the positioning helper and basic window lifecycle.
+    ///
+    /// v3.53: запускаем через <see cref="TestAppThemes"/> — окно парсит
+    /// <c>AiAssistantControl.xaml</c>, а тот берёт единицы движения из токенов
+    /// (<c>Duration="{StaticResource Motion.*}"</c>). Без словарей тем разметка
+    /// не загрузится вовсе, поэтому «голый» <c>WpfTestHelper.RunOnSta</c> больше
+    /// не подходит: тест обязан видеть то же окружение ресурсов, что продукт.
     /// </summary>
+    [Collection("WPF_UI")]
     public class AiAssistantWindowTests
     {
         [Fact]
         public void PositionNextToCore_DocksRight_AlignedWithOwnerTop_WhenSpaceAllows()
         {
-            WpfTestHelper.RunOnSta(() =>
+            TestAppThemes.RunOnSta(() =>
             {
                 var window = new AiAssistantWindow { Width = 400 };
 
@@ -34,7 +41,7 @@ namespace MosquitoNetCalculator.Tests.Controls
         [Fact]
         public void PositionNextToCore_ClampsToRightEdge_WhenRightDockOverflows()
         {
-            WpfTestHelper.RunOnSta(() =>
+            TestAppThemes.RunOnSta(() =>
             {
                 var window = new AiAssistantWindow { Width = 400 };
 
@@ -55,7 +62,7 @@ namespace MosquitoNetCalculator.Tests.Controls
         [Fact]
         public void PositionNextToCore_FitsExactlyAtRightEdge_WhenSpaceAllows()
         {
-            WpfTestHelper.RunOnSta(() =>
+            TestAppThemes.RunOnSta(() =>
             {
                 var window = new AiAssistantWindow { Width = 400 };
 
@@ -73,7 +80,7 @@ namespace MosquitoNetCalculator.Tests.Controls
         [Fact]
         public void PositionNextToCore_ClampsToRightEdge_WhenOverflowsByOnePixel()
         {
-            WpfTestHelper.RunOnSta(() =>
+            TestAppThemes.RunOnSta(() =>
             {
                 var window = new AiAssistantWindow { Width = 400 };
 
@@ -91,7 +98,7 @@ namespace MosquitoNetCalculator.Tests.Controls
         [Fact]
         public void PositionNextToCore_ClampsToRightEdge_WhenOwnerSpansNearlyWholeScreen()
         {
-            WpfTestHelper.RunOnSta(() =>
+            TestAppThemes.RunOnSta(() =>
             {
                 var window = new AiAssistantWindow { Width = 400 };
 
@@ -112,7 +119,7 @@ namespace MosquitoNetCalculator.Tests.Controls
         [Fact]
         public void PositionNextToCore_AlignsTopWithOwnerTop()
         {
-            WpfTestHelper.RunOnSta(() =>
+            TestAppThemes.RunOnSta(() =>
             {
                 var window = new AiAssistantWindow { Width = 400 };
 
@@ -129,7 +136,7 @@ namespace MosquitoNetCalculator.Tests.Controls
         [Fact]
         public void PositionNextToCore_ClampsTop_WhenOwnerNearBottom()
         {
-            WpfTestHelper.RunOnSta(() =>
+            TestAppThemes.RunOnSta(() =>
             {
                 var window = new AiAssistantWindow { Width = 400 };
 
@@ -146,7 +153,7 @@ namespace MosquitoNetCalculator.Tests.Controls
         [Fact]
         public void PositionNextToCore_ClampsBottom_WhenOwnerHeightExceedsScreen()
         {
-            WpfTestHelper.RunOnSta(() =>
+            TestAppThemes.RunOnSta(() =>
             {
                 var window = new AiAssistantWindow { Width = 400 };
 
@@ -165,7 +172,7 @@ namespace MosquitoNetCalculator.Tests.Controls
         [Fact]
         public void PositionNextToCore_MirrorsOwnerHeight()
         {
-            WpfTestHelper.RunOnSta(() =>
+            TestAppThemes.RunOnSta(() =>
             {
                 var window = new AiAssistantWindow { Width = 400 };
 
@@ -182,7 +189,7 @@ namespace MosquitoNetCalculator.Tests.Controls
         [Fact]
         public void PositionNextToCore_HeightNeverBelowMinHeight()
         {
-            WpfTestHelper.RunOnSta(() =>
+            TestAppThemes.RunOnSta(() =>
             {
                 var window = new AiAssistantWindow { Width = 400 };
 
@@ -198,7 +205,7 @@ namespace MosquitoNetCalculator.Tests.Controls
         [Fact]
         public void PositionNextTo_NullOwner_DoesNotThrow()
         {
-            WpfTestHelper.RunOnSta(() =>
+            TestAppThemes.RunOnSta(() =>
             {
                 var window = new AiAssistantWindow { Width = 400 };
 
@@ -211,7 +218,7 @@ namespace MosquitoNetCalculator.Tests.Controls
         [Fact]
         public void AiAssistantWindow_CanBeShownAndClosed()
         {
-            WpfTestHelper.RunOnSta(() =>
+            TestAppThemes.RunOnSta(() =>
             {
                 var window = new AiAssistantWindow();
 
@@ -226,7 +233,7 @@ namespace MosquitoNetCalculator.Tests.Controls
         [Fact]
         public void AiAssistantWindow_ViewModel_CanBeSetAndRead()
         {
-            WpfTestHelper.RunOnSta(() =>
+            TestAppThemes.RunOnSta(() =>
             {
                 var window = new AiAssistantWindow();
                 var viewModel = new AiAssistantViewModel();
@@ -241,7 +248,7 @@ namespace MosquitoNetCalculator.Tests.Controls
         [Fact]
         public void AiAssistantWindow_IsFixedSizeAndBorderless()
         {
-            WpfTestHelper.RunOnSta(() =>
+            TestAppThemes.RunOnSta(() =>
             {
                 var window = new AiAssistantWindow();
 
