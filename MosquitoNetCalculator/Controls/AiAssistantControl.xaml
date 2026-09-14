@@ -92,7 +92,7 @@
     </UserControl.Resources>
 
     <Border Background="{DynamicResource Surface}"
-            CornerRadius="10"
+            CornerRadius="{DynamicResource Radius.Lg}"
             Margin="8,8,0,8"
             BorderBrush="{DynamicResource Border}"
             BorderThickness="1"
@@ -156,7 +156,7 @@
                                                 Margin="0,0,8,0"
                                                 VerticalAlignment="Top"
                                                 Background="{DynamicResource Accent}"
-                                                CornerRadius="15">
+                                                CornerRadius="{DynamicResource Radius.Xl}">
                                             <TextBlock Text="&#xE99A;"
                                                        FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets"
                                                        FontSize="13"
@@ -171,13 +171,13 @@
                                                 Background="{DynamicResource SectionBg}"
                                                 BorderBrush="{DynamicResource SubtleBorder}"
                                                 BorderThickness="1"
-                                                CornerRadius="12,12,12,3"
+                                                CornerRadius="{DynamicResource Radius.BubbleSent}"
                                                 Loaded="BotBubbleBorder_Loaded">
                                             <StackPanel>
                                                 <Border Background="{DynamicResource AccentLight}"
                                                         BorderBrush="{DynamicResource Accent}"
                                                         BorderThickness="1"
-                                                        CornerRadius="8"
+                                                        CornerRadius="{DynamicResource Radius.Md}"
                                                         Padding="8,6"
                                                         Margin="0,0,0,8"
                                                         Visibility="{Binding IsAction, Converter={StaticResource BoolToVisibility}}">
@@ -218,7 +218,7 @@
                                                      for missing product data («Сделай сетку» → «Уточните…»).
                                                      Bindings live on AiChatMessage.ClarificationForm; the submit
                                                      button builds an AddItem command without a second LLM call. -->
-                                                <Border CornerRadius="8"
+                                                <Border CornerRadius="{DynamicResource Radius.Md}"
                                                         Padding="10"
                                                         Margin="0,10,0,0"
                                                         Background="{DynamicResource Surface}"
@@ -308,7 +308,7 @@
 
                                                 <!-- Plan preview card: shown when the AI produced actions and the
                                                      user must confirm before anything touches the order. -->
-                                                <Border CornerRadius="8"
+                                                <Border CornerRadius="{DynamicResource Radius.Md}"
                                                         Padding="10"
                                                         Margin="0,10,0,0"
                                                         Background="{DynamicResource AccentLight}"
@@ -321,7 +321,7 @@
                                                                        FontSize="12" FontWeight="SemiBold"
                                                                        Foreground="{DynamicResource TextPrimary}"
                                                                        VerticalAlignment="Center"/>
-                                                            <Border CornerRadius="4" Padding="5,2" Margin="8,0,0,0"
+                                                            <Border CornerRadius="{DynamicResource Radius.Sm}" Padding="5,2" Margin="8,0,0,0"
                                                                     Background="{DynamicResource ChipBg}">
                                                                 <TextBlock Text="ПОДТВЕРДИТЕ" FontSize="8" FontWeight="Bold"
                                                                            Foreground="{DynamicResource Accent}"/>
@@ -364,7 +364,7 @@
                                                 </Border>
 
                                                 <!-- Executed plan: summary + «Отменить действие» (one Undo step). -->
-                                                <Border CornerRadius="8"
+                                                <Border CornerRadius="{DynamicResource Radius.Md}"
                                                         Padding="10"
                                                         Margin="0,10,0,0"
                                                         Background="{DynamicResource Surface}"
@@ -389,7 +389,7 @@
                                                 </Border>
 
                                                 <!-- Rejected/cancelled plan. -->
-                                                <Border CornerRadius="8"
+                                                <Border CornerRadius="{DynamicResource Radius.Md}"
                                                         Padding="10"
                                                         Margin="0,10,0,0"
                                                         Background="{DynamicResource Surface}"
@@ -490,7 +490,7 @@
                                                 Padding="11,9"
                                                 HorizontalAlignment="Stretch"
                                                 Background="{DynamicResource Accent}"
-                                                CornerRadius="12,12,3,12">
+                                                CornerRadius="{DynamicResource Radius.BubbleReceived}">
                                             <StackPanel>
                                                 <TextBlock Text="{Binding Text}"
                                                            TextWrapping="Wrap"
@@ -513,7 +513,7 @@
                                                 Background="{DynamicResource SectionBg}"
                                                 BorderBrush="{DynamicResource Border}"
                                                 BorderThickness="1"
-                                                CornerRadius="15">
+                                                CornerRadius="{DynamicResource Radius.Xl}">
                                             <TextBlock Text="&#xE77B;"
                                                        FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets"
                                                        FontSize="13"
@@ -555,7 +555,7 @@
                                 Background="{TemplateBinding Background}"
                                 BorderBrush="{TemplateBinding BorderBrush}"
                                 BorderThickness="{TemplateBinding BorderThickness}"
-                                CornerRadius="18">
+                                CornerRadius="{DynamicResource Radius.Xl}">
                             <TextBlock Text="&#xE70D;"
                                        FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets"
                                        FontSize="12"
@@ -591,7 +591,7 @@
                     Background="{DynamicResource SectionBg}"
                     BorderBrush="{DynamicResource Accent}"
                     BorderThickness="1"
-                    CornerRadius="10"
+                    CornerRadius="{DynamicResource Radius.Lg}"
                     AutomationProperties.LiveSetting="Polite"
                     AutomationProperties.Name="Состояние ответа AI">
                 <StackPanel Orientation="Horizontal">
@@ -626,7 +626,7 @@
             <Border Grid.Row="1"
                     Padding="10,9,10,10"
                     Background="{DynamicResource SectionBg}"
-                    CornerRadius="0,0,10,10">
+                    CornerRadius="{DynamicResource Radius.Bottom}">
                 <Grid>
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="Auto"/>
@@ -647,7 +647,7 @@
                             FocusVisualStyle="{StaticResource AiAssistantFocusVisual}">
                         <Button.Template>
                             <ControlTemplate TargetType="Button">
-                                <Border x:Name="ClearBorder" Background="Transparent" CornerRadius="8"
+                                <Border x:Name="ClearBorder" Background="Transparent" CornerRadius="{DynamicResource Radius.Md}"
                                         RenderTransformOrigin="0.5,0.5">
                                     <Border.RenderTransform>
                                         <ScaleTransform/>
@@ -738,7 +738,7 @@
                             MinHeight="40"
                             Background="{DynamicResource Surface}"
                             BorderThickness="1"
-                            CornerRadius="10">
+                            CornerRadius="{DynamicResource Radius.Lg}">
                         <Border.Style>
                             <Style TargetType="Border">
                                 <Setter Property="BorderBrush" Value="{DynamicResource Border}"/>
@@ -820,7 +820,7 @@
                            MinWidth="300"
                            HorizontalOffset="0"
                            VerticalOffset="-4">
-                        <Border CornerRadius="10"
+                        <Border CornerRadius="{DynamicResource Radius.Lg}"
                                 Padding="5"
                                 Background="{DynamicResource Surface}"
                                 BorderBrush="{DynamicResource Border}"
@@ -899,7 +899,7 @@
                                         <ControlTemplate TargetType="Button">
                                             <Border x:Name="SendBorder"
                                                     Background="{TemplateBinding Background}"
-                                                    CornerRadius="9"
+                                                    CornerRadius="{DynamicResource Radius.Md}"
                                                     RenderTransformOrigin="0.5,0.5">
                                                 <Border.RenderTransform>
                                                     <ScaleTransform/>

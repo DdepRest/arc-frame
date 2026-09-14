@@ -22,7 +22,7 @@
                         Background="{DynamicResource BadgeWarningBg}"
                         BorderBrush="{DynamicResource BadgeWarningFg}"
                         BorderThickness="1"
-                        CornerRadius="8"
+                        CornerRadius="{DynamicResource Radius.Md}"
                         Margin="0,12,0,12"
                         Padding="12,10"
                         SnapsToDevicePixels="True">
@@ -70,14 +70,14 @@
                 <Border Background="{DynamicResource Surface}"
                         BorderBrush="{DynamicResource Border}"
                         BorderThickness="1"
-                        CornerRadius="8"
+                        CornerRadius="{DynamicResource Radius.Md}"
                         Margin="0,12,0,12"
                         SnapsToDevicePixels="True">
                     <Grid>
                         <!-- Brand accent strip on left edge -->
                         <Border Width="4" HorizontalAlignment="Left"
                                 Background="{DynamicResource Accent}"
-                                CornerRadius="8,0,0,8"/>
+                                CornerRadius="{DynamicResource Radius.StripeLeft}"/>
                         <StackPanel Margin="16,14,16,14">
                             <!-- Header -->
                             <StackPanel Orientation="Horizontal" Margin="0,0,0,14">
@@ -157,13 +157,13 @@
                 <Border Background="{DynamicResource Surface}"
                         BorderBrush="{DynamicResource Border}"
                         BorderThickness="1"
-                        CornerRadius="8"
+                        CornerRadius="{DynamicResource Radius.Md}"
                         Margin="0,0,0,12"
                         SnapsToDevicePixels="True">
                     <Grid>
                         <Border Width="4" HorizontalAlignment="Left"
                                 Background="{DynamicResource Accent}"
-                                CornerRadius="8,0,0,8"/>
+                                CornerRadius="{DynamicResource Radius.StripeLeft}"/>
                         <StackPanel Margin="16,14,16,14">
 
                             <Grid>
@@ -242,7 +242,7 @@
                                                            Foreground="{DynamicResource TextPrimary}"
                                                            TextTrimming="CharacterEllipsis"/>
                                                 <!-- «ручн.» chip — auto-shows when user edited Qty/Price. -->
-                                                <Border CornerRadius="4"
+                                                <Border CornerRadius="{DynamicResource Radius.Sm}"
                                                         Background="{DynamicResource ChipBg}"
                                                         HorizontalAlignment="Left"
                                                         Padding="6,1"
@@ -309,7 +309,7 @@
                                     <TextBlock Text="Работа"
                                                FontSize="11"
                                                Foreground="{DynamicResource TextPrimary}"/>
-                                    <Border CornerRadius="4"
+                                    <Border CornerRadius="{DynamicResource Radius.Sm}"
                                             Background="{DynamicResource ChipBg}"
                                             HorizontalAlignment="Left"
                                             Padding="6,1"
@@ -374,7 +374,7 @@
                                     <TextBlock Text="Работа за ламинатину"
                                                FontSize="11"
                                                Foreground="{DynamicResource TextPrimary}"/>
-                                    <Border CornerRadius="4"
+                                    <Border CornerRadius="{DynamicResource Radius.Sm}"
                                             Background="{DynamicResource ChipBg}"
                                             HorizontalAlignment="Left"
                                             Padding="6,1"
@@ -436,14 +436,14 @@
                         Background="{DynamicResource Surface}"
                         BorderBrush="{DynamicResource Border}"
                         BorderThickness="1"
-                        CornerRadius="8"
+                        CornerRadius="{DynamicResource Radius.Md}"
                         Margin="0,0,0,12"
                         SnapsToDevicePixels="True"
                         Visibility="Collapsed">
                     <Grid>
                         <Border Width="4" HorizontalAlignment="Left"
                                 Background="{DynamicResource Accent}"
-                                CornerRadius="8,0,0,8"/>
+                                CornerRadius="{DynamicResource Radius.StripeLeft}"/>
                         <StackPanel Margin="16,14,16,14">
                             <!-- Header -->
                             <StackPanel Orientation="Horizontal" Margin="0,0,0,12">
@@ -481,7 +481,7 @@
                                                            FontSize="10"
                                                            Foreground="{DynamicResource TextSecondary}"
                                                            VerticalAlignment="Center"/>
-                                                <Border CornerRadius="4"
+                                                <Border CornerRadius="{DynamicResource Radius.Sm}"
                                                         Background="{DynamicResource ChipBg}"
                                                         Padding="5,1"
                                                         Margin="6,0,0,0"
@@ -539,7 +539,7 @@
                 Background="{DynamicResource Surface}"
                 BorderBrush="{DynamicResource Border}"
                 BorderThickness="1,1,1,0"
-                CornerRadius="8,8,0,0"
+                CornerRadius="{DynamicResource Radius.Top}"
                 Margin="0,0,0,0"
                 SnapsToDevicePixels="True">
             <StackPanel Margin="16,14,16,12">
@@ -623,7 +623,7 @@
                 <!-- Итого с экономией -->
                 <Border x:Name="TotalAllRow" Visibility="Collapsed"
                         Background="{DynamicResource EconomyGreenLight}"
-                        CornerRadius="6"
+                        CornerRadius="{DynamicResource Radius.Md}"
                         Padding="8,6"
                         Margin="0,0,0,8">
                     <Grid>

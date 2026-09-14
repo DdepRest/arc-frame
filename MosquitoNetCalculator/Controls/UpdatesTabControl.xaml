@@ -45,7 +45,7 @@
                                 Background="{TemplateBinding Background}"
                                 BorderBrush="{TemplateBinding BorderBrush}"
                                 BorderThickness="{TemplateBinding BorderThickness}"
-                                CornerRadius="12"
+                                CornerRadius="{DynamicResource Radius.Lg}"
                                 Padding="{TemplateBinding Padding}">
                             <ContentPresenter VerticalAlignment="Center"/>
                         </Border>
@@ -90,7 +90,7 @@
             <Border Background="{DynamicResource HeaderBg}"
                     BorderBrush="{DynamicResource Border}"
                     BorderThickness="1"
-                    CornerRadius="6"
+                    CornerRadius="{DynamicResource Radius.Md}"
                     Padding="10,3"
                     HorizontalAlignment="Left"
                     Margin="2,2,0,8">
@@ -147,7 +147,7 @@
             <Border Grid.Column="2"
                     VerticalAlignment="Center"
                     Background="{DynamicResource ChipBg}"
-                    CornerRadius="12"
+                    CornerRadius="{DynamicResource Radius.Lg}"
                     Padding="12,5">
                 <StackPanel Orientation="Horizontal">
                     <TextBlock FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets"
@@ -283,7 +283,7 @@
                                          скруглённого дизайна (регрессия — CardStripeCornerTests).
                                          CornerRadius 11 = 12 (радиус карточки) минус 1px её рамки. -->
                                     <Border BorderThickness="4,0,0,0"
-                                            CornerRadius="11,0,0,11"
+                                            CornerRadius="{DynamicResource Radius.StripeInner}"
                                             BorderBrush="{Binding Type, Converter={StaticResource UpdateTypeBrush}, ConverterParameter=strong}">
                                     <StackPanel Margin="14,10,16,12">
 
@@ -302,7 +302,7 @@
                                             <!-- Бейдж типа (компактный) -->
                                             <Border Grid.Column="0"
                                                     VerticalAlignment="Center"
-                                                    CornerRadius="7"
+                                                    CornerRadius="{DynamicResource Radius.Md}"
                                                     Padding="7,3"
                                                     Background="{Binding Type, Converter={StaticResource UpdateTypeBrush}, ConverterParameter=soft}">
                                                 <StackPanel Orientation="Horizontal">
@@ -401,7 +401,7 @@
                                                      ВАЖНО: дефолт Collapsed — ТОЛЬКО через Setter стиля.
                                                      Локальный атрибут Visibility на Border сильнее
                                                      триггера стиля — бейдж не появился бы никогда. -->
-                                                <Border CornerRadius="7"
+                                                <Border CornerRadius="{DynamicResource Radius.Md}"
                                                         Padding="9,4"
                                                         Background="{DynamicResource AccentLight}"
                                                         VerticalAlignment="Center"
@@ -433,7 +433,7 @@
                                                 <!-- Бейдж «Ваша версия» — совпадает с версией запущенного
                                                      приложения. Дефолт Collapsed — только через стиль
                                                      (локальный атрибут перебил бы триггер). -->
-                                                <Border CornerRadius="7"
+                                                <Border CornerRadius="{DynamicResource Radius.Md}"
                                                         Padding="9,4"
                                                         Background="{DynamicResource ChipBg}"
                                                         BorderBrush="{DynamicResource Border}"

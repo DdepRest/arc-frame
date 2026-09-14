@@ -2,7 +2,7 @@
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:controls="clr-namespace:MosquitoNetCalculator.Controls">
-    <Border Background="{DynamicResource Surface}" CornerRadius="10"
+    <Border Background="{DynamicResource Surface}" CornerRadius="{DynamicResource Radius.Lg}"
             Margin="8,8,0,8" Padding="0"
             BorderBrush="{DynamicResource Border}" BorderThickness="1"
             Style="{DynamicResource Card}">
@@ -11,7 +11,7 @@
                       Padding="0">
             <StackPanel Margin="10,10,10,10">
                 <!-- ЗАКАЗЧИК Card -->
-                <Border x:Name="CardClient" Background="{DynamicResource SectionBg}" CornerRadius="8" Padding="12" Margin="0,0,0,8" Opacity="0">
+                <Border x:Name="CardClient" Background="{DynamicResource SectionBg}" CornerRadius="{DynamicResource Radius.Md}" Padding="12" Margin="0,0,0,8" Opacity="0">
                     <StackPanel>
                         <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
                             <TextBlock Style="{DynamicResource FluentIconSection}" Text="&#xE77B;"/>
@@ -38,7 +38,7 @@
                 </Border>
 
                 <!-- ДОГОВОР Card -->
-                <Border x:Name="CardContract" Background="{DynamicResource SectionBg}" CornerRadius="8" Padding="12" Margin="0,0,0,8" Opacity="0">
+                <Border x:Name="CardContract" Background="{DynamicResource SectionBg}" CornerRadius="{DynamicResource Radius.Md}" Padding="12" Margin="0,0,0,8" Opacity="0">
                     <StackPanel>
                         <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
                             <TextBlock Style="{DynamicResource FluentIconSection}" Text="&#xE8A5;"/>
@@ -73,7 +73,7 @@
                              Dot color mirrors the badge colors of the chosen status. -->
                         <Border Background="{DynamicResource SectionBg}"
                                 BorderBrush="{DynamicResource Border}" BorderThickness="1"
-                                CornerRadius="7" Padding="10,0" Height="34">
+                                CornerRadius="{DynamicResource Radius.Md}" Padding="10,0" Height="34">
                             <Grid>
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="Auto"/>
@@ -101,7 +101,7 @@
                 <controls:AdditionalKpsControl x:Name="CardAdditionalKp" Margin="0,0,0,8"/>
 
                 <!-- ПРИМЕЧАНИЯ Card -->
-                <Border x:Name="CardNotes" Background="{DynamicResource SectionBg}" CornerRadius="8" Padding="12" Margin="0,0,0,0" Opacity="0">
+                <Border x:Name="CardNotes" Background="{DynamicResource SectionBg}" CornerRadius="{DynamicResource Radius.Md}" Padding="12" Margin="0,0,0,0" Opacity="0">
                     <StackPanel>
                         <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
                             <TextBlock Style="{DynamicResource FluentIconSection}" Text="&#xE70B;"/>
@@ -113,29 +113,29 @@
                                 <Button x:Name="BtnItalic" AutomationProperties.Name="Курсив" Content="К" FontStyle="Italic" Width="28" Height="24" Margin="0,0,4,0" Padding="0" Click="BtnItalic_Click" Style="{DynamicResource GhostButton}" FontSize="12" ToolTip="Курсив (выделите текст)"/>
                                 <Button x:Name="BtnColor" AutomationProperties.Name="Цвет текста" Content="A" Foreground="{DynamicResource Accent}" Width="28" Height="24" Margin="0,0,4,0" Padding="0" Click="BtnColor_Click" Style="{DynamicResource GhostButton}" FontSize="12" FontWeight="Bold" ToolTip="Цвет текста (выделите текст)"/>
                                 <Popup x:Name="ColorPopup" PlacementTarget="{Binding ElementName=BtnColor}" Placement="Bottom" StaysOpen="False" AllowsTransparency="True">
-                                    <Border Background="{DynamicResource Surface}" BorderBrush="{DynamicResource Border}" BorderThickness="1" CornerRadius="8" Padding="8">
+                                    <Border Background="{DynamicResource Surface}" BorderBrush="{DynamicResource Border}" BorderThickness="1" CornerRadius="{DynamicResource Radius.Md}" Padding="8">
                                         <Border.Effect>
                                             <DropShadowEffect BlurRadius="16" ShadowDepth="4" Opacity="0.15"/>
                                         </Border.Effect>
                                         <UniformGrid Columns="5" Rows="3" >
                                             <!-- Row 1: classic colors -->
-                                            <Border x:Name="SwatchRed" Background="{DynamicResource NotesColor.Red}" Width="24" Height="24" CornerRadius="4" Margin="3" Cursor="Hand" MouseLeftButtonDown="ColorSwatch_Click" ToolTip="Красный"/>
-                                            <Border x:Name="SwatchOrange" Background="{DynamicResource NotesColor.Orange}" Width="24" Height="24" CornerRadius="4" Margin="3" Cursor="Hand" MouseLeftButtonDown="ColorSwatch_Click" ToolTip="Оранжевый"/>
-                                            <Border x:Name="SwatchAmber" Background="{DynamicResource NotesColor.Amber}" Width="24" Height="24" CornerRadius="4" Margin="3" Cursor="Hand" MouseLeftButtonDown="ColorSwatch_Click" ToolTip="Янтарный"/>
-                                            <Border x:Name="SwatchGreen" Background="{DynamicResource NotesColor.Green}" Width="24" Height="24" CornerRadius="4" Margin="3" Cursor="Hand" MouseLeftButtonDown="ColorSwatch_Click" ToolTip="Зелёный"/>
-                                            <Border x:Name="SwatchTeal" Background="{DynamicResource NotesColor.Teal}" Width="24" Height="24" CornerRadius="4" Margin="3" Cursor="Hand" MouseLeftButtonDown="ColorSwatch_Click" ToolTip="Бирюзовый"/>
+                                            <Border x:Name="SwatchRed" Background="{DynamicResource NotesColor.Red}" Width="24" Height="24" CornerRadius="{DynamicResource Radius.Sm}" Margin="3" Cursor="Hand" MouseLeftButtonDown="ColorSwatch_Click" ToolTip="Красный"/>
+                                            <Border x:Name="SwatchOrange" Background="{DynamicResource NotesColor.Orange}" Width="24" Height="24" CornerRadius="{DynamicResource Radius.Sm}" Margin="3" Cursor="Hand" MouseLeftButtonDown="ColorSwatch_Click" ToolTip="Оранжевый"/>
+                                            <Border x:Name="SwatchAmber" Background="{DynamicResource NotesColor.Amber}" Width="24" Height="24" CornerRadius="{DynamicResource Radius.Sm}" Margin="3" Cursor="Hand" MouseLeftButtonDown="ColorSwatch_Click" ToolTip="Янтарный"/>
+                                            <Border x:Name="SwatchGreen" Background="{DynamicResource NotesColor.Green}" Width="24" Height="24" CornerRadius="{DynamicResource Radius.Sm}" Margin="3" Cursor="Hand" MouseLeftButtonDown="ColorSwatch_Click" ToolTip="Зелёный"/>
+                                            <Border x:Name="SwatchTeal" Background="{DynamicResource NotesColor.Teal}" Width="24" Height="24" CornerRadius="{DynamicResource Radius.Sm}" Margin="3" Cursor="Hand" MouseLeftButtonDown="ColorSwatch_Click" ToolTip="Бирюзовый"/>
                                             <!-- Row 2: blues & purples -->
-                                            <Border x:Name="SwatchBlue" Background="{DynamicResource NotesColor.Blue}" Width="24" Height="24" CornerRadius="4" Margin="3" Cursor="Hand" MouseLeftButtonDown="ColorSwatch_Click" ToolTip="Синий"/>
-                                            <Border x:Name="SwatchIndigo" Background="{DynamicResource NotesColor.Indigo}" Width="24" Height="24" CornerRadius="4" Margin="3" Cursor="Hand" MouseLeftButtonDown="ColorSwatch_Click" ToolTip="Индиго"/>
-                                            <Border x:Name="SwatchPurple" Background="{DynamicResource NotesColor.Purple}" Width="24" Height="24" CornerRadius="4" Margin="3" Cursor="Hand" MouseLeftButtonDown="ColorSwatch_Click" ToolTip="Фиолетовый"/>
-                                            <Border x:Name="SwatchPink" Background="{DynamicResource NotesColor.Pink}" Width="24" Height="24" CornerRadius="4" Margin="3" Cursor="Hand" MouseLeftButtonDown="ColorSwatch_Click" ToolTip="Розовый"/>
-                                            <Border x:Name="SwatchBrown" Background="{DynamicResource NotesColor.Brown}" Width="24" Height="24" CornerRadius="4" Margin="3" Cursor="Hand" MouseLeftButtonDown="ColorSwatch_Click" ToolTip="Коричневый"/>
+                                            <Border x:Name="SwatchBlue" Background="{DynamicResource NotesColor.Blue}" Width="24" Height="24" CornerRadius="{DynamicResource Radius.Sm}" Margin="3" Cursor="Hand" MouseLeftButtonDown="ColorSwatch_Click" ToolTip="Синий"/>
+                                            <Border x:Name="SwatchIndigo" Background="{DynamicResource NotesColor.Indigo}" Width="24" Height="24" CornerRadius="{DynamicResource Radius.Sm}" Margin="3" Cursor="Hand" MouseLeftButtonDown="ColorSwatch_Click" ToolTip="Индиго"/>
+                                            <Border x:Name="SwatchPurple" Background="{DynamicResource NotesColor.Purple}" Width="24" Height="24" CornerRadius="{DynamicResource Radius.Sm}" Margin="3" Cursor="Hand" MouseLeftButtonDown="ColorSwatch_Click" ToolTip="Фиолетовый"/>
+                                            <Border x:Name="SwatchPink" Background="{DynamicResource NotesColor.Pink}" Width="24" Height="24" CornerRadius="{DynamicResource Radius.Sm}" Margin="3" Cursor="Hand" MouseLeftButtonDown="ColorSwatch_Click" ToolTip="Розовый"/>
+                                            <Border x:Name="SwatchBrown" Background="{DynamicResource NotesColor.Brown}" Width="24" Height="24" CornerRadius="{DynamicResource Radius.Sm}" Margin="3" Cursor="Hand" MouseLeftButtonDown="ColorSwatch_Click" ToolTip="Коричневый"/>
                                             <!-- Row 3: dark & neutrals -->
-                                            <Border x:Name="SwatchGray" Background="{DynamicResource NotesColor.Gray}" Width="24" Height="24" CornerRadius="4" Margin="3" Cursor="Hand" MouseLeftButtonDown="ColorSwatch_Click" ToolTip="Серый"/>
-                                            <Border x:Name="SwatchDark" Background="{DynamicResource NotesColor.Dark}" Width="24" Height="24" CornerRadius="4" Margin="3" Cursor="Hand" MouseLeftButtonDown="ColorSwatch_Click" ToolTip="Тёмный"/>
-                                            <Border x:Name="SwatchWhite" Background="{DynamicResource NotesColor.White}" Width="24" Height="24" CornerRadius="4" Margin="3" Cursor="Hand" MouseLeftButtonDown="ColorSwatch_Click" ToolTip="Белый" BorderBrush="{DynamicResource Border}" BorderThickness="1"/>
-                                            <Border x:Name="SwatchAccent" Background="{DynamicResource Accent}" Width="24" Height="24" CornerRadius="4" Margin="3" Cursor="Hand" MouseLeftButtonDown="ColorSwatch_Click" ToolTip="Акцентный"/>
-                                            <Border x:Name="SwatchCustom" Width="24" Height="24" CornerRadius="4" Margin="3" Cursor="Hand" MouseLeftButtonDown="ColorSwatch_CustomClick" ToolTip="Любой цвет...">
+                                            <Border x:Name="SwatchGray" Background="{DynamicResource NotesColor.Gray}" Width="24" Height="24" CornerRadius="{DynamicResource Radius.Sm}" Margin="3" Cursor="Hand" MouseLeftButtonDown="ColorSwatch_Click" ToolTip="Серый"/>
+                                            <Border x:Name="SwatchDark" Background="{DynamicResource NotesColor.Dark}" Width="24" Height="24" CornerRadius="{DynamicResource Radius.Sm}" Margin="3" Cursor="Hand" MouseLeftButtonDown="ColorSwatch_Click" ToolTip="Тёмный"/>
+                                            <Border x:Name="SwatchWhite" Background="{DynamicResource NotesColor.White}" Width="24" Height="24" CornerRadius="{DynamicResource Radius.Sm}" Margin="3" Cursor="Hand" MouseLeftButtonDown="ColorSwatch_Click" ToolTip="Белый" BorderBrush="{DynamicResource Border}" BorderThickness="1"/>
+                                            <Border x:Name="SwatchAccent" Background="{DynamicResource Accent}" Width="24" Height="24" CornerRadius="{DynamicResource Radius.Sm}" Margin="3" Cursor="Hand" MouseLeftButtonDown="ColorSwatch_Click" ToolTip="Акцентный"/>
+                                            <Border x:Name="SwatchCustom" Width="24" Height="24" CornerRadius="{DynamicResource Radius.Sm}" Margin="3" Cursor="Hand" MouseLeftButtonDown="ColorSwatch_CustomClick" ToolTip="Любой цвет...">
                                                 <Border.Background>
                                                     <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
                                                         <GradientStop Color="{StaticResource NotesColor.Crimson.Color}" Offset="0"/>
@@ -161,7 +161,7 @@
                                      GotFocus="SelectAll_OnFocus"
                                      TextChanged="TxtNotes_TextChanged"/>
                             <TextBlock Text="Предпросмотр:" Style="{DynamicResource FieldLabel}" Margin="0,0,0,4"/>
-                            <Border Background="{DynamicResource Surface}" BorderBrush="{DynamicResource Border}" BorderThickness="1" CornerRadius="6" Padding="6" Height="120">
+                            <Border Background="{DynamicResource Surface}" BorderBrush="{DynamicResource Border}" BorderThickness="1" CornerRadius="{DynamicResource Radius.Md}" Padding="6" Height="120">
                                 <FlowDocumentScrollViewer x:Name="NotesPreview" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" IsToolBarVisible="False">
                                     <FlowDocument />
                                 </FlowDocumentScrollViewer>

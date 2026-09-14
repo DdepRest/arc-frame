@@ -38,4 +38,15 @@
     <!-- Лист предпросмотра / модальные окна с крупным скруглением -->
     <CornerRadius x:Key="Radius.Sheet">16</CornerRadius>
 
+    <!-- ── Частичное скругление: форма «приклеено к краю» ──────────── -->
+    <!-- Полоса/таб у левой кромки (округлены только левые углы) -->
+    <CornerRadius x:Key="Radius.StripeLeft">8,0,0,8</CornerRadius>
+    <!-- Подвал/нижняя кромка: округлён низ (попап над элементом) -->
+    <CornerRadius x:Key="Radius.Bottom">0,0,8,8</CornerRadius>
+    <!-- Шапка/верхняя кромка: округлён верх (панель, уходящая вниз) -->
+    <CornerRadius x:Key="Radius.Top">8,8,0,0</CornerRadius>
+    <!-- Пузырь сообщения: три угла скруглены, один «прицеплен» к автору -->
+    <CornerRadius x:Key="Radius.BubbleSent">12,12,12,3</CornerRadius>
+    <CornerRadius x:Key="Radius.BubbleReceived">12,12,3,12</CornerRadius>
+
 </ResourceDictionary>

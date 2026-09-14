@@ -211,7 +211,10 @@ namespace MosquitoNetCalculator.Tests.Controls
             // её рамки). Пиксели проверяет CardStripeCornerTests.
             Assert.Contains("ConverterParameter=strong", xaml);
             string cardMarkup = System.Text.RegularExpressions.Regex.Replace(xaml, @"\s+", " ");
-            Assert.Contains("BorderThickness=\"4,0,0,0\" CornerRadius=\"11,0,0,11\"", cardMarkup);
+            // v3.53: радиус берётся токеном, а не числом на месте — инвариант
+            // «радиус карточки минус 1px рамки» живёт в Radius.StripeInner
+            // (его значение стережёт DesignTokenGuardTests).
+            Assert.Contains("BorderThickness=\"4,0,0,0\" CornerRadius=\"{DynamicResource Radius.StripeInner}\"", cardMarkup);
             Assert.DoesNotContain("<Border Grid.Column=\"0\" Width=\"4\"", cardMarkup);
 
             // v3.51 hotfix (владелец): заголовок не должен дублироваться —

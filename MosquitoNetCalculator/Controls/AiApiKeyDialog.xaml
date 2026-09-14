@@ -21,7 +21,7 @@
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="CheckBox">
-                        <Border x:Name="CheckBorder" Width="18" Height="18" CornerRadius="5"
+                        <Border x:Name="CheckBorder" Width="18" Height="18" CornerRadius="{DynamicResource Radius.Sm}"
                                 Background="{DynamicResource SectionBg}"
                                 BorderBrush="{DynamicResource TextMuted}" BorderThickness="2">
                             <TextBlock x:Name="CheckMark" Text="✓" FontSize="12" FontWeight="Bold"
@@ -45,7 +45,7 @@
         </Style>
     </Window.Resources>
 
-    <Border BorderBrush="{DynamicResource Border}" BorderThickness="1" CornerRadius="12"
+    <Border BorderBrush="{DynamicResource Border}" BorderThickness="1" CornerRadius="{DynamicResource Radius.Lg}"
             Background="{DynamicResource Surface}">
         <Grid Margin="20,0">
             <!-- Three-zone layout that can never clip the footer: header and
@@ -65,7 +65,7 @@
                     <ColumnDefinition Width="*"/>
                     <ColumnDefinition Width="32"/>
                 </Grid.ColumnDefinitions>
-                <Border Grid.Column="0" Width="28" Height="28" CornerRadius="8"
+                <Border Grid.Column="0" Width="28" Height="28" CornerRadius="{DynamicResource Radius.Md}"
                         Background="{DynamicResource Accent}" VerticalAlignment="Center">
                     <TextBlock Text="AI" FontSize="10" FontWeight="Bold"
                                Foreground="{DynamicResource OnAccent}"
@@ -111,7 +111,7 @@
                     </Grid.RowDefinitions>
 
             <!-- Status banner: concise and actionable -->
-            <Border Grid.Row="0" Margin="2,8,2,14" Padding="12,10" CornerRadius="8"
+            <Border Grid.Row="0" Margin="2,8,2,14" Padding="12,10" CornerRadius="{DynamicResource Radius.Md}"
                     Background="{DynamicResource BadgeSuccessBg}"
                     BorderBrush="{DynamicResource Success}" BorderThickness="1">
                 <Grid>
@@ -120,7 +120,7 @@
                         <ColumnDefinition Width="*"/>
                         <ColumnDefinition Width="Auto"/>
                     </Grid.ColumnDefinitions>
-                    <Border Grid.Column="0" Width="22" Height="22" CornerRadius="11"
+                    <Border Grid.Column="0" Width="22" Height="22" CornerRadius="{DynamicResource Radius.Pill}"
                             Background="{DynamicResource Success}" VerticalAlignment="Center">
                         <TextBlock Text="✓" FontSize="12" FontWeight="Bold"
                                    Foreground="{DynamicResource OnSuccess}"
@@ -156,7 +156,7 @@
             </Grid>
 
             <!-- Keys card -->
-            <Border Grid.Row="2" Padding="12,11" CornerRadius="8"
+            <Border Grid.Row="2" Padding="12,11" CornerRadius="{DynamicResource Radius.Md}"
                     Background="{DynamicResource SectionBg}"
                     BorderBrush="{DynamicResource Border}" BorderThickness="1">
                 <StackPanel>
@@ -168,7 +168,7 @@
                         </Grid.ColumnDefinitions>
                         <StackPanel Grid.Column="0" VerticalAlignment="Top">
                             <StackPanel Orientation="Horizontal">
-                                <Border Width="18" Height="18" CornerRadius="5"
+                                <Border Width="18" Height="18" CornerRadius="{DynamicResource Radius.Sm}"
                                         Background="{DynamicResource ChipBg}" Margin="0,0,6,0">
                                     <TextBlock Text="OR" FontSize="8" FontWeight="Bold"
                                                Foreground="{DynamicResource Accent}"
@@ -194,12 +194,12 @@
                                            Margin="10,0,8,0" VerticalAlignment="Center"
                                            IsHitTestVisible="False"/>
                             </Grid>
-                            <Border x:Name="OrTestStatus" CornerRadius="4" Padding="7,3"
+                            <Border x:Name="OrTestStatus" CornerRadius="{DynamicResource Radius.Sm}" Padding="7,3"
                                     HorizontalAlignment="Left" Margin="2,4,0,0"
                                     Background="{DynamicResource SectionBg}"
                                     BorderBrush="{DynamicResource SubtleBorder}" BorderThickness="1">
                                 <StackPanel Orientation="Horizontal">
-                                    <Border x:Name="OrTestDot" Width="8" Height="8" CornerRadius="4"
+                                    <Border x:Name="OrTestDot" Width="8" Height="8" CornerRadius="{DynamicResource Radius.Sm}"
                                             Background="{DynamicResource TextMuted}" Margin="0,0,5,0"
                                             VerticalAlignment="Center"/>
                                     <TextBlock x:Name="TxtOrTestStatus" Text="не проверено" FontSize="11"
@@ -219,7 +219,7 @@
                         </Grid.ColumnDefinitions>
                         <StackPanel Grid.Column="0" VerticalAlignment="Top">
                             <StackPanel Orientation="Horizontal">
-                                <Border Width="18" Height="18" CornerRadius="5"
+                                <Border Width="18" Height="18" CornerRadius="{DynamicResource Radius.Sm}"
                                         Background="{DynamicResource BadgeSuccessBg}" Margin="0,0,6,0">
                                     <TextBlock Text="NV" FontSize="8" FontWeight="Bold"
                                                Foreground="{DynamicResource Success}"
@@ -246,12 +246,12 @@
                                            Margin="10,0,8,0" VerticalAlignment="Center"
                                            IsHitTestVisible="False"/>
                             </Grid>
-                            <Border x:Name="NvTestStatus" CornerRadius="4" Padding="7,3"
+                            <Border x:Name="NvTestStatus" CornerRadius="{DynamicResource Radius.Sm}" Padding="7,3"
                                     HorizontalAlignment="Left" Margin="2,4,0,0"
                                     Background="{DynamicResource SectionBg}"
                                     BorderBrush="{DynamicResource SubtleBorder}" BorderThickness="1">
                                 <StackPanel Orientation="Horizontal">
-                                    <Border x:Name="NvTestDot" Width="8" Height="8" CornerRadius="4"
+                                    <Border x:Name="NvTestDot" Width="8" Height="8" CornerRadius="{DynamicResource Radius.Sm}"
                                             Background="{DynamicResource TextMuted}" Margin="0,0,5,0"
                                             VerticalAlignment="Center"/>
                                     <TextBlock x:Name="TxtNvTestStatus" Text="не проверено" FontSize="11"
@@ -267,7 +267,7 @@
             <Border Grid.Row="3" Margin="2,0,2,12" Padding="12,8"
                     Background="{DynamicResource SectionBg}"
                     BorderBrush="{DynamicResource Border}" BorderThickness="1,0,1,1"
-                    CornerRadius="0,0,8,8">
+                    CornerRadius="{DynamicResource Radius.Bottom}">
                 <Grid>
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="*"/>
@@ -298,7 +298,7 @@
                     <StackPanel Orientation="Horizontal">
                         <TextBlock Text="Выбор моделей" FontSize="12" FontWeight="SemiBold"
                                    Foreground="{DynamicResource TextPrimary}"/>
-                        <Border CornerRadius="4" Padding="6,2" Margin="8,0,0,0"
+                        <Border CornerRadius="{DynamicResource Radius.Sm}" Padding="6,2" Margin="8,0,0,0"
                                 Background="{DynamicResource ChipBg}">
                             <TextBlock Text="НЕСКОЛЬКО" FontSize="8" FontWeight="Bold"
                                        Foreground="{DynamicResource Accent}"/>
@@ -323,9 +323,9 @@
                                     <Setter.Value>
                                         <ControlTemplate TargetType="ToggleButton">
                                             <Border x:Name="SwitchTrack" Width="36" Height="20"
-                                                    CornerRadius="10" Background="{DynamicResource Border}">
+                                                    CornerRadius="{DynamicResource Radius.Lg}" Background="{DynamicResource Border}">
                                                 <Border x:Name="SwitchThumb" Width="16" Height="16"
-                                                        CornerRadius="8" Background="White"
+                                                        CornerRadius="{DynamicResource Radius.Md}" Background="White"
                                                         HorizontalAlignment="Left" Margin="2,0,0,0"/>
                                             </Border>
                                             <ControlTemplate.Triggers>
@@ -368,7 +368,7 @@
             </Grid>
 
             <!-- Model list gets the remaining space -->
-            <Border Grid.Row="7" CornerRadius="8" BorderBrush="{DynamicResource Border}"
+            <Border Grid.Row="7" CornerRadius="{DynamicResource Radius.Md}" BorderBrush="{DynamicResource Border}"
                     BorderThickness="1" Background="{DynamicResource Surface}">
                 <ListBox x:Name="LstModels" Padding="0" BorderThickness="0" MaxHeight="190"
                          Background="Transparent" Foreground="{DynamicResource TextPrimary}"
@@ -415,7 +415,7 @@
                                                 VerticalAlignment="Center">
                                         <!-- Vision badge: visible only for models the
                                              catalog reported as image-capable. -->
-                                        <Border CornerRadius="4" Padding="6,3"
+                                        <Border CornerRadius="{DynamicResource Radius.Sm}" Padding="6,3"
                                                 Margin="8,0,0,0"
                                                 ToolTip="{Binding VisionTooltip}">
                                             <Border.Style>
@@ -432,7 +432,7 @@
                                             <TextBlock Text="📷" FontSize="9"
                                                        Foreground="{DynamicResource BadgeVisionFg}"/>
                                         </Border>
-                                        <Border CornerRadius="4" Padding="6,3"
+                                        <Border CornerRadius="{DynamicResource Radius.Sm}" Padding="6,3"
                                                 Margin="8,0,0,0"
                                                 ToolTip="{Binding ProviderTooltip}">
                                             <Border.Style>
