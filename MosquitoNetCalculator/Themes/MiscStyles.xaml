@@ -1,6 +1,31 @@
 ﻿<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
                     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
         <!-- ═══════════════════════════════════════════════════════ -->
+        <!-- БАЗА ОКНА — единый рендер текста и типографика             -->
+        <!-- ═══════════════════════════════════════════════════════ -->
+        <!-- Неявный стиль Window: до v3.53.0 шрифт и режим рендера
+             задавались только в MainWindow, а 12 вторичных окон (Welcome,
+             Import, PrintPreview, SendToFactory, ChangeOrderStatus, WhatsNew,
+             UpdateAvailable, SlopeEconomy, AdminPassword, AiApiKey, AiAssistant,
+             MessageDialog) рисовали текст иначе — другой способ сглаживания
+             и «рваные» hairline-границы на 150% DPI.
+             TextFormattingMode=Display выбран осознанно: интерфейсные размеры
+             11-14px на нём читаются резче. Предпросмотр печати СОЗНАТЕЛЬНО
+             переопределяет режим на Ideal в PrintPreviewControl — там важно
+             совпадение разбиения на страницы с выводом на печать.
+             Стиль ловит тест WindowChromeAndDpiTests. -->
+        <Style TargetType="Window">
+            <Setter Property="FontFamily" Value="{DynamicResource Font.Text}"/>
+            <Setter Property="FontSize" Value="{StaticResource Type.BodyMd}"/>
+            <Setter Property="TextOptions.TextFormattingMode" Value="Display"/>
+            <Setter Property="TextOptions.TextRenderingMode" Value="ClearType"/>
+            <Setter Property="UseLayoutRounding" Value="True"/>
+            <Setter Property="SnapsToDevicePixels" Value="True"/>
+            <Setter Property="Background" Value="{DynamicResource AppBg}"/>
+            <Setter Property="Foreground" Value="{DynamicResource TextPrimary}"/>
+        </Style>
+
+        <!-- ═══════════════════════════════════════════════════════ -->
         <!-- TOAST NOTIFICATION STYLE                                 -->
         <!-- ═══════════════════════════════════════════════════════ -->
         <Style x:Key="ToastBorder" TargetType="Border">
