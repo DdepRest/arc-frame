@@ -203,10 +203,17 @@ namespace MosquitoNetCalculator.Tests.Controls
             Assert.Contains("CardHeader_Click", xaml);
             Assert.Contains("{Binding IsExpanded", xaml);
 
-            // Владелец: цветная полоса статуса слева на карточке — тип версии,
-            // как в админ-панели (OfficeStatusStripeBrush → UpdateTypeBrush strong).
-            Assert.Contains("Width=\"4\"", xaml);
+            // Владелец: цветная полоса статуса слева на карточке — тип версии.
+            // v3.52.0 (владелец: «дизайн скруглённый, а полоска квадратная»):
+            // полоса была отдельным ПРЯМОУГОЛЬНИКОМ Width=4 и закрашивала
+            // скруглённый угол карточки. Теперь это ЛЕВАЯ ГРАНИЦА внутреннего
+            // Border — рамка обводит скруглённый контур, поэтому полоса
+            // повторяет радиус карточки (11 = 12 радиуса карточки минус 1px
+            // её рамки). Пиксели проверяет UpdateCardStripeTests.
             Assert.Contains("ConverterParameter=strong", xaml);
+            string cardMarkup = System.Text.RegularExpressions.Regex.Replace(xaml, @"\s+", " ");
+            Assert.Contains("BorderThickness=\"4,0,0,0\" CornerRadius=\"11,0,0,11\"", cardMarkup);
+            Assert.DoesNotContain("<Border Grid.Column=\"0\" Width=\"4\"", cardMarkup);
 
             // v3.51 hotfix (владелец): заголовок не должен дублироваться —
             // в компактной строке он скрывается, когда карточка раскрыта.

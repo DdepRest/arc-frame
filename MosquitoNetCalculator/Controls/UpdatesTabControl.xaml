@@ -273,18 +273,19 @@
                                   остальные свёрнуты — длинная история не простыня.
                                 -->
                                 <Border Style="{StaticResource UpdateCardStyle}">
-                                    <Grid>
-                                        <Grid.ColumnDefinitions>
-                                            <ColumnDefinition Width="Auto"/>
-                                            <ColumnDefinition Width="*"/>
-                                        </Grid.ColumnDefinitions>
-
-                                        <!-- Цветная полоса статуса слева — тип версии
-                                             (Новинка/Улучшение/Исправление), как в админ-панели -->
-                                        <Border Grid.Column="0" Width="4" Margin="0"
-                                                Background="{Binding Type, Converter={StaticResource UpdateTypeBrush}, ConverterParameter=strong}"/>
-
-                                    <StackPanel Grid.Column="1" Margin="14,10,16,12">
+                                    <!-- Цветная полоса статуса слева — тип версии
+                                         (Новинка/Улучшение/Исправление).
+                                         v3.52.0 (владелец): полоса рисуется ЛЕВОЙ ГРАНИЦЕЙ
+                                         внутреннего Border, а не отдельным прямоугольником
+                                         Width=4: рамка Border обводит скруглённый контур, поэтому
+                                         полоса повторяет радиус карточки. Квадратный
+                                         прямоугольник торчал в скруглённом углу и выбивался из
+                                         скруглённого дизайна (регрессия — UpdateCardStripeTests).
+                                         CornerRadius 11 = 12 (радиус карточки) минус 1px её рамки. -->
+                                    <Border BorderThickness="4,0,0,0"
+                                            CornerRadius="11,0,0,11"
+                                            BorderBrush="{Binding Type, Converter={StaticResource UpdateTypeBrush}, ConverterParameter=strong}">
+                                    <StackPanel Margin="14,10,16,12">
 
                                         <!-- ─── Компактная строка (клик — разворот) ─── -->
                                         <Grid Cursor="Hand"
@@ -508,7 +509,7 @@
                                             </Button>
                                         </StackPanel>
                                     </StackPanel>
-                                    </Grid>
+                                    </Border>
                                 </Border>
                             </DataTemplate>
                         </ItemsControl.ItemTemplate>
