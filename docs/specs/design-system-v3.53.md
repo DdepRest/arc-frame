@@ -98,6 +98,30 @@ CPU каждый кадр — выпилено в v3.52.0 и защищено т
 Порядок работы: мигрировал литералы на токены → понизил цифры в том же коммите →
 `dotnet test --filter FullyQualifiedName~Tests.Design`.
 
+## 5б. Контраст и доступность
+
+Контраст считается машинно по WCAG 2.1 в **обеих** темах:
+`Design/ContrastTests.cs` прогоняет 26 пар «передний план на фоне» из реальных
+словарей `ThemeService`, а не из разметки. Долг (пара ниже минимума) обязан быть
+перечислен в `Design/design-contrast-debt.json` — иначе тест падает; починил
+пару → строку убери, иначе тест упадёт на «долг закрыт, но не снят». Аудит
+v3.53.0 нашёл 5 реальных нарушений, все они **исправлены**, поэтому счётчик
+долга пуст:
+
+| Пара | Тема | Было | Стало |
+|---|---|---|---|
+| `OnAccent` на `Accent` | dark | 2.70:1 | 6.97:1 (тёмный текст на ярком акценте) |
+| `OnDanger` на `Danger` | dark | 3.91:1 | 4.58:1 (`Danger` → `#D63C42`) |
+| `BadgeDangerFg` на `BadgeDangerBg` | dark | 4.15:1 | 5.41:1 |
+| `OnAccentPrimary` на `AccentHover` | light | 3.30:1 | 6.06:1 (hover/press — шаг вниз) |
+| `BadgeVisionFg` на `BadgeVisionBg` | light | 3.89:1 | 5.54:1 |
+
+Доступность стережёт `Design/AccessibilityTests.cs`: у иконочных кнопок и
+управления окном есть `AutomationProperties.Name` (экранный диктор больше не
+читает «кнопка»), покрытие растёт ратчетом `Floors` — минимум на файл можно
+только поднимать. Общий стиль `DialogCloseButton` несёт имя один раз на все
+~10 диалогов.
+
 ## 6. Проверка
 
 | Что проверяется | Тест |
@@ -111,6 +135,9 @@ CPU каждый кадр — выпилено в v3.52.0 и защищено т
 | Порядок мержа токенов в App.xaml и bootstrap | `DesignTokenGuardTests.TokenDictionaries_AreMerged*` |
 | Инвариант радиуса полосы | `DesignTokenGuardTests.StripingRadius_*` |
 | Бюджеты литералов | `DesignTokenGuardTests.*_DoNotGrow`, `HardcodedHexColors_*` |
+| Контраст WCAG 2.1 в двух темах + реестр долга | `ContrastTests.Contrast_MeetsMinimumOrIsListedAsDebt` |
+| UIA-имена иконочных кнопок и окна | `AccessibilityTests.*` |
+| `TextFormattingMode`/`UseLayoutRounding` и DPI | `WindowChromeAndDpiTests.*` |
 
 ## 7. Порядок миграции (для продолжающих)
 

@@ -384,6 +384,10 @@
             <Setter Property="Cursor" Value="Hand"/>
             <Setter Property="Foreground" Value="{DynamicResource TextPrimary}"/>
             <Setter Property="ToolTip" Value="Закрыть (Escape)"/>
+            <!-- Один сеттер закрывает доступность сразу у ~10 диалогов: раньше
+                 у кнопки-крестика не было ни имени для экранного диктора, ни
+                 стабильного имени для UIA-харнесса (он ищет элементы по имени). -->
+            <Setter Property="AutomationProperties.Name" Value="Закрыть"/>
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="Button">

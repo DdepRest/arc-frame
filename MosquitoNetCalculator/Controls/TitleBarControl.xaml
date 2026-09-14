@@ -38,6 +38,8 @@
             <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center" HorizontalAlignment="Right">
                 <!-- Settings gear button -->
                 <Button x:Name="BtnSettingsGear"
+                        AutomationProperties.Name="Настройки и обновления"
+                        AutomationProperties.HelpText="Тема, точка установки, проверка обновлений"
                         Click="BtnSettingsGear_Click"
                         Width="40" Height="40" Background="Transparent" BorderThickness="0"
                         Foreground="{DynamicResource TextPrimary}"
@@ -99,6 +101,7 @@
                 </Button>
 
                 <Button x:Name="BtnMinimize" Click="BtnMinimize_Click"
+                        AutomationProperties.Name="Свернуть"
                         Width="40" Height="40" Background="Transparent" BorderThickness="0"
                         Foreground="{DynamicResource TextPrimary}"
                         WindowChrome.IsHitTestVisibleInChrome="True">
@@ -138,6 +141,7 @@
                     <TextBlock Text="&#xE738;" FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets" FontSize="10"/>
                 </Button>
                 <Button x:Name="BtnMaximize" Click="BtnMaximize_Click"
+                        AutomationProperties.Name="Развернуть"
                         Width="40" Height="40" Background="Transparent" BorderThickness="0"
                         Foreground="{DynamicResource TextPrimary}"
                         WindowChrome.IsHitTestVisibleInChrome="True">
@@ -177,6 +181,7 @@
                     <TextBlock x:Name="TxtMaximizeIcon" Text="&#xE739;" FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets" FontSize="10"/>
                 </Button>
                 <Button x:Name="BtnClose" Click="BtnClose_Click"
+                        AutomationProperties.Name="Закрыть"
                         Width="40" Height="40" Background="Transparent" BorderThickness="0"
                         Foreground="{DynamicResource TextPrimary}"
                         WindowChrome.IsHitTestVisibleInChrome="True">

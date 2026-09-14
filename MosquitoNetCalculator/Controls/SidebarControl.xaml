@@ -109,9 +109,9 @@
                         </StackPanel>
                         <StackPanel x:Name="ContentNotes" Visibility="Visible">
                             <StackPanel Orientation="Horizontal" Margin="0,0,0,6">
-                                <Button x:Name="BtnBold" Content="Ж" FontWeight="Bold" Width="28" Height="24" Margin="0,0,4,0" Padding="0" Click="BtnBold_Click" Style="{DynamicResource GhostButton}" FontSize="12" ToolTip="Жирный (выделите текст)"/>
-                                <Button x:Name="BtnItalic" Content="К" FontStyle="Italic" Width="28" Height="24" Margin="0,0,4,0" Padding="0" Click="BtnItalic_Click" Style="{DynamicResource GhostButton}" FontSize="12" ToolTip="Курсив (выделите текст)"/>
-                                <Button x:Name="BtnColor" Content="A" Foreground="{DynamicResource Accent}" Width="28" Height="24" Margin="0,0,4,0" Padding="0" Click="BtnColor_Click" Style="{DynamicResource GhostButton}" FontSize="12" FontWeight="Bold" ToolTip="Цвет текста (выделите текст)"/>
+                                <Button x:Name="BtnBold" AutomationProperties.Name="Жирный" Content="Ж" FontWeight="Bold" Width="28" Height="24" Margin="0,0,4,0" Padding="0" Click="BtnBold_Click" Style="{DynamicResource GhostButton}" FontSize="12" ToolTip="Жирный (выделите текст)"/>
+                                <Button x:Name="BtnItalic" AutomationProperties.Name="Курсив" Content="К" FontStyle="Italic" Width="28" Height="24" Margin="0,0,4,0" Padding="0" Click="BtnItalic_Click" Style="{DynamicResource GhostButton}" FontSize="12" ToolTip="Курсив (выделите текст)"/>
+                                <Button x:Name="BtnColor" AutomationProperties.Name="Цвет текста" Content="A" Foreground="{DynamicResource Accent}" Width="28" Height="24" Margin="0,0,4,0" Padding="0" Click="BtnColor_Click" Style="{DynamicResource GhostButton}" FontSize="12" FontWeight="Bold" ToolTip="Цвет текста (выделите текст)"/>
                                 <Popup x:Name="ColorPopup" PlacementTarget="{Binding ElementName=BtnColor}" Placement="Bottom" StaysOpen="False" AllowsTransparency="True">
                                     <Border Background="{DynamicResource Surface}" BorderBrush="{DynamicResource Border}" BorderThickness="1" CornerRadius="8" Padding="8">
                                         <Border.Effect>
@@ -149,8 +149,8 @@
                                         </UniformGrid>
                                     </Border>
                                 </Popup>
-                                <Button x:Name="BtnList" Content="• Список" Width="60" Height="24" Margin="0,0,4,0" Padding="0" Click="BtnList_Click" Style="{DynamicResource GhostButton}" FontSize="11" ToolTip="Список"/>
-                                <Button x:Name="BtnClear" Content="✕" Width="28" Height="24" Margin="0,0,0,0" Padding="0" Click="BtnClear_Click" Style="{DynamicResource DangerGhostButton}" FontSize="12" ToolTip="Очистить форматирование"/>
+                                <Button x:Name="BtnList" AutomationProperties.Name="Список" Content="• Список" Width="60" Height="24" Margin="0,0,4,0" Padding="0" Click="BtnList_Click" Style="{DynamicResource GhostButton}" FontSize="11" ToolTip="Список"/>
+                                <Button x:Name="BtnClear" AutomationProperties.Name="Очистить форматирование" Content="✕" Width="28" Height="24" Margin="0,0,0,0" Padding="0" Click="BtnClear_Click" Style="{DynamicResource DangerGhostButton}" FontSize="12" ToolTip="Очистить форматирование"/>
                             </StackPanel>
                             <TextBox x:Name="TxtNotes" Margin="0,0,0,8"
                                      Text="{Binding ClientInfo.Notes, UpdateSourceTrigger=PropertyChanged}"

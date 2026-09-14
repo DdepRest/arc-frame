@@ -261,8 +261,12 @@ namespace MosquitoNetCalculator.Services
             // Accent — professional blue. v3.51 contrast audit: #3878C8 давал
             // 4.48:1 с белым текстом (чуть ниже AA 4.5); #3574C3 = 4.73:1.
             ["Accent"]        = "#3574C3",
-            ["AccentHover"]   = "#4A90E0",
-            ["AccentPress"]   = "#2A60AA",
+            // v3.53 contrast audit: #4A90E0 давал 3.30:1 с белым текстом —
+            // активная кнопка на hover становилась нечитаемой. hover/press
+            // теперь ШАГ ВНИЗ от базового (как в тёмной теме — шаг вверх):
+            // #2E63A8 = 6.06:1, #24508F = 8.02:1. Базовый оттенок не менялся.
+            ["AccentHover"]   = "#2E63A8",
+            ["AccentPress"]   = "#24508F",
             ["AccentLight"]   = "#EBF3FC",
             ["AccentShadowColor"] = "#3878C8",
             // Text
@@ -332,7 +336,9 @@ namespace MosquitoNetCalculator.Services
             ["BadgeDangerBg"]   = "#FDE7E9",
             ["BadgeDangerFg"]   = "#C42B1C",
             ["BadgeVisionBg"]   = "#F0ECFA",
-            ["BadgeVisionFg"]   = "#7A5AF8",
+            // v3.53 contrast audit: #7A5AF8 на этом фоне давал 3.89:1 (ниже AA).
+            // #6338E8 = 5.54:1 — тот же фиолетовый, читаемый.
+            ["BadgeVisionFg"]   = "#6338E8",
             // Install toggle
             ["InstallGreen"]  = "#0F7B3F",
             ["InstallRed"]    = "#C42B1C",
@@ -390,13 +396,20 @@ namespace MosquitoNetCalculator.Services
             // Semantic — prototype: --green #3ECF8E, --red #E5484D, --amber #F5A524
             ["Success"]       = "#3ECF8E",
             ["SuccessHover"]  = "#5EDDA4",
-            ["Danger"]        = "#E5484D",
+            // v3.53 contrast audit: прототипный #E5484D давал 3.91:1 с белым
+            // текстом на опасной кнопке (ниже AA). #D63C42 = 4.58:1 и при этом
+            // остаётся графикой ≥3:1 на Surface (3.56) — красный не «сереет».
+            ["Danger"]        = "#D63C42",
             ["DangerHover"]   = "#FF6B6F",
             ["Warning"]       = "#F5A524",
             ["DangerLight"]   = "#2E1B1E",
             ["DangerGhostBorder"] = "#5A2629",
-            // On-accent text — dark text on bright buttons (prototype .btn.green uses #04180D)
-            ["OnAccent"]      = "#FFFFFF",
+            // On-accent text.
+            // v3.53 contrast audit: белый на прототипном акценте #4EA1F7 давал
+            // 2.70:1 — все 19 мест с OnAccent (галочки, активные чипы, тумблеры
+            // вкладок) сидели на акцентной заливке. В тёмной теме это тёмный
+            // текст на ярком акценте, ровно как OnAccentPrimary (#06121F = 6.97:1).
+            ["OnAccent"]      = "#06121F",
             // v3.50.1: prototype .btn.blue color #06121F — dark text on accent fill
             ["OnAccentPrimary"] = "#06121F",
             ["OnSuccess"]     = "#04180D",
@@ -436,7 +449,9 @@ namespace MosquitoNetCalculator.Services
             ["BadgeWarningBg"]  = "#2E2415",
             ["BadgeWarningFg"]  = "#F5A524",
             ["BadgeDangerBg"]   = "#2E1B1E",
-            ["BadgeDangerFg"]   = "#E5484D",
+            // v3.53 contrast audit: #E5484D на этом фоне давал 4.15:1 (ниже AA).
+            // #F06A6E = 5.41:1 — высветление того же тона.
+            ["BadgeDangerFg"]   = "#F06A6E",
             ["BadgeVisionBg"]   = "#251E38",
             ["BadgeVisionFg"]   = "#A78BFA",
             // Install toggle

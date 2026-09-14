@@ -1,7 +1,8 @@
 param([string]$Dir = ".tools/shots")
 
 # Pixel-verify UX state colors in the captured screenshots.
-# Dark tokens (v3.50 prototype palette): selected #26384C, invalid #E5484D, warn #F5A524
+# Dark tokens: selected #26384C, invalid #D63C42 (v3.53 contrast audit: #E5484D
+# gave white-on-red 3.91:1, below AA), warn #F5A524
 # Light tokens (ThemeService): selected #E8F0FA, invalid #C42B1C, warn #D48C00
 $ErrorActionPreference = "Stop"
 Add-Type -AssemblyName System.Drawing
@@ -9,11 +10,11 @@ Add-Type -AssemblyName System.Drawing
 $checks = @(
     @{ f = "09a-grid-row-selected-dark.png";       rgb = 0x26,0x38,0x4C; tol = 14; label = "dark  row-selected RowAltSelected #26384C" },
     @{ f = "09a-grid-row-selected-light.png";      rgb = 0xE8,0xF0,0xFA; tol = 10; label = "light row-selected RowAltSelected #E8F0FA" },
-    @{ f = "03-quickadd-invalid-dark.png";         rgb = 0xE5,0x48,0x4D; tol = 40; label = "dark  quickadd invalid border #E5484D" },
+    @{ f = "03-quickadd-invalid-dark.png";         rgb = 0xD6,0x3C,0x42; tol = 20; label = "dark  quickadd invalid border #D63C42" },
     @{ f = "03-quickadd-invalid-light.png";        rgb = 0xC4,0x2B,0x1C; tol = 40; label = "light quickadd invalid border #C42B1C" },
     @{ f = "08a-warning-toast-dark.png";           rgb = 0xF5,0xA5,0x24; tol = 40; label = "dark  warning toast accent #F5A524" },
     @{ f = "08a-warning-toast-light.png";          rgb = 0xD4,0x8C,0x00; tol = 40; label = "light warning toast accent #D48C00" },
-    @{ f = "10a-destructive-dialog-dark.png";      rgb = 0xE5,0x48,0x4D; tol = 40; label = "dark  destructive dialog cancel #E5484D" },
+    @{ f = "10a-destructive-dialog-dark.png";      rgb = 0xD6,0x3C,0x42; tol = 20; label = "dark  destructive dialog cancel #D63C42" },
     @{ f = "10a-destructive-dialog-light.png";     rgb = 0xC4,0x2B,0x1C; tol = 40; label = "light destructive dialog cancel #C42B1C" },
     @{ f = "08c-warning-hover-held-7s-dark.png";   rgb = 0xF5,0xA5,0x24; tol = 40; label = "dark  toast still visible at +7s (pause)" },
     @{ f = "08c-warning-hover-held-7s-light.png";  rgb = 0xD4,0x8C,0x00; tol = 40; label = "light toast still visible at +7s (pause)" },
