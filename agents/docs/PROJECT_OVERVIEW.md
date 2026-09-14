@@ -62,6 +62,8 @@
 - `README.md` — описание проекта, инструкции по сборке и тестированию.
 
 ## Last verified
+2026-09-14 (v3.53.0) — auto-synced from csproj (sync-version.ps1, CONTROL#13).
+
 2026-09-14 (v3.52.0) — auto-synced from csproj (sync-version.ps1, CONTROL#13).
 
 2026-09-14 (v3.51.0) — auto-synced from csproj (sync-version.ps1, CONTROL#13).

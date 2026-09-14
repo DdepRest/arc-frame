@@ -83,6 +83,25 @@ namespace MosquitoNetCalculator.Tests.Helpers
         /// </summary>
         public static void Ensure()
         {
+            // Процесс-глобальный ресурс — процесс-глобальный замок. xUnit
+            // параллелит КЛАССЫ разных коллекций, а приложение в WPF одно на
+            // процесс: без замка два потока могли одновременно увидеть
+            // «приложения нет», и один из них успевал создать пустое
+            // (без тем) приложение. Тогда следующий же тест, искавший
+            // ресурс темы (напр. ToastBorder), получал
+            // ResourceReferenceKeyNotFoundException — и падал не один тест,
+            // а вся группа, его увидевшая. Замок снимает гонку: второй
+            // вызов видит готовое приложение и просто переиспользует его.
+            lock (Gate)
+            {
+                EnsureCore();
+            }
+        }
+
+        private static readonly object Gate = new();
+
+        private static void EnsureCore()
+        {
             if (HasThemedApplication()) return;
 
             // Оба слота чистим ВСЕГДА: Current может быть null, когда гейт

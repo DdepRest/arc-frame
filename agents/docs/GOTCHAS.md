@@ -511,6 +511,32 @@ new FontFamily(new Uri("pack://application:,,,/MosquitoNetCalculator;component/R
 Сторожит `DesignTokenGuardTests.FontTokens_AreConsumedViaDynamicResource`, а сам факт
 загрузки Inter (а не фолбэка) — `TypographyTests.InterFont_IsActuallyBundled_NotSilentFallback`.
 
+### 21. Одно `Application` на процесс + параллельные коллекции xUnit = «ресурс не найден» (СРЕДНИЙ)
+
+**Где:** `MosquitoNetCalculator.Tests/Helpers/TestAppThemes.cs` (bootstrap тем для тестов).
+Выявлено при добавлении новых тест-классов в v3.53.0.
+
+**Что случилось:** прогнали 2345 тестов — 2345 pass. Добавили новый STA-класс
+(`Design/MotionTests`), который тоже поднимает приложение с темами, — и полный прогон
+стал падать несвязанным тестом: `ResourceReferenceKeyNotFoundException : Ресурс
+"ToastBorder" не найден` в `ToastServiceTests` (тот поднимает только STA-поток,
+без тем, и полагается на уже существующее приложение).
+
+**Причина:** `Application` в WPF — один на процесс, а xUnit параллелит КЛАССЫ
+разных коллекций. Два потока одновременно видели «приложения нет» — и один из них
+успевал создать ПУСТОЕ (без словарей тем) приложение. Дальше первый же тест,
+искавший ресурс темы, получал исключение; от порядка запуска зависело, падает ли
+вся группа. Тот же класс проблемы, что «отравленные» статики WPF (GOTCHAS
+о `AppLifecycleTests`), но причина — гонка, а не расхождение слотов.
+
+**Решение (v3.53.0):** (1) весь `TestAppThemes.Ensure()` под процесс-глобальным
+`lock` — второй вызов видит готовое приложение и переиспользует его; (2) всякий
+новый тест-класс, который поднимает приложение или ищет ресурсы темы, обязан быть
+в коллекции `[Collection("WPF_UI")]` (она `DisableParallelization`).
+
+**Правило:** если тест читает `Application.Current` — он либо в `WPF_UI`, либо не
+имеет права полагаться на чужой STA-поток.
+
 ---
 
 ## Риски по категориям
@@ -545,6 +571,8 @@ new FontFamily(new Uri("pack://application:,,,/MosquitoNetCalculator;component/R
 ---
 
 ## Last verified
+2026-09-14 (v3.53.0) — auto-synced from csproj (sync-version.ps1, CONTROL#13).
+
 2026-09-14 (v3.52.0) — auto-synced from csproj (sync-version.ps1, CONTROL#13).
 
 2026-09-14 (v3.51.0) — auto-synced from csproj (sync-version.ps1, CONTROL#13).

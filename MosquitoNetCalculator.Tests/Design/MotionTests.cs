@@ -20,6 +20,7 @@ namespace MosquitoNetCalculator.Tests.Design
     /// разметке жило 46 литеральных Duration (0.08…0.6 с), а в коде — 30
     /// анимаций с числами на месте, включая пульс 600 мс.
     /// </summary>
+    [Collection("WPF_UI")]
     public class MotionTests
     {
         private static string RepoRoot()
