@@ -82,7 +82,7 @@
                                 <Ellipse x:Name="StatusDot" Grid.Column="0"
                                          Width="9" Height="9" VerticalAlignment="Center"
                                          Margin="0,0,8,0"
-                                         Fill="#5B7BB4"/>
+                                         Fill="{DynamicResource Accent}"/>
                                 <ComboBox x:Name="CmbStatus" Grid.Column="1"
                                           IsEditable="False"
                                           Background="Transparent" BorderThickness="0"
@@ -111,7 +111,7 @@
                             <StackPanel Orientation="Horizontal" Margin="0,0,0,6">
                                 <Button x:Name="BtnBold" Content="Ж" FontWeight="Bold" Width="28" Height="24" Margin="0,0,4,0" Padding="0" Click="BtnBold_Click" Style="{DynamicResource GhostButton}" FontSize="12" ToolTip="Жирный (выделите текст)"/>
                                 <Button x:Name="BtnItalic" Content="К" FontStyle="Italic" Width="28" Height="24" Margin="0,0,4,0" Padding="0" Click="BtnItalic_Click" Style="{DynamicResource GhostButton}" FontSize="12" ToolTip="Курсив (выделите текст)"/>
-                                <Button x:Name="BtnColor" Content="A" Foreground="#005FB8" Width="28" Height="24" Margin="0,0,4,0" Padding="0" Click="BtnColor_Click" Style="{DynamicResource GhostButton}" FontSize="12" FontWeight="Bold" ToolTip="Цвет текста (выделите текст)"/>
+                                <Button x:Name="BtnColor" Content="A" Foreground="{DynamicResource Accent}" Width="28" Height="24" Margin="0,0,4,0" Padding="0" Click="BtnColor_Click" Style="{DynamicResource GhostButton}" FontSize="12" FontWeight="Bold" ToolTip="Цвет текста (выделите текст)"/>
                                 <Popup x:Name="ColorPopup" PlacementTarget="{Binding ElementName=BtnColor}" Placement="Bottom" StaysOpen="False" AllowsTransparency="True">
                                     <Border Background="{DynamicResource Surface}" BorderBrush="{DynamicResource Border}" BorderThickness="1" CornerRadius="8" Padding="8">
                                         <Border.Effect>
@@ -119,30 +119,30 @@
                                         </Border.Effect>
                                         <UniformGrid Columns="5" Rows="3" >
                                             <!-- Row 1: classic colors -->
-                                            <Border x:Name="SwatchRed" Background="#FF0000" Width="24" Height="24" CornerRadius="4" Margin="3" Cursor="Hand" MouseLeftButtonDown="ColorSwatch_Click" ToolTip="Красный"/>
-                                            <Border x:Name="SwatchOrange" Background="#F57C00" Width="24" Height="24" CornerRadius="4" Margin="3" Cursor="Hand" MouseLeftButtonDown="ColorSwatch_Click" ToolTip="Оранжевый"/>
-                                            <Border x:Name="SwatchAmber" Background="#FFA000" Width="24" Height="24" CornerRadius="4" Margin="3" Cursor="Hand" MouseLeftButtonDown="ColorSwatch_Click" ToolTip="Янтарный"/>
-                                            <Border x:Name="SwatchGreen" Background="#388E3C" Width="24" Height="24" CornerRadius="4" Margin="3" Cursor="Hand" MouseLeftButtonDown="ColorSwatch_Click" ToolTip="Зелёный"/>
-                                            <Border x:Name="SwatchTeal" Background="#00897B" Width="24" Height="24" CornerRadius="4" Margin="3" Cursor="Hand" MouseLeftButtonDown="ColorSwatch_Click" ToolTip="Бирюзовый"/>
+                                            <Border x:Name="SwatchRed" Background="{DynamicResource NotesColor.Red}" Width="24" Height="24" CornerRadius="4" Margin="3" Cursor="Hand" MouseLeftButtonDown="ColorSwatch_Click" ToolTip="Красный"/>
+                                            <Border x:Name="SwatchOrange" Background="{DynamicResource NotesColor.Orange}" Width="24" Height="24" CornerRadius="4" Margin="3" Cursor="Hand" MouseLeftButtonDown="ColorSwatch_Click" ToolTip="Оранжевый"/>
+                                            <Border x:Name="SwatchAmber" Background="{DynamicResource NotesColor.Amber}" Width="24" Height="24" CornerRadius="4" Margin="3" Cursor="Hand" MouseLeftButtonDown="ColorSwatch_Click" ToolTip="Янтарный"/>
+                                            <Border x:Name="SwatchGreen" Background="{DynamicResource NotesColor.Green}" Width="24" Height="24" CornerRadius="4" Margin="3" Cursor="Hand" MouseLeftButtonDown="ColorSwatch_Click" ToolTip="Зелёный"/>
+                                            <Border x:Name="SwatchTeal" Background="{DynamicResource NotesColor.Teal}" Width="24" Height="24" CornerRadius="4" Margin="3" Cursor="Hand" MouseLeftButtonDown="ColorSwatch_Click" ToolTip="Бирюзовый"/>
                                             <!-- Row 2: blues & purples -->
-                                            <Border x:Name="SwatchBlue" Background="#1976D2" Width="24" Height="24" CornerRadius="4" Margin="3" Cursor="Hand" MouseLeftButtonDown="ColorSwatch_Click" ToolTip="Синий"/>
-                                            <Border x:Name="SwatchIndigo" Background="#303F9F" Width="24" Height="24" CornerRadius="4" Margin="3" Cursor="Hand" MouseLeftButtonDown="ColorSwatch_Click" ToolTip="Индиго"/>
-                                            <Border x:Name="SwatchPurple" Background="#7B1FA2" Width="24" Height="24" CornerRadius="4" Margin="3" Cursor="Hand" MouseLeftButtonDown="ColorSwatch_Click" ToolTip="Фиолетовый"/>
-                                            <Border x:Name="SwatchPink" Background="#C2185B" Width="24" Height="24" CornerRadius="4" Margin="3" Cursor="Hand" MouseLeftButtonDown="ColorSwatch_Click" ToolTip="Розовый"/>
-                                            <Border x:Name="SwatchBrown" Background="#5D4037" Width="24" Height="24" CornerRadius="4" Margin="3" Cursor="Hand" MouseLeftButtonDown="ColorSwatch_Click" ToolTip="Коричневый"/>
+                                            <Border x:Name="SwatchBlue" Background="{DynamicResource NotesColor.Blue}" Width="24" Height="24" CornerRadius="4" Margin="3" Cursor="Hand" MouseLeftButtonDown="ColorSwatch_Click" ToolTip="Синий"/>
+                                            <Border x:Name="SwatchIndigo" Background="{DynamicResource NotesColor.Indigo}" Width="24" Height="24" CornerRadius="4" Margin="3" Cursor="Hand" MouseLeftButtonDown="ColorSwatch_Click" ToolTip="Индиго"/>
+                                            <Border x:Name="SwatchPurple" Background="{DynamicResource NotesColor.Purple}" Width="24" Height="24" CornerRadius="4" Margin="3" Cursor="Hand" MouseLeftButtonDown="ColorSwatch_Click" ToolTip="Фиолетовый"/>
+                                            <Border x:Name="SwatchPink" Background="{DynamicResource NotesColor.Pink}" Width="24" Height="24" CornerRadius="4" Margin="3" Cursor="Hand" MouseLeftButtonDown="ColorSwatch_Click" ToolTip="Розовый"/>
+                                            <Border x:Name="SwatchBrown" Background="{DynamicResource NotesColor.Brown}" Width="24" Height="24" CornerRadius="4" Margin="3" Cursor="Hand" MouseLeftButtonDown="ColorSwatch_Click" ToolTip="Коричневый"/>
                                             <!-- Row 3: dark & neutrals -->
-                                            <Border x:Name="SwatchGray" Background="#757575" Width="24" Height="24" CornerRadius="4" Margin="3" Cursor="Hand" MouseLeftButtonDown="ColorSwatch_Click" ToolTip="Серый"/>
-                                            <Border x:Name="SwatchDark" Background="#212121" Width="24" Height="24" CornerRadius="4" Margin="3" Cursor="Hand" MouseLeftButtonDown="ColorSwatch_Click" ToolTip="Тёмный"/>
-                                            <Border x:Name="SwatchWhite" Background="#FFFFFF" Width="24" Height="24" CornerRadius="4" Margin="3" Cursor="Hand" MouseLeftButtonDown="ColorSwatch_Click" ToolTip="Белый" BorderBrush="{DynamicResource Border}" BorderThickness="1"/>
+                                            <Border x:Name="SwatchGray" Background="{DynamicResource NotesColor.Gray}" Width="24" Height="24" CornerRadius="4" Margin="3" Cursor="Hand" MouseLeftButtonDown="ColorSwatch_Click" ToolTip="Серый"/>
+                                            <Border x:Name="SwatchDark" Background="{DynamicResource NotesColor.Dark}" Width="24" Height="24" CornerRadius="4" Margin="3" Cursor="Hand" MouseLeftButtonDown="ColorSwatch_Click" ToolTip="Тёмный"/>
+                                            <Border x:Name="SwatchWhite" Background="{DynamicResource NotesColor.White}" Width="24" Height="24" CornerRadius="4" Margin="3" Cursor="Hand" MouseLeftButtonDown="ColorSwatch_Click" ToolTip="Белый" BorderBrush="{DynamicResource Border}" BorderThickness="1"/>
                                             <Border x:Name="SwatchAccent" Background="{DynamicResource Accent}" Width="24" Height="24" CornerRadius="4" Margin="3" Cursor="Hand" MouseLeftButtonDown="ColorSwatch_Click" ToolTip="Акцентный"/>
                                             <Border x:Name="SwatchCustom" Width="24" Height="24" CornerRadius="4" Margin="3" Cursor="Hand" MouseLeftButtonDown="ColorSwatch_CustomClick" ToolTip="Любой цвет...">
                                                 <Border.Background>
                                                     <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
-                                                        <GradientStop Color="#D32F2F" Offset="0"/>
-                                                        <GradientStop Color="#F57C00" Offset="0.25"/>
-                                                        <GradientStop Color="#1976D2" Offset="0.5"/>
-                                                        <GradientStop Color="#388E3C" Offset="0.75"/>
-                                                        <GradientStop Color="#7B1FA2" Offset="1"/>
+                                                        <GradientStop Color="{StaticResource NotesColor.Crimson.Color}" Offset="0"/>
+                                                        <GradientStop Color="{StaticResource NotesColor.Orange.Color}" Offset="0.25"/>
+                                                        <GradientStop Color="{StaticResource NotesColor.Blue.Color}" Offset="0.5"/>
+                                                        <GradientStop Color="{StaticResource NotesColor.Green.Color}" Offset="0.75"/>
+                                                        <GradientStop Color="{StaticResource NotesColor.Purple.Color}" Offset="1"/>
                                                     </LinearGradientBrush>
                                                 </Border.Background>
                                             </Border>

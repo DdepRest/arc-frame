@@ -209,7 +209,7 @@
                 <Grid x:Name="PreviewContainer"
                       HorizontalAlignment="Center" VerticalAlignment="Center">
                     <Border Background="White"
-                            BorderBrush="#777777" BorderThickness="2"
+                            BorderBrush="{DynamicResource PreviewPageBorder}" BorderThickness="2"
                             CornerRadius="2">
                         <Grid>
                         <FlowDocumentPageViewer x:Name="DocumentReader"
@@ -220,7 +220,7 @@
                                                 UseLayoutRounding="True"
                                                 SnapsToDevicePixels="True"/>
                             <Border x:Name="DimmingOverlay"
-                                    Background="#99FFFFFF"
+                                    Background="{DynamicResource PreviewDimOverlay}"
                                     IsHitTestVisible="False"
                                     Visibility="Collapsed">
                                 <TextBlock x:Name="DimmingText"
@@ -228,7 +228,7 @@
                                            VerticalAlignment="Center"
                                            HorizontalAlignment="Center"
                                            FontSize="24"
-                                           Foreground="#666666"
+                                           Foreground="{DynamicResource PreviewDimText}"
                                            FontWeight="Bold"
                                            TextWrapping="Wrap"
                                            TextAlignment="Center"

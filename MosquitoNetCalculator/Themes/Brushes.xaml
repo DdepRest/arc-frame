@@ -87,4 +87,52 @@
     <SolidColorBrush x:Key="TotalText" Color="#FFFFFF"/>
     <SolidColorBrush x:Key="TotalTextMuted" Color="#A0A0A0"/>
 
+    <!-- ═══════════════════════════════════════════════════════ -->
+    <!-- СЛУЖЕБНЫЕ ТОКЕНЫ (не переключаются темой)              -->
+    <!-- ═══════════════════════════════════════════════════════ -->
+    <!-- Раньше эти значения жили hex-литералами прямо в разметке
+         (8 скримов в MainWindow, красные точки, серая бумага в предпросмотре). -->
+    <!-- Скрим подложки оверлеев. Значение ОБНОВЛЯЕТ ThemeService при смене
+         темы (в тёмной он глубже), поэтому потребители берут его через
+         DynamicResource. -->
+    <SolidColorBrush x:Key="Scrim" Color="#80000000"/>
+    <!-- Красная точка «доступно обновление» (нав-рельс, шестерёнка титульной) -->
+    <SolidColorBrush x:Key="NotificationDot" Color="#E81123"/>
+    <!-- Кнопка закрытия окна: фон при hover и глиф на нём — стандарт Windows -->
+    <SolidColorBrush x:Key="WindowCloseHover" Color="#E81123"/>
+    <SolidColorBrush x:Key="OnWindowClose" Color="#FFFFFF"/>
+    <!-- Блеск карточки ИТОГО под курсором (тёмная подложка в обеих темах) -->
+    <SolidColorBrush x:Key="TotalSheen" Color="#33FFFFFF"/>
+    <!-- Предпросмотр печати: лист ВСЕГДА белый (это бумага), поэтому его
+         кромка и подложка приглушения не зависят от темы. -->
+    <SolidColorBrush x:Key="PreviewPageBorder" Color="#777777"/>
+    <SolidColorBrush x:Key="PreviewDimOverlay" Color="#99FFFFFF"/>
+    <SolidColorBrush x:Key="PreviewDimText" Color="#666666"/>
+
+    <!-- ── Палитра заметок (данные пользователя, не тема) ───── -->
+    <!-- Цвета текста в примечаниях: пользователь выбирает из набора,
+         поэтому это фиксированные значения в обеих темах. -->
+    <SolidColorBrush x:Key="NotesColor.Red" Color="#FF0000"/>
+    <SolidColorBrush x:Key="NotesColor.Orange" Color="#F57C00"/>
+    <SolidColorBrush x:Key="NotesColor.Amber" Color="#FFA000"/>
+    <SolidColorBrush x:Key="NotesColor.Green" Color="#388E3C"/>
+    <SolidColorBrush x:Key="NotesColor.Teal" Color="#00897B"/>
+    <SolidColorBrush x:Key="NotesColor.Blue" Color="#1976D2"/>
+    <SolidColorBrush x:Key="NotesColor.Indigo" Color="#303F9F"/>
+    <SolidColorBrush x:Key="NotesColor.Purple" Color="#7B1FA2"/>
+    <SolidColorBrush x:Key="NotesColor.Pink" Color="#C2185B"/>
+    <SolidColorBrush x:Key="NotesColor.Brown" Color="#5D4037"/>
+    <SolidColorBrush x:Key="NotesColor.Gray" Color="#757575"/>
+    <SolidColorBrush x:Key="NotesColor.Dark" Color="#212121"/>
+    <!-- «Белый» свободного цвета: глиф на белом листе, ему нужна рамка -->
+    <SolidColorBrush x:Key="NotesColor.White" Color="#FFFFFF"/>
+    <!-- Color-двойники только для свотча «любой цвет»: градиенту
+         (GradientStop.Color) нужен Color, а не Brush. Значения держим рядом,
+         чтобы пара не разъезжалась. -->
+    <Color x:Key="NotesColor.Crimson.Color">#D32F2F</Color>
+    <Color x:Key="NotesColor.Orange.Color">#F57C00</Color>
+    <Color x:Key="NotesColor.Blue.Color">#1976D2</Color>
+    <Color x:Key="NotesColor.Green.Color">#388E3C</Color>
+    <Color x:Key="NotesColor.Purple.Color">#7B1FA2</Color>
+
 </ResourceDictionary>

@@ -231,7 +231,7 @@
                 <!-- ═══════════════════════════════════════ -->
                 <Grid x:Name="OrdersOverlay" Visibility="Collapsed" Panel.ZIndex="15">
                     <!-- Backdrop -->
-                    <Border x:Name="OrdersBackdrop" Background="#80000000" Opacity="0"
+                    <Border x:Name="OrdersBackdrop" Background="{DynamicResource Scrim}" Opacity="0"
                             MouseLeftButtonDown="Backdrop_MouseLeftButtonDown" Cursor="Hand"/>
                     <!-- Content panel (slides from right) -->
                     <Border x:Name="OrdersPanel"
@@ -285,7 +285,7 @@
                 <!-- OVERLAY: ЦЕНЫ                           -->
                 <!-- ═══════════════════════════════════════ -->
                 <Grid x:Name="PricesOverlay" Visibility="Collapsed" Panel.ZIndex="15">
-                    <Border x:Name="PricesBackdrop" Background="#80000000" Opacity="0"
+                    <Border x:Name="PricesBackdrop" Background="{DynamicResource Scrim}" Opacity="0"
                             MouseLeftButtonDown="Backdrop_MouseLeftButtonDown" Cursor="Hand"/>
                     <Border x:Name="PricesPanel"
                             Background="{DynamicResource Surface}"
@@ -321,7 +321,7 @@
                 <!-- OVERLAY: ОБНОВЛЕНИЯ                     -->
                 <!-- ═══════════════════════════════════════ -->
                 <Grid x:Name="UpdatesOverlay" Visibility="Collapsed" Panel.ZIndex="15">
-                    <Border x:Name="UpdatesBackdrop" Background="#80000000" Opacity="0"
+                    <Border x:Name="UpdatesBackdrop" Background="{DynamicResource Scrim}" Opacity="0"
                             MouseLeftButtonDown="Backdrop_MouseLeftButtonDown" Cursor="Hand"/>
                     <Border x:Name="UpdatesPanel"
                             Background="{DynamicResource Surface}"
@@ -357,7 +357,7 @@
                 <!-- OVERLAY: АДМИН-ПАНЕЛЬ                  -->
                 <!-- ═══════════════════════════════════════ -->
                 <Grid x:Name="AdminOverlay" Visibility="Collapsed" Panel.ZIndex="15">
-                    <Border x:Name="AdminBackdrop" Background="#80000000" Opacity="0"
+                    <Border x:Name="AdminBackdrop" Background="{DynamicResource Scrim}" Opacity="0"
                             MouseLeftButtonDown="Backdrop_MouseLeftButtonDown" Cursor="Hand"/>
                     <Border x:Name="AdminPanel"
                             Background="{DynamicResource Surface}"
@@ -393,7 +393,7 @@
                 <!-- OVERLAY: ОТКОСЫ                        -->
                 <!-- ═══════════════════════════════════════ -->
                 <Grid x:Name="SlopeOverlay" Visibility="Collapsed" Panel.ZIndex="15">
-                    <Border x:Name="SlopeBackdrop" Background="#80000000" Opacity="0"
+                    <Border x:Name="SlopeBackdrop" Background="{DynamicResource Scrim}" Opacity="0"
                             MouseLeftButtonDown="BackdropSlope_MouseLeftButtonDown" Cursor="Hand"/>
                     <Border x:Name="SlopePanel"
                             Background="{DynamicResource Surface}"
@@ -431,7 +431,7 @@
                 <!-- OVERLAY: AI ASSISTANT                  -->
                 <!-- ══════════════════════════════════════════════════ -->
                 <Grid x:Name="AiOverlay" Visibility="Collapsed" Panel.ZIndex="15">
-                    <Border x:Name="AiBackdrop" Background="#80000000" Opacity="0"
+                    <Border x:Name="AiBackdrop" Background="{DynamicResource Scrim}" Opacity="0"
                             MouseLeftButtonDown="Backdrop_MouseLeftButtonDown" Cursor="Hand"/>
                     <Border x:Name="AiPanel"
                             Background="{DynamicResource Surface}"
@@ -475,7 +475,7 @@
                 <!-- OVERLAY: ДАННЫЕ ЗАКАЗА (sidebar)        -->
                 <!-- ═══════════════════════════════════════ -->
                 <Grid x:Name="SidebarOverlay" Visibility="Collapsed" Panel.ZIndex="15">
-                    <Border x:Name="SidebarBackdrop" Background="#80000000" Opacity="0"
+                    <Border x:Name="SidebarBackdrop" Background="{DynamicResource Scrim}" Opacity="0"
                             MouseLeftButtonDown="Backdrop_MouseLeftButtonDown" Cursor="Hand"/>
                     <Border x:Name="SidebarPanel"
                             Background="{DynamicResource Surface}"
@@ -511,7 +511,7 @@
                 <!-- OVERLAY: ПЕЧАТЬ                        -->
                 <!-- ═══════════════════════════════════════ -->
                 <Grid x:Name="PrintOverlay" Visibility="Collapsed" Panel.ZIndex="15">
-                    <Border x:Name="PrintBackdrop" Background="#80000000" Opacity="0"
+                    <Border x:Name="PrintBackdrop" Background="{DynamicResource Scrim}" Opacity="0"
                             MouseLeftButtonDown="Backdrop_MouseLeftButtonDown" Cursor="Hand"/>
                     <Border x:Name="PrintPanel"
                             Background="{DynamicResource Surface}"
@@ -682,7 +682,7 @@
                                 <Grid Grid.Column="0" Width="30" Height="28">
                                     <TextBlock x:Name="NavIconUpdates" Text="&#xE81C;"
                                                FontSize="20" HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                                    <Ellipse x:Name="NavUpdatesDot" Width="8" Height="8" Fill="#E81123"
+                                    <Ellipse x:Name="NavUpdatesDot" Width="8" Height="8" Fill="{DynamicResource NotificationDot}"
                                              HorizontalAlignment="Right" VerticalAlignment="Top"
                                              Margin="0,2,-4,0" Visibility="Collapsed"
                                              ToolTip="Доступна новая версия!"/>

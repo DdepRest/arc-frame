@@ -247,6 +247,9 @@ namespace MosquitoNetCalculator.Services
             ["AppBg"]        = "#F5F5F7",
             ["SidebarBg"]     = "#FFFFFF",
             ["Surface"]       = "#FFFFFF",
+            // Скрим подложки оверлеев (см. Brushes.xaml): в светлой теме мягче,
+            // чтобы панель отделялась без «чёрного провала».
+            ["Scrim"]        = "#80000000",
             ["QuickBg"]       = "#FCFCFD",
             ["RowHover"]      = "#F0F0F5",
             ["RowAlt"]        = "#FAFAFD",
@@ -354,6 +357,9 @@ namespace MosquitoNetCalculator.Services
             ["SidebarBg"]    = "#17181C",
             ["Surface"]       = "#1E2025",
             ["QuickBg"]       = "#23262C",
+            // Скрим глубже, чем в светлой теме: тёмная подложка уже тёмная,
+            // панель должна читаться как отдельный слой.
+            ["Scrim"]        = "#8C000000",
             ["RowAlt"]        = "#17181C",
             ["RowHover"]      = "#22252B",
             ["RowAltHover"]   = "#22252B",

@@ -395,7 +395,7 @@
                         </Border>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsMouseOver" Value="True">
-                                <Setter Property="Foreground" Value="#FFFFFF"/>
+                                <Setter Property="Foreground" Value="{DynamicResource OnDanger}"/>
                                 <Setter TargetName="HoverOverlay" Property="Opacity" Value="1"/>
                             </Trigger>
                         </ControlTemplate.Triggers>

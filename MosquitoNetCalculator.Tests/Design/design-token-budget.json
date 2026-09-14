@@ -80,7 +80,7 @@
   },
   "totals": {
     "_comment": "Суммарные бюджеты для категорий, где разбивка по файлам ничего не даёт.",
-    "rawHexColorsOutsideColorLayer": 36,
+    "rawHexColorsOutsideColorLayer": 0,
     "rawAnimationDurationsXaml": 46,
     "rawAnimationDurationsCodeMs": 42,
     "subElevenOrFractionalFontSizes": 98,
