@@ -97,8 +97,11 @@
                 </StackPanel>
                 </Border>
 
+                <!-- ДОПОЛНИТЕЛЬНОЕ КП (UserControl) -->
+                <controls:AdditionalKpsControl x:Name="CardAdditionalKp" Margin="0,0,0,8"/>
+
                 <!-- ПРИМЕЧАНИЯ Card -->
-                <Border x:Name="CardNotes" Background="{DynamicResource SectionBg}" CornerRadius="8" Padding="12" Margin="0,0,0,8" Opacity="0">
+                <Border x:Name="CardNotes" Background="{DynamicResource SectionBg}" CornerRadius="8" Padding="12" Margin="0,0,0,0" Opacity="0">
                     <StackPanel>
                         <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
                             <TextBlock Style="{DynamicResource FluentIconSection}" Text="&#xE70B;"/>
@@ -166,9 +169,6 @@
                         </StackPanel>
                     </StackPanel>
                 </Border>
-
-                <!-- ДОПОЛНИТЕЛЬНОЕ КП (UserControl) -->
-                <controls:AdditionalKpsControl x:Name="CardAdditionalKp"/>
             </StackPanel>
     </ScrollViewer>
 </Border>

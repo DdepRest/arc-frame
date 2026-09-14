@@ -36,6 +36,20 @@ namespace MosquitoNetCalculator.Controls
             return view;
         }
 
+        // ─── Чипы-фильтры: взаимоисключающая логика выбора ───────────
+
+        /// <summary>
+        /// Какой чип должен быть активен после клика. Ровно один всегда:
+        /// повторный клик по активному чипу-типу (или клик по «Все»)
+        /// возвращает «Все» (пустая строка); клик по неактивному чипу
+        /// выбирает его. Чистая функция — покрыта юнит-тестами.
+        /// </summary>
+        public static string ResolveChipSelection(string clickedChip, string activeChip)
+        {
+            if (clickedChip == "Все") return "";
+            return clickedChip == activeChip ? "" : clickedChip;
+        }
+
         // ─── Фильтр: чип типа + поисковый запрос ────────────────────────────
 
         /// <summary>

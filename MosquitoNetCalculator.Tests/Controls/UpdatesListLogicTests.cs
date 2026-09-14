@@ -147,6 +147,20 @@ namespace MosquitoNetCalculator.Tests.Controls
             Assert.Equal(string.Empty, UpdatesListLogic.BuildCopyText(null));
         }
 
+        // ─── ResolveChipSelection (v3.51.1: баг «оба чипа активны») ───
+
+        [Theory]
+        [InlineData("Все", "", "")]           // клик по «Все» — без фильтра
+        [InlineData("Все", "Новинка", "")]    // клик по «Все» снимает тип
+        [InlineData("Новинка", "", "Новинка")]
+        [InlineData("Новинка", "Улучшение", "Новинка")]
+        [InlineData("Новинка", "Новинка", "")]  // повторный клик — снять
+        [InlineData("Исправление", "Исправление", "")]
+        public void ResolveChipSelection_Exclusive(string clicked, string active, string expected)
+        {
+            Assert.Equal(expected, UpdatesListLogic.ResolveChipSelection(clicked, active));
+        }
+
         // ─── IsMyVersionConverter ───────────────────────────────────────
 
         [Fact]

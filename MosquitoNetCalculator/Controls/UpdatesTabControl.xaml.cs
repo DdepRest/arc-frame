@@ -8,6 +8,7 @@ using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
 using System.Windows.Data;
 using System.Windows.Input;
+using System.Windows.Threading;
 using MosquitoNetCalculator.Models;
 using MosquitoNetCalculator.Services;
 
@@ -79,7 +80,9 @@ namespace MosquitoNetCalculator.Controls
         // ════════════════════════════════════════════════════════════════════
 
         private ListCollectionView? _view;
-        private bool _filterIsProgrammatic;
+        private string _activeChip = "";          // "" = «Все»
+        private DispatcherOperation? _pendingFilterRefresh;
+        private DispatcherOperation? _searchDebounce;
 
         protected override void OnInitialized(EventArgs e)
         {
@@ -94,29 +97,21 @@ namespace MosquitoNetCalculator.Controls
 
             _view = UpdatesListLogic.ConfigureView(updates);
             _view.Filter = o => ApplyFilter(o);
+            // Синхронизировать чипы с фактическим состоянием (дефолт «Все»).
+            SyncChipChecks();
         }
+
+        private Func<UpdateItem, bool>? _filterPredicateCache;
 
         private bool ApplyFilter(object o)
         {
             if (o is not UpdateItem item || _boundWindow?.Updates == null) return false;
 
-            string type = ActiveTypeFilter();
-            string query = TxtUpdatesSearch?.Text ?? string.Empty;
-            bool matches = UpdatesListLogic.BuildPredicate(type, query)(item);
-
-            // Пока фильтр/поиск активен — отфильтрованные карточки раскрыты,
-            // иначе поиск по свёрнутым телам нечитаем.
-            if (matches && (type.Length > 0 || query.Trim().Length > 0))
-                item.IsExpanded = true;
+            // Предикат строится ОДИН раз на изменение фильтра (кэш), а не на
+            // каждый элемент — иначе на 65 карточек × Refresh создаётся 65
+            // замыканий и проседает UI.
+            bool matches = (_filterPredicateCache ?? UpdatesListLogic.BuildPredicate("", ""))(item);
             return matches;
-        }
-
-        private string ActiveTypeFilter()
-        {
-            if (ChipFilterNovelty?.IsChecked == true) return "Новинка";
-            if (ChipFilterImprovement?.IsChecked == true) return "Улучшение";
-            if (ChipFilterFix?.IsChecked == true) return "Исправление";
-            return string.Empty;
         }
 
         private void RefreshFilter()
@@ -124,38 +119,57 @@ namespace MosquitoNetCalculator.Controls
             if (_view == null) ConfigureCollectionView();
             if (_view == null) return;
 
-            _view.Refresh();
+            string query = TxtUpdatesSearch?.Text ?? string.Empty;
+            _filterPredicateCache = UpdatesListLogic.BuildPredicate(_activeChip, query);
 
-            var updates = _boundWindow?.Updates;
-            int total = updates?.Count ?? 0;
-            int visible = _view.Count;
-            TxtUpdatesCount.Text = UpdatesListLogic.CountText(visible, total);
-            UpdatesEmptyState.Visibility = visible == 0 && total > 0
-                ? Visibility.Visible : Visibility.Collapsed;
+            // Раскрытие совпадений — ПОСЛЕ фильтрации (не в предикате):
+            // предикат вызывается на каждый элемент во время Refresh, дёргать
+            // там INPC (IsExpanded) — ре-entrant и тормозит. Отложенный
+            // Dispatcher-проход делает это один раз по готовому представлению.
+            _pendingFilterRefresh?.Abort();
+            _pendingFilterRefresh = Dispatcher.BeginInvoke(new Action(() =>
+            {
+                _pendingFilterRefresh = null;
+                if (_view == null) return;
+
+                bool filterActive = _activeChip.Length > 0 || query.Trim().Length > 0;
+                if (filterActive)
+                    foreach (UpdateItem item in _view)
+                        item.IsExpanded = true;
+
+                int total = _boundWindow?.Updates?.Count ?? 0;
+                int visible = _view.Count;
+                TxtUpdatesCount.Text = UpdatesListLogic.CountText(visible, total);
+                UpdatesEmptyState.Visibility = visible == 0 && total > 0
+                    ? Visibility.Visible : Visibility.Collapsed;
+            }), System.Windows.Threading.DispatcherPriority.Background);
+
+            _view.Refresh();
         }
 
         private void ChipTypeFilter_Click(object sender, RoutedEventArgs e)
         {
-            if (_filterIsProgrammatic) return;
-
-            // Чипы — взаимоисключающие: клик по активному чипу снимает его
-            // («Все» снова активно). IsChecked прямо в обработчике не вернуть,
-            // поэтому снимаем через Dispatcher.
+            // v3.51.1: взаимоисключающие чипы через чистую ResolveChipSelection.
+            // Раньше клик по «Все» при активном типе не снимал тип (оба checked,
+            // фильтр молча оставался типом) — вид на скриншоте владельца.
             var clicked = (ToggleButton)sender;
-            if (clicked.IsChecked != true)
-            {
-                _filterIsProgrammatic = true;
-                ChipFilterAll.IsChecked = true;
-                _filterIsProgrammatic = false;
-            }
-            else if (!ReferenceEquals(clicked, ChipFilterAll))
-            {
-                _filterIsProgrammatic = true;
-                ChipFilterAll.IsChecked = false;
-                _filterIsProgrammatic = false;
-            }
+            string clickedName = ReferenceEquals(clicked, ChipFilterAll) ? "Все"
+                : ReferenceEquals(clicked, ChipFilterNovelty) ? "Новинка"
+                : ReferenceEquals(clicked, ChipFilterImprovement) ? "Улучшение"
+                : "Исправление";
 
+            _activeChip = UpdatesListLogic.ResolveChipSelection(clickedName, _activeChip);
+            SyncChipChecks();
             RefreshFilter();
+        }
+
+        /// <summary>Приводит IsChecked чипов к _activeChip (ровно один активен).</summary>
+        private void SyncChipChecks()
+        {
+            ChipFilterAll.IsChecked = _activeChip.Length == 0;
+            ChipFilterNovelty.IsChecked = _activeChip == "Новинка";
+            ChipFilterImprovement.IsChecked = _activeChip == "Улучшение";
+            ChipFilterFix.IsChecked = _activeChip == "Исправление";
         }
 
         private void TxtUpdatesSearch_TextChanged(object sender, TextChangedEventArgs e)
@@ -164,7 +178,12 @@ namespace MosquitoNetCalculator.Controls
                 ? Visibility.Visible : Visibility.Collapsed;
             BtnClearUpdatesSearch.Visibility = TxtUpdatesSearch.Text.Length == 0
                 ? Visibility.Collapsed : Visibility.Visible;
-            RefreshFilter();
+
+            // Debounce набора: Refresh на каждый символ перерисовывает весь
+            // список; 150 мс после последнего нажатия — незаметно и плавно.
+            _searchDebounce?.Abort();
+            _searchDebounce = Dispatcher.BeginInvoke(RefreshFilter,
+                System.Windows.Threading.DispatcherPriority.Background);
         }
 
         private void BtnClearUpdatesSearch_Click(object sender, RoutedEventArgs e)
