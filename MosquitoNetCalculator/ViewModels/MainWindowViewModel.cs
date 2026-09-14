@@ -38,7 +38,9 @@ namespace MosquitoNetCalculator.ViewModels
 
         public MainWindowViewModel()
         {
-            foreach (var entry in UpdateLog.AllNewestFirst())
+            // v3.51: первые 5 карточек «Истории обновлений» раскрыты —
+            // правило по умолчанию живёт в UpdatesListLogic.DefaultExpandedCards.
+            foreach (var entry in UpdateLog.AllNewestFirst(Controls.UpdatesListLogic.DefaultExpandedCards))
                 Updates.Add(entry);
         }
 

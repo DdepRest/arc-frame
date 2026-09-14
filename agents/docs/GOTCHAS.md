@@ -507,6 +507,8 @@ InstallationSurcharge = (od.InstallationSurcharge > 0 && od.InstallationMode != 
 ---
 
 ## Last verified
+2026-09-14 (v3.51.0) — auto-synced from csproj (sync-version.ps1, CONTROL#13).
+
 2026-09-11 (v3.50.0) — auto-synced from csproj (sync-version.ps1, CONTROL#13).
 
 2026-09-06 (v3.49.0) — auto-synced from csproj (sync-version.ps1, CONTROL#13).

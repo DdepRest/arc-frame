@@ -626,6 +626,12 @@ namespace MosquitoNetCalculator
         private void NavOrders_Click(object s, ExecutedRoutedEventArgs e)     { NavButton_Click(NavBtnOrders, new RoutedEventArgs()); }
         private void NavPrices_Click(object s, ExecutedRoutedEventArgs e)     { NavButton_Click(NavBtnPrices, new RoutedEventArgs()); }
         private void NavUpdates_Click(object s, ExecutedRoutedEventArgs e)    { NavButton_Click(NavBtnUpdates, new RoutedEventArgs()); }
+
+        /// <summary>
+        /// v3.51: программное открытие вкладки «Обновления» — переход
+        /// «Вся история →» из окна «Что нового» после авто-обновления.
+        /// </summary>
+        internal void OpenUpdatesTab() => NavButton_Click(NavBtnUpdates, new RoutedEventArgs());
         private void NavPrint_Click(object s, ExecutedRoutedEventArgs e)      { NavButton_Click(NavBtnPrint, new RoutedEventArgs()); }
 
 

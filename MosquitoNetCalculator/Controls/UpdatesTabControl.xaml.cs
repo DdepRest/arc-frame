@@ -1,9 +1,14 @@
 using System;
 using System.Collections.Specialized;
 using System.ComponentModel;
+using System.Linq;
 using System.Text;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Controls.Primitives;
+using System.Windows.Data;
+using System.Windows.Input;
+using MosquitoNetCalculator.Models;
 using MosquitoNetCalculator.Services;
 
 namespace MosquitoNetCalculator.Controls
@@ -30,6 +35,7 @@ namespace MosquitoNetCalculator.Controls
             UnsubscribeFromCollection();
             _boundWindow = DataContext as MainWindow;
             SubscribeToCollection();
+            ConfigureCollectionView();
             UpdateCount();
         }
 
@@ -47,31 +53,155 @@ namespace MosquitoNetCalculator.Controls
             _boundCollection = null;
         }
 
-        private void OnUpdatesChanged(object? sender, NotifyCollectionChangedEventArgs e) => UpdateCount();
+        private void OnUpdatesChanged(object? sender, NotifyCollectionChangedEventArgs e)
+        {
+            UpdateCount();
+            if (e.Action == NotifyCollectionChangedAction.Add && _view != null)
+            {
+                // Runtime-добавление новой версии (AddNewUpdate): новая карточка
+                // раскрыта, правило «первые 5» не пересчитываем — старые карточки
+                // не должны дёргаться.
+                foreach (UpdateItem item in e.NewItems!.OfType<UpdateItem>())
+                    item.IsExpanded = true;
+            }
+        }
 
         private void UpdateCount()
         {
             if (TxtUpdatesCount == null) return;
-            int count = _boundWindow?.Updates?.Count ?? 0;
-            TxtUpdatesCount.Text = CountText(count);
+            int total = _boundWindow?.Updates?.Count ?? 0;
+            TxtUpdatesCount.Text = UpdatesListLogic.ClassicCountText(total);
         }
 
-        /// <summary>
-        /// Русская плюрализация: 1 версия, 2-4 версии, 5+ версий
-        /// (с учётом особой формы 11-14: 11 версий, 12 версий, …)
-        /// </summary>
-        private static string CountText(int count)
+        // ════════════════════════════════════════════════════════════════════
+        // v3.51: фильтры (чипы типа + поиск), счётчик «N из M», свёрнутые
+        // карточки, копирование и «Наверх». Чистая логика — UpdatesListLogic.
+        // ════════════════════════════════════════════════════════════════════
+
+        private ListCollectionView? _view;
+        private bool _filterIsProgrammatic;
+
+        protected override void OnInitialized(EventArgs e)
         {
-            int rem10 = count % 10;
-            int rem100 = count % 100;
-            if (rem100 is >= 11 and <= 14) return $"{count} версий";
-            return rem10 switch
-            {
-                1 => $"{count} версия",
-                2 or 3 or 4 => $"{count} версии",
-                _ => $"{count} версий"
-            };
+            base.OnInitialized(e);
+            ConfigureCollectionView();
         }
+
+        private void ConfigureCollectionView()
+        {
+            var updates = _boundWindow?.Updates;
+            if (updates == null) return;
+
+            _view = UpdatesListLogic.ConfigureView(updates);
+            _view.Filter = o => ApplyFilter(o);
+        }
+
+        private bool ApplyFilter(object o)
+        {
+            if (o is not UpdateItem item || _boundWindow?.Updates == null) return false;
+
+            string type = ActiveTypeFilter();
+            string query = TxtUpdatesSearch?.Text ?? string.Empty;
+            bool matches = UpdatesListLogic.BuildPredicate(type, query)(item);
+
+            // Пока фильтр/поиск активен — отфильтрованные карточки раскрыты,
+            // иначе поиск по свёрнутым телам нечитаем.
+            if (matches && (type.Length > 0 || query.Trim().Length > 0))
+                item.IsExpanded = true;
+            return matches;
+        }
+
+        private string ActiveTypeFilter()
+        {
+            if (ChipFilterNovelty?.IsChecked == true) return "Новинка";
+            if (ChipFilterImprovement?.IsChecked == true) return "Улучшение";
+            if (ChipFilterFix?.IsChecked == true) return "Исправление";
+            return string.Empty;
+        }
+
+        private void RefreshFilter()
+        {
+            if (_view == null) ConfigureCollectionView();
+            if (_view == null) return;
+
+            _view.Refresh();
+
+            var updates = _boundWindow?.Updates;
+            int total = updates?.Count ?? 0;
+            int visible = _view.Count;
+            TxtUpdatesCount.Text = UpdatesListLogic.CountText(visible, total);
+            UpdatesEmptyState.Visibility = visible == 0 && total > 0
+                ? Visibility.Visible : Visibility.Collapsed;
+        }
+
+        private void ChipTypeFilter_Click(object sender, RoutedEventArgs e)
+        {
+            if (_filterIsProgrammatic) return;
+
+            // Чипы — взаимоисключающие: клик по активному чипу снимает его
+            // («Все» снова активно). IsChecked прямо в обработчике не вернуть,
+            // поэтому снимаем через Dispatcher.
+            var clicked = (ToggleButton)sender;
+            if (clicked.IsChecked != true)
+            {
+                _filterIsProgrammatic = true;
+                ChipFilterAll.IsChecked = true;
+                _filterIsProgrammatic = false;
+            }
+            else if (!ReferenceEquals(clicked, ChipFilterAll))
+            {
+                _filterIsProgrammatic = true;
+                ChipFilterAll.IsChecked = false;
+                _filterIsProgrammatic = false;
+            }
+
+            RefreshFilter();
+        }
+
+        private void TxtUpdatesSearch_TextChanged(object sender, TextChangedEventArgs e)
+        {
+            UpdatesSearchPlaceholder.Visibility = TxtUpdatesSearch.Text.Length == 0
+                ? Visibility.Visible : Visibility.Collapsed;
+            BtnClearUpdatesSearch.Visibility = TxtUpdatesSearch.Text.Length == 0
+                ? Visibility.Collapsed : Visibility.Visible;
+            RefreshFilter();
+        }
+
+        private void BtnClearUpdatesSearch_Click(object sender, RoutedEventArgs e)
+        {
+            TxtUpdatesSearch.Clear();
+            TxtUpdatesSearch.Focus();
+        }
+
+        private void CardHeader_Click(object sender, MouseButtonEventArgs e)
+        {
+            if ((sender as FrameworkElement)?.DataContext is UpdateItem item)
+                item.IsExpanded = !item.IsExpanded;
+        }
+
+        private void CopyCard_Click(object sender, RoutedEventArgs e)
+        {
+            if ((sender as FrameworkElement)?.DataContext is UpdateItem item)
+            {
+                try { Clipboard.SetText(UpdatesListLogic.BuildCopyText(item)); }
+                catch (Exception ex) { System.Diagnostics.Debug.WriteLine($"[Updates] clipboard failed: {ex}"); }
+            }
+        }
+
+        private void BtnScrollTop_Click(object sender, RoutedEventArgs e)
+        {
+            UpdatesScroll?.ScrollToHome();
+        }
+
+        private void UpdatesScroll_ScrollChanged(object sender, ScrollChangedEventArgs e)
+        {
+            if (BtnScrollTop == null) return;
+            BtnScrollTop.Visibility = e.VerticalOffset > UpdatesScroll.ViewportHeight
+                ? Visibility.Visible : Visibility.Collapsed;
+        }
+
+        // ════════════════════════════════════════════════════════════════════
+        // Диагностика связи
 
         // ════════════════════════════════════════════════════════════════════
         // Диагностика связи
@@ -109,7 +239,7 @@ namespace MosquitoNetCalculator.Controls
         private static string UserFacingProbeDetail(UpdateManifestClient.ManifestProbe probe)
         {
             if (probe.Ok)
-                return $"доступен ({probe.ElapsedMs} мс)";
+                return $"работает, {probe.ElapsedMs} мс";
             if (probe.Detail.Contains("таймаут", StringComparison.OrdinalIgnoreCase))
                 return "нет ответа вовремя";
             if (probe.Detail.StartsWith("HTTP ", StringComparison.OrdinalIgnoreCase))
@@ -117,39 +247,50 @@ namespace MosquitoNetCalculator.Controls
             return "нет связи";
         }
 
+        /// <summary>
+        /// v3.51: текст диагностики выровнен по колонкам — короткое имя канала,
+        /// затем точка-статус. Длинные канцелярские подписи («Основной способ
+        /// связи») переносились на 2-3 строки и сливались в кашу.
+        /// </summary>
         private static string BuildDiagnosticsText(
             UpdateManifestClient.ManifestProbe raw,
             UpdateManifestClient.ManifestProbe api,
             UpdateManifestClient.ManifestProbe jsDelivr)
         {
-            static string Mark(UpdateManifestClient.ManifestProbe p) => p.Ok ? "✓" : "✗";
+            static string Line(string channel, UpdateManifestClient.ManifestProbe p)
+            {
+                string mark = p.Ok ? "✓" : "✗";
+                return $"{mark} {channel}: {UserFacingProbeDetail(p)}";
+            }
 
             var sb = new StringBuilder();
-            sb.AppendLine($"Проверка каналов обновлений — {DateTime.Now:HH:mm, dd.MM.yyyy}");
+            sb.AppendLine($"Проверка каналов — {DateTime.Now:HH:mm, dd.MM.yyyy}");
             sb.AppendLine();
-            sb.AppendLine($"{Mark(raw)} Основной способ связи — {UserFacingProbeDetail(raw)}");
-            sb.AppendLine($"{Mark(api)} Запасной способ связи — {UserFacingProbeDetail(api)}");
-            sb.AppendLine($"{Mark(jsDelivr)} Дополнительный способ связи — {UserFacingProbeDetail(jsDelivr)}");
+            sb.AppendLine(Line("Основной", raw));
+            sb.AppendLine(Line("Запасной", api));
+            sb.AppendLine(Line("Дополн. (jsDelivr)", jsDelivr));
+            sb.AppendLine();
+            sb.AppendLine("— — — — — — — — — — — —");
             sb.AppendLine();
 
             if (raw.Ok)
             {
-                sb.AppendLine("Вывод: проверка обновлений работает.");
+                sb.AppendLine("Проверка обновлений работает.");
             }
             else if (api.Ok)
             {
-                sb.AppendLine("Вывод: основной способ связи недоступен, но запасной работает — " +
+                sb.AppendLine("Основной канал недоступен, но запасной работает — " +
                               "обновления доступны.");
             }
             else if (jsDelivr.Ok)
             {
-                sb.AppendLine("Вывод: основные способы связи недоступны, но дополнительный работает — " +
-                              "обновления доступны. Если установка не начнётся, попробуйте подключение " +
-                              "через другую сеть или обратитесь к ответственному за установку.");
+                sb.AppendLine("Основные каналы недоступны, но дополнительный работает — " +
+                              "обновления доступны. Если установка не начнётся, " +
+                              "попробуйте другую сеть или VPN.");
             }
             else
             {
-                sb.AppendLine("Вывод: ни один способ связи недоступен — проверить обновления не удалось. " +
+                sb.AppendLine("Ни один канал недоступен — проверить обновления не удалось. " +
                               "Проверьте интернет-соединение и попробуйте снова.");
             }
 

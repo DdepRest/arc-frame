@@ -233,6 +233,14 @@ namespace MosquitoNetCalculator.Services
         //   L2  QuickBg    #FCFCFD  — interactive cards
         //   L3  HeaderBg   #F8F8FA  — column headers
         // ─────────────────────────────────────────────────────────
+        /// <summary>Только для тестов контраста: читаемый снимок светлой палитры.</summary>
+        internal static System.Collections.Generic.Dictionary<string, string> LightColorsForTests() =>
+            new(LightColors);
+
+        /// <summary>Только для тестов контраста: читаемый снимок тёмной палитры.</summary>
+        internal static System.Collections.Generic.Dictionary<string, string> DarkColorsForTests() =>
+            new(DarkColors);
+
         private static readonly Dictionary<string, string> LightColors = new()
         {
             // Backgrounds
@@ -247,8 +255,9 @@ namespace MosquitoNetCalculator.Services
             // Row-hover/select animation targets (Color)
             ["RowHoverColor"]    = "#F0F0F5",
             ["AccentLightColor"] = "#E8F0FA",
-            // Accent — professional blue
-            ["Accent"]        = "#3878C8",
+            // Accent — professional blue. v3.51 contrast audit: #3878C8 давал
+            // 4.48:1 с белым текстом (чуть ниже AA 4.5); #3574C3 = 4.73:1.
+            ["Accent"]        = "#3574C3",
             ["AccentHover"]   = "#4A90E0",
             ["AccentPress"]   = "#2A60AA",
             ["AccentLight"]   = "#EBF3FC",
@@ -271,7 +280,9 @@ namespace MosquitoNetCalculator.Services
             ["SuccessHover"]  = "#0A6333",
             ["Danger"]        = "#C42B1C",
             ["DangerHover"]   = "#A61B10",
-            ["Warning"]       = "#D48C00",
+            // v3.51 contrast audit: #D48C00 на белой карточке = 2.78:1 —
+            // ниже non-text AA (3:1) для полосы «Исправление». #BF8000 = 3.33:1.
+            ["Warning"]       = "#BF8000",
             ["DangerLight"]   = "#FDE7E9",
             ["DangerGhostBorder"] = "#F0C6CA",
             // On-accent text
@@ -305,13 +316,16 @@ namespace MosquitoNetCalculator.Services
             ["MenuItemPressed"] = "#E8EDF5",
             // Shadow
             ["ShadowColor"]   = "#1A1A24",
-            // Badges
+            // Badges — Fg затемнён до 4.5:1+ на своём Bg (UX-07/AA; v3.51
+            // contrast audit: #3878C8 на #EBF3FC давал 4.00:1).
             ["BadgeDefaultBg"]  = "#EBF3FC",
-            ["BadgeDefaultFg"]  = "#3878C8",
+            ["BadgeDefaultFg"]  = "#2B639F",
             ["BadgeSuccessBg"]  = "#E6F5EC",
             ["BadgeSuccessFg"]  = "#0F7B3F",
             ["BadgeWarningBg"]  = "#FFF4CE",
-            ["BadgeWarningFg"]  = "#D48C00",
+            // v3.51 contrast audit: #D48C00 на #FFF4CE = 2.53:1 — ниже AA;
+            // #8F5F00 = 5.02:1 (тот же янтарный тон, читаемее).
+            ["BadgeWarningFg"]  = "#8F5F00",
             ["BadgeDangerBg"]   = "#FDE7E9",
             ["BadgeDangerFg"]   = "#C42B1C",
             ["BadgeVisionBg"]   = "#F0ECFA",
@@ -407,9 +421,10 @@ namespace MosquitoNetCalculator.Services
             ["MenuItemPressed"] = "#26384C",
             // Shadow
             ["ShadowColor"]   = "#000000",
-            // Badges
+            // Badges — Fg высветлен до 4.5:1+ на своём Bg (v3.51 contrast
+            // audit: #4EA1F7 на #26384C давал 4.43:1).
             ["BadgeDefaultBg"]  = "#26384C",
-            ["BadgeDefaultFg"]  = "#4EA1F7",
+            ["BadgeDefaultFg"]  = "#65AEF9",
             ["BadgeSuccessBg"]  = "#12291D",
             ["BadgeSuccessFg"]  = "#3ECF8E",
             ["BadgeWarningBg"]  = "#2E2415",

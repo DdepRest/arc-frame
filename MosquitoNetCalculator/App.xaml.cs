@@ -194,7 +194,7 @@ namespace MosquitoNetCalculator
                 // Если приложение обновилось с прошлого запуска — показываем
                 // список изменений, добавленных после последней виденной
                 // версии, и фиксируем текущую как виденную.
-                WhatsNewService.ShowIfNeeded(window);
+                WhatsNewService.ShowIfNeeded(window, openFullHistory: () => window.OpenUpdatesTab());
 
                 // ── Background update check (silent, non-blocking) ──
                 // Fire-and-forget after the main window is visible so

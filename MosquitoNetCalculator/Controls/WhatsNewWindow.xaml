@@ -90,6 +90,17 @@
                         Orientation="Horizontal"
                         HorizontalAlignment="Right"
                         Margin="24,20,24,20">
+                <!-- v3.51: переход в полную «Историю обновлений» -->
+                <Button x:Name="BtnOpenHistory"
+                        Content="Вся история →"
+                        Style="{DynamicResource GhostButton}"
+                        MinWidth="110"
+                        Padding="14,7"
+                        FontSize="13"
+                        Cursor="Hand"
+                        Margin="0,0,8,0"
+                        ToolTip="Открыть полную историю обновлений"
+                        Click="BtnOpenHistory_Click"/>
                 <Button x:Name="BtnOk"
                         Content="Понятно"
                         Style="{DynamicResource PrimaryButton}"

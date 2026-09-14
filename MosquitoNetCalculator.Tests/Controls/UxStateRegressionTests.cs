@@ -128,6 +128,130 @@ namespace MosquitoNetCalculator.Tests.Controls
             Assert.Contains("TriggerPrinterPrint();", previewCode);
         }
 
+        // ═══════════ v3.51: «История обновлений» — 8 улучшений ═══════════
+
+        [Fact]
+        public void UpdatesList_IsVirtualized_GroupedByYear_WithVisibleScrollbar()
+        {
+            var sourceDir = LocateSourceProject();
+            var xaml = File.ReadAllText(Path.Combine(sourceDir, "Controls", "UpdatesTabControl.xaml"));
+
+            // Идея 5: виртуализация + видимый скроллбар.
+            Assert.Contains("<VirtualizingStackPanel/>", xaml);
+            Assert.Contains("VirtualizingPanel.IsVirtualizing=\"True\"", xaml);
+            Assert.Contains("VirtualizingPanel.IsVirtualizingWhenGrouping=\"True\"", xaml);
+            Assert.Contains("VirtualizingPanel.VirtualizationMode=\"Recycling\"", xaml);
+            Assert.DoesNotContain("VerticalScrollBarVisibility=\"Hidden\"", xaml);
+            Assert.Contains("VerticalScrollBarVisibility=\"Auto\"", xaml);
+            Assert.Contains("UpdatesScroll_ScrollChanged", xaml);
+            Assert.Contains("BtnScrollTop", xaml);
+
+            // Идея 6: группы по годам.
+            Assert.Contains("ItemsControl.GroupStyle", xaml);
+            Assert.Contains("YearGroupHeaderTemplate", xaml);
+        }
+
+        [Fact]
+        public void UpdatesList_HasTypeChips_SearchAndEmptyState()
+        {
+            var sourceDir = LocateSourceProject();
+            var xaml = File.ReadAllText(Path.Combine(sourceDir, "Controls", "UpdatesTabControl.xaml"));
+            var code = File.ReadAllText(Path.Combine(sourceDir, "Controls", "UpdatesTabControl.xaml.cs"));
+
+            // Идея 3: чипы-фильтры + поиск + пустое состояние.
+            Assert.Contains("ChipFilterAll", xaml);
+            Assert.Contains("ChipFilterNovelty", xaml);
+            Assert.Contains("ChipFilterImprovement", xaml);
+            Assert.Contains("ChipFilterFix", xaml);
+            Assert.Contains("TxtUpdatesSearch_TextChanged", xaml);
+            Assert.Contains("x:Name=\"UpdatesSearchPlaceholder\"", xaml);
+            Assert.Contains("BtnClearUpdatesSearch", xaml);
+            Assert.Contains("x:Name=\"UpdatesEmptyState\"", xaml);
+            Assert.Contains("Ничего не найдено", xaml);
+
+            // Фильтр идёт через CollectionView, счётчик — «N из M».
+            Assert.Contains("ListCollectionView", code);
+            Assert.Contains("UpdatesListLogic.CountText", code);
+        }
+
+        [Fact]
+        public void UpdatesList_HasMyVersionBadge_CopyButton_AndCollapsibleCards()
+        {
+            var sourceDir = LocateSourceProject();
+            var xaml = File.ReadAllText(Path.Combine(sourceDir, "Controls", "UpdatesTabControl.xaml"));
+
+            // Идея 1: бейдж «Ваша версия» через IsMyVersionConverter.
+            Assert.Contains("Ваша версия", xaml);
+            Assert.Contains("{StaticResource IsMyVersion}", xaml);
+
+            // v3.51 hotfix (владелец): бейджи «Новейшая»/«Ваша версия» не
+            // показывались — дефолт Visibility=Collapsed был ЛОКАЛЬНЫМ
+            // атрибутом, который сильнее триггера стиля. Дефолт обязан жить
+            // в Setter стиля — запрещаем локальный Visibility на бейджах.
+            foreach (var badgeStart in FindAll(xaml, "<!-- Бейдж "))
+            {
+                int tagEnd = xaml.IndexOf(">", badgeStart, StringComparison.Ordinal);
+                string badgeTag = xaml.Substring(badgeStart, tagEnd - badgeStart + 1);
+                Assert.DoesNotContain("Visibility=\"Collapsed\"", badgeTag);
+            }
+
+            // Идея 7: копирование карточки.
+            Assert.Contains("CopyCard_Click", xaml);
+            Assert.Contains("Скопировать", xaml);
+
+            // Идея 4: компактная строка + разворот по клику.
+            Assert.Contains("CardHeader_Click", xaml);
+            Assert.Contains("{Binding IsExpanded", xaml);
+
+            // Владелец: цветная полоса статуса слева на карточке — тип версии,
+            // как в админ-панели (OfficeStatusStripeBrush → UpdateTypeBrush strong).
+            Assert.Contains("Width=\"4\"", xaml);
+            Assert.Contains("ConverterParameter=strong", xaml);
+
+            // v3.51 hotfix (владелец): заголовок не должен дублироваться —
+            // в компактной строке он скрывается, когда карточка раскрыта.
+            // Ищем устойчиво к отступам: сворачиваем пробелы и проверяем пару
+            // триггер→сеттер без учёта whitespace.
+            string noWs = System.Text.RegularExpressions.Regex.Replace(xaml, @"\s+", " ");
+            Assert.Contains(
+                "<DataTrigger Binding=\"{Binding IsExpanded}\" Value=\"True\"> <Setter Property=\"Visibility\" Value=\"Collapsed\"/> </DataTrigger>",
+                noWs);
+
+            // Идея 8: в прототипе нет line-clamp — длинные пункты остаются
+            // полными внутри развёрнутой карточки; фича осознанно не вносилась.
+        }
+
+        [Fact]
+        public void UpdatesList_CollapsedCards_DefaultFiveExpanded_SearchExpandsMatches()
+        {
+            // Идея 4 (поведение): правило «первые 5 раскрыты» живёт в модели
+            // через AllNewestFirst(expandFirst) — тот же источник, что и UI.
+            var updates = UpdateLog.AllNewestFirst(UpdatesListLogic.DefaultExpandedCards);
+
+            Assert.True(updates.Count >= 5, "Expected the real log to have at least 5 entries");
+            for (int i = 0; i < UpdatesListLogic.DefaultExpandedCards; i++)
+                Assert.True(updates[i].IsExpanded, $"Card {i} must be expanded by default");
+            for (int i = UpdatesListLogic.DefaultExpandedCards; i < updates.Count; i++)
+                Assert.False(updates[i].IsExpanded, $"Card {i} must be collapsed by default");
+        }
+
+        [Fact]
+        public void WhatsNewWindow_OpensFullHistory_OnDemand()
+        {
+            // Идея 2: дайджест после обновления уже существовал (WhatsNewService);
+            // добавлен переход «Вся история →» на вкладку «Обновления».
+            var sourceDir = LocateSourceProject();
+            var windowCode = File.ReadAllText(Path.Combine(sourceDir, "Controls", "WhatsNewWindow.xaml.cs"));
+            var windowXaml = File.ReadAllText(Path.Combine(sourceDir, "Controls", "WhatsNewWindow.xaml"));
+            var appCode = File.ReadAllText(Path.Combine(sourceDir, "App.xaml.cs"));
+            var mainCode = File.ReadAllText(Path.Combine(sourceDir, "MainWindow.xaml.cs"));
+
+            Assert.Contains("BtnOpenHistory_Click", windowXaml);
+            Assert.Contains("_openHistory?.Invoke()", windowCode);
+            Assert.Contains("openFullHistory: () => window.OpenUpdatesTab()", appCode);
+            Assert.Contains("internal void OpenUpdatesTab()", mainCode);
+        }
+
         [Fact]
         public void HistoryFilter_ReappliesAfterItemsSourceRefresh()
         {
@@ -213,6 +337,17 @@ namespace MosquitoNetCalculator.Tests.Controls
             app.Resources["StatusToBadgeBg"] = new MosquitoNetCalculator.Converters.StatusToBadgeBackgroundConverter();
             app.Resources["StatusToBadgeFg"] = new MosquitoNetCalculator.Converters.StatusToBadgeForegroundConverter();
             app.Resources["MoneyConv"] = new MosquitoNetCalculator.Converters.MoneyConverter();
+        }
+
+        /// <summary>Все индексы вхождений <paramref name="needle"/> в <paramref name="text"/>.</summary>
+        private static IEnumerable<int> FindAll(string text, string needle)
+        {
+            int idx = 0;
+            while ((idx = text.IndexOf(needle, idx, StringComparison.Ordinal)) >= 0)
+            {
+                yield return idx;
+                idx += needle.Length;
+            }
         }
 
         private static string LocateSourceProject()

@@ -46,7 +46,7 @@ namespace MosquitoNetCalculator.Services
         /// упадёт, следующий запуск не будет повторять сбой (иначе — бесконечный
         /// цикл падений при старте, т.к. вызов идёт в фатальном try App.OnStartup).
         /// </summary>
-        public static void ShowIfNeeded(Window? owner)
+        public static void ShowIfNeeded(Window? owner, Action? openFullHistory = null)
         {
             var current = UpdateService.CurrentVersion;
             var changes = GetChanges(current, AppSettingsService.LoadLastSeenVersion());
@@ -62,7 +62,7 @@ namespace MosquitoNetCalculator.Services
             // но продолжаем запуск.
             try
             {
-                var window = new WhatsNewWindow(current, changes) { Owner = owner };
+                var window = new WhatsNewWindow(current, changes, openFullHistory) { Owner = owner };
                 window.ShowDialog();
             }
             catch (Exception ex)

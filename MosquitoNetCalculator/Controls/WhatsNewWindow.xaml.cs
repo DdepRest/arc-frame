@@ -13,9 +13,12 @@ namespace MosquitoNetCalculator.Controls
     /// </summary>
     public partial class WhatsNewWindow : Window
     {
-        public WhatsNewWindow(Version version, IEnumerable<UpdateItem> changes)
+        private readonly Action? _openHistory;
+
+        public WhatsNewWindow(Version version, IEnumerable<UpdateItem> changes, Action? openHistory = null)
         {
             InitializeComponent();
+            _openHistory = openHistory;
             VersionText.Text = $"Версия {version}";
 
             var items = changes as IReadOnlyCollection<UpdateItem> ?? new List<UpdateItem>(changes);
@@ -43,6 +46,14 @@ namespace MosquitoNetCalculator.Controls
         private void BtnOk_Click(object sender, RoutedEventArgs e)
         {
             Close();
+        }
+
+        /// <summary>v3.51: «Вся история →» — закрыть дайджест и открыть
+        /// вкладку «Обновления» с полной историей.</summary>
+        private void BtnOpenHistory_Click(object sender, RoutedEventArgs e)
+        {
+            Close();
+            _openHistory?.Invoke();
         }
 
         private void Window_KeyDown(object sender, KeyEventArgs e)

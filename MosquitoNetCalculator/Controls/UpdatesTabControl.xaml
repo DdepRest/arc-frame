@@ -4,7 +4,9 @@
     <UserControl.Resources>
 
         <!-- ═══════════════════════════════════════════════════════ -->
-        <!-- КАРТОЧКА ОБНОВЛЕНИЯ — единый стиль с анимацией появления  -->
+        <!-- КАРТОЧКА ОБНОВЛЕНИЯ                                     -->
+        <!-- v3.51: без анимации Loaded — список виртуализирован,      -->
+        <!-- Storyboard переигрывался бы на каждом скролле.           -->
         <!-- ═══════════════════════════════════════════════════════ -->
         <Style x:Key="UpdateCardStyle" TargetType="Border">
             <Setter Property="Background" Value="{DynamicResource Surface}"/>
@@ -13,39 +15,53 @@
             <Setter Property="CornerRadius" Value="12"/>
             <Setter Property="Margin" Value="0,0,0,10"/>
             <Setter Property="Padding" Value="0"/>
-            <Setter Property="Opacity" Value="0"/>
-            <Setter Property="RenderTransform">
-                <Setter.Value>
-                    <TranslateTransform Y="14"/>
-                </Setter.Value>
-            </Setter>
             <Style.Triggers>
-                <EventTrigger RoutedEvent="Loaded">
-                    <BeginStoryboard>
-                        <Storyboard>
-                            <DoubleAnimation Storyboard.TargetProperty="Opacity"
-                                             From="0" To="1"
-                                             Duration="0:0:0.42"
-                                             BeginTime="0:0:0.05">
-                                <DoubleAnimation.EasingFunction>
-                                    <CubicEase EasingMode="EaseOut"/>
-                                </DoubleAnimation.EasingFunction>
-                            </DoubleAnimation>
-                            <DoubleAnimation Storyboard.TargetProperty="(RenderTransform).(TranslateTransform.Y)"
-                                             From="14" To="0"
-                                             Duration="0:0:0.42"
-                                             BeginTime="0:0:0.05">
-                                <DoubleAnimation.EasingFunction>
-                                    <CubicEase EasingMode="EaseOut"/>
-                                </DoubleAnimation.EasingFunction>
-                            </DoubleAnimation>
-                        </Storyboard>
-                    </BeginStoryboard>
-                </EventTrigger>
                 <Trigger Property="IsMouseOver" Value="True">
                     <Setter Property="Background" Value="{DynamicResource AccentLight}"/>
+                    <Setter Property="BorderBrush" Value="{DynamicResource BorderHover}"/>
                 </Trigger>
             </Style.Triggers>
+        </Style>
+
+        <!-- Чип-фильтр типа (Все / Новинки / Улучшения / Исправления).
+             Текст НЕактивного чипа — TextSecondary, не TextMuted: на ChipBg
+             (светлая #EBF3FC / тёмная #26384C) muted даёт ≈4.3:1 — ниже AA
+             для 11.5px; secondary держит ≥5.5:1 в обеих темах. -->
+        <Style x:Key="ChipToggleStyle" TargetType="ToggleButton">
+            <Setter Property="Background" Value="{DynamicResource ChipBg}"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource Border}"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="Foreground" Value="{DynamicResource TextSecondary}"/>
+            <Setter Property="FontSize" Value="11.5"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="Padding" Value="10,4"/>
+            <Setter Property="Margin" Value="0,0,6,0"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="VerticalAlignment" Value="Center"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="ToggleButton">
+                        <Border x:Name="Chrome"
+                                Background="{TemplateBinding Background}"
+                                BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="{TemplateBinding BorderThickness}"
+                                CornerRadius="12"
+                                Padding="{TemplateBinding Padding}">
+                            <ContentPresenter VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="Chrome" Property="Opacity" Value="0.85"/>
+                            </Trigger>
+                            <Trigger Property="IsChecked" Value="True">
+                                <Setter TargetName="Chrome" Property="Background" Value="{DynamicResource Accent}"/>
+                                <Setter TargetName="Chrome" Property="BorderBrush" Value="{DynamicResource Accent}"/>
+                                <Setter Property="Foreground" Value="{DynamicResource OnAccent}"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
         </Style>
 
         <!-- Bullet glyph for changes list.
@@ -67,10 +83,27 @@
             <Setter Property="TextWrapping" Value="Wrap"/>
             <Setter Property="LineHeight" Value="18"/>
         </Style>
+
+        <!-- Заголовок годовой группы («2026») — пилюля на HeaderBg:
+             структурирует список, в тёмной теме меньше «монотонной каши» -->
+        <DataTemplate x:Key="YearGroupHeaderTemplate">
+            <Border Background="{DynamicResource HeaderBg}"
+                    BorderBrush="{DynamicResource Border}"
+                    BorderThickness="1"
+                    CornerRadius="6"
+                    Padding="10,3"
+                    HorizontalAlignment="Left"
+                    Margin="2,2,0,8">
+                <TextBlock Text="{Binding Name}"
+                           FontSize="11.5" FontWeight="SemiBold"
+                           Foreground="{DynamicResource TextSecondary}"/>
+            </Border>
+        </DataTemplate>
     </UserControl.Resources>
 
     <Grid Background="{DynamicResource AppBg}">
         <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="*"/>
         </Grid.RowDefinitions>
@@ -110,7 +143,7 @@
                 </StackPanel>
             </Button>
 
-            <!-- Счётчик версий справа -->
+            <!-- Счётчик версий справа: «N версий», при фильтре «N из M версий» -->
             <Border Grid.Column="2"
                     VerticalAlignment="Center"
                     Background="{DynamicResource ChipBg}"
@@ -132,137 +165,405 @@
         </Grid>
 
         <!-- ═══════════════════════════════════════════════════════ -->
-        <!-- СПИСОК ВЕРСИЙ                                         -->
+        <!-- ФИЛЬТРЫ: чипы типа + поиск (v3.51)                     -->
         <!-- ═══════════════════════════════════════════════════════ -->
-        <ScrollViewer Grid.Row="1"
-                      VerticalScrollBarVisibility="Hidden"
-                      HorizontalScrollBarVisibility="Disabled"
-                      Padding="20,0,20,16">
-            <ItemsControl x:Name="UpdatesList"
-                          ItemsSource="{Binding Updates}">
-                <ItemsControl.ItemTemplate>
-                    <DataTemplate>
-                        <!--
-                          По рефакторингу блока «Обновления»: бейдж «Новейшая»
-                          привязан к свойству IsLatest (вычисляется runtime в
-                          UpdateLog.AllNewestFirst), а не к позиции
-                          (AlternationIndex). Это позволяет добавлять новые
-                          версии без сдвига UI-привязок старых карточек.
-                        -->
-                        <Border Style="{StaticResource UpdateCardStyle}">
-                            <StackPanel Margin="16,12,16,14">
+        <Grid Grid.Row="1" Margin="20,0,20,10">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition Width="*"/>
+            </Grid.ColumnDefinitions>
 
-                                    <!-- ─── Шапка карточки ─── -->
-                                    <Grid Margin="0,0,0,10">
+            <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center">
+                <ToggleButton x:Name="ChipFilterAll"
+                              Style="{StaticResource ChipToggleStyle}"
+                              IsChecked="True"
+                              Content="Все"
+                              ToolTip="Показать все версии"
+                              Click="ChipTypeFilter_Click"/>
+                <ToggleButton x:Name="ChipFilterNovelty"
+                              Style="{StaticResource ChipToggleStyle}"
+                              Content="Новинки"
+                              ToolTip="Только «Новинка»"
+                              Click="ChipTypeFilter_Click"/>
+                <ToggleButton x:Name="ChipFilterImprovement"
+                              Style="{StaticResource ChipToggleStyle}"
+                              Content="Улучшения"
+                              ToolTip="Только «Улучшение»"
+                              Click="ChipTypeFilter_Click"/>
+                <ToggleButton x:Name="ChipFilterFix"
+                              Style="{StaticResource ChipToggleStyle}"
+                              Content="Исправления"
+                              ToolTip="Только «Исправление»"
+                              Click="ChipTypeFilter_Click"/>
+            </StackPanel>
+
+            <Grid Grid.Column="1" MaxWidth="420" HorizontalAlignment="Right">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+                <TextBlock Grid.Column="0" Text="&#xE721;"
+                           FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets"
+                           FontSize="12" Foreground="{DynamicResource TextMuted}"
+                           VerticalAlignment="Center" Margin="0,0,6,0"/>
+                <Grid Grid.Column="1">
+                    <!-- v3.51 hotfix: фон Surface (элeвированный, а не синеватый ChipBg —
+                         в тёмной теме поле сливалось с карточками), без локального Padding:
+                         он сдвигал реальный курсор (маржа шаблона 10 + padding) относительно
+                         плейсхолдера — «палочка не в начале строки». Плейсхолдер выровнен
+                         под контент-хост шаблона (10 маржа + 1 рамка = 11). -->
+                    <TextBox x:Name="TxtUpdatesSearch"
+                             Height="28" FontSize="12"
+                             Background="{DynamicResource Surface}"
+                             BorderBrush="{DynamicResource Border}"
+                             Foreground="{DynamicResource TextPrimary}"
+                             VerticalContentAlignment="Center"
+                             TextChanged="TxtUpdatesSearch_TextChanged"
+                             ToolTip="Поиск по номеру версии или тексту изменений"/>
+                    <TextBlock x:Name="UpdatesSearchPlaceholder"
+                               Text="Поиск: версия или текст"
+                               Margin="11,0,0,0"
+                               VerticalAlignment="Center"
+                               FontSize="12"
+                               Foreground="{DynamicResource TextMuted}"
+                               IsHitTestVisible="False"/>
+                </Grid>
+                <Button x:Name="BtnClearUpdatesSearch" Grid.Column="2"
+                        Style="{DynamicResource GhostButton}"
+                        Content="&#xE711;" FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets"
+                        FontSize="10" Padding="4,2" Margin="4,0,0,0" Cursor="Hand"
+                        Visibility="Collapsed"
+                        Click="BtnClearUpdatesSearch_Click"
+                        ToolTip="Очистить поиск"/>
+            </Grid>
+        </Grid>
+
+        <!-- ═══════════════════════════════════════════════════════ -->
+        <!-- СПИСОК ВЕРСИЙ (виртуализированный, с группами по годам)  -->
+        <!-- ═══════════════════════════════════════════════════════ -->
+        <Grid Grid.Row="2">        <ScrollViewer x:Name="UpdatesScroll"
+                      VerticalScrollBarVisibility="Auto"
+                      HorizontalScrollBarVisibility="Disabled"
+                      Padding="20,0,20,16"
+                      ScrollChanged="UpdatesScroll_ScrollChanged">
+            <!-- ItemsControl — ПРЯМОЙ ребёнок ScrollViewer: обёртка в StackPanel
+                 давала бы бесконечную высоту при измерении и убивала виртуализацию. -->
+                    <ItemsControl x:Name="UpdatesList"
+                                  ItemsSource="{Binding Updates}"
+                                  KeyboardNavigation.DirectionalNavigation="Contained"
+                                  VirtualizingPanel.IsVirtualizing="True"
+                                  VirtualizingPanel.IsVirtualizingWhenGrouping="True"
+                                  VirtualizingPanel.VirtualizationMode="Recycling"
+                                  ScrollViewer.CanContentScroll="True">
+                        <ItemsControl.ItemsPanel>
+                            <ItemsPanelTemplate>
+                                <VirtualizingStackPanel/>
+                            </ItemsPanelTemplate>
+                        </ItemsControl.ItemsPanel>
+                        <ItemsControl.GroupStyle>
+                            <GroupStyle HeaderTemplate="{StaticResource YearGroupHeaderTemplate}"/>
+                        </ItemsControl.GroupStyle>
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <!--
+                                  v3.51: карточка = всегда видимая компактная строка
+                                  (тип · версия · заголовок · дата) + разворачиваемое
+                                  тело. Первые 5 карточек раскрыты (UpdatesListLogic),
+                                  остальные свёрнуты — длинная история не простыня.
+                                -->
+                                <Border Style="{StaticResource UpdateCardStyle}">
+                                    <Grid>
                                         <Grid.ColumnDefinitions>
                                             <ColumnDefinition Width="Auto"/>
                                             <ColumnDefinition Width="*"/>
-                                            <ColumnDefinition Width="Auto"/>
                                         </Grid.ColumnDefinitions>
 
-                                        <!-- Type badge -->
-                                        <Border Grid.Column="0"
-                                                VerticalAlignment="Center"
-                                                CornerRadius="7"
-                                                Padding="9,4"
-                                                Background="{Binding Type, Converter={StaticResource UpdateTypeBrush}, ConverterParameter=soft}">
-                                            <StackPanel Orientation="Horizontal">
-                                                <TextBlock Text="{Binding Type, Converter={StaticResource UpdateTypeIcon}}"
-                                                           FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets"
-                                                           FontSize="12"
-                                                           VerticalAlignment="Center"
-                                                           Foreground="{Binding Type, Converter={StaticResource UpdateTypeBrush}, ConverterParameter=fg}"
-                                                           Margin="0,0,6,0"/>
-                                                <TextBlock Text="{Binding Type}"
-                                                           FontSize="11" FontWeight="SemiBold"
-                                                           VerticalAlignment="Center"
-                                                           Foreground="{Binding Type, Converter={StaticResource UpdateTypeBrush}, ConverterParameter=fg}"/>
+                                        <!-- Цветная полоса статуса слева — тип версии
+                                             (Новинка/Улучшение/Исправление), как в админ-панели -->
+                                        <Border Grid.Column="0" Width="4" Margin="0"
+                                                Background="{Binding Type, Converter={StaticResource UpdateTypeBrush}, ConverterParameter=strong}"/>
+
+                                    <StackPanel Grid.Column="1" Margin="14,10,16,12">
+
+                                        <!-- ─── Компактная строка (клик — разворот) ─── -->
+                                        <Grid Cursor="Hand"
+                                              MouseLeftButtonUp="CardHeader_Click"
+                                              Background="Transparent">
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="Auto"/>
+                                                <ColumnDefinition Width="Auto"/>
+                                                <ColumnDefinition Width="*"/>
+                                                <ColumnDefinition Width="Auto"/>
+                                                <ColumnDefinition Width="Auto"/>
+                                            </Grid.ColumnDefinitions>
+
+                                            <!-- Бейдж типа (компактный) -->
+                                            <Border Grid.Column="0"
+                                                    VerticalAlignment="Center"
+                                                    CornerRadius="7"
+                                                    Padding="7,3"
+                                                    Background="{Binding Type, Converter={StaticResource UpdateTypeBrush}, ConverterParameter=soft}">
+                                                <StackPanel Orientation="Horizontal">
+                                                    <TextBlock Text="{Binding Type, Converter={StaticResource UpdateTypeIcon}}"
+                                                               FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets"
+                                                               FontSize="11"
+                                                               VerticalAlignment="Center"
+                                                               Foreground="{Binding Type, Converter={StaticResource UpdateTypeBrush}, ConverterParameter=fg}"/>
+                                                    <TextBlock Text="{Binding Type}"
+                                                               FontSize="10.5" FontWeight="SemiBold"
+                                                               VerticalAlignment="Center"
+                                                               Margin="5,0,0,0"
+                                                               Foreground="{Binding Type, Converter={StaticResource UpdateTypeBrush}, ConverterParameter=fg}"/>
+                                                </StackPanel>
+                                            </Border>
+
+                                            <!-- Версия -->
+                                            <TextBlock Grid.Column="1"
+                                                       Margin="10,0,0,0"
+                                                       VerticalAlignment="Center">
+                                                <Run Text="v" FontSize="11"
+                                                     Foreground="{DynamicResource TextMuted}"/><Run Text="{Binding Version, Mode=OneWay}" FontSize="13.5" FontWeight="Bold"
+                                                     Foreground="{Binding Type, Converter={StaticResource UpdateTypeBrush}, ConverterParameter=fg}"/>
+                                            </TextBlock>
+
+                                            <!-- Заголовок (обрезается). В раскрытой карточке
+                                                 скрывается — иначе заголовок видно дважды:
+                                                 здесь и крупным шрифтом в теле. -->
+                                            <TextBlock Grid.Column="2"
+                                                       Text="{Binding Title}"
+                                                       FontSize="12.5"
+                                                       Foreground="{DynamicResource TextPrimary}"
+                                                       VerticalAlignment="Center"
+                                                       Margin="10,0,10,0"
+                                                       TextTrimming="CharacterEllipsis">
+                                                <TextBlock.Style>
+                                                    <Style TargetType="TextBlock">
+                                                        <Style.Triggers>
+                                                            <DataTrigger Binding="{Binding IsExpanded}" Value="True">
+                                                                <Setter Property="Visibility" Value="Collapsed"/>
+                                                            </DataTrigger>
+                                                        </Style.Triggers>
+                                                    </Style>
+                                                </TextBlock.Style>
+                                            </TextBlock>
+
+                                            <!-- Дата -->
+                                            <TextBlock Grid.Column="3"
+                                                       Text="{Binding Date, Converter={StaticResource RussianDateConv}}"
+                                                       FontSize="11"
+                                                       Foreground="{DynamicResource TextMuted}"
+                                                       VerticalAlignment="Center"/>
+
+                                            <!-- Шеврон разворота -->
+                                            <TextBlock Grid.Column="4"
+                                                       Text="&#xE70D;"
+                                                       FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets"
+                                                       FontSize="11"
+                                                       Foreground="{DynamicResource TextMuted}"
+                                                       VerticalAlignment="Center"
+                                                       Margin="10,0,0,0"
+                                                       RenderTransformOrigin="0.5,0.5">
+                                                <TextBlock.RenderTransform>
+                                                    <RotateTransform/>
+                                                </TextBlock.RenderTransform>
+                                                <TextBlock.Style>
+                                                    <Style TargetType="TextBlock">
+                                                        <Style.Triggers>
+                                                            <DataTrigger Binding="{Binding IsExpanded}" Value="True">
+                                                                <Setter Property="RenderTransform">
+                                                                    <Setter.Value>
+                                                                        <RotateTransform Angle="180"/>
+                                                                    </Setter.Value>
+                                                                </Setter>
+                                                            </DataTrigger>
+                                                        </Style.Triggers>
+                                                    </Style>
+                                                </TextBlock.Style>
+                                            </TextBlock>
+                                        </Grid>
+
+                                        <!-- ─── Развёрнутое тело ─── -->
+                                        <StackPanel Visibility="{Binding IsExpanded, Converter={StaticResource BoolToVis}}"
+                                                    Margin="0,10,0,0">
+                                            <!-- Заголовок полностью -->
+                                            <TextBlock Text="{Binding Title}"
+                                                       FontSize="14.5" FontWeight="SemiBold"
+                                                       Foreground="{DynamicResource TextPrimary}"
+                                                       TextWrapping="Wrap"
+                                                       LineHeight="20"
+                                                       Margin="0,0,0,10"/>
+
+                                            <!-- Бейджи «Новейшая» и «Ваша версия» -->
+                                            <StackPanel Orientation="Horizontal" Margin="0,0,0,10">
+                                                <!-- Бейдж «Новейшая» — property-based, через IsLatest.
+                                                     ВАЖНО: дефолт Collapsed — ТОЛЬКО через Setter стиля.
+                                                     Локальный атрибут Visibility на Border сильнее
+                                                     триггера стиля — бейдж не появился бы никогда. -->
+                                                <Border CornerRadius="7"
+                                                        Padding="9,4"
+                                                        Background="{DynamicResource AccentLight}"
+                                                        VerticalAlignment="Center"
+                                                        HorizontalAlignment="Left">
+                                                    <Border.Style>
+                                                        <Style TargetType="Border">
+                                                            <Setter Property="Visibility" Value="Collapsed"/>
+                                                            <Style.Triggers>
+                                                                <DataTrigger Binding="{Binding IsLatest}" Value="True">
+                                                                    <Setter Property="Visibility" Value="Visible"/>
+                                                                </DataTrigger>
+                                                            </Style.Triggers>
+                                                        </Style>
+                                                    </Border.Style>
+                                                    <StackPanel Orientation="Horizontal">
+                                                        <TextBlock Text="&#xE735;"
+                                                                   FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets"
+                                                                   FontSize="11"
+                                                                   Foreground="{DynamicResource Accent}"
+                                                                   VerticalAlignment="Center"
+                                                                   Margin="0,0,5,0"/>
+                                                        <TextBlock Text="Новейшая"
+                                                                   FontSize="11" FontWeight="SemiBold"
+                                                                   Foreground="{DynamicResource Accent}"
+                                                                   VerticalAlignment="Center"/>
+                                                    </StackPanel>
+                                                </Border>
+
+                                                <!-- Бейдж «Ваша версия» — совпадает с версией запущенного
+                                                     приложения. Дефолт Collapsed — только через стиль
+                                                     (локальный атрибут перебил бы триггер). -->
+                                                <Border CornerRadius="7"
+                                                        Padding="9,4"
+                                                        Background="{DynamicResource ChipBg}"
+                                                        BorderBrush="{DynamicResource Border}"
+                                                        BorderThickness="1"
+                                                        VerticalAlignment="Center"
+                                                        HorizontalAlignment="Left"
+                                                        Margin="8,0,0,0">
+                                                    <Border.Style>
+                                                        <Style TargetType="Border">
+                                                            <Setter Property="Visibility" Value="Collapsed"/>
+                                                            <Style.Triggers>
+                                                                <DataTrigger Binding="{Binding Version, Converter={StaticResource IsMyVersion}}" Value="True">
+                                                                    <Setter Property="Visibility" Value="Visible"/>
+                                                                </DataTrigger>
+                                                            </Style.Triggers>
+                                                        </Style>
+                                                    </Border.Style>
+                                                    <StackPanel Orientation="Horizontal">
+                                                        <TextBlock Text="&#xE7C9;"
+                                                                   FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets"
+                                                                   FontSize="11"
+                                                                   Foreground="{DynamicResource TextPrimary}"
+                                                                   VerticalAlignment="Center"
+                                                                   Margin="0,0,5,0"/>
+                                                        <TextBlock Text="Ваша версия"
+                                                                   FontSize="11" FontWeight="SemiBold"
+                                                                   Foreground="{DynamicResource TextPrimary}"
+                                                                   VerticalAlignment="Center"/>
+                                                    </StackPanel>
+                                                </Border>
                                             </StackPanel>
-                                        </Border>
 
-                                        <!-- Бейдж «Новейшая» — property-based, через IsLatest -->
-                                        <Border Grid.Column="1"
-                                                Margin="10,0,0,0"
-                                                CornerRadius="7"
-                                                Padding="9,4"
-                                                Background="{DynamicResource AccentLight}"
-                                                VerticalAlignment="Center"
-                                                HorizontalAlignment="Left"
-                                                Visibility="Collapsed">
-                                            <Border.Style>
-                                                <Style TargetType="Border">
-                                                    <Style.Triggers>
-                                                        <DataTrigger Binding="{Binding IsLatest}" Value="True">
-                                                            <Setter Property="Visibility" Value="Visible"/>
-                                                        </DataTrigger>
-                                                    </Style.Triggers>
-                                                </Style>
-                                            </Border.Style>
-                                            <StackPanel Orientation="Horizontal">
-                                                <TextBlock Text="&#xE735;"
-                                                           FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets"
-                                                           FontSize="11"
-                                                           Foreground="{DynamicResource Accent}"
-                                                           VerticalAlignment="Center"
-                                                           Margin="0,0,5,0"/>
-                                                <TextBlock Text="Новейшая"
-                                                           FontSize="11" FontWeight="SemiBold"
-                                                           Foreground="{DynamicResource Accent}"
-                                                           VerticalAlignment="Center"/>
-                                            </StackPanel>
-                                        </Border>
+                                            <!-- ─── Список изменений: разделительная линия над телом
+                                                 карточки — отделяет контент от шапки (меньше «каши») ─── -->
+                                            <Border Height="1" Background="{DynamicResource Border}"
+                                                    Opacity="0.6" Margin="0,0,0,10"/>
+                                            <ItemsControl ItemsSource="{Binding Changes}">
+                                                <ItemsControl.ItemTemplate>
+                                                    <DataTemplate>
+                                                        <Grid Margin="0,0,0,6">
+                                                            <Grid.ColumnDefinitions>
+                                                                <ColumnDefinition Width="14"/>
+                                                                <ColumnDefinition Width="*"/>
+                                                            </Grid.ColumnDefinitions>
+                                                            <TextBlock Grid.Column="0"
+                                                                       Text="•"
+                                                                       Style="{StaticResource ChangeBulletStyle}"
+                                                                       Foreground="{DynamicResource Accent}"/>
+                                                            <TextBlock Grid.Column="1"
+                                                                       Text="{Binding}"
+                                                                       Style="{StaticResource ChangeTextStyle}"/>
+                                                        </Grid>
+                                                    </DataTemplate>
+                                                </ItemsControl.ItemTemplate>
+                                            </ItemsControl>
 
-                                        <!-- Дата справа -->
-                                        <TextBlock Grid.Column="2"
-                                                   Text="{Binding Date, Converter={StaticResource RussianDateConv}}"
-                                                   FontSize="11"
-                                                   Foreground="{DynamicResource TextMuted}"
-                                                   VerticalAlignment="Center"/>
-                                    </Grid>
-
-                                    <!-- ─── Версия (крупно) ─── -->
-                                    <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
-                                        <TextBlock Text="v" FontSize="13"
-                                                   Foreground="{DynamicResource TextMuted}"
-                                                   VerticalAlignment="Bottom" Margin="0,0,2,4"/>
-                                        <TextBlock Text="{Binding Version}"
-                                                   FontSize="22" FontWeight="Bold"
-                                                   Foreground="{Binding Type, Converter={StaticResource UpdateTypeBrush}, ConverterParameter=fg}"/>
+                                            <!-- Скопировать карточку (для пересылки в чат) -->
+                                            <Button Style="{DynamicResource GhostButton}"
+                                                    HorizontalAlignment="Right"
+                                                    Margin="0,6,0,0"
+                                                    Padding="8,3"
+                                                    FontSize="11"
+                                                    Cursor="Hand"
+                                                    ToolTip="Скопировать текст карточки — для пересылки в чат"
+                                                    Click="CopyCard_Click">
+                                                <StackPanel Orientation="Horizontal">
+                                                    <TextBlock Text="&#xE8C8;"
+                                                               FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets"
+                                                               FontSize="11" VerticalAlignment="Center"
+                                                               Margin="0,0,6,0"/>
+                                                    <TextBlock Text="Скопировать" VerticalAlignment="Center"/>
+                                                </StackPanel>
+                                            </Button>
+                                        </StackPanel>
                                     </StackPanel>
-
-                                    <!-- ─── Заголовок ─── -->
-                                    <TextBlock Text="{Binding Title}"
-                                               FontSize="14.5" FontWeight="SemiBold"
-                                               Foreground="{DynamicResource TextPrimary}"
-                                               TextWrapping="Wrap"
-                                               LineHeight="20"
-                                               Margin="0,0,0,12"/>
-
-                                    <!-- ─── Список изменений ─── -->
-                                    <ItemsControl ItemsSource="{Binding Changes}">
-                                        <ItemsControl.ItemTemplate>
-                                            <DataTemplate>
-                                                <Grid Margin="0,0,0,6">
-                                                    <Grid.ColumnDefinitions>
-                                                        <ColumnDefinition Width="14"/>
-                                                        <ColumnDefinition Width="*"/>
-                                                    </Grid.ColumnDefinitions>
-                                                    <TextBlock Grid.Column="0"
-                                                               Text="•"
-                                                               Style="{StaticResource ChangeBulletStyle}"
-                                                               Foreground="{DynamicResource Accent}"/>
-                                                    <TextBlock Grid.Column="1"
-                                                               Text="{Binding}"
-                                                               Style="{StaticResource ChangeTextStyle}"/>
-                                                </Grid>
-                                            </DataTemplate>
-                                        </ItemsControl.ItemTemplate>
-                                    </ItemsControl>
-                            </StackPanel>
-                        </Border>
-                    </DataTemplate>
-                </ItemsControl.ItemTemplate>
-            </ItemsControl>
+                                    </Grid>
+                                </Border>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
         </ScrollViewer>
+
+        <!-- Пустой результат фильтра/поиска — поверх списка,
+             вне ScrollViewer (контент ScrollViewer — ровно один элемент) -->
+        <Border x:Name="UpdatesEmptyState"
+                Background="{DynamicResource Surface}"
+                BorderBrush="{DynamicResource Border}"
+                BorderThickness="1"
+                CornerRadius="12"
+                Padding="20,28"
+                Margin="20,0,20,16"
+                Visibility="Collapsed">
+            <StackPanel HorizontalAlignment="Center">
+                            <TextBlock Text="&#xE721;"
+                                       FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets"
+                                       FontSize="22"
+                                       Foreground="{DynamicResource TextMuted}"
+                                       HorizontalAlignment="Center"
+                                       Margin="0,0,0,8"/>
+                            <TextBlock Text="Ничего не найдено"
+                                       FontSize="14" FontWeight="SemiBold"
+                                       Foreground="{DynamicResource TextPrimary}"
+                                       HorizontalAlignment="Center"/>
+                            <TextBlock Text="Измените фильтр или очистите поиск"
+                                       FontSize="12"
+                                       Foreground="{DynamicResource TextMuted}"
+                                       HorizontalAlignment="Center"
+                                       Margin="0,4,0,0"/>
+            </StackPanel>
+        </Border>
+
+        <!-- Кнопка «Наверх»: видна после прокрутки примерно на экран -->
+        <Button x:Name="BtnScrollTop"
+                    HorizontalAlignment="Right"
+                    VerticalAlignment="Bottom"
+                    Margin="0,0,34,26"
+                    Style="{DynamicResource GhostButton}"
+                    Padding="8,5"
+                    FontSize="11"
+                    Cursor="Hand"
+                    Visibility="Collapsed"
+                    ToolTip="Наверх к новейшим версиям"
+                    Click="BtnScrollTop_Click">
+                <StackPanel Orientation="Horizontal">
+                    <TextBlock Text="&#xE74A;"
+                               FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets"
+                               FontSize="11" VerticalAlignment="Center"
+                               Margin="0,0,5,0"/>
+                    <TextBlock Text="Наверх" VerticalAlignment="Center"/>
+                </StackPanel>
+            </Button>
+        </Grid>
     </Grid>
 </UserControl>

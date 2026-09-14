@@ -60,6 +60,29 @@ namespace MosquitoNetCalculator.Models
             }
         }
 
+        private bool _isExpanded;
+
+        /// <summary>
+        /// Раскрыта ли карточка в «Истории обновлений» (UpdatesTabControl).
+        /// Свёрнутые старые карточки показывают одну строку (версия · заголовок
+        /// · дата), разворот — по клику. Как и <see cref="IsLatest"/>: runtime-
+        /// состояние UI, в JSON не пишется; дефолт расставляет контрол при
+        /// загрузке списка (первые N карточек раскрыты).
+        /// </summary>
+        [JsonIgnore]
+        public bool IsExpanded
+        {
+            get => _isExpanded;
+            set
+            {
+                if (_isExpanded != value)
+                {
+                    _isExpanded = value;
+                    OnPropertyChanged();
+                }
+            }
+        }
+
         public event PropertyChangedEventHandler? PropertyChanged;
         protected void OnPropertyChanged([CallerMemberName] string? propertyName = null)
             => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));

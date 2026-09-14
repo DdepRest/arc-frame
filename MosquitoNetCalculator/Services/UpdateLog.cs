@@ -87,7 +87,7 @@ namespace MosquitoNetCalculator.Services
         /// Теперь порядок в файле не имеет значения: сортировка в коде по дате/версии.
         /// </para>
         /// </summary>
-        public static ObservableCollection<UpdateItem> AllNewestFirst()
+        public static ObservableCollection<UpdateItem> AllNewestFirst(int expandFirst = 0)
         {
             var items = _entries.Value;
             var sorted = items
@@ -102,6 +102,13 @@ namespace MosquitoNetCalculator.Services
                 e.IsLatest = false;
             if (sorted.Length > 0)
                 sorted[0].IsLatest = true;
+
+            // v3.51: дефолт раскрытия карточек «Истории обновлений» — первые N
+            // (самые свежие) раскрыты, остальные свёрнуты в одну строку.
+            // expandFirst=0 — поведение по умолчанию (все свёрнуты) для
+            // не-UI потребителей (AI prompt и т.п.); контрол передаёт 5.
+            for (int i = 0; i < sorted.Length; i++)
+                sorted[i].IsExpanded = expandFirst > 0 && i < expandFirst;
 
             return new ObservableCollection<UpdateItem>(sorted);
         }
