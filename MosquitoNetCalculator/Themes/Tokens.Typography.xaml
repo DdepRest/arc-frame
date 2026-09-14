@@ -1,0 +1,73 @@
+<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                    xmlns:sys="clr-namespace:System;assembly=System.Runtime">
+
+    <!-- ═══════════════════════════════════════════════════════════════ -->
+    <!-- TYPOGRAPHY SCALE — v3.53.0 (см. docs/specs/design-system-v3.53.md) -->
+    <!--                                                                 -->
+    <!-- Шрифт: Inter (SIL OFL 1.1) вшит в сборку как <Resource> —       -->
+    <!-- Resources/Fonts/*.ttf, лицензия рядом (OFL.txt). Причина:       -->
+    <!-- офисы работают на Windows 10 (эта машина — 10.0.19045), где     -->
+    <!-- Segoe UI Variable нет, поэтому системный шрифт давал разный вид  -->
+    <!-- на Win10 и Win11. Assembly-qualified pack URI (;component/)      -->
+    <!-- выбран специально: он резолвится и из тестового процесса.        -->
+    <!--                                                                 -->
+    <!-- Шкала размеров: 11 · 12 · 13 · 14 · 16 · 18 · 20 · 24 · 32 · 42. -->
+    <!-- Пол: 11px для любого реального текста (правило UX-16); 9px —     -->
+    <!-- только монограммы бейджей (BETA/OR/NV/USER), это осознанная      -->
+    <!-- типографика знака, а не текст. Дробные размеры (11.5/10.5/12.5)  -->
+    <!-- больше не используются: при 100% DPI они дают субпиксельный      -->
+    <!-- гребень и «мыло» на границах глифов.                             -->
+    <!-- ═══════════════════════════════════════════════════════════════ -->
+
+    <!-- ── Семейства ────────────────────────────────────────────────── -->
+    <!-- ВАЖНО: это ФОЛБЭК, а не итоговое значение. Вшитый Inter задаётся
+         из кода (Services/AppFontService) при старте приложения и в
+         тестовом bootstrap'е, потому что в абсолютном pack-URI символ «#»
+         понимается WPF как URI-фрагмент, и рабочая форма — только
+         ctor(baseUri, "./#Inter"). Подробности и воспроизведение — в
+         тесте TypographyTests и в GOTCHAS.
+         Следствие: Font.* обязательно потреблять через DynamicResource,
+         иначе StaticResource зафиксирует фолбэк (сторожит
+         DesignTokenGuardTests.FontTokens_AreConsumedViaDynamicResource). -->
+    <FontFamily x:Key="Font.Text">Inter, Segoe UI, Tahoma</FontFamily>
+    <FontFamily x:Key="Font.Mono">Consolas, Cascadia Mono, Courier New</FontFamily>
+    <FontFamily x:Key="Font.Icon">Segoe Fluent Icons, Segoe MDL2 Assets</FontFamily>
+
+    <!-- ── Размеры ──────────────────────────────────────────────────── -->
+    <!-- Монограмма бейджа (исключение из пола 11px, см. комментарий выше) -->
+    <sys:Double x:Key="Type.Monogram">9</sys:Double>
+    <!-- Подписи, хинты, шапки колонок, метки в капсе -->
+    <sys:Double x:Key="Type.Caption">11</sys:Double>
+    <!-- Вторичный текст внутри строк и карточек -->
+    <sys:Double x:Key="Type.Body">12</sys:Double>
+    <!-- Основной текст интерфейса (значение по умолчанию для окон) -->
+    <sys:Double x:Key="Type.BodyMd">13</sys:Double>
+    <!-- Акцентный текст: заголовки карточек, подписи чипов -->
+    <sys:Double x:Key="Type.BodyLg">14</sys:Double>
+    <!-- Заголовок блока/секции -->
+    <sys:Double x:Key="Type.Subtitle">16</sys:Double>
+    <!-- Заголовок панели -->
+    <sys:Double x:Key="Type.Title">18</sys:Double>
+    <!-- Крупный заголовок (шапка оверлея, диалог) -->
+    <sys:Double x:Key="Type.TitleLg">20</sys:Double>
+    <!-- Числовая метрика (сводка, «3/5», счётчики) -->
+    <sys:Double x:Key="Type.Display">24</sys:Double>
+    <!-- Крупная метрика и ИТОГО -->
+    <sys:Double x:Key="Type.Metric">32</sys:Double>
+    <!-- Экранный герой (заставка/пустое состояние) -->
+    <sys:Double x:Key="Type.Hero">42</sys:Double>
+
+    <!-- ── Веса ─────────────────────────────────────────────────────── -->
+    <FontWeight x:Key="Weight.Regular">Normal</FontWeight>
+    <FontWeight x:Key="Weight.Medium">Medium</FontWeight>
+    <FontWeight x:Key="Weight.SemiBold">SemiBold</FontWeight>
+    <FontWeight x:Key="Weight.Bold">Bold</FontWeight>
+
+    <!-- ── Межстрочный интервал (для многострочного текста и хинтов) ── -->
+    <!-- 13px × 1.4 и 11px × 1.45: без явного LineHeight WPF считает
+         интервал от метрик шрифта, и абзацы хинтов «слипались». -->
+    <sys:Double x:Key="Type.LineHeightBody">18</sys:Double>
+    <sys:Double x:Key="Type.LineHeightCaption">16</sys:Double>
+
+</ResourceDictionary>

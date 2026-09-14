@@ -134,6 +134,20 @@ namespace MosquitoNetCalculator
                 args.Handled = true;
             };
 
+            // Типографика: подменяем токен Font.Text на вшитый Inter до
+            // создания окон (в XAML абсолютный pack-URI не выразим — см.
+            // AppFontService и GOTCHAS). Порядок с ThemeService не важен:
+            // FontFamily берётся через DynamicResource.
+            try
+            {
+                AppFontService.Install(this);
+            }
+            catch (Exception ex)
+            {
+                // Шрифт — не повод не запуститься: остаётся фолбэк Segoe UI.
+                System.Diagnostics.Debug.WriteLine("Inter не установился: " + ex.Message);
+            }
+
             // Load theme before any window is created so StaticResource
             // resolves the correct colors during InitializeComponent.
             try

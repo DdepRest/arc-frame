@@ -1,68 +1,109 @@
-﻿<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
                     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
         <!-- ═══════════════════════════════════════════════════════ -->
-        <!-- ICONS — Segoe Fluent Icons typography                    -->
+        <!-- ИКОНКИ — Segoe Fluent Icons (токен Font.Icon)           -->
         <!-- ═══════════════════════════════════════════════════════ -->
+        <!-- Иконка всегда парна тексту и берёт его ступень шкалы:
+             12/13/14px = Type.Body/Type.BodyMd/Type.BodyLg. Магических
+             размеров у иконок быть не должно — они и вызывали «расползание». -->
         <Style x:Key="FluentIcon" TargetType="TextBlock">
-            <Setter Property="FontFamily" Value="Segoe Fluent Icons, Segoe MDL2 Assets"/>
-            <Setter Property="FontSize" Value="14"/>
+            <Setter Property="FontFamily" Value="{DynamicResource Font.Icon}"/>
+            <Setter Property="FontSize" Value="{StaticResource Type.BodyLg}"/>
             <Setter Property="VerticalAlignment" Value="Center"/>
             <Setter Property="HorizontalAlignment" Value="Center"/>
         </Style>
 
         <Style x:Key="FluentIconTab" TargetType="TextBlock" BasedOn="{StaticResource FluentIcon}">
-            <Setter Property="FontSize" Value="13"/>
-            <Setter Property="Margin" Value="0,0,6,0"/>
+            <Setter Property="FontSize" Value="{StaticResource Type.BodyMd}"/>
+            <Setter Property="Margin" Value="{StaticResource Gap.InlineSm}"/>
             <Setter Property="Opacity" Value="0.85"/>
         </Style>
 
         <Style x:Key="FluentIconSection" TargetType="TextBlock" BasedOn="{StaticResource FluentIcon}">
-            <Setter Property="FontSize" Value="12"/>
-            <Setter Property="Margin" Value="0,0,6,0"/>
+            <Setter Property="FontSize" Value="{StaticResource Type.Body}"/>
+            <Setter Property="Margin" Value="{StaticResource Gap.InlineSm}"/>
             <Setter Property="Foreground" Value="{DynamicResource Accent}"/>
         </Style>
 
         <Style x:Key="FluentIconButton" TargetType="TextBlock" BasedOn="{StaticResource FluentIcon}">
-            <Setter Property="FontSize" Value="13"/>
-            <Setter Property="Margin" Value="0,0,6,0"/>
-        </Style>
-        <!-- ═══════════════════════════════════════════════════════ -->
-        <!-- TEXT STYLES — Fluent                                    -->
-        <!-- ═══════════════════════════════════════════════════════ -->
-        <Style x:Key="SectionLabel" TargetType="TextBlock">
-            <Setter Property="FontSize" Value="10"/>
-            <Setter Property="FontWeight" Value="SemiBold"/>
-            <Setter Property="Foreground" Value="{DynamicResource TextMuted}"/>
-            <Setter Property="Margin" Value="0,0,0,10"/>
-        </Style>
-
-        <Style x:Key="FieldLabel" TargetType="TextBlock">
-            <Setter Property="FontSize" Value="11"/>
-            <Setter Property="Foreground" Value="{DynamicResource TextSecondary}"/>
-            <Setter Property="Margin" Value="0,0,0,4"/>
+            <Setter Property="FontSize" Value="{StaticResource Type.BodyMd}"/>
+            <Setter Property="Margin" Value="{StaticResource Gap.InlineSm}"/>
         </Style>
 
         <!-- ═══════════════════════════════════════════════════════ -->
-        <!-- TYPOGRAPHY SCALE — UX-16                                -->
+        <!-- ТЕКСТ — базовая семья и шкала размеров                  -->
         <!-- ═══════════════════════════════════════════════════════ -->
-        <!-- Minimum readable sizes: WPF renders at 96 DPI logical px; 10px
-             regular text is the practical floor for the audience (mostly
-             40+ installers). Use these tokens instead of raw FontSize
-             numbers so future screens stay consistent.
+        <!-- FontFamily задан и здесь, и на стиле Window (MiscStyles):
+             окно наследует шрифт всем детям, а TextBlock-и внутри
+             контролов (в т.ч. в шаблонах попапов) — этим стилем. -->
+        <Style x:Key="Text.Base" TargetType="TextBlock">
+            <Setter Property="FontFamily" Value="{DynamicResource Font.Text}"/>
+            <Setter Property="FontSize" Value="{StaticResource Type.BodyMd}"/>
+            <Setter Property="Foreground" Value="{DynamicResource TextPrimary}"/>
+        </Style>
 
-             Floor rules (UX-16):
-             - 11px  — smallest allowed for real text (captions, hints)
-             - 10px  — allowed ONLY for ALL-CAPS section labels (SectionLabel
-                       above) and icon glyphs, never for sentences
-             - <10px — banned for text; badge letters (BETA/OR/NV/USER) keep
-                       their sizes as intentional monogram styling -->
-        <Style x:Key="CaptionText" TargetType="TextBlock">
-            <Setter Property="FontSize" Value="11"/>
+        <Style x:Key="BodyText" TargetType="TextBlock" BasedOn="{StaticResource Text.Base}"/>
+
+        <Style x:Key="BodyStrongText" TargetType="TextBlock" BasedOn="{StaticResource Text.Base}">
+            <Setter Property="FontWeight" Value="{StaticResource Weight.SemiBold}"/>
+        </Style>
+
+        <Style x:Key="CaptionText" TargetType="TextBlock" BasedOn="{StaticResource Text.Base}">
+            <Setter Property="FontSize" Value="{StaticResource Type.Body}"/>
             <Setter Property="Foreground" Value="{DynamicResource TextSecondary}"/>
         </Style>
 
         <Style x:Key="HintText" TargetType="TextBlock" BasedOn="{StaticResource CaptionText}">
             <Setter Property="Foreground" Value="{DynamicResource TextMuted}"/>
             <Setter Property="TextWrapping" Value="Wrap"/>
+            <Setter Property="LineHeight" Value="{StaticResource Type.LineHeightCaption}"/>
+            <Setter Property="LineStackingStrategy" Value="BlockLineHeight"/>
         </Style>
+
+        <Style x:Key="FieldLabel" TargetType="TextBlock" BasedOn="{StaticResource Text.Base}">
+            <Setter Property="FontSize" Value="{StaticResource Type.Caption}"/>
+            <Setter Property="Foreground" Value="{DynamicResource TextSecondary}"/>
+            <Setter Property="Margin" Value="{StaticResource Gap.BlockSm}"/>
+        </Style>
+
+        <Style x:Key="SectionLabel" TargetType="TextBlock" BasedOn="{StaticResource Text.Base}">
+            <Setter Property="FontSize" Value="{StaticResource Type.Caption}"/>
+            <Setter Property="FontWeight" Value="{StaticResource Weight.SemiBold}"/>
+            <Setter Property="Foreground" Value="{DynamicResource TextMuted}"/>
+            <Setter Property="Margin" Value="{StaticResource Gap.Block}"/>
+        </Style>
+
+        <Style x:Key="SectionTitleText" TargetType="TextBlock" BasedOn="{StaticResource Text.Base}">
+            <Setter Property="FontSize" Value="{StaticResource Type.Subtitle}"/>
+            <Setter Property="FontWeight" Value="{StaticResource Weight.SemiBold}"/>
+        </Style>
+
+        <Style x:Key="PanelTitleText" TargetType="TextBlock" BasedOn="{StaticResource Text.Base}">
+            <Setter Property="FontSize" Value="{StaticResource Type.Title}"/>
+            <Setter Property="FontWeight" Value="{StaticResource Weight.SemiBold}"/>
+        </Style>
+
+        <Style x:Key="MetricText" TargetType="TextBlock" BasedOn="{StaticResource Text.Base}">
+            <Setter Property="FontSize" Value="{StaticResource Type.Display}"/>
+            <Setter Property="FontWeight" Value="{StaticResource Weight.SemiBold}"/>
+        </Style>
+
+        <!-- Монограмма бейджа (BETA/OR/NV/USER) — единственное место,
+             где допустим размер ниже 11px (Type.Monogram = 9). -->
+        <Style x:Key="MonogramText" TargetType="TextBlock">
+            <Setter Property="FontFamily" Value="{DynamicResource Font.Text}"/>
+            <Setter Property="FontSize" Value="{StaticResource Type.Monogram}"/>
+            <Setter Property="FontWeight" Value="{StaticResource Weight.Bold}"/>
+        </Style>
+
+        <!-- ═══════════════════════════════════════════════════════ -->
+        <!-- ШКАЛА ТИПОГРАФИКИ — справка (UX-16 → v3.53.0)           -->
+        <!-- ═══════════════════════════════════════════════════════ -->
+        <!-- Ступени: 11 (Caption) · 12 (Body) · 13 (BodyMd, дефолт) ·
+             14 (BodyLg) · 16 (Subtitle) · 18 (Title) · 20 (TitleLg) ·
+             24 (Display) · 32 (Metric) · 42 (Hero).
+             Пол 11px для любого реального текста; 9px — только монограммы.
+             Дробные размеры (11.5/10.5/12.5) запрещены: при 100% DPI дают
+             субпиксельный гребень. Правило сторожит
+             DesignTokenGuardTests.SubElevenOrFractionalFontSizes_DoNotGrow. -->
 </ResourceDictionary>

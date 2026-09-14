@@ -78,6 +78,11 @@
          is data, not code, and updates/changes review cleanly. -->
     <EmbeddedResource Include="Resources\ai-system-prompt.md" />
     <Resource Include="Resources\app_icon.ico" />
+    <!-- Inter (SIL OFL 1.1) вшит как WPF-Resource: доступен и в single-file
+         publish, поэтому упаковка ZIP/установщика (build.bat, installer.iss,
+         release.yml) не меняется. Лицензия едет рядом с файлами шрифта:
+         Resources\Fonts\OFL.txt. Токены — Themes/Tokens.Typography.xaml. -->
+    <Resource Include="Resources\Fonts\*.ttf" />
   </ItemGroup>
 
 

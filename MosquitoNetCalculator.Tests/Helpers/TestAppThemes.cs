@@ -43,7 +43,12 @@ namespace MosquitoNetCalculator.Tests.Helpers
         /// требует порядок загрузки (FluentFocusVisual до тех, кто его берёт).</summary>
         private static readonly string[] Dictionaries =
         {
-            "Brushes.xaml", "FocusVisualStyles.xaml", "CardStyles.xaml",
+            "Brushes.xaml", "FocusVisualStyles.xaml",
+            // Design tokens v3.53.0 — тот же порядок, что в App.xaml: стили
+            // ссылаются на них через DynamicResource.
+            "Tokens.Spacing.xaml", "Tokens.Radius.xaml",
+            "Tokens.Typography.xaml", "Tokens.Motion.xaml",
+            "CardStyles.xaml",
             "FontStyles.xaml", "TabStyles.xaml", "ButtonStyles.xaml",
             "InputStyles.xaml", "DataGridStyles.xaml", "InputStyles.RadioButton.xaml",
             "ScrollViewerStyles.xaml", "ContextMenuStyles.xaml", "MiscStyles.xaml",
@@ -91,6 +96,11 @@ namespace MosquitoNetCalculator.Tests.Helpers
             }
 
             RegisterConverters(application);
+
+            // Та же подмена токена Font.Text, что делает App.OnStartup:
+            // вшитый Inter задаётся кодом (в XAML абсолютный pack-URI для
+            // шрифта не выразить — см. AppFontService).
+            MosquitoNetCalculator.Services.AppFontService.Install(application);
         }
 
         /// <summary>

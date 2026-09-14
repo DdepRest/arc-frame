@@ -117,6 +117,7 @@ Or run: agents/scripts/what-to-update.ps1 (git diff --name-only) -- the script r
 | Changed file | Update docs |
 |---|---|
 | `Themes/Brushes.xaml` | `DECISIONS.md#10`, `GOTCHAS.md#7`, `CHANGELOG.md` |
+| `Themes/Tokens.*.xaml` | `docs/specs/design-system-v3.53.md`, `CHANGELOG.md` (шкалы дизайн-токенов: отступы/радиусы/типографика/движение) |
 | `Themes/*.xaml` | `CHANGELOG.md` (стили) |
 
 ### Resources
@@ -167,8 +168,8 @@ Or run: agents/scripts/what-to-update.ps1 (git diff --name-only) -- the script r
 | `agents/docs/MULTI_AGENT_ARC_CALC_CONTROL.md` | `CHEATSHEET.md`, `CURRENT_STATE.md`, `AGENTS.md` (canonical source of truth; CONTROL#13 self-maintenance) |
 | `agents/scripts/sync-version.ps1` | `CHEATSHEET.md`, `MULTI_AGENT_ARC_CALC_CONTROL.md` (sync-version.ps1: auto-sync csproj version to all agents/docs Last verified) |
 | `MosquitoNetCalculator/Converters/OfficeStatusConverters.cs` | `CURRENT_STATE.md`, `CHANGELOG.md` (Админ-панель: бейджи статусов (BadgeSuccess/Warning/Danger)) |
-| `MosquitoNetCalculator/Converters/UppercaseHeaderTemplate.cs` | `CURRENT_STATE.md`, `CHANGELOG.md`, `GOTCHAS.md#19` (капс заголовков колонок; шаблон строится в коде — DynamicResource в Binding.Converter невозможен) |
-| `MosquitoNetCalculator/Converters/UppercaseConverter.cs` | `GOTCHAS.md#19`, `CURRENT_STATE.md` (капс-конвертер заголовков) |
+| `MosquitoNetCalculator/Converters/UppercaseHeaderTemplate.cs` | `CURRENT_STATE.md`, `CHANGELOG.md`, `GOTCHAS.md#19` (Капс заголовков колонок DataGrid; шаблон строится в коде — DynamicResource в Binding.Converter невозможен (GOTCHAS#19)) |
+| `MosquitoNetCalculator/Converters/UppercaseConverter.cs` | `GOTCHAS.md#19`, `CURRENT_STATE.md` (Капс-конвертер заголовков колонок) |
 
 ---
 
@@ -183,4 +184,4 @@ Use agents/scripts/what-to-update.ps1 to get the list of docs to update - the sc
 
 ## Last verified
 
-2026-09-06 (generated from JSON)
+2026-09-14 (generated from JSON)

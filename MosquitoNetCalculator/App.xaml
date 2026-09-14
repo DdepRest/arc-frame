@@ -13,6 +13,15 @@
                 <!-- Focus visual: loaded early so all subsequent style dictionaries
                      can reference FluentFocusVisual via StaticResource. -->
                 <ResourceDictionary Source="Themes/FocusVisualStyles.xaml"/>
+                <!-- Design tokens v3.53.0: шкалы отступов, радиусов, типографики
+                     и движения. Грузятся ДО стилей: стили и разметка берут их
+                     через DynamicResource. Контракт и правила — в
+                     docs/specs/design-system-v3.53.md; расхождения ловят тесты
+                     DesignTokenGuardTests. -->
+                <ResourceDictionary Source="Themes/Tokens.Spacing.xaml"/>
+                <ResourceDictionary Source="Themes/Tokens.Radius.xaml"/>
+                <ResourceDictionary Source="Themes/Tokens.Typography.xaml"/>
+                <ResourceDictionary Source="Themes/Tokens.Motion.xaml"/>
                 <!-- Base/dependency-free styles -->
                 <ResourceDictionary Source="Themes/CardStyles.xaml"/>
                 <ResourceDictionary Source="Themes/FontStyles.xaml"/>

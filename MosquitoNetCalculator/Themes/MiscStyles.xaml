@@ -48,7 +48,7 @@
             <Setter Property="Background" Value="{DynamicResource Surface}"/>
             <Setter Property="BorderBrush" Value="{DynamicResource Border}"/>
             <Setter Property="BorderThickness" Value="0"/>
-            <Setter Property="FontSize" Value="13"/>
+            <Setter Property="FontSize" Value="{StaticResource Type.BodyMd}"/>
             <Setter Property="Foreground" Value="{DynamicResource TextPrimary}"/>
         </Style>
 
@@ -56,8 +56,8 @@
         <Style TargetType="GridViewColumnHeader">
             <Setter Property="Background" Value="{DynamicResource HeaderBg}"/>
             <Setter Property="Foreground" Value="{DynamicResource HeaderText}"/>
-            <Setter Property="FontWeight" Value="SemiBold"/>
-            <Setter Property="FontSize" Value="11"/>
+            <Setter Property="FontWeight" Value="{StaticResource Weight.SemiBold}"/>
+            <Setter Property="FontSize" Value="{StaticResource Type.Caption}"/>
             <Setter Property="HorizontalContentAlignment" Value="Center"/>
             <Setter Property="Padding" Value="10,8"/>
             <Setter Property="MinHeight" Value="36"/>

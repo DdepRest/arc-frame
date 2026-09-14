@@ -448,6 +448,14 @@
       ]
     },
     {
+      "file": "Themes/Tokens.*.xaml",
+      "docs": [
+        "docs/specs/design-system-v3.53.md",
+        "CHANGELOG.md"
+      ],
+      "note": "шкалы дизайн-токенов: отступы/радиусы/типографика/движение"
+    },
+    {
       "file": "Themes/*.xaml",
       "docs": [
         "CHANGELOG.md"

@@ -475,6 +475,44 @@ InstallationSurcharge = (od.InstallationSurcharge > 0 && od.InstallationMode != 
 
 ---
 
+### 20. Вшитый шрифт: абсолютный pack-URI со «#» молча даёт системный фолбэк (СРЕДНИЙ)
+
+**Где:** `Themes/Tokens.Typography.xaml` (токен `Font.Text`), `Services/AppFontService.cs`.
+Выявлено при переходе на вшитый Inter (v3.53.0).
+
+**Что может случиться:** шрифт лежит в сборке как `<Resource Include="Resources\Fonts\*.ttf" />`,
+ресурс реально доступен (`Application.GetResourceStream` возвращает поток), но токен
+`FontFamily` в «естественной» форме
+`pack://application:,,,/MosquitoNetCalculator;component/Resources/Fonts/#Inter`
+НЕ грузится: `Typeface.TryGetGlyphTypeface` отдаёт `Segoe UI`. Ошибки нет — просто
+фолбэк на системный шрифт, то есть приложение выглядит почти так же, и подмена
+остаётся незамеченной.
+
+**Причина:** в абсолютном pack-URI символ `#` разбирается как URI-фрагмент, а не как
+разделитель «папка → имя семейства» (то же значение играет роль fragment'а пакового URI).
+
+**Замер (тест `TypographyTests`, воспроизводимо):**
+```
+  только pack-URI            → [не загрузился]
+  pack-URI + фолбэки        → [Segoe UI]        // тихая подмена
+  ctor(base, "./#Inter")   → [Inter]           // рабочая форма
+```
+
+**Решение (v3.53.0):** токен `Font.Text` в XAML объявляет только фолбэк
+(`Inter, Segoe UI, Tahoma`), а вшитый Inter ставится кодом в `App.OnStartup` и в
+тестовом `TestAppThemes`:
+```csharp
+new FontFamily(new Uri("pack://application:,,,/MosquitoNetCalculator;component/Resources/Fonts/"),
+               "./#Inter");
+```
+
+**Правило:** значение подменяется в рантайме — значит, `Font.*` потребляется ТОЛЬКО
+через `DynamicResource`; `StaticResource` зафиксирует фолбэк при разборе словаря.
+Сторожит `DesignTokenGuardTests.FontTokens_AreConsumedViaDynamicResource`, а сам факт
+загрузки Inter (а не фолбэка) — `TypographyTests.InterFont_IsActuallyBundled_NotSilentFallback`.
+
+---
+
 ## Риски по категориям
 
 | Категория | Риск | Уровень |

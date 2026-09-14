@@ -1,0 +1,41 @@
+<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+    <!-- ═══════════════════════════════════════════════════════════════ -->
+    <!-- RADIUS SCALE — v3.53.0 (см. docs/specs/design-system-v3.53.md)  -->
+    <!--                                                                 -->
+    <!-- До этой версии в разметке жило 15+ разных радиусов (2.5, 3, 5,  -->
+    <!-- 6, 7, 9, 10, 11, 14, 15…) — отсюда «чуть-чуть разные» скругления -->
+    <!-- у соседних элементов. Шкала: 4 · 8 · 12 · 16 · Pill.             -->
+    <!--                                                                 -->
+    <!-- ПРАВИЛО ПОЛОСЫ (stripe): цветная полоса слева на карточке — это   -->
+    <!-- ЛЕВАЯ ГРАНИЦА внутреннего Border, поэтому её радиус обязан быть   -->
+    <!-- на 1px меньше радиуса карточки (Border рисует рамку ПО контуру,   -->
+    <!-- а внешняя рамка карточки съедает 1px). Отсюда Radius.StripeInner = -->
+    <!-- Radius.Card − 1. Инвариант закреплён тестом                      -->
+    <!-- DesignTokenGuardTests.StripeInnerRadius_IsCardRadiusMinusFrame.    -->
+    <!-- ═══════════════════════════════════════════════════════════════ -->
+
+    <!-- Примитивы шкалы -->
+    <CornerRadius x:Key="Radius.Sm">4</CornerRadius>
+    <CornerRadius x:Key="Radius.Md">8</CornerRadius>
+    <CornerRadius x:Key="Radius.Lg">12</CornerRadius>
+    <CornerRadius x:Key="Radius.Xl">16</CornerRadius>
+    <!-- Пилюли/чипы-круг: 999 больше любой реальной высоты элемента -->
+    <CornerRadius x:Key="Radius.Pill">999</CornerRadius>
+
+    <!-- ── Семантика компонентов ────────────────────────────────────── -->
+    <!-- Карточка/панель (в т.ч. карточки версий, офисов, тоталов) -->
+    <CornerRadius x:Key="Radius.Card">12</CornerRadius>
+    <!-- Шапка карточки: скруглены только верхние углы -->
+    <CornerRadius x:Key="Radius.CardHeader">12,12,0,0</CornerRadius>
+    <!-- Полоса статуса/типа: левый край карточки минус её 1px рамка -->
+    <CornerRadius x:Key="Radius.StripeInner">11,0,0,11</CornerRadius>
+    <!-- Поля ввода, кнопки, выпадающие списки, чипы -->
+    <CornerRadius x:Key="Radius.Control">8</CornerRadius>
+    <!-- Мелкие элементы внутри строк (свотчи, бейджи-квадраты) -->
+    <CornerRadius x:Key="Radius.Element">4</CornerRadius>
+    <!-- Лист предпросмотра / модальные окна с крупным скруглением -->
+    <CornerRadius x:Key="Radius.Sheet">16</CornerRadius>
+
+</ResourceDictionary>
