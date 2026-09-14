@@ -211,9 +211,6 @@
                     <Border Background="White"
                             BorderBrush="#777777" BorderThickness="2"
                             CornerRadius="2">
-                        <Border.Effect>
-                            <DropShadowEffect BlurRadius="12" ShadowDepth="2" Opacity="0.18" Color="#000000"/>
-                        </Border.Effect>
                         <Grid>
                         <FlowDocumentPageViewer x:Name="DocumentReader"
                                                 Loaded="DocumentReader_Loaded"

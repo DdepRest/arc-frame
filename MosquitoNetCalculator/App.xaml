@@ -8,8 +8,7 @@
         <ResourceDictionary>
             <ResourceDictionary.MergedDictionaries>
                 <!-- Brushes first: styles reference brushes via DynamicResource —
-                     they must be loaded before styles, especially ShadowColor
-                     used in the Card style's DropShadowEffect (a Freezable). -->
+                     they must be loaded before styles. -->
                 <ResourceDictionary Source="Themes/Brushes.xaml"/>
                 <!-- Focus visual: loaded early so all subsequent style dictionaries
                      can reference FluentFocusVisual via StaticResource. -->

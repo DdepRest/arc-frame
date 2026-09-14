@@ -108,9 +108,6 @@
                         <Border Background="{DynamicResource Surface}" BorderBrush="{DynamicResource Border}"
                                 BorderThickness="1" CornerRadius="8" Padding="5" Margin="0,4,8,8"
                                 SnapsToDevicePixels="True" MinWidth="270">
-                            <Border.Effect>
-                                <DropShadowEffect BlurRadius="18" ShadowDepth="5" Opacity="0.3"/>
-                            </Border.Effect>
                             <StackPanel>
                                 <!-- v3.50.3: меню каретки — БЕЗ предпросмотра; предпросмотр
                                      теперь главный сегмент кнопки. Каждый пункт — прямой

@@ -553,6 +553,81 @@ namespace MosquitoNetCalculator.Tests.ViewModels
             Assert.Contains(vm.Messages, m => !m.IsUser && m.Text.Contains("Неизвестная команда"));
         }
 
+        // ─── v3.52.0 perf: visible-cap + «Загрузить ранее» ─────────
+
+        [Fact]
+        public void VisibleCap_100Messages_AllVisible()
+        {
+            var history = Enumerable.Range(0, AiAssistantViewModel.VisibleCap)
+                .Select(i => new AiChatMessage { Text = $"msg {i}", IsUser = i % 2 == 0 })
+                .ToList();
+            AppSettingsServiceAi.SaveChatHistory(history, maxMessages: AiAssistantViewModel.VisibleCap);
+
+            var vm = new AiAssistantViewModel();
+
+            Assert.Equal(AiAssistantViewModel.VisibleCap, vm.Messages.Count);
+            Assert.All(vm.Messages, m => Assert.True(m.ShowInChat));
+            Assert.False(vm.HasOlderHiddenMessages);
+        }
+
+        [Fact]
+        public void VisibleCap_OverCap_OldestHidden_TailVisible()
+        {
+            var total = AiAssistantViewModel.VisibleCap + 30;
+            var history = Enumerable.Range(0, total)
+                .Select(i => new AiChatMessage { Text = $"msg {i}", IsUser = i % 2 == 0 })
+                .ToList();
+            AppSettingsServiceAi.SaveChatHistory(history, maxMessages: total);
+
+            var vm = new AiAssistantViewModel();
+
+            Assert.Equal(total, vm.Messages.Count);                       // nothing dropped
+            Assert.Equal(30, vm.HiddenMessageCount);                      // exactly the overflow hidden
+            Assert.True(vm.HasOlderHiddenMessages);
+            Assert.True(vm.Messages.Take(30).All(m => !m.ShowInChat));    // oldest hidden
+            Assert.True(vm.Messages.Skip(30).All(m => m.ShowInChat));     // newest visible
+        }
+
+        [Fact]
+        public void LoadOlderMessages_RevealsBatch_AndUpdatesFlag()
+        {
+            var total = AiAssistantViewModel.VisibleCap + 70;
+            var history = Enumerable.Range(0, total)
+                .Select(i => new AiChatMessage { Text = $"msg {i}", IsUser = i % 2 == 0 })
+                .ToList();
+            AppSettingsServiceAi.SaveChatHistory(history, maxMessages: total);
+
+            var vm = new AiAssistantViewModel();
+            Assert.Equal(70, vm.HiddenMessageCount);
+
+            vm.LoadOlderMessages();
+            Assert.Equal(20, vm.HiddenMessageCount);                      // 70 - batch 50
+            Assert.True(vm.HasOlderHiddenMessages);
+            Assert.True(vm.Messages.Skip(20).Take(50).All(m => m.ShowInChat));
+            Assert.True(vm.Messages.Take(20).All(m => !m.ShowInChat));
+
+            vm.LoadOlderMessages();                                       // reveals the remaining 20
+            Assert.Equal(0, vm.HiddenMessageCount);
+            Assert.False(vm.HasOlderHiddenMessages);
+        }
+
+        [Fact]
+        public void ClearChat_ResetsHiddenState()
+        {
+            var history = Enumerable.Range(0, AiAssistantViewModel.VisibleCap + 10)
+                .Select(i => new AiChatMessage { Text = $"msg {i}", IsUser = i % 2 == 0 })
+                .ToList();
+            AppSettingsServiceAi.SaveChatHistory(history, maxMessages: history.Count);
+
+            var vm = new AiAssistantViewModel();
+            Assert.True(vm.HasOlderHiddenMessages);
+
+            vm.ClearChat();
+
+            Assert.False(vm.HasOlderHiddenMessages);
+            Assert.Single(vm.Messages);
+        }
+
         [Fact]
         public void ClearChat_ClearsPersistedHistory()
         {

@@ -319,6 +319,15 @@ namespace MosquitoNetCalculator.Models
         [JsonIgnore]
         public bool HasAnimated { get; set; }
 
+        /// <summary>
+        /// v3.52.0 perf: hidden messages stay in <c>Messages</c> (history/plan
+        /// walks keep index arithmetic) but don't render a bubble until the
+        /// user asks for older messages («Загрузить ранее») or the cap
+        /// un-hides them. Runtime-only.
+        /// </summary>
+        [JsonIgnore]
+        public bool ShowInChat { get; set; } = true;
+
         public event PropertyChangedEventHandler? PropertyChanged;
         private void OnPropertyChanged([CallerMemberName] string? name = null)
             => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));

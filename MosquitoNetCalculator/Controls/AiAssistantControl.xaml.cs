@@ -127,10 +127,45 @@ namespace MosquitoNetCalculator.Controls
             {
                 foreach (var item in e.NewItems)
                 {
-                    if (item is AiChatMessage msg && msg.IsStreaming)
-                        msg.PropertyChanged += OnStreamingMessageTextChanged;
+                    if (item is AiChatMessage msg)
+                    {
+                        if (msg.IsStreaming)
+                            msg.PropertyChanged += OnStreamingMessageTextChanged;
+                        // v3.52.0 perf: only messages added LIVE in this session
+                        // get the fade-in — history restore and «Загрузить ранее»
+                        // add dozens of containers at once and used to animate
+                        // all of them simultaneously.
+                        if (e.Action == NotifyCollectionChangedAction.Add && msg.ShowInChat)
+                            AnimateNewMessage(msg);
+                    }
                 }
             }
+        }
+
+        /// <summary>
+        /// Short opacity fade for a single newly added bubble. Replaces the old
+        /// per-template EventTrigger that fired on every container re-render.
+        /// </summary>
+        private void AnimateNewMessage(AiChatMessage msg)
+        {
+            Dispatcher.BeginInvoke(() =>
+            {
+                if (!IsLoaded || _vm == null) return;
+                var container = MessagesItemsControl
+                    .ItemContainerGenerator.ContainerFromItem(msg) as FrameworkElement;
+                if (container == null) return;
+
+                container.Opacity = 0;
+                var fade = new System.Windows.Media.Animation.DoubleAnimation(1,
+                    System.TimeSpan.FromMilliseconds(180))
+                {
+                    EasingFunction = new System.Windows.Media.Animation.CubicEase
+                    {
+                        EasingMode = System.Windows.Media.Animation.EasingMode.EaseOut
+                    }
+                };
+                container.BeginAnimation(UIElement.OpacityProperty, fade);
+            }, DispatcherPriority.Loaded);
         }
 
         /// <summary>
@@ -158,6 +193,27 @@ namespace MosquitoNetCalculator.Controls
         private bool IsAtConversationEnd()
         {
             return ChatScroll.ScrollableHeight - ChatScroll.VerticalOffset <= 16;
+        }
+
+        /// <summary>
+        /// v3.52.0 perf: reveals the next batch of older messages. The viewport
+        /// is pinned to the same content position afterwards, so the revealed
+        /// bubbles appear ABOVE the current view without a visual jump.
+        /// </summary>
+        private void BtnLoadOlder_Click(object sender, RoutedEventArgs e)
+        {
+            if (_vm == null) return;
+            double previousExtent = ChatScroll.ExtentHeight;
+            double previousOffset = ChatScroll.VerticalOffset;
+
+            _vm.LoadOlderMessages();
+
+            Dispatcher.BeginInvoke(() =>
+            {
+                if (!IsLoaded) return;
+                ChatScroll.UpdateLayout();
+                ChatScroll.ScrollToVerticalOffset(previousOffset + (ChatScroll.ExtentHeight - previousExtent));
+            }, DispatcherPriority.Loaded);
         }
 
         private void ChatScroll_ScrollChanged(object sender, ScrollChangedEventArgs e)

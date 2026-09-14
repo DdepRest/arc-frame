@@ -27,6 +27,10 @@ namespace MosquitoNetCalculator.Services
         private readonly Action<string> _onSetActiveNav;
         private readonly Action? _onBeforeClosePrint;
 
+        // Pre-first-render width cache per panel (cleared never: overlay panels
+        // have fixed XAML Width, so the value cannot go stale).
+        private readonly System.Collections.Generic.Dictionary<OverlayEntry, double> _measuredWidths = new();
+
         /// <summary>
         /// Creates an OverlayManager.
         /// </summary>
@@ -76,9 +80,21 @@ namespace MosquitoNetCalculator.Services
             entry.Grid.Visibility = Visibility.Visible;
             entry.Backdrop.Opacity = 0;
 
-            // Force measure to get correct ActualWidth on first open
-            entry.Panel.Measure(new Size(double.PositiveInfinity, double.PositiveInfinity));
-            double panelWidth = entry.Panel.ActualWidth > 0 ? entry.Panel.ActualWidth : 800;
+            // v3.52.0 perf: measure an unrendered panel once, then reuse the
+            // width. Measure(∞) on every open forced a full layout pass of the
+            // panel's subtree right before the slide animation — noticeable on
+            // the heavier overlays (Заказы, Обновления, Админ).
+            double panelWidth;
+            if (entry.Panel.ActualWidth > 0)
+            {
+                panelWidth = entry.Panel.ActualWidth;
+            }
+            else if (!_measuredWidths.TryGetValue(entry, out panelWidth) || panelWidth <= 0)
+            {
+                entry.Panel.Measure(new Size(double.PositiveInfinity, double.PositiveInfinity));
+                panelWidth = entry.Panel.ActualWidth > 0 ? entry.Panel.ActualWidth : 800;
+                _measuredWidths[entry] = panelWidth;
+            }
             entry.SlideTransform.X = panelWidth;
 
             var slideAnim = new DoubleAnimation(0, TimeSpan.FromMilliseconds(280))

@@ -9,11 +9,6 @@
             <Setter Property="Padding" Value="14,10"/>
             <Setter Property="BorderBrush" Value="{DynamicResource SubtleBorder}"/>
             <Setter Property="BorderThickness" Value="1"/>
-            <Setter Property="Effect">
-                <Setter.Value>
-                    <DropShadowEffect BlurRadius="20" ShadowDepth="4" Opacity="0.10" Direction="270" Color="#1A1A1A"/>
-                </Setter.Value>
-            </Setter>
         </Style>
         <!-- ═══════════════════════════════════════════════════════ -->
         <!-- OVERLAY HEADER — shared chrome for all slide-over panels -->

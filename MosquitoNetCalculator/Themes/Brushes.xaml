@@ -66,11 +66,9 @@
     <Color x:Key="RowHoverColor">#F5F5F5</Color>
     <Color x:Key="AccentLightColor">#EBF3FD</Color>
     <!--
-      AccentShadowColor — parallel Color for the NavOrdersBadge DropShadowEffect.
-      WPF cannot implicitly convert SolidColorBrush→Color (Color is a struct),
-      so DropShadowEffect.Color needs a plain Color resource. ThemeService mirrors
-      Accent (brush) into AccentShadowColor (Color) on every theme switch.
-      Light: #005FB8 (Windows 11 Blue). Dark: #60CDFF (lighter variant for glow on dark surface).
+      AccentShadowColor — legacy accent Color (kept: ThemeService mirrors it on
+      every theme switch; no live consumer since v3.52.0 removed the last
+      DropShadowEffect that used it).
     -->
     <Color x:Key="AccentShadowColor">#005FB8</Color>
     <SolidColorBrush x:Key="InstallGreen" Color="#0F7B3F"/>

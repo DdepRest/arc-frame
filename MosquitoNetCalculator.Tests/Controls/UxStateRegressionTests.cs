@@ -350,6 +350,54 @@ namespace MosquitoNetCalculator.Tests.Controls
             }
         }
 
+        [Fact]
+        public void Themes_HaveNoLiveDropShadow_InTriggersOrTemplates()
+        {
+            // v3.52.0 perf: DropShadowEffect (Gaussian blur) renders on the CPU
+            // and re-rasterizes on EVERY frame of an animation. Effects inside
+            // hover/press triggers (ButtonStyles, CardStyles, input styles)
+            // made each overlay slide re-blur the whole visual tree — the
+            // reported "tab switching lags". Effects on static popups/dialog
+            // windows are allowed (computed once at open time).
+            var themesDir = Path.Combine(LocateSourceProject(), "Themes");
+            var offenders = new List<string>();
+
+            foreach (var file in Directory.GetFiles(themesDir, "*.xaml"))
+            {
+                var lines = File.ReadAllLines(file);
+                bool inComment = false;
+                for (int i = 0; i < lines.Length; i++)
+                {
+                    string line = lines[i];
+
+                    // Documentation comments legitimately mention DropShadowEffect
+                    // ("why we don't use it") — count only real markup.
+                    int commentStart;
+                    while ((commentStart = line.IndexOf("<!--", StringComparison.Ordinal)) >= 0)
+                    {
+                        int commentEnd = line.IndexOf("-->", commentStart, StringComparison.Ordinal);
+                        line = commentEnd >= 0
+                            ? line.Remove(commentStart, commentEnd - commentStart + 3)
+                            : line[..commentStart];
+                        if (commentEnd < 0) inComment = true;
+                    }
+                    if (inComment)
+                    {
+                        int end = line.IndexOf("-->", StringComparison.Ordinal);
+                        if (end >= 0) { line = line[(end + 3)..]; inComment = false; }
+                        else line = string.Empty;
+                    }
+
+                    if (line.Contains("DropShadowEffect") || line.Contains("<DropShadowEffect"))
+                        offenders.Add($"{Path.GetFileName(file)}:{i + 1}");
+                }
+            }
+
+            Assert.True(offenders.Count == 0,
+                "DropShadowEffect/Effect setters found in theme triggers/templates — " +
+                "live Gaussian blur makes animations lag: " + string.Join(", ", offenders));
+        }
+
         private static string LocateSourceProject()
         {
             var dir = new DirectoryInfo(AppContext.BaseDirectory);

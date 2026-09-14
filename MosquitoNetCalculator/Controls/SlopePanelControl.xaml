@@ -533,8 +533,8 @@
         <!-- v3.43.4 (review fix #2): НЕ используем Style="{DynamicResource Card}" —
              иначе егО IsMouseOver-триггер усиливает тень при любом движении мыши
              над низом панели → "дышащий" zitter у нижнего края, когда курсор
-             идёт к кнопке «Добавить в КП». Inline-статическая тень без триггеров
-             даёт нужную elevation без hover-эффекта. -->
+             идёт к кнопке «Добавить в КП». v3.52.0: тень убрана — DropShadowEffect
+             рендерится программно и перерисовывается при каждой анимации. -->
         <Border Grid.Row="1"
                 Background="{DynamicResource Surface}"
                 BorderBrush="{DynamicResource Border}"
@@ -542,9 +542,6 @@
                 CornerRadius="8,8,0,0"
                 Margin="0,0,0,0"
                 SnapsToDevicePixels="True">
-            <Border.Effect>
-                <DropShadowEffect BlurRadius="16" ShadowDepth="2" Opacity="0.08" Direction="270" Color="#1A1A1A"/>
-            </Border.Effect>
             <StackPanel Margin="16,14,16,12">
                 <!-- Без экономии -->
                 <Grid x:Name="WithoutEconomyRow" Visibility="Collapsed" Margin="0,0,0,4">

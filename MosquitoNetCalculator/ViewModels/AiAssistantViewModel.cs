@@ -28,7 +28,48 @@ namespace MosquitoNetCalculator.ViewModels
 
         // _planMessages / _planLock moved to AiAssistantViewModel.Plans.cs partial.
 
+        /// <summary>
+        /// v3.52.0 perf: cap on VISIBLE chat bubbles. Older messages stay in
+        /// <see cref="Messages"/> (hidden via ShowInChat=false) so every index
+        /// walk and plan lookup keeps working; only the rendered tail is
+        /// capped. Opening a very long conversation renders ≤VisibleCap
+        /// bubbles instead of the whole history.
+        /// </summary>
+        public const int VisibleCap = 100;
+        /// <summary>How many previously hidden messages «Загрузить ранее» reveals per click.</summary>
+        public const int LoadOlderBatch = 50;
+
         public ObservableCollection<AiChatMessage> Messages { get; } = new();
+
+        private bool _hasOlderHiddenMessages;
+        /// <summary>True when hidden messages exist above the visible tail — drives the «Загрузить ранее» button.</summary>
+        public bool HasOlderHiddenMessages
+        {
+            get => _hasOlderHiddenMessages;
+            private set { if (_hasOlderHiddenMessages != value) { _hasOlderHiddenMessages = value; OnPropertyChanged(); } }
+        }
+
+        /// <summary>Count of currently hidden (not rendered) messages above the visible tail.</summary>
+        public int HiddenMessageCount => Messages.Count(m => !m.ShowInChat);
+
+        /// <summary>
+        /// Reveals up to <see cref="LoadOlderBatch"/> hidden messages above the
+        /// visible tail and refreshes <see cref="HasOlderHiddenMessages"/>.
+        /// </summary>
+        public void LoadOlderMessages()
+        {
+            int revealed = 0;
+            for (int i = Messages.Count - 1; i >= 0 && revealed < LoadOlderBatch; i--)
+            {
+                if (Messages[i].ShowInChat) continue;
+                Messages[i].ShowInChat = true;
+                revealed++;
+            }
+            RefreshHasOlderHidden();
+        }
+
+        private void RefreshHasOlderHidden()
+            => HasOlderHiddenMessages = Messages.Any(m => !m.ShowInChat);
 
         /// <summary>Images staged in the composer for the next message (runtime-only).</summary>
         public ObservableCollection<AiImageAttachment> Attachments { get; } = new();
@@ -234,6 +275,7 @@ namespace MosquitoNetCalculator.ViewModels
             Messages.Clear();
             lock (_planLock) _planMessages.Clear();
             Messages.Add(new AiChatMessage { Text = "Чат очищен. Чем могу помочь?", IsUser = false });
+            RefreshHasOlderHidden();
             StatusText = "Готов к работе";
             AppSettingsServiceAi.SaveChatHistory(Array.Empty<AiChatMessage>());
         }

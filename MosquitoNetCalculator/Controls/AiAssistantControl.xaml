@@ -112,34 +112,35 @@
                           ScrollChanged="ChatScroll_ScrollChanged"
                           Focusable="False">
                 <StackPanel>
+                    <!-- v3.52.0 perf: reveals older hidden messages in batches of
+                         50 instead of rendering the whole history at open time. -->
+                    <Button x:Name="BtnLoadOlder"
+                            HorizontalAlignment="Center"
+                            Margin="0,0,0,10"
+                            Padding="14,5"
+                            Style="{DynamicResource GhostButton}"
+                            FontSize="11"
+                            Visibility="{Binding HasOlderHiddenMessages, Converter={StaticResource BoolToVisibility}}"
+                            Click="BtnLoadOlder_Click"
+                            ToolTip="Показать предыдущие сообщения"
+                            AutomationProperties.AutomationId="BtnLoadOlder">
+                        <TextBlock>
+                            <Run Text="Загрузить ранее"/><Run Text=" ("/><Run Text="{Binding HiddenMessageCount, Mode=OneWay}"/><Run Text=")"/>
+                        </TextBlock>
+                    </Button>
                     <ItemsControl x:Name="MessagesItemsControl" ItemsSource="{Binding Messages}">
                         <ItemsControl.ItemTemplate>
                             <DataTemplate>
                                 <Grid Margin="0,0,0,12"
-                                      HorizontalAlignment="Stretch">
-                                    <Grid.RenderTransform>
-                                        <TranslateTransform Y="8"/>
-                                    </Grid.RenderTransform>
-                                    <Grid.Triggers>
-                                        <EventTrigger RoutedEvent="Loaded">
-                                            <BeginStoryboard>
-                                                <Storyboard>
-                                                    <DoubleAnimation Storyboard.TargetProperty="Opacity"
-                                                                     From="0" To="1" Duration="0:0:0.22">
-                                                        <DoubleAnimation.EasingFunction>
-                                                            <CubicEase EasingMode="EaseOut"/>
-                                                        </DoubleAnimation.EasingFunction>
-                                                    </DoubleAnimation>
-                                                    <DoubleAnimation Storyboard.TargetProperty="(UIElement.RenderTransform).(TranslateTransform.Y)"
-                                                                     From="8" To="0" Duration="0:0:0.22">
-                                                        <DoubleAnimation.EasingFunction>
-                                                            <CubicEase EasingMode="EaseOut"/>
-                                                        </DoubleAnimation.EasingFunction>
-                                                    </DoubleAnimation>
-                                                </Storyboard>
-                                            </BeginStoryboard>
-                                        </EventTrigger>
-                                    </Grid.Triggers>
+                                      HorizontalAlignment="Stretch"
+                                      Visibility="{Binding ShowInChat, Converter={StaticResource BoolToVisibility}}">
+                                    <!-- v3.52.0 perf: the per-message fade-in ran on EVERY
+                                         container re-render (history load, «Загрузить ранее»,
+                                         virtualization measure) — during a long conversation
+                                         open it animated dozens of bubbles at once. New bubbles
+                                         now animate via code-behind (AnimateNewMessage) only for
+                                         messages added live in this session; history renders
+                                         instantly with no transition. -->
 
                                     <!-- Assistant message -->
                                     <Grid Visibility="{Binding IsUser, Converter={StaticResource InverseBoolVisibility}}"
@@ -747,14 +748,6 @@
                                     </Trigger>
                                     <Trigger Property="IsKeyboardFocusWithin" Value="True">
                                         <Setter Property="BorderBrush" Value="{DynamicResource Accent}"/>
-                                        <Setter Property="Effect">
-                                            <Setter.Value>
-                                                <DropShadowEffect BlurRadius="10"
-                                                                  ShadowDepth="0"
-                                                                  Opacity="0.25"
-                                                                  Color="{DynamicResource AccentShadowColor}"/>
-                                            </Setter.Value>
-                                        </Setter>
                                     </Trigger>
                                 </Style.Triggers>
                             </Style>

@@ -148,7 +148,30 @@ namespace MosquitoNetCalculator.ViewModels
             {
                 foreach (var msg in history)
                     Messages.Add(msg);
+                // v3.52.0 perf: restore only the visible tail; older messages
+                // stay in Messages (hidden) — «Загрузить ранее» reveals them.
+                ApplyVisibleCap();
             }
+        }
+
+        /// <summary>
+        /// Keeps the rendered bubble count ≤ <see cref="VisibleCap"/> by hiding
+        /// the oldest messages (ShowInChat=false). Pure bookkeeping — the
+        /// hidden messages remain in <see cref="Messages"/> for plan lookups,
+        /// regeneration walks and history saves.
+        /// </summary>
+        private void ApplyVisibleCap()
+        {
+            int visible = 0;
+            for (int i = Messages.Count - 1; i >= 0; i--)
+            {
+                if (!Messages[i].ShowInChat) continue;
+                if (visible >= VisibleCap)
+                    Messages[i].ShowInChat = false;
+                else
+                    visible++;
+            }
+            RefreshHasOlderHidden();
         }
 
         public async Task SendMessageAsync()
@@ -254,6 +277,7 @@ namespace MosquitoNetCalculator.ViewModels
                 // block and leave the composer permanently locked.
                 IsBusy = false;
                 HandleLocalRoute(route, userText);
+                ApplyVisibleCap();
                 var historyToSave = Messages.ToList();
                 await Task.Run(() => AppSettingsServiceAi.SaveChatHistory(historyToSave));
                 StatusText = "Готово ✓";
@@ -447,6 +471,7 @@ namespace MosquitoNetCalculator.ViewModels
                 IsBusy = false;
                 _cts?.Dispose();
                 _cts = null;
+                ApplyVisibleCap();
                 // Snapshot on the UI thread before offloading file I/O. The
                 // ObservableCollection is bound to WPF and must not be enumerated
                 // from a worker thread.
@@ -787,6 +812,7 @@ namespace MosquitoNetCalculator.ViewModels
                 else
                     Messages.Remove(msg);
                 StatusText = "Отменено";
+                RefreshHasOlderHidden();
                 return;
             }
 
@@ -805,6 +831,7 @@ namespace MosquitoNetCalculator.ViewModels
             }
 
             StatusText = "Ошибка";
+            RefreshHasOlderHidden();
         }
 
         /// <summary>

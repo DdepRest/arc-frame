@@ -171,6 +171,8 @@
 - `MosquitoNetCalculator/Services/PrintService.cs`
 
 ## Last verified
+2026-09-14 (v3.52.0) — auto-synced from csproj (sync-version.ps1, CONTROL#13).
+
 2026-09-14 (v3.51.0) — auto-synced from csproj (sync-version.ps1, CONTROL#13).
 
 2026-09-11 (v3.50.0) — auto-synced from csproj (sync-version.ps1, CONTROL#13).

@@ -83,9 +83,6 @@
                                     Margin="0,2,0,0"
                                     Padding="4,4"
                                     SnapsToDevicePixels="True">
-                                <Border.Effect>
-                                    <DropShadowEffect BlurRadius="16" ShadowDepth="4" Opacity="0.08" Direction="270" Color="#1A1A1A"/>
-                                </Border.Effect>
                                 <ScrollViewer MaxHeight="200"
                                               VerticalScrollBarVisibility="Auto"
                                               HorizontalScrollBarVisibility="Disabled"
@@ -188,9 +185,6 @@
                                     Margin="0,2,0,0"
                                     Padding="4,4"
                                     SnapsToDevicePixels="True">
-                                <Border.Effect>
-                                    <DropShadowEffect BlurRadius="16" ShadowDepth="4" Opacity="0.08" Direction="270" Color="#1A1A1A"/>
-                                </Border.Effect>
                                 <ScrollViewer MaxHeight="200"
                                               VerticalScrollBarVisibility="Auto"
                                               HorizontalScrollBarVisibility="Disabled"

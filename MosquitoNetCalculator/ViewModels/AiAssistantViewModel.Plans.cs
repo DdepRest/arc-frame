@@ -84,6 +84,7 @@ namespace MosquitoNetCalculator.ViewModels
             plan.SourceMessageId = confirm.MessageId;
             Messages.Add(confirm);
             lock (_planLock) _planMessages[plan.PlanId] = confirm;
+            ApplyVisibleCap();
 
             // Persist like a normal exchange (fire-and-forget file I/O).
             var historyToSave = Messages.ToList();

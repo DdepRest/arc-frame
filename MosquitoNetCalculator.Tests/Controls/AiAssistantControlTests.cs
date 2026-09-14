@@ -243,6 +243,31 @@ namespace MosquitoNetCalculator.Tests.Controls
             Assert.Contains("msg.Text = ConfirmationLead(plan)", streamingPartial);
         }
 
+        [Fact]
+        public void Xaml_NoPerTemplateEntranceAnimation_CapAndLoadOlderWired()
+        {
+            // v3.52.0 perf: the message template must NOT contain a Loaded
+            // EventTrigger fade-in — it re-animated every bubble on history
+            // restore and «Загрузить ранее». Entrance animation lives in
+            // code-behind for live-added messages only.
+            var xaml = File.ReadAllText(LocateSource("Controls/AiAssistantControl.xaml"));
+            var codeBehind = File.ReadAllText(LocateSource("Controls/AiAssistantControl.xaml.cs"));
+            var viewModel = File.ReadAllText(LocateSource("ViewModels/AiAssistantViewModel.cs"));
+
+            int templateStart = xaml.IndexOf("<ItemsControl.ItemTemplate>", StringComparison.Ordinal);
+            int templateEnd = xaml.IndexOf("</ItemsControl.ItemTemplate>", templateStart, StringComparison.Ordinal);
+            string template = xaml.Substring(templateStart, templateEnd - templateStart);
+            Assert.DoesNotContain("EventTrigger RoutedEvent=\"Loaded\"", template);
+
+            // The cap/load-older plumbing is wired end-to-end.
+            Assert.Contains("Binding ShowInChat", xaml);
+            Assert.Contains("BtnLoadOlder", xaml);
+            Assert.Contains("Binding HasOlderHiddenMessages", xaml);
+            Assert.Contains("BtnLoadOlder_Click", codeBehind);
+            Assert.Contains("LoadOlderMessages()", codeBehind);
+            Assert.Contains("const int VisibleCap = 100", viewModel);
+        }
+
         private static string LocateSource(string relativePath)
         {
             var directory = new DirectoryInfo(AppContext.BaseDirectory);

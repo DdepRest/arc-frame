@@ -17,9 +17,6 @@
                                 CornerRadius="8"
                                 SnapsToDevicePixels="True"
                                 Margin="0,2,0,0">
-                            <Border.Effect>
-                                <DropShadowEffect BlurRadius="16" ShadowDepth="4" Opacity="0.08" Direction="270" Color="#1A1A1A"/>
-                            </Border.Effect>
                             <ScrollViewer VerticalScrollBarVisibility="Auto"
                                           HorizontalScrollBarVisibility="Disabled"
                                           CanContentScroll="True"

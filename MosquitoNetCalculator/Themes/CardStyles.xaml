@@ -1,21 +1,20 @@
 ﻿<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
                     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
         <!-- ═══════════════════════════════════════════════════════ -->
-        <!-- CARD — subtle Fluent elevation shadow for major cards  -->
+        <!-- CARD — hairline border instead of a live shadow          -->
         <!-- ═══════════════════════════════════════════════════════ -->
+        <!-- v3.52.0 perf: DropShadowEffect (Gaussian blur) is rendered on the
+             CPU inside WPF's software composition path. On the 8 major cards it
+             re-blurred on every frame of the overlay slide animations, which is
+             the main "tab switching lags" source. A hairline border reads as
+             elevation too, costs nothing, and the hover trigger simply
+             intensifies it (no Effect swap → no re-render storm). -->
         <Style x:Key="Card" TargetType="Border">
-            <Setter Property="Effect">
-                <Setter.Value>
-                    <DropShadowEffect BlurRadius="16" ShadowDepth="2" Opacity="0.04" Direction="270" Color="#1A1A1A"/>
-                </Setter.Value>
-            </Setter>
+            <Setter Property="BorderBrush" Value="{DynamicResource Border}"/>
+            <Setter Property="BorderThickness" Value="1"/>
             <Style.Triggers>
                 <Trigger Property="IsMouseOver" Value="True">
-                    <Setter Property="Effect">
-                        <Setter.Value>
-                            <DropShadowEffect BlurRadius="24" ShadowDepth="4" Opacity="0.08" Direction="270" Color="#1A1A1A"/>
-                        </Setter.Value>
-                    </Setter>
+                    <Setter Property="BorderBrush" Value="{DynamicResource BorderHover}"/>
                 </Trigger>
             </Style.Triggers>
         </Style>
