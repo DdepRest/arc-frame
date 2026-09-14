@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Threading;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
@@ -12,6 +11,7 @@ using System.Windows.Threading;
 using MosquitoNetCalculator.Controls;
 using MosquitoNetCalculator.Models;
 using MosquitoNetCalculator.Services;
+using MosquitoNetCalculator.Tests.Helpers;
 using Xunit;
 
 namespace MosquitoNetCalculator.Tests.Controls
@@ -21,97 +21,15 @@ namespace MosquitoNetCalculator.Tests.Controls
     /// AdminPanelControl на STA-потоке с реальными темами App.xaml, данными из
     /// чистых конструкторов моделей. Находит дефекты запуска/интеракции, которые
     /// не ловит ни сборка, ни чистые тесты.
-    /// <para>WPF_UI — сериализованная коллекция (как у AppLifecycleTests): каждый
-    /// тест создаёт свой Application на своём STA-потоке и чинит статик WPF в
-    /// конце, чтобы соседние STA-тесты могли сделать то же.</para>
+    /// <para>WPF_UI — сериализованная коллекция (как у AppLifecycleTests);
+    /// приложение с темами поднимает общий самовосстанавливающийся bootstrap
+    /// <see cref="Helpers.TestAppThemes"/> и переиспользует его между тестами.</para>
     /// </summary>
     [Collection("WPF_UI")]
     public class AdminPanelPlaytestTests
     {
-        private static string FindSourceDir()
-        {
-            var dir = new DirectoryInfo(AppContext.BaseDirectory);
-            while (dir != null)
-            {
-                var candidate = Path.Combine(dir.FullName, "MosquitoNetCalculator");
-                if (File.Exists(Path.Combine(candidate, "App.xaml"))) return candidate;
-                dir = dir.Parent;
-            }
-            throw new DirectoryNotFoundException("source not found");
-        }
-
-        // Один тест — один STA-поток и один Application (по образцу
-        // AppLifecycleTests): статик WPF «не более одного Application в
-        // AppDomain» чистится в конце, чтобы не ломать соседние STA-тесты.
-        private static void RunOnSta(Action action)
-        {
-            Exception? caught = null, cleanupError = null;
-            var gate = new ManualResetEventSlim(false);
-
-            var t = new Thread(() =>
-            {
-                try
-                {
-                    // Чужой Application в AppDomain (параллельный STA-тест)
-                    // помешает создать наш — чистим статик перед стартом.
-                    if (Application.Current != null)
-                        MosquitoNetCalculator.Tests.App.AppLifecycleTests.ClearWpfApplicationStatic();
-
-                    EnsureAppThemes();
-                    action();
-                }
-                catch (Exception ex) { caught = ex; }
-                finally
-                {
-                    try { MosquitoNetCalculator.Tests.App.AppLifecycleTests.ClearWpfApplicationStatic(); }
-                    catch (Exception ex) { cleanupError = ex; }
-                    gate.Set();
-                }
-            });
-            t.SetApartmentState(ApartmentState.STA);
-            t.Start();
-
-            Assert.True(gate.Wait(TimeSpan.FromSeconds(90)), "STA playtest thread did not finish in time");
-            t.Join();
-
-            if (caught != null) throw caught;
-            if (cleanupError != null)
-                throw new InvalidOperationException("playtest WPF cleanup failed", cleanupError);
-        }
-
-        /// <summary>
-        /// Ровно тот же набор словарей в ТОМ ЖЕ порядке, что App.xaml:
-        /// StaticResource между словарями требует порядок загрузки
-        /// (FluentFocusVisual до словарей, которые его используют).
-        /// </summary>
-        private static void EnsureAppThemes()
-        {
-            if (Application.Current != null && Application.Current.Resources.MergedDictionaries.Count > 0)
-                return;
-
-            var app = new Application { ShutdownMode = ShutdownMode.OnExplicitShutdown };
-            var src = FindSourceDir();
-            string[] order =
-            {
-                "Brushes.xaml", "FocusVisualStyles.xaml", "CardStyles.xaml",
-                "FontStyles.xaml", "TabStyles.xaml", "ButtonStyles.xaml",
-                "InputStyles.xaml", "DataGridStyles.xaml", "InputStyles.RadioButton.xaml",
-                "ScrollViewerStyles.xaml", "ContextMenuStyles.xaml", "MiscStyles.xaml",
-            };
-            foreach (var name in order)
-            {
-                app.Resources.MergedDictionaries.Add(new ResourceDictionary
-                { Source = new Uri(Path.Combine(src, "Themes", name), UriKind.Absolute) });
-            }
-
-            // Конвертеры из App.xaml (StaticResource панели ссылается на них —
-            // в продукте их регистрирует App.xaml).
-            app.Resources["OfficeStatusBadgeBg"] = new MosquitoNetCalculator.Converters.OfficeStatusToBadgeBackgroundConverter();
-            app.Resources["OfficeStatusBadgeFg"] = new MosquitoNetCalculator.Converters.OfficeStatusToBadgeForegroundConverter();
-            app.Resources["OfficeStatusStripeBrush"] = new MosquitoNetCalculator.Converters.OfficeStatusToStripeBrushConverter();
-            app.Resources["UnbindModeToVisibility"] = new MosquitoNetCalculator.Converters.UnbindModeToVisibilityConverter();
-            app.Resources["BoolToVis"] = new System.Windows.Controls.BooleanToVisibilityConverter();
-        }
+        /// <summary>STA-поток с приложением и темами — общий bootstrap коллекции.</summary>
+        private static void RunOnSta(Action action) => TestAppThemes.RunOnSta(action);
 
         /// <summary>
         /// Открывает панель, наполняет Rows/StatsRows (как это делает RefreshAsync),
@@ -121,7 +39,7 @@ namespace MosquitoNetCalculator.Tests.Controls
             out List<OfficeStatusRow> rows,
             OfficeStatus? overrideStatus = null)
         {
-            EnsureAppThemes();
+            TestAppThemes.Ensure();
             var panel = new AdminPanelControl();
             // Без Measure/Arrange у контрола нет визуального дерева (шаблон не
             // применён) — эмулируем размещение в окне, как при реальном показе.

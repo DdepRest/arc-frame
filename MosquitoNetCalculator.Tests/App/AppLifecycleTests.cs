@@ -158,13 +158,15 @@ namespace MosquitoNetCalculator.Tests.App
             {
                 try
                 {
+                    // Application — процесс-глобальный статик. Живое приложение к
+                    // этому моменту — это bootstrap тестов с темами
+                    // (TestAppThemes держит его между тестами, чтобы не парсить
+                    // 12 словарей в каждом). Этому тесту нужен СВОЙ жизненный
+                    // цикл, поэтому статик забираем себе: раньше здесь был
+                    // «пропуск теста», и любое такое приложение превращалось в
+                    // падение вместо проверки.
                     if (Application.Current != null)
-                    {
-                        // xUnit may share an AppDomain with another test that
-                        // touched Application; bail out cleanly rather than throw.
-                        result.Skipped = true;
-                        return;
-                    }
+                        ClearWpfApplicationStatic();
 
                     var app = new Application { ShutdownMode = ShutdownMode.OnExplicitShutdown };
                     app.Exit += (_, _) => result.ExitCount++;
@@ -212,7 +214,6 @@ namespace MosquitoNetCalculator.Tests.App
 
             Assert.Null(caught);
             Assert.Null(result.CleanupError);
-            Assert.False(result.Skipped, "Application was already running in this AppDomain — cannot run STA lifecycle test.");
             Assert.True(result.AuxClosed, "Auxiliary window closed");
             Assert.True(result.MainOpened, "Main window opened");
             Assert.Equal(1, result.ExitCount);   // app exited exactly once, only after MainWindow.Close
@@ -245,7 +246,9 @@ namespace MosquitoNetCalculator.Tests.App
         ///    readers of <c>Current</c> see no live Application.
         ///
         /// We do NOT gate on <c>Application.Current == null</c> as a
-        /// fast-path because it has two failure modes:
+        /// fast-path because it has two failure modes (exactly why the same
+        /// unconditional reset now lives in the shared test bootstrap —
+        /// <see cref="Helpers.TestAppThemes.ResetStatics"/>):
         ///  • The getter calls <c>VerifyAccess()</c> on the static's
         ///    associated dispatcher, which can throw <c>InvalidOperationException</c>
         ///    after a shutdown has been scheduled.
@@ -262,36 +265,9 @@ namespace MosquitoNetCalculator.Tests.App
         /// </summary>
         internal static void ClearWpfApplicationStatic()
         {
-            var appType = typeof(System.Windows.Application);
-            const System.Reflection.BindingFlags PrivateStatic =
-                System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static;
-
-            // 1. Reset the per-AppDomain "already created" flag — MUST
-            //    come first; it's the gate new Application() ctor checks.
-            var flagField = appType.GetField("_appCreatedInThisAppDomain", PrivateStatic);
-            if (flagField == null)
-            {
-                throw new InvalidOperationException(
-                    "ClearWpfApplicationStatic: WPF Application._appCreatedInThisAppDomain " +
-                    "private static field not found on " + appType.FullName +
-                    " (assembly: " + appType.Assembly.GetName().FullName + "). " +
-                    "WPF likely renamed it in a new runtime — update ClearWpfApplicationStatic " +
-                    "to the new field name.");
-            }
-            flagField.SetValue(null, false);
-
-            // 2. Null the static Application reference — backs Application.Current.
-            var refField = appType.GetField("_appInstance", PrivateStatic);
-            if (refField == null)
-            {
-                throw new InvalidOperationException(
-                    "ClearWpfApplicationStatic: WPF Application._appInstance " +
-                    "private static field not found on " + appType.FullName +
-                    " (assembly: " + appType.Assembly.GetName().FullName + "). " +
-                    "WPF likely renamed it in a new runtime — update ClearWpfApplicationStatic " +
-                    "to the new field name.");
-            }
-            refField.SetValue(null, null);
+            // Единственная реализация сброса — в общем bootstrap'е тестов
+            // (см. TestAppThemesTests: расхождение слотов валило всю коллекцию).
+            Helpers.TestAppThemes.ResetStatics();
         }
 
         private sealed class LifecycleResult
@@ -299,7 +275,6 @@ namespace MosquitoNetCalculator.Tests.App
             public bool AuxClosed;
             public bool MainOpened;
             public int ExitCount;
-            public bool Skipped;
             // Set by the STA thread's finally block when ClearWpfApplicationStatic
             // throws. Surfaced as a distinct assertion on the main thread so the
             // actionable cleanup message is preserved without being trapped in

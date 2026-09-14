@@ -2,7 +2,6 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Threading;
 using System.Windows;
 using System.Windows.Controls;
 using MosquitoNetCalculator.Controls;
@@ -300,51 +299,7 @@ namespace MosquitoNetCalculator.Tests.Controls
             });
         }
 
-        private static void RunOnStaWithThemes(Action action)
-        {
-            WpfTestHelper.RunOnSta(() =>
-            {
-                if (Application.Current != null)
-                    AppLifecycleTests.ClearWpfApplicationStatic();
-
-                try
-                {
-                    EnsureAppThemes();
-                    action();
-                }
-                finally
-                {
-                    AppLifecycleTests.ClearWpfApplicationStatic();
-                }
-            });
-        }
-
-        private static void EnsureAppThemes()
-        {
-            var app = new Application { ShutdownMode = ShutdownMode.OnExplicitShutdown };
-            string sourceDir = LocateSourceProject();
-            string[] dictionaries =
-            {
-                "Brushes.xaml", "FocusVisualStyles.xaml", "CardStyles.xaml",
-                "FontStyles.xaml", "TabStyles.xaml", "ButtonStyles.xaml",
-                "InputStyles.xaml", "DataGridStyles.xaml", "InputStyles.RadioButton.xaml",
-                "ScrollViewerStyles.xaml", "ContextMenuStyles.xaml", "MiscStyles.xaml",
-            };
-
-            foreach (var dictionary in dictionaries)
-            {
-                app.Resources.MergedDictionaries.Add(new ResourceDictionary
-                {
-                    Source = new Uri(Path.Combine(sourceDir, "Themes", dictionary), UriKind.Absolute)
-                });
-            }
-
-            app.Resources["DimConv"] = new MosquitoNetCalculator.Converters.DimensionConverter();
-            app.Resources["BoolToVis"] = new BooleanToVisibilityConverter();
-            app.Resources["StatusToBadgeBg"] = new MosquitoNetCalculator.Converters.StatusToBadgeBackgroundConverter();
-            app.Resources["StatusToBadgeFg"] = new MosquitoNetCalculator.Converters.StatusToBadgeForegroundConverter();
-            app.Resources["MoneyConv"] = new MosquitoNetCalculator.Converters.MoneyConverter();
-        }
+        private static void RunOnStaWithThemes(Action action) => TestAppThemes.RunOnSta(action);
 
         /// <summary>Все индексы вхождений <paramref name="needle"/> в <paramref name="text"/>.</summary>
         private static IEnumerable<int> FindAll(string text, string needle)
