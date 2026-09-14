@@ -38,6 +38,13 @@
     <!-- Над блоком -->
     <Thickness x:Key="Gap.BlockTop">0,4,0,0</Thickness>
 
+    <!-- Пустые/загрузочные состояния: поля внутри карточки состояния -->
+    <Thickness x:Key="Pad.EmptyPanel">24,32</Thickness>
+    <!-- Между блоком состояния и заголовком/подсказкой/действием -->
+    <Thickness x:Key="Gap.EmptyIcon">0,0,0,8</Thickness>
+    <Thickness x:Key="Gap.EmptyHint">0,4,0,0</Thickness>
+    <Thickness x:Key="Gap.EmptyAction">0,12,0,0</Thickness>
+
     <!-- ── Готовые отступы: горизонтальный поток (Inline) ───────────── -->
     <!-- Иконка → подпись, кнопка → кнопка -->
     <Thickness x:Key="Gap.Inline">0,0,8,0</Thickness>

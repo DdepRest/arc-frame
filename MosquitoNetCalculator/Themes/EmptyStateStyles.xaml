@@ -1,0 +1,79 @@
+<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+    <!-- ═══════════════════════════════════════════════════════════════ -->
+    <!-- EMPTY / NO-RESULTS STATES — v3.53.0                            -->
+    <!--                                                                -->
+    <!-- До этой версии «пусто» рисовалось шесть раз шестью разными      -->
+    <!-- наборами чисел: глиф 22 / 40 / 44 / 48 / 60px, прозрачность    -->
+    <!-- 0.30 / 0.35 / 0.60 / 0.85, заголовок то TextPrimary, то        -->
+    <!-- TextMuted, то TextSecondary, подсказка то 11, то 12px.         -->
+    <!-- Один смысл — одно оформление: собирай состояние из этих        -->
+    <!-- строительных блоков, своих чисел не вводи.                     -->
+    <!--                                                                -->
+    <!-- Появление/исчезновение состояния — забота вызывающей стороны   -->
+    <!-- (Visibility-триггер) и Motion-токенов v3.53.0.                 -->
+    <!-- ═══════════════════════════════════════════════════════════════ -->
+
+    <!-- ── Карточка состояния: подложка Surface внутри панели AppBg ──── -->
+    <Style x:Key="EmptyState.Card" TargetType="Border">
+        <Setter Property="Background" Value="{DynamicResource Surface}"/>
+        <Setter Property="BorderBrush" Value="{DynamicResource Border}"/>
+        <Setter Property="BorderThickness" Value="1"/>
+        <Setter Property="CornerRadius" Value="{DynamicResource Radius.Card}"/>
+        <Setter Property="HorizontalAlignment" Value="Stretch"/>
+        <Setter Property="VerticalAlignment" Value="Stretch"/>
+    </Style>
+
+    <!-- ── Контейнер состояния: по центру доступного места ───────────── -->
+    <Style x:Key="EmptyState.Panel" TargetType="StackPanel">
+        <Setter Property="HorizontalAlignment" Value="Center"/>
+        <Setter Property="VerticalAlignment" Value="Center"/>
+        <Setter Property="Margin" Value="{DynamicResource Pad.EmptyPanel}"/>
+    </Style>
+
+    <!-- ── Глиф состояния: Fluent-иконка приглушённым цветом ──────────── -->
+    <Style x:Key="EmptyState.Icon" TargetType="TextBlock">
+        <Setter Property="FontFamily" Value="{DynamicResource Font.Icon}"/>
+        <Setter Property="FontSize" Value="{DynamicResource Type.Hero}"/>
+        <Setter Property="Foreground" Value="{DynamicResource TextMuted}"/>
+        <Setter Property="Opacity" Value="0.35"/>
+        <Setter Property="HorizontalAlignment" Value="Center"/>
+        <Setter Property="Margin" Value="{DynamicResource Gap.EmptyIcon}"/>
+        <Setter Property="IsHitTestVisible" Value="False"/>
+    </Style>
+
+    <!-- Компактный вариант для состояния ВНУТРИ списка/таблицы (свой
+         «ничего не найдено») — глиф не спорит с содержимым вокруг. -->
+    <Style x:Key="EmptyState.IconSm" TargetType="TextBlock" BasedOn="{StaticResource EmptyState.Icon}">
+        <Setter Property="FontSize" Value="{DynamicResource Type.Display}"/>
+    </Style>
+
+    <!-- ── Заголовок: что здесь произойдёт ───────────────────────────── -->
+    <Style x:Key="EmptyState.Title" TargetType="TextBlock">
+        <Setter Property="FontSize" Value="{DynamicResource Type.BodyLg}"/>
+        <Setter Property="FontWeight" Value="{DynamicResource Weight.SemiBold}"/>
+        <Setter Property="Foreground" Value="{DynamicResource TextPrimary}"/>
+        <Setter Property="HorizontalAlignment" Value="Center"/>
+        <Setter Property="TextAlignment" Value="Center"/>
+        <Setter Property="TextWrapping" Value="Wrap"/>
+    </Style>
+
+    <!-- ── Подсказка: что сделать прямо сейчас (одно предложение) ────── -->
+    <Style x:Key="EmptyState.Hint" TargetType="TextBlock">
+        <Setter Property="FontSize" Value="{DynamicResource Type.Caption}"/>
+        <Setter Property="Foreground" Value="{DynamicResource TextMuted}"/>
+        <Setter Property="HorizontalAlignment" Value="Center"/>
+        <Setter Property="TextAlignment" Value="Center"/>
+        <Setter Property="TextWrapping" Value="Wrap"/>
+        <Setter Property="MaxWidth" Value="380"/>
+        <Setter Property="Margin" Value="{DynamicResource Gap.EmptyHint}"/>
+    </Style>
+
+    <!-- ── Действие: одна понятная кнопка (необязательно) ───────────── -->
+    <Style x:Key="EmptyState.Action" TargetType="Button" BasedOn="{StaticResource GhostButton}">
+        <Setter Property="HorizontalAlignment" Value="Center"/>
+        <Setter Property="Margin" Value="{DynamicResource Gap.EmptyAction}"/>
+    </Style>
+
+</ResourceDictionary>

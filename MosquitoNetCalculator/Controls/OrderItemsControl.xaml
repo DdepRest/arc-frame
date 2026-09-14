@@ -473,12 +473,10 @@
              v3.50: MUST overlay the table (Grid.Row=1, same cell as CardTable) —
              without the explicit row it lands in Row 0 and pushes the grid
              headers below the illustration. -->
-        <Border x:Name="EmptyState" Grid.Row="1" Background="{DynamicResource Surface}" CornerRadius="10"
-                HorizontalAlignment="Stretch" VerticalAlignment="Stretch"
-                BorderBrush="{DynamicResource Border}" BorderThickness="1"
+        <Border x:Name="EmptyState" Grid.Row="1"
                 Opacity="0" Visibility="Collapsed">
             <Border.Style>
-                <Style TargetType="Border">
+                <Style TargetType="Border" BasedOn="{StaticResource EmptyState.Card}">
                     <Style.Triggers>
                         <DataTrigger Binding="{Binding Visibility, RelativeSource={RelativeSource Self}}" Value="Visible">
                             <DataTrigger.EnterActions>
@@ -498,19 +496,14 @@
                     </Style.Triggers>
                 </Style>
             </Border.Style>
-            <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center" Margin="20,0,20,30" MaxWidth="700">
-                <!-- Header icon + title -->
-                <Path Data="M2,2 L14,2 L14,14 L2,14 Z M2,7 L14,7 M7,2 L7,14"
-                      Width="40" Height="40" Stretch="Uniform"
-                      Stroke="{DynamicResource Border}" StrokeThickness="1.2" Fill="Transparent"
-                      StrokeLineJoin="Round" StrokeStartLineCap="Round" StrokeEndLineCap="Round"
-                      HorizontalAlignment="Center" Margin="0,0,0,10"
-                      Opacity="0.6"/>
-                <TextBlock Text="Выберите товар" FontSize="15"
-                           FontWeight="SemiBold" Foreground="{DynamicResource TextPrimary}"
-                           HorizontalAlignment="Center" Margin="0,0,0,4" Opacity="0.85"/>
-                <TextBlock FontSize="11" Foreground="{DynamicResource TextSecondary}" Opacity="0.85"
-                           HorizontalAlignment="Center" Margin="0,0,0,14" TextAlignment="Center">
+            <StackPanel Style="{DynamicResource EmptyState.Panel}" MaxWidth="700">
+                <!-- Иконка + заголовок + подсказка — общие блоки состояния:
+                     одно оформление на все шесть состояний пустоты в продукте. -->
+                <TextBlock Text="&#xE8FD;"
+                           Style="{DynamicResource EmptyState.Icon}"/>
+                <TextBlock Text="Выберите товар"
+                           Style="{DynamicResource EmptyState.Title}"/>
+                <TextBlock Style="{DynamicResource EmptyState.Hint}">
                     <Run Text="Нажмите на товар — он появится в поле"/>
                     <Run Text=" «Тип»" Foreground="{DynamicResource Accent}" FontWeight="SemiBold"/>
                     <Run Text=" выше"/>

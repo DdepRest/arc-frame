@@ -224,26 +224,15 @@
             </DataGrid>
 
                 <!-- Empty state — Fluent illustration with action button -->
-                <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center"
-                            x:Name="OrdersEmptyState"
-                            Visibility="{Binding IsEmpty, RelativeSource={RelativeSource AncestorType=UserControl}, Converter={StaticResource BoolToVis}}"
-                            Margin="0,0,0,40">
-                    <TextBlock Text="" FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets"
-                               FontSize="60"
-                               Foreground="{DynamicResource TextMuted}"
-                               Opacity="0.30"
-                               HorizontalAlignment="Center"/>
+                <StackPanel x:Name="OrdersEmptyState"
+                            Style="{DynamicResource EmptyState.Panel}"
+                            Visibility="{Binding IsEmpty, RelativeSource={RelativeSource AncestorType=UserControl}, Converter={StaticResource BoolToVis}}">
+                    <TextBlock Text="" Style="{DynamicResource EmptyState.Icon}"/>
                     <TextBlock Text="Заказов пока нет"
-                               FontSize="14" FontWeight="SemiBold"
-                               Foreground="{DynamicResource TextMuted}"
-                               HorizontalAlignment="Center" Margin="0,10,0,2"/>
+                               Style="{DynamicResource EmptyState.Title}"/>
                     <TextBlock Text="Создайте первый заказ на вкладке «Расчёт», заполните позиции и сохраните"
-                               FontSize="11"
-                               Foreground="{DynamicResource TextMuted}"
-                               Opacity="0.75"
-                               HorizontalAlignment="Center" Margin="0,0,0,18"/>
-                    <Button Style="{DynamicResource GhostButton}"
-                            HorizontalAlignment="Center"
+                               Style="{DynamicResource EmptyState.Hint}"/>
+                    <Button Style="{DynamicResource EmptyState.Action}"
                             Click="BtnGoToCalculation_Click"
                             ToolTip="Вернуться к расчёту (Ctrl+1)">
                         <StackPanel Orientation="Horizontal">
@@ -256,24 +245,16 @@
                 <!-- UX-09: search no-results state — orders exist, none match the filter.
                      The filtering happens in TxtSearchOrders_TextChanged, which also
                      maintains NoSearchResults; keep this mutually exclusive with IsEmpty. -->
-                <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center"
-                            x:Name="OrdersNoResultsState"
-                            Visibility="{Binding NoSearchResults, RelativeSource={RelativeSource AncestorType=UserControl}, Converter={StaticResource BoolToVis}}"
-                            Margin="0,0,0,40" IsHitTestVisible="False">
-                    <TextBlock Text="&#xE721;" FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets"
-                               FontSize="44"
-                               Foreground="{DynamicResource TextMuted}"
-                               Opacity="0.30"
-                               HorizontalAlignment="Center"/>
+                <StackPanel x:Name="OrdersNoResultsState"
+                            Style="{DynamicResource EmptyState.Panel}"
+                            IsHitTestVisible="False"
+                            Visibility="{Binding NoSearchResults, RelativeSource={RelativeSource AncestorType=UserControl}, Converter={StaticResource BoolToVis}}">
+                    <TextBlock Text="&#xE721;"
+                               Style="{DynamicResource EmptyState.Icon}"/>
                     <TextBlock Text="Ничего не найдено"
-                               FontSize="14" FontWeight="SemiBold"
-                               Foreground="{DynamicResource TextMuted}"
-                               HorizontalAlignment="Center" Margin="0,10,0,2"/>
+                               Style="{DynamicResource EmptyState.Title}"/>
                     <TextBlock Text="Попробуйте изменить запрос — поиск идёт по № КП, адресу и телефону"
-                               FontSize="11"
-                               Foreground="{DynamicResource TextMuted}"
-                               Opacity="0.75"
-                               HorizontalAlignment="Center" Margin="0,0,0,0"/>
+                               Style="{DynamicResource EmptyState.Hint}"/>
                 </StackPanel>
             </Grid>
         </Border>

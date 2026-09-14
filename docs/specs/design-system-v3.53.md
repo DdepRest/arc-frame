@@ -122,6 +122,19 @@ v3.53.0 нашёл 5 реальных нарушений, все они **исп
 только поднимать. Общий стиль `DialogCloseButton` несёт имя один раз на все
 ~10 диалогов.
 
+## 5в. Состояния (пусто / загрузка / ошибка)
+
+У состояния пустоты один язык: словарь `Themes/EmptyStateStyles.xaml` —
+`EmptyState.Card` (подложка Surface на панели), `EmptyState.Panel` (центр),
+`EmptyState.Icon` / `EmptyState.IconSm` (глиф 42px / 24px), `EmptyState.Title`,
+`EmptyState.Hint`, `EmptyState.Action` (наследует `GhostButton`). Свои размеры
+глифа, цвета заголовка и ширина подсказки на месте не вводятся — до v3.53.0
+шесть состояний расходились по всем трём параметрам.
+Загрузка и ошибка — те же блоки: заголовок меняется на «Проверяю…» /
+«Не удалось…», подсказка — на причину и что делать. Мгновенный переход к
+состоянию — `EmptyState.Panel` без анимации; появление с мягким входом —
+через Motion-токены (см. §4).
+
 ## 6. Проверка
 
 | Что проверяется | Тест |
@@ -137,6 +150,7 @@ v3.53.0 нашёл 5 реальных нарушений, все они **исп
 | Бюджеты литералов | `DesignTokenGuardTests.*_DoNotGrow`, `HardcodedHexColors_*` |
 | Контраст WCAG 2.1 в двух темах + реестр долга | `ContrastTests.Contrast_MeetsMinimumOrIsListedAsDebt` |
 | UIA-имена иконочных кнопок и окна | `AccessibilityTests.*` |
+| Состояния пустоты — из общих блоков, без литералов | `EmptyStateTests.*` |
 | `TextFormattingMode`/`UseLayoutRounding` и DPI | `WindowChromeAndDpiTests.*` |
 
 ## 7. Порядок миграции (для продолжающих)

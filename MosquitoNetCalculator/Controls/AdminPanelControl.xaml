@@ -661,27 +661,14 @@
 
                             <!-- Пустое состояние -->
                             <StackPanel x:Name="UpdatesEmpty"
-                                        Visibility="Collapsed"
-                                        HorizontalAlignment="Center"
-                                        VerticalAlignment="Center"
-                                        Margin="20,40,20,40">
+                                        Style="{DynamicResource EmptyState.Panel}"
+                                        Visibility="Collapsed">
                                 <TextBlock Text="&#xE8B7;"
-                                           FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets"
-                                           FontSize="42"
-                                           Foreground="{DynamicResource TextMuted}"
-                                           HorizontalAlignment="Center"/>
+                                           Style="{DynamicResource EmptyState.Icon}"/>
                                 <TextBlock x:Name="UpdatesEmptyTitle" Text="Отчёты ещё не получены"
-                                           FontSize="14" FontWeight="SemiBold"
-                                           Foreground="{DynamicResource TextPrimary}"
-                                           HorizontalAlignment="Center"
-                                           Margin="0,10,0,4"/>
+                                           Style="{DynamicResource EmptyState.Title}"/>
                                 <TextBlock x:Name="UpdatesEmptyHint" Text="Запустите программу в каждом офисе — здесь появятся статусы."
-                                           FontSize="12"
-                                           Foreground="{DynamicResource TextMuted}"
-                                           HorizontalAlignment="Center"
-                                           TextWrapping="Wrap"
-                                           TextAlignment="Center"
-                                           MaxWidth="380"/>
+                                           Style="{DynamicResource EmptyState.Hint}"/>
                             </StackPanel>
                         </Grid>
                     </ScrollViewer>

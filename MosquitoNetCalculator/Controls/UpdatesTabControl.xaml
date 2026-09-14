@@ -519,29 +519,17 @@
         <!-- Пустой результат фильтра/поиска — поверх списка,
              вне ScrollViewer (контент ScrollViewer — ровно один элемент) -->
         <Border x:Name="UpdatesEmptyState"
-                Background="{DynamicResource Surface}"
-                BorderBrush="{DynamicResource Border}"
-                BorderThickness="1"
-                CornerRadius="12"
-                Padding="20,28"
+                Style="{DynamicResource EmptyState.Card}"
+                Padding="{DynamicResource Pad.EmptyPanel}"
                 Margin="20,0,20,16"
                 Visibility="Collapsed">
-            <StackPanel HorizontalAlignment="Center">
-                            <TextBlock Text="&#xE721;"
-                                       FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets"
-                                       FontSize="22"
-                                       Foreground="{DynamicResource TextMuted}"
-                                       HorizontalAlignment="Center"
-                                       Margin="0,0,0,8"/>
-                            <TextBlock Text="Ничего не найдено"
-                                       FontSize="14" FontWeight="SemiBold"
-                                       Foreground="{DynamicResource TextPrimary}"
-                                       HorizontalAlignment="Center"/>
-                            <TextBlock Text="Измените фильтр или очистите поиск"
-                                       FontSize="12"
-                                       Foreground="{DynamicResource TextMuted}"
-                                       HorizontalAlignment="Center"
-                                       Margin="0,4,0,0"/>
+            <StackPanel Style="{DynamicResource EmptyState.Panel}" Margin="0">
+                <TextBlock Text="&#xE721;"
+                           Style="{DynamicResource EmptyState.IconSm}"/>
+                <TextBlock Text="Ничего не найдено"
+                           Style="{DynamicResource EmptyState.Title}"/>
+                <TextBlock Text="Измените фильтр или очистите поиск"
+                           Style="{DynamicResource EmptyState.Hint}"/>
             </StackPanel>
         </Border>
 

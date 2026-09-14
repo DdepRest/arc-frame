@@ -51,7 +51,11 @@ namespace MosquitoNetCalculator.Tests.Helpers
             "CardStyles.xaml",
             "FontStyles.xaml", "TabStyles.xaml", "ButtonStyles.xaml",
             "InputStyles.xaml", "DataGridStyles.xaml", "InputStyles.RadioButton.xaml",
-            "ScrollViewerStyles.xaml", "ContextMenuStyles.xaml", "MiscStyles.xaml",
+            "ScrollViewerStyles.xaml", "ContextMenuStyles.xaml",
+            // После ButtonStyles: EmptyState.Action наследует GhostButton
+            // через BasedOn StaticResource (тот же порядок, что в App.xaml).
+            "EmptyStateStyles.xaml",
+            "MiscStyles.xaml",
         };
 
         private static readonly string SourceDir = LocateSourceProject();

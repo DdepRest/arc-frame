@@ -33,6 +33,9 @@
                 <ResourceDictionary Source="Themes/InputStyles.RadioButton.xaml"/>
                 <ResourceDictionary Source="Themes/ScrollViewerStyles.xaml"/>
                 <ResourceDictionary Source="Themes/ContextMenuStyles.xaml"/>
+                <!-- После ButtonStyles: EmptyState.Action наследует GhostButton
+                     через BasedOn StaticResource. -->
+                <ResourceDictionary Source="Themes/EmptyStateStyles.xaml"/>
                 <ResourceDictionary Source="Themes/MiscStyles.xaml"/>
             </ResourceDictionary.MergedDictionaries>
 
