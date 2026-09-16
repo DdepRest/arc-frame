@@ -89,7 +89,7 @@ namespace MosquitoNetCalculator.Tests.Design
             // Типографика окна тоже из токенов, а шрифт — через DynamicResource
             // (значение подменяет AppFontService на вшитый Inter).
             Assert.Contains("{DynamicResource Font.Text}", style);
-            Assert.Contains("{StaticResource Type.BodyMd}", style);
+            Assert.Contains("{StaticResource Type.Body}", style);
 
             // Неявного дубля быть не должно: он либо выбирается вместо явного
             // (и тогда ни одно окно-наследник его не видит), либо выглядит
@@ -130,7 +130,7 @@ namespace MosquitoNetCalculator.Tests.Design
             TestAppThemes.RunOnSta(() =>
             {
                 var app = Application.Current;
-                double expectedFontSize = (double)app.Resources["Type.BodyMd"];
+                double expectedFontSize = (double)app.Resources["Type.Body"];
 
                 var factories = new (string Name, Func<Window> Create)[]
                 {

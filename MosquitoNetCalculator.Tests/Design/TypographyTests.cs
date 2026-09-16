@@ -149,7 +149,7 @@ namespace MosquitoNetCalculator.Tests.Design
                 RepoRoot(), "MosquitoNetCalculator", "Themes", "Tokens.Typography.xaml"));
 
             // Только ступени шкалы: Type.LineHeight* живут отдельно и не являются размерами.
-            const string scaleNames = "Monogram|Caption|Body|BodyMd|BodyLg|Subtitle|Title|TitleLg|Display|Metric|Hero";
+            const string scaleNames = "Monogram|Caption|Body|BodyLg|Subtitle|Title|TitleLg|Display|Metric|Hero";
             var sizes = Regex.Matches(tokens, $"<sys:Double x:Key=\"Type\\.({scaleNames})\">([0-9.]+)</sys:Double>")
                 .Select(m => double.Parse(m.Groups[2].Value, System.Globalization.CultureInfo.InvariantCulture))
                 .ToList();
@@ -164,6 +164,34 @@ namespace MosquitoNetCalculator.Tests.Design
 
             // Каждая ступень уникальна — иначе это не шкала.
             Assert.Equal(sizes.Count, sizes.Distinct().Count());
+        }
+
+        [Fact]
+        public void TypeScale_ExcludesDegenerateThirteenPixelStep()
+        {
+            // У Inter на 13px высота чернил прыгает с 9px на 11px (+22%),
+            // пропуская 10px — интерфейс выглядит «вытянутым» (замеры и
+            // разбор — GOTCHAS §24). Ступень 13 выведена из шкалы в v3.53.0:
+            // основной текст — 12px (чернилами равен старому Segoe UI).
+            // Страж: ни токен, ни литерал 13px не должны вернуться.
+            foreach (string path in new[]
+                     {
+                         "Themes/Tokens.Typography.xaml",
+                         "Themes/FontStyles.xaml",
+                         "Themes/MiscStyles.xaml",
+                     })
+            {
+                string text = File.ReadAllText(Path.Combine(RepoRoot(), "MosquitoNetCalculator", path.Replace('/', Path.DirectorySeparatorChar)));
+                Assert.DoesNotContain("Type.BodyMd", text);
+                Assert.DoesNotContain(">13<", text);
+            }
+
+            foreach (string file in Directory.EnumerateFiles(
+                         Path.Combine(RepoRoot(), "MosquitoNetCalculator"), "*.xaml", SearchOption.AllDirectories))
+            {
+                string text = File.ReadAllText(file);
+                Assert.DoesNotContain("FontSize=\"13\"", text);
+            }
         }
 
         [Fact]

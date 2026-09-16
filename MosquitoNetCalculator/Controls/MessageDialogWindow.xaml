@@ -65,7 +65,7 @@
             <!-- Message -->
             <TextBlock x:Name="MessageText"
                        Grid.Row="1"
-                       FontSize="13"
+                       FontSize="12"
                        Foreground="{DynamicResource TextPrimary}"
                        TextWrapping="Wrap"
                        Margin="24,20,24,20"/>
@@ -93,7 +93,7 @@
                                 MinWidth="90"
                                 Padding="16,7"
                                 Margin="8,0,0,0"
-                                FontSize="13"
+                                FontSize="12"
                                 Click="DialogButton_Click"
                                 Loaded="DialogButton_Loaded"
                                 Tag="{Binding}"/>

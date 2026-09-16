@@ -44,7 +44,7 @@ namespace MosquitoNetCalculator.Controls
             panel.Children.Add(new TextBlock
             {
                 Text = $"v{item.Version}",
-                FontSize = 13,
+                FontSize = 12,
                 FontWeight = FontWeights.SemiBold,
                 Foreground = (Brush?)Application.Current?.TryFindResource("TextPrimary") ?? Brushes.Black,
                 VerticalAlignment = VerticalAlignment.Center

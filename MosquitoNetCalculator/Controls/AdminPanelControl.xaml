@@ -280,7 +280,7 @@
                                      VerticalContentAlignment="Center"
                                      TextChanged="TxtSearch_TextChanged"/>
                             <TextBlock Text="&#xE721;" FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets"
-                                       FontSize="13" Foreground="{DynamicResource TextMuted}"
+                                       FontSize="12" Foreground="{DynamicResource TextMuted}"
                                        VerticalAlignment="Center" Margin="10,0,0,0" IsHitTestVisible="False"/>
                             <Button x:Name="BtnClearSearch" Visibility="Collapsed" Content="✕" Width="22" Height="22"
                                     Click="BtnClearSearch_Click" Background="Transparent" BorderThickness="0"

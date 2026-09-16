@@ -201,7 +201,7 @@
                                     </Ellipse>
                                     <TextBlock Grid.Column="1" Grid.Row="0"
                                                Text="{Binding LocationName}"
-                                               FontSize="13" FontWeight="Medium"
+                                               FontSize="12" FontWeight="Medium"
                                                Foreground="{DynamicResource TextPrimary}"
                                                Margin="0,0,0,2"/>
                                     <TextBlock Grid.Column="1" Grid.Row="1"
@@ -268,12 +268,12 @@
                         Margin="0,10,0,0">
                     <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
                         <TextBlock Text="Номер договора: "
-                                   FontSize="13"
+                                   FontSize="12"
                                    Foreground="{DynamicResource TextSecondary}"
                                    VerticalAlignment="Center"/>
                         <TextBlock x:Name="PreviewContractNumber"
                                    Text="1-1"
-                                   FontSize="13" FontWeight="Bold"
+                                   FontSize="12" FontWeight="Bold"
                                    Foreground="{DynamicResource Accent}"
                                    VerticalAlignment="Center"/>
                     </StackPanel>

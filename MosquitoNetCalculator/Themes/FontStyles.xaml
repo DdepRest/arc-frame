@@ -4,7 +4,7 @@
         <!-- ИКОНКИ — Segoe Fluent Icons (токен Font.Icon)           -->
         <!-- ═══════════════════════════════════════════════════════ -->
         <!-- Иконка всегда парна тексту и берёт его ступень шкалы:
-             12/13/14px = Type.Body/Type.BodyMd/Type.BodyLg. Магических
+             11/12/14px = Type.Caption/Type.Body/Type.BodyLg. Магических
              размеров у иконок быть не должно — они и вызывали «расползание». -->
         <Style x:Key="FluentIcon" TargetType="TextBlock">
             <Setter Property="FontFamily" Value="{DynamicResource Font.Icon}"/>
@@ -14,7 +14,7 @@
         </Style>
 
         <Style x:Key="FluentIconTab" TargetType="TextBlock" BasedOn="{StaticResource FluentIcon}">
-            <Setter Property="FontSize" Value="{StaticResource Type.BodyMd}"/>
+            <Setter Property="FontSize" Value="{StaticResource Type.Body}"/>
             <Setter Property="Margin" Value="{StaticResource Gap.InlineSm}"/>
             <Setter Property="Opacity" Value="0.85"/>
         </Style>
@@ -26,7 +26,7 @@
         </Style>
 
         <Style x:Key="FluentIconButton" TargetType="TextBlock" BasedOn="{StaticResource FluentIcon}">
-            <Setter Property="FontSize" Value="{StaticResource Type.BodyMd}"/>
+            <Setter Property="FontSize" Value="{StaticResource Type.Body}"/>
             <Setter Property="Margin" Value="{StaticResource Gap.InlineSm}"/>
         </Style>
 
@@ -38,7 +38,7 @@
              контролов (в т.ч. в шаблонах попапов) — этим стилем. -->
         <Style x:Key="Text.Base" TargetType="TextBlock">
             <Setter Property="FontFamily" Value="{DynamicResource Font.Text}"/>
-            <Setter Property="FontSize" Value="{StaticResource Type.BodyMd}"/>
+            <Setter Property="FontSize" Value="{StaticResource Type.Body}"/>
             <Setter Property="Foreground" Value="{DynamicResource TextPrimary}"/>
         </Style>
 
@@ -99,8 +99,8 @@
         <!-- ═══════════════════════════════════════════════════════ -->
         <!-- ШКАЛА ТИПОГРАФИКИ — справка (UX-16 → v3.53.0)           -->
         <!-- ═══════════════════════════════════════════════════════ -->
-        <!-- Ступени: 11 (Caption) · 12 (Body) · 13 (BodyMd, дефолт) ·
-             14 (BodyLg) · 16 (Subtitle) · 18 (Title) · 20 (TitleLg) ·
+        <!-- Ступени: 11 (Caption) · 12 (Body, дефолт) · 14 (BodyLg) ·
+             16 (Subtitle) · 18 (Title) · 20 (TitleLg) ·
              24 (Display) · 32 (Metric) · 42 (Hero).
              Пол 11px для любого реального текста; 9px — только монограммы.
              Дробные размеры (11.5/10.5/12.5) в этой шкале не используются: при

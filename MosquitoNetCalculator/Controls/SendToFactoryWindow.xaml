@@ -61,7 +61,7 @@
                                    Foreground="{DynamicResource Accent}"
                                    VerticalAlignment="Center" Margin="0,0,8,0"/>
                         <TextBlock Text="Отправить на завод"
-                                   FontSize="13" FontWeight="SemiBold"
+                                   FontSize="12" FontWeight="SemiBold"
                                    Foreground="{DynamicResource TextPrimary}"
                                    VerticalAlignment="Center"/>
                     </StackPanel>
@@ -224,7 +224,7 @@
                 <Button x:Name="BtnCopy"
                         Style="{DynamicResource PrimaryButton}"
                         Click="BtnCopy_Click"
-                        FontSize="13" Padding="18,7"
+                        FontSize="12" Padding="18,7"
                         ToolTip="Копировать в буфер обмена (Ctrl+C)">
                     <StackPanel Orientation="Horizontal">
                         <TextBlock Text="&#xE8C8;" FontSize="14"

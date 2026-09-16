@@ -95,7 +95,7 @@
                                Text="Поиск: № КП, адрес или телефон"
                                Margin="8,0,0,0"
                                VerticalAlignment="Center"
-                               FontSize="13"
+                               FontSize="12"
                                Foreground="{DynamicResource TextMuted}"
                                IsHitTestVisible="False"/>
                 </Grid>

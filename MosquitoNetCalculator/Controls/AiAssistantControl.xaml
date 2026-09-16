@@ -159,7 +159,7 @@
                                                 CornerRadius="{DynamicResource Radius.Xl}">
                                             <TextBlock Text="&#xE99A;"
                                                        FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets"
-                                                       FontSize="13"
+                                                       FontSize="12"
                                                        Foreground="{DynamicResource OnAccent}"
                                                        HorizontalAlignment="Center"
                                                        VerticalAlignment="Center"/>
@@ -251,7 +251,7 @@
                                                             <TextBox Text="{Binding ClarificationForm.WidthText, UpdateSourceTrigger=PropertyChanged}"
                                                                      Height="28" FontSize="12"
                                                                      AutomationProperties.Name="Ширина"/>
-                                                            <TextBlock Grid.Column="1" Text="×" FontSize="13"
+                                                            <TextBlock Grid.Column="1" Text="×" FontSize="12"
                                                                        Foreground="{DynamicResource TextMuted}"
                                                                        VerticalAlignment="Center" Margin="6,0"/>
                                                             <TextBox Grid.Column="2"
@@ -516,7 +516,7 @@
                                                 CornerRadius="{DynamicResource Radius.Xl}">
                                             <TextBlock Text="&#xE77B;"
                                                        FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets"
-                                                       FontSize="13"
+                                                       FontSize="12"
                                                        Foreground="{DynamicResource TextMuted}"
                                                        HorizontalAlignment="Center"
                                                        VerticalAlignment="Center"/>
@@ -654,7 +654,7 @@
                                     </Border.RenderTransform>
                                     <TextBlock Text="&#xE74D;"
                                                FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets"
-                                               FontSize="13"
+                                               FontSize="12"
                                                HorizontalAlignment="Center"
                                                VerticalAlignment="Center"
                                                Foreground="{TemplateBinding Foreground}"/>

@@ -24,7 +24,7 @@
              совпадение разбиения на страницы с выводом на печать. -->
         <Style x:Key="Window.Shared" TargetType="Window">
             <Setter Property="FontFamily" Value="{DynamicResource Font.Text}"/>
-            <Setter Property="FontSize" Value="{StaticResource Type.BodyMd}"/>
+            <Setter Property="FontSize" Value="{StaticResource Type.Body}"/>
             <Setter Property="TextOptions.TextFormattingMode" Value="Display"/>
             <Setter Property="TextOptions.TextRenderingMode" Value="ClearType"/>
             <Setter Property="UseLayoutRounding" Value="True"/>
@@ -81,7 +81,7 @@
             <Setter Property="Background" Value="{DynamicResource Surface}"/>
             <Setter Property="BorderBrush" Value="{DynamicResource Border}"/>
             <Setter Property="BorderThickness" Value="0"/>
-            <Setter Property="FontSize" Value="{StaticResource Type.BodyMd}"/>
+            <Setter Property="FontSize" Value="{StaticResource Type.Body}"/>
             <Setter Property="Foreground" Value="{DynamicResource TextPrimary}"/>
         </Style>
 

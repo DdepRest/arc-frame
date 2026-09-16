@@ -433,7 +433,7 @@ namespace MosquitoNetCalculator.Services
             var titleBlock = new TextBlock
             {
                 Text = "Доступно обновление",
-                FontSize = 13,
+                FontSize = 12,
                 FontWeight = FontWeights.SemiBold,
                 Foreground = (Brush?)Application.Current?.FindResource("TextPrimary") ?? Brushes.Black,
                 Margin = new Thickness(0, 0, 0, 1),

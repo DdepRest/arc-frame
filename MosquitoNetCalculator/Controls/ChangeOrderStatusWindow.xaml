@@ -79,7 +79,7 @@
                            Margin="0,0,0,6"/>
                 <ComboBox x:Name="StatusCombo"
                           ItemsSource="{x:Static models:OrderStatuses.All}"
-                          FontSize="13"/>
+                          FontSize="12"/>
             </StackPanel>
 
             <!-- Buttons -->
@@ -93,7 +93,7 @@
                         MinWidth="90"
                         Padding="16,7"
                         Margin="0,0,8,0"
-                        FontSize="13"
+                        FontSize="12"
                         Click="BtnCancel_Click"
                         IsCancel="True"/>
                 <Button x:Name="BtnSave"
@@ -101,7 +101,7 @@
                         Content="Сохранить"
                         MinWidth="90"
                         Padding="16,7"
-                        FontSize="13"
+                        FontSize="12"
                         FontWeight="SemiBold"
                         Click="BtnSave_Click"
                         IsDefault="True"/>

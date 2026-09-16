@@ -86,7 +86,7 @@
                                            FontSize="14"
                                            VerticalAlignment="Center"/>
                                 <TextBlock Text="Размеры окна"
-                                           FontSize="13"
+                                           FontSize="12"
                                            FontWeight="SemiBold"
                                            Foreground="{DynamicResource TextPrimary}"
                                            VerticalAlignment="Center"/>
@@ -177,7 +177,7 @@
                                                FontSize="14"
                                                VerticalAlignment="Center"/>
                                     <TextBlock Text="Материалы"
-                                               FontSize="13"
+                                               FontSize="12"
                                                FontWeight="SemiBold"
                                                Foreground="{DynamicResource TextPrimary}"
                                                VerticalAlignment="Center"/>
@@ -192,7 +192,7 @@
                                     <StackPanel Orientation="Horizontal">
                                         <TextBlock Text="&#xE72C;"
                                                    Style="{DynamicResource FluentIconButton}"
-                                                   FontSize="13"
+                                                   FontSize="12"
                                                    VerticalAlignment="Center"/>
                                         <TextBlock Text="Сбросить"
                                                    FontSize="11"
@@ -452,7 +452,7 @@
                                            FontSize="14"
                                            VerticalAlignment="Center"/>
                                 <TextBlock Text="{Binding SummaryTitle, RelativeSource={RelativeSource AncestorType=UserControl}}"
-                                           FontSize="13"
+                                           FontSize="12"
                                            FontWeight="SemiBold"
                                            Foreground="{DynamicResource TextPrimary}"
                                            VerticalAlignment="Center"/>
