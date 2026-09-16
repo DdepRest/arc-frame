@@ -2,6 +2,7 @@
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
+using MosquitoNetCalculator.Helpers;
 using MosquitoNetCalculator.Models;
 
 namespace MosquitoNetCalculator.Controls
@@ -60,7 +61,7 @@ namespace MosquitoNetCalculator.Controls
             panel.Children.Add(new Border
             {
                 Background = typeBrush,
-                CornerRadius = new CornerRadius(4),
+                CornerRadius = Radii.Element,
                 Padding = new Thickness(6, 1, 6, 1),
                 Margin = new Thickness(8, 0, 0, 0),
                 VerticalAlignment = VerticalAlignment.Center,

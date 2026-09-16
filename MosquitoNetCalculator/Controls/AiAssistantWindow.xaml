@@ -1,4 +1,4 @@
-<Window x:Class="MosquitoNetCalculator.Controls.AiAssistantWindow"
+﻿<Window x:Class="MosquitoNetCalculator.Controls.AiAssistantWindow"
         Style="{DynamicResource Window.Shared}"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
@@ -55,7 +55,7 @@
                                 <Setter.Value>
                                     <ControlTemplate TargetType="Button">
                                         <Border x:Name="Bd" Background="{TemplateBinding Background}"
-                                                CornerRadius="6" Width="32" Height="32">
+                                                CornerRadius="{DynamicResource Radius.Md}" Width="32" Height="32">
                                             <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
                                         </Border>
                                         <ControlTemplate.Triggers>

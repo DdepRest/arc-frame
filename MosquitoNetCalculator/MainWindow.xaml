@@ -18,7 +18,7 @@
 
     <WindowChrome.WindowChrome>
         <WindowChrome CaptionHeight="40"
-                      CornerRadius="0"
+                      CornerRadius="{DynamicResource Radius.None}"
                       GlassFrameThickness="0"
                       ResizeBorderThickness="6"
                       UseAeroCaptionButtons="False"/>
@@ -85,13 +85,13 @@
                 <Setter.Value>
                     <ControlTemplate TargetType="Button">
                         <Border Background="{TemplateBinding Background}"
-                                CornerRadius="8" BorderThickness="0"
+                                CornerRadius="{DynamicResource Radius.Md}" BorderThickness="0"
                                 Height="40">
                             <Grid>
                                 <!-- Active indicator pill (left edge) -->
                                 <Border x:Name="ActivePill" Width="3" Height="16"
                                         Background="{DynamicResource Accent}"
-                                        CornerRadius="1.5"
+                                        CornerRadius="{DynamicResource Radius.CapsuleSm}"
                                         HorizontalAlignment="Left" VerticalAlignment="Center"
                                         Margin="0,0,0,0" Opacity="0"/>
                                 <ContentPresenter HorizontalAlignment="Left"
@@ -125,7 +125,7 @@
                 <Setter.Value>
                     <ControlTemplate TargetType="Button">
                         <Border x:Name="Bd" Background="{TemplateBinding Background}"
-                                CornerRadius="6" BorderThickness="0"
+                                CornerRadius="{DynamicResource Radius.Md}" BorderThickness="0"
                                 Width="32" Height="32">
                             <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
                         </Border>
@@ -208,7 +208,7 @@
                                            VerticalAlignment="Center"/>
                                 <Border x:Name="StatusDirtyIndicator" Visibility="Collapsed"
                                         Background="{DynamicResource BadgeWarningBg}"
-                                        CornerRadius="7" Padding="7,3" Margin="10,0,0,0"
+                                        CornerRadius="{DynamicResource Radius.Capsule}" Padding="7,3" Margin="10,0,0,0"
                                         ToolTip="Несохранённые изменения (Ctrl+S)">
                                     <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
                                         <Ellipse Width="6" Height="6" Fill="{DynamicResource BadgeWarningFg}"
@@ -262,7 +262,7 @@
                                              ChipBg (light blue) + Accent bold text + CornerRadius 10, so
                                              the count stands out visually, exactly as the user expects. -->
                                         <Border x:Name="OrdersCountBadge"
-                                                Background="{DynamicResource ChipBg}" CornerRadius="10"
+                                                Background="{DynamicResource ChipBg}" CornerRadius="{DynamicResource Radius.Capsule}"
                                                 Padding="10,4" Margin="10,0,0,0"
                                                 VerticalAlignment="Center"
                                                 Visibility="Collapsed">
@@ -455,7 +455,7 @@
                                                    Foreground="{DynamicResource Accent}" VerticalAlignment="Center" Margin="0,0,8,0"/>
                                         <TextBlock Text="AI Ассистент" FontSize="14" FontWeight="SemiBold"
                                                    Foreground="{DynamicResource TextPrimary}" VerticalAlignment="Center"/>
-                                        <Border CornerRadius="5" Padding="5,2" Margin="8,0,0,0"
+                                        <Border CornerRadius="{DynamicResource Radius.Capsule}" Padding="5,2" Margin="8,0,0,0"
                                                 Background="{DynamicResource BadgeWarningBg}"
                                                 BorderBrush="{DynamicResource BadgeWarningFg}" BorderThickness="1"
                                                 ToolTip="AI-функции находятся в стадии тестирования">

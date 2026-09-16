@@ -575,10 +575,10 @@
                                                                 Margin="12,0,0,0" VerticalAlignment="Center"
                                                                 ToolTip="Сколько устройств офиса в актуальной версии">
                                                             <StackPanel Orientation="Horizontal">
-                                                                <Border Width="34" Height="5" CornerRadius="2.5"
+                                                                <Border Width="34" Height="5" CornerRadius="{DynamicResource Radius.CapsuleSm}"
                                                                         Background="{DynamicResource Border}" VerticalAlignment="Center">
                                                                     <Border Width="{Binding ProgressWidth}"
-                                                                            HorizontalAlignment="Left" CornerRadius="2.5"
+                                                                            HorizontalAlignment="Left" CornerRadius="{DynamicResource Radius.CapsuleSm}"
                                                                             Background="{DynamicResource Success}"/>
                                                                 </Border>
                                                                 <TextBlock Text="{Binding ProgressText}"

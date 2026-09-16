@@ -26,13 +26,13 @@
                              margin that was previously the Padding). This makes the hover
                              tint fill the whole tab cell, not just the text area. -->
                         <Border x:Name="OuterBd"
-                                Background="Transparent" CornerRadius="4"
+                                Background="Transparent" CornerRadius="{DynamicResource Radius.Sm}"
                                 SnapsToDevicePixels="True"
                                 HorizontalAlignment="Stretch" VerticalAlignment="Stretch">
                             <Grid>
                                 <!-- Hover overlay — AccentLight tint for a visible but calm Fluent hover -->
                                 <Border x:Name="HoverOverlay" Background="{DynamicResource AccentLight}"
-                                        CornerRadius="4" Opacity="0"
+                                        CornerRadius="{DynamicResource Radius.Sm}" Opacity="0"
                                         HorizontalAlignment="Stretch" VerticalAlignment="Stretch"/>
                                     <StackPanel Margin="18,8" RenderTransformOrigin="0.5,0.5">
                                         <StackPanel.RenderTransform>
@@ -42,7 +42,7 @@
                                             VerticalAlignment="Center" ContentSource="Header"/>
                                         <!-- Selection underline indicator — grows from center when selected -->
                                         <Border x:Name="Indicator" Width="0" Height="3" Margin="0,4,0,0"
-                                                CornerRadius="1.5" Background="{DynamicResource Accent}"
+                                                CornerRadius="{DynamicResource Radius.CapsuleSm}" Background="{DynamicResource Accent}"
                                                 HorizontalAlignment="Center" Opacity="0">
                                             <Border.Style>
                                                 <Style TargetType="Border">

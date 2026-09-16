@@ -14,7 +14,7 @@
         >
     <Border Background="{DynamicResource Surface}" ClipToBounds="True"
             BorderBrush="{DynamicResource Border}" BorderThickness="1"
-            CornerRadius="12" Padding="4" Margin="8">
+            CornerRadius="{DynamicResource Radius.Lg}" Padding="4" Margin="8">
         <Border.Effect>
             <DropShadowEffect Color="{DynamicResource ShadowColor}" BlurRadius="20" ShadowDepth="2" Opacity="0.12"/>
         </Border.Effect>
@@ -27,7 +27,7 @@
             <!-- Title bar -->
             <Border x:Name="TitleBarBorder" Grid.Row="0"
                     Background="{DynamicResource HeaderBg}"
-                    CornerRadius="12,12,0,0"
+                    CornerRadius="{DynamicResource Radius.CardHeader}"
                     Height="32"
                     Padding="14,0,0,0"
                     MouseLeftButtonDown="TitleBarBorder_MouseLeftButtonDown">

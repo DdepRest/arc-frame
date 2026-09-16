@@ -21,7 +21,7 @@
                             Background="{Binding Background, RelativeSource={RelativeSource TemplatedParent}}"
                             BorderBrush="{Binding BorderBrush, RelativeSource={RelativeSource TemplatedParent}}"
                             BorderThickness="{Binding BorderThickness, RelativeSource={RelativeSource TemplatedParent}}"
-                            CornerRadius="7"
+                            CornerRadius="{DynamicResource Radius.Control}"
                             SnapsToDevicePixels="True">
                         <ScrollViewer x:Name="PART_ContentHost"
                                       Margin="10,0"
@@ -53,7 +53,7 @@
                             Background="{Binding Background, RelativeSource={RelativeSource TemplatedParent}}"
                             BorderBrush="{Binding BorderBrush, RelativeSource={RelativeSource TemplatedParent}}"
                             BorderThickness="{Binding BorderThickness, RelativeSource={RelativeSource TemplatedParent}}"
-                            CornerRadius="7"
+                            CornerRadius="{DynamicResource Radius.Control}"
                             SnapsToDevicePixels="True">
                         <ScrollViewer x:Name="PART_ContentHost"
                                       Margin="8,0"
@@ -96,7 +96,7 @@
                     <Border Background="{Binding Background, RelativeSource={RelativeSource TemplatedParent}}"
                             BorderBrush="{Binding BorderBrush, RelativeSource={RelativeSource TemplatedParent}}"
                             BorderThickness="{Binding BorderThickness, RelativeSource={RelativeSource TemplatedParent}}"
-                            CornerRadius="7"
+                            CornerRadius="{DynamicResource Radius.Control}"
                             SnapsToDevicePixels="True">
                         <ScrollViewer x:Name="PART_ContentHost"
                                       Margin="10,0"

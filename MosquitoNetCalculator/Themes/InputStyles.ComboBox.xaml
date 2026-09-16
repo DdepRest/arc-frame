@@ -10,7 +10,7 @@
     <ControlTemplate x:Key="SelectableItemTemplate" TargetType="ListBoxItem">
         <Border x:Name="Bd" Background="Transparent"
                 Padding="{Binding Padding, RelativeSource={RelativeSource TemplatedParent}}"
-                CornerRadius="5" Margin="0,1">
+                CornerRadius="{DynamicResource Radius.Sm}" Margin="0,1">
             <ContentPresenter VerticalAlignment="Center"/>
         </Border>
         <ControlTemplate.Triggers>
@@ -41,7 +41,7 @@
                                 Background="{Binding Background, RelativeSource={RelativeSource TemplatedParent}}"
                                 BorderBrush="{Binding BorderBrush, RelativeSource={RelativeSource TemplatedParent}}"
                                 BorderThickness="{Binding BorderThickness, RelativeSource={RelativeSource TemplatedParent}}"
-                                CornerRadius="7"
+                                CornerRadius="{DynamicResource Radius.Control}"
                                 SnapsToDevicePixels="True">
                             <Grid>
                                 <ContentPresenter Margin="10,0,28,0"
@@ -79,7 +79,7 @@
                             <Border Background="{DynamicResource Surface}"
                                     BorderBrush="{DynamicResource Border}"
                                     BorderThickness="1"
-                                    CornerRadius="8"
+                                    CornerRadius="{DynamicResource Radius.Md}"
                                     Margin="0,2,0,0"
                                     Padding="4,4"
                                     SnapsToDevicePixels="True">
@@ -143,7 +143,7 @@
                                 Background="{Binding Background, RelativeSource={RelativeSource TemplatedParent}}"
                                 BorderBrush="{Binding BorderBrush, RelativeSource={RelativeSource TemplatedParent}}"
                                 BorderThickness="{Binding BorderThickness, RelativeSource={RelativeSource TemplatedParent}}"
-                                CornerRadius="7"
+                                CornerRadius="{DynamicResource Radius.Control}"
                                 SnapsToDevicePixels="True">
                             <Grid>
                                 <ContentPresenter Margin="8,0,28,0"
@@ -181,7 +181,7 @@
                             <Border Background="{DynamicResource Surface}"
                                     BorderBrush="{DynamicResource Border}"
                                     BorderThickness="1"
-                                    CornerRadius="8"
+                                    CornerRadius="{DynamicResource Radius.Md}"
                                     Margin="0,2,0,0"
                                     Padding="4,4"
                                     SnapsToDevicePixels="True">

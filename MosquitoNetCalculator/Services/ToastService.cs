@@ -178,7 +178,7 @@ namespace MosquitoNetCalculator.Services
             var accentBar = new Border
             {
                 Width = 4,
-                CornerRadius = new CornerRadius(2),
+                CornerRadius = Radii.CapsuleSm,
                 Background = accentBrush,
                 Margin = new Thickness(0, 0, 12, 0),
                 VerticalAlignment = VerticalAlignment.Stretch
@@ -187,7 +187,7 @@ namespace MosquitoNetCalculator.Services
             var iconBorder = new Border
             {
                 Width = 24, Height = 24,
-                CornerRadius = new CornerRadius(12),
+                CornerRadius = Radii.Pill,
                 Background = accentBrush,
                 Child = new TextBlock
                 {
@@ -405,7 +405,7 @@ namespace MosquitoNetCalculator.Services
             var accentBar = new Border
             {
                 Width = 4,
-                CornerRadius = new CornerRadius(2),
+                CornerRadius = Radii.CapsuleSm,
                 Background = accentBrush,
                 Margin = new Thickness(0, 0, 12, 0),
                 VerticalAlignment = VerticalAlignment.Stretch,
@@ -415,7 +415,7 @@ namespace MosquitoNetCalculator.Services
             {
                 Width = 24,
                 Height = 24,
-                CornerRadius = new CornerRadius(12),
+                CornerRadius = Radii.Pill,
                 Background = accentBrush,
                 Margin = new Thickness(0, 0, 10, 0),
                 VerticalAlignment = VerticalAlignment.Center,

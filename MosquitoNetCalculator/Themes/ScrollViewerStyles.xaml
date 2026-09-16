@@ -15,7 +15,7 @@
                     <ControlTemplate TargetType="ScrollBar">
                         <Border x:Name="TrackBg"
                                 Background="{DynamicResource TrackBg}"
-                                Opacity="0.12" CornerRadius="3"
+                                Opacity="0.12" CornerRadius="{DynamicResource Radius.CapsuleSm}"
                                 HorizontalAlignment="Center" Width="6">
                             <Track x:Name="PART_Track" IsDirectionReversed="True">
                                 <Track.DecreaseRepeatButton>
@@ -30,7 +30,7 @@
                                         <Thumb.Template>
                                             <ControlTemplate TargetType="Thumb">
                                                 <Border Background="{DynamicResource ScrollBarThumb}"
-                                                        CornerRadius="3"
+                                                        CornerRadius="{DynamicResource Radius.CapsuleSm}"
                                                         MinHeight="24"/>
                                             </ControlTemplate>
                                         </Thumb.Template>

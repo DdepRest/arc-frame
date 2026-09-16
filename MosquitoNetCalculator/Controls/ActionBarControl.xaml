@@ -23,7 +23,7 @@
                 <Setter.Value>
                     <ControlTemplate TargetType="Button">
                         <Border x:Name="Bd" Background="{TemplateBinding Background}"
-                                CornerRadius="0,7,7,0" Padding="7,0">
+                                CornerRadius="{DynamicResource Radius.StripeRight}" Padding="7,0">
                             <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"
                                               RecognizesAccessKey="True"/>
                         </Border>
@@ -56,7 +56,7 @@
                 <Setter.Value>
                     <ControlTemplate TargetType="Button">
                         <Border x:Name="Bd" Background="{TemplateBinding Background}"
-                                CornerRadius="5" Padding="{TemplateBinding Padding}">
+                                CornerRadius="{DynamicResource Radius.Sm}" Padding="{TemplateBinding Padding}">
                             <ContentPresenter VerticalAlignment="Center"/>
                         </Border>
                         <ControlTemplate.Triggers>
@@ -71,7 +71,7 @@
     </UserControl.Resources>
     <!-- v3.50.1: prototype .actionbar — flat strip on the page background with a
          bottom hairline, not a floating card. -->
-    <Border x:Name="CardActionBar" Background="{DynamicResource AppBg}" CornerRadius="0"
+    <Border x:Name="CardActionBar" Background="{DynamicResource AppBg}" CornerRadius="{DynamicResource Radius.None}"
             Padding="12,10" Margin="0"
             BorderBrush="{DynamicResource Border}" BorderThickness="0,0,0,1" Opacity="0">
         <Grid>
@@ -106,7 +106,7 @@
                            Placement="Bottom" PlacementTarget="{Binding ElementName=BtnPrintCaret}"
                            PopupAnimation="Fade" StaysOpen="False">
                         <Border Background="{DynamicResource Surface}" BorderBrush="{DynamicResource Border}"
-                                BorderThickness="1" CornerRadius="8" Padding="5" Margin="0,4,8,8"
+                                BorderThickness="1" CornerRadius="{DynamicResource Radius.Md}" Padding="5" Margin="0,4,8,8"
                                 SnapsToDevicePixels="True" MinWidth="270">
                             <StackPanel>
                                 <!-- v3.50.3: меню каретки — БЕЗ предпросмотра; предпросмотр

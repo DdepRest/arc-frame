@@ -17,11 +17,11 @@
                             <ColumnDefinition Width="*"/>
                         </Grid.ColumnDefinitions>
                         <Border x:Name="SwitchTrack" Width="40" Height="20"
-                                CornerRadius="10" Margin="0,0,8,0"
+                                CornerRadius="{DynamicResource Radius.Capsule}" Margin="0,0,8,0"
                                 Background="{DynamicResource TrackBg}" BorderThickness="0"
                                 SnapsToDevicePixels="True">
                             <Border x:Name="SwitchThumb" Width="16" Height="16"
-                                    CornerRadius="8" Background="{DynamicResource Surface}"
+                                    CornerRadius="{DynamicResource Radius.Pill}" Background="{DynamicResource Surface}"
                                     HorizontalAlignment="Left" Margin="2,0,0,0"
                                     VerticalAlignment="Center"/>
                         </Border>
@@ -61,7 +61,7 @@
             <Setter.Value>
                 <ControlTemplate TargetType="CheckBox">
                     <Border x:Name="SwitchTrack" Width="48" Height="26"
-                            CornerRadius="13"
+                            CornerRadius="{DynamicResource Radius.CapsuleLg}"
                             Background="Transparent"
                             BorderBrush="{DynamicResource Border}"
                             BorderThickness="1"
@@ -73,7 +73,7 @@
 
                             <!-- Thumb -->
                             <Border x:Name="SwitchThumb" Width="22" Height="22"
-                                    CornerRadius="11" Background="{DynamicResource Surface}"
+                                    CornerRadius="{DynamicResource Radius.Pill}" Background="{DynamicResource Surface}"
                                     HorizontalAlignment="Left" Margin="2,0,0,0"
                                     VerticalAlignment="Center"
                                     RenderTransformOrigin="0.5,0.5">

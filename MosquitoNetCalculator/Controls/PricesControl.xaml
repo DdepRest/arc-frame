@@ -34,7 +34,7 @@
             </Grid>
         </Border>
 
-        <Border Grid.Row="1" Background="{DynamicResource Surface}" CornerRadius="10"
+        <Border Grid.Row="1" Background="{DynamicResource Surface}" CornerRadius="{DynamicResource Radius.Card}"
                 BorderBrush="{DynamicResource Border}" BorderThickness="1" Margin="8,0,8,6"
                 Style="{DynamicResource Card}">
             <Grid>

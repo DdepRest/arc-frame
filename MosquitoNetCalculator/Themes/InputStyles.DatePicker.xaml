@@ -29,7 +29,7 @@
                                 Background="{Binding Background, RelativeSource={RelativeSource TemplatedParent}}"
                                 BorderBrush="{Binding BorderBrush, RelativeSource={RelativeSource TemplatedParent}}"
                                 BorderThickness="{Binding BorderThickness, RelativeSource={RelativeSource TemplatedParent}}"
-                                CornerRadius="7"
+                                CornerRadius="{DynamicResource Radius.Control}"
                                 SnapsToDevicePixels="True">
                             <Grid>
                                 <DatePickerTextBox x:Name="PART_TextBox"
@@ -70,7 +70,7 @@
                             <Border Background="{DynamicResource Surface}"
                                     BorderBrush="{DynamicResource Border}"
                                     BorderThickness="1"
-                                    CornerRadius="8"
+                                    CornerRadius="{DynamicResource Radius.Md}"
                                     Margin="0,2,0,0"
                                     Padding="0"
                                     SnapsToDevicePixels="True">

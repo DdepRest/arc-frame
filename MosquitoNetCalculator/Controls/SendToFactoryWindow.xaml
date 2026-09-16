@@ -24,7 +24,7 @@
     </Window.Resources>
     <Border x:Name="RootBorder" Background="{DynamicResource Surface}"
             BorderBrush="{DynamicResource Border}" BorderThickness="1"
-            CornerRadius="14" Margin="8" Opacity="0">
+            CornerRadius="{DynamicResource Radius.Lg}" Margin="8" Opacity="0">
         <Border.Effect>
             <DropShadowEffect BlurRadius="24" ShadowDepth="3" Opacity="0.10"
                               Color="{DynamicResource ShadowColor}"/>
@@ -41,7 +41,7 @@
             <!-- ══════════════════════════════════════════════════ -->
             <Border x:Name="TitleBar" Grid.Row="0"
                     Background="{DynamicResource HeaderBg}"
-                    CornerRadius="14,14,0,0" Height="38"
+                    CornerRadius="{DynamicResource Radius.CardHeader}" Height="38"
                     MouseLeftButtonDown="TitleBar_MouseLeftButtonDown">
                 <Grid>
                     <Grid.ColumnDefinitions>
@@ -52,7 +52,7 @@
                     <!-- Accent color strip -->
                     <Border Grid.Column="0" Width="4"
                             Background="{DynamicResource Accent}"
-                            CornerRadius="14,0,0,0"
+                            CornerRadius="{DynamicResource Radius.StripeLeft}"
                             VerticalAlignment="Stretch"/>
                     <StackPanel Grid.Column="1" Orientation="Horizontal"
                                 VerticalAlignment="Center" Margin="14,0,0,0">
@@ -95,11 +95,11 @@
                     <!-- Selection toolbar -->
                     <Border Grid.Row="0" Margin="0,0,0,10"
                             Background="{DynamicResource GhostBg}"
-                            CornerRadius="8" Padding="10,10">
+                            CornerRadius="{DynamicResource Radius.Md}" Padding="10,10">
                         <StackPanel>
                             <!-- Counter chip -->
                             <Border Background="{DynamicResource AccentLight}"
-                                    CornerRadius="5" Padding="8,4"
+                                    CornerRadius="{DynamicResource Radius.Md}" Padding="8,4"
                                     HorizontalAlignment="Left"
                                     Margin="0,0,0,8">
                                 <TextBlock x:Name="CounterTxt"
@@ -153,7 +153,7 @@
                 <Border Grid.Column="2" x:Name="PreviewBorder"
                         Background="{DynamicResource SectionBg}"
                         BorderBrush="{DynamicResource SubtleBorder}"
-                        BorderThickness="1" CornerRadius="10"
+                        BorderThickness="1" CornerRadius="{DynamicResource Radius.Card}"
                         ClipToBounds="True"
                         VerticalAlignment="Stretch">
                     <Grid>
@@ -165,7 +165,7 @@
                         <!-- Preview header -->
                         <Border Grid.Row="0"
                                 Background="{DynamicResource GhostBg}"
-                                CornerRadius="10,10,0,0"
+                                CornerRadius="{DynamicResource Radius.CardHeader}"
                                 Padding="12,10">
                             <StackPanel Orientation="Horizontal">
                                 <TextBlock Text="&#xE8A1;" FontSize="14"

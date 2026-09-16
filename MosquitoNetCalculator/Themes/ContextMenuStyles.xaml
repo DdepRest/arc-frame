@@ -14,7 +14,7 @@
                         <Border Background="{Binding Background, RelativeSource={RelativeSource TemplatedParent}}"
                                 BorderBrush="{Binding BorderBrush, RelativeSource={RelativeSource TemplatedParent}}"
                                 BorderThickness="{Binding BorderThickness, RelativeSource={RelativeSource TemplatedParent}}"
-                                CornerRadius="8"
+                                CornerRadius="{DynamicResource Radius.Md}"
                                 SnapsToDevicePixels="True"
                                 Margin="0,2,0,0">
                             <ScrollViewer VerticalScrollBarVisibility="Auto"
@@ -40,7 +40,7 @@
                 <Setter.Value>
                     <ControlTemplate TargetType="MenuItem">
                         <Border x:Name="Bd" Background="Transparent"
-                                CornerRadius="5" Margin="1,0"
+                                CornerRadius="{DynamicResource Radius.Sm}" Margin="1,0"
                                 Padding="{Binding Padding, RelativeSource={RelativeSource TemplatedParent}}"
                                 SnapsToDevicePixels="True">
                             <ContentPresenter ContentSource="Header"

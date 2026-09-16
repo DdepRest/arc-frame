@@ -13,16 +13,16 @@
             <Setter Property="Background" Value="Transparent"/>
         </Style>
         <Style x:Key="SegLeft" TargetType="Border" BasedOn="{StaticResource SegBase}">
-            <Setter Property="CornerRadius" Value="6,0,0,6"/>
+            <Setter Property="CornerRadius" Value="{DynamicResource Radius.StripeLeft}"/>
         </Style>
         <Style x:Key="SegMid" TargetType="Border" BasedOn="{StaticResource SegBase}">
-            <Setter Property="CornerRadius" Value="0"/>
+            <Setter Property="CornerRadius" Value="{DynamicResource Radius.None}"/>
         </Style>
         <Style x:Key="SegRight" TargetType="Border" BasedOn="{StaticResource SegBase}">
-            <Setter Property="CornerRadius" Value="0,6,6,0"/>
+            <Setter Property="CornerRadius" Value="{DynamicResource Radius.StripeRight}"/>
         </Style>
     </UserControl.Resources>
-    <Border x:Name="CardQuickAdd" Background="{DynamicResource QuickBg}" CornerRadius="10"
+    <Border x:Name="CardQuickAdd" Background="{DynamicResource QuickBg}" CornerRadius="{DynamicResource Radius.Card}"
             Padding="16,12" Margin="0,0,0,8"
             BorderBrush="{DynamicResource Border}" BorderThickness="1"
             Style="{DynamicResource Card}" Opacity="0">
@@ -83,7 +83,7 @@
                            Placement="Bottom" PlacementTarget="{Binding ElementName=TxtQuickSearch}"
                            PopupAnimation="Slide" StaysOpen="True">
                         <Border Background="{DynamicResource Surface}" BorderBrush="{DynamicResource Border}"
-                                BorderThickness="1" CornerRadius="6" Margin="0,2,0,0" Padding="4,4"
+                                BorderThickness="1" CornerRadius="{DynamicResource Radius.Md}" Margin="0,2,0,0" Padding="4,4"
                                 SnapsToDevicePixels="True" MinWidth="220" MaxHeight="260">
                             <ListBox x:Name="SearchSuggestions" BorderThickness="0" Background="Transparent"
                                      SelectionChanged="SearchSuggestions_SelectionChanged"
@@ -98,7 +98,7 @@
                                             <Setter.Value>
                                                 <ControlTemplate TargetType="ListBoxItem">
                                                     <Border x:Name="Bd" Background="{TemplateBinding Background}"
-                                                            BorderThickness="0" CornerRadius="4"
+                                                            BorderThickness="0" CornerRadius="{DynamicResource Radius.Sm}"
                                                             Padding="{TemplateBinding Padding}" SnapsToDevicePixels="True">
                                                         <ContentPresenter HorizontalAlignment="Stretch" VerticalAlignment="Center" SnapsToDevicePixels="True"/>
                                                     </Border>
@@ -238,7 +238,7 @@
                                                 Background="{TemplateBinding Background}"
                                                 BorderBrush="{TemplateBinding BorderBrush}"
                                                 BorderThickness="{TemplateBinding BorderThickness}"
-                                                CornerRadius="6"
+                                                CornerRadius="{DynamicResource Radius.Md}"
                                                 Padding="{TemplateBinding Padding}"
                                                 SnapsToDevicePixels="True">
                                             <ContentPresenter HorizontalAlignment="Center"
@@ -302,7 +302,7 @@
                     <TranslateTransform X="0" Y="0"/>
                 </StackPanel.RenderTransform>
                 <Border Background="{DynamicResource SubtleBorder}"
-                        CornerRadius="7" ClipToBounds="True">
+                        CornerRadius="{DynamicResource Radius.Control}" ClipToBounds="True">
                     <StackPanel Orientation="Horizontal">
                         <Border x:Name="PillBB60" Style="{DynamicResource SegLeft}" Cursor="Hand"
                                 PreviewMouseLeftButtonDown="AnwisModePill_Click">
@@ -337,7 +337,7 @@
             </StackPanel>
 
             <Border x:Name="PreviewChip" Background="{DynamicResource ChipBg}"
-                    CornerRadius="5" Padding="8,5" HorizontalAlignment="Left"
+                    CornerRadius="{DynamicResource Radius.Capsule}" Padding="8,5" HorizontalAlignment="Left"
                     Margin="0,8,0,0" Visibility="Collapsed">
                 <TextBlock x:Name="TxtQuickPreview" FontSize="11"
                            Foreground="{DynamicResource Accent}"/>

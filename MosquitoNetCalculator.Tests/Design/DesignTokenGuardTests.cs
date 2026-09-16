@@ -429,5 +429,69 @@ namespace MosquitoNetCalculator.Tests.Design
             Assert.Equal(card - 1, stripe[0]);       // TopLeft скруглён как карточка
             Assert.Equal(card - 1, stripe[3]);       // BottomLeft
         }
+
+        /// <summary>
+        /// Частичные радиусы обязаны повторять дугу своей карточки: шапка и
+        /// подвал — те же углы, что у Card, только с одной стороны, а
+        /// StripeLeft/StripeRight — зеркала друг друга. Иначе карточка и её шапка
+        /// скругляются по-разному, и на стыке виден «ступенчатый» шов.
+        /// </summary>
+        [Fact]
+        public void PartialRadiusTokens_MatchTheirCardEdges()
+        {
+            string radiusXaml = File.ReadAllText(Path.Combine(AppDir, "Themes", "Tokens.Radius.xaml"));
+
+            double[] Token(string key)
+            {
+                var m = Regex.Match(radiusXaml,
+                    $"<CornerRadius x:Key=\"Radius\\.{key}\">([0-9.,]+)</CornerRadius>");
+                Assert.True(m.Success, $"в Tokens.Radius.xaml нет Radius.{key}");
+                return m.Groups[1].Value.Split(',')
+                    .Select(v => double.Parse(v, System.Globalization.CultureInfo.InvariantCulture))
+                    .ToArray();
+            }
+
+            // Порядок значений CornerRadius: TopLeft, TopRight, BottomRight, BottomLeft.
+            double card = Token("Card")[0];
+
+            Assert.Equal(new[] { card, card, 0, 0 }, Token("CardHeader"));
+            Assert.Equal(new[] { 0, 0, card, card }, Token("CardFooter"));
+
+            var left = Token("StripeLeft");
+            var right = Token("StripeRight");
+            // Зеркало по горизонтали: TopLeft ↔ TopRight, BottomLeft ↔ BottomRight.
+            Assert.Equal(new[] { left[1], left[0], left[3], left[2] }, right);
+            Assert.Equal(0, left[1]);                // правая кромка прямой полосы прямая
+            Assert.Equal(0, left[2]);
+
+            // Прямой угол — тоже токен: WindowChrome и плоские полосы не должны
+            // возвращать в разметку литеральный ноль.
+            Assert.All(Token("None"), v => Assert.Equal(0, v));
+        }
+
+        /// <summary>
+        /// Радиусы в C# берутся из <c>Helpers/Radii</c> — те же токены Radius.*,
+        /// что и в разметке. Иначе разметка живёт на шкале, а код задаёт свои
+        /// числа на месте, и скругления расходятся (так и было в тостах и
+        /// «Истории обновлений»).
+        /// </summary>
+        [Fact]
+        public void CornerRadiusInCode_UsesTokens()
+        {
+            var codeRadius = new Regex(@"new\s+CornerRadius\s*\(\s*[0-9]", RegexOptions.Compiled);
+            // Комментарии не код: в пояснениях к дизайну числа упоминаются как
+            // примеры («new CornerRadius(2) в тостах»), и страж не должен ловить себя же.
+            var commentLine = new Regex(@"^[ \t]*(?://|\*).*$", RegexOptions.Multiline);
+
+            var offenders = ProductCs()
+                .Where(f => codeRadius.IsMatch(commentLine.Replace(File.ReadAllText(f), string.Empty)))
+                .Select(Relative)
+                .OrderBy(f => f)
+                .ToList();
+
+            Assert.True(offenders.Count == 0,
+                "Радиусы в коде — только через Helpers.Radii (токены Radius.*), иначе они вне бюджета:\n  " +
+                string.Join("\n  ", offenders));
+        }
     }
 }

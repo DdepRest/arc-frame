@@ -11,7 +11,7 @@
         <!-- v3.50: таблица-шапка «Позиции заказа» + чип «Позиций: N» (prototype tbl-head).
              No Opacity=0 here: the entrance cascade (MainWindow.Animations) knows
              only its fixed card list — an unlisted element would stay invisible. -->
-        <Border Grid.Row="0" Background="{DynamicResource Surface}" CornerRadius="10,10,0,0"
+        <Border Grid.Row="0" Background="{DynamicResource Surface}" CornerRadius="{DynamicResource Radius.CardHeader}"
                 BorderBrush="{DynamicResource Border}" BorderThickness="1,1,1,0"
                 Padding="12,5"
                 x:Name="TableHeadBar">
@@ -19,7 +19,7 @@
                 <TextBlock Text="Позиции заказа" FontSize="12" FontWeight="SemiBold"
                            Foreground="{DynamicResource TextPrimary}" VerticalAlignment="Center"/>
                 <Border x:Name="PosCountBadge" Background="{DynamicResource ChipBg}"
-                        CornerRadius="10" Padding="9,3" Margin="10,0,0,0"
+                        CornerRadius="{DynamicResource Radius.Capsule}" Padding="9,3" Margin="10,0,0,0"
                         VerticalAlignment="Center" Visibility="Collapsed">
                     <TextBlock x:Name="PosCountText" FontSize="11" FontWeight="SemiBold"
                                Foreground="{DynamicResource Accent}"/>
@@ -33,7 +33,7 @@
             </StackPanel>
         </Border>
 
-        <Border x:Name="CardTable" Grid.Row="1" Background="{DynamicResource Surface}" CornerRadius="0,0,10,10"
+        <Border x:Name="CardTable" Grid.Row="1" Background="{DynamicResource Surface}" CornerRadius="{DynamicResource Radius.CardFooter}"
                 BorderBrush="{DynamicResource Border}" BorderThickness="1,0,1,1"
                 Opacity="0"
                 ClipToBounds="True">
@@ -120,7 +120,7 @@
                                     <TextBlock Text="{Binding DisplayName}" VerticalAlignment="Center"
                                                Foreground="{DynamicResource TextPrimary}" FontWeight="Medium"
                                                TextWrapping="Wrap"/>
-                                    <Border Background="{DynamicResource AccentLight}" CornerRadius="4"
+                                    <Border Background="{DynamicResource AccentLight}" CornerRadius="{DynamicResource Radius.Md}"
                                             Padding="7,2" Margin="6,0,0,0" Cursor="Hand"
                                             Visibility="{Binding IsAnwis, Converter={StaticResource BoolToVis}}"
                                             ToolTip="{Binding AnwisSizeToolTip}"
@@ -151,7 +151,7 @@
                                     </Border>
                                 
                                 <!-- ИМ — автоматический импост. Клик — тёмный попап с деталями. -->
-                                <Border Background="{DynamicResource AccentLight}" CornerRadius="4"
+                                <Border Background="{DynamicResource AccentLight}" CornerRadius="{DynamicResource Radius.Md}"
                                         Padding="7,2" Margin="6,0,0,0" Cursor="Hand"
                                         Visibility="{Binding HasImpost, Converter={StaticResource BoolToVis}}"
                                         PreviewMouseLeftButtonDown="BadgeInfo_Click">
@@ -182,7 +182,7 @@
                                                PopupAnimation="Fade">
                                             <Border Background="{DynamicResource Surface}"
                                                     BorderBrush="{DynamicResource Border}" BorderThickness="1"
-                                                    CornerRadius="6" Padding="10,8" Margin="0,6,0,0" MaxWidth="340">
+                                                    CornerRadius="{DynamicResource Radius.Md}" Padding="10,8" Margin="0,6,0,0" MaxWidth="340">
                                                 <TextBlock Text="{Binding ImpostToolTip}" FontSize="12"
                                                            Foreground="{DynamicResource TextPrimary}"
                                                            TextWrapping="Wrap"/>
@@ -192,7 +192,7 @@
                                 </Border>
 
                                 <!-- АК — антикошка. Клик — тёмный попап с деталями. -->
-                                <Border Background="{DynamicResource AccentLight}" CornerRadius="4"
+                                <Border Background="{DynamicResource AccentLight}" CornerRadius="{DynamicResource Radius.Md}"
                                         Padding="7,2" Margin="6,0,0,0" Cursor="Hand"
                                         Visibility="{Binding IsAnticat, Converter={StaticResource BoolToVis}}"
                                         PreviewMouseLeftButtonDown="BadgeInfo_Click">
@@ -224,7 +224,7 @@
                                                PopupAnimation="Fade">
                                             <Border Background="{DynamicResource Surface}"
                                                     BorderBrush="{DynamicResource Border}" BorderThickness="1"
-                                                    CornerRadius="6" Padding="10,8" Margin="0,6,0,0" MaxWidth="340">
+                                                    CornerRadius="{DynamicResource Radius.Md}" Padding="10,8" Margin="0,6,0,0" MaxWidth="340">
                                                 <TextBlock Text="{Binding AnticatToolTip}" FontSize="12"
                                                            Foreground="{DynamicResource TextPrimary}"
                                                            TextWrapping="Wrap"/>
@@ -528,7 +528,7 @@
                     </ItemsControl.ItemsPanel>
                     <ItemsControl.ItemTemplate>
                         <DataTemplate>
-                            <Border Background="{DynamicResource QuickBg}" CornerRadius="8"
+                            <Border Background="{DynamicResource QuickBg}" CornerRadius="{DynamicResource Radius.Md}"
                                     BorderBrush="{DynamicResource Border}" BorderThickness="1"
                                     Padding="14,8" Margin="4,4" Cursor="Hand"
                                     SnapsToDevicePixels="True">

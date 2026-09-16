@@ -15,7 +15,7 @@
     <Border Background="{DynamicResource Surface}"
             BorderBrush="{DynamicResource Border}"
             BorderThickness="1"
-            CornerRadius="12"
+            CornerRadius="{DynamicResource Radius.Lg}"
             Margin="8"
             SnapsToDevicePixels="True">
         <Border.Effect>
@@ -34,7 +34,7 @@
             <!-- Title bar -->
             <Border Grid.Row="0"
                     Background="{DynamicResource HeaderBg}"
-                    CornerRadius="12,12,0,0"
+                    CornerRadius="{DynamicResource Radius.CardHeader}"
                     Height="32"
                     Padding="14,0"
                     MouseLeftButtonDown="TitleBar_MouseLeftButtonDown">

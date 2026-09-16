@@ -62,7 +62,7 @@
                                 BorderBrush="{Binding BorderBrush, RelativeSource={RelativeSource TemplatedParent}}"
                                 BorderThickness="{Binding BorderThickness, RelativeSource={RelativeSource TemplatedParent}}"
                                 Padding="{Binding Padding, RelativeSource={RelativeSource TemplatedParent}}"
-                                CornerRadius="4"
+                                CornerRadius="{DynamicResource Radius.Element}"
                                 SnapsToDevicePixels="True">
                             <Grid>
                                 <Grid.ColumnDefinitions>
@@ -142,7 +142,7 @@
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="DataGridRow">
-                <Border x:Name="DGR_RowBorder" Background="{TemplateBinding Background}" CornerRadius="4">
+                <Border x:Name="DGR_RowBorder" Background="{TemplateBinding Background}" CornerRadius="{DynamicResource Radius.Element}">
                     <DataGridCellsPresenter ItemsPanel="{TemplateBinding ItemsPanel}"/>
                 </Border>
                         <ControlTemplate.Triggers>
@@ -195,7 +195,7 @@
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="DataGridRow">
-                <Border x:Name="DGR_RowBorder" Background="{TemplateBinding Background}" CornerRadius="4">
+                <Border x:Name="DGR_RowBorder" Background="{TemplateBinding Background}" CornerRadius="{DynamicResource Radius.Element}">
                     <DataGridCellsPresenter ItemsPanel="{TemplateBinding ItemsPanel}"/>
                 </Border>
                         <ControlTemplate.Triggers>
@@ -223,7 +223,7 @@
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="DataGridRow">
-                <Border x:Name="DGR_RowBorder" Background="{TemplateBinding Background}" CornerRadius="4">
+                <Border x:Name="DGR_RowBorder" Background="{TemplateBinding Background}" CornerRadius="{DynamicResource Radius.Element}">
                     <DataGridCellsPresenter ItemsPanel="{TemplateBinding ItemsPanel}"/>
                 </Border>
                         <ControlTemplate.Triggers>
@@ -254,7 +254,7 @@
                     <ControlTemplate TargetType="DataGridCell">
                         <Border x:Name="Bd" Background="Transparent"
                                 BorderBrush="Transparent" BorderThickness="0"
-                                CornerRadius="3"
+                                CornerRadius="{DynamicResource Radius.Element}"
                                 SnapsToDevicePixels="True">
                             <ContentPresenter HorizontalAlignment="{Binding HorizontalContentAlignment, RelativeSource={RelativeSource TemplatedParent}}"
                                               VerticalAlignment="{Binding VerticalContentAlignment, RelativeSource={RelativeSource TemplatedParent}}"
