@@ -59,9 +59,16 @@
                     <StaticResource ResourceKey="OrderRow"/>
                 </DataGrid.RowStyle>
                 <DataGrid.Resources>
+                    <!-- Числовая клетка: справа текст прижат к своей границе (6px),
+                         слева — воздух 14px, чтобы длинные числа (суммы в 5-6 знаков)
+                         не слипались с числом соседней колонки. Замер по кадрам до
+                         правки: между ЦЕНОЙ и СУММОЙ было 18px при самой длинной
+                         сумме, между ПЛОЩ./ДЛ. и ЦЕНОЙ — 11px, а у остальных
+                         колонок 26–36px (GOTCHAS §28). -->
                     <Style x:Key="RightCell" TargetType="TextBlock">
                         <Setter Property="HorizontalAlignment" Value="Right"/>
                         <Setter Property="VerticalAlignment" Value="Center"/>
+                        <Setter Property="Margin" Value="14,0,6,0"/>
                     </Style>
                     <Style x:Key="CenterCell" TargetType="TextBlock">
                         <Setter Property="HorizontalAlignment" Value="Center"/>
@@ -262,10 +269,8 @@
                             <Binding Path="ШиринаВвод" Converter="{StaticResource DimConv}" ConverterParameter=" мм" UpdateSourceTrigger="LostFocus"/>
                         </DataGridTextColumn.Binding>
                         <DataGridTextColumn.ElementStyle>
-                            <Style TargetType="TextBlock">
-                                <Setter Property="HorizontalAlignment" Value="Right"/>
-                                <Setter Property="VerticalAlignment" Value="Center"/>
-                                <Setter Property="Margin" Value="6,0"/>
+                            <Style TargetType="TextBlock" BasedOn="{StaticResource RightCell}">
+                                <Setter Property="Margin" Value="14,0,6,0"/>
                             </Style>
                         </DataGridTextColumn.ElementStyle>
                         <DataGridTextColumn.EditingElementStyle>
@@ -289,10 +294,8 @@
                             <Binding Path="ВысотаВвод" Converter="{StaticResource DimConv}" ConverterParameter=" мм" UpdateSourceTrigger="LostFocus"/>
                         </DataGridTextColumn.Binding>
                         <DataGridTextColumn.ElementStyle>
-                            <Style TargetType="TextBlock">
-                                <Setter Property="HorizontalAlignment" Value="Right"/>
-                                <Setter Property="VerticalAlignment" Value="Center"/>
-                                <Setter Property="Margin" Value="6,0"/>
+                            <Style TargetType="TextBlock" BasedOn="{StaticResource RightCell}">
+                                <Setter Property="Margin" Value="14,0,6,0"/>
                             </Style>
                         </DataGridTextColumn.ElementStyle>
                         <DataGridTextColumn.EditingElementStyle>
@@ -428,7 +431,7 @@
                         </DataGridTextColumn.Binding>
                         <DataGridTextColumn.ElementStyle>
                             <Style TargetType="TextBlock" BasedOn="{StaticResource RightCell}">
-                                <Setter Property="Margin" Value="6,0"/>
+                                <Setter Property="Margin" Value="14,0,6,0"/>
                                 <Setter Property="Typography.NumeralAlignment" Value="Tabular"/>
                             </Style>
                         </DataGridTextColumn.ElementStyle>
@@ -454,7 +457,7 @@
                             <Style TargetType="TextBlock" BasedOn="{StaticResource RightCell}">
                                 <Setter Property="Foreground" Value="{DynamicResource TextPrimary}"/>
                                 <Setter Property="FontWeight" Value="Medium"/>
-                                <Setter Property="Margin" Value="6,0"/>
+                                <Setter Property="Margin" Value="14,0,6,0"/>
                                 <Setter Property="Typography.NumeralAlignment" Value="Tabular"/>
                             </Style>
                         </DataGridTextColumn.ElementStyle>

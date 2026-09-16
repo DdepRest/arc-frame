@@ -138,6 +138,52 @@ namespace MosquitoNetCalculator.Tests.Design
             Assert.DoesNotContain("Value=\"10.5\"", GridStyles);
         }
 
+        /// <summary>
+        /// Числовые колонки дышат ВЛЕВО: правое выравнивание прижимает число к
+        /// своей правой границе, поэтому воздух между соседними числами даёт
+        /// ЛЕВЫЙ отступ. Замер по кадрам при симметричных 6px: между «Площ./Дл.» и
+        /// «Ценой» оставалось 11px, между «Ценой» и «Суммой» — 18px на самой
+        /// длинной сумме, тогда как у остальных колонок 26–36px. Симметричный
+        /// отступ вернёт «зажёванные» суммы (GOTCHAS §28).
+        /// </summary>
+        [Fact]
+        public void NumericCells_KeepAirFromTheirLeftNeighbour()
+        {
+            const double minLeftAir = 12;
+            const double maxRightAir = 8;
+
+            var rightCellStyle = new Regex("<Style[^>]*RightCell[^>]*>(.*?)</Style>", RegexOptions.Singleline);
+            var marginSetter = new Regex(
+                "Property=\"Margin\" Value=\"([0-9.]+),([0-9.]+)(?:,([0-9.]+),([0-9.]+))?\"");
+
+            var offenders = new List<string>();
+            int checkedSetters = 0;
+            foreach (Match style in rightCellStyle.Matches(GridMarkup))
+            {
+                foreach (Match setter in marginSetter.Matches(style.Groups[1].Value))
+                {
+                    checkedSetters++;
+                    double left = double.Parse(setter.Groups[1].Value, CultureInfo.InvariantCulture);
+                    if (!setter.Groups[4].Success)
+                    {
+                        offenders.Add($"симметричный Margin=\"{setter.Groups[1].Value},{setter.Groups[2].Value}\" — " +
+                                      "числа соседних колонок слипнутся");
+                        continue;
+                    }
+
+                    double right = double.Parse(setter.Groups[2].Value, CultureInfo.InvariantCulture);
+                    if (left < minLeftAir) offenders.Add($"левый отступ {left}px < {minLeftAir}px");
+                    if (right > maxRightAir) offenders.Add($"правый отступ {right}px — число отрывается от своей границы");
+                }
+            }
+
+            Assert.True(checkedSetters >= 5,
+                $"Числовых клеток с отступом нашлось {checkedSetters} — проверка вырождается в пустую.");
+            Assert.True(offenders.Count == 0,
+                "Клетки с правым выравниванием: воздух даётся слева (проверка «зажёванных» сумм, GOTCHAS §28):\n  " +
+                string.Join("\n  ", offenders));
+        }
+
         [Fact]
         public void InstallationAmount_StaysOnTheBadgeLine()
         {

@@ -3,7 +3,16 @@
         <!-- ═══════════════════════════════════════════════════════ -->
         <!-- CONTEXT MENU — Fluent Design                            -->
         <!-- ═══════════════════════════════════════════════════════ -->
+        <!-- Шрифт задаётся ЗДЕСЬ, а не наследуется от окна: контекстное
+             меню живёт в отдельном Popup-дереве, до него не достаёт ни
+             стиль Window.Shared (MiscStyles), ни семантические стили
+             FontStyles. Без этого срабатывает умолчание Control.FontFamily
+             = SystemFonts.MessageFontFamily, и меню рисуется системным
+             Segoe UI, пока весь остальной интерфейс — вшитым Inter
+             (замер: строка «Открыть заказ» 78px вместо 87px). Разбор —
+             GOTCHAS §29, страж — PopupTypographyTests. -->
         <Style TargetType="ContextMenu">
+            <Setter Property="FontFamily" Value="{DynamicResource Font.Text}"/>
             <Setter Property="Background" Value="{DynamicResource Surface}"/>
             <Setter Property="BorderBrush" Value="{DynamicResource Border}"/>
             <Setter Property="BorderThickness" Value="1"/>
@@ -30,8 +39,12 @@
             </Setter>
         </Style>
 
+        <!-- FontFamily и здесь: пункты подменю (MenuItem внутри MenuItem)
+             получают контейнеры в своём ItemsHost, и опираться только на
+             наследование от корня меню нельзя. -->
         <Style TargetType="MenuItem">
             <Setter Property="Foreground" Value="{DynamicResource TextPrimary}"/>
+            <Setter Property="FontFamily" Value="{DynamicResource Font.Text}"/>
             <Setter Property="FontSize" Value="{StaticResource Type.Body}"/>
             <Setter Property="FontWeight" Value="Regular"/>
             <Setter Property="Padding" Value="14,10"/>

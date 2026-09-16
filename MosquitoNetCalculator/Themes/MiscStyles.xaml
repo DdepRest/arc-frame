@@ -75,6 +75,39 @@
             </Setter>
         </Style>
         <!-- ═══════════════════════════════════════════════════════ -->
+        <!-- TOOLTIP — тот же корпус, что у контекстного меню         -->
+        <!-- ═══════════════════════════════════════════════════════ -->
+        <!-- До v3.54 подсказки были без стиля вообще: системный
+             белый прямоугольник со шрифтом Segoe UI поверх тёмного
+             интерфейса. Причина та же, что у меню — ToolTip живёт в
+             Popup-дереве и не наследует ни шрифт, ни цвета окна
+             (GOTCHAS §29, страж PopupTypographyTests). -->
+        <Style TargetType="ToolTip">
+            <Setter Property="Foreground" Value="{DynamicResource TextPrimary}"/>
+            <Setter Property="FontFamily" Value="{DynamicResource Font.Text}"/>
+            <Setter Property="FontSize" Value="{StaticResource Type.Body}"/>
+            <Setter Property="Background" Value="{DynamicResource Surface}"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource Border}"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="Padding" Value="{StaticResource Pad.Row}"/>
+            <Setter Property="HasDropShadow" Value="False"/>
+            <Setter Property="SnapsToDevicePixels" Value="True"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="ToolTip">
+                        <Border Background="{Binding Background, RelativeSource={RelativeSource TemplatedParent}}"
+                                BorderBrush="{Binding BorderBrush, RelativeSource={RelativeSource TemplatedParent}}"
+                                BorderThickness="{Binding BorderThickness, RelativeSource={RelativeSource TemplatedParent}}"
+                                CornerRadius="{DynamicResource Radius.Md}"
+                                Padding="{Binding Padding, RelativeSource={RelativeSource TemplatedParent}}"
+                                SnapsToDevicePixels="True">
+                            <ContentPresenter RecognizesAccessKey="True"/>
+                        </Border>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+        <!-- ═══════════════════════════════════════════════════════ -->
         <!-- LISTVIEW — Orders tab                                   -->
         <!-- ═══════════════════════════════════════════════════════ -->
         <Style TargetType="ListView">
