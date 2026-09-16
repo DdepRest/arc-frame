@@ -860,7 +860,7 @@
                                             </Grid.ColumnDefinitions>
                                             <TextBlock Grid.Column="0"
                                                        Text="{Binding Command}"
-                                                       FontFamily="Consolas, Courier New"
+                                                       FontFamily="{DynamicResource Font.Mono}"
                                                        FontSize="11.5"
                                                        FontWeight="SemiBold"
                                                        Foreground="{DynamicResource Accent}"

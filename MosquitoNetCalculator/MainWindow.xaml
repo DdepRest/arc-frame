@@ -1,4 +1,5 @@
 ﻿<Window x:Class="MosquitoNetCalculator.MainWindow"
+        Style="{DynamicResource Window.Shared}"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:controls="clr-namespace:MosquitoNetCalculator.Controls"
@@ -571,12 +572,12 @@
                                                SnapsToDevicePixels="True"/>
                                 </Grid>
                                 <TextBlock x:Name="NavToggleLabel" Grid.Column="1" Text="Свернуть" Margin="10,0,0,0"
-                                           FontSize="13" VerticalAlignment="Center" FontFamily="Segoe UI"/>
+                                           FontSize="13" VerticalAlignment="Center" FontFamily="{DynamicResource Font.Text}"/>
                             </Grid>
                         </Button>
                         <!-- v3.50: navigation groups (prototype sidebar) -->
                         <TextBlock x:Name="NavGroupMain" Text="ОСНОВНОЕ"
-                                   FontSize="10" FontWeight="SemiBold" FontFamily="Segoe UI"
+                                   FontSize="10" FontWeight="SemiBold" FontFamily="{DynamicResource Font.Text}"
                                    Foreground="{DynamicResource TextMuted}"
                                    Margin="12,6,0,4"/>
                         <!-- Расчёт -->
@@ -593,7 +594,7 @@
                                 </Grid>
                                 <TextBlock x:Name="NavLabelCalc" Grid.Column="1" Text="Расчёт" Opacity="1"
                                            Margin="10,0,0,0" FontSize="13" VerticalAlignment="Center"
-                                           FontFamily="Segoe UI"/>
+                                           FontFamily="{DynamicResource Font.Text}"/>
                             </Grid>
                         </Button>
                         <!-- Заказы -->
@@ -611,7 +612,7 @@
                                 </Grid>
                                 <TextBlock x:Name="NavLabelOrders" Grid.Column="1" Text="Заказы" Opacity="1"
                                            Margin="10,0,0,0" FontSize="13" VerticalAlignment="Center"
-                                           FontFamily="Segoe UI"/>
+                                           FontFamily="{DynamicResource Font.Text}"/>
                             </Grid>
                         </Button>
                         <!-- Цены -->
@@ -628,7 +629,7 @@
                                 </Grid>
                                 <TextBlock x:Name="NavLabelPrices" Grid.Column="1" Text="Цены" Opacity="1"
                                            Margin="10,0,0,0" FontSize="13" VerticalAlignment="Center"
-                                           FontFamily="Segoe UI"/>
+                                           FontFamily="{DynamicResource Font.Text}"/>
                             </Grid>
                         </Button>
                         <!-- Откосы (v3.50: в группе «Основное» — пользовательское требование) -->
@@ -646,7 +647,7 @@
                                 <!-- Автоматический просчёт откосов. -->
                                 <TextBlock x:Name="NavLabelSlope" Grid.Column="1" Text="Авто · Откосы" Opacity="1"
                                            Margin="10,0,0,0" FontSize="13" VerticalAlignment="Center"
-                                           FontFamily="Segoe UI"/>
+                                           FontFamily="{DynamicResource Font.Text}"/>
                             </Grid>
                         </Button>
                         <!-- Печать -->
@@ -663,12 +664,12 @@
                                 </Grid>
                                 <TextBlock x:Name="NavLabelPrint" Grid.Column="1" Text="Печать" Opacity="1"
                                            Margin="10,0,0,0" FontSize="13" VerticalAlignment="Center"
-                                           FontFamily="Segoe UI"/>
+                                           FontFamily="{DynamicResource Font.Text}"/>
                             </Grid>
                         </Button>
                         <!-- Служебное -->
                         <TextBlock x:Name="NavGroupService" Text="СЛУЖЕБНОЕ"
-                                   FontSize="10" FontWeight="SemiBold" FontFamily="Segoe UI"
+                                   FontSize="10" FontWeight="SemiBold" FontFamily="{DynamicResource Font.Text}"
                                    Foreground="{DynamicResource TextMuted}"
                                    Margin="12,14,0,4"/>
                         <!-- Обновления -->
@@ -689,7 +690,7 @@
                                 </Grid>
                                 <TextBlock x:Name="NavLabelUpdates" Grid.Column="1" Text="Обновления" Opacity="1"
                                            Margin="10,0,0,0" FontSize="13" VerticalAlignment="Center"
-                                           FontFamily="Segoe UI"/>
+                                           FontFamily="{DynamicResource Font.Text}"/>
                             </Grid>
                         </Button>
                         <!-- AI Ассистент -->
@@ -710,7 +711,7 @@
                                 </Grid>
                                 <TextBlock x:Name="NavLabelAi" Grid.Column="1" Opacity="1"
                                            Margin="10,0,0,0" FontSize="13" VerticalAlignment="Center"
-                                           FontFamily="Segoe UI">
+                                           FontFamily="{DynamicResource Font.Text}">
                                     <Run Text="AI"/>
                                     <Run Text="  BETA" FontSize="8" FontWeight="Bold"
                                          Foreground="{DynamicResource BadgeWarningFg}"/>

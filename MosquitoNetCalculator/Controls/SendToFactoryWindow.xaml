@@ -1,4 +1,5 @@
 <Window x:Class="MosquitoNetCalculator.Controls.SendToFactoryWindow"
+        Style="{DynamicResource Window.Shared}"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         Title="Отправить на завод"
@@ -191,7 +192,7 @@
                             <TextBlock x:Name="PreviewBox"
                                        TextWrapping="Wrap"
                                        FontSize="12"
-                                       FontFamily="Consolas, Cascadia Code, Courier New"
+                                       FontFamily="{DynamicResource Font.Mono}"
                                        Foreground="{DynamicResource TextPrimary}"
                                        Padding="14,10"
                                        ToolTip="Нажмите «Скопировать» чтобы скопировать текст"/>

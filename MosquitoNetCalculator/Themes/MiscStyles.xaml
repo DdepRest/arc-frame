@@ -3,18 +3,26 @@
         <!-- ═══════════════════════════════════════════════════════ -->
         <!-- БАЗА ОКНА — единый рендер текста и типографика             -->
         <!-- ═══════════════════════════════════════════════════════ -->
-        <!-- Неявный стиль Window: до v3.53.0 шрифт и режим рендера
+        <!-- Общий стиль окна. Имя обязательно: НЕЯВНЫЙ стиль (TargetType без
+             x:Key) WPF применяет только к ТОЧНОМУ типу Window, а все окна
+             приложения — наследники (MainWindow + 12 вторичных), поэтому
+             неявный стиль не доставал ни до одного из них: замер v3.53.0
+             давал Style=null, Segoe UI 12, TextFormattingMode=Ideal,
+             UseLayoutRounding=false. До v3.53.0 шрифт и режим рендера
              задавались только в MainWindow, а 12 вторичных окон (Welcome,
              Import, PrintPreview, SendToFactory, ChangeOrderStatus, WhatsNew,
              UpdateAvailable, SlopeEconomy, AdminPassword, AiApiKey, AiAssistant,
              MessageDialog) рисовали текст иначе — другой способ сглаживания
              и «рваные» hairline-границы на 150% DPI.
+             Отсюда правило: КАЖДОЕ окно объявляет
+             Style="{DynamicResource Window.Shared}", и это стережёт
+             Design/WindowChromeAndDpiTests — наличие стиля в словаре ничего не
+             доказывает (неявный стиль лежал там и не работал).
              TextFormattingMode=Display выбран осознанно: интерфейсные размеры
              11-14px на нём читаются резче. Предпросмотр печати СОЗНАТЕЛЬНО
              переопределяет режим на Ideal в PrintPreviewControl — там важно
-             совпадение разбиения на страницы с выводом на печать.
-             Стиль ловит тест WindowChromeAndDpiTests. -->
-        <Style TargetType="Window">
+             совпадение разбиения на страницы с выводом на печать. -->
+        <Style x:Key="Window.Shared" TargetType="Window">
             <Setter Property="FontFamily" Value="{DynamicResource Font.Text}"/>
             <Setter Property="FontSize" Value="{StaticResource Type.BodyMd}"/>
             <Setter Property="TextOptions.TextFormattingMode" Value="Display"/>
