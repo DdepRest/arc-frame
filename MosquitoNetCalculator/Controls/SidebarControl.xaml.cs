@@ -25,23 +25,37 @@ namespace MosquitoNetCalculator.Controls
             // SelectedItem assignment (MainWindow ctor) also fires SelectionChanged,
             // so the dot follows both paths.
             CmbStatus.SelectionChanged += (_, _) => UpdateStatusDot();
+
+            // v3.53: точка статуса следует теме. Кисть берётся из тех же токенов,
+            // что и бейдж в «Заказах», а ThemeService анимирует существующую кисть
+            // на месте (fast path) — то есть точка докрашивается вместе с
+            // интерфейсом. Подписка нужна для slow path, где ресурс заменяется
+            // новым экземпляром. Отписываемся на Unloaded, иначе статическое
+            // событие держало бы контрол живым.
+            Loaded += (_, _) =>
+            {
+                ThemeService.ThemeChanged -= UpdateStatusDot;
+                ThemeService.ThemeChanged += UpdateStatusDot;
+                UpdateStatusDot();
+            };
+            Unloaded += (_, _) => ThemeService.ThemeChanged -= UpdateStatusDot;
         }
 
         /// <summary>
-        /// v3.50: status pill dot — mirrors OrderStatuses.GetBadgeColors foreground
-        /// for the chosen status (pure UI; the badge colors are the existing
-        /// single source of truth used by the Orders grid).
+        /// v3.50: status pill dot — цвет того же статуса, что и у бейджа в
+        /// «Заказах» (<see cref="Models.OrderStatuses.GetBadgeKeys"/>), из
+        /// ресурсов темы. До v3.53 здесь была ВТОРАЯ палитра hex-литералами
+        /// светлой темы: точка не следовала тёмной теме и отличалась от бейджа
+        /// того же статуса на одном экране.
         /// </summary>
         private void UpdateStatusDot()
         {
             if (StatusDot == null || CmbStatus == null) return;
             string status = CmbStatus.SelectedItem?.ToString() ?? string.Empty;
-            var (_, fg) = Models.OrderStatuses.GetBadgeColors(status);
-            try
-            {
-                StatusDot.Fill = (Brush?)new BrushConverter().ConvertFromString(fg) ?? StatusDot.Fill;
-            }
-            catch { /* best-effort cosmetic — keep previous fill */ }
+            var (_, fgKey) = Models.OrderStatuses.GetBadgeKeys(status);
+
+            if (Application.Current?.Resources[fgKey] is Brush brush)
+                StatusDot.Fill = brush;
         }
 
         /// <summary>XAML SelectionChanged handler — refreshes the dot (no business logic).</summary>

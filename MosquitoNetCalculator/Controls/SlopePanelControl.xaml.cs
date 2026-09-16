@@ -9,6 +9,7 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
 using System.Windows.Media.Animation;
+using MosquitoNetCalculator.Helpers;
 using MosquitoNetCalculator.Models;
 using MosquitoNetCalculator.Services;
 
@@ -782,7 +783,10 @@ namespace MosquitoNetCalculator.Controls
                 transform.Y = 8;
             TotalSavingsRow.Opacity = 0;
 
-            storyboard.Begin(TotalSavingsRow);
+            // Через гейт: при выключенных анимациях строка появляется мгновенно,
+            // но конечное состояние (Opacity=1, Y=0) применяется — строку выше
+            // подготовили невидимой и сдвинутой.
+            Motion.Run(storyboard, TotalSavingsRow);
         }
 
 

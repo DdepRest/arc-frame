@@ -15,17 +15,9 @@ namespace MosquitoNetCalculator.Converters
         public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
         {
             string status = value as string ?? "";
-            string key = status switch
-            {
-                "Подтверждён"        => "BadgeSuccessBg",
-                "Отправлен на завод" => "BadgeWarningBg",
-                "В производстве"     => "BadgeWarningBg",
-                "Готов к установке"  => "BadgeSuccessBg",
-                "Установлен"         => "BadgeSuccessBg",
-                "Оплачен"            => "BadgeSuccessBg",
-                "Отменён"            => "BadgeDangerBg",
-                _                    => "BadgeDefaultBg",
-            };
+            // Статус → ключ токена живёт в модели: до v3.53 та же таблица была
+            // продублирована здесь, во втором конвертере и в точке статуса.
+            var (key, _) = MosquitoNetCalculator.Models.OrderStatuses.GetBadgeKeys(status);
             return Application.Current?.Resources[key] as Brush ?? Brushes.Transparent;
         }
 

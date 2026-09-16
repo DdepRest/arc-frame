@@ -391,9 +391,18 @@ namespace MosquitoNetCalculator.Controls
             };
             Storyboard.SetTarget(anim, dot);
             Storyboard.SetTargetProperty(anim, new PropertyPath("Opacity"));
+            if (Motion.ReducedMotion)
+            {
+                // Анимации выключены: пульс не запускаем ВООБЩЕ (сжатие
+                // бесконечной анимации дало бы строб вместо спокойной точки),
+                // точка остаётся видимой на полной непрозрачности.
+                dot.Opacity = 1.0;
+                return;
+            }
+
             var sb = new Storyboard();
             sb.Children.Add(anim);
-            sb.Begin();
+            Motion.Run(sb);
             _dotPulses[dot] = sb;
         }
 

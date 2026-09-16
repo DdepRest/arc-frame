@@ -103,7 +103,9 @@
              14 (BodyLg) · 16 (Subtitle) · 18 (Title) · 20 (TitleLg) ·
              24 (Display) · 32 (Metric) · 42 (Hero).
              Пол 11px для любого реального текста; 9px — только монограммы.
-             Дробные размеры (11.5/10.5/12.5) запрещены: при 100% DPI дают
-             субпиксельный гребень. Правило сторожит
-             DesignTokenGuardTests.SubElevenOrFractionalFontSizes_DoNotGrow. -->
+             Дробные размеры (11.5/10.5/12.5) в этой шкале не используются: при
+             100% DPI они дают субпиксельный гребень. В разметке они ещё есть
+             (46 вхождений на момент v3.53.0) — это ДОЛГ под ратчетом, а не
+             разрешение: бюджет может только убывать.
+             Сторожит DesignTokenGuardTests.SubElevenOrFractionalFontSizes_DoNotGrow. -->
 </ResourceDictionary>

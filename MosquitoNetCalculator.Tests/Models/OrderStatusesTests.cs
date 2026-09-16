@@ -1,4 +1,6 @@
+using System.Linq;
 using MosquitoNetCalculator.Models;
+using MosquitoNetCalculator.Services;
 using Xunit;
 
 namespace MosquitoNetCalculator.Tests.Models
@@ -53,6 +55,64 @@ namespace MosquitoNetCalculator.Tests.Models
                 Assert.True(a < b,
                     $"Rank must be strictly increasing: '{OrderStatuses.All[i]}' ({a}) < '{OrderStatuses.All[i + 1]}' ({b})");
             }
+        }
+
+        // ── v3.53: цвета бейджа и точки статуса — из токенов темы ──────────
+
+        /// <summary>
+        /// Ключи токенов для бейджа/точки статуса должны существовать в ОБЕИХ
+        /// темах. Конвертеры отдают кисть по ключу из ресурсов, и «на глазок»
+        /// заданный ключ дал бы Transparent/Gray — бейдж просто исчез бы в одной
+        /// из тем, без исключения и без лога.
+        /// </summary>
+        [Fact]
+        public void GetBadgeKeys_EveryStatus_MapsToThemeTokensThatExist()
+        {
+            var light = ThemeService.LightColorsForTests();
+            var dark = ThemeService.DarkColorsForTests();
+
+            foreach (var status in OrderStatuses.All.Append(string.Empty))
+            {
+                var (bg, fg) = OrderStatuses.GetBadgeKeys(status);
+
+                Assert.StartsWith("Badge", bg);
+                Assert.EndsWith("Bg", bg);
+                Assert.StartsWith("Badge", fg);
+                Assert.EndsWith("Fg", fg);
+
+                // Пара обязана быть одного семантического оттенка (если разъедется,
+                // получится жёлтый фон с зелёным текстом и наоборот).
+                Assert.Equal(bg[..^2], fg[..^2]);
+
+                Assert.True(light.ContainsKey(bg) && dark.ContainsKey(bg),
+                    $"Статус «{status}»: токена {bg} нет в одной из тем.");
+                Assert.True(light.ContainsKey(fg) && dark.ContainsKey(fg),
+                    $"Статус «{status}»: токена {fg} нет в одной из тем.");
+            }
+        }
+
+        /// <summary>
+        /// Регрессия v3.53: цвета бейджа не дублируются вторым набором hex-литералов.
+        /// До этого здесь жила «светлая» палитра на 16 значений, и точка статуса
+        /// в сайдбаре не следовала тёмной теме (и отличалась от бейджа того же
+        /// статуса на том же экране).
+        /// </summary>
+        [Fact]
+        public void GetBadgeKeys_ReturnTokenKeys_NotRawColors()
+        {
+            foreach (var status in OrderStatuses.All)
+            {
+                var (bg, fg) = OrderStatuses.GetBadgeKeys(status);
+                Assert.DoesNotContain("#", bg);
+                Assert.DoesNotContain("#", fg);
+            }
+        }
+
+        [Fact]
+        public void GetBadgeKeys_UnknownStatus_FallsBackToTheDefaultPair()
+        {
+            Assert.Equal(("BadgeDefaultBg", "BadgeDefaultFg"), OrderStatuses.GetBadgeKeys("Новый"));
+            Assert.Equal(("BadgeDefaultBg", "BadgeDefaultFg"), OrderStatuses.GetBadgeKeys("что-то новое"));
         }
 
         [Fact]

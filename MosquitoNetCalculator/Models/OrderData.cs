@@ -116,23 +116,35 @@ namespace MosquitoNetCalculator.Models
         };
 
         /// <summary>
-        /// Single source of truth for the order-status badge visual:
-        /// returns a tuple of (Background, Foreground) hex colors used by
-        /// the «Заказы» ListView cell template via dedicated IValueConverters.
-        /// Status «Новый» (and any unknown value) falls back to the default
-        /// calm blue used elsewhere in the app.
+        /// Single source of truth for the order-status badge visual: keys of the
+        /// theme tokens (<c>Badge*Bg</c>/<c>Badge*Fg</c>) used by the badge
+        /// converters and by the status dot in the sidebar.
+        ///
+        /// <para>До v3.53 здесь лежала вторая палитра — hex-литералы светлой
+        /// темы, — и она разъехалась с токенами: тёмная тема давала бейдж
+        /// (яркий мятный, см. ThemeService.DarkColors), а точка того же статуса
+        /// оставалась на старом светлом зелёном литерале.
+        /// Теперь цвета не дублируются: статус → ключ токена, и оба потребителя
+        /// берут кисть из ресурсов приложения (значит, следуют теме).
+        /// Существование ключей в обеих темах стережёт
+        /// <c>OrderStatusesTests</c>.</para>
+        ///
+        /// <para>Hex-значения в этом комментарии не приводим намеренно: стражи
+        /// <c>HexColorsInCode_LiveOnlyInTheColorLayerOrPrintSchematics</c> считают
+        /// hex-литералы в C# без вырезания комментариев (в отличие от XAML), и
+        /// упоминание цвета здесь выглядело бы как утечка палитры.</para>
         /// </summary>
 
-        public static (string Background, string Foreground) GetBadgeColors(string status) => status switch
+        public static (string BackgroundKey, string ForegroundKey) GetBadgeKeys(string status) => status switch
         {
-            "Подтверждён"        => ("#EDF7F0", "#3D9964"),
-            "Отправлен на завод" => ("#FFF3E0", "#E8963E"),
-            "В производстве"     => ("#FFF3E0", "#E8963E"),
-            "Готов к установке"  => ("#EDF7F0", "#3D9964"),
-            "Установлен"         => ("#EDF7F0", "#3D9964"),
-            "Оплачен"            => ("#EDF7F0", "#3D9964"),
-            "Отменён"            => ("#FDF2F3", "#D94452"),
-            _                    => ("#EDF1F8", "#5B7BB4"),
+            "Подтверждён"        => ("BadgeSuccessBg", "BadgeSuccessFg"),
+            "Отправлен на завод" => ("BadgeWarningBg", "BadgeWarningFg"),
+            "В производстве"     => ("BadgeWarningBg", "BadgeWarningFg"),
+            "Готов к установке"  => ("BadgeSuccessBg", "BadgeSuccessFg"),
+            "Установлен"         => ("BadgeSuccessBg", "BadgeSuccessFg"),
+            "Оплачен"            => ("BadgeSuccessBg", "BadgeSuccessFg"),
+            "Отменён"            => ("BadgeDangerBg", "BadgeDangerFg"),
+            _                    => ("BadgeDefaultBg", "BadgeDefaultFg"),
         };
 
         /// <summary>

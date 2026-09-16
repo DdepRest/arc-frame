@@ -109,7 +109,11 @@ namespace MosquitoNetCalculator.Services
 
             var colors = IsDarkTheme ? DarkColors : LightColors;
             var duration = transitionDuration ?? TransitionDuration;
-            bool animate = duration > TimeSpan.Zero;
+
+            // Смена темы — тоже движение: при системной настройке «отключить
+            // анимации» она применяется мгновенно (иначе Accessibility-обещание
+            // соблюдалось бы везде, кроме самого заметного перехода).
+            bool animate = duration > TimeSpan.Zero && !Helpers.Motion.ReducedMotion;
 
             foreach (var pair in colors)
             {

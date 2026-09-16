@@ -203,6 +203,69 @@ namespace MosquitoNetCalculator.Tests.Design
                 string.Join("\n  ", actual.OrderByDescending(kv => kv.Value).Select(kv => $"{kv.Key}: {kv.Value}")));
         }
 
+        /// <summary>
+        /// То же, но для C#. Концепция «цветового слоя» (см. <see cref="IsColorLayer"/>
+        /// выше) включает <c>Services/ThemeService.cs</c>, то есть замысел был
+        /// покрыть и код, — но проверка сканировала только XAML. Из-за этого
+        /// <c>Models/OrderData.cs</c> держал ВТОРУЮ палитру бейджей hex-литералами
+        /// (16 значений, светлая тема), пока бюджет рапортовал «0 хардкод-цветов»:
+        /// точка статуса в сайдбаре не следовала тёмной теме и отличалась от
+        /// бейджа того же статуса на одном экране.
+        ///
+        /// Исключение — печатный слой (<c>Services/DrawingService.cs</c>: цвета SVG
+        /// схем проёма, которые идут в QuestPDF). Он не интерфейсный и не
+        /// переключается темой, поэтому живёт в бюджете явной строкой, а не молчанием
+        /// проверки.
+        ///
+        /// Комментарии в C# не вырезаются (в XAML — вырезаются): наивная обрезка
+        /// строк после «//» (URL, пути к шаблонам) прятала бы настоящие литералы,
+        /// а упоминание цвета в комментарии к коду — редкость и лечится переформулировкой.
+        /// </summary>
+        [Fact]
+        public void HexColorsInCode_LiveOnlyInTheColorLayerOrPrintSchematics()
+        {
+            var actual = CountPerFile(ProductCs(), text => Count(text, HexColor), includeColorLayer: false);
+            AssertRatchet("hexInCode", actual, Budget());
+        }
+
+        // ── 5. Семьи шрифтов ─────────────────────────────────────────────
+
+        /// <summary>Семьи иконочных глифов: их нет в Inter, токен их не заменяет.</summary>
+        private static readonly string[] IconFamilies = { "Segoe Fluent Icons", "Segoe MDL2 Assets" };
+
+        /// <summary>
+        /// Текстовая семья в разметке задаётся только токеном. Литерал (например
+        /// <c>Segoe UI</c>) молча уводит элемент на системный шрифт мимо вшитого
+        /// Inter — до v3.53 таких мест было 14 (10 × Segoe UI в MainWindow и 4 ×
+        /// Consolas), и они выпадали из типографики ровно так же, как ранее
+        /// выпадали цвета мимо палитры.
+        ///
+        /// Печатные документы (<c>FlowDocumentBuilder</c>, <c>FixedDocumentBuilder</c>,
+        /// <c>DrawingService</c>) берут печатную семью в C# — это не интерфейсный
+        /// текст, и разметки у них нет.
+        /// </summary>
+        [Fact]
+        public void TextFontFamilies_AreTokens_IconFamiliesMayStayLiteral()
+        {
+            var offenders = new List<string>();
+
+            foreach (var file in ProductXaml())
+            {
+                foreach (Match m in Regex.Matches(ReadWithoutComments(file), "FontFamily=\"([^\"]+)\""))
+                {
+                    string value = m.Groups[1].Value;
+                    if (value.StartsWith("{", StringComparison.Ordinal)) continue;
+                    if (IconFamilies.Any(icon => value.Contains(icon, StringComparison.Ordinal))) continue;
+
+                    offenders.Add($"{Relative(file)}: FontFamily=\"{value}\"");
+                }
+            }
+
+            Assert.True(offenders.Count == 0,
+                "Семья шрифта задана литералом — текст уйдёт на системный шрифт мимо токена Font.Text:\n  " +
+                string.Join("\n  ", offenders));
+        }
+
         // ── 5. Пол 11px и запрет дробных размеров (правило UX-16) ─────────
 
         [Fact]
@@ -252,7 +315,7 @@ namespace MosquitoNetCalculator.Tests.Design
                     defined.Add(m.Groups[1].Value);
 
             var referenced = new Dictionary<string, string>(StringComparer.Ordinal);
-            var tokenRef = new Regex("\\{(?:Static|Dynamic)Resource\\s+((?:Space|Gap|Pad|Radius|Type|Weight|Font|Motion|Ease)\\.[A-Za-z0-9.]+)\\}");
+            var tokenRef = new Regex("\\{(?:Static|Dynamic)Resource\\s+((?:Window|Space|Gap|Pad|Radius|Type|Weight|Font|Motion|Ease)\\.[A-Za-z0-9.]+)\\}");
             foreach (var file in ProductXaml())
                 foreach (Match m in tokenRef.Matches(File.ReadAllText(file)))
                     referenced.TryAdd(m.Groups[1].Value, Relative(file));

@@ -128,7 +128,10 @@ namespace MosquitoNetCalculator.Helpers
                     _bar.Opacity = 0;
                 }
 
-                _activeStoryboard.Begin(_bar);
+                // Через гейт: при выключенных анимациях бар появляется/исчезает
+                // мгновенно, но Completed срабатывает — на нём висит Collapsed
+                // (OnActiveStoryboardCompleted).
+                Motion.Run(_activeStoryboard, _bar);
             }
             catch (Exception ex)
             {

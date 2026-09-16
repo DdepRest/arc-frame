@@ -15,17 +15,8 @@ namespace MosquitoNetCalculator.Converters
         public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
         {
             string status = value as string ?? "";
-            string key = status switch
-            {
-                "Подтверждён"        => "BadgeSuccessFg",
-                "Отправлен на завод" => "BadgeWarningFg",
-                "В производстве"     => "BadgeWarningFg",
-                "Готов к установке"  => "BadgeSuccessFg",
-                "Установлен"         => "BadgeSuccessFg",
-                "Оплачен"            => "BadgeSuccessFg",
-                "Отменён"            => "BadgeDangerFg",
-                _                    => "BadgeDefaultFg",
-            };
+            // Статус → ключ токена живёт в модели (см. фон бейджа).
+            var (_, key) = MosquitoNetCalculator.Models.OrderStatuses.GetBadgeKeys(status);
             return Application.Current?.Resources[key] as Brush ?? Brushes.Gray;
         }
 

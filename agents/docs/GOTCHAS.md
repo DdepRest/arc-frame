@@ -539,6 +539,74 @@ new FontFamily(new Uri("pack://application:,,,/MosquitoNetCalculator;component/R
 
 ---
 
+### 22. Неявный стиль `Window` не достаёт до окон-наследников (ВЫСОКИЙ)
+
+**Где:** `Themes/MiscStyles.xaml` (стиль `Window.Shared`) и 13 корневых `<Window>` в проекте.
+
+**Что случилось:** стиль окна был неявным (`<Style TargetType="Window">` без `x:Key`) —
+«чтобы один раз задать шрифт, режим рендера текста и округление для всех окон». Тест
+проверял, что стиль ЛЕЖИТ В СЛОВАРЕ, и был зелёным. Замер на реальных окнах дал другое:
+`AdminPasswordWindow`, `AiAssistantWindow`, `SlopeEconomyDetailsWindow` — `Style=null`,
+`Segoe UI` 12px, `TextFormattingMode=Ideal`, `UseLayoutRounding=false`,
+`SnapsToDevicePixels=false`. Обещание «12 вторичных окон рисуют текст одинаково» не
+выполнялось ни для одного окна.
+
+**Причина:** неявный стиль WPF сопоставляет по ТОЧНОМУ типу, а все окна приложения —
+наследники (`MainWindow : Window`, диалоги тоже); стиль был зарегистрирован под
+`typeof(Window)`. Проверка на голом `new Window()` даёт ложную уверенность — именно он
+стиль получает. Второе следствие: шрифт текста наследуется ОТ ОКНА, поэтому без стиля
+вшитый `Inter` до большинства `TextBlock` не доходил вообще (в разметке `Font.Text` не
+упоминался ни разу, работали только `FieldLabel`/`SectionLabel`, у которых `FontFamily`
+есть в самом стиле) — на одном экране соседствовали `Inter` 11 и `Segoe UI` 12–13.
+
+**Решение (v3.53.0):** стиль именован (`x:Key="Window.Shared"`) и объявлен ЯВНО в
+каждом окне (`Style="{DynamicResource Window.Shared}"`), неявный дубль удалён;
+14 жёстких семей в разметке (`Segoe UI`, `Consolas`) переведены на токены
+`Font.Text`/`Font.Mono`. Тест переписан на два уровня: скан разметки (все 13 корней
+обязаны объявить стиль) + рантайм-проверка настоящих окон (`Inter`, размер из
+`Type.BodyMd`, `Display`, round/снаппинг).
+
+**Правило:** для базового типа с производными элементами проверять ПРИМЕНЕНИЕ на
+реальном объекте, а не наличие ресурса в словаре. Наличие стиля в словаре и его
+действие — разные утверждения.
+
+---
+
+### 23. Анимация нулевой длины всё равно завершается — на этом стоит гейт reduced-motion (СРЕДНИЙ)
+
+**Где:** `Helpers/Motion.cs`, системная настройка «отключить анимации»
+(`SystemParameters.ClientAreaAnimation`).
+
+**Что случилось:** гейт `Motion.Run(storyboard)` «уважал» настройку — возвращал `false`
+и НЕ запускал анимацию. В продакшене он не вызывался ни разу (все 34 места брали из
+`Motion` только длительности), то есть обещание жило в комментарии, а тест проверял
+мёртвый хелпер. При этом наивная «починка» сломала бы интерфейс: очистка висит на
+`Completed` — убрать тост (`ToastService.ScheduleToastRemoval`), свернуть оверлей
+(`OverlayManager.CloseAll/CloseSingle`), спрятать кнопку (`AiAssistantControl`),
+закрыть панель режимов (`QuickAddControl.AnwisMode`), свернуть бар обновления
+(`ProgressBarUpdateAnimator`). Пропущенная анимация = тост не исчезает, оверлей не
+закрывается, карточка остаётся с `Opacity=0` (пре-ролл в `MainWindow.Animations`).
+
+**Факт (замер):** анимация нулевой длины доходит до конечного значения И вызывает
+`Completed` — и для `BeginAnimation`, и для `Storyboard`. Замер закреплён тестом
+`MotionTests.InstantAnimation_StillCompletes`: это инвариант, а не деталь реализации.
+
+**Решение (v3.53.0):** «мгновенно» вместо «отменено»: токены
+(`Motion.Fast/Base/Slow/Emphasized`) возвращают `TimeSpan.Zero`, а `Motion.Run`
+проигрывает Storyboard со сжатым временем (`SetSpeedRatio` ×1000) — конечное состояние
+применяется, `Completed` срабатывает. Смена темы тоже перестаёт анимироваться. Стражи:
+`NoCode_StartsStoryboardsOutsideOfMotion` (единственная точка запуска) и условная
+проверка «токены = 0, когда анимации выключены».
+
+**Что НЕ покрыто (честно):** анимации, которые стартуют из XAML-триггеров
+(hover/pressed в стилях контролов), — их запускает WPF, а не код; при выключенных
+анимациях они остаются. Записано и в спецификации, а не умолчано.
+
+**Правило:** если на `Completed` висит не косметика, а состояние (свернуть, удалить,
+снять подписку) — анимацию нельзя отменять, её нужно сжимать.
+
+---
+
 ## Риски по категориям
 
 | Категория | Риск | Уровень |
@@ -557,6 +625,9 @@ new FontFamily(new Uri("pack://application:,,,/MosquitoNetCalculator;component/R
 | UI | `Width="Auto"` колонки не растёт при наборе (`LostFocus` без `PropertyChanged`) | СРЕДНИЙ |
 | UI | DataGridTextColumn SelectAll race (отложенный BeginInvoke проигрывает первому keystroke, текст дописывается) | СРЕДНИЙ |
 | UI | `{Binding Converter={DynamicResource ...}}` — компилируется, краш в рантайме (Converter не DP) | СРЕДНИЙ |
+| UI | Неявный стиль базового типа не применяется к производным (стиль `Window` и наследники) | ВЫСОКИЙ |
+| UI | Очистка на `Completed`: отмена анимации оставляет элемент в промежуточном состоянии | СРЕДНИЙ |
+| UI | Вторая палитра литералами в C# (бейджи/статусы) не видна страху по XAML | СРЕДНИЙ |
 ## Source files
 
 - `MosquitoNetCalculator/Models/OrderItem.cs`
@@ -567,6 +638,8 @@ new FontFamily(new Uri("pack://application:,,,/MosquitoNetCalculator;component/R
 - `MosquitoNetCalculator/Services/PrintService.cs`
 - `MosquitoNetCalculator/Services/ThemeService.cs`
 - `MosquitoNetCalculator/Services/AppSettingsService.cs`
+- `MosquitoNetCalculator/Helpers/Motion.cs`
+- `MosquitoNetCalculator/Themes/MiscStyles.xaml`
 
 ---
 

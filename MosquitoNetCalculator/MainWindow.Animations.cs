@@ -54,7 +54,10 @@ namespace MosquitoNetCalculator
                 storyboard.Children.Add(animation);
             }
 
-            storyboard.Begin(this);
+            // Через гейт: при выключенных анимациях карточки появляются мгновенно,
+            // но конечное состояние (Opacity=1) применяется — иначе они остались бы
+            // невидимыми, потому что пре-ролл выше выставил Opacity=0.
+            Motion.Run(storyboard, this);
         }
 
         private void OnThemeChanged()
