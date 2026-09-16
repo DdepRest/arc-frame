@@ -14,16 +14,25 @@
             <Setter Property="CanUserDeleteRows" Value="False"/>
             <Setter Property="SelectionMode" Value="Single"/>
             <Setter Property="SelectionUnit" Value="FullRow"/>
-            <Setter Property="FontSize" Value="13"/>
+            <Setter Property="FontSize" Value="{StaticResource Type.Body}"/>
             <Setter Property="Foreground" Value="{DynamicResource TextPrimary}"/>
             <Setter Property="GridLinesVisibility" Value="Horizontal"/>
             <Setter Property="HorizontalGridLinesBrush" Value="{DynamicResource GridLine}"/>
             <Setter Property="HeadersVisibility" Value="Column"/>
             <Setter Property="BorderThickness" Value="0"/>
-            <Setter Property="MinRowHeight" Value="32"/>
+            <!-- ── Плотность (v3.53.1, замеры — GOTCHAS §25) ────────────────
+                 Строка держится НЕ текстом: 12px Inter даёт строку текста
+                 14,4px, а пол строки задают элементы управления — включаемый
+                 тумблер 20px и кнопка «Вкл» 20px в клетке «Монтаж». 32px были
+                 произволом: 55% строки — пустота. 26px = содержимое 21px +
+                 5px воздуха, и это ровно высота шапки (симметрия полос). -->
+            <Setter Property="MinRowHeight" Value="26"/>
             <Setter Property="AlternatingRowBackground" Value="{DynamicResource RowAlt}"/>
             <Setter Property="RowBackground" Value="{DynamicResource Surface}"/>
-            <Setter Property="ColumnHeaderHeight" Value="36"/>
+            <!-- Шапка НЕ ВЫШЕ строк: 36px против 32px давали перевёрнутую
+                 иерархию — самая «жирная» полоса несла самую мелкую подпись.
+                 26px = подпись 11px (Type.Caption, пол шкалы) + 8px паддинга. -->
+            <Setter Property="ColumnHeaderHeight" Value="26"/>
             <Setter Property="Background" Value="{DynamicResource Surface}"/>
             <Setter Property="ScrollViewer.Padding" Value="0"/>
             <!-- UX-04 fix: Auto instead of Hidden — the scrollbar thumb is
@@ -38,9 +47,11 @@
             <Setter Property="Background" Value="{DynamicResource HeaderBg}"/>
             <Setter Property="Foreground" Value="{DynamicResource HeaderText}"/>
             <Setter Property="FontWeight" Value="SemiBold"/>
-            <Setter Property="FontSize" Value="10.5"/>
+            <!-- v3.53.1: 10.5px был ниже пола шкалы (11px) и тянул долг
+                 дробных размеров; Type.Caption — тот же вид, но законно. -->
+            <Setter Property="FontSize" Value="{StaticResource Type.Caption}"/>
             <Setter Property="HorizontalContentAlignment" Value="Center"/>
-            <Setter Property="Padding" Value="10,6"/>
+            <Setter Property="Padding" Value="10,4"/>
             <Setter Property="BorderBrush" Value="{DynamicResource HeaderBorder}"/>
             <Setter Property="BorderThickness" Value="0,0,1,0"/>
             <Setter Property="Template">
@@ -66,7 +77,7 @@
                                      from an unsorted one. Shown only while SortDirection > None. -->
                                 <TextBlock x:Name="SortGlyph" Grid.Column="1"
                                            FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets"
-                                           FontSize="9"
+                                           FontSize="11"
                                            Foreground="{DynamicResource Accent}"
                                            VerticalAlignment="Center"
                                            Margin="4,0,0,0"

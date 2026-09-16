@@ -4,7 +4,7 @@
     <!-- DATEPICKER                                              -->
     <!-- ═══════════════════════════════════════════════════════ -->
     <Style TargetType="DatePicker">
-        <Setter Property="FontSize" Value="13"/>
+        <Setter Property="FontSize" Value="{StaticResource Type.Body}"/>
         <Setter Property="Height" Value="32"/>
         <Setter Property="BorderBrush" Value="{DynamicResource Border}"/>
         <Setter Property="BorderThickness" Value="1"/>
@@ -104,7 +104,7 @@
         <Setter Property="BorderThickness" Value="0"/>
         <Setter Property="FocusVisualStyle" Value="{StaticResource FluentFocusVisual}"/>
         <Setter Property="Foreground" Value="{DynamicResource TextPrimary}"/>
-        <Setter Property="FontSize" Value="13"/>
+        <Setter Property="FontSize" Value="{StaticResource Type.Body}"/>
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="DatePickerTextBox">

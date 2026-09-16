@@ -1,4 +1,4 @@
-<Window x:Class="MosquitoNetCalculator.Controls.AiApiKeyDialog"
+﻿<Window x:Class="MosquitoNetCalculator.Controls.AiApiKeyDialog"
         Style="{DynamicResource Window.Shared}"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
@@ -68,12 +68,12 @@
                 </Grid.ColumnDefinitions>
                 <Border Grid.Column="0" Width="28" Height="28" CornerRadius="{DynamicResource Radius.Md}"
                         Background="{DynamicResource Accent}" VerticalAlignment="Center">
-                    <TextBlock Text="AI" FontSize="10" FontWeight="Bold"
+                    <TextBlock Text="AI" FontSize="9" FontWeight="Bold"
                                Foreground="{DynamicResource OnAccent}"
                                HorizontalAlignment="Center" VerticalAlignment="Center"/>
                 </Border>
                 <StackPanel Grid.Column="1" VerticalAlignment="Center" Margin="8,0,0,0">
-                    <TextBlock Text="Настройки AI Ассистента" FontSize="15" FontWeight="SemiBold"
+                    <TextBlock Text="Настройки AI Ассистента" FontSize="16" FontWeight="SemiBold"
                                Foreground="{DynamicResource TextPrimary}"/>
                     <TextBlock Text="Бесплатные модели · автовыбор · резервное подключение" FontSize="11"
                                Foreground="{DynamicResource TextMuted}" Margin="0,2,0,0"
@@ -86,7 +86,7 @@
                         Width="28" Height="28" Click="BtnClose_Click"
                         Style="{DynamicResource DialogCloseButton}"
                         VerticalAlignment="Center">
-                    <TextBlock Text="&#xE8BB;" FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets" FontSize="10"/>
+                    <TextBlock Text="&#xE8BB;" FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets" FontSize="11"/>
                 </Button>
             </Grid>
 
@@ -147,7 +147,7 @@
                     <ColumnDefinition Width="Auto"/>
                 </Grid.ColumnDefinitions>
                 <StackPanel Grid.Column="0">
-                    <TextBlock Text="API-КЛЮЧИ" FontSize="10" FontWeight="Bold"
+                    <TextBlock Text="API-КЛЮЧИ" FontSize="11" FontWeight="Bold"
                                Foreground="{DynamicResource TextMuted}"/>
                     <TextBlock Text="Ключ нужен для работы AI · проверка без сохранения" FontSize="11"
                                Foreground="{DynamicResource TextMuted}" Margin="0,2,0,0"/>
@@ -171,7 +171,7 @@
                             <StackPanel Orientation="Horizontal">
                                 <Border Width="18" Height="18" CornerRadius="{DynamicResource Radius.Sm}"
                                         Background="{DynamicResource ChipBg}" Margin="0,0,6,0">
-                                    <TextBlock Text="OR" FontSize="8" FontWeight="Bold"
+                                    <TextBlock Text="OR" FontSize="9" FontWeight="Bold"
                                                Foreground="{DynamicResource Accent}"
                                                HorizontalAlignment="Center" VerticalAlignment="Center"/>
                                 </Border>
@@ -222,7 +222,7 @@
                             <StackPanel Orientation="Horizontal">
                                 <Border Width="18" Height="18" CornerRadius="{DynamicResource Radius.Sm}"
                                         Background="{DynamicResource BadgeSuccessBg}" Margin="0,0,6,0">
-                                    <TextBlock Text="NV" FontSize="8" FontWeight="Bold"
+                                    <TextBlock Text="NV" FontSize="9" FontWeight="Bold"
                                                Foreground="{DynamicResource Success}"
                                                HorizontalAlignment="Center" VerticalAlignment="Center"/>
                                 </Border>
@@ -275,8 +275,8 @@
                         <ColumnDefinition Width="Auto"/>
                     </Grid.ColumnDefinitions>
                     <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center">
-                        <TextBlock Text="●" FontSize="9" Foreground="{DynamicResource TextMuted}" Margin="0,0,6,0"/>
-                        <TextBlock Text="Живой запрос · данные не сохраняются" FontSize="10"
+                        <TextBlock Text="●" FontSize="11" Foreground="{DynamicResource TextMuted}" Margin="0,0,6,0"/>
+                        <TextBlock Text="Живой запрос · данные не сохраняются" FontSize="11"
                                    Foreground="{DynamicResource TextMuted}"/>
                     </StackPanel>
                     <Button Grid.Column="1" x:Name="BtnTestKeys"
@@ -301,7 +301,7 @@
                                    Foreground="{DynamicResource TextPrimary}"/>
                         <Border CornerRadius="{DynamicResource Radius.Sm}" Padding="6,2" Margin="8,0,0,0"
                                 Background="{DynamicResource ChipBg}">
-                            <TextBlock Text="НЕСКОЛЬКО" FontSize="8" FontWeight="Bold"
+                            <TextBlock Text="НЕСКОЛЬКО" FontSize="9" FontWeight="Bold"
                                        Foreground="{DynamicResource Accent}"/>
                         </Border>
                     </StackPanel>
@@ -430,7 +430,7 @@
                                                     </Style.Triggers>
                                                 </Style>
                                             </Border.Style>
-                                            <TextBlock Text="📷" FontSize="9"
+                                            <TextBlock Text="📷" FontSize="11"
                                                        Foreground="{DynamicResource BadgeVisionFg}"/>
                                         </Border>
                                         <Border CornerRadius="{DynamicResource Radius.Sm}" Padding="6,3"

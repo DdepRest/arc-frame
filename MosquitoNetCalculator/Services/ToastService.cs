@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Windows;
 using System.Windows.Controls;
@@ -205,7 +205,7 @@ namespace MosquitoNetCalculator.Services
             var textBlock = new TextBlock
             {
                 Text = message,
-                FontSize = 12.5,
+                FontSize = 12,
                 Foreground = (Brush?)Application.Current?.FindResource("TextPrimary") ?? Brushes.Black,
                 VerticalAlignment = VerticalAlignment.Center,
                 MaxWidth = 300,
@@ -230,7 +230,7 @@ namespace MosquitoNetCalculator.Services
                 var actionBtn = new Button
                 {
                     Content = actionLabel,
-                    FontSize = 11.5,
+                    FontSize = 12,
                     FontWeight = FontWeights.SemiBold,
                     Cursor = Cursors.Hand,
                     Margin = new Thickness(10, 0, 0, 0),
@@ -253,7 +253,7 @@ namespace MosquitoNetCalculator.Services
             {
                 Content = "\uE711",
                 FontFamily = new System.Windows.Media.FontFamily("Segoe Fluent Icons, Segoe MDL2 Assets"),
-                FontSize = 9,
+                FontSize = 11,
                 Cursor = Cursors.Hand,
                 Margin = new Thickness(8, 0, 0, 0),
                 Padding = new Thickness(4, 2, 4, 2),

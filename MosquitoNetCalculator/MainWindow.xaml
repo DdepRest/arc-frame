@@ -459,7 +459,7 @@
                                                 Background="{DynamicResource BadgeWarningBg}"
                                                 BorderBrush="{DynamicResource BadgeWarningFg}" BorderThickness="1"
                                                 ToolTip="AI-функции находятся в стадии тестирования">
-                                            <TextBlock Text="BETA" FontSize="8" FontWeight="Bold"
+                                            <TextBlock Text="BETA" FontSize="9" FontWeight="Bold"
                                                        Foreground="{DynamicResource BadgeWarningFg}"/>
                                         </Border>
                                     </StackPanel>
@@ -567,7 +567,7 @@
                                 <Grid Width="30" Height="28">
                                     <!-- Segoe MDL2 Assets: GlobalNavigationButton. The literal ☰
                                          rendered as a missing-glyph square on some Windows font setups. -->
-                                    <TextBlock Text="&#xE700;" FontFamily="Segoe MDL2 Assets" FontSize="17"
+                                    <TextBlock Text="&#xE700;" FontFamily="Segoe MDL2 Assets" FontSize="16"
                                                HorizontalAlignment="Center" VerticalAlignment="Center"
                                                SnapsToDevicePixels="True"/>
                                 </Grid>
@@ -577,7 +577,7 @@
                         </Button>
                         <!-- v3.50: navigation groups (prototype sidebar) -->
                         <TextBlock x:Name="NavGroupMain" Text="ОСНОВНОЕ"
-                                   FontSize="10" FontWeight="SemiBold" FontFamily="{DynamicResource Font.Text}"
+                                   FontSize="11" FontWeight="SemiBold" FontFamily="{DynamicResource Font.Text}"
                                    Foreground="{DynamicResource TextMuted}"
                                    Margin="12,6,0,4"/>
                         <!-- Расчёт -->
@@ -669,7 +669,7 @@
                         </Button>
                         <!-- Служебное -->
                         <TextBlock x:Name="NavGroupService" Text="СЛУЖЕБНОЕ"
-                                   FontSize="10" FontWeight="SemiBold" FontFamily="{DynamicResource Font.Text}"
+                                   FontSize="11" FontWeight="SemiBold" FontFamily="{DynamicResource Font.Text}"
                                    Foreground="{DynamicResource TextMuted}"
                                    Margin="12,14,0,4"/>
                         <!-- Обновления -->
@@ -713,7 +713,7 @@
                                            Margin="10,0,0,0" FontSize="12" VerticalAlignment="Center"
                                            FontFamily="{DynamicResource Font.Text}">
                                     <Run Text="AI"/>
-                                    <Run Text="  BETA" FontSize="8" FontWeight="Bold"
+                                    <Run Text="  BETA" FontSize="9" FontWeight="Bold"
                                          Foreground="{DynamicResource BadgeWarningFg}"/>
                                 </TextBlock>
                             </Grid>

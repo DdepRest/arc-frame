@@ -10,7 +10,7 @@
         </Style>
 
         <Style TargetType="TabItem">
-            <Setter Property="FontSize" Value="13"/>
+            <Setter Property="FontSize" Value="{StaticResource Type.Body}"/>
             <Setter Property="FontWeight" Value="Regular"/>
             <Setter Property="Padding" Value="18,8"/>
             <Setter Property="Foreground" Value="{DynamicResource TextMuted}"/>

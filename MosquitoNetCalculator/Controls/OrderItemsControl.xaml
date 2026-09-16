@@ -13,10 +13,10 @@
              only its fixed card list — an unlisted element would stay invisible. -->
         <Border Grid.Row="0" Background="{DynamicResource Surface}" CornerRadius="10,10,0,0"
                 BorderBrush="{DynamicResource Border}" BorderThickness="1,1,1,0"
-                Padding="12,7"
+                Padding="12,5"
                 x:Name="TableHeadBar">
             <StackPanel Orientation="Horizontal">
-                <TextBlock Text="Позиции заказа" FontSize="12.5" FontWeight="SemiBold"
+                <TextBlock Text="Позиции заказа" FontSize="12" FontWeight="SemiBold"
                            Foreground="{DynamicResource TextPrimary}" VerticalAlignment="Center"/>
                 <Border x:Name="PosCountBadge" Background="{DynamicResource ChipBg}"
                         CornerRadius="10" Padding="9,3" Margin="10,0,0,0"
@@ -136,7 +136,7 @@
                                             </Style>
                                         </Border.Style>
                                         <TextBlock Text="{Binding AnwisSizeShortLabel}"
-                                                   FontSize="10" FontWeight="SemiBold">
+                                                   FontSize="11" FontWeight="SemiBold">
                                             <TextBlock.Style>
                                                 <Style TargetType="TextBlock">
                                                     <Setter Property="Foreground" Value="{DynamicResource Accent}"/>
@@ -165,7 +165,7 @@
                                         </Style>
                                     </Border.Style>
                                     <Grid>
-                                        <TextBlock Text="ИМ" FontSize="10" FontWeight="SemiBold">
+                                        <TextBlock Text="ИМ" FontSize="11" FontWeight="SemiBold">
                                             <TextBlock.Style>
                                                 <Style TargetType="TextBlock">
                                                     <Setter Property="Foreground" Value="{DynamicResource Accent}"/>
@@ -183,7 +183,7 @@
                                             <Border Background="{DynamicResource Surface}"
                                                     BorderBrush="{DynamicResource Border}" BorderThickness="1"
                                                     CornerRadius="6" Padding="10,8" Margin="0,6,0,0" MaxWidth="340">
-                                                <TextBlock Text="{Binding ImpostToolTip}" FontSize="11.5"
+                                                <TextBlock Text="{Binding ImpostToolTip}" FontSize="12"
                                                            Foreground="{DynamicResource TextPrimary}"
                                                            TextWrapping="Wrap"/>
                                             </Border>
@@ -207,7 +207,7 @@
                                     </Border.Style>
                                     <Grid>
                                         <!-- UX-05: self-explanatory label instead of bare "АК" -->
-                                        <TextBlock Text="{Binding AnticatBadgeLabel}" FontSize="10" FontWeight="SemiBold">
+                                        <TextBlock Text="{Binding AnticatBadgeLabel}" FontSize="11" FontWeight="SemiBold">
                                             <TextBlock.Style>
                                                 <Style TargetType="TextBlock">
                                                     <Setter Property="Foreground" Value="{DynamicResource Accent}"/>
@@ -225,7 +225,7 @@
                                             <Border Background="{DynamicResource Surface}"
                                                     BorderBrush="{DynamicResource Border}" BorderThickness="1"
                                                     CornerRadius="6" Padding="10,8" Margin="0,6,0,0" MaxWidth="340">
-                                                <TextBlock Text="{Binding AnticatToolTip}" FontSize="11.5"
+                                                <TextBlock Text="{Binding AnticatToolTip}" FontSize="12"
                                                            Foreground="{DynamicResource TextPrimary}"
                                                            TextWrapping="Wrap"/>
                                             </Border>
@@ -317,29 +317,39 @@
                                 <!-- v3.47.1: FlatIconButton — без WPF-овского «хрома» (фон-кнопка),
                                      только глиф V/X/B. Не-applicable товары затемняются
                                      через IsEnabled=False в стиле. -->
-                                <StackPanel>
+                                <!-- v3.53.1: бейдж и сумма монтажа — ОДНОЙ строкой.
+                                     Раньше сумма стояла подписью ПОД бейджем: высота
+                                     клетки становилась 26+13 = 39px вместо 21px у
+                                     остальных, и строка с монтажом выбивалась из
+                                     ритма таблицы (39 против 32; замеры — GOTCHAS
+                                     §25). В одну строку все позиции одной высоты.
+                                     Height=20 подчинён компактной шкале: строку держит
+                                     именно эта кнопка, а не текст 12px (7,2px). -->
+                                <StackPanel Orientation="Horizontal"
+                                            HorizontalAlignment="Center">
                                     <!-- UX-06: readable word badge instead of V/X/В glyph;
                                          auto-width so «Вкл»/«Без»/«ВК» are not clipped -->
                                     <Button Content="{Binding InstallationButtonLabel}"
                                             Style="{DynamicResource FlatIconButton}"
-                                            FontSize="11"
+                                            FontSize="{StaticResource Type.Caption}"
                                             FontWeight="SemiBold"
                                             MinWidth="34"
                                             Padding="6,0"
-                                            Height="26"
+                                            Height="20"
+                                            VerticalAlignment="Center"
                                             HorizontalAlignment="Center"
                                             Foreground="{Binding InstallationForegroundColor}"
                                             Click="BtnToggleInstallation_Click"
                                             ToolTip="{Binding InstallationToolTip}"
                                             IsEnabled="{Binding IsInstallationApplicable}"/>
-                                    <!-- v3.48.3: сумма монтажа за строку мелким текстом
-                                         под глифом (скрыта для «—» и нулевой суммы) -->
+                                    <!-- v3.48.3: сумма монтажа за строку (скрыта для «—»
+                                         и нулевой суммы) — теперь в строку с бейджем -->
                                     <TextBlock Text="{Binding InstallationAmountDisplay}"
                                                Visibility="{Binding InstallationAmountDisplay,
                                                                             Converter={StaticResource NonEmptyToVis}}"
-                                               FontSize="11"
-                                               Margin="0,-1,0,0"
-                                               HorizontalAlignment="Center"
+                                               FontSize="{StaticResource Type.Caption}"
+                                               Margin="5,0,0,0"
+                                               VerticalAlignment="Center"
                                                Foreground="{DynamicResource TextSecondary}"/>
                                 </StackPanel>
                             </DataTemplate>
@@ -532,7 +542,7 @@
                                         </Style.Triggers>
                                     </Style>
                                 </Border.Style>
-                                <TextBlock Text="{Binding}" FontSize="12.5" FontWeight="Medium"
+                                <TextBlock Text="{Binding}" FontSize="12" FontWeight="Medium"
                                            Foreground="{DynamicResource TextPrimary}">
                                     <TextBlock.Style>
                                         <Style TargetType="TextBlock">

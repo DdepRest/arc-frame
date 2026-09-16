@@ -1,4 +1,4 @@
-<Window x:Class="MosquitoNetCalculator.Controls.WhatsNewWindow"
+﻿<Window x:Class="MosquitoNetCalculator.Controls.WhatsNewWindow"
         Style="{DynamicResource Window.Shared}"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
@@ -53,7 +53,7 @@
                             Width="40" Height="40"
                             Style="{DynamicResource DialogCloseButton}"
                             Click="CloseButton_Click">
-                        <TextBlock Text="&#xE8BB;" FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets" FontSize="10"/>
+                        <TextBlock Text="&#xE8BB;" FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets" FontSize="11"/>
                     </Button>
                 </Grid>
             </Border>

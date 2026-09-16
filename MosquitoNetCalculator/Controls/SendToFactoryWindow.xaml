@@ -1,4 +1,4 @@
-<Window x:Class="MosquitoNetCalculator.Controls.SendToFactoryWindow"
+﻿<Window x:Class="MosquitoNetCalculator.Controls.SendToFactoryWindow"
         Style="{DynamicResource Window.Shared}"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
@@ -56,7 +56,7 @@
                             VerticalAlignment="Stretch"/>
                     <StackPanel Grid.Column="1" Orientation="Horizontal"
                                 VerticalAlignment="Center" Margin="14,0,0,0">
-                        <TextBlock Text="&#xE7B3;" FontSize="15"
+                        <TextBlock Text="&#xE7B3;" FontSize="16"
                                    FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets"
                                    Foreground="{DynamicResource Accent}"
                                    VerticalAlignment="Center" Margin="0,0,8,0"/>
@@ -70,7 +70,7 @@
                             Width="40" Height="40"
                             Style="{DynamicResource DialogCloseButton}"
                             Click="BtnClose_Click">
-                        <TextBlock Text="&#xE8BB;" FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets" FontSize="10"/>
+                        <TextBlock Text="&#xE8BB;" FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets" FontSize="11"/>
                     </Button>
                 </Grid>
             </Border>
@@ -133,7 +133,7 @@
                             <!-- Products section -->
                             <TextBlock x:Name="ProductsHeader"
                                        Text="Т О В А Р Ы"
-                                       FontSize="10" FontWeight="Bold"
+                                       FontSize="11" FontWeight="Bold"
                                        Foreground="{DynamicResource TextMuted}"
                                        Margin="4,0,0,8"/>
                             <StackPanel x:Name="ProductsPanel" Margin="0,0,0,14"/>
@@ -141,7 +141,7 @@
                             <!-- Additional KPs section -->
                             <TextBlock x:Name="KpHeader"
                                        Text="Д О П О Л Н И Т Е Л Ь Н Ы Е   К П"
-                                       FontSize="10" FontWeight="Bold"
+                                       FontSize="11" FontWeight="Bold"
                                        Foreground="{DynamicResource TextMuted}"
                                        Margin="4,0,0,8"/>
                             <StackPanel x:Name="KpPanel"/>

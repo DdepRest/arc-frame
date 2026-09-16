@@ -48,7 +48,7 @@
             <Setter Property="Foreground" Value="{DynamicResource TextPrimary}"/>
             <Setter Property="BorderThickness" Value="0"/>
             <Setter Property="Cursor" Value="Hand"/>
-            <Setter Property="FontSize" Value="12.5"/>
+            <Setter Property="FontSize" Value="12"/>
             <Setter Property="HorizontalContentAlignment" Value="Left"/>
             <Setter Property="Padding" Value="10,8"/>
             <Setter Property="FocusVisualStyle" Value="{StaticResource FluentFocusVisual}"/>
@@ -101,7 +101,7 @@
                             ToolTip="Другие варианты печати"
                             AutomationProperties.Name="Другие варианты печати"
                             AutomationProperties.AutomationId="BtnPrintCaret">
-                        <TextBlock Text="&#xE70D;" FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets" FontSize="10"/>
+                        <TextBlock Text="&#xE70D;" FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets" FontSize="11"/>
                     </Button>                    <Popup x:Name="PrintMenuPopup" AllowsTransparency="True" IsOpen="False"
                            Placement="Bottom" PlacementTarget="{Binding ElementName=BtnPrintCaret}"
                            PopupAnimation="Fade" StaysOpen="False">

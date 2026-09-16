@@ -23,19 +23,19 @@
     "Controls/TitleBarControl.xaml": 5,
     "Controls/TotalCardControl.xaml": 9,
     "Controls/UpdateAvailableWindow.xaml": 9,
-    "Controls/UpdatesTabControl.xaml": 29,
+    "Controls/UpdatesTabControl.xaml": 27,
     "Controls/WhatsNewWindow.xaml": 6,
     "ImportDialogWindow.xaml": 5,
     "MainWindow.xaml": 43,
     "Themes/ButtonStyles.xaml": 9,
-    "Themes/ContextMenuStyles.xaml": 1,
-    "Themes/DataGridStyles.xaml": 3,
-    "Themes/InputStyles.CheckBox.xaml": 4,
-    "Themes/InputStyles.ComboBox.xaml": 3,
-    "Themes/InputStyles.DatePicker.xaml": 3,
-    "Themes/InputStyles.RadioButton.xaml": 1,
-    "Themes/InputStyles.TextBox.xaml": 1,
-    "Themes/TabStyles.xaml": 1,
+    "Themes/ContextMenuStyles.xaml": 0,
+    "Themes/DataGridStyles.xaml": 1,
+    "Themes/InputStyles.CheckBox.xaml": 3,
+    "Themes/InputStyles.ComboBox.xaml": 0,
+    "Themes/InputStyles.DatePicker.xaml": 1,
+    "Themes/InputStyles.RadioButton.xaml": 0,
+    "Themes/InputStyles.TextBox.xaml": 0,
+    "Themes/TabStyles.xaml": 0,
     "WelcomeWindow.xaml": 10
   },
   "cornerRadius": {
@@ -77,11 +77,11 @@
     "Services/DrawingService.cs": 9
   },
   "totals": {
-    "_comment": "Суммарные бюджеты для категорий, где разбивка по файлам ничего не даёт. rawAnimationDurationsXaml = 0: движение только через Motion.* (литеральный Duration= — сразу ошибка). rawAnimationDurationsCodeMs = 13: оставшиеся TimeSpan.FromMilliseconds — это интервалы таймеров, задержки повторов сети и ожидание первого токена, не движение; анимации в коде берут Helpers/Motion.",
+    "_comment": "Суммарные бюджеты для категорий, где разбивка по файлам ничего не даёт. rawAnimationDurationsXaml = 0: движение только через Motion.* (литеральный Duration= — сразу ошибка). rawAnimationDurationsCodeMs = 13: оставшиеся TimeSpan.FromMilliseconds — это интервалы таймеров, задержки повторов сети и ожидание первого токена, не движение; анимации в коде берут Helpers/Motion. subElevenOrFractionalFontSizes = 10 — это монограммы бейджей и иконные глифы на ступени 9px (Type.Monogram), единственное разрешённое исключение. fractionalFontSizes = 0: дробных размеров в разметке нет совсем, а не «ещё немного» — их запрещает и отдельный тест FontSizes_LiveOnTheScale (GOTCHAS §26).",
     "rawHexColorsOutsideColorLayer": 0,
     "rawAnimationDurationsXaml": 0,
     "rawAnimationDurationsCodeMs": 13,
-    "subElevenOrFractionalFontSizes": 98,
-    "fractionalFontSizes": 46
+    "subElevenOrFractionalFontSizes": 10,
+    "fractionalFontSizes": 0
   }
 }

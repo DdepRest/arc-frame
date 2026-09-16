@@ -5,7 +5,7 @@
     <!-- ═══════════════════════════════════════════════════════ -->
     <Style TargetType="CheckBox">
         <Setter Property="Foreground" Value="{DynamicResource TextPrimary}"/>
-        <Setter Property="FontSize" Value="13"/>
+        <Setter Property="FontSize" Value="{StaticResource Type.Body}"/>
         <Setter Property="Cursor" Value="Hand"/>
         <Setter Property="VerticalContentAlignment" Value="Center"/>
         <Setter Property="Template">
@@ -80,7 +80,7 @@
                                 <TextBlock x:Name="ThumbText" Text="−"
                                            Foreground="{DynamicResource Danger}"
                                            HorizontalAlignment="Center" VerticalAlignment="Center"
-                                           FontSize="15" FontWeight="Bold" Margin="0,0,0,1"/>
+                                           FontSize="16" FontWeight="Bold" Margin="0,0,0,1"/>
                             </Border>
                         </Grid>
                     </Border>

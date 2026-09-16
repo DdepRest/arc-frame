@@ -294,13 +294,51 @@ namespace MosquitoNetCalculator.Tests.Design
             Assert.True(bad.Count <= allowed,
                 $"Размеров ниже 11px или дробных стало {bad.Count} (бюджет {allowed}).\n  " + breakdown);
 
-            // Дробные размеры — отдельный, более строгий бюджет: 11.5/10.5 дают
-            // субпиксельный гребень на 100% DPI и подлежат полной ликвидации.
+            // Дробные размеры — отдельный, более строгий бюджет: при 100% DPI
+            // они рисуются как СЛЕДУЮЩАЯ целая ступень (12.5 — как 13, замер в
+            // TypographyTests.FractionalFontSize_RendersAsTheNextWholeStep),
+            // то есть текст виден крупнее задуманного — GOTCHAS §26.
             var fractional = bad.Where(o => o.Value.Contains('.')).ToList();
             int fractionalAllowed = Budget().GetProperty("totals").GetProperty("fractionalFontSizes").GetInt32();
             Assert.True(fractional.Count <= fractionalAllowed,
                 $"Дробных размеров шрифта стало {fractional.Count} (бюджет {fractionalAllowed}): " +
                 string.Join(", ", fractional.Select(f => $"{f.File}={f.Value}")));
+        }
+
+        /// <summary>
+        /// Шкала типографики: 9 (только монограммы бейджей и иконные глифы),
+        /// 11 · 12 · 14 · 16 · 18 · 20 · 24 · 32 · 42. Всё прочее — долг, а не
+        /// решение: дробный размер при 100% DPI даёт субпиксельную шкалу по
+        /// вертикали и глиф выглядит «вытянутым», вне-шкальное целое
+        /// (10/15/17/22/26) ломает ритм иерархии. Разбор — GOTCHAS §26.
+        /// </summary>
+        private static readonly double[] TypeScale = { 9, 11, 12, 14, 16, 18, 20, 24, 32, 42 };
+
+        [Fact]
+        public void FontSizes_LiveOnTheScale()
+        {
+            var offenders = new List<string>();
+
+            foreach (var file in ProductXaml())
+            {
+                string text = ReadWithoutComments(file);
+                var matches = FontSizeValue.Matches(text).Cast<Match>()
+                    .Concat(FontSizeSetterValue.Matches(text).Cast<Match>());
+
+                foreach (var match in matches)
+                {
+                    double value = double.Parse(match.Groups[1].Value,
+                        System.Globalization.CultureInfo.InvariantCulture);
+                    if (!TypeScale.Contains(value))
+                        offenders.Add($"{Relative(file)}: FontSize={match.Groups[1].Value}");
+                }
+            }
+
+            Assert.True(offenders.Count == 0,
+                "Размер шрифта вне шкалы (11·12·14·16·18·20·24·32·42, плюс 9 для " +
+                "монограмм/иконок). Дробный размер «вытягивает» текст на 100% DPI, " +
+                "вне-шкальное целое ломает иерархию:\n  " +
+                string.Join("\n  ", offenders.Distinct().OrderBy(o => o)));
         }
 
         // ── 6. Токены существуют и подключены ────────────────────────────

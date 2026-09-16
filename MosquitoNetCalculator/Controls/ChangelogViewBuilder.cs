@@ -1,4 +1,4 @@
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
@@ -67,7 +67,7 @@ namespace MosquitoNetCalculator.Controls
                 Child = new TextBlock
                 {
                     Text = item.Type,
-                    FontSize = 10,
+                    FontSize = 11,
                     FontWeight = FontWeights.SemiBold,
                     Foreground = (Brush?)Application.Current?.TryFindResource("OnAccent") ?? Brushes.White
                 }

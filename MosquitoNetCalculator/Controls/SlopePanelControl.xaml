@@ -1,4 +1,4 @@
-<UserControl x:Class="MosquitoNetCalculator.Controls.SlopePanelControl"
+﻿<UserControl x:Class="MosquitoNetCalculator.Controls.SlopePanelControl"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:controls="clr-namespace:MosquitoNetCalculator.Controls">
@@ -478,7 +478,7 @@
 
                                             <StackPanel Grid.Column="1" Orientation="Horizontal" Margin="10,0,0,0" VerticalAlignment="Center">
                                                 <TextBlock Text="{Binding PerDetail}"
-                                                           FontSize="10"
+                                                           FontSize="11"
                                                            Foreground="{DynamicResource TextSecondary}"
                                                            VerticalAlignment="Center"/>
                                                 <Border CornerRadius="{DynamicResource Radius.Sm}"
@@ -514,7 +514,7 @@
 
                             <!-- Hint when economy is enabled but nothing saved for these dimensions -->
                             <TextBlock x:Name="TxtNoSavingsHint"
-                                       FontSize="10"
+                                       FontSize="11"
                                        FontStyle="Italic"
                                        Foreground="{DynamicResource TextMuted}"
                                        TextWrapping="Wrap"

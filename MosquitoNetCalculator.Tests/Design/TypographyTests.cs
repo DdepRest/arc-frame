@@ -190,8 +190,92 @@ namespace MosquitoNetCalculator.Tests.Design
                          Path.Combine(RepoRoot(), "MosquitoNetCalculator"), "*.xaml", SearchOption.AllDirectories))
             {
                 string text = File.ReadAllText(file);
+                // Любая форма литерала 13: атрибут FontSize="13", сеттер
+                // <Setter Property="FontSize" Value="13"/> (форма, через которую
+                // 13 просочилось в DataGrid/TextBox/ComboBox/Tab после первого
+                // стража), Run FontSize="13".
                 Assert.DoesNotContain("FontSize=\"13\"", text);
+                Assert.DoesNotContain("Value=\"13\"", text);
             }
+
+            // и в коде: ToastService/ChangelogViewBuilder уже мигрированы;
+            // исключение — печатный слой FlowDocumentBuilder (13.5pt — пункты
+            // для QuestPDF, не экранный кегль).
+            foreach (string file in Directory.EnumerateFiles(
+                         Path.Combine(RepoRoot(), "MosquitoNetCalculator"), "*.cs", SearchOption.AllDirectories))
+            {
+                string text = File.ReadAllText(file);
+                if (text.Contains("FlowDocumentBuilder")) continue;
+                Assert.DoesNotContain("FontSize = 13", text);
+            }
+        }
+
+        /// <summary>
+        /// Чернильный бокс строки при заданном размере (тот же режим, что в
+        /// приложении: Display, вшитый Inter). Возвращает (высота, ширина).
+        /// </summary>
+        private static (int Height, int Width) InkBox(double size)
+        {
+            const string sample = "Печать без предпросмотра";
+            int w = 300, h = 40;
+
+            var text = new System.Windows.Controls.TextBlock
+            {
+                Text = sample,
+                FontFamily = MosquitoNetCalculator.Services.AppFontService.CreateInterFamily(),
+                FontSize = size,
+                Foreground = Brushes.Black,
+            };
+            TextOptions.SetTextFormattingMode(text, TextFormattingMode.Display);
+            text.Measure(new Size(w, h));
+            text.Arrange(new Rect(0, 0, w, h));
+            text.UpdateLayout();
+
+            var shot = new System.Windows.Media.Imaging.RenderTargetBitmap(
+                w, h, 96, 96, PixelFormats.Pbgra32);
+            shot.Render(text);
+            var px = new byte[w * h * 4];
+            shot.CopyPixels(px, w * 4, 0);
+
+            int top = -1, bottom = -1, left = w, right = -1;
+            for (int y = 0; y < h; y++)
+            {
+                for (int x = 0; x < w; x++)
+                {
+                    if (px[((y * w) + x) * 4 + 3] <= 8) continue;
+                    if (top < 0) top = y;
+                    bottom = y;
+                    if (x < left) left = x;
+                    if (x > right) right = x;
+                }
+            }
+
+            return (bottom - top + 1, right - left + 1);
+        }
+
+        /// <summary>
+        /// Дробный размер рисуется как СЛЕДУЮЩАЯ целая ступень — именно поэтому
+        /// он запрещён (GOTCHAS §26). Меню печати было задано как 12.5 и в
+        /// готовом окне рисовалось как 13: чернила выше на 17%, чем у соседнего
+        /// 12px-текста, и это видно как «вытянутость». Тест фиксирует механизм:
+        /// 12.5 = 13 и 12.5 ≠ 12.
+        /// </summary>
+        [Fact]
+        public void FractionalFontSize_RendersAsTheNextWholeStep()
+        {
+            TestAppThemes.RunOnSta(() =>
+            {
+                var at12 = InkBox(12);
+                var at12AndHalf = InkBox(12.5);
+                var at13 = InkBox(13);
+
+                Assert.Equal(at13, at12AndHalf);
+                Assert.NotEqual(at12, at12AndHalf);
+
+                // И это не «чуть-чуть»: шаг 12 → 13 добавляет заметную высоту.
+                Assert.True(at13.Height > at12.Height,
+                    $"12px и 13px совпали ({at12.Height}px) — замер перестал ловить ступень.");
+            });
         }
 
         [Fact]

@@ -1,4 +1,4 @@
-<UserControl x:Class="MosquitoNetCalculator.Controls.AdditionalKpsControl"
+﻿<UserControl x:Class="MosquitoNetCalculator.Controls.AdditionalKpsControl"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
     <Border x:Name="CardAdditionalKp" Background="{DynamicResource SectionBg}"
@@ -28,9 +28,9 @@
                                 <ColumnDefinition Width="2"/>
                                 <ColumnDefinition Width="Auto"/>
                             </Grid.ColumnDefinitions>
-                            <TextBlock Grid.Column="0" Text="Вкл." FontSize="10" Foreground="{DynamicResource TextMuted}" VerticalAlignment="Center" Width="48" TextAlignment="Center"/>
-                            <TextBlock Grid.Column="2" Text="№ КП" FontSize="10" Foreground="{DynamicResource TextMuted}" VerticalAlignment="Center" Width="60" TextAlignment="Center"/>
-                            <TextBlock Grid.Column="4" Text="Сумма, руб." FontSize="10" Foreground="{DynamicResource TextMuted}" HorizontalAlignment="Right" VerticalAlignment="Center"/>
+                            <TextBlock Grid.Column="0" Text="Вкл." FontSize="11" Foreground="{DynamicResource TextMuted}" VerticalAlignment="Center" Width="48" TextAlignment="Center"/>
+                            <TextBlock Grid.Column="2" Text="№ КП" FontSize="11" Foreground="{DynamicResource TextMuted}" VerticalAlignment="Center" Width="60" TextAlignment="Center"/>
+                            <TextBlock Grid.Column="4" Text="Сумма, руб." FontSize="11" Foreground="{DynamicResource TextMuted}" HorizontalAlignment="Right" VerticalAlignment="Center"/>
                         </Grid>
 
                         <ItemsControl ItemsSource="{Binding ClientInfo.AdditionalKps}">

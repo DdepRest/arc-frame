@@ -32,7 +32,7 @@
 
         <Style TargetType="MenuItem">
             <Setter Property="Foreground" Value="{DynamicResource TextPrimary}"/>
-            <Setter Property="FontSize" Value="13"/>
+            <Setter Property="FontSize" Value="{StaticResource Type.Body}"/>
             <Setter Property="FontWeight" Value="Regular"/>
             <Setter Property="Padding" Value="14,10"/>
             <Setter Property="Cursor" Value="Hand"/>

@@ -1,4 +1,4 @@
-using System.Windows.Input;
+﻿using System.Windows.Input;
 using System.Collections.Generic;
 using System.Windows;
 using System.Windows.Controls;
@@ -28,7 +28,7 @@ namespace MosquitoNetCalculator
                 var cb = new CheckBox
                 {
                     IsChecked = true,
-                    FontSize = 11.5,
+                    FontSize = 12,
                     Foreground = (System.Windows.Media.Brush)FindResource("TextPrimary"),
                     Margin = new Thickness(0, 2, 0, 2),
                     Content = $"№{order.ContractNumber} — {order.ClientName} — {order.ClientAddress} — {MoneyFormatService.Format(order.TotalAmount)} руб. — {order.UpdatedAt:dd.MM.yy HH:mm}"

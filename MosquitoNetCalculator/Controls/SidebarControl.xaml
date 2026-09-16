@@ -1,4 +1,4 @@
-<UserControl x:Class="MosquitoNetCalculator.Controls.SidebarControl"
+﻿<UserControl x:Class="MosquitoNetCalculator.Controls.SidebarControl"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:controls="clr-namespace:MosquitoNetCalculator.Controls">
@@ -91,7 +91,7 @@
                             </Grid>
                         </Border>
                         <TextBlock Text="Статус не блокирует редактирование заказа — справочная метка для менеджера и истории."
-                                   FontSize="10.5" Foreground="{DynamicResource TextMuted}"
+                                   FontSize="11" Foreground="{DynamicResource TextMuted}"
                                    TextWrapping="Wrap" Margin="0,6,0,0"/>
                         </StackPanel>
                 </StackPanel>

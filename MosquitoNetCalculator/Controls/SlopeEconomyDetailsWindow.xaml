@@ -1,4 +1,4 @@
-<Window x:Class="MosquitoNetCalculator.Controls.SlopeEconomyDetailsWindow"
+﻿<Window x:Class="MosquitoNetCalculator.Controls.SlopeEconomyDetailsWindow"
         Style="{DynamicResource Window.Shared}"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
@@ -56,7 +56,7 @@
                             Width="40" Height="40"
                             Style="{DynamicResource DialogCloseButton}"
                             Click="CloseButton_Click">
-                        <TextBlock Text="&#xE8BB;" FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets" FontSize="10"/>
+                        <TextBlock Text="&#xE8BB;" FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets" FontSize="11"/>
                     </Button>
                 </Grid>
             </Border>
@@ -97,11 +97,11 @@
                             <ColumnDefinition Width="70"/>
                             <ColumnDefinition Width="80"/>
                         </Grid.ColumnDefinitions>
-                        <TextBlock Grid.Column="0" Text="Материал" FontSize="10" FontWeight="SemiBold" Foreground="{DynamicResource TextSecondary}" Margin="10,8,4,8" VerticalAlignment="Center"/>
-                        <TextBlock Grid.Column="1" Text="Без экон." FontSize="10" FontWeight="SemiBold" Foreground="{DynamicResource TextSecondary}" HorizontalAlignment="Right" Margin="4,8,10,8" VerticalAlignment="Center"/>
-                        <TextBlock Grid.Column="2" Text="С экон." FontSize="10" FontWeight="SemiBold" Foreground="{DynamicResource TextSecondary}" HorizontalAlignment="Right" Margin="4,8,10,8" VerticalAlignment="Center"/>
-                        <TextBlock Grid.Column="3" Text="Экон." FontSize="10" FontWeight="SemiBold" Foreground="{DynamicResource TextSecondary}" HorizontalAlignment="Right" Margin="4,8,10,8" VerticalAlignment="Center"/>
-                        <TextBlock Grid.Column="4" Text="Сумма" FontSize="10" FontWeight="SemiBold" Foreground="{DynamicResource TextSecondary}" HorizontalAlignment="Right" Margin="4,8,10,8" VerticalAlignment="Center"/>
+                        <TextBlock Grid.Column="0" Text="Материал" FontSize="11" FontWeight="SemiBold" Foreground="{DynamicResource TextSecondary}" Margin="10,8,4,8" VerticalAlignment="Center"/>
+                        <TextBlock Grid.Column="1" Text="Без экон." FontSize="11" FontWeight="SemiBold" Foreground="{DynamicResource TextSecondary}" HorizontalAlignment="Right" Margin="4,8,10,8" VerticalAlignment="Center"/>
+                        <TextBlock Grid.Column="2" Text="С экон." FontSize="11" FontWeight="SemiBold" Foreground="{DynamicResource TextSecondary}" HorizontalAlignment="Right" Margin="4,8,10,8" VerticalAlignment="Center"/>
+                        <TextBlock Grid.Column="3" Text="Экон." FontSize="11" FontWeight="SemiBold" Foreground="{DynamicResource TextSecondary}" HorizontalAlignment="Right" Margin="4,8,10,8" VerticalAlignment="Center"/>
+                        <TextBlock Grid.Column="4" Text="Сумма" FontSize="11" FontWeight="SemiBold" Foreground="{DynamicResource TextSecondary}" HorizontalAlignment="Right" Margin="4,8,10,8" VerticalAlignment="Center"/>
                     </Grid>
 
                     <!-- Rows -->

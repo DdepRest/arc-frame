@@ -26,7 +26,7 @@
 
     <!-- Sidebar ComboBox — Fluent -->
     <Style TargetType="ComboBox">
-        <Setter Property="FontSize" Value="13"/>
+        <Setter Property="FontSize" Value="{StaticResource Type.Body}"/>
         <Setter Property="Height" Value="32"/>
         <Setter Property="BorderBrush" Value="{DynamicResource Border}"/>
         <Setter Property="BorderThickness" Value="1"/>
@@ -117,7 +117,7 @@
     <!-- ComboBox item style — Fluent (uses shared template) -->
     <Style TargetType="ComboBoxItem">
         <Setter Property="Padding" Value="10,7"/>
-        <Setter Property="FontSize" Value="13"/>
+        <Setter Property="FontSize" Value="{StaticResource Type.Body}"/>
         <Setter Property="Foreground" Value="{DynamicResource TextPrimary}"/>
         <Setter Property="Cursor" Value="Hand"/>
         <Setter Property="Template" Value="{StaticResource SelectableItemTemplate}"/>
@@ -126,7 +126,7 @@
     <!-- ListBoxItem — Fluent (uses shared template, deduplicated) -->
     <Style TargetType="ListBoxItem">
         <Setter Property="Padding" Value="10,7"/>
-        <Setter Property="FontSize" Value="13"/>
+        <Setter Property="FontSize" Value="{StaticResource Type.Body}"/>
         <Setter Property="Foreground" Value="{DynamicResource TextPrimary}"/>
         <Setter Property="Cursor" Value="Hand"/>
         <Setter Property="Template" Value="{StaticResource SelectableItemTemplate}"/>

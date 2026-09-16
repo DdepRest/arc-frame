@@ -61,7 +61,7 @@
                     <TextBlock FontSize="11" Foreground="{DynamicResource TotalTextMuted}"
                                Margin="12,0,0,0"
                                ToolTip="Ctrl+Z — отменить последнее действие">
-                        <Run Text="Ctrl+Z" FontFamily="{DynamicResource Font.Mono}" FontSize="10"/>
+                        <Run Text="Ctrl+Z" FontFamily="{DynamicResource Font.Mono}" FontSize="11"/>
                         <Run Text="— отменить удаление"/>
                     </TextBlock>
                 </StackPanel>

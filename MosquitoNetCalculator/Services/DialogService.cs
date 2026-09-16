@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Windows;
@@ -89,7 +89,7 @@ namespace MosquitoNetCalculator.Services
             {
                 Text = "\uE8BB",
                 FontFamily = new FontFamily("Segoe Fluent Icons"),
-                FontSize = 10
+                FontSize = 11
             };
 
             var btn = new Button
