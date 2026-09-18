@@ -193,25 +193,47 @@ function Send-Keys-Safe([string]$keys, [string]$context) {
     return $true
 }
 function Close-WhatsNewIfAny {
-    # «Что нового» перекрывает кадры. Раньше его закрывали через ESC, но ESC уходит
-    # в переднее окно (на занятом столе — в чужое), поэтому сначала ищем окно в UIA
-    # и закрываем кнопкой; ESC остаётся мягкой попыткой в Send-Keys-Safe.
+    # «Что нового» перекрывает кадры, поэтому закрываем его ДО первого кадра.
+    # Замеренный отказ (2026-09-18): поиск кнопки среди элементов типа Text по имени
+    # «Закрыть» не находил ничего (имя висит на КНОПКЕ, а не на её глифе), ESC
+    # уходил не в то окно — окно оставалось, и прогон падал после 12 попыток, не
+    # записав ни одного кадра. Поэтому основной путь — канонический
+    # WindowPattern.Close() (не зависит от разметки окна), а кнопка и ESC — запасные.
+    $closed = $false
     foreach ($title in "Что нового", "Что нового?") {
         $dlg = $null
         try { $dlg = Find-DialogByTitle $proc.Id $title } catch { $dlg = $null }
         if (-not $dlg) { continue }
-        Write-Host "[i] найдено окно «$title» — закрываю через UIA (не через ESC)"
-        $textCond = New-Object System.Windows.Automation.PropertyCondition(
-            [System.Windows.Automation.AutomationElement]::ControlTypeProperty,
-            [System.Windows.Automation.ControlType]::Text)
-        foreach ($t in $dlg.FindAll([System.Windows.Automation.TreeScope]::Descendants, $textCond)) {
-            if ($t.Current.Name -ne "Закрыть") { continue }
-            $walker = [System.Windows.Automation.TreeWalker]::ControlViewWalker
-            $btn = $walker.GetParent($t)
-            try { $btn.GetCurrentPattern([System.Windows.Automation.InvokePattern]::Pattern).Invoke() } catch { }
-            break
+        Write-Host "[i] найдено окно «$title» — закрываю"
+        $done = $false
+        try {
+            $wp = $dlg.GetCurrentPattern([System.Windows.Automation.WindowPattern]::Pattern)
+            $wp.Close()
+            $done = $true
+        } catch { }
+        if (-not $done) {
+            # Запасной путь 1: элемент с именем «Закрыть» — ЛЮБОГО типа, а не только Text.
+            try {
+                $nameCond = New-Object System.Windows.Automation.PropertyCondition(
+                    [System.Windows.Automation.AutomationElement]::NameProperty, "Закрыть")
+                $btn = $dlg.FindFirst([System.Windows.Automation.TreeScope]::Descendants, $nameCond)
+                if ($btn) {
+                    $btn.GetCurrentPattern([System.Windows.Automation.InvokePattern]::Pattern).Invoke()
+                    $done = $true
+                }
+            } catch { }
         }
+        if (-not $done) {
+            # Запасной путь 2: поднять окно и отправить ESC именно ему.
+            try {
+                $hdl = [IntPtr]$dlg.Current.NativeWindowHandle
+                if ($hdl -ne [IntPtr]::Zero) { Set-WindowFrontmost $hdl "«$title»" | Out-Null }
+            } catch { }
+            try { Send-Keys-Safe "{ESC}" "«$title»" | Out-Null } catch { }
+        }
+        if ($done) { $closed = $true }
     }
+    return $closed
 }
 function Wait-For([scriptblock]$test, [int]$timeoutMs = 6000, [int]$pollMs = 250) {
     $sw = [Diagnostics.Stopwatch]::StartNew()
@@ -257,18 +279,13 @@ function Shot([string]$name, [IntPtr]$hwndOverride = [IntPtr]::Zero, [scriptbloc
     # Состояние сцены видно в логе: если кадр снят не в том состоянии, это
     # заметно по строке, а не только по картинке.
     Write-Host "[shot] $name — открытые оверлеи: $(if (@(Get-OpenOverlayNames).Count) { @(Get-OpenOverlayNames) -join ', ' } else { 'нет' })"
-    # 0. Перед съёмкой уводим курсор в инертную зону (середина шапки кадра):
-    #    иначе в базлайн попадает подсказка или hover-подсветка от предыдущей
-    #    сцены — шум, который меняется от прогона к прогону и делает базлайны
-    #    невоспроизводимыми. Сцены, где наведение и есть предмет проверки
+    # 0. Перед съёмкой приводим КУРСОР и ФОКУС в нейтральное состояние:
+    #    иначе в базлайн попадает подсказка, hover-подсветка или рамка фокуса
+    #    от предыдущей сцены — шум, который делал базлайны невоспроизводимыми
+    #    (разбор — GOTCHAS §30). Сцены, где наведение и есть предмет проверки
     #    (08a–08c — пауза тоста), снимаются с -KeepCursor.
-    if (-not $KeepCursor) {
-        $box = Get-Rect $h
-        if ($box.W -gt 40 -and $box.H -gt 40) {
-            try { Move-At ($box.X + [int]($box.W / 2)) ($box.Y + 18) } catch { }
-            Start-Sleep -Milliseconds 250
-        }
-    }
+    try { Reset-InputState $h -KeepCursor:$KeepCursor } catch { }
+    Start-Sleep -Milliseconds 50
     # 1. Область кадра — наша? Если нет, окно поднимается и проверка повторяется.
     $r = Assert-ScreenIsOurs $h "кадр $name" 5 $PointOwned
     # 2. Захват
@@ -419,6 +436,145 @@ function Move-At([int]$x, [int]$y) {
         throw "наведение на ($x,$y) отменено: в этой точке «$($o.Title)» pid=$($o.Pid), а не наше приложение (pid=$appPid)"
     }
     [Native]::SetCursorPos($x, $y) | Out-Null
+}
+function Assert-InputIsMouse {
+    # Кадр обязан означать СОСТОЯНИЕ ВИДА, а не историю ввода.
+    # SetCursorPos (которым ходит Move-At) перемещает курсор, но настоящим
+    # событием мыши для приложения не является: WPF по-прежнему считает
+    # последним устройством ввода клавиатуру (в сценарии нажимаются ESC/ENTER)
+    # и рисует рамку фокуса FluentFocusVisual на том элементе, который получил
+    # фокус раньше — а он зависит от того, показывалось ли при запуске окно
+    # «Что нового» и чем его закрыли. Именно этим 2026-09-18 разошлись семь
+    # кадров (01/02/03/04a/08a-d) при пиксель-в-пиксель совпадающих двух
+    # прогонах подряд.
+    # Реальная инъекция мыши (MOUSEEVENTF_MOVE|ABSOLUTE) идёт тем же путём,
+    # что и настоящая мышь, и переключает флаг: рамка фокуса исчезает.
+    $p = [System.Windows.Forms.Cursor]::Position
+    # Сдвиг на 2px и возврат: Windows НЕ постит WM_MOUSEMOVE на «перемещение в ту
+    # же точку», а без настоящего mouse-события приложение продолжает считать
+    # последним устройством ввода клавиатуру — и рамка фокуса остаётся (проверено:
+    # инъекция «в ту же точку» на кадр не влияла).
+    [Native]::SetCursorPos($p.X + 2, $p.Y + 2) | Out-Null
+    Start-Sleep -Milliseconds 40
+    $vs = [System.Windows.Forms.SystemInformation]::VirtualScreen
+    $nx = [int][Math]::Round(65535.0 * ($p.X - $vs.X) / [Math]::Max(1, $vs.Width))
+    $ny = [int][Math]::Round(65535.0 * ($p.Y - $vs.Y) / [Math]::Max(1, $vs.Height))
+    [Native]::mouse_event(0x8001, $nx, $ny, 0, [UIntPtr]::Zero) | Out-Null
+    Start-Sleep -Milliseconds 80
+}
+function Get-FocusedDesc {
+    # Диагностика фокуса для сообщений харнесса: чей элемент сейчас в фокусе.
+    try {
+        $fe = [System.Windows.Automation.AutomationElement]::FocusedElement
+        if (-not $fe) { return "<нет>" }
+        $c = $fe.Current
+        if ($c.ProcessId -ne $appPid) { return "<чужой pid=$($c.ProcessId)>" }
+        return "$($c.ControlType.ProgrammaticName -replace 'ControlType.',''):$($c.AutomationId)"
+    } catch { return "<ошибка>" }
+}
+function Test-InertPoint([int]$x, [int]$y) {
+    # «Инертная точка» — та, где клик не нажмёт ничего живого: там нет ни
+    # кнопки, ни поля, ни строки списка. Проверяем честно, через UIA, а не
+    # «по памяти о разметке» (разметка меняется вместе с дизайном).
+    try {
+        $pt = New-Object System.Windows.Point($x, $y)
+        $el = [System.Windows.Automation.AutomationElement]::FromPoint($pt)
+    } catch { return $false }
+    $live = @("ControlType.Button", "ControlType.Edit", "ControlType.ComboBox",
+              "ControlType.ListItem", "ControlType.DataItem", "ControlType.Hyperlink",
+              "ControlType.CheckBox", "ControlType.RadioButton", "ControlType.MenuItem",
+              "ControlType.TabItem", "ControlType.TreeItem", "ControlType.Slider",
+              "ControlType.Spinner", "ControlType.ScrollBar")
+    for ($i = 0; $i -lt 4 -and $el; $i++) {
+        if ($live -contains $el.Current.ControlType.ProgrammaticName) { return $false }
+        $walker = [System.Windows.Automation.TreeWalker]::ControlViewWalker
+        $el = $walker.GetParent($el)
+    }
+    return $true
+}
+function Clear-KeyboardFocus([IntPtr]$h) {
+    # Рамка фокуса и подсказка приходят НЕ от мыши, а от КЛАВИАТУРНОГО фокуса:
+    # WPF рисует FluentFocusVisual (Accent-рамка 2px) и показывает ToolTip на том
+    # элементе, который получил фокус последним — после закрытия «Что нового»,
+    # после ESC/ENTER сценария.
+    #
+    # Замерено 2026-09-18: AutomationElement.SetFocus() на окно — ПУСТОЕ действие
+    # (в логе фокус до/после не менялся: name='Быстрая помощь' pid=чужой),
+    # а инъекция движения мыши рамку тоже не снимает. Снимает её только
+    # НАСТОЯЩИЙ клик по инертной точке клиентской области: клик по
+    # не-фокусируемому элементу переводит фокус на само окно.
+    #
+    # У диалоговых сцен клик не делаем: их кадры и без этого совпадают
+    # (10a–10c), а клик по чужой разметке диалога — это риск нажать кнопку.
+    if ($h -ne $script:hwnd) { return $false }
+    # КЛИКА НЕДОСТАТОЧНО (замерено): WPF НЕ переносит клавиатурный фокус при
+    # клике по нефокусируемому фону. Win32 SetFocus(hwnd) тоже не годится: WPF
+    # понимает его как «окно снова активно» и ВОЗВРАЩАЕТ фокус элементу с
+    # логическим фокусом — каретка возвращается (расхождение 03 и 06b:
+    # 15px каретки то в одном, то в другом поле между запусками).
+    # Рабочий путь: UIA SetFocus на САМ ЭЛЕМЕНТ ОКНА (Window focusable, но без
+    # каретки и без рамки фокуса). Клик перед этим поднял наше окно, поэтому
+    # UIA-перевод фокуса проходит (без него падал — фокус был у чужого процесса,
+    # «Быстрая помощь», и SetFocus молча игнорировался).
+    try {
+        $el = [System.Windows.Automation.AutomationElement]::FromHandle($h)
+        if ($el) { $el.SetFocus() }
+    } catch { }
+    $box = Get-Rect $h
+    if ($box.W -le 80 -or $box.H -le 80) { return $false }
+    # Кандидаты — нижняя полоса окна, справа налево: там панель состояния
+    # (текст дат/подсказок), и правый край всегда пуст.
+    for ($i = 0; $i -lt 5; $i++) {
+        $x = $box.X + $box.W - 30 - ($i * 150)
+        $y = $box.Y + $box.H - 14
+        if ($x -le $box.X + 10) { break }
+        $owner = Get-PointOwner $x $y
+        if ($owner.Pid -ne $appPid) { continue }
+        if (-not (Test-InertPoint $x $y)) { continue }
+        Click-At $x $y
+        Start-Sleep -Milliseconds 120
+        return $true
+    }
+    Write-Host "[warn] фокус не снят: инертной точки в окне hwnd=$h не нашлось (кадр может содержать рамку фокуса)"
+    return $false
+}
+function Reset-InputState([IntPtr]$h, [switch]$KeepCursor) {
+    # Нейтральное состояние ввода перед кадром: снять клавиатурный фокус его
+    # визуал (рамка + подсказка от фокуса) и поставить курсор в ФИКСИРОВАННУЮ
+    # инертную точку (середина шапки окна), чтобы не осталось hover-подсветки
+    # от предыдущей сцены. Сцены, где наведение и есть предмет проверки
+    # (08a–08c — пауза тоста), снимаются с -KeepCursor: курсор возвращается туда,
+    # где его поставила сцена, а снятие фокуса всё равно делается.
+    if ($KeepCursor) {
+        # Предмет проверки — НАВЕДЕНИЕ (08a–08c: пауза тоста), поэтому курсор
+        # обязан остаться там, где его поставила сцена. Клик для снятия фокуса
+        # всё равно делаем (без него рамка остаётся), но курсор сразу
+        # возвращаем на место.
+        $p = [System.Windows.Forms.Cursor]::Position
+        Clear-KeyboardFocus $h | Out-Null
+        [Native]::SetCursorPos($p.X, $p.Y) | Out-Null
+        Start-Sleep -Milliseconds 160
+        return
+    }
+    if ($h -ne $script:hwnd) {
+        # Диалог: его кадры нормальны и без клика (10a–10c совпадают в обоих
+        # состояниях запуска), а клик по чужой разметке — риск нажать кнопку.
+        $box = Get-Rect $h
+        if ($box.W -le 40 -or $box.H -le 40) { return }
+        Move-At ($box.X + [int]($box.W / 2)) ($box.Y + 18)
+        Assert-InputIsMouse
+        Start-Sleep -Milliseconds 220
+        return
+    }
+    $cleared = Clear-KeyboardFocus $h
+    if ($env:UIVERIFY_FOCUS_DEBUG) {
+        Write-Host "[focus] до: $(Get-FocusedDesc) -> после: $(Get-FocusedDesc) cleared=$cleared"
+    }
+    if (-not $cleared) { Assert-InputIsMouse }
+    $box = Get-Rect $h
+    if ($box.W -le 40 -or $box.H -le 40) { return }
+    Move-At ($box.X + [int]($box.W / 2)) ($box.Y + 18)
+    Start-Sleep -Milliseconds 220
 }
 # ── Состояние оверлеев: маркеры из дерева UIA ───────────────────────────────
 # У каждого оверлея MainWindow есть контрол, который существует в UIA ТОЛЬКО
@@ -769,6 +925,13 @@ try {
     [Native]::MoveWindow($script:hwnd, 0, 0, $wr.W, $wr.H, $true) | Out-Null
     [Native]::SetForegroundWindow($script:hwnd) | Out-Null
     Start-Sleep -Seconds 3
+
+    # Нормализуем состояние ввода ДО первого кадра. Без этого весь прогон
+    # наследовал то, что осталось от закрытия «Что нового» (кнопкой или ESC),
+    # и кадры зависели от того, показывалось ли окно в этом запуске: прогон
+    # сразу после обновления и обычный давали разные базлайны (разбор §30).
+    Reset-InputState $script:hwnd
+    Write-Host "[i] состояние ввода нормализовано (курсор в инертной точке + инъекция мыши)"
 
     if ($Theme -eq "light") { Switch-ThemeViaMenu $proc.Id "Светлая" }
 
