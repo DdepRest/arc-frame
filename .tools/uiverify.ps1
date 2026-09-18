@@ -740,8 +740,29 @@ try {
     $appPid = $proc.Id          # по нему проверяется «точка экрана / фокус наш?»
     [Native]::SetForegroundWindow($script:hwnd) | Out-Null
     Start-Sleep -Milliseconds 500
-    Close-WhatsNewIfAny
-    Send-Keys-Safe "{ESC}" "стартовый ESC («Что нового»)" | Out-Null   # dismiss possible «Что нового»
+    # «Что нового» показывается один раз на версию — то есть ровно в ПЕРВОМ
+    # прогоне после обновления — и находится в UIA не мгновенно: одиночная
+    # попытка его пропускала, и он попадал в кадры 01/02/03/08a-d (прогон
+    # 2026-09-18: 7,5% расхождения в тёмной теме на пустом месте — окно висело
+    # поверх области быстрого добавления, а остальные кадры той же темы считались
+    # «изменившимися»). Поэтому ждём ФАКТИЧЕСКОГО исчезновения окна, а не одно
+    # нажатие: пока окно видно в UIA — пробуем снова (UIA-кнопка, затем ESC).
+    $whatsNewAttempts = 0
+    foreach ($attempt in 1..12) {
+        $alive = $false
+        foreach ($title in "Что нового", "Что нового?") {
+            try { if (Find-DialogByTitle $proc.Id $title) { $alive = $true } } catch { }
+        }
+        if (-not $alive) { break }
+        $whatsNewAttempts = $attempt
+        Close-WhatsNewIfAny
+        Send-Keys-Safe "{ESC}" "стартовый ESC («Что нового», попытка $attempt)" | Out-Null
+        Start-Sleep -Milliseconds 250
+    }
+    if ($whatsNewAttempts -gt 0) {
+        if ($whatsNewAttempts -ge 12) { throw "«Что нового» не закрылось за 12 попыток — кадры были бы с чужим окном" }
+        Write-Host "[i] «Что нового» закрыто за $whatsNewAttempts попыток(и)"
+    }
     Start-Sleep -Milliseconds 800
 
     $wr = Get-WinRect
