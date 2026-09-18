@@ -16,7 +16,8 @@ namespace MosquitoNetCalculator.Helpers
             double headerPad = 20,
             double contentPad = 16,
             FontWeight? contentWeight = null,
-            double? contentFontSize = null)
+            double? contentFontSize = null,
+            double? contentCap = null)
         {
             if (col == null || grid == null) return;
 
@@ -36,6 +37,10 @@ namespace MosquitoNetCalculator.Helpers
                 var cTypeface = new Typeface(grid.FontFamily, grid.FontStyle,
                     contentWeight ?? grid.FontWeight, grid.FontStretch);
                 double contentW = GetMaxTextWidth(cellValues, cTypeface, cSize, dpi) + contentPad;
+                // cap: контент длиннее капа не поднимает минимум (переносится
+                // в ячейке или остаётся шире минимума — Auto-колонка всё равно
+                // покажет его целиком, если вьюпорт позволяет).
+                if (contentCap is double cap && contentW > cap) contentW = cap;
                 if (contentW > minWidth) minWidth = contentW;
             }
 

@@ -50,7 +50,7 @@
     <SolidColorBrush x:Key="HeaderText"    Color="#424242"/>
     <SolidColorBrush x:Key="HeaderHover"   Color="#F0F0F4"/>
     <SolidColorBrush x:Key="HeaderPress"   Color="#E0E0E0"/>
-    <SolidColorBrush x:Key="GridLine"      Color="#F0F0F0"/>
+    <SolidColorBrush x:Key="GridLine"      Color="#F0F0F5"/>
     <SolidColorBrush x:Key="TrackBg"       Color="#D4D4D4"/>
     <SolidColorBrush x:Key="ScrollBarThumb" Color="#B0B0B0"/>
     <SolidColorBrush x:Key="SubtleBorder"  Color="#EBEBEB"/>

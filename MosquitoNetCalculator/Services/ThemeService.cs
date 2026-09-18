@@ -283,7 +283,8 @@ namespace MosquitoNetCalculator.Services
             ["Border"]        = "#E0E0E8",
             ["BorderHover"]   = "#C0C0CC",
             ["SubtleBorder"]  = "#EEEEF2",
-            ["GridLine"]      = "#F0F0F5",
+            // Синхронно с тёмной: разделитель должен читаться и на белом.
+            ["GridLine"]      = "#E4E6EC",
             ["TrackBg"]       = "#E0E0E8",
             ["ScrollBarThumb"] = "#B8B8C4",
             // Semantic
@@ -393,7 +394,9 @@ namespace MosquitoNetCalculator.Services
             ["Border"]        = "#2C2F36",
             ["BorderHover"]   = "#454A53",
             ["SubtleBorder"]  = "#26292F",
-            ["GridLine"]      = "#26292F",
+            // GridLine чуть светлее Surface — иначе на многострочных адресных
+            // строках таблицы разделители не видны и строки сливаются в «кашу».
+            ["GridLine"]      = "#34383F",
             ["TrackBg"]       = "#33363D",
             ["ScrollBarThumb"] = "#606873",
             ["HeaderBorder"]  = "#33363C",

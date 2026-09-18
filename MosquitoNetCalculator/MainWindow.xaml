@@ -241,9 +241,12 @@
                     <Border x:Name="OrdersBackdrop" Background="{DynamicResource Scrim}" Opacity="0"
                             MouseLeftButtonDown="Backdrop_MouseLeftButtonDown" Cursor="Hand"/>
                     <!-- Content panel (slides from right) -->
+                    <!-- Ширина: НЕ жёсткая (Width=800 обрезала «Обновлено» краем
+                         экрана на узких окнах) — до 800 с ужатием вниз. MinWidth
+                         страхует от сжатия в ноль на маленьких мониторах. -->
                     <Border x:Name="OrdersPanel"
                             Background="{DynamicResource Surface}"
-                            HorizontalAlignment="Right" Width="800"
+                            HorizontalAlignment="Right" MaxWidth="800" MinWidth="360"
                             BorderBrush="{DynamicResource Border}" BorderThickness="1,0,0,0">
                         <Border.RenderTransform>
                             <TranslateTransform x:Name="OrdersSlideTransform" X="0"/>
@@ -296,7 +299,7 @@
                             MouseLeftButtonDown="Backdrop_MouseLeftButtonDown" Cursor="Hand"/>
                     <Border x:Name="PricesPanel"
                             Background="{DynamicResource Surface}"
-                            HorizontalAlignment="Right" Width="800"
+                            HorizontalAlignment="Right" MaxWidth="800" MinWidth="360"
                             BorderBrush="{DynamicResource Border}" BorderThickness="1,0,0,0">
                         <Border.RenderTransform>
                             <TranslateTransform x:Name="PricesSlideTransform" X="0"/>
@@ -332,7 +335,7 @@
                             MouseLeftButtonDown="Backdrop_MouseLeftButtonDown" Cursor="Hand"/>
                     <Border x:Name="UpdatesPanel"
                             Background="{DynamicResource Surface}"
-                            HorizontalAlignment="Right" Width="800"
+                            HorizontalAlignment="Right" MaxWidth="800" MinWidth="360"
                             BorderBrush="{DynamicResource Border}" BorderThickness="1,0,0,0">
                         <Border.RenderTransform>
                             <TranslateTransform x:Name="UpdatesSlideTransform" X="0"/>

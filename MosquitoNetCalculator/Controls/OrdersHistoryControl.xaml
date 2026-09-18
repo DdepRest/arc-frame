@@ -79,7 +79,7 @@
                     <ColumnDefinition Width="Auto"/>
                 </Grid.ColumnDefinitions>
                 <TextBlock Grid.Column="0" Text="&#xE721;"
-                           FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets"
+                           FontFamily="{DynamicResource Font.Icon}"
                            FontSize="14" Foreground="{DynamicResource TextMuted}"
                            VerticalAlignment="Center" Margin="0,0,8,0"/>
                 <Grid Grid.Column="1">
@@ -101,7 +101,7 @@
                 </Grid>
                 <Button x:Name="BtnClearOrdersSearch" Grid.Column="2"
                         Style="{DynamicResource GhostButton}"
-                        Content="&#xE711;" FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets"
+                        Content="&#xE711;" FontFamily="{DynamicResource Font.Icon}"
                         FontSize="11" Padding="4,2" Margin="4,0,0,0" Cursor="Hand"
                         Visibility="Collapsed"
                         Click="BtnClearOrdersSearch_Click"
@@ -164,13 +164,22 @@
                                         SortMemberPath="ContractNumberSortKey"
                                         Width="Auto" MinWidth="60"/>
 
+                    <!-- Адрес — единственная колонка со звёздной шириной, и
+                         обрезка с многоточием здесь недопустима: адрес нужен
+                         ЦЕЛИКОМ (владелец). Поэтому перенос строк вместо
+                         обрезки: строка таблицы растёт по высоте на длинных
+                         адресах (MinRowHeight 26 остаётся для коротких),
+                         тултип сохранён для скринридеров и на случай ещё
+                         более узких окон. MinWidth 150: бюджет минимумов
+                         колонок должен влезать в панель 800 минус паддинги
+                         (~776 DIP) наряду с шестью Auto-соседями. -->
                     <DataGridTextColumn Header="Адрес"
                                         Binding="{Binding ClientAddress}"
-                                        Width="*" MinWidth="140">
+                                        Width="*" MinWidth="150">
                         <DataGridTextColumn.ElementStyle>
                             <Style TargetType="TextBlock">
                                 <Setter Property="VerticalAlignment" Value="Center"/>
-                                <Setter Property="TextTrimming" Value="CharacterEllipsis"/>
+                                <Setter Property="TextWrapping" Value="Wrap"/>
                                 <Setter Property="ToolTip" Value="{Binding Text, RelativeSource={RelativeSource Self}}"/>
                             </Style>
                         </DataGridTextColumn.ElementStyle>
@@ -178,15 +187,34 @@
 
                     <DataGridTextColumn Header="Телефон"
                                         Binding="{Binding ClientPhone}"
-                                        Width="Auto" MinWidth="100"/>
+                                        Width="Auto" MinWidth="100" MaxWidth="150">
+                        <DataGridTextColumn.ElementStyle>
+                            <Style TargetType="TextBlock">
+                                <Setter Property="VerticalAlignment" Value="Center"/>
+                                <!-- Два номера в одной ячейке («+7… +7…») на одной
+                                     строке задавали auto-ширину ~250px и выталкивали
+                                     «Обновлено» за край панели: кап 150 ограничивает
+                                     колонку, перенос делает оба номера читаемыми. -->
+                                <Setter Property="TextWrapping" Value="Wrap"/>
+                                <Setter Property="ToolTip" Value="{Binding Text, RelativeSource={RelativeSource Self}}"/>
+                            </Style>
+                        </DataGridTextColumn.ElementStyle>
+                    </DataGridTextColumn>
 
                     <DataGridTextColumn Header="Дата"
                                         Binding="{Binding ContractDate, StringFormat='dd.MM.yyyy'}"
-                                        Width="Auto" MinWidth="80"/>
+                                        Width="Auto" MinWidth="80">
+                        <DataGridTextColumn.ElementStyle>
+                            <Style TargetType="TextBlock">
+                                <Setter Property="VerticalAlignment" Value="Center"/>
+                                <Setter Property="ToolTip" Value="{Binding ContractDate, StringFormat='dd.MM.yyyy'}"/>
+                            </Style>
+                        </DataGridTextColumn.ElementStyle>
+                    </DataGridTextColumn>
 
                     <DataGridTextColumn Header="Сумма, руб."
                                         Binding="{Binding TotalAmount, Converter={StaticResource MoneyConv}}"
-                                        Width="Auto" MinWidth="130">
+                                        Width="Auto" MinWidth="110">
                         <DataGridTextColumn.ElementStyle>
                             <Style TargetType="TextBlock">
                                 <Setter Property="HorizontalAlignment" Value="Right"/>
@@ -195,12 +223,17 @@
                                 <Setter Property="FontWeight" Value="Medium"/>
                                 <Setter Property="Foreground" Value="{DynamicResource TextPrimary}"/>
                                 <Setter Property="Typography.NumeralAlignment" Value="Tabular"/>
+                                <Setter Property="ToolTip" Value="{Binding TotalAmount, Converter={StaticResource MoneyConv}}"/>
                             </Style>
                         </DataGridTextColumn.ElementStyle>
                     </DataGridTextColumn>
 
+                    <!-- Статус: Auto-колонка растягивается по самому длинному
+                         бейджу («Отправлен на завод») и на узком окне съедает
+                         ширину у адреса. MaxWidth + перенос в исключительных
+                         случаях: бейдж остаётся капсулой, адрес не страдает. -->
                     <DataGridTemplateColumn Header="Статус"
-                                            Width="Auto" MinWidth="100"
+                                            Width="Auto" MinWidth="100" MaxWidth="150"
                                             SortMemberPath="StatusRank">
                         <DataGridTemplateColumn.CellTemplate>
                             <DataTemplate>
@@ -210,7 +243,9 @@
                                         Background="{Binding Status, Converter={StaticResource StatusToBadgeBg}}">
                                     <TextBlock Text="{Binding Status}"
                                                FontSize="11" FontWeight="Medium"
+                                               TextWrapping="Wrap"
                                                HorizontalAlignment="Center"
+                                               TextAlignment="Center"
                                                Foreground="{Binding Status, Converter={StaticResource StatusToBadgeFg}}"/>
                                 </Border>
                             </DataTemplate>
@@ -219,7 +254,14 @@
 
                     <DataGridTextColumn Header="Обновлено"
                                         Binding="{Binding UpdatedAt, StringFormat='dd.MM.yy HH:mm'}"
-                                        Width="Auto" MinWidth="110"/>
+                                        Width="Auto" MinWidth="108">
+                        <DataGridTextColumn.ElementStyle>
+                            <Style TargetType="TextBlock">
+                                <Setter Property="VerticalAlignment" Value="Center"/>
+                                <Setter Property="ToolTip" Value="{Binding UpdatedAt, StringFormat='dd.MM.yy HH:mm'}"/>
+                            </Style>
+                        </DataGridTextColumn.ElementStyle>
+                    </DataGridTextColumn>
                 </DataGrid.Columns>
             </DataGrid>
 

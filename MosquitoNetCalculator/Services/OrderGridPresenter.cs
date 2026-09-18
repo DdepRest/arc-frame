@@ -20,6 +20,24 @@ namespace MosquitoNetCalculator.Services
     /// </summary>
     internal static class OrderGridPresenter
     {
+        // Телефонная колонка: контент длиннее этого капа не поднимает минимум.
+        // Кап подобран так, чтобы сумма минимумов всех Auto-колонок оставляла
+        // адресной (*-колонке) не меньше ~150 DIP во вьюпорте узкой панели
+        // (~776 DIP при ужатом до окна оверлее). Длинные форматы не должны
+        // отнимать ширину у адреса.
+        private const double PhoneColumnCap = 126;
+
+        // «Обновлено»: формат фиксированный «дд.мм.гг чч:мм» (~105px),
+        // кап страхует от нестандартных значений.
+        private const double UpdatedColumnCap = 110;
+
+        /// <summary>
+        /// Заголовок колонки всегда отображается В ВЕРХНЕМ РЕГИСТРЕ
+        /// (<see cref="Converters.UppercaseHeaderTemplate"/>), поэтому замер
+        /// ведётся по капсу — иначе минимум берётся из «Сумма, руб.» (~70px),
+        /// а рисуется «СУММА, РУБ.» (~88px) и шапка режется многоточием.
+        /// </summary>
+        private static string UpperHeader(string header) => header.ToUpperInvariant();
         /// <summary>
         /// Refreshes the grid with a new orders list: autosizes columns to
         /// header + widest cell content, restores prior sort descriptions,
@@ -32,21 +50,49 @@ namespace MosquitoNetCalculator.Services
 
             var sortDescriptions = grid.Items.SortDescriptions.ToList();
 
-            DataGridColumnAutoSizer.SetColumnMinWidth(grid, DataGridColumnAutoSizer.FindCol(grid, "№ КП"), "№ КП",
+            // АДРЕС — приоритетная колонка: минимум из XAML (150) не должен
+            // перезаписываться автосайзером вниз (иначе он опустит его до
+            // ширины заголовка «АДРЕС» ≈60px, и адрес снова станет «ПУШКИНСКА…»).
+            var addrCol = DataGridColumnAutoSizer.FindCol(grid, "Адрес");
+            var addrMin = addrCol?.MinWidth ?? 0;
+            DataGridColumnAutoSizer.SetColumnMinWidth(grid, addrCol, UpperHeader("Адрес"));
+            if (addrCol != null && addrCol.MinWidth < addrMin) addrCol.MinWidth = addrMin;
+
+            DataGridColumnAutoSizer.SetColumnMinWidth(grid, DataGridColumnAutoSizer.FindCol(grid, "№ КП"), UpperHeader("№ КП"),
                 orders.Select(o => o.ContractNumber));
-            DataGridColumnAutoSizer.SetColumnMinWidth(grid, DataGridColumnAutoSizer.FindCol(grid, "Адрес"), "Адрес");
-            DataGridColumnAutoSizer.SetColumnMinWidth(grid, DataGridColumnAutoSizer.FindCol(grid, "Телефон"), "Телефон",
-                orders.Select(o => o.ClientPhone));
-            DataGridColumnAutoSizer.SetColumnMinWidth(grid, DataGridColumnAutoSizer.FindCol(grid, "Дата"), "Дата",
+            // ТЕЛЕФОН ограничен сверху разумным капом: полный номер с
+            // пробелами («+7 994 948 53 24») задавал бы минимум ~190px,
+            // отнимая ширину у адреса. Номер читается и без «жирной»
+            // колонки — это Auto-колонка, лишний текст не обрезается.
+            var phoneCol = DataGridColumnAutoSizer.FindCol(grid, "Телефон");
+            DataGridColumnAutoSizer.SetColumnMinWidth(grid, phoneCol, UpperHeader("Телефон"),
+                orders.Select(o => o.ClientPhone), contentCap: PhoneColumnCap);
+            if (phoneCol != null && phoneCol.MaxWidth < double.MaxValue && phoneCol.MinWidth > phoneCol.MaxWidth)
+                phoneCol.MinWidth = phoneCol.MaxWidth;
+            // Обновлено: содержимое фиксированного формата «дд.мм.гг чч:мм» —
+            // кап не даёт длинным значениям раздуть минимум.
+            var updCol = DataGridColumnAutoSizer.FindCol(grid, "Обновлено");
+            DataGridColumnAutoSizer.SetColumnMinWidth(grid, updCol, UpperHeader("Обновлено"),
+                orders.Select(o => o.UpdatedAt.ToString("dd.MM.yy HH:mm")), contentCap: UpdatedColumnCap);
+
+            DataGridColumnAutoSizer.SetColumnMinWidth(grid, DataGridColumnAutoSizer.FindCol(grid, "Дата"), UpperHeader("Дата"),
                 orders.Select(o => o.ContractDate.ToString("dd.MM.yyyy")));
-            DataGridColumnAutoSizer.SetColumnMinWidth(grid, DataGridColumnAutoSizer.FindCol(grid, "Сумма, руб."), "Сумма, руб.",
+            DataGridColumnAutoSizer.SetColumnMinWidth(grid, DataGridColumnAutoSizer.FindCol(grid, "Сумма, руб."), UpperHeader("Сумма, руб."),
                 orders.Select(o => MoneyFormatService.Format(o.TotalAmount)),
                 contentWeight: FontWeights.Medium);
-            DataGridColumnAutoSizer.SetColumnMinWidth(grid, DataGridColumnAutoSizer.FindCol(grid, "Статус"), "Статус",
+            DataGridColumnAutoSizer.SetColumnMinWidth(grid, DataGridColumnAutoSizer.FindCol(grid, "Статус"), UpperHeader("Статус"),
                 orders.Select(o => o.Status).Distinct(),
-                contentPad: 32, contentWeight: FontWeights.Medium, contentFontSize: 11);
-            DataGridColumnAutoSizer.SetColumnMinWidth(grid, DataGridColumnAutoSizer.FindCol(grid, "Обновлено"), "Обновлено",
-                orders.Select(o => o.UpdatedAt.ToString("dd.MM.yy HH:mm")));
+                // кап 118 = MaxWidth XAML (150) минус contentPad 32: иначе минимум
+                // от длинного бейджа («ОТПРАВЛЕН НА ЗАВОД») выходит за MaxWidth,
+                // и MinWidth>MaxWidth выталкивает «Обновлено» за край панели.
+                contentPad: 32, contentWeight: FontWeights.Medium, contentFontSize: 11,
+                contentCap: 118);
+            // Статусная колонка: MaxWidth из XAML (150) ограничивает её фактическую
+            // ширину, но клампить MinWidth до MaxWidth НЕЛЬЗЯ — жёсткое равенство
+            // (MinWidth=MaxWidth=150) на узкой панели лишает DataGrid возможности
+            // ужать колонку, и последняя колонка («Обновлено») выталкивается за
+            // край вьюпорта. Достаточно того, что сам бейдж с переносом
+            // укладывается в 150.
 
             grid.ItemsSource = orders;
 
