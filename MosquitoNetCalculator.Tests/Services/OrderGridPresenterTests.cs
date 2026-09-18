@@ -1,10 +1,14 @@
+using System;
 using System.Collections.Generic;
 using System.ComponentModel;
+using System.IO;
 using System.Linq;
+using System.Text.RegularExpressions;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
 using System.Windows.Data;
+using MosquitoNetCalculator.Helpers;
 using MosquitoNetCalculator.Models;
 using MosquitoNetCalculator.Services;
 using MosquitoNetCalculator.Tests.Helpers;
@@ -318,6 +322,127 @@ namespace MosquitoNetCalculator.Tests.Services
                 Assert.Equal(ListSortDirection.Descending, sort.Direction);
                 Assert.Equal("Name ▼", grid.Columns[0].Header);
             });
+        }
+
+        // ─── SetColumnMinWidth: объявленный MinWidth — пол ─────
+
+        /// <summary>
+        /// Регрессия v3.53.1. Автосайзер ПРИСВАИВАЛ вычисленный минимум,
+        /// затирая объявленный в разметке. Колонка «№ КП» получала 50px —
+        /// ровно подпись 11px SemiBold плюс паддинг шапки 10+10, без запаса.
+        /// На ужатом окне (источник: список заказов, окно ~790 DIP) такая
+        /// колонка показывала «№…», а «СУММА, руб.» — «СУММА, Р…».
+        /// </summary>
+        [Fact]
+        public void SetColumnMinWidth_DoesNotDropBelowDeclaredMinWidth()
+        {
+            WpfTestHelper.RunOnSta(() =>
+            {
+                var grid = new DataGrid { FontSize = 12 };
+                var col = new DataGridTextColumn
+                {
+                    Header = "№ КП",
+                    MinWidth = 60,
+                    Width = DataGridLength.Auto
+                };
+                grid.Columns.Add(col);
+
+                DataGridColumnAutoSizer.SetColumnMinWidth(grid, col, "№ КП", new[] { "2-50" });
+                Assert.Equal(60, col.MinWidth);
+
+                // Содержимое минимум ПОДНИМАЕТ…
+                DataGridColumnAutoSizer.SetColumnMinWidth(grid, col, "№ КП", new[] { "2-50-2026-длинный-номер" });
+                Assert.True(col.MinWidth > 60,
+                    $"Длинное содержимое должно поднять минимум, получено {col.MinWidth}.");
+
+                // …но не превращает его в храповик: с коротким содержимым
+                // минимум возвращается к объявленному, а не остаётся раздутым.
+                DataGridColumnAutoSizer.SetColumnMinWidth(grid, col, "№ КП", new[] { "2-50" });
+                Assert.Equal(60, col.MinWidth);
+            });
+        }
+
+        /// <summary>
+        /// Страж, который поймал бы обрезку шапки ДО пользователя: объявленный
+        /// в разметке <c>MinWidth</c> каждой колонки списка заказов обязан
+        /// вмещать подпись шапки так, как её меряет сам автосайзер (11px
+        /// SemiBold, ВЕРХНИЙ регистр — шапка рисуется капсом), плюс паддинг
+        /// шапки 10+10 и запас. Без запаса колонка, ужатая узким окном до
+        /// минимума, отдаёт подпись под многоточие (GOTCHAS §34).
+        /// </summary>
+        [Fact]
+        public void Заказы_ОбъявленныйMinWidthКолонок_ВмещаетПодписьШапки()
+        {
+            var columns = OrdersGridColumns();
+            Assert.Equal(7, columns.Count);
+
+            WpfTestHelper.RunOnSta(() =>
+            {
+                var grid = new DataGrid
+                {
+                    FontSize = 12,
+                    FontFamily = AppFontService.CreateInterFamily()
+                };
+
+                // Собираем ВСЕ проблемы в один список: падение перечисляет
+                // сразу все узкие колонки, а не первую попавшуюся.
+                var problems = new List<string>();
+                foreach (var (header, minWidth) in columns)
+                {
+                    double needed = DataGridColumnAutoSizer.MeasureHeaderWidth(
+                                        grid, header.ToUpperInvariant())
+                                    + DataGridColumnAutoSizer.HeaderPadding;
+                    if (minWidth < needed + MinimalSlack)
+                        problems.Add("«" + header + "»: MinWidth " + minWidth +
+                                     " < подпись " + needed.ToString("F1") +
+                                     " + запас " + MinimalSlack);
+                }
+
+                Assert.True(problems.Count == 0,
+                    "На узком окне колонка опускается до объявленного MinWidth, и подпись шапки " +
+                    "уходит в многоточие:\n  " + string.Join("\n  ", problems));
+            });
+        }
+
+        /// <summary>Запас между подписью и минимумом: страховка от дробных пикселей замера.</summary>
+        private const double MinimalSlack = 4;
+
+        /// <summary>
+        /// Разбирает колонки таблицы заказов из разметки: (заголовок, MinWidth).
+        /// Колонка без объявленного MinWidth — уже ошибка: именно он служит
+        /// полом для автосайзера, и без него колонку снова ужмёт под подпись.
+        /// </summary>
+        private static List<(string Header, double MinWidth)> OrdersGridColumns()
+        {
+            string path = Path.Combine(RepoRoot(), "MosquitoNetCalculator", "Controls", "OrdersHistoryControl.xaml");
+            string xaml = Regex.Replace(File.ReadAllText(path), "<!--.*?-->", string.Empty, RegexOptions.Singleline);
+
+            var result = new List<(string, double)>();
+            foreach (Match m in Regex.Matches(xaml,
+                "<DataGrid(?:Text|Template)Column\\b(?<body>.*?)(?:/>|>)", RegexOptions.Singleline))
+            {
+                var header = Regex.Match(m.Groups["body"].Value, "Header=\"(?<h>[^\"]+)\"");
+                if (!header.Success) continue; // колонки без подписи (служебные) не проверяем
+                string headerText = header.Groups["h"].Value;
+                var min = Regex.Match(m.Groups["body"].Value, "MinWidth=\"(?<w>[0-9.]+)\"");
+                Assert.True(min.Success,
+                    "У колонки «" + headerText + "» нет MinWidth — автосайзер сможет ужать её под подпись шапки.");
+                result.Add((header.Groups["h"].Value,
+                    double.Parse(min.Groups["w"].Value, System.Globalization.CultureInfo.InvariantCulture)));
+            }
+
+            return result;
+        }
+
+        private static string RepoRoot()
+        {
+            var dir = new DirectoryInfo(AppContext.BaseDirectory);
+            while (dir != null
+                   && !File.Exists(Path.Combine(dir.FullName, "MosquitoNetCalculator", "App.xaml")))
+                dir = dir.Parent;
+            if (dir == null)
+                throw new DirectoryNotFoundException("Не найден корень репозитория.");
+            return dir.FullName;
         }
     }
 }

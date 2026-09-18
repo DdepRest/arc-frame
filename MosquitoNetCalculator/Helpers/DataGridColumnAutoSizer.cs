@@ -1,5 +1,7 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
@@ -8,6 +10,42 @@ namespace MosquitoNetCalculator.Helpers
 {
     internal static class DataGridColumnAutoSizer
     {
+        /// <summary>Горизонтальный паддинг шапки: 10px слева + 10px справа.</summary>
+        public const double HeaderPadding = 20;
+
+        /// <summary>
+        /// Размер подписи шапки (токен <c>Type.Caption</c>). Держать в паре с
+        /// <c>DataGridColumnHeader</c> в <c>Themes/DataGridStyles.xaml</c>.
+        /// </summary>
+        public const double HeaderFontSize = 11;
+
+        /// <summary>
+        /// Объявленный в разметке <c>MinWidth</c>, снятый при ПЕРВОМ обращении
+        /// к колонке. Дальше он служит полом: автосайзер может минимум поднять,
+        /// но не опустить ниже разметки (почему — см. GOTCHAS §34). Запоминание
+        /// первого значения (а не перечитывание текущего) защищает от храповика:
+        /// после длинного содержимого минимум возвращается к объявленному.
+        /// </summary>
+        private static readonly ConditionalWeakTable<DataGridColumn, StrongBox<double>> DeclaredMinWidths = new();
+
+        private static double DeclaredMinWidth(DataGridColumn col) =>
+            DeclaredMinWidths.GetValue(col, c => new StrongBox<double>(c.MinWidth)).Value;
+
+        /// <summary>
+        /// Ширина подписи шапки ровно тем инструментом, которым пользуется
+        /// <see cref="SetColumnMinWidth"/>. Нужна стражам: страж обязан мерить
+        /// шапку тем же инструментом, что и колонка, иначе они разъедутся и
+        /// страж будет молчать про реальную обрезку.
+        /// </summary>
+        public static double MeasureHeaderWidth(DataGrid grid, string headerText)
+        {
+            if (grid == null || string.IsNullOrEmpty(headerText)) return 0;
+            double dpi = VisualTreeHelper.GetDpi(grid).PixelsPerDip;
+            var typeface = new Typeface(grid.FontFamily, grid.FontStyle,
+                FontWeights.SemiBold, grid.FontStretch);
+            return GetMaxTextWidth(new[] { headerText }, typeface, HeaderFontSize, dpi);
+        }
+
         public static void SetColumnMinWidth(
             DataGrid grid,
             DataGridColumn? col,
@@ -23,7 +61,7 @@ namespace MosquitoNetCalculator.Helpers
 
             double dpi = VisualTreeHelper.GetDpi(grid).PixelsPerDip;
             double fontSize = grid.FontSize > 0 ? grid.FontSize : 12;
-            double headerFontSize = 11;
+            double headerFontSize = HeaderFontSize;
 
             var headerTypeface = new Typeface(grid.FontFamily, grid.FontStyle,
                 FontWeights.SemiBold, grid.FontStretch);
@@ -44,7 +82,15 @@ namespace MosquitoNetCalculator.Helpers
                 if (contentW > minWidth) minWidth = contentW;
             }
 
-            col.MinWidth = minWidth;
+            // Флор: MinWidth из разметки — не «значение по умолчанию», а
+            // подобранная с запасом ширина, при которой подпись шапки
+            // (11px SemiBold + паддинг 20) не режется. Замер FormattedText
+            // ложится ВПРИТЫК, поэтому присваивание вычисленного минимума
+            // «как есть» обнуляло запас: ужатая окном колонка показывала
+            // «№…» и «СУММА, Р…» (GOTCHAS §34). Объявленный минимум не
+            // пробиваем.
+            double declaredMin = DeclaredMinWidth(col);
+            col.MinWidth = minWidth > declaredMin ? minWidth : declaredMin;
         }
 
         public static DataGridColumn? FindCol(DataGrid grid, string headerText)

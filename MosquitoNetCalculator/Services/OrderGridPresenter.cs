@@ -51,12 +51,12 @@ namespace MosquitoNetCalculator.Services
             var sortDescriptions = grid.Items.SortDescriptions.ToList();
 
             // АДРЕС — приоритетная колонка: минимум из XAML (150) не должен
-            // перезаписываться автосайзером вниз (иначе он опустит его до
-            // ширины заголовка «АДРЕС» ≈60px, и адрес снова станет «ПУШКИНСКА…»).
-            var addrCol = DataGridColumnAutoSizer.FindCol(grid, "Адрес");
-            var addrMin = addrCol?.MinWidth ?? 0;
-            DataGridColumnAutoSizer.SetColumnMinWidth(grid, addrCol, UpperHeader("Адрес"));
-            if (addrCol != null && addrCol.MinWidth < addrMin) addrCol.MinWidth = addrMin;
+            // опускаться до ширины заголовка «АДРЕС» ≈60px, иначе адрес снова
+            // станет «ПУШКИНСКА…». Держит это сам автосайзер: объявленный в
+            // разметке MinWidth — пол для ЛЮБОЙ колонки (GOTCHAS §34), поэтому
+            // отдельной страховки именно для адреса больше не нужно.
+            DataGridColumnAutoSizer.SetColumnMinWidth(grid,
+                DataGridColumnAutoSizer.FindCol(grid, "Адрес"), UpperHeader("Адрес"));
 
             DataGridColumnAutoSizer.SetColumnMinWidth(grid, DataGridColumnAutoSizer.FindCol(grid, "№ КП"), UpperHeader("№ КП"),
                 orders.Select(o => o.ContractNumber));
