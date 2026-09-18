@@ -30,6 +30,7 @@ namespace MosquitoNetCalculator.Tests.Design
             ["Controls/AiApiKeyDialog.xaml"] = 1,
             ["Controls/AiAssistantControl.xaml"] = 20,    // уже был размечен
             ["Themes/ButtonStyles.xaml"] = 1,             // DialogCloseButton: одна точка на ~10 диалогов
+            ["MainWindow.xaml"] = 1,                      // OverlayCloseButton: одна точка на все slide-over'ы
         };
 
         private static string RepoRoot()
@@ -90,6 +91,30 @@ namespace MosquitoNetCalculator.Tests.Design
             // Один сеттер в общем стиле закрывает доступность ~10 диалогов —
             // именно поэтому он здесь, а не в каждом окне по отдельности.
             Assert.Contains("AutomationProperties.Name", style);
+        }
+
+        [Fact]
+        public void OverlayCloseButton_CarriesNameAndAutomationId()
+        {
+            // Кнопка закрытия slide-over'а — глиф без текста: без этих сеттеров диктор
+            // читал «кнопка», а UIA-харнесс не мог найти её семантически и кликал по
+            // координатам, молча промахиваясь (кадры светлой темы 04b/09a записались
+            // с открытой панелью). AutomationId нужен харнессу, Name — диктору.
+            string window = File.ReadAllText(Path.Combine(AppDir, "MainWindow.xaml"));
+
+            int styleStart = window.IndexOf("x:Key=\"OverlayCloseButton\"", StringComparison.Ordinal);
+            Assert.True(styleStart >= 0, "Стиль OverlayCloseButton не найден в MainWindow.xaml.");
+
+            string style = window[styleStart..];
+            style = style[..style.IndexOf("</Style>", StringComparison.Ordinal)];
+
+            Assert.Contains("AutomationProperties.Name", style);
+            Assert.Contains("AutomationProperties.AutomationId\" Value=\"OverlayClose\"", style);
+
+            // Все slide-over'ы используют этот стиль — ни один не должен нести
+            // собственный шаблон кнопки закрытия со своим (или отсутствующим) именем.
+            int usages = Regex.Matches(window, "StaticResource OverlayCloseButton").Count;
+            Assert.True(usages >= 5, $"Кнопок закрытия на стиле OverlayCloseButton всего {usages} — похоже, часть панелей обошла общий стиль.");
         }
 
         [Fact]

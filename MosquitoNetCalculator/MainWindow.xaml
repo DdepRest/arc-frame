@@ -112,6 +112,12 @@
 
         <!-- Overlay close button style -->
         <Style x:Key="OverlayCloseButton" TargetType="Button">
+            <!-- Иконочная кнопка без текста: диктор читал бы только глиф, а UIA-харнесс
+                 не мог найти её иначе как по координатам (и промахивался). Один
+                 сеттер закрывает все slide-over'ы сразу. -->
+            <Setter Property="AutomationProperties.AutomationId" Value="OverlayClose"/>
+            <Setter Property="AutomationProperties.Name" Value="Закрыть панель"/>
+            <Setter Property="AutomationProperties.HelpText" Value="Закрыть панель без изменений (Escape)"/>
             <Setter Property="Width" Value="32"/>
             <Setter Property="Height" Value="32"/>
             <Setter Property="Background" Value="Transparent"/>
