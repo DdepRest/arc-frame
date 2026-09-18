@@ -43,5 +43,29 @@ namespace MosquitoNetCalculator.Services
 
         internal static FontFamily CreateInterFamily() =>
             new(new Uri(InterFolder, UriKind.Absolute), InterRelativeFamily);
+
+        /// <summary>
+        /// Иконочная семья для КОДА. В разметке её задаёт токен
+        /// <c>Font.Icon</c> («Segoe Fluent Icons, Segoe MDL2 Assets»);
+        /// код не видит словарей приложения (тосты собираются до того,
+        /// как окно существует, диалоги — из сервиса), поэтому здесь
+        /// та же строка-источник. ПОРЯДОК КРИТИЧЕН: «Segoe Fluent Icons»
+        /// есть только на Windows 11 — без второго имени в списке глиф
+        /// на Windows 10 рисуется пустым квадратом (разбор — GOTCHAS §31).
+        /// </summary>
+        internal static FontFamily CreateIconFamily() =>
+            new(Font.IconFamilyString);
+
+        /// <summary>Моноширинная семья для КОДА (эквивалент токена Font.Mono).
+        /// Каскадия есть только на Win11/Office, поэтому фолбэки обязательны.</summary>
+        internal static FontFamily CreateMonoFamily() =>
+            new(Font.MonoFamilyString);
+    }
+
+    /// <summary>Строки-источники семей — один источник истины для кода и тестов.</summary>
+    internal static partial class Font
+    {
+        internal const string IconFamilyString = "Segoe Fluent Icons, Segoe MDL2 Assets";
+        internal const string MonoFamilyString = "Consolas, Cascadia Mono, Courier New";
     }
 }

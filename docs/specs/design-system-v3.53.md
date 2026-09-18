@@ -318,6 +318,9 @@ GOTCHAS §28). Симметричная форма у правого вырав�
 | Числовые клетки дышат влево (зазор между числами ≥ 12px) | `GridDensityTests.NumericCells_*` |
 | Размеры шрифта только со шкалы, дробных нет | `DesignTokenGuardTests.FontSizes_LiveOnTheScale` |
 | Шрифт попапов: токен в стилях + реальное разрешение в Inter | `PopupTypographyTests.*` |
+| Семьи шрифтов: в разметке литералов нет вовсе (иконки тоже — `Font.Icon`) | `DesignTokenGuardTests.TextFontFamilies_*` |
+| `Font.Icon` содержит Win10-фолбэк «Segoe MDL2 Assets» (иначе глифы — tofu) | `DesignTokenGuardTests.IconFontToken_KeepsWin10Fallback` |
+| Семья в C# — только через `AppFontService` (исключение: печатный слой) | `DesignTokenGuardTests.FontFamiliesInCode_*` |
 | UIA-имя у кнопки закрытия slide-over (Диктор + UIA-Invoke) | `AccessibilityTests.*` |
 
 ## 7. Порядок миграции (для продолжающих)

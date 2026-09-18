@@ -88,7 +88,9 @@ namespace MosquitoNetCalculator.Services
             var glyph = new TextBlock
             {
                 Text = "\uE8BB",
-                FontFamily = new FontFamily("Segoe Fluent Icons"),
+                // Иконочная семья из одной точки: без фолбэка «Segoe MDL2 Assets»
+                // глиф на Windows 10 — пустой квадрат (GOTCHAS §31).
+                FontFamily = AppFontService.CreateIconFamily(),
                 FontSize = 11
             };
 

@@ -40,6 +40,9 @@ namespace MosquitoNetCalculator.Tests.Design
 
         private static string AppDir => Path.Combine(RepoRoot(), "MosquitoNetCalculator");
 
+        /// <summary>Словарь токенов типографики — источник Font.Text/Mono/Icon.</summary>
+        private static string TokensFile => Path.Combine(AppDir, "Themes", "Tokens.Typography.xaml");
+
         /// <summary>XAML-файлы продукта без артефактов сборки (obj/bin/.artifacts).</summary>
         private static IEnumerable<string> ProductXaml()
         {
@@ -234,15 +237,14 @@ namespace MosquitoNetCalculator.Tests.Design
         private static readonly string[] IconFamilies = { "Segoe Fluent Icons", "Segoe MDL2 Assets" };
 
         /// <summary>
-        /// Текстовая семья в разметке задаётся только токеном. Литерал (например
-        /// <c>Segoe UI</c>) молча уводит элемент на системный шрифт мимо вшитого
-        /// Inter — до v3.53 таких мест было 14 (10 × Segoe UI в MainWindow и 4 ×
-        /// Consolas), и они выпадали из типографики ровно так же, как ранее
-        /// выпадали цвета мимо палитры.
-        ///
-        /// Печатные документы (<c>FlowDocumentBuilder</c>, <c>FixedDocumentBuilder</c>,
-        /// <c>DrawingService</c>) берут печатную семью в C# — это не интерфейсный
-        /// текст, и разметки у них нет.
+        /// ЛЮБАЯ семья в разметке задаётся только токеном: текст — <c>Font.Text</c>,
+        /// код — <c>Font.Mono</c>, глифы — <c>Font.Icon</c>. Раньше иконочные литералы
+        /// разрешались (80 мест с «Segoe Fluent Icons, Segoe MDL2 Assets»), но это
+        /// дыра стража: опечатка в имени семьи («Segoe Fluent Icon») даёт молчаливый
+        /// tofu, который не поймает ни один тест, — токен же проверяется на
+        /// существование и определён в одном месте. Печатные документы
+        /// (<c>FlowDocumentBuilder</c>, <c>FixedDocumentBuilder</c>, <c>DrawingService</c>)
+        /// берут печатную семью в C# — это не интерфейсный текст, и разметки у них нет.
         /// </summary>
         [Fact]
         public void TextFontFamilies_AreTokens_IconFamiliesMayStayLiteral()
@@ -255,15 +257,40 @@ namespace MosquitoNetCalculator.Tests.Design
                 {
                     string value = m.Groups[1].Value;
                     if (value.StartsWith("{", StringComparison.Ordinal)) continue;
-                    if (IconFamilies.Any(icon => value.Contains(icon, StringComparison.Ordinal))) continue;
 
                     offenders.Add($"{Relative(file)}: FontFamily=\"{value}\"");
                 }
             }
 
             Assert.True(offenders.Count == 0,
-                "Семья шрифта задана литералом — текст уйдёт на системный шрифт мимо токена Font.Text:\n  " +
+                "Семья шрифта задана литералом — текст уйдёт на системный шрифт или глиф в tofu мимо токенов Font.Text/Font.Mono/Font.Icon:\n  " +
                 string.Join("\n  ", offenders));
+        }
+
+        /// <summary>
+        /// Токен <c>Font.Icon</c> обязан содержать ФОЛБЭК «Segoe MDL2 Assets»:
+        /// «Segoe Fluent Icons» есть только на Windows 11, а продукт заявлен
+        /// для Win10 — без фолбэка все 80+ глифов интерфейса рисуются пустым
+        /// квадратом (реальный дефект <c>DialogService</c>, закрыт в этом же
+        /// проходе). Порядок в строке-источнике кода держит тот же тест через
+        /// <c>AppFontService</c>-константу.
+        /// </summary>
+        [Fact]
+        public void IconFontToken_KeepsWin10Fallback()
+        {
+            foreach (var file in ProductXaml().Concat(new[] { TokensFile }))
+            {
+                if (!File.Exists(file)) continue;
+                string text = ReadWithoutComments(file);
+                foreach (Match m in Regex.Matches(text, "x:Key=\"Font.Icon\">([^<]+)</"))
+                {
+                    string value = m.Groups[1].Value;
+                    Assert.True(value.Contains("Segoe Fluent Icons", StringComparison.Ordinal) &&
+                                value.Contains("Segoe MDL2 Assets", StringComparison.Ordinal),
+                        $"{Relative(file)}: Font.Icon = «{value}» — должен быть «Segoe Fluent Icons, Segoe MDL2 Assets» " +
+                        "(второе имя — фолбэк Windows 10, без него глифы — пустые квадраты)");
+                }
+            }
         }
 
         // ── 5. Пол 11px и запрет дробных размеров (правило UX-16) ─────────
@@ -491,6 +518,35 @@ namespace MosquitoNetCalculator.Tests.Design
 
             Assert.True(offenders.Count == 0,
                 "Радиусы в коде — только через Helpers.Radii (токены Radius.*), иначе они вне бюджета:\n  " +
+                string.Join("\n  ", offenders));
+        }
+
+        /// <summary>
+        /// Семья шрифта в C# задаётся только через <c>AppFontService</c>
+        /// (Inter/иконки/моно) или разрешена в ПЕЧАТНОМ слое: бумаги
+        /// (<c>FlowDocumentBuilder</c>, <c>FixedDocumentBuilder</c>, <c>DrawingService</c>,
+        /// QuestPDF-<c>PdfExportService</c>) Inter не касается — лист всегда белый,
+        /// и шрифт печати не переключается темой. До этого прохода в UI-коде жили
+        /// три места мимо токенов, одно из них (<c>DialogService</c>, глиф без
+        /// MDL2-фолбэка) рисовало tofu на Windows 10. Комментарии не код.
+        /// </summary>
+        [Fact]
+        public void FontFamiliesInCode_UseAppFontService_ExceptPrintLayer()
+        {
+            var familyLiteral = new Regex(@"new\s+(?:System\.Windows\.Media\.)?(?:FontFamily|Typeface)\s*\(\s*\""", RegexOptions.Compiled);
+            var commentLine = new Regex(@"^[ \t]*(?://|\*).*$", RegexOptions.Multiline);
+            var printLayer = new Regex(@"(?:DrawingService|FixedDocumentBuilder|FlowDocumentBuilder|PdfExportService)\.cs$", RegexOptions.Compiled);
+            // AppFontService — источник строк-источников, там литералы и обязаны жить.
+            var fontService = new Regex(@"AppFontService\.cs$", RegexOptions.Compiled);
+
+            var offenders = ProductCs()
+                .Where(f => !printLayer.IsMatch(f) && !fontService.IsMatch(f))
+                .Where(f => familyLiteral.IsMatch(commentLine.Replace(File.ReadAllText(f), string.Empty)))
+                .Select(Relative)
+                .OrderBy(f => f)
+                .ToList();            Assert.True(offenders.Count == 0,
+                "Семья шрифта в коде — только через AppFontService (Inter/иконки/моно); литералы разрешены лишь в печатном слое " +
+                "(FlowDocumentBuilder/FixedDocumentBuilder/DrawingService/PdfExportService):\n  " +
                 string.Join("\n  ", offenders));
         }
     }

@@ -27,7 +27,7 @@
                 <TextBlock FontSize="11" Foreground="{DynamicResource TextMuted}"
                            VerticalAlignment="Center" Margin="14,0,0,0"
                            ToolTip="Заблокированные ячейки определяются типом товара">
-                    <Run Text="&#xE72E;" FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets" FontSize="11"/>
+                    <Run Text="&#xE72E;" FontFamily="{DynamicResource Font.Icon}" FontSize="11"/>
                     <Run Text=" заблокированные ячейки определяются типом товара"/>
                 </TextBlock>
             </StackPanel>

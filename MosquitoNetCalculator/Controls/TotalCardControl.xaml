@@ -45,7 +45,7 @@
                             </ControlTemplate.Triggers>
                         </ControlTemplate>
                     </Button.Template>
-                    <TextBlock Text="&#xE8C8;" FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets" FontSize="12"/>
+                    <TextBlock Text="&#xE8C8;" FontFamily="{DynamicResource Font.Icon}" FontSize="12"/>
                 </Button>
             </StackPanel>
 

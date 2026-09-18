@@ -76,7 +76,7 @@
                                      no glyph at all, so a sorted column was indistinguishable
                                      from an unsorted one. Shown only while SortDirection > None. -->
                                 <TextBlock x:Name="SortGlyph" Grid.Column="1"
-                                           FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets"
+                                           FontFamily="{DynamicResource Font.Icon}"
                                            FontSize="11"
                                            Foreground="{DynamicResource Accent}"
                                            VerticalAlignment="Center"

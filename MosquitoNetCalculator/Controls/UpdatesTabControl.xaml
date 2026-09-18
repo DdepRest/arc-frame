@@ -137,7 +137,7 @@
                     ToolTip="Проверить доступность каналов обновлений и показать точные причины сбоя"
                     Click="BtnDiagnostics_Click">
                 <StackPanel Orientation="Horizontal">
-                    <TextBlock Text="&#xE968;" FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets"
+                    <TextBlock Text="&#xE968;" FontFamily="{DynamicResource Font.Icon}"
                                FontSize="12" VerticalAlignment="Center" Margin="0,0,6,0"/>
                     <TextBlock Text="Диагностика связи" VerticalAlignment="Center"/>
                 </StackPanel>
@@ -150,7 +150,7 @@
                     CornerRadius="{DynamicResource Radius.Lg}"
                     Padding="12,5">
                 <StackPanel Orientation="Horizontal">
-                    <TextBlock FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets"
+                    <TextBlock FontFamily="{DynamicResource Font.Icon}"
                                Text="&#xE81C;"
                                FontSize="11"
                                Foreground="{DynamicResource Accent}"
@@ -204,7 +204,7 @@
                     <ColumnDefinition Width="Auto"/>
                 </Grid.ColumnDefinitions>
                 <TextBlock Grid.Column="0" Text="&#xE721;"
-                           FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets"
+                           FontFamily="{DynamicResource Font.Icon}"
                            FontSize="12" Foreground="{DynamicResource TextMuted}"
                            VerticalAlignment="Center" Margin="0,0,6,0"/>
                 <Grid Grid.Column="1">
@@ -231,7 +231,7 @@
                 </Grid>
                 <Button x:Name="BtnClearUpdatesSearch" Grid.Column="2"
                         Style="{DynamicResource GhostButton}"
-                        Content="&#xE711;" FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets"
+                        Content="&#xE711;" FontFamily="{DynamicResource Font.Icon}"
                         FontSize="11" Padding="4,2" Margin="4,0,0,0" Cursor="Hand"
                         Visibility="Collapsed"
                         Click="BtnClearUpdatesSearch_Click"
@@ -307,7 +307,7 @@
                                                     Background="{Binding Type, Converter={StaticResource UpdateTypeBrush}, ConverterParameter=soft}">
                                                 <StackPanel Orientation="Horizontal">
                                                     <TextBlock Text="{Binding Type, Converter={StaticResource UpdateTypeIcon}}"
-                                                               FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets"
+                                                               FontFamily="{DynamicResource Font.Icon}"
                                                                FontSize="11"
                                                                VerticalAlignment="Center"
                                                                Foreground="{Binding Type, Converter={StaticResource UpdateTypeBrush}, ConverterParameter=fg}"/>
@@ -359,7 +359,7 @@
                                             <!-- Шеврон разворота -->
                                             <TextBlock Grid.Column="4"
                                                        Text="&#xE70D;"
-                                                       FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets"
+                                                       FontFamily="{DynamicResource Font.Icon}"
                                                        FontSize="11"
                                                        Foreground="{DynamicResource TextMuted}"
                                                        VerticalAlignment="Center"
@@ -418,7 +418,7 @@
                                                     </Border.Style>
                                                     <StackPanel Orientation="Horizontal">
                                                         <TextBlock Text="&#xE735;"
-                                                                   FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets"
+                                                                   FontFamily="{DynamicResource Font.Icon}"
                                                                    FontSize="11"
                                                                    Foreground="{DynamicResource Accent}"
                                                                    VerticalAlignment="Center"
@@ -453,7 +453,7 @@
                                                     </Border.Style>
                                                     <StackPanel Orientation="Horizontal">
                                                         <TextBlock Text="&#xE7C9;"
-                                                                   FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets"
+                                                                   FontFamily="{DynamicResource Font.Icon}"
                                                                    FontSize="11"
                                                                    Foreground="{DynamicResource TextPrimary}"
                                                                    VerticalAlignment="Center"
@@ -501,7 +501,7 @@
                                                     Click="CopyCard_Click">
                                                 <StackPanel Orientation="Horizontal">
                                                     <TextBlock Text="&#xE8C8;"
-                                                               FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets"
+                                                               FontFamily="{DynamicResource Font.Icon}"
                                                                FontSize="11" VerticalAlignment="Center"
                                                                Margin="0,0,6,0"/>
                                                     <TextBlock Text="Скопировать" VerticalAlignment="Center"/>
@@ -547,7 +547,7 @@
                     Click="BtnScrollTop_Click">
                 <StackPanel Orientation="Horizontal">
                     <TextBlock Text="&#xE74A;"
-                               FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets"
+                               FontFamily="{DynamicResource Font.Icon}"
                                FontSize="11" VerticalAlignment="Center"
                                Margin="0,0,5,0"/>
                     <TextBlock Text="Наверх" VerticalAlignment="Center"/>

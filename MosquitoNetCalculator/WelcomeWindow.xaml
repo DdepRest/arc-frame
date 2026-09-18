@@ -97,7 +97,7 @@
                         </Button.Template>
                         <TextBlock x:Name="TxtThemeIcon"
                                    Text="&#xE706;"
-                                   FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets" FontSize="11"
+                                   FontFamily="{DynamicResource Font.Icon}" FontSize="11"
                                    HorizontalAlignment="Center" VerticalAlignment="Center"
                                    Margin="0"/>
                     </Button>
@@ -108,7 +108,7 @@
                             Style="{DynamicResource DialogCloseButton}"
                             ToolTip="Закрыть"
                             Click="BtnClose_Click">
-                        <TextBlock Text="&#xE8BB;" FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets" FontSize="11"
+                        <TextBlock Text="&#xE8BB;" FontFamily="{DynamicResource Font.Icon}" FontSize="11"
                                    HorizontalAlignment="Center" VerticalAlignment="Center"
                                    Margin="0"/>
                     </Button>

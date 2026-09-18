@@ -17,7 +17,7 @@
                     <ColumnDefinition Width="Auto"/>
                 </Grid.ColumnDefinitions>
                 <TextBlock Grid.Column="0" Text="&#xE721;"
-                           FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets"
+                           FontFamily="{DynamicResource Font.Icon}"
                            FontSize="14" Foreground="{DynamicResource TextMuted}"
                            VerticalAlignment="Center" Margin="0,0,8,0"/>
                 <TextBox x:Name="TxtSearchPrices" Grid.Column="1"
@@ -26,7 +26,7 @@
                          ToolTip="Фильтр по наименованию или цвету"/>
                 <Button x:Name="BtnClearPricesSearch" Grid.Column="2"
                         Style="{DynamicResource GhostButton}"
-                        Content="&#xE711;" FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets"
+                        Content="&#xE711;" FontFamily="{DynamicResource Font.Icon}"
                         FontSize="11" Padding="4,2" Margin="4,0,0,0" Cursor="Hand"
                         Visibility="Collapsed"
                         Click="BtnClearPricesSearch_Click"

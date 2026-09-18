@@ -252,7 +252,7 @@ namespace MosquitoNetCalculator.Services
             var closeBtn = new Button
             {
                 Content = "\uE711",
-                FontFamily = new System.Windows.Media.FontFamily("Segoe Fluent Icons, Segoe MDL2 Assets"),
+                FontFamily = AppFontService.CreateIconFamily(),
                 FontSize = 11,
                 Cursor = Cursors.Hand,
                 Margin = new Thickness(8, 0, 0, 0),

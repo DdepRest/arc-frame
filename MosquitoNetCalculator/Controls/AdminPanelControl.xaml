@@ -84,7 +84,7 @@
                         ToolTip="Проверить отчёты офисов и последнюю версию"
                         Click="BtnRefresh_Click">
                     <StackPanel Orientation="Horizontal">
-                        <TextBlock x:Name="BtnRefreshIcon" Text="&#xE72C;" FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets"
+                        <TextBlock x:Name="BtnRefreshIcon" Text="&#xE72C;" FontFamily="{DynamicResource Font.Icon}"
                                    FontSize="12" VerticalAlignment="Center" Margin="0,0,6,0"/>
                         <TextBlock x:Name="BtnRefreshLabel" Text="Обновить" VerticalAlignment="Center"/>
                     </StackPanel>
@@ -98,7 +98,7 @@
                         FontSize="12"
                         ToolTip="Дополнительные действия"
                         Click="BtnMoreActions_Click">
-                    <TextBlock Text="&#xE712;" FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets"
+                    <TextBlock Text="&#xE712;" FontFamily="{DynamicResource Font.Icon}"
                                FontSize="12" VerticalAlignment="Center"/>
                 </Button>
             </StackPanel>
@@ -115,7 +115,7 @@
                     Margin="0,0,0,8"
                     Visibility="Collapsed">
                 <StackPanel Orientation="Horizontal">
-                    <TextBlock Text="&#xE7BA;" FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets"
+                    <TextBlock Text="&#xE7BA;" FontFamily="{DynamicResource Font.Icon}"
                                FontSize="14" Foreground="{DynamicResource BadgeWarningFg}"
                                VerticalAlignment="Center" Margin="0,0,8,0"/>
                     <TextBlock x:Name="TxtBanner"
@@ -133,7 +133,7 @@
                     Margin="0,0,0,8"
                     Visibility="Collapsed">
                 <StackPanel Orientation="Horizontal">
-                    <TextBlock Text="&#xE7BA;" FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets"
+                    <TextBlock Text="&#xE7BA;" FontFamily="{DynamicResource Font.Icon}"
                                FontSize="14" Foreground="{DynamicResource BadgeDangerFg}"
                                VerticalAlignment="Center" Margin="0,0,8,0"/>
                     <TextBlock Text="Не удалось получить свежие данные — показаны последние известные результаты. Проверьте подключение к интернету и попробуйте «Обновить»."
@@ -188,7 +188,7 @@
 
                                 <TextBlock Grid.Column="0"
                                            Text="&#xE73E;"
-                                           FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets"
+                                           FontFamily="{DynamicResource Font.Icon}"
                                            FontSize="20"
                                            Foreground="{DynamicResource Accent}"
                                            VerticalAlignment="Center"
@@ -231,7 +231,7 @@
                                         ToolTip="Скопировать одно общее напоминание об обновлении для всех устаревших офисов"
                                         Click="BtnRemindAll_Click">
                                     <StackPanel Orientation="Horizontal">
-                                        <TextBlock Text="&#xE789;" FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets"
+                                        <TextBlock Text="&#xE789;" FontFamily="{DynamicResource Font.Icon}"
                                                    FontSize="12" VerticalAlignment="Center" Margin="0,0,6,0"/>
                                         <TextBlock Text="Отправить напоминание" VerticalAlignment="Center"/>
                                     </StackPanel>
@@ -244,7 +244,7 @@
                                         ToolTip="Отметить устройства и удалить их привязки из хранилища. Устройство само вернётся со своим следующим отчётом — уже под актуальным офисом."
                                         Click="BtnUnbindMode_Click">
                                     <StackPanel Orientation="Horizontal">
-                                        <TextBlock Text="&#xE8EE;" FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets"
+                                        <TextBlock Text="&#xE8EE;" FontFamily="{DynamicResource Font.Icon}"
                                                    FontSize="12" VerticalAlignment="Center" Margin="0,0,6,0"/>
                                         <TextBlock x:Name="TxtUnbindModeLabel" Text="Отвязать выбранные" VerticalAlignment="Center"/>
                                     </StackPanel>
@@ -279,7 +279,7 @@
                                      Background="{DynamicResource Surface}" Foreground="{DynamicResource TextPrimary}"
                                      VerticalContentAlignment="Center"
                                      TextChanged="TxtSearch_TextChanged"/>
-                            <TextBlock Text="&#xE721;" FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets"
+                            <TextBlock Text="&#xE721;" FontFamily="{DynamicResource Font.Icon}"
                                        FontSize="12" Foreground="{DynamicResource TextMuted}"
                                        VerticalAlignment="Center" Margin="10,0,0,0" IsHitTestVisible="False"/>
                             <Button x:Name="BtnClearSearch" Visibility="Collapsed" Content="✕" Width="22" Height="22"
@@ -337,7 +337,7 @@
                                     </Style>
                                 </Border.Style>
                                 <StackPanel Orientation="Horizontal">
-                                    <TextBlock Text="&#xE7BA;" FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets" FontSize="12" FontWeight="Bold" Margin="0,0,5,0" VerticalAlignment="Center">
+                                    <TextBlock Text="&#xE7BA;" FontFamily="{DynamicResource Font.Icon}" FontSize="12" FontWeight="Bold" Margin="0,0,5,0" VerticalAlignment="Center">
                                         <TextBlock.Style>
                                             <Style TargetType="TextBlock">
                                                 <Setter Property="Foreground" Value="{DynamicResource BadgeWarningFg}"/>
@@ -378,7 +378,7 @@
                                     </Style>
                                 </Border.Style>
                                 <StackPanel Orientation="Horizontal">
-                                    <TextBlock Text="&#xE73E;" FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets" FontSize="12" FontWeight="Bold" Margin="0,0,5,0" VerticalAlignment="Center">
+                                    <TextBlock Text="&#xE73E;" FontFamily="{DynamicResource Font.Icon}" FontSize="12" FontWeight="Bold" Margin="0,0,5,0" VerticalAlignment="Center">
                                         <TextBlock.Style>
                                             <Style TargetType="TextBlock">
                                                 <Setter Property="Foreground" Value="{DynamicResource BadgeSuccessFg}"/>
@@ -419,7 +419,7 @@
                                     </Style>
                                 </Border.Style>
                                 <StackPanel Orientation="Horizontal">
-                                    <TextBlock Text="&#xE9CE;" FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets" FontSize="12" Margin="0,0,5,0" VerticalAlignment="Center">
+                                    <TextBlock Text="&#xE9CE;" FontFamily="{DynamicResource Font.Icon}" FontSize="12" Margin="0,0,5,0" VerticalAlignment="Center">
                                         <TextBlock.Style>
                                             <Style TargetType="TextBlock">
                                                 <Setter Property="Foreground" Value="{DynamicResource BadgeDangerFg}"/>
@@ -548,7 +548,7 @@
                                                                 Background="{Binding Status, Converter={StaticResource OfficeStatusBadgeBg}}">
                                                             <StackPanel Orientation="Horizontal">
                                                                 <TextBlock Text="{Binding StatusGlyph}"
-                                                                           FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets"
+                                                                           FontFamily="{DynamicResource Font.Icon}"
                                                                            FontSize="12" FontWeight="Bold"
                                                                            Foreground="{Binding Status, Converter={StaticResource OfficeStatusBadgeFg}}"
                                                                            VerticalAlignment="Center"
@@ -636,7 +636,7 @@
                                                                                        Margin="5,0,0,0"
                                                                                        VerticalAlignment="Center"/>
                                                                             <TextBlock Text="{Binding StatusGlyph}"
-                                                                                       FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets"
+                                                                                       FontFamily="{DynamicResource Font.Icon}"
                                                                                        FontSize="11" FontWeight="Bold"
                                                                                        Foreground="{Binding Status, Converter={StaticResource OfficeStatusBadgeFg}}"
                                                                                        Margin="5,0,0,0"
@@ -707,7 +707,7 @@
 
                             <TextBlock Grid.Column="0"
                                        Text="&#xE8F1;"
-                                       FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets"
+                                       FontFamily="{DynamicResource Font.Icon}"
                                        FontSize="20"
                                        Foreground="{DynamicResource Accent}"
                                        VerticalAlignment="Center"
@@ -841,7 +841,7 @@
                                         VerticalAlignment="Center"
                                         Margin="20,40,20,40">
                                 <TextBlock Text="&#xE9F9;"
-                                           FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets"
+                                           FontFamily="{DynamicResource Font.Icon}"
                                            FontSize="42"
                                            Foreground="{DynamicResource TextMuted}"
                                            HorizontalAlignment="Center"/>

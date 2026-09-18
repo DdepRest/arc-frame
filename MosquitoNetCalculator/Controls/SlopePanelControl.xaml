@@ -34,7 +34,7 @@
                         </Grid.ColumnDefinitions>
                         <TextBlock Grid.Column="0"
                                    Text="&#xE7BA;"
-                                   FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets"
+                                   FontFamily="{DynamicResource Font.Icon}"
                                    FontSize="18"
                                    Foreground="{DynamicResource BadgeWarningFg}"
                                    VerticalAlignment="Top"
@@ -59,7 +59,7 @@
                                 VerticalAlignment="Top"
                                 ToolTip="Скрыть предупреждение">
                             <TextBlock Text="&#xE8BB;"
-                                       FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets"
+                                       FontFamily="{DynamicResource Font.Icon}"
                                        FontSize="11"
                                        Foreground="{DynamicResource BadgeWarningFg}"/>
                         </Button>

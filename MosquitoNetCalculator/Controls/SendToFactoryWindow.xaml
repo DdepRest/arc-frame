@@ -57,7 +57,7 @@
                     <StackPanel Grid.Column="1" Orientation="Horizontal"
                                 VerticalAlignment="Center" Margin="14,0,0,0">
                         <TextBlock Text="&#xE7B3;" FontSize="16"
-                                   FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets"
+                                   FontFamily="{DynamicResource Font.Icon}"
                                    Foreground="{DynamicResource Accent}"
                                    VerticalAlignment="Center" Margin="0,0,8,0"/>
                         <TextBlock Text="Отправить на завод"
@@ -70,7 +70,7 @@
                             Width="40" Height="40"
                             Style="{DynamicResource DialogCloseButton}"
                             Click="BtnClose_Click">
-                        <TextBlock Text="&#xE8BB;" FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets" FontSize="11"/>
+                        <TextBlock Text="&#xE8BB;" FontFamily="{DynamicResource Font.Icon}" FontSize="11"/>
                     </Button>
                 </Grid>
             </Border>
@@ -169,7 +169,7 @@
                                 Padding="12,10">
                             <StackPanel Orientation="Horizontal">
                                 <TextBlock Text="&#xE8A1;" FontSize="14"
-                                           FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets"
+                                           FontFamily="{DynamicResource Font.Icon}"
                                            Foreground="{DynamicResource Accent}"
                                            VerticalAlignment="Center"
                                            Margin="0,0,8,0"/>
@@ -228,7 +228,7 @@
                         ToolTip="Копировать в буфер обмена (Ctrl+C)">
                     <StackPanel Orientation="Horizontal">
                         <TextBlock Text="&#xE8C8;" FontSize="14"
-                                   FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets"
+                                   FontFamily="{DynamicResource Font.Icon}"
                                    Margin="0,0,8,0" VerticalAlignment="Center"/>
                         <TextBlock Text="Скопировать" VerticalAlignment="Center"/>
                     </StackPanel>

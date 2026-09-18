@@ -160,7 +160,7 @@ namespace MosquitoNetCalculator
                 btn.Width = btn.Height = 32;
                 if (btn.Content is TextBlock tb)
                 {
-                    tb.FontFamily = new FontFamily("Segoe Fluent Icons, Segoe MDL2 Assets");
+                    tb.FontFamily = AppFontService.CreateIconFamily();
                     tb.FontSize = fontSize;
                     tb.Text = fontIcon;
                 }

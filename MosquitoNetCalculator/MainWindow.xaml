@@ -258,7 +258,7 @@
                             <Border Grid.Row="0" Style="{StaticResource OverlayHeader}">
                                 <Grid>
                                     <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                                        <TextBlock Text="&#xE71D;" FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets" FontSize="16"
+                                        <TextBlock Text="&#xE71D;" FontFamily="{DynamicResource Font.Icon}" FontSize="16"
                                                    Foreground="{DynamicResource Accent}" VerticalAlignment="Center" Margin="0,0,8,0"/>
                                         <TextBlock Text="Заказы" FontSize="14" FontWeight="SemiBold"
                                                    Foreground="{DynamicResource TextPrimary}" VerticalAlignment="Center"/>
@@ -310,7 +310,7 @@
                             <Border Grid.Row="0" Style="{StaticResource OverlayHeader}">
                                 <Grid>
                                     <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                                        <TextBlock Text="&#xE8C7;" FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets" FontSize="16"
+                                        <TextBlock Text="&#xE8C7;" FontFamily="{DynamicResource Font.Icon}" FontSize="16"
                                                    Foreground="{DynamicResource Accent}" VerticalAlignment="Center" Margin="0,0,8,0"/>
                                         <TextBlock Text="Цены" FontSize="14" FontWeight="SemiBold"
                                                    Foreground="{DynamicResource TextPrimary}" VerticalAlignment="Center"/>
@@ -346,7 +346,7 @@
                             <Border Grid.Row="0" Style="{StaticResource OverlayHeader}">
                                 <Grid>
                                     <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                                        <TextBlock Text="&#xE81C;" FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets" FontSize="16"
+                                        <TextBlock Text="&#xE81C;" FontFamily="{DynamicResource Font.Icon}" FontSize="16"
                                                    Foreground="{DynamicResource Accent}" VerticalAlignment="Center" Margin="0,0,8,0"/>
                                         <TextBlock Text="Обновления" FontSize="14" FontWeight="SemiBold"
                                                    Foreground="{DynamicResource TextPrimary}" VerticalAlignment="Center"/>
@@ -382,7 +382,7 @@
                             <Border Grid.Row="0" Style="{StaticResource OverlayHeader}">
                                 <Grid>
                                     <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                                        <TextBlock Text="&#xE8C8;" FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets" FontSize="16"
+                                        <TextBlock Text="&#xE8C8;" FontFamily="{DynamicResource Font.Icon}" FontSize="16"
                                                    Foreground="{DynamicResource Accent}" VerticalAlignment="Center" Margin="0,0,8,0"/>
                                         <TextBlock Text="Админ-панель" FontSize="14" FontWeight="SemiBold"
                                                    Foreground="{DynamicResource TextPrimary}" VerticalAlignment="Center"/>
@@ -419,7 +419,7 @@
                             <Border Grid.Row="0" Style="{StaticResource OverlayHeader}">
                                 <Grid>
                                     <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                                        <TextBlock Text="&#xE83D;" FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets" FontSize="16"
+                                        <TextBlock Text="&#xE83D;" FontFamily="{DynamicResource Font.Icon}" FontSize="16"
                                                    Foreground="{DynamicResource Accent}" VerticalAlignment="Center" Margin="0,0,8,0"/>
                                         <TextBlock Text="Откосы из сэндвича" FontSize="14" FontWeight="SemiBold"
                                                    Foreground="{DynamicResource TextPrimary}" VerticalAlignment="Center"/>
@@ -457,7 +457,7 @@
                                         <ColumnDefinition Width="Auto"/>
                                     </Grid.ColumnDefinitions>
                                     <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center">
-                                        <TextBlock Text="&#xE99A;" FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets" FontSize="16"
+                                        <TextBlock Text="&#xE99A;" FontFamily="{DynamicResource Font.Icon}" FontSize="16"
                                                    Foreground="{DynamicResource Accent}" VerticalAlignment="Center" Margin="0,0,8,0"/>
                                         <TextBlock Text="AI Ассистент" FontSize="14" FontWeight="SemiBold"
                                                    Foreground="{DynamicResource TextPrimary}" VerticalAlignment="Center"/>
@@ -500,7 +500,7 @@
                             <Border Grid.Row="0" Style="{StaticResource OverlayHeader}">
                                 <Grid>
                                     <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                                        <TextBlock Text="&#xE77B;" FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets" FontSize="16"
+                                        <TextBlock Text="&#xE77B;" FontFamily="{DynamicResource Font.Icon}" FontSize="16"
                                                    Foreground="{DynamicResource Accent}" VerticalAlignment="Center" Margin="0,0,8,0"/>
                                         <TextBlock Text="Заказчик" FontSize="14" FontWeight="SemiBold"
                                                    Foreground="{DynamicResource TextPrimary}" VerticalAlignment="Center"/>
@@ -537,7 +537,7 @@
                             <Border Grid.Row="0" Style="{StaticResource OverlayHeader}">
                                 <Grid>
                                     <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                                        <TextBlock Text="&#xE7B3;" FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets" FontSize="16"
+                                        <TextBlock Text="&#xE7B3;" FontFamily="{DynamicResource Font.Icon}" FontSize="16"
                                                    Foreground="{DynamicResource Accent}" VerticalAlignment="Center" Margin="0,0,8,0"/>
                                         <TextBlock Text="Печать КП" FontSize="14" FontWeight="SemiBold"
                                                    Foreground="{DynamicResource TextPrimary}" VerticalAlignment="Center"/>
@@ -573,7 +573,7 @@
                                 <Grid Width="30" Height="28">
                                     <!-- Segoe MDL2 Assets: GlobalNavigationButton. The literal ☰
                                          rendered as a missing-glyph square on some Windows font setups. -->
-                                    <TextBlock Text="&#xE700;" FontFamily="Segoe MDL2 Assets" FontSize="16"
+                                    <TextBlock Text="&#xE700;" FontFamily="{DynamicResource Font.Icon}" FontSize="16"
                                                HorizontalAlignment="Center" VerticalAlignment="Center"
                                                SnapsToDevicePixels="True"/>
                                 </Grid>

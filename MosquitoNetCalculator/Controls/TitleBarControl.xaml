@@ -84,7 +84,7 @@
                             </ControlTemplate.Triggers>
                         </ControlTemplate>
                     </Button.Template>
-                    <TextBlock Text="&#xE713;" FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets" FontSize="14"/>
+                    <TextBlock Text="&#xE713;" FontFamily="{DynamicResource Font.Icon}" FontSize="14"/>
                     <Button.ContextMenu>
                         <ContextMenu x:Name="SettingsMenu">
                             <MenuItem x:Name="MenuThemeLight" Header="☀  Светлая тема" IsCheckable="True" Click="MenuThemeLight_Click"/>
@@ -138,7 +138,7 @@
                             </ControlTemplate.Triggers>
                         </ControlTemplate>
                     </Button.Template>
-                    <TextBlock Text="&#xE738;" FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets" FontSize="11"/>
+                    <TextBlock Text="&#xE738;" FontFamily="{DynamicResource Font.Icon}" FontSize="11"/>
                 </Button>
                 <Button x:Name="BtnMaximize" Click="BtnMaximize_Click"
                         AutomationProperties.Name="Развернуть"
@@ -178,7 +178,7 @@
                             </ControlTemplate.Triggers>
                         </ControlTemplate>
                     </Button.Template>
-                    <TextBlock x:Name="TxtMaximizeIcon" Text="&#xE739;" FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets" FontSize="11"/>
+                    <TextBlock x:Name="TxtMaximizeIcon" Text="&#xE739;" FontFamily="{DynamicResource Font.Icon}" FontSize="11"/>
                 </Button>
                 <Button x:Name="BtnClose" Click="BtnClose_Click"
                         AutomationProperties.Name="Закрыть"
@@ -218,7 +218,7 @@
                             </ControlTemplate.Triggers>
                         </ControlTemplate>
                     </Button.Template>
-                    <TextBlock Text="&#xE8BB;" FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets" FontSize="11"/>
+                    <TextBlock Text="&#xE8BB;" FontFamily="{DynamicResource Font.Icon}" FontSize="11"/>
                 </Button>
             </StackPanel>
         </Grid>

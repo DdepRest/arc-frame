@@ -29,7 +29,7 @@
                 </Grid.ColumnDefinitions>
 
                 <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Grid.Column="0">
-                    <TextBlock Text="&#xE99A;" FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets" FontSize="16"
+                    <TextBlock Text="&#xE99A;" FontFamily="{DynamicResource Font.Icon}" FontSize="16"
                                Foreground="{DynamicResource Accent}" VerticalAlignment="Center" Margin="0,0,8,0"/>
                     <TextBlock Text="AI Ассистент" FontSize="14" FontWeight="SemiBold"
                                Foreground="{DynamicResource TextPrimary}" VerticalAlignment="Center"
@@ -45,7 +45,7 @@
                         BorderThickness="0"
                         Foreground="{DynamicResource TextSecondary}"
                         Cursor="Hand"
-                        FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets"
+                        FontFamily="{DynamicResource Font.Icon}"
                         FontSize="12"
                         Content="&#xE8BB;"
                         Click="BtnClose_Click">

@@ -59,7 +59,7 @@
                             Style="{DynamicResource DialogCloseButton}"
                             Click="CloseButton_Click">
                         <TextBlock Text="&#xE8BB;"
-                                   FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets"
+                                   FontFamily="{DynamicResource Font.Icon}"
                                    FontSize="11"/>
                     </Button>
                 </Grid>

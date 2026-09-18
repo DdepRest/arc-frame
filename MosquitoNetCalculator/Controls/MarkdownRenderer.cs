@@ -3,6 +3,7 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Documents;
 using System.Windows.Media;
+using MosquitoNetCalculator.Services;
 
 namespace MosquitoNetCalculator.Controls
 {
@@ -104,7 +105,9 @@ namespace MosquitoNetCalculator.Controls
                         // `inline code`
                         textBlock.Inlines.Add(new Run(part[1..^1])
                         {
-                            FontFamily = new FontFamily("Consolas, Courier New"),
+                            // Тот же каскад, что у токена Font.Mono (Consolas →
+                            // Cascadia Mono → Courier New), но из одной точки.
+                            FontFamily = AppFontService.CreateMonoFamily(),
                             FontSize = textBlock.FontSize * 0.92,
                         });
                     }

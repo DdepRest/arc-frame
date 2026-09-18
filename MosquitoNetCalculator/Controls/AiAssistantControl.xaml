@@ -158,7 +158,7 @@
                                                 Background="{DynamicResource Accent}"
                                                 CornerRadius="{DynamicResource Radius.Xl}">
                                             <TextBlock Text="&#xE99A;"
-                                                       FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets"
+                                                       FontFamily="{DynamicResource Font.Icon}"
                                                        FontSize="12"
                                                        Foreground="{DynamicResource OnAccent}"
                                                        HorizontalAlignment="Center"
@@ -188,7 +188,7 @@
                                                         </Grid.ColumnDefinitions>
                                                         <TextBlock Grid.Column="0"
                                                                    Text="&#xE930;"
-                                                                   FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets"
+                                                                   FontFamily="{DynamicResource Font.Icon}"
                                                                    FontSize="12"
                                                                    Foreground="{DynamicResource Accent}"
                                                                    VerticalAlignment="Top"
@@ -425,7 +425,7 @@
                                                 AutomationProperties.Name="Скопировать сообщение"
                                                 Background="Transparent"
                                                 Foreground="{DynamicResource TextMuted}"
-                                                FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets"
+                                                FontFamily="{DynamicResource Font.Icon}"
                                                 FontSize="12"
                                                 Content="&#xE8C8;"
                                                 FocusVisualStyle="{StaticResource AiAssistantFocusVisual}">
@@ -467,7 +467,7 @@
                                                 Background="Transparent"
                                                 BorderThickness="0"
                                                 Foreground="{DynamicResource TextMuted}"
-                                                FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets"
+                                                FontFamily="{DynamicResource Font.Icon}"
                                                 FontSize="12"
                                                 Content="&#xE8C8;">
                                             <Button.Style>
@@ -515,7 +515,7 @@
                                                 BorderThickness="1"
                                                 CornerRadius="{DynamicResource Radius.Xl}">
                                             <TextBlock Text="&#xE77B;"
-                                                       FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets"
+                                                       FontFamily="{DynamicResource Font.Icon}"
                                                        FontSize="12"
                                                        Foreground="{DynamicResource TextMuted}"
                                                        HorizontalAlignment="Center"
@@ -557,7 +557,7 @@
                                 BorderThickness="{TemplateBinding BorderThickness}"
                                 CornerRadius="{DynamicResource Radius.Xl}">
                             <TextBlock Text="&#xE70D;"
-                                       FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets"
+                                       FontFamily="{DynamicResource Font.Icon}"
                                        FontSize="12"
                                        FontWeight="Bold"
                                        Foreground="{TemplateBinding Foreground}"
@@ -653,7 +653,7 @@
                                         <ScaleTransform/>
                                     </Border.RenderTransform>
                                     <TextBlock Text="&#xE74D;"
-                                               FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets"
+                                               FontFamily="{DynamicResource Font.Icon}"
                                                FontSize="12"
                                                HorizontalAlignment="Center"
                                                VerticalAlignment="Center"
@@ -906,7 +906,7 @@
                                                 </Border.RenderTransform>
                                                 <TextBlock x:Name="SendGlyph"
                                                            Text="&#xE724;"
-                                                           FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets"
+                                                           FontFamily="{DynamicResource Font.Icon}"
                                                            FontSize="16"
                                                            HorizontalAlignment="Center"
                                                            VerticalAlignment="Center"
