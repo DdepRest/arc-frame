@@ -53,6 +53,9 @@ namespace MosquitoNetCalculator.Services
             public string LastReportedPrefix { get; set; } = "";
             // Глобальная настройка «добавить копию в производство» в окне печати.
             public bool IncludeProductionCopy { get; set; } = false;
+            // Версия комплекта Inter, установленного per-user
+            // (FontSelfInstallService). Null = установка ещё не выполнялась.
+            public string? InstalledFontVersion { get; set; }
         }
 
         private static Settings LoadSettings()
@@ -258,6 +261,30 @@ namespace MosquitoNetCalculator.Services
             {
                 var settings = LoadSettings();
                 settings.LastSeenVersion = version;
+                SaveSettings(settings);
+            }
+        }
+
+        /// <summary>
+        /// Версия комплекта Inter, установленного per-user
+        /// (FontSelfInstallService). Null = установка ещё не выполнялась.
+        /// </summary>
+        public static string? LoadInstalledFontVersion()
+        {
+            lock (_lock)
+            {
+                var settings = LoadSettings();
+                return settings.InstalledFontVersion;
+            }
+        }
+
+        /// <summary>Запоминает версию установленного комплекта Inter.</summary>
+        public static void SaveInstalledFontVersion(string? version)
+        {
+            lock (_lock)
+            {
+                var settings = LoadSettings();
+                settings.InstalledFontVersion = version;
                 SaveSettings(settings);
             }
         }

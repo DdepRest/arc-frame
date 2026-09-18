@@ -2,6 +2,7 @@ using System;
 using System.IO;
 using System.Runtime.InteropServices;
 using System.Text;
+using System.Threading.Tasks;
 using System.Windows;
 using MosquitoNetCalculator.Services;
 
@@ -146,6 +147,34 @@ namespace MosquitoNetCalculator
             {
                 // Шрифт — не повод не запуститься: остаётся фолбэк Segoe UI.
                 System.Diagnostics.Debug.WriteLine("Inter не установился: " + ex.Message);
+            }
+
+            // Per-user страховка: если семейства Inter нет на устройстве
+            // (чистая машина, сторонний деинсталлятор почистил шрифты,
+            // обновление поверх сломанной системы), запущенное приложение
+            // само ставит его из вшитых файлов — без прав администратора
+            // и без установщика. Это нужно ПЕЧАТНОМУ слою и внешним
+            // просмотрщикам: сам интерфейс рисует Inter напрямую из сборки.
+            // Выполняется в фоне, чтобы не задержать старт: установка —
+            // несколько копий файлов и ключ реестра, но диск может быть занят.
+            try
+            {
+                var uiDispatcher = Dispatcher;
+                Task.Run(() =>
+                {
+                    try
+                    {
+                        FontSelfInstallService.EnsureInstalled();
+                    }
+                    catch
+                    {
+                        // Глотается: повтор при следующем запуске.
+                    }
+                });
+            }
+            catch
+            {
+                // Даже планирование не должно влиять на старт.
             }
 
             // Load theme before any window is created so StaticResource
