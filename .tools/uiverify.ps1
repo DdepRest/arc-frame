@@ -4,7 +4,17 @@
     # Самопроверка стража «экран здесь наш»: кладёт ПОВЕРХ нашего окна чужое
     # и требует, чтобы харнесс отказался снимать кадры и кликать. Кадры сцен
     # при этом не пишутся (режим только для проверки самого харнесса).
-    [switch]$SelfTest
+    [switch]$SelfTest,
+    # ── Точки внедрения: проверка НЕВАКУУМНОСТИ стражей воспроизводимости ─────
+    # Нужны только для доказательства, что стражи не пустышки; в обычном прогоне
+    # не используются. Каждый прогон с ними ОБЯЗАН расходиться с базлайном
+    # (или падать), иначе страж ничего не охраняет.
+    #   -InjectNoDateFix  — не фиксировать дату договора: кадры 04a/05 обязаны
+    #                       разойтись с базлайном (иначе страж даты — пустышка);
+    #   -InjectFocusLeak  — не снимать клавиатурный фокус: страж каретки обязан
+    #                       УПАСТЬ, а не записать кадр 03 с кареткой.
+    [switch]$InjectNoDateFix,
+    [switch]$InjectFocusLeak
 )
 
 # UIA rects are empty in this session (DPI virtualization), so:
@@ -286,6 +296,9 @@ function Shot([string]$name, [IntPtr]$hwndOverride = [IntPtr]::Zero, [scriptbloc
     #    (08a–08c — пауза тоста), снимаются с -KeepCursor.
     try { Reset-InputState $h -KeepCursor:$KeepCursor } catch { }
     Start-Sleep -Milliseconds 50
+    # 0b. Каретка: в кадре её быть не должно — мигание зависит от момента
+    #     съёмки, а не от вида (03 разошёлся на 15px ровно из-за неё).
+    Assert-FocusNotInTextEdit "кадр $name"
     # 1. Область кадра — наша? Если нет, окно поднимается и проверка повторяется.
     $r = Assert-ScreenIsOurs $h "кадр $name" 5 $PointOwned
     # 2. Захват
@@ -492,7 +505,91 @@ function Test-InertPoint([int]$x, [int]$y) {
     }
     return $true
 }
+
+# ── Фиксированные входные данные кадра ─────────────────────────────────────
+# Кадр обязан зависеть от ВИДА, а не от часов и истории ввода. Замер 2026-09-20
+# (тот же код, другие сутки) показал два оставшихся источника расхождения:
+#   * 04a-sidebar-open и 05-print-toolbar разошлись ровно на СУТКИ —
+#     «18.09.2026» в базлайне против «20.09.2026» в прогоне. В 04a дату
+#     показывает поле «Дата» сайдбара «Заказчик» (ClientInfo.ContractDate:
+#     приложение ставит DateTime.Today при новом заказе), в 05 — шапка печатного
+#     КП («№ 2-51 от <дата договора>», FlowDocumentBuilder);
+#   * 03-quickadd-invalid разошёлся на 15px каретки в поле «Ширина» —
+#     приложение САМО фокусирует поле с ошибкой (QuickAddControl.AddItem.cs).
+# Поэтому дата договора ставится харнессом (штатным полем DatePicker) и
+# ПРОВЕРЯЕТСЯ чтением обратно, а перед каждым кадром проверяется, что фокус не
+# стоит в текстовом поле. 05.05.2025 выбран так, что день == месяц: значение не
+# зависит от порядка «дд.мм»/«мм.дд» в культуре системы.
+$script:FixedContractDate = "05.05.2025"
+
+function Get-FocusedTextEdit {
+    # Текстовое поле в фокусе = каретка в кадре, а её мигание зависит от момента
+    # съёмки, а не от вида (см. блок выше).
+    try {
+        $fe = [System.Windows.Automation.AutomationElement]::FocusedElement
+        if (-not $fe) { return $null }
+        $ct = $fe.Current.ControlType
+        if ($ct -eq [System.Windows.Automation.ControlType]::Edit -or
+            $ct -eq [System.Windows.Automation.ControlType]::Document) { return $fe }
+    } catch { }
+    return $null
+}
+function Assert-FocusNotInTextEdit([string]$context) {
+    # Не предупреждение, а ОШИБКА: сцена обязана снять фокус сама (ниже), иначе
+    # кадр невоспроизводим по определению — расхождение базлайна перестало бы
+    # означать изменение вида (ровно это и случилось с 03).
+    $fe = Get-FocusedTextEdit
+    if (-not $fe) { return }
+    $id = $fe.Current.AutomationId
+    if (-not $id) { $id = $fe.Current.Name }
+    throw ("перед кадром $context фокус стоит в текстовом поле (id='$id') — кадр содержал бы каретку, " +
+           "мигание которой зависит от момента съёмки, а не от вида. Снять фокус обязан Reset-InputState/Clear-KeyboardFocus.")
+}
+function Set-FixedContractDate($root, [string]$context) {
+    # Дата договора — входные данные кадра. Ставим её так, как это сделал бы
+    # пользователь (поле DatePicker на сайдбаре «Заказчик»), и читаем обратно:
+    # «выставил» без подтверждения ничего не доказывает — ValuePattern может не
+    # примениться, а binding не обновиться, и кадр 05 ушёл бы в печать с
+    # системной датой, то есть расхождение снова зависело бы от суток.
+    $dp = Find-ById $root "DpContractDate"
+    if (-not $dp) {
+        throw "$context`: поле «Дата» (DpContractDate) не найдено — дату договора зафиксировать нельзя, а без этого кадры 04a/05 зависят от суток прогона"
+    }
+    $editCond = New-Object System.Windows.Automation.PropertyCondition(
+        [System.Windows.Automation.AutomationElement]::ControlTypeProperty,
+        [System.Windows.Automation.ControlType]::Edit)
+    $edit = $dp.FindFirst([System.Windows.Automation.TreeScope]::Descendants, $editCond)
+    if (-not $edit) {
+        throw "$context`: внутри поля «Дата» нет текстового поля — дату договора зафиксировать нельзя"
+    }
+    $vp = $edit.GetCurrentPattern([System.Windows.Automation.ValuePattern]::Pattern)
+    $vp.SetValue($script:FixedContractDate)
+    # Коммит значения: DatePicker принимает набранный текст по потере фокуса.
+    try { $dp.SetFocus() } catch { }
+    Start-Sleep -Milliseconds 150
+    try {
+        $windowEl = [System.Windows.Automation.AutomationElement]::FromHandle($script:hwnd)
+        if ($windowEl) { $windowEl.SetFocus() }
+    } catch { }
+    Start-Sleep -Milliseconds 250
+    $got = $vp.Current.Value
+    $expected = [datetime]::ParseExact($script:FixedContractDate, "dd.MM.yyyy", $null)
+    $ok = $false
+    try { $ok = ([datetime]::Parse($got) -eq $expected) } catch { $ok = $false }
+    if (-not $ok) {
+        throw "$context`: дата договора не зафиксирована — ожидалось «$($script:FixedContractDate)», в поле «$got». Кадр писать нельзя: он зависел бы от суток прогона"
+    }
+    Write-Host "[i] $context`: дата договора зафиксирована («$got») — 04a/05 не зависят от суток прогона"
+}
+
 function Clear-KeyboardFocus([IntPtr]$h) {
+    if ($InjectFocusLeak) {
+        # Точка внедрения для стража каретки: сцену 03 снимаем БЕЗ снятия фокуса.
+        # Приложение само фокусирует поле «Ширина» на ошибке, поэтому страж
+        # ОБЯЗАН упасть, а не записать кадр с кареткой.
+        Write-Host "[inject] снятие клавиатурного фокуса отключено (проверка стража каретки)"
+        return $false
+    }
     # Рамка фокуса и подсказка приходят НЕ от мыши, а от КЛАВИАТУРНОГО фокуса:
     # WPF рисует FluentFocusVisual (Accent-рамка 2px) и показывает ToolTip на том
     # элементе, который получил фокус последним — после закрытия «Что нового»,
@@ -524,6 +621,7 @@ function Clear-KeyboardFocus([IntPtr]$h) {
     if ($box.W -le 80 -or $box.H -le 80) { return $false }
     # Кандидаты — нижняя полоса окна, справа налево: там панель состояния
     # (текст дат/подсказок), и правый край всегда пуст.
+    $clicked = $false
     for ($i = 0; $i -lt 5; $i++) {
         $x = $box.X + $box.W - 30 - ($i * 150)
         $y = $box.Y + $box.H - 14
@@ -533,10 +631,42 @@ function Clear-KeyboardFocus([IntPtr]$h) {
         if (-not (Test-InertPoint $x $y)) { continue }
         Click-At $x $y
         Start-Sleep -Milliseconds 120
-        return $true
+        $clicked = $true
+        break
     }
-    Write-Host "[warn] фокус не снят: инертной точки в окне hwnd=$h не нашлось (кадр может содержать рамку фокуса)"
-    return $false
+    if (-not $clicked) {
+        Write-Host "[warn] фокус не снят: инертной точки в окне hwnd=$h не нашлось (кадр может содержать рамку фокуса)"
+    }
+    # Клик и UIA SetFocus на ЭЛЕМЕНТ ОКНА не вытаскивают фокус из ТЕКСТОВОГО
+    # поля: WPF при активации окна возвращает логический фокус прежнему элементу
+    # (замер 2026-09-20 при 03: «до: Edit:TxtQuickWidth -> после:
+    # Edit:TxtQuickWidth», cleared=True, клик при этом состоялся). А каретка
+    # мигает, поэтому такой кадр невоспроизводим (именно это и дало 15px
+    # расхождения в 03 между прогонами). Забираем фокус на нейтральную КНОПКУ:
+    # у неё нет каретки, она не рисует шаблонную рамку «в фокусе» (в отличие от
+    # ComboBox/TextBox — замер: фокус на CmbQuickType закрашивает его акцентом и
+    # кадры 03/06b разъезжаются), а FluentFocusVisual гасится инъекцией мыши
+    # (в базлайнах 06b/10c фокус уже стоит на Button — и кадры чисты).
+    if (Get-FocusedTextEdit) {
+        $neutral = $null
+        try {
+            $root = [System.Windows.Automation.AutomationElement]::FromHandle($h)
+            foreach ($id in @("BtnAdd", "NavBtnOrders")) {
+                if (-not $root) { break }
+                $candidate = Find-ById $root $id
+                if (-not $candidate) { continue }
+                try { $candidate.SetFocus() } catch { }
+                Start-Sleep -Milliseconds 90
+                if (-not (Get-FocusedTextEdit)) { $neutral = $candidate; break }
+            }
+        } catch { }
+        Assert-InputIsMouse
+        Start-Sleep -Milliseconds 150
+        if (-not $neutral) {
+            Write-Host "[warn] фокус остался в текстовом поле: нейтральная кнопка (BtnAdd/NavBtnOrders) его не забрала"
+        }
+    }
+    return $clicked
 }
 function Reset-InputState([IntPtr]$h, [switch]$KeepCursor) {
     # Нейтральное состояние ввода перед кадром: снять клавиатурный фокус его
@@ -571,6 +701,18 @@ function Reset-InputState([IntPtr]$h, [switch]$KeepCursor) {
         Write-Host "[focus] до: $(Get-FocusedDesc) -> после: $(Get-FocusedDesc) cleared=$cleared"
     }
     if (-not $cleared) { Assert-InputIsMouse }
+    # Каретка: приложение само фокусирует поле с ошибкой (03: «Ширина»), и
+    # пропущенное снятие дало 15px расхождения между прогонами. Доводим до
+    # ФАКТА: пока в фокусе текстовое поле — снимаем фокус ещё раз.
+    for ($i = 1; $i -le 3; $i++) {
+        $feDbg = Get-FocusedTextEdit
+        if (-not $feDbg) { break }
+        if ($env:UIVERIFY_FOCUS_DEBUG) {
+            Write-Host "  [focus] попытка $i`: в фокусе текстовое поле id='$($feDbg.Current.AutomationId)' (кто в фокусе до: $(Get-FocusedDesc))"
+        }
+        Clear-KeyboardFocus $h | Out-Null
+        Start-Sleep -Milliseconds 150
+    }
     $box = Get-Rect $h
     if ($box.W -le 40 -or $box.H -le 40) { return }
     Move-At ($box.X + [int]($box.W / 2)) ($box.Y + 18)
@@ -984,6 +1126,14 @@ try {
     Invoke-ActionBarButton "Заказчик"
     Assert-SceneReady @("TxtClientName") "04a-sidebar-open"
     Start-Sleep -Milliseconds 500
+    # Дата договора — входные данные кадра (см. блок «Фиксированные входные
+    # данные кадра» выше): без неё 04a (поле «Дата») и 05 (шапка печатного КП)
+    # зависят от суток прогона.
+    if ($InjectNoDateFix) {
+        Write-Host "[inject] фиксация даты договора отключена — 04a/05 ОБЯЗАНЫ разойтись с базлайном (проверка невакуумности)"
+    } else {
+        Set-FixedContractDate $win "04a-sidebar-open"
+    }
     Shot "04a-sidebar-open-$Theme"
     $name = Find-ById $win "TxtClientName"
     $phone = Find-ById $win "TxtClientPhone"
