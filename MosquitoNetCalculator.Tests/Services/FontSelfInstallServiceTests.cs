@@ -37,6 +37,10 @@ namespace MosquitoNetCalculator.Tests.Services
             FontSelfInstallService.InstallDir = _tempDir;
             // InstalledFontVersion пишется в settings — тоже в изоляцию,
             // иначе тест портит реальный settings.json пользователя.
+            // Каталог создаём сразу: SaveSettings глотает ошибки записи, и
+            // без каталога SaveInstalledFontVersion молча ничего не запишет
+            // (ловилось тестом на устаревшую версию комплекта).
+            Directory.CreateDirectory(_tempDir);
             AppSettingsService.SettingsPath = Path.Combine(_tempDir, "settings.json");
 
             // Реестр — в одноразовый куст (Registry.CurrentUser.CreateSubKey
@@ -106,9 +110,43 @@ namespace MosquitoNetCalculator.Tests.Services
         public void EnsureInstalled_FamilyPresent_DoesNothing()
         {
             FontSelfInstallService.FamilyInstalled = _ => true;
+            // Явно: записи о нашей установке нет (шрифт ставили не мы).
+            AppSettingsService.SaveInstalledFontVersion(null);
             Assert.True(FontSelfInstallService.EnsureInstalled());
-            Assert.False(Directory.Exists(_tempDir),
-                "Семья есть — копировать файлы нельзя");
+            Assert.True(Directory.GetFiles(_tempDir, "*.ttf").Length == 0,
+                "Семья есть и записи о нашей установке нет — копировать файлы нельзя");
+        }
+
+        [Fact]
+        public void EnsureInstalled_FamilyPresent_FreshRecord_DoesNothing()
+        {
+            FontSelfInstallService.FamilyInstalled = _ => true;
+            AppSettingsService.SaveInstalledFontVersion(FontSelfInstallService.BundleVersion);
+            Assert.True(FontSelfInstallService.EnsureInstalled());
+            Assert.True(Directory.GetFiles(_tempDir, "*.ttf").Length == 0,
+                "Версия комплекта актуальна — переустановка не нужна");
+        }
+
+        [Fact]
+        public void EnsureInstalled_StaleSavedVersion_ReinstallsBundle()
+        {
+            // Машина ставила СТАРЫЙ состав комплекта: семья есть, а запись
+            // в settings не совпадает с текущим BundleVersion. Обязан
+            // переустановить (обновить ключ реестра на новый путь) и
+            // записать актуальную версию.
+            FontSelfInstallService.FamilyInstalled = _ => true;
+            AppSettingsService.SaveInstalledFontVersion("0.9");
+
+            Assert.True(FontSelfInstallService.EnsureInstalled());
+            foreach (var fileName in FontSelfInstallService.BundleFiles)
+            {
+                Assert.True(File.Exists(Path.Combine(_tempDir, fileName)),
+                    $"{fileName} не переустановлен при устаревшей версии комплекта");
+            }
+            Assert.Equal(FontSelfInstallService.BundleVersion,
+                AppSettingsService.LoadInstalledFontVersion());
+            Assert.True(FontSelfInstallService.LastInstallWasFake,
+                "Переустановка пошла мимо подменного куста");
         }
 
         [Fact]

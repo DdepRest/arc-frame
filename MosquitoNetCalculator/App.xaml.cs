@@ -159,7 +159,6 @@ namespace MosquitoNetCalculator
             // несколько копий файлов и ключ реестра, но диск может быть занят.
             try
             {
-                var uiDispatcher = Dispatcher;
                 Task.Run(() =>
                 {
                     try

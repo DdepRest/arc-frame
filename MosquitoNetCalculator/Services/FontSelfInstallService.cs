@@ -194,7 +194,18 @@ namespace MosquitoNetCalculator.Services
             {
                 if (FamilyInstalled(FamilyName))
                 {
-                    return true;
+                    // Семья есть, но комплект мог устареть: если в settings
+                    // записана ДРУГАЯ версия комплекта (например, машина
+                    // ставила старый состав файлов), переустанавливаем —
+                    // иначе ключ реестра навсегда указывает на прошлый путь.
+                    // Пустой записи нет доверия: шрифт ставили не мы — не трогаем.
+                    var saved = AppSettingsService.LoadInstalledFontVersion();
+                    if (string.IsNullOrEmpty(saved) ||
+                        string.Equals(saved, BundleVersion, StringComparison.Ordinal))
+                    {
+                        return true;
+                    }
+                    return InstallBundle();
                 }
 
                 return InstallBundle();
