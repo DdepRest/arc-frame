@@ -1,4 +1,4 @@
-# generate-update-log.ps1
+﻿# generate-update-log.ps1
 # Генерирует MosquitoNetCalculator/Resources/update-log.json из CHANGELOG.md.
 # Запускать из любого каталога при подготовке релиза.
 #
@@ -61,9 +61,19 @@ for ($i = 0; $i -lt $versionMatches.Count; $i++) {
         }
     }
 
+    # Инвариант приложения: у каждой записи непустой список пунктов
+    # (ManualChecklistTests). Секции-однострочники без буллетов берём
+    # первым абзацем текста.
+    if ($changes.Count -eq 0) {
+        foreach ($line in ($section -split "`n")) {
+            $t = $line.Trim()
+            if ($t -and -not $t.StartsWith('#') -and $t -ne '---') { $changes += $t; break }
+        }
+    }
+
     $type = "Исправление"
     if ($section -match 'добавлен|новая|новый|feat|feature') {
-        $type = "Новая функция"
+        $type = "Новинка"
     }
 
     $updates += [ordered]@{
@@ -75,11 +85,39 @@ for ($i = 0; $i -lt $versionMatches.Count; $i++) {
     }
 }
 
-$updates = @($updates | Select-Object -First 15)
+$updates = @($updates)
 if ($updates.Count -eq 0) {
     Write-Error "No version entries found in CHANGELOG.md. Expected: ## X.Y.Z - YYYY-MM-DD"
     exit 1
 }
+
+# Мержим с существующим json. Для версий, датированных в CHANGELOG, свежие
+# дата/заголовок/пункты берутся ИЗ CHANGELOG (иначе устаревшая запись 3.53.0
+# от 14.09 пережила бы финализацию секции), но ПОЛЕ type остаётся курируемым:
+# таксономию чипов («Новинка»/«Улучшение»/«Исправление»/«Техническое»)
+# эвристика по тексту не восстанавливает. Версии, которых в CHANGELOG нет
+# (история до введения дат), переносятся в json как есть.
+$existingByVersion = @{}
+if (Test-Path -LiteralPath $updateLogPath) {
+    try {
+        $existing = ConvertFrom-Json ([System.IO.File]::ReadAllText($updateLogPath, [System.Text.Encoding]::UTF8))
+        foreach ($e in @($existing)) { $existingByVersion[[string]$e.version] = $e }
+        foreach ($u in $updates) {
+            $v = [string]$u.version
+            if ($existingByVersion.ContainsKey($v) -and $existingByVersion[$v].type) {
+                $u.type = [string]$existingByVersion[$v].type
+            }
+        }
+    } catch {
+        Write-Warning "Существующий $updateLogPath не разобран — перезаписываю только из CHANGELOG: $($_.Exception.Message)"
+        $existing = @()
+    }
+} else {
+    $existing = @()
+}
+$datedVersions = @{}
+foreach ($u in $updates) { $datedVersions[[string]$u.version] = $true }
+$updates = @($updates + @($existing | Where-Object { -not $datedVersions.ContainsKey([string]$_.version) }))
 
 $json = ConvertTo-Json -InputObject $updates -Depth 5
 $utf8NoBom = New-Object System.Text.UTF8Encoding($false)
