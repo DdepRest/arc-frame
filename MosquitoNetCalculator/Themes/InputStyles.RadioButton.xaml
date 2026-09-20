@@ -19,7 +19,7 @@
                         <Border x:Name="Outer" Width="18" Height="18" CornerRadius="{DynamicResource Radius.Pill}"
                                 Background="{DynamicResource Surface}"
                                 BorderBrush="{DynamicResource Border}" BorderThickness="2"
-                                VerticalAlignment="Center" Margin="0,0,8,0"
+                                VerticalAlignment="Center" Margin="{DynamicResource Gap.Inline}"
                                 SnapsToDevicePixels="True">
                             <!-- Внутренний Accent-точка (выбранное состояние) -->
                             <Ellipse x:Name="Dot"

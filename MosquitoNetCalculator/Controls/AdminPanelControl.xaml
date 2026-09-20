@@ -64,7 +64,7 @@
                            Text="Последняя версия: …"
                            FontSize="12"
                            Foreground="{DynamicResource TextMuted}"
-                           Margin="0,4,0,0"/>
+                           Margin="{DynamicResource Gap.BlockTop}"/>
                 <!-- Тонкая строка «обновлено X · авто через Y» -->
                 <TextBlock x:Name="TxtRefreshStatus"
                            Text=""
@@ -78,7 +78,7 @@
             <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
                 <Button x:Name="BtnRefresh"
                         Style="{StaticResource AccentBorderButton}"
-                        Margin="12,0,0,0"
+                        Margin="{DynamicResource Gap.LeftLg}"
                         Padding="14,6"
                         FontSize="12"
                         ToolTip="Проверить отчёты офисов и последнюю версию"
@@ -93,7 +93,7 @@
                      the header keeps only the frequent «Обновить» primary. -->
                 <Button x:Name="BtnMoreActions"
                         Style="{StaticResource AccentBorderButton}"
-                        Margin="8,0,0,0"
+                        Margin="{DynamicResource Gap.Left}"
                         Padding="10,6"
                         FontSize="12"
                         ToolTip="Дополнительные действия"
@@ -112,12 +112,12 @@
                     Background="{DynamicResource BadgeWarningBg}"
                     CornerRadius="{DynamicResource Radius.Lg}"
                     Padding="12,9"
-                    Margin="0,0,0,8"
+                    Margin="{DynamicResource Gap.Block}"
                     Visibility="Collapsed">
                 <StackPanel Orientation="Horizontal">
                     <TextBlock Text="&#xE7BA;" FontFamily="{DynamicResource Font.Icon}"
                                FontSize="14" Foreground="{DynamicResource BadgeWarningFg}"
-                               VerticalAlignment="Center" Margin="0,0,8,0"/>
+                               VerticalAlignment="Center" Margin="{DynamicResource Gap.Inline}"/>
                     <TextBlock x:Name="TxtBanner"
                                FontSize="12"
                                Foreground="{DynamicResource BadgeWarningFg}"
@@ -130,12 +130,12 @@
                     Background="{DynamicResource BadgeDangerBg}"
                     CornerRadius="{DynamicResource Radius.Lg}"
                     Padding="12,9"
-                    Margin="0,0,0,8"
+                    Margin="{DynamicResource Gap.Block}"
                     Visibility="Collapsed">
                 <StackPanel Orientation="Horizontal">
                     <TextBlock Text="&#xE7BA;" FontFamily="{DynamicResource Font.Icon}"
                                FontSize="14" Foreground="{DynamicResource BadgeDangerFg}"
-                               VerticalAlignment="Center" Margin="0,0,8,0"/>
+                               VerticalAlignment="Center" Margin="{DynamicResource Gap.Inline}"/>
                     <TextBlock Text="Не удалось получить свежие данные — показаны последние известные результаты. Проверьте подключение к интернету и попробуйте «Обновить»."
                                FontSize="12"
                                Foreground="{DynamicResource BadgeDangerFg}"
@@ -192,7 +192,7 @@
                                            FontSize="20"
                                            Foreground="{DynamicResource Accent}"
                                            VerticalAlignment="Center"
-                                           Margin="0,0,12,0"/>
+                                           Margin="{DynamicResource Gap.InlineLg}"/>
                                 <StackPanel Grid.Column="1" VerticalAlignment="Center">
                                     <TextBlock x:Name="TxtSummary" Text="— из — актуальны"
                                                FontSize="16" FontWeight="SemiBold"
@@ -223,7 +223,7 @@
                             </Grid>
 
                             <!-- Быстрые действия -->
-                            <StackPanel Grid.Row="2" Orientation="Horizontal" Margin="0,12,0,0">
+                            <StackPanel Grid.Row="2" Orientation="Horizontal" Margin="{DynamicResource Gap.BlockTopLg}">
                                 <Button x:Name="BtnRemindAll"
                                         Style="{StaticResource AccentBorderButton}"
                                         Padding="12,5"
@@ -240,7 +240,7 @@
                                         Style="{StaticResource AccentBorderButton}"
                                         Padding="12,5"
                                         FontSize="12"
-                                        Margin="8,0,0,0"
+                                        Margin="{DynamicResource Gap.Left}"
                                         ToolTip="Отметить устройства и удалить их привязки из хранилища. Устройство само вернётся со своим следующим отчётом — уже под актуальным офисом."
                                         Click="BtnUnbindMode_Click">
                                     <StackPanel Orientation="Horizontal">
@@ -252,7 +252,7 @@
                                 <!-- Плашка режима отвязки -->
                                 <Border x:Name="UnbindModeBanner" Visibility="Collapsed"
                                         Background="{DynamicResource BadgeWarningBg}"
-                                        CornerRadius="{DynamicResource Radius.Md}" Padding="10,5" Margin="8,0,0,0"
+                                        CornerRadius="{DynamicResource Radius.Md}" Padding="10,5" Margin="{DynamicResource Gap.Left}"
                                         VerticalAlignment="Center">
                                     <TextBlock x:Name="TxtUnbindBanner" Text="Отметьте устройства для отвязки"
                                                FontSize="11" FontWeight="SemiBold"
@@ -285,7 +285,7 @@
                             <Button x:Name="BtnClearSearch" Visibility="Collapsed" Content="✕" Width="22" Height="22"
                                     Click="BtnClearSearch_Click" Background="Transparent" BorderThickness="0"
                                     Foreground="{DynamicResource TextMuted}" Cursor="Hand" HorizontalAlignment="Right"
-                                    VerticalAlignment="Center" Margin="0,0,8,0" ToolTip="Очистить поиск"/>
+                                    VerticalAlignment="Center" Margin="{DynamicResource Gap.Inline}" ToolTip="Очистить поиск"/>
                         </Grid>
                         <StackPanel Orientation="Horizontal" Margin="0,8,0,0">
                             <!-- Чипы-фильтры: ToggleButton-подобные кнопки с Checked-состоянием.
@@ -507,7 +507,7 @@
                                                         </Border>
                                                         <Border Background="{DynamicResource AccentLight}"
                                                                 CornerRadius="{DynamicResource Radius.Md}" Padding="7,2"
-                                                                Margin="8,0,0,0" VerticalAlignment="Center"
+                                                                Margin="{DynamicResource Gap.Left}" VerticalAlignment="Center"
                                                                 Visibility="Collapsed">
                                                             <Border.Style>
                                                                 <Style TargetType="Border">
@@ -526,7 +526,7 @@
                                                         <!-- Кол-во устройств офиса -->
                                                         <Border Background="{DynamicResource ChipBg}"
                                                                 CornerRadius="{DynamicResource Radius.Md}" Padding="7,2"
-                                                                Margin="8,0,0,0" VerticalAlignment="Center"
+                                                                Margin="{DynamicResource Gap.Left}" VerticalAlignment="Center"
                                                                 Visibility="Visible">
                                                             <Border.Style>
                                                                 <Style TargetType="Border">
@@ -572,7 +572,7 @@
                                                                    VerticalAlignment="Center"/>
                                                         <!-- Мини-прогресс «2/3» с тонкой полосой -->
                                                         <Border Background="{DynamicResource ChipBg}" CornerRadius="{DynamicResource Radius.Md}" Padding="8,3"
-                                                                Margin="12,0,0,0" VerticalAlignment="Center"
+                                                                Margin="{DynamicResource Gap.LeftLg}" VerticalAlignment="Center"
                                                                 ToolTip="Сколько устройств офиса в актуальной версии">
                                                             <StackPanel Orientation="Horizontal">
                                                                 <Border Width="34" Height="5" CornerRadius="{DynamicResource Radius.CapsuleSm}"
@@ -711,7 +711,7 @@
                                        FontSize="20"
                                        Foreground="{DynamicResource Accent}"
                                        VerticalAlignment="Center"
-                                       Margin="0,0,12,0"/>
+                                       Margin="{DynamicResource Gap.InlineLg}"/>
                             <StackPanel Grid.Column="1" VerticalAlignment="Center">
                                 <TextBlock x:Name="TxtStatsTotal" Text="Всего заказов: …"
                                            FontSize="16" FontWeight="SemiBold"
@@ -767,7 +767,7 @@
                                                         </Border>
                                                         <Border Background="{DynamicResource AccentLight}"
                                                                 CornerRadius="{DynamicResource Radius.Md}" Padding="7,2"
-                                                                Margin="8,0,0,0" VerticalAlignment="Center"
+                                                                Margin="{DynamicResource Gap.Left}" VerticalAlignment="Center"
                                                                 Visibility="Collapsed">
                                                             <Border.Style>
                                                                 <Style TargetType="Border">
@@ -786,7 +786,7 @@
                                                         <!-- Кол-во устройств офиса -->
                                                         <Border Background="{DynamicResource ChipBg}"
                                                                 CornerRadius="{DynamicResource Radius.Md}" Padding="7,2"
-                                                                Margin="8,0,0,0" VerticalAlignment="Center"
+                                                                Margin="{DynamicResource Gap.Left}" VerticalAlignment="Center"
                                                                 Visibility="Visible">
                                                             <Border.Style>
                                                                 <Style TargetType="Border">

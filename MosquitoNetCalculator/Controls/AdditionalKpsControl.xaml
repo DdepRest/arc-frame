@@ -18,7 +18,7 @@
             <StackPanel Visibility="{Binding IsChecked, ElementName=ChkAdditionalKp, Converter={StaticResource BoolToVis}}">
                 <Border Margin="-8,0">
                     <StackPanel>
-                        <Grid Margin="0,0,0,4">
+                        <Grid Margin="{DynamicResource Gap.BlockSm}">
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="Auto"/>
                                 <ColumnDefinition Width="2"/>
@@ -136,7 +136,7 @@
                                 FontSize="11" Foreground="{DynamicResource Accent}"
                                 Background="Transparent" BorderThickness="0"
                                 Cursor="Hand" Padding="2,2"
-                                HorizontalAlignment="Left" Margin="0,4,0,0">
+                                HorizontalAlignment="Left" Margin="{DynamicResource Gap.BlockTop}">
                             <Button.Template>
                                 <ControlTemplate TargetType="Button">
                                     <Border Background="{Binding Background, RelativeSource={RelativeSource TemplatedParent}}"

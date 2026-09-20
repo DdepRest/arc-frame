@@ -232,7 +232,7 @@
                 <Button x:Name="BtnClearUpdatesSearch" Grid.Column="2"
                         Style="{DynamicResource GhostButton}"
                         Content="&#xE711;" FontFamily="{DynamicResource Font.Icon}"
-                        FontSize="11" Padding="4,2" Margin="4,0,0,0" Cursor="Hand"
+                        FontSize="11" Padding="4,2" Margin="{DynamicResource Gap.LeftSm}" Cursor="Hand"
                         Visibility="Collapsed"
                         Click="BtnClearUpdatesSearch_Click"
                         ToolTip="Очистить поиск"/>
@@ -440,7 +440,7 @@
                                                         BorderThickness="1"
                                                         VerticalAlignment="Center"
                                                         HorizontalAlignment="Left"
-                                                        Margin="8,0,0,0">
+                                                        Margin="{DynamicResource Gap.Left}">
                                                     <Border.Style>
                                                         <Style TargetType="Border">
                                                             <Setter Property="Visibility" Value="Collapsed"/>

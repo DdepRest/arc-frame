@@ -71,7 +71,7 @@
                            FontWeight="Bold"
                            FontSize="14"
                            Foreground="{DynamicResource TextPrimary}"
-                           Margin="0,0,0,12"
+                           Margin="{DynamicResource Gap.BlockLg}"
                            TextTrimming="CharacterEllipsis"/>
                 <TextBlock Text="Новый статус:"
                            FontSize="12"
@@ -92,7 +92,7 @@
                         Content="Отмена"
                         MinWidth="90"
                         Padding="16,7"
-                        Margin="0,0,8,0"
+                        Margin="{DynamicResource Gap.Inline}"
                         FontSize="12"
                         Click="BtnCancel_Click"
                         IsCancel="True"/>

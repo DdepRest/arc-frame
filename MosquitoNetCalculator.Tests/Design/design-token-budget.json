@@ -1,5 +1,5 @@
 ﻿{
-  "_comment": "Бюджет дизайн-литералов v3.53.0 — «ратчет»: число может только УБЫВАТЬ. DesignTokenGuardTests падает, если в файле стало больше литералов, если бюджет просел больше чем на 3 (его забыли понизить после миграции) или если литералы появились в файле, которого здесь нет. Числа = фактические на момент коммита; понижай их в том же коммите, где мигрировал литералы на токены. Контракт — docs/specs/design-system-v3.53.md. v3.53.0: радиусы мигрированы полностью — 226 литералов → 113 в восьми файлах, затем 113 → 0 по всей разметке и по коду (код берёт их из Helpers/Radii) (литеральный Duration= в XAML недопустим). Категория hexInCode покрывает C# (раньше проверялся только XAML): исключение — Services/DrawingService.cs, цвета SVG-схем проёма для QuestPDF (печатный слой, темой не переключается). Models/OrderData.cs держал вторую палитру бейджей и убран в v3.53.0 — статус теперь даёт ключ токена.",
+  "_comment": "Бюджет дизайн-литералов v3.53.0 — «ратчет»: число может только УБЫВАТЬ. DesignTokenGuardTests падает, если в файле стало больше литералов, если бюджет просел больше чем на 3 (его забыли понизить после миграции) или если литералы появились в файле, которого здесь нет. Числа = фактические на момент коммита; понижай их в том же коммите, где мигрировал литералы на токены. Контракт — docs/specs/design-system-v3.53.md. v3.53.0: радиусы мигрированы полностью — 226 литералов → 113 в восьми файлах, затем 113 → 0 по всей разметке и по коду (код берёт их из Helpers/Radii) (литеральный Duration= в XAML недопустим). Категория hexInCode покрывает C# (раньше проверялся только XAML): исключение — Services/DrawingService.cs, цвета SVG-схем проёма для QuestPDF (печатный слой, темой не переключается). Models/OrderData.cs держал вторую палитру бейджей и убран в v3.53.0 — статус теперь даёт ключ токена. Шаг 6 (отступы): категория margins — литеральные Margin/Padding (Margin=\"0\" не литерал); offScaleSpacings — значения вне шкалы 4·8·12·16·24·32·48, держит их тест SpacingValues_LiveOnTheScale.",
   "fontSize": {
     "Controls/ActionBarControl.xaml": 5,
     "Controls/AdditionalKpsControl.xaml": 5,
@@ -82,6 +82,45 @@
     "rawAnimationDurationsXaml": 0,
     "rawAnimationDurationsCodeMs": 13,
     "subElevenOrFractionalFontSizes": 10,
-    "fractionalFontSizes": 0
+    "fractionalFontSizes": 0,
+    "offScaleSpacings": 407,
+    "negativeSpacings": 3
+  },
+  "margins": {
+    "Controls/ActionBarControl.xaml": 16,
+    "Controls/AdditionalKpsControl.xaml": 11,
+    "Controls/AdminPanelControl.xaml": 72,
+    "Controls/AdminPasswordWindow.xaml": 13,
+    "Controls/AiApiKeyDialog.xaml": 49,
+    "Controls/AiAssistantControl.xaml": 55,
+    "Controls/AiAssistantWindow.xaml": 1,
+    "Controls/ChangeOrderStatusWindow.xaml": 7,
+    "Controls/MessageDialogWindow.xaml": 5,
+    "Controls/NumericUpDownControl.xaml": 1,
+    "Controls/OrderItemsControl.xaml": 22,
+    "Controls/OrdersHistoryControl.xaml": 10,
+    "Controls/PricesControl.xaml": 7,
+    "Controls/PrintPreviewControl.xaml": 26,
+    "Controls/QuickAddControl.xaml": 17,
+    "Controls/SendToFactoryWindow.xaml": 19,
+    "Controls/SidebarControl.xaml": 42,
+    "Controls/SlopeEconomyDetailsWindow.xaml": 22,
+    "Controls/SlopePanelControl.xaml": 49,
+    "Controls/TitleBarControl.xaml": 2,
+    "Controls/TotalCardControl.xaml": 5,
+    "Controls/UpdateAvailableWindow.xaml": 10,
+    "Controls/UpdatesTabControl.xaml": 36,
+    "Controls/WhatsNewWindow.xaml": 9,
+    "ImportDialogWindow.xaml": 5,
+    "MainWindow.xaml": 25,
+    "Themes/ContextMenuStyles.xaml": 3,
+    "Themes/DataGridStyles.xaml": 1,
+    "Themes/InputStyles.CheckBox.xaml": 5,
+    "Themes/InputStyles.ComboBox.xaml": 11,
+    "Themes/InputStyles.DatePicker.xaml": 3,
+    "Themes/InputStyles.TextBox.xaml": 3,
+    "Themes/ScrollViewerStyles.xaml": 1,
+    "Themes/TabStyles.xaml": 1,
+    "WelcomeWindow.xaml": 14
   }
 }

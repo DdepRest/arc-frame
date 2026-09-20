@@ -17,7 +17,7 @@
                             <ColumnDefinition Width="*"/>
                         </Grid.ColumnDefinitions>
                         <Border x:Name="SwitchTrack" Width="40" Height="20"
-                                CornerRadius="{DynamicResource Radius.Capsule}" Margin="0,0,8,0"
+                                CornerRadius="{DynamicResource Radius.Capsule}" Margin="{DynamicResource Gap.Inline}"
                                 Background="{DynamicResource TrackBg}" BorderThickness="0"
                                 SnapsToDevicePixels="True">
                             <Border x:Name="SwitchThumb" Width="16" Height="16"

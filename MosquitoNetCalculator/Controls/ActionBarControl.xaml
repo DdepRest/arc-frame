@@ -163,7 +163,7 @@
                 <!-- UX-12: Undo/Redo — discoverable buttons for the existing Ctrl+Z/Y flow;
                      disabled state mirrors the undo/redo stacks via MainWindow.CanUndo/CanRedo. -->
                 <Button Style="{DynamicResource GhostButton}"
-                        Click="BtnUndo_Click" Margin="0,0,4,0"
+                        Click="BtnUndo_Click" Margin="{DynamicResource Gap.InlineSm}"
                         IsEnabled="{Binding CanUndo, FallbackValue=False}"
                         ToolTip="Отменить последнее действие (Ctrl+Z)">
                     <StackPanel Orientation="Horizontal">

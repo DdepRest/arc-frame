@@ -72,7 +72,7 @@
                                Foreground="{DynamicResource OnAccent}"
                                HorizontalAlignment="Center" VerticalAlignment="Center"/>
                 </Border>
-                <StackPanel Grid.Column="1" VerticalAlignment="Center" Margin="8,0,0,0">
+                <StackPanel Grid.Column="1" VerticalAlignment="Center" Margin="{DynamicResource Gap.Left}">
                     <TextBlock Text="Настройки AI Ассистента" FontSize="16" FontWeight="SemiBold"
                                Foreground="{DynamicResource TextPrimary}"/>
                     <TextBlock Text="Бесплатные модели · автовыбор · резервное подключение" FontSize="11"
@@ -299,7 +299,7 @@
                     <StackPanel Orientation="Horizontal">
                         <TextBlock Text="Выбор моделей" FontSize="12" FontWeight="SemiBold"
                                    Foreground="{DynamicResource TextPrimary}"/>
-                        <Border CornerRadius="{DynamicResource Radius.Sm}" Padding="6,2" Margin="8,0,0,0"
+                        <Border CornerRadius="{DynamicResource Radius.Sm}" Padding="6,2" Margin="{DynamicResource Gap.Left}"
                                 Background="{DynamicResource ChipBg}">
                             <TextBlock Text="НЕСКОЛЬКО" FontSize="9" FontWeight="Bold"
                                        Foreground="{DynamicResource Accent}"/>
@@ -417,7 +417,7 @@
                                         <!-- Vision badge: visible only for models the
                                              catalog reported as image-capable. -->
                                         <Border CornerRadius="{DynamicResource Radius.Sm}" Padding="6,3"
-                                                Margin="8,0,0,0"
+                                                Margin="{DynamicResource Gap.Left}"
                                                 ToolTip="{Binding VisionTooltip}">
                                             <Border.Style>
                                                 <Style TargetType="Border">
@@ -434,7 +434,7 @@
                                                        Foreground="{DynamicResource BadgeVisionFg}"/>
                                         </Border>
                                         <Border CornerRadius="{DynamicResource Radius.Sm}" Padding="6,3"
-                                                Margin="8,0,0,0"
+                                                Margin="{DynamicResource Gap.Left}"
                                                 ToolTip="{Binding ProviderTooltip}">
                                             <Border.Style>
                                                 <Style TargetType="Border">
@@ -502,7 +502,7 @@
                     VerticalAlignment="Stretch">
                 <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center">
                     <Button Content="Отмена" Click="BtnCancel_Click" Width="88" Height="35"
-                            Style="{StaticResource DialogOutlineButton}" Margin="0,0,8,0" FontSize="12"/>
+                            Style="{StaticResource DialogOutlineButton}" Margin="{DynamicResource Gap.Inline}" FontSize="12"/>
                     <Button Content="Сохранить" Click="BtnSave_Click" Width="116" Height="35"
                             Style="{StaticResource DialogPrimaryButton}" FontSize="12"/>
                 </StackPanel>

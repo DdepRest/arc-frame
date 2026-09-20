@@ -59,12 +59,12 @@
                            TextWrapping="Wrap"
                            Margin="0,0,0,10"/>
 
-                <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
+                <StackPanel Orientation="Horizontal" Margin="{DynamicResource Gap.Block}">
                     <Button x:Name="BtnSelectAll"
                             Content="Выбрать все"
                             Style="{DynamicResource GhostButton}"
                             FontSize="11"
-                            Margin="0,0,8,0"/>
+                            Margin="{DynamicResource Gap.Inline}"/>
                     <Button x:Name="BtnDeselectAll"
                             Content="Снять все"
                             Style="{DynamicResource GhostButton}"
@@ -75,11 +75,11 @@
                     <StackPanel x:Name="ListStack"/>
                 </ScrollViewer>
 
-                <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,12,0,0">
+                <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="{DynamicResource Gap.BlockTopLg}">
                     <Button x:Name="BtnCancel"
                             Content="Отмена"
                             Style="{DynamicResource GhostButton}"
-                            Margin="0,0,8,0"
+                            Margin="{DynamicResource Gap.Inline}"
                             IsCancel="True"
                             Click="BtnCancel_Click"/>
                     <Button x:Name="BtnOk"

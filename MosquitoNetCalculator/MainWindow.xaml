@@ -262,7 +262,7 @@
                                 <Grid>
                                     <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
                                         <TextBlock Text="&#xE71D;" FontFamily="{DynamicResource Font.Icon}" FontSize="16"
-                                                   Foreground="{DynamicResource Accent}" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                                                   Foreground="{DynamicResource Accent}" VerticalAlignment="Center" Margin="{DynamicResource Gap.Inline}"/>
                                         <TextBlock Text="Заказы" FontSize="14" FontWeight="SemiBold"
                                                    Foreground="{DynamicResource TextPrimary}" VerticalAlignment="Center"/>
                                         <!-- Orders-count badge: chip-style tag next to «Заказы» title.
@@ -314,7 +314,7 @@
                                 <Grid>
                                     <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
                                         <TextBlock Text="&#xE8C7;" FontFamily="{DynamicResource Font.Icon}" FontSize="16"
-                                                   Foreground="{DynamicResource Accent}" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                                                   Foreground="{DynamicResource Accent}" VerticalAlignment="Center" Margin="{DynamicResource Gap.Inline}"/>
                                         <TextBlock Text="Цены" FontSize="14" FontWeight="SemiBold"
                                                    Foreground="{DynamicResource TextPrimary}" VerticalAlignment="Center"/>
                                     </StackPanel>
@@ -350,7 +350,7 @@
                                 <Grid>
                                     <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
                                         <TextBlock Text="&#xE81C;" FontFamily="{DynamicResource Font.Icon}" FontSize="16"
-                                                   Foreground="{DynamicResource Accent}" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                                                   Foreground="{DynamicResource Accent}" VerticalAlignment="Center" Margin="{DynamicResource Gap.Inline}"/>
                                         <TextBlock Text="Обновления" FontSize="14" FontWeight="SemiBold"
                                                    Foreground="{DynamicResource TextPrimary}" VerticalAlignment="Center"/>
                                     </StackPanel>
@@ -386,7 +386,7 @@
                                 <Grid>
                                     <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
                                         <TextBlock Text="&#xE8C8;" FontFamily="{DynamicResource Font.Icon}" FontSize="16"
-                                                   Foreground="{DynamicResource Accent}" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                                                   Foreground="{DynamicResource Accent}" VerticalAlignment="Center" Margin="{DynamicResource Gap.Inline}"/>
                                         <TextBlock Text="Админ-панель" FontSize="14" FontWeight="SemiBold"
                                                    Foreground="{DynamicResource TextPrimary}" VerticalAlignment="Center"/>
                                     </StackPanel>
@@ -423,7 +423,7 @@
                                 <Grid>
                                     <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
                                         <TextBlock Text="&#xE83D;" FontFamily="{DynamicResource Font.Icon}" FontSize="16"
-                                                   Foreground="{DynamicResource Accent}" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                                                   Foreground="{DynamicResource Accent}" VerticalAlignment="Center" Margin="{DynamicResource Gap.Inline}"/>
                                         <TextBlock Text="Откосы из сэндвича" FontSize="14" FontWeight="SemiBold"
                                                    Foreground="{DynamicResource TextPrimary}" VerticalAlignment="Center"/>
                                     </StackPanel>
@@ -461,10 +461,10 @@
                                     </Grid.ColumnDefinitions>
                                     <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center">
                                         <TextBlock Text="&#xE99A;" FontFamily="{DynamicResource Font.Icon}" FontSize="16"
-                                                   Foreground="{DynamicResource Accent}" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                                                   Foreground="{DynamicResource Accent}" VerticalAlignment="Center" Margin="{DynamicResource Gap.Inline}"/>
                                         <TextBlock Text="AI Ассистент" FontSize="14" FontWeight="SemiBold"
                                                    Foreground="{DynamicResource TextPrimary}" VerticalAlignment="Center"/>
-                                        <Border CornerRadius="{DynamicResource Radius.Capsule}" Padding="5,2" Margin="8,0,0,0"
+                                        <Border CornerRadius="{DynamicResource Radius.Capsule}" Padding="5,2" Margin="{DynamicResource Gap.Left}"
                                                 Background="{DynamicResource BadgeWarningBg}"
                                                 BorderBrush="{DynamicResource BadgeWarningFg}" BorderThickness="1"
                                                 ToolTip="AI-функции находятся в стадии тестирования">
@@ -504,7 +504,7 @@
                                 <Grid>
                                     <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
                                         <TextBlock Text="&#xE77B;" FontFamily="{DynamicResource Font.Icon}" FontSize="16"
-                                                   Foreground="{DynamicResource Accent}" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                                                   Foreground="{DynamicResource Accent}" VerticalAlignment="Center" Margin="{DynamicResource Gap.Inline}"/>
                                         <TextBlock Text="Заказчик" FontSize="14" FontWeight="SemiBold"
                                                    Foreground="{DynamicResource TextPrimary}" VerticalAlignment="Center"/>
                                     </StackPanel>
@@ -541,7 +541,7 @@
                                 <Grid>
                                     <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
                                         <TextBlock Text="&#xE7B3;" FontFamily="{DynamicResource Font.Icon}" FontSize="16"
-                                                   Foreground="{DynamicResource Accent}" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                                                   Foreground="{DynamicResource Accent}" VerticalAlignment="Center" Margin="{DynamicResource Gap.Inline}"/>
                                         <TextBlock Text="Печать КП" FontSize="14" FontWeight="SemiBold"
                                                    Foreground="{DynamicResource TextPrimary}" VerticalAlignment="Center"/>
                                     </StackPanel>
@@ -567,7 +567,7 @@
                         <!-- Explicit toggle: the panel stays expanded until the user collapses it. -->
                         <Button x:Name="BtnToggleNav" Style="{StaticResource NavButton}" Width="148"
                                 ToolTip="Свернуть панель навигации" Click="BtnToggleNav_Click"
-                                Margin="0,0,0,8">
+                                Margin="{DynamicResource Gap.Block}">
                             <Grid>
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="Auto"/>
@@ -608,7 +608,7 @@
                         </Button>
                         <!-- Заказы -->
                         <Button x:Name="NavBtnOrders" Style="{StaticResource NavButton}" Width="148"
-                                ToolTip="Заказы (Ctrl+2)" Click="NavButton_Click" Tag="Orders" Margin="0,4,0,0">
+                                ToolTip="Заказы (Ctrl+2)" Click="NavButton_Click" Tag="Orders" Margin="{DynamicResource Gap.BlockTop}">
                             <Grid>
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="Auto"/>
@@ -626,7 +626,7 @@
                         </Button>
                         <!-- Цены -->
                         <Button x:Name="NavBtnPrices" Style="{StaticResource NavButton}" Width="148"
-                                ToolTip="Цены (Ctrl+3)" Click="NavButton_Click" Tag="Prices" Margin="0,4,0,0">
+                                ToolTip="Цены (Ctrl+3)" Click="NavButton_Click" Tag="Prices" Margin="{DynamicResource Gap.BlockTop}">
                             <Grid>
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="Auto"/>
@@ -643,7 +643,7 @@
                         </Button>
                         <!-- Откосы (v3.50: в группе «Основное» — пользовательское требование) -->
                         <Button x:Name="NavBtnSlope" Style="{StaticResource NavButton}" Width="148"
-                                ToolTip="Откосы из сэндвича — калькулятор" Click="NavSlope_Click" Tag="Slope" Margin="0,4,0,0">
+                                ToolTip="Откосы из сэндвича — калькулятор" Click="NavSlope_Click" Tag="Slope" Margin="{DynamicResource Gap.BlockTop}">
                             <Grid>
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="Auto"/>
@@ -661,7 +661,7 @@
                         </Button>
                         <!-- Печать -->
                         <Button x:Name="NavBtnPrint" Style="{StaticResource NavButton}" Width="148"
-                                ToolTip="Печать (Ctrl+5)" Click="NavButton_Click" Tag="Print" Margin="0,4,0,0">
+                                ToolTip="Печать (Ctrl+5)" Click="NavButton_Click" Tag="Print" Margin="{DynamicResource Gap.BlockTop}">
                             <Grid>
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="Auto"/>
@@ -683,7 +683,7 @@
                                    Margin="12,14,0,4"/>
                         <!-- Обновления -->
                         <Button x:Name="NavBtnUpdates" Style="{StaticResource NavButton}" Width="148"
-                                ToolTip="Обновления (Ctrl+4)" Click="NavButton_Click" Tag="Updates" Margin="0,4,0,0">
+                                ToolTip="Обновления (Ctrl+4)" Click="NavButton_Click" Tag="Updates" Margin="{DynamicResource Gap.BlockTop}">
                             <Grid>
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="Auto"/>
@@ -704,7 +704,7 @@
                         </Button>
                         <!-- AI Ассистент -->
                         <Button x:Name="NavBtnAi" Style="{StaticResource NavButton}" Width="148"
-                                ToolTip="AI Ассистент" Click="NavAi_Click" Tag="AI" Margin="0,4,0,0">
+                                ToolTip="AI Ассистент" Click="NavAi_Click" Tag="AI" Margin="{DynamicResource Gap.BlockTop}">
                             <Grid>
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="Auto"/>
@@ -713,7 +713,7 @@
                                 <Grid Grid.Column="0" Width="30" Height="28">
                                     <TextBlock x:Name="NavIconAi" Text="&#xE99A;"
                                                FontSize="20" HorizontalAlignment="Center" VerticalAlignment="Center"
-                                               Margin="0,0,0,4"/>
+                                               Margin="{DynamicResource Gap.BlockSm}"/>
                                     <TextBlock Text="AI" FontSize="9" FontWeight="Bold"
                                                HorizontalAlignment="Center" VerticalAlignment="Bottom"
                                                Foreground="{DynamicResource Accent}"/>

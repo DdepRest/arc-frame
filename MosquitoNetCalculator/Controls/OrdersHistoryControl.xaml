@@ -42,7 +42,7 @@
                 </StackPanel>
                 <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center">
                     <Button Style="{DynamicResource GhostButton}"
-                            Click="BtnImportOrders_Click" Margin="0,0,8,0"
+                            Click="BtnImportOrders_Click" Margin="{DynamicResource Gap.Inline}"
                             ToolTip="Импортировать заказы из файла">
                         <StackPanel Orientation="Horizontal">
                             <TextBlock Style="{DynamicResource FluentIconButton}" Text="&#xE8B5;"/>
@@ -50,7 +50,7 @@
                         </StackPanel>
                     </Button>
                     <Button Style="{DynamicResource GhostButton}"
-                            Click="BtnExportOrders_Click" Margin="0,0,8,0"
+                            Click="BtnExportOrders_Click" Margin="{DynamicResource Gap.Inline}"
                             ToolTip="Экспортировать заказы в файл">
                         <StackPanel Orientation="Horizontal">
                             <TextBlock Style="{DynamicResource FluentIconButton}" Text="&#xE898;"/>
@@ -81,7 +81,7 @@
                 <TextBlock Grid.Column="0" Text="&#xE721;"
                            FontFamily="{DynamicResource Font.Icon}"
                            FontSize="14" Foreground="{DynamicResource TextMuted}"
-                           VerticalAlignment="Center" Margin="0,0,8,0"/>
+                           VerticalAlignment="Center" Margin="{DynamicResource Gap.Inline}"/>
                 <Grid Grid.Column="1">
                     <TextBox x:Name="TxtSearchOrders"
                              Style="{DynamicResource QuickInput}"
@@ -93,7 +93,7 @@
                          (same rule as in the AI assistant input). -->
                     <TextBlock x:Name="OrdersSearchPlaceholder"
                                Text="Поиск: № КП, адрес или телефон"
-                               Margin="8,0,0,0"
+                               Margin="{DynamicResource Gap.Left}"
                                VerticalAlignment="Center"
                                FontSize="12"
                                Foreground="{DynamicResource TextMuted}"
@@ -102,18 +102,18 @@
                 <Button x:Name="BtnClearOrdersSearch" Grid.Column="2"
                         Style="{DynamicResource GhostButton}"
                         Content="&#xE711;" FontFamily="{DynamicResource Font.Icon}"
-                        FontSize="11" Padding="4,2" Margin="4,0,0,0" Cursor="Hand"
+                        FontSize="11" Padding="4,2" Margin="{DynamicResource Gap.LeftSm}" Cursor="Hand"
                         Visibility="Collapsed"
                         Click="BtnClearOrdersSearch_Click"
                         ToolTip="Очистить поиск"/>
                 <!-- v3.50: status filter (prototype .dr-tools .inp) — view-only filter
                      over the existing ItemsSource; no data changes -->
-                <ComboBox x:Name="CmbStatusFilter" Grid.Column="3" Margin="8,0,0,0" MinWidth="150"
+                <ComboBox x:Name="CmbStatusFilter" Grid.Column="3" Margin="{DynamicResource Gap.Left}" MinWidth="150"
                           Style="{DynamicResource QuickCombo}"
                           SelectionChanged="StatusFilter_SelectionChanged"
                           ToolTip="Фильтр по статусу заказа"/>
                 <!-- v3.50: date filter — matches the exact contract date -->
-                <DatePicker x:Name="DpDateFilter" Grid.Column="4" Margin="8,0,0,0"
+                <DatePicker x:Name="DpDateFilter" Grid.Column="4" Margin="{DynamicResource Gap.Left}"
                             SelectedDateChanged="DateFilter_SelectionChanged"
                             ToolTip="Фильтр по дате договора"/>
             </Grid>

@@ -59,7 +59,7 @@
                         <TextBlock Text="&#xE7B3;" FontSize="16"
                                    FontFamily="{DynamicResource Font.Icon}"
                                    Foreground="{DynamicResource Accent}"
-                                   VerticalAlignment="Center" Margin="0,0,8,0"/>
+                                   VerticalAlignment="Center" Margin="{DynamicResource Gap.Inline}"/>
                         <TextBlock Text="Отправить на завод"
                                    FontSize="12" FontWeight="SemiBold"
                                    Foreground="{DynamicResource TextPrimary}"
@@ -101,7 +101,7 @@
                             <Border Background="{DynamicResource AccentLight}"
                                     CornerRadius="{DynamicResource Radius.Md}" Padding="8,4"
                                     HorizontalAlignment="Left"
-                                    Margin="0,0,0,8">
+                                    Margin="{DynamicResource Gap.Block}">
                                 <TextBlock x:Name="CounterTxt"
                                            FontWeight="SemiBold" FontSize="11"
                                            Foreground="{DynamicResource Accent}"/>
@@ -172,7 +172,7 @@
                                            FontFamily="{DynamicResource Font.Icon}"
                                            Foreground="{DynamicResource Accent}"
                                            VerticalAlignment="Center"
-                                           Margin="0,0,8,0"/>
+                                           Margin="{DynamicResource Gap.Inline}"/>
                                 <TextBlock Text="Предпросмотр"
                                            FontSize="12" FontWeight="SemiBold"
                                            Foreground="{DynamicResource TextPrimary}"
@@ -181,7 +181,7 @@
                                            FontSize="11"
                                            Foreground="{DynamicResource TextMuted}"
                                            VerticalAlignment="Center"
-                                           Margin="12,0,0,0"/>
+                                           Margin="{DynamicResource Gap.LeftLg}"/>
                             </StackPanel>
                         </Border>
                         <!-- Preview content -->
@@ -229,7 +229,7 @@
                     <StackPanel Orientation="Horizontal">
                         <TextBlock Text="&#xE8C8;" FontSize="14"
                                    FontFamily="{DynamicResource Font.Icon}"
-                                   Margin="0,0,8,0" VerticalAlignment="Center"/>
+                                   Margin="{DynamicResource Gap.Inline}" VerticalAlignment="Center"/>
                         <TextBlock Text="Скопировать" VerticalAlignment="Center"/>
                     </StackPanel>
                 </Button>

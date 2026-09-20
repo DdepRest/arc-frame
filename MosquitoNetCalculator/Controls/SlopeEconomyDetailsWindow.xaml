@@ -71,7 +71,7 @@
                 <TextBlock x:Name="TxtTotalSlopes"
                            FontSize="11"
                            Foreground="{DynamicResource TextMuted}"
-                           Margin="0,4,0,0"/>
+                           Margin="{DynamicResource Gap.BlockTop}"/>
             </StackPanel>
 
             <!-- Table -->
@@ -177,13 +177,13 @@
                                FontSize="11"
                                Foreground="{DynamicResource EconomyGreen}"
                                VerticalAlignment="Center"
-                               Margin="0,4,0,0"/>
+                               Margin="{DynamicResource Gap.BlockTop}"/>
                     <TextBlock x:Name="TxtTotalSavedPerSlope"
                                Grid.Row="1" Grid.Column="1"
                                FontSize="11"
                                Foreground="{DynamicResource EconomyGreen}"
                                VerticalAlignment="Center"
-                               Margin="0,4,0,0"/>
+                               Margin="{DynamicResource Gap.BlockTop}"/>
                 </Grid>
             </Border>
 

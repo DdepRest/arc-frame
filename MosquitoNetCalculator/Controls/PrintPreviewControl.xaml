@@ -17,13 +17,13 @@
             <StackPanel Margin="12,12">
 
                 <!-- Принтер -->
-                <TextBlock Text="ПРИНТЕР" Style="{DynamicResource SectionLabel}" Margin="0,0,0,4"/>
-                <ComboBox x:Name="PrinterCombo" Margin="0,0,0,12"
+                <TextBlock Text="ПРИНТЕР" Style="{DynamicResource SectionLabel}" Margin="{DynamicResource Gap.BlockSm}"/>
+                <ComboBox x:Name="PrinterCombo" Margin="{DynamicResource Gap.BlockLg}"
                           DisplayMemberPath="FullName"
                           SelectionChanged="PrinterCombo_SelectionChanged"/>
 
                 <!-- Копии -->
-                <TextBlock Text="КОПИИ" Style="{DynamicResource SectionLabel}" Margin="0,0,0,4"/>
+                <TextBlock Text="КОПИИ" Style="{DynamicResource SectionLabel}" Margin="{DynamicResource Gap.BlockSm}"/>
                 <controls:NumericUpDownControl x:Name="CopiesControl" Height="32" Value="1" Minimum="0"
                                               ToolTip="0 = только лист «В производство» (если включён флажок)."/>
 
@@ -42,36 +42,36 @@
 
                 <!-- Collation -->
                 <CheckBox x:Name="CollatedCheck" Content="Разбить по копиям"
-                          IsChecked="True" Margin="0,4,0,0"
+                          IsChecked="True" Margin="{DynamicResource Gap.BlockTop}"
                           ToolTip="Включено: 1,2,3,1,2,3. Выключено: 1,1,2,2,3,3"/>
 
                 <!-- Цветность -->
                 <TextBlock Text="ЦВЕТ" Style="{DynamicResource SectionLabel}" Margin="0,12,0,4"/>
                 <StackPanel Orientation="Horizontal">
                     <RadioButton x:Name="ColorBtn" Content="Цветная" IsChecked="True"
-                                 GroupName="ColorGroup" Margin="0,0,12,0"/>
+                                 GroupName="ColorGroup" Margin="{DynamicResource Gap.InlineLg}"/>
                     <RadioButton x:Name="BwBtn" Content="Ч/б"
                                  GroupName="ColorGroup"/>
                 </StackPanel>
 
                 <!-- Страницы -->
                 <TextBlock Text="СТРАНИЦЫ" Style="{DynamicResource SectionLabel}" Margin="0,12,0,4"/>
-                <StackPanel x:Name="PageModePanel" Margin="0,0,0,4">
+                <StackPanel x:Name="PageModePanel" Margin="{DynamicResource Gap.BlockSm}">
                     <RadioButton x:Name="PageModeAll" Content="Все страницы"
                                  GroupName="PageModeGroup" IsChecked="True"
                                  Checked="PageMode_Changed"/>
                     <RadioButton x:Name="PageModeRange" Content="Диапазон"
                                  GroupName="PageModeGroup"
                                  Checked="PageMode_Changed"
-                                 Margin="0,4,0,0"/>
+                                 Margin="{DynamicResource Gap.BlockTop}"/>
                     <RadioButton x:Name="PageModeSingle" Content="Одна страница"
                                  GroupName="PageModeGroup"
                                  Checked="PageMode_Changed"
-                                 Margin="0,4,0,0"/>
+                                 Margin="{DynamicResource Gap.BlockTop}"/>
                 </StackPanel>
 
                 <!-- Поля диапазона -->
-                <Border x:Name="RangeFieldsBorder" Margin="0,4,0,0"
+                <Border x:Name="RangeFieldsBorder" Margin="{DynamicResource Gap.BlockTop}"
                         Background="{DynamicResource Surface}"
                         BorderBrush="{DynamicResource Border}"
                         BorderThickness="1"
@@ -79,7 +79,7 @@
                         Padding="8,6"
                         Visibility="Collapsed">
                     <StackPanel>
-                        <StackPanel Orientation="Horizontal" Margin="0,0,0,4">
+                        <StackPanel Orientation="Horizontal" Margin="{DynamicResource Gap.BlockSm}">
                             <TextBlock Text="от" VerticalAlignment="Center"
                                        Foreground="{DynamicResource TextMuted}" Margin="0,0,6,0" Width="20"/>
                             <controls:NumericUpDownControl x:Name="PageFromControl" Width="110"
@@ -95,7 +95,7 @@
                 </Border>
 
                 <!-- Поле одной страницы -->
-                <Border x:Name="SinglePageBorder" Margin="0,4,0,0"
+                <Border x:Name="SinglePageBorder" Margin="{DynamicResource Gap.BlockTop}"
                         Background="{DynamicResource Surface}"
                         BorderBrush="{DynamicResource Border}"
                         BorderThickness="1"
@@ -119,7 +119,7 @@
                 <ProgressBar x:Name="PrintProgressBar" Height="4" Margin="0,16,0,0"
                              Visibility="Collapsed" Minimum="0" Maximum="100"
                              Background="{DynamicResource TrackBg}"/>
-                <TextBlock x:Name="ProgressText" Margin="0,4,0,0"
+                <TextBlock x:Name="ProgressText" Margin="{DynamicResource Gap.BlockTop}"
                            Visibility="Collapsed" FontSize="11"
                            Foreground="{DynamicResource TextMuted}"/>
 
@@ -156,10 +156,10 @@
                 <StackPanel Orientation="Horizontal">
                     <!-- Навигация по страницам -->
                     <Button x:Name="PrevPageBtn" Content="&lt;" Style="{DynamicResource GhostButton}"
-                            Padding="6,2" Width="32" Height="28" Margin="0,0,4,0"
+                            Padding="6,2" Width="32" Height="28" Margin="{DynamicResource Gap.InlineSm}"
                             Click="PrevPage_Click" ToolTip="Предыдущая страница"/>
                     <Border Background="{DynamicResource Surface}" BorderBrush="{DynamicResource Border}"
-                            BorderThickness="1" CornerRadius="{DynamicResource Radius.Md}" Padding="10,0" Margin="0,0,4,0"
+                            BorderThickness="1" CornerRadius="{DynamicResource Radius.Md}" Padding="10,0" Margin="{DynamicResource Gap.InlineSm}"
                             VerticalAlignment="Center" Height="28">
                         <TextBlock x:Name="PageIndicator" Text="1 / 1"
                                    FontSize="12" FontWeight="SemiBold"
@@ -167,19 +167,19 @@
                                    VerticalAlignment="Center"/>
                     </Border>
                     <Button x:Name="NextPageBtn" Content="&gt;" Style="{DynamicResource GhostButton}"
-                            Padding="6,2" Width="32" Height="28" Margin="0,0,12,0"
+                            Padding="6,2" Width="32" Height="28" Margin="{DynamicResource Gap.InlineLg}"
                             Click="NextPage_Click" ToolTip="Следующая страница"/>
 
                     <!-- Разделитель -->
                     <Border Width="1" Height="20" Background="{DynamicResource Border}"
-                            VerticalAlignment="Center" Margin="0,0,12,0"/>
+                            VerticalAlignment="Center" Margin="{DynamicResource Gap.InlineLg}"/>
 
                     <!-- Зум -->
                     <Button x:Name="ZoomOutBtn" Content="-" Style="{DynamicResource GhostButton}"
-                            Padding="6,2" Width="32" Height="28" Margin="0,0,4,0"
+                            Padding="6,2" Width="32" Height="28" Margin="{DynamicResource Gap.InlineSm}"
                             Click="ZoomOut_Click" ToolTip="Уменьшить"/>
                     <Border Background="{DynamicResource Surface}" BorderBrush="{DynamicResource Border}"
-                            BorderThickness="1" CornerRadius="{DynamicResource Radius.Md}" Padding="10,0" Margin="0,0,4,0"
+                            BorderThickness="1" CornerRadius="{DynamicResource Radius.Md}" Padding="10,0" Margin="{DynamicResource Gap.InlineSm}"
                             VerticalAlignment="Center" Height="28">
                         <TextBlock x:Name="ZoomLabel" Text="100 %"
                                    FontSize="12" FontWeight="SemiBold"
@@ -187,15 +187,15 @@
                                    VerticalAlignment="Center"/>
                     </Border>
                     <Button x:Name="ZoomInBtn" Content="+" Style="{DynamicResource GhostButton}"
-                            Padding="6,2" Width="32" Height="28" Margin="0,0,8,0"
+                            Padding="6,2" Width="32" Height="28" Margin="{DynamicResource Gap.Inline}"
                             Click="ZoomIn_Click" ToolTip="Увеличить"/>
                     <!-- UX-08: «Fit»/«Fit+20%» were cryptic and duplicated each
                          other's job — one «Вписать» button is enough. -->
                     <Button x:Name="ZoomResetBtn" Content="100%" Style="{DynamicResource GhostButton}"
-                            Padding="8,2" Height="28" Margin="0,0,4,0"
+                            Padding="8,2" Height="28" Margin="{DynamicResource Gap.InlineSm}"
                             Click="ZoomReset_Click" ToolTip="100% — натуральная величина"/>
                     <Button x:Name="ZoomFitBtn" Content="Вписать" Style="{DynamicResource GhostButton}"
-                            Padding="8,2" Height="28" Margin="0,0,8,0"
+                            Padding="8,2" Height="28" Margin="{DynamicResource Gap.Inline}"
                             Click="ZoomFit_Click" ToolTip="Вписать в окно"/>
                 </StackPanel>
             </Border>

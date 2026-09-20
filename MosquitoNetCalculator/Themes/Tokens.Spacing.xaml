@@ -37,6 +37,9 @@
     <Thickness x:Key="Gap.BlockSm">0,0,0,4</Thickness>
     <!-- Над блоком -->
     <Thickness x:Key="Gap.BlockTop">0,4,0,0</Thickness>
+    <!-- Шаг 6 (v3.53.0): крупный вертикальный зазор 12 — между секциями панели -->
+    <Thickness x:Key="Gap.BlockLg">0,0,0,12</Thickness>
+    <Thickness x:Key="Gap.BlockTopLg">0,12,0,0</Thickness>
 
     <!-- Пустые/загрузочные состояния: поля внутри карточки состояния -->
     <Thickness x:Key="Pad.EmptyPanel">24,32</Thickness>
@@ -49,6 +52,9 @@
     <!-- Иконка → подпись, кнопка → кнопка -->
     <Thickness x:Key="Gap.Inline">0,0,8,0</Thickness>
     <Thickness x:Key="Gap.InlineSm">0,0,4,0</Thickness>
+    <!-- Шаг 6 (v3.53.0): горизонтальные 12 — после иконки секции, перед чипом -->
+    <Thickness x:Key="Gap.InlineLg">0,0,12,0</Thickness>
+    <Thickness x:Key="Gap.LeftLg">12,0,0,0</Thickness>
     <!-- Отступ слева от предыдущего элемента (чекбокс, второй столбец) -->
     <Thickness x:Key="Gap.Left">8,0,0,0</Thickness>
     <Thickness x:Key="Gap.LeftSm">4,0,0,0</Thickness>

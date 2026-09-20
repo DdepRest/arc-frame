@@ -131,7 +131,7 @@
                     <ItemsControl x:Name="MessagesItemsControl" ItemsSource="{Binding Messages}">
                         <ItemsControl.ItemTemplate>
                             <DataTemplate>
-                                <Grid Margin="0,0,0,12"
+                                <Grid Margin="{DynamicResource Gap.BlockLg}"
                                       HorizontalAlignment="Stretch"
                                       Visibility="{Binding ShowInChat, Converter={StaticResource BoolToVisibility}}">
                                     <!-- v3.52.0 perf: the per-message fade-in ran on EVERY
@@ -153,7 +153,7 @@
 
                                         <Border Grid.Column="0"
                                                 Width="30" Height="30"
-                                                Margin="0,0,8,0"
+                                                Margin="{DynamicResource Gap.Inline}"
                                                 VerticalAlignment="Top"
                                                 Background="{DynamicResource Accent}"
                                                 CornerRadius="{DynamicResource Radius.Xl}">
@@ -179,7 +179,7 @@
                                                         BorderThickness="1"
                                                         CornerRadius="{DynamicResource Radius.Md}"
                                                         Padding="8,6"
-                                                        Margin="0,0,0,8"
+                                                        Margin="{DynamicResource Gap.Block}"
                                                         Visibility="{Binding IsAction, Converter={StaticResource BoolToVisibility}}">
                                                     <Grid>
                                                         <Grid.ColumnDefinitions>
@@ -229,7 +229,7 @@
                                                         <TextBlock Text="📝 Заполните параметры"
                                                                    FontSize="12" FontWeight="SemiBold"
                                                                    Foreground="{DynamicResource TextPrimary}"
-                                                                   Margin="0,0,0,8"/>
+                                                                   Margin="{DynamicResource Gap.Block}"/>
 
                                                         <!-- Тип -->
                                                         <TextBlock Text="Тип" FontSize="11"
@@ -321,7 +321,7 @@
                                                                        FontSize="12" FontWeight="SemiBold"
                                                                        Foreground="{DynamicResource TextPrimary}"
                                                                        VerticalAlignment="Center"/>
-                                                            <Border CornerRadius="{DynamicResource Radius.Sm}" Padding="5,2" Margin="8,0,0,0"
+                                                            <Border CornerRadius="{DynamicResource Radius.Sm}" Padding="5,2" Margin="{DynamicResource Gap.Left}"
                                                                     Background="{DynamicResource ChipBg}">
                                                                 <TextBlock Text="ПОДТВЕРДИТЕ" FontSize="9" FontWeight="Bold"
                                                                            Foreground="{DynamicResource Accent}"/>
@@ -350,7 +350,7 @@
                                                         <StackPanel Orientation="Horizontal" Margin="0,8,0,0">
                                                             <Button Content="Выполнить"
                                                                     Height="30" FontSize="12"
-                                                                    Margin="0,0,8,0"
+                                                                    Margin="{DynamicResource Gap.Inline}"
                                                                     Click="BtnConfirmPlan_Click"
                                                                     Style="{StaticResource PrimaryButton}"
                                                                     AutomationProperties.Name="Выполнить план"/>
@@ -508,7 +508,7 @@
 
                                         <Border Grid.Column="2"
                                                 Width="30" Height="30"
-                                                Margin="8,0,0,0"
+                                                Margin="{DynamicResource Gap.Left}"
                                                 VerticalAlignment="Top"
                                                 Background="{DynamicResource SectionBg}"
                                                 BorderBrush="{DynamicResource Border}"

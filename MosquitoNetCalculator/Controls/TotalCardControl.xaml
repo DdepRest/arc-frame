@@ -18,7 +18,7 @@
             </StackPanel>
 
             <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
-                <TextBlock FontSize="24" FontWeight="SemiBold" Foreground="{DynamicResource TotalText}" Margin="0,0,8,0"
+                <TextBlock FontSize="24" FontWeight="SemiBold" Foreground="{DynamicResource TotalText}" Margin="{DynamicResource Gap.Inline}"
                            Typography.NumeralAlignment="Tabular">
                     <Run x:Name="RunTotalAmount" Text="0.00"/>
                 </TextBlock>
@@ -55,11 +55,11 @@
                            TextWrapping="Wrap" MaxWidth="380" TextAlignment="Right"/>
                 <!-- v3.50: right-side meta line (prototype totals .right):
                      «Позиций: N» + undo hint -->
-                <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,4,0,0">
+                <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="{DynamicResource Gap.BlockTop}">
                     <TextBlock x:Name="TxtPositionsMeta" FontSize="11"
                                Foreground="{DynamicResource TotalTextMuted}"/>
                     <TextBlock FontSize="11" Foreground="{DynamicResource TotalTextMuted}"
-                               Margin="12,0,0,0"
+                               Margin="{DynamicResource Gap.LeftLg}"
                                ToolTip="Ctrl+Z — отменить последнее действие">
                         <Run Text="Ctrl+Z" FontFamily="{DynamicResource Font.Mono}" FontSize="11"/>
                         <Run Text="— отменить удаление"/>

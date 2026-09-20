@@ -21,7 +21,7 @@
 
             <!-- Grid вместо StackPanel: жёстко ограничивает ширину TextBlock →
                  TextTrimming работает корректно и заголовок не наезжает на кнопки. -->
-            <Grid Grid.Column="0" VerticalAlignment="Center" Margin="12,0,0,0">
+            <Grid Grid.Column="0" VerticalAlignment="Center" Margin="{DynamicResource Gap.LeftLg}">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="Auto"/>
                     <ColumnDefinition Width="*"/>

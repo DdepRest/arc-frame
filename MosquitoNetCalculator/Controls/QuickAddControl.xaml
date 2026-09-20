@@ -23,12 +23,12 @@
         </Style>
     </UserControl.Resources>
     <Border x:Name="CardQuickAdd" Background="{DynamicResource QuickBg}" CornerRadius="{DynamicResource Radius.Card}"
-            Padding="16,12" Margin="0,0,0,8"
+            Padding="16,12" Margin="{DynamicResource Gap.Block}"
             BorderBrush="{DynamicResource Border}" BorderThickness="1"
             Style="{DynamicResource Card}" Opacity="0">
         <StackPanel>
             <!-- Header: title + input-flow hint (v3.50) + «Повторить» (F2) -->
-            <Grid Margin="0,0,0,8">
+            <Grid Margin="{DynamicResource Gap.Block}">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="Auto"/>
                     <ColumnDefinition Width="*"/>
@@ -39,7 +39,7 @@
                 <TextBlock Grid.Column="1" x:Name="TxtInputFlowHint"
                            Text="поток ввода: ширина → высота → кол-во → цена → Enter"
                            FontSize="11" Foreground="{DynamicResource TextMuted}"
-                           VerticalAlignment="Center" Margin="12,0,0,0"
+                           VerticalAlignment="Center" Margin="{DynamicResource Gap.LeftLg}"
                            HorizontalAlignment="Left"
                            ToolTip="Enter в любом поле переходит к следующему; Enter в поле цены добавляет позицию"/>
                 <Button x:Name="BtnRepeat" Grid.Column="2"
@@ -130,7 +130,7 @@
                     <Button x:Name="BtnClearQuickSearch" Grid.Column="1"
                             Style="{DynamicResource GhostButton}"
                             Content="&#xE711;" FontFamily="{DynamicResource Font.Icon}"
-                            FontSize="11" Padding="4,2" Margin="4,0,0,0" Cursor="Hand"
+                            FontSize="11" Padding="4,2" Margin="{DynamicResource Gap.LeftSm}" Cursor="Hand"
                             Visibility="Collapsed"
                             Click="BtnClearQuickSearch_Click"
                             ToolTip="Очистить поиск"/>
@@ -221,7 +221,7 @@
                               Content="Антикошка  +2000 ₽/м²"
                               FontSize="11" FontWeight="SemiBold"
                               HorizontalAlignment="Left"
-                              Margin="0,4,0,0" Padding="10,5"
+                              Margin="{DynamicResource Gap.BlockTop}" Padding="10,5"
                               Visibility="Collapsed"
                               Click="TbtnAnticat_Click">
                     <ToggleButton.Style>
@@ -330,7 +330,7 @@
                         </Border>
                     </StackPanel>
                 </Border>
-                <TextBlock x:Name="TxtAnwisModeHint" FontSize="11" FontWeight="SemiBold" Margin="8,0,0,0"
+                <TextBlock x:Name="TxtAnwisModeHint" FontSize="11" FontWeight="SemiBold" Margin="{DynamicResource Gap.Left}"
                            VerticalAlignment="Center"
                            Foreground="{DynamicResource TextSecondary}"/>
                 </StackPanel>

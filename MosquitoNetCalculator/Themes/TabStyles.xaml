@@ -41,7 +41,7 @@
                                         <ContentPresenter HorizontalAlignment="Center"
                                             VerticalAlignment="Center" ContentSource="Header"/>
                                         <!-- Selection underline indicator — grows from center when selected -->
-                                        <Border x:Name="Indicator" Width="0" Height="3" Margin="0,4,0,0"
+                                        <Border x:Name="Indicator" Width="0" Height="3" Margin="{DynamicResource Gap.BlockTop}"
                                                 CornerRadius="{DynamicResource Radius.CapsuleSm}" Background="{DynamicResource Accent}"
                                                 HorizontalAlignment="Center" Opacity="0">
                                             <Border.Style>

@@ -75,6 +75,16 @@ namespace MosquitoNetCalculator.Tests.Design
         private static readonly Regex FontSizeSetterValue = new("Property=\"FontSize\"\\s*Value=\"([0-9.]+)\"", RegexOptions.Compiled);
         private static readonly Regex CornerRadiusAttr = new("CornerRadius=\"[0-9]", RegexOptions.Compiled);
         private static readonly Regex CornerRadiusSetter = new("Property=\"CornerRadius\"\\s*Value=\"[0-9]", RegexOptions.Compiled);
+        // v3.53, шаг 6 (отступы): литеральные Margin/Padding со числом на первом месте.
+        // Ссылки на токены ({DynamicResource Gap.*}/{Pad.*}/{StaticResource ...}) и
+        // привязки ({Binding ...}) нарушением не являются; Margin="0" литералом НЕ
+        // считается — обнуление («снять унаследованный отступ») не несёт расстояния;
+        // отрицательные значения (первый символ «-») — тоже отдельная категория
+        // оптической компенсации (выход глифа/рамки за границу контейнера), они
+        // держатся бюджетом totals.negativeSpacings, а не шкалой.
+        private static readonly Regex SpacingAttr = new("\\b(?:Margin|Padding)=\"[0-9.]", RegexOptions.Compiled);
+        private static readonly Regex SpacingValue = new("\\b(?:Margin|Padding)=\"([0-9][0-9.,]*)\"", RegexOptions.Compiled);
+        private static readonly Regex NegativeSpacing = new("\\b(?:Margin|Padding)=\"[^\"]*-[0-9][^\"]*\"", RegexOptions.Compiled);
         private static readonly Regex HexColor = new("#[0-9A-Fa-f]{6}(?:[0-9A-Fa-f]{2})?\\b", RegexOptions.Compiled);
         // v3.53: считаем только ЛИТЕРАЛЬНЫЕ длительности. Ссылка на токен
         // (Duration="{StaticResource Motion.Base}") нарушением не является.
@@ -173,6 +183,82 @@ namespace MosquitoNetCalculator.Tests.Design
         {
             var actual = CountPerFile(ProductXaml(), text => Count(text, CornerRadiusAttr, CornerRadiusSetter));
             AssertRatchet("cornerRadius", actual, Budget());
+        }
+
+        /// <summary>
+        /// Отступы — та же история, что радиусы: до v3.53.0 в разметке жило 573
+        /// Margin= с шестью «почти одинаковыми» значениями (5/6/7/10/14/18 вместо
+        /// шкалы 4·8·12·16·24·32·48). Токены <c>Gap.*</c> (между элементами) и
+        /// <c>Pad.*</c> (внутри контейнеров) существовали с самого запуска шкалы,
+        /// но не имели принуждения — единственная из четырёх шкал без стража.
+        ///
+        /// Особенности подсчёта: <c>Margin="0"</c> НЕ литерал (обнуление не несёт
+        /// расстояния — «снять унаследованный отступ стиля»); числа вне шкалы
+        /// (3/5/6/7/9/10/14…) держит ОТДЕЛЬНЫЙ тест <see cref="SpacingValues_LiveOnTheScale"/>,
+        /// здесь считается любой литерал. Бюджет-ратчет — в
+        /// <c>design-token-budget.json</c>, категория <c>margins</c>.
+        /// </summary>
+        [Fact]
+        public void SpacingLiterals_DoNotGrow()
+        {
+            var actual = CountPerFile(ProductXaml(), text => Count(text, SpacingAttr));
+            AssertRatchet("margins", actual, Budget());
+        }
+
+        /// <summary>
+        /// Значение отступа обязано лежать на шкале 4·8·12·16·24·32·48 (по всем
+        /// четырём компонентам Thickness). Исключения держит бюджет
+        /// <c>totals.offScaleSpacings</c>: микро-зазоры глифов (2–3px, как
+        /// Space.Hair), оптическая компенсация к токену (3px к 11-му бейджу и
+        /// т.п.) и подгонка под системные размеры (высота строки DataGrid).
+        /// Каждое исключение видно в списке падения — новое значение либо
+        /// ложится на шкалу, либо честно попадает в бюджет.
+        /// </summary>
+        [Fact]
+        public void SpacingValues_LiveOnTheScale()
+        {
+            double[] scale = { 0, 2, 4, 8, 12, 16, 24, 32, 48 };
+            var offenders = new List<string>();
+
+            foreach (var file in ProductXaml())
+            {
+                foreach (Match m in SpacingValue.Matches(ReadWithoutComments(file)))
+                {
+                    var parts = m.Groups[1].Value.Split(',');
+                    if (parts.All(p => scale.Contains(double.Parse(p,
+                        System.Globalization.CultureInfo.InvariantCulture)))) continue;
+
+                    offenders.Add($"{Relative(file)}: {m.Groups[0].Value}");
+                }
+            }
+
+            int allowed = Budget().GetProperty("totals").GetProperty("offScaleSpacings").GetInt32();
+            Assert.True(offenders.Count <= allowed,
+                $"Отступов вне шкалы 4·8·12·16·24·32·48 стало {offenders.Count} (бюджет {allowed}).\n  " +
+                string.Join("\n  ", offenders.Distinct().OrderBy(o => o)));
+        }
+
+        /// <summary>
+        /// Отрицательные отступы — осознанный приём оптической компенсации (глиф
+        /// или рамка выходят за границу контейнера: выделение активной вкладки,
+        /// кнопка на краю карточки), а не «забыли отступ». Шкала их не покрывает
+        /// по определению, поэтому держит отдельный бюджет
+        /// <c>totals.negativeSpacings</c>: больше — нельзя, каждое новое
+        /// отрицательное значение обязано быть объяснено и посчитано.
+        /// </summary>
+        [Fact]
+        public void NegativeSpacings_AreExplicitAndBounded()
+        {
+            var found = new List<string>();
+            foreach (var file in ProductXaml())
+                foreach (Match m in NegativeSpacing.Matches(ReadWithoutComments(file)))
+                    found.Add($"{Relative(file)}: {m.Value}");
+
+            int allowed = Budget().GetProperty("totals").GetProperty("negativeSpacings").GetInt32();
+            Assert.True(found.Count <= allowed,
+                $"Отрицательных отступов стало {found.Count} (бюджет {allowed}). " +
+                "Каждое — осознанная оптическая компенсация, а не забытое число:\n  " +
+                string.Join("\n  ", found));
         }
 
         [Fact]

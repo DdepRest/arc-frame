@@ -80,7 +80,7 @@
                                            FontSize="11"
                                            Foreground="{DynamicResource Accent}"
                                            VerticalAlignment="Center"
-                                           Margin="4,0,0,0"
+                                           Margin="{DynamicResource Gap.LeftSm}"
                                            Visibility="Collapsed"/>
                             </Grid>
                         </Border>

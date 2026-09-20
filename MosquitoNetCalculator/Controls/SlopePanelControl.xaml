@@ -14,7 +14,7 @@
         <ScrollViewer Grid.Row="0"
                       VerticalScrollBarVisibility="Auto"
                       HorizontalScrollBarVisibility="Disabled"
-                      Padding="0,0,0,12">
+                      Padding="{DynamicResource Gap.BlockLg}">
             <StackPanel>
 
                 <!-- BETA warning banner -->
@@ -48,7 +48,7 @@
                                        FontSize="11"
                                        Foreground="{DynamicResource TextPrimary}"
                                        TextWrapping="Wrap"
-                                       Margin="0,4,0,0"/>
+                                       Margin="{DynamicResource Gap.BlockTop}"/>
                         </StackPanel>
                         <Button Grid.Column="2"
                                 x:Name="BtnCloseBetaBanner"
@@ -158,7 +158,7 @@
                         BorderBrush="{DynamicResource Border}"
                         BorderThickness="1"
                         CornerRadius="{DynamicResource Radius.Md}"
-                        Margin="0,0,0,12"
+                        Margin="{DynamicResource Gap.BlockLg}"
                         SnapsToDevicePixels="True">
                     <Grid>
                         <Border Width="4" HorizontalAlignment="Left"
@@ -225,7 +225,7 @@
 
                             <!-- v3.43.3 + v3.43.4: Кол-во/Цена редактируемые, чип "ручн." под названием строки
                                  при IsQuantityOverridden=true (виден через DataTrigger в ItemTemplate). -->
-                            <ItemsControl x:Name="MaterialItems" Margin="0,0,0,4">
+                            <ItemsControl x:Name="MaterialItems" Margin="{DynamicResource Gap.BlockSm}">
                                 <ItemsControl.ItemTemplate>
                                     <DataTemplate>
                                         <Grid Margin="0,5,0,5">
@@ -273,7 +273,7 @@
                                                      HorizontalContentAlignment="Right"
                                                      VerticalContentAlignment="Center"
                                                      FontSize="11"
-                                                     Margin="0,0,4,0"/>
+                                                     Margin="{DynamicResource Gap.InlineSm}"/>
                                             <TextBox Grid.Column="2"
                                                      Tag="Price"
                                                      Style="{DynamicResource QuickInput}"
@@ -340,7 +340,7 @@
                                          HorizontalContentAlignment="Right"
                                          VerticalContentAlignment="Center"
                                          FontSize="11"
-                                         Margin="0,0,4,0"/>
+                                         Margin="{DynamicResource Gap.InlineSm}"/>
                                 <TextBox Grid.Column="2"
                                          x:Name="TxtLaborPrice"
                                          Tag="LaborPrice"
@@ -405,7 +405,7 @@
                                          HorizontalContentAlignment="Right"
                                          VerticalContentAlignment="Center"
                                          FontSize="11"
-                                         Margin="0,0,4,0"/>
+                                         Margin="{DynamicResource Gap.InlineSm}"/>
                                 <TextBox Grid.Column="2"
                                          x:Name="TxtLaminatinaLaborPrice"
                                          Tag="LaminatinaLaborPrice"
@@ -437,7 +437,7 @@
                         BorderBrush="{DynamicResource Border}"
                         BorderThickness="1"
                         CornerRadius="{DynamicResource Radius.Md}"
-                        Margin="0,0,0,12"
+                        Margin="{DynamicResource Gap.BlockLg}"
                         SnapsToDevicePixels="True"
                         Visibility="Collapsed">
                     <Grid>
@@ -446,7 +446,7 @@
                                 CornerRadius="{DynamicResource Radius.StripeLeft}"/>
                         <StackPanel Margin="16,14,16,14">
                             <!-- Header -->
-                            <StackPanel Orientation="Horizontal" Margin="0,0,0,12">
+                            <StackPanel Orientation="Horizontal" Margin="{DynamicResource Gap.BlockLg}">
                                 <TextBlock Text="&#xE7B5;"
                                            Style="{DynamicResource FluentIconSection}"
                                            FontSize="14"
@@ -459,7 +459,7 @@
                             </StackPanel>
 
                             <!-- Summary rows -->
-                            <ItemsControl x:Name="SummaryItems" Margin="0,0,0,4">
+                            <ItemsControl x:Name="SummaryItems" Margin="{DynamicResource Gap.BlockSm}">
                                 <ItemsControl.ItemTemplate>
                                     <DataTemplate>
                                         <Grid Margin="0,3,0,3">
@@ -544,7 +544,7 @@
                 SnapsToDevicePixels="True">
             <StackPanel Margin="16,14,16,12">
                 <!-- Без экономии -->
-                <Grid x:Name="WithoutEconomyRow" Visibility="Collapsed" Margin="0,0,0,4">
+                <Grid x:Name="WithoutEconomyRow" Visibility="Collapsed" Margin="{DynamicResource Gap.BlockSm}">
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="*"/>
                         <ColumnDefinition Width="Auto"/>
@@ -625,7 +625,7 @@
                         Background="{DynamicResource EconomyGreenLight}"
                         CornerRadius="{DynamicResource Radius.Md}"
                         Padding="8,6"
-                        Margin="0,0,0,8">
+                        Margin="{DynamicResource Gap.Block}">
                     <Grid>
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="*"/>
@@ -655,7 +655,7 @@
                            Visibility="Collapsed"
                            FontSize="11"
                            Foreground="{DynamicResource EconomyGreen}"
-                           Margin="0,0,0,8"
+                           Margin="{DynamicResource Gap.Block}"
                            TextAlignment="Right"/>
                 <StackPanel Orientation="Horizontal" Margin="0,0,0,6">
                     <CheckBox x:Name="ChkApplyEconomy"
@@ -683,7 +683,7 @@
                         Click="BtnAddLaminatina_Click"
                         IsEnabled="False"
                         Height="32"
-                        Margin="0,0,0,8">
+                        Margin="{DynamicResource Gap.Block}">
                     <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
                         <TextBlock Text="&#xE710;"
                                    Style="{DynamicResource FluentIconButton}"

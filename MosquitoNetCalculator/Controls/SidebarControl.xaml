@@ -11,9 +11,9 @@
                       Padding="0">
             <StackPanel Margin="10,10,10,10">
                 <!-- ЗАКАЗЧИК Card -->
-                <Border x:Name="CardClient" Background="{DynamicResource SectionBg}" CornerRadius="{DynamicResource Radius.Md}" Padding="12" Margin="0,0,0,8" Opacity="0">
+                <Border x:Name="CardClient" Background="{DynamicResource SectionBg}" CornerRadius="{DynamicResource Radius.Md}" Padding="{DynamicResource Pad.Section}" Margin="{DynamicResource Gap.Block}" Opacity="0">
                     <StackPanel>
-                        <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
+                        <StackPanel Orientation="Horizontal" Margin="{DynamicResource Gap.Block}">
                             <TextBlock Style="{DynamicResource FluentIconSection}" Text="&#xE77B;"/>
                             <TextBlock Text="ЗАКАЗЧИК" Style="{DynamicResource SectionLabel}" Margin="0"/>
                         </StackPanel>
@@ -38,9 +38,9 @@
                 </Border>
 
                 <!-- ДОГОВОР Card -->
-                <Border x:Name="CardContract" Background="{DynamicResource SectionBg}" CornerRadius="{DynamicResource Radius.Md}" Padding="12" Margin="0,0,0,8" Opacity="0">
+                <Border x:Name="CardContract" Background="{DynamicResource SectionBg}" CornerRadius="{DynamicResource Radius.Md}" Padding="{DynamicResource Pad.Section}" Margin="{DynamicResource Gap.Block}" Opacity="0">
                     <StackPanel>
-                        <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
+                        <StackPanel Orientation="Horizontal" Margin="{DynamicResource Gap.Block}">
                             <TextBlock Style="{DynamicResource FluentIconSection}" Text="&#xE8A5;"/>
                             <TextBlock Text="ДОГОВОР" Style="{DynamicResource SectionLabel}" Margin="0"/>
                         </StackPanel>
@@ -81,7 +81,7 @@
                                 </Grid.ColumnDefinitions>
                                 <Ellipse x:Name="StatusDot" Grid.Column="0"
                                          Width="9" Height="9" VerticalAlignment="Center"
-                                         Margin="0,0,8,0"
+                                         Margin="{DynamicResource Gap.Inline}"
                                          Fill="{DynamicResource Accent}"/>
                                 <ComboBox x:Name="CmbStatus" Grid.Column="1"
                                           IsEditable="False"
@@ -98,20 +98,20 @@
                 </Border>
 
                 <!-- ДОПОЛНИТЕЛЬНОЕ КП (UserControl) -->
-                <controls:AdditionalKpsControl x:Name="CardAdditionalKp" Margin="0,0,0,8"/>
+                <controls:AdditionalKpsControl x:Name="CardAdditionalKp" Margin="{DynamicResource Gap.Block}"/>
 
                 <!-- ПРИМЕЧАНИЯ Card -->
-                <Border x:Name="CardNotes" Background="{DynamicResource SectionBg}" CornerRadius="{DynamicResource Radius.Md}" Padding="12" Margin="0,0,0,0" Opacity="0">
+                <Border x:Name="CardNotes" Background="{DynamicResource SectionBg}" CornerRadius="{DynamicResource Radius.Md}" Padding="{DynamicResource Pad.Section}" Margin="0,0,0,0" Opacity="0">
                     <StackPanel>
-                        <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
+                        <StackPanel Orientation="Horizontal" Margin="{DynamicResource Gap.Block}">
                             <TextBlock Style="{DynamicResource FluentIconSection}" Text="&#xE70B;"/>
                             <TextBlock Text="ПРИМЕЧАНИЯ" Style="{DynamicResource SectionLabel}" Margin="0"/>
                         </StackPanel>
                         <StackPanel x:Name="ContentNotes" Visibility="Visible">
                             <StackPanel Orientation="Horizontal" Margin="0,0,0,6">
-                                <Button x:Name="BtnBold" AutomationProperties.Name="Жирный" Content="Ж" FontWeight="Bold" Width="28" Height="24" Margin="0,0,4,0" Padding="0" Click="BtnBold_Click" Style="{DynamicResource GhostButton}" FontSize="12" ToolTip="Жирный (выделите текст)"/>
-                                <Button x:Name="BtnItalic" AutomationProperties.Name="Курсив" Content="К" FontStyle="Italic" Width="28" Height="24" Margin="0,0,4,0" Padding="0" Click="BtnItalic_Click" Style="{DynamicResource GhostButton}" FontSize="12" ToolTip="Курсив (выделите текст)"/>
-                                <Button x:Name="BtnColor" AutomationProperties.Name="Цвет текста" Content="A" Foreground="{DynamicResource Accent}" Width="28" Height="24" Margin="0,0,4,0" Padding="0" Click="BtnColor_Click" Style="{DynamicResource GhostButton}" FontSize="12" FontWeight="Bold" ToolTip="Цвет текста (выделите текст)"/>
+                                <Button x:Name="BtnBold" AutomationProperties.Name="Жирный" Content="Ж" FontWeight="Bold" Width="28" Height="24" Margin="{DynamicResource Gap.InlineSm}" Padding="0" Click="BtnBold_Click" Style="{DynamicResource GhostButton}" FontSize="12" ToolTip="Жирный (выделите текст)"/>
+                                <Button x:Name="BtnItalic" AutomationProperties.Name="Курсив" Content="К" FontStyle="Italic" Width="28" Height="24" Margin="{DynamicResource Gap.InlineSm}" Padding="0" Click="BtnItalic_Click" Style="{DynamicResource GhostButton}" FontSize="12" ToolTip="Курсив (выделите текст)"/>
+                                <Button x:Name="BtnColor" AutomationProperties.Name="Цвет текста" Content="A" Foreground="{DynamicResource Accent}" Width="28" Height="24" Margin="{DynamicResource Gap.InlineSm}" Padding="0" Click="BtnColor_Click" Style="{DynamicResource GhostButton}" FontSize="12" FontWeight="Bold" ToolTip="Цвет текста (выделите текст)"/>
                                 <Popup x:Name="ColorPopup" PlacementTarget="{Binding ElementName=BtnColor}" Placement="Bottom" StaysOpen="False" AllowsTransparency="True">
                                     <Border Background="{DynamicResource Surface}" BorderBrush="{DynamicResource Border}" BorderThickness="1" CornerRadius="{DynamicResource Radius.Md}" Padding="8">
                                         <Border.Effect>
@@ -149,10 +149,10 @@
                                         </UniformGrid>
                                     </Border>
                                 </Popup>
-                                <Button x:Name="BtnList" AutomationProperties.Name="Список" Content="• Список" Width="60" Height="24" Margin="0,0,4,0" Padding="0" Click="BtnList_Click" Style="{DynamicResource GhostButton}" FontSize="11" ToolTip="Список"/>
+                                <Button x:Name="BtnList" AutomationProperties.Name="Список" Content="• Список" Width="60" Height="24" Margin="{DynamicResource Gap.InlineSm}" Padding="0" Click="BtnList_Click" Style="{DynamicResource GhostButton}" FontSize="11" ToolTip="Список"/>
                                 <Button x:Name="BtnClear" AutomationProperties.Name="Очистить форматирование" Content="✕" Width="28" Height="24" Margin="0,0,0,0" Padding="0" Click="BtnClear_Click" Style="{DynamicResource DangerGhostButton}" FontSize="12" ToolTip="Очистить форматирование"/>
                             </StackPanel>
-                            <TextBox x:Name="TxtNotes" Margin="0,0,0,8"
+                            <TextBox x:Name="TxtNotes" Margin="{DynamicResource Gap.Block}"
                                      Text="{Binding ClientInfo.Notes, UpdateSourceTrigger=PropertyChanged}"
                                      AcceptsReturn="True" Height="60"
                                      VerticalScrollBarVisibility="Hidden"
@@ -160,7 +160,7 @@
                                      VerticalContentAlignment="Top"
                                      GotFocus="SelectAll_OnFocus"
                                      TextChanged="TxtNotes_TextChanged"/>
-                            <TextBlock Text="Предпросмотр:" Style="{DynamicResource FieldLabel}" Margin="0,0,0,4"/>
+                            <TextBlock Text="Предпросмотр:" Style="{DynamicResource FieldLabel}" Margin="{DynamicResource Gap.BlockSm}"/>
                             <Border Background="{DynamicResource Surface}" BorderBrush="{DynamicResource Border}" BorderThickness="1" CornerRadius="{DynamicResource Radius.Md}" Padding="6" Height="120">
                                 <FlowDocumentScrollViewer x:Name="NotesPreview" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" IsToolBarVisible="False">
                                     <FlowDocument />

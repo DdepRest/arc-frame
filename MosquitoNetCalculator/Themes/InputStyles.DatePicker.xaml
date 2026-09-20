@@ -47,7 +47,7 @@
                                       StrokeLineJoin="Round" StrokeStartLineCap="Round" StrokeEndLineCap="Round"
                                       HorizontalAlignment="Right"
                                       VerticalAlignment="Center"
-                                      Margin="0,0,8,0"
+                                      Margin="{DynamicResource Gap.Inline}"
                                       Stretch="Uniform" Width="14" Height="14"/>
                             </Grid>
                         </Border>
