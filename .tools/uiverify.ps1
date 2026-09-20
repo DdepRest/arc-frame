@@ -14,8 +14,32 @@
     #   -InjectFocusLeak  — не снимать клавиатурный фокус: страж каретки обязан
     #                       УПАСТЬ, а не записать кадр 03 с кареткой.
     [switch]$InjectNoDateFix,
-    [switch]$InjectFocusLeak
+    [switch]$InjectFocusLeak,
+    # Дата договора для кадров 04a/05. По умолчанию 05.05.2025 (день равен
+    # месяцу — значение не зависит от порядка «дд.мм»/«мм.дд» в культуре).
+    # Другую дату дают только для ПРОВЕРКИ, что от суток не зависит больше ни
+    # один кадр: прогон с другой датой обязан разойтись РОВНО на 04a и 05.
+    [string]$ContractDate = "05.05.2025",
+    # Профиль машины (тема, локация, префикс, цены, «Что нового») по умолчанию
+    # подменяется фикстурой из .tools/fixtures и восстанавливается после прогона.
+    # -KeepProfile — для отладки: работать с реальным профилем и не изолировать.
+    [switch]$KeepProfile,
+    # Проиграть сценарий «первый запуск после обновления»: в подставленном
+    # профиле LastSeenVersion = 0.0.0, поэтому приложение показывает «Что нового».
+    [switch]$SimulateFirstRun,
+    # Проверка без перезаписи базлайнов: кадры идут во временный каталог, а в
+    # конце гейт verify-baselines.ps1 сравнивает их с .tools/shots и валит
+    # прогон на расхождении. Именно так кадры и проверяются перед релизом.
+    [switch]$Verify
 )
+
+# Режим проверки не трогает базлайны: свой временный каталог создаём и убираем сами.
+$script:ownScratchOutDir = $false
+if ($Verify -and -not $PSBoundParameters.ContainsKey("OutDir")) {
+    $OutDir = ".tools/_verify-$Theme"
+    if (Test-Path $OutDir) { Remove-Item -Recurse -Force $OutDir }
+    $script:ownScratchOutDir = $true
+}
 
 # UIA rects are empty in this session (DPI virtualization), so:
 #   - actions use UIA patterns (Invoke/Value/Toggle/Select) — no rects needed
@@ -520,7 +544,11 @@ function Test-InertPoint([int]$x, [int]$y) {
 # ПРОВЕРЯЕТСЯ чтением обратно, а перед каждым кадром проверяется, что фокус не
 # стоит в текстовом поле. 05.05.2025 выбран так, что день == месяц: значение не
 # зависит от порядка «дд.мм»/«мм.дд» в культуре системы.
-$script:FixedContractDate = "05.05.2025"
+$script:FixedContractDate = $ContractDate
+$contractDateParsed = [datetime]::MinValue
+if (-not [datetime]::TryParseExact($script:FixedContractDate, "dd.MM.yyyy", [System.Globalization.CultureInfo]::InvariantCulture, [System.Globalization.DateTimeStyles]::None, [ref]$contractDateParsed)) {
+    throw "-ContractDate '$ContractDate' не разбирается как дд.ММ.гггг"
+}
 
 function Get-FocusedTextEdit {
     # Текстовое поле в фокусе = каретка в кадре, а её мигание зависит от момента
@@ -621,6 +649,12 @@ function Clear-KeyboardFocus([IntPtr]$h) {
     if ($box.W -le 80 -or $box.H -le 80) { return $false }
     # Кандидаты — нижняя полоса окна, справа налево: там панель состояния
     # (текст дат/подсказок), и правый край всегда пуст.
+    # Расширять этот список — только с проверкой ВСЕХ 34 кадров: попытка
+    # 2026-09-20 (мелкий шаг и вторая линия у кромки) дала две РЕАЛЬНЫЕ поломки —
+    # точка попадала (а) на ПОДЛОЖКУ оверлея, и клик ЗАКРЫВАЛ оверлей «Заказы»
+    # (сцена 06b падала на «поле поиска не найдено»), (б) на тост в правом нижнем
+    # углу, и тост «залипал» под курсором (кадр 03 разошёлся на 9 555 px). Пять
+    # точек в полосе состояния — проверенный минимум.
     $clicked = $false
     for ($i = 0; $i -lt 5; $i++) {
         $x = $box.X + $box.W - 30 - ($i * 150)
@@ -635,7 +669,26 @@ function Clear-KeyboardFocus([IntPtr]$h) {
         break
     }
     if (-not $clicked) {
-        Write-Host "[warn] фокус не снят: инертной точки в окне hwnd=$h не нашлось (кадр может содержать рамку фокуса)"
+        # Инертной точки нет — кликать НЕЛЬЗЯ (риск нажать живое или закрыть
+        # оверлей; замер 2026-09-20: клик по подложке закрывал «Заказы»).
+        # Но недетерминизм кадра создаёт не отсутствие клика, а каретка и
+        # «плавающая» рамка фокуса. Каретку закрываем здесь же: если фокус
+        # стоит в текстовом поле — выводим его на элемент окна (UIA, без
+        # клика); не помогло — кадр упадёт на страже каретки в Shot. Фокус на
+        # дефолтной кнопке диалога — детерминированное состояние: диалог
+        # ВСЕГДА открывается с ней, поэтому кадр от него не зависит.
+        if (Get-FocusedTextEdit) {
+            try { ([System.Windows.Automation.AutomationElement]::FromHandle($h)).SetFocus() } catch { }
+            Start-Sleep -Milliseconds 90
+            Assert-InputIsMouse
+            if (Get-FocusedTextEdit) {
+                Write-Host "[warn] фокус не снят: инертной точки нет, UIA-перевод фокуса не помог (кадр упадёт на страже каретки в Shot)"
+            } else {
+                Write-Host "[info] клик не понадобился: инертной точки нет, фокус из текстового поля выведен через UIA"
+            }
+        } else {
+            Write-Host "[info] клик не понадобился: инертной точки нет, фокус не в текстовом поле (детерминированное состояние сцены)"
+        }
     }
     # Клик и UIA SetFocus на ЭЛЕМЕНТ ОКНА не вытаскивают фокус из ТЕКСТОВОГО
     # поля: WPF при активации окна возвращает логический фокус прежнему элементу
@@ -682,17 +735,45 @@ function Reset-InputState([IntPtr]$h, [switch]$KeepCursor) {
         # возвращаем на место.
         $p = [System.Windows.Forms.Cursor]::Position
         Clear-KeyboardFocus $h | Out-Null
+        # Возврат курсора — с «ТОЛЧКОМ»: SetCursorPos в ту же точку не порождает
+        # WM_MOUSEMOVE (Windows не постит событие без смещения), поэтому если
+        # снятие фокуса кликнуло в полосу состояния и вернуло курсор назад,
+        # приложение так и не увидит hover — и пауза тоста не сработает. Замер
+        # 2026-09-20: без толчка кадры 08b/08c иногда снимались уже БЕЗ тоста
+        # (расхождение 13 833 px в углу, гейт валил прогон).
+        [Native]::SetCursorPos(($p.X - 24), $p.Y) | Out-Null
+        Start-Sleep -Milliseconds 40
         [Native]::SetCursorPos($p.X, $p.Y) | Out-Null
         Start-Sleep -Milliseconds 160
         return
     }
     if ($h -ne $script:hwnd) {
-        # Диалог: его кадры нормальны и без клика (10a–10c совпадают в обоих
+        # Диалог: кадры нормальны и без клика (10a–10c совпадают в обоих
         # состояниях запуска), а клик по чужой разметке — риск нажать кнопку.
+        # Но каретку убираем и здесь: фокус уводится с текстового поля на САМ
+        # ЭЛЕМЕНТ диалога, при необходимости — на его кнопку (SetFocus не
+        # нажимает). До этого кадры диалогов гейтились только стражем каретки,
+        # то есть «фокус снят» для них ничем не подтверждалось.
         $box = Get-Rect $h
         if ($box.W -le 40 -or $box.H -le 40) { return }
         Move-At ($box.X + [int]($box.W / 2)) ($box.Y + 18)
         Assert-InputIsMouse
+        if (Get-FocusedTextEdit) {
+            try { ([System.Windows.Automation.AutomationElement]::FromHandle($h)).SetFocus() } catch { }
+            Start-Sleep -Milliseconds 80
+            if (Get-FocusedTextEdit) {
+                try {
+                    $root = [System.Windows.Automation.AutomationElement]::FromHandle($h)
+                    $btnCond = New-Object System.Windows.Automation.PropertyCondition(
+                        [System.Windows.Automation.AutomationElement]::ControlTypeProperty,
+                        [System.Windows.Automation.ControlType]::Button)
+                    $btn = $root.FindFirst([System.Windows.Automation.TreeScope]::Descendants, $btnCond)
+                    if ($btn) { $btn.SetFocus() }
+                } catch { }
+            }
+            Assert-InputIsMouse
+            Start-Sleep -Milliseconds 120
+        }
         Start-Sleep -Milliseconds 220
         return
     }
@@ -1022,8 +1103,136 @@ function Invoke-SelfTest {
     }
     Write-Host "SELFTEST PASS (тема $Theme)"
 }
+
+# ── Изоляция профиля: прогон не зависит от машины и не оставляет следов ──────
+# Профиль пользователя (%AppData%\MosquitoNetCalculator) — такое же окружение
+# кадра, как дата и история ввода: тема, префикс договора, НАЗВАНИЕ ЛОКАЦИИ
+# (идёт в заголовок окна, MainWindow.TitleDirty), «висит ли обновление» и что
+# уже прочитано в «Что нового» — всё это меняет пиксели, а цены меняют
+# содержимое половины сцен. Плюс сам прогон ПИШЕТ в профиль: приветствие
+# AI-чата при пустой истории (AiAssistantViewModel.Streaming), кэш моделей
+# (AiAssistantService), тема при переключении. Поэтому:
+#   * перед стартом оригиналы settings/ai-settings/prices копируются в %TEMP%,
+#     а на их место кладётся ЗАФИКСИРОВАННЫЙ профиль из .tools/fixtures;
+#   * после прогона (в finally, то есть и при падении) оригиналы возвращаются
+#     БАЙТ-В-БАЙТ, а подставленные файлы, которых у пользователя не было,
+#     удаляются — хеши до/после сверяются;
+#   * хранилище заказов харнесс НЕ подменяет и НЕ восстанавливает (это рабочие
+#     данные): его хеш снимается до и после, и расхождение — ОШИБКА прогона.
+$script:appDataDir = Join-Path $env:APPDATA "MosquitoNetCalculator"
+$script:fixturesDir = Join-Path $PSScriptRoot "fixtures"
+$script:profileFiles = @("settings.json", "ai-settings.json", "prices.json")
+$script:backupDir = Join-Path $env:TEMP ("uiverify-profile-" + $PID)
+$script:profileHashes = @{}
+$script:ordersHashBefore = $null
+
+function Get-TreeHash([string]$dir) {
+    # Хеш дерева «содержимое, а не mtime»: по нему проверяется, что прогон не
+    # изменил реальные данные пользователя (заказы).
+    if (-not (Test-Path $dir)) { return "<нет>" }
+    $sha = [System.Security.Cryptography.SHA256]::Create()
+    $parts = New-Object System.Collections.Generic.List[string]
+    foreach ($f in (Get-ChildItem -Path $dir -Recurse -File | Sort-Object FullName)) {
+        $h = [BitConverter]::ToString($sha.ComputeHash([System.IO.File]::ReadAllBytes($f.FullName))).Replace("-", "")
+        $parts.Add(("{0}={1}" -f $f.FullName.Substring($dir.Length), $h))
+    }
+    $joined = [Text.Encoding]::UTF8.GetBytes(($parts -join ";"))
+    return [BitConverter]::ToString($sha.ComputeHash($joined)).Replace("-", "").Substring(0, 16)
+}
+function Get-FileHash16([string]$path) {
+    if (-not (Test-Path $path)) { return "<нет>" }
+    $sha = [System.Security.Cryptography.SHA256]::Create()
+    return [BitConverter]::ToString($sha.ComputeHash([System.IO.File]::ReadAllBytes($path))).Replace("-", "").Substring(0, 16)
+}
+function Write-Utf8NoBom([string]$path, [string]$text) {
+    # AppSettingsService читает файл как есть, поэтому BOM (который добавил бы
+    # Set-Content -Encoding UTF8 в PowerShell 5.1) сломал бы разбор JSON.
+    [System.IO.File]::WriteAllText($path, $text, (New-Object System.Text.UTF8Encoding($false)))
+}
+function Prepare-PinnedProfile([string]$theme) {
+    if ($KeepProfile) {
+        Write-Host "[i] изоляция профиля ОТКЛЮЧЕНА (-KeepProfile): кадры зависят от профиля машины"
+        return
+    }
+    New-Item -ItemType Directory -Force -Path $script:backupDir | Out-Null
+    foreach ($f in $script:profileFiles) {
+        $src = Join-Path $script:appDataDir $f
+        $script:profileHashes[$f] = Get-FileHash16 $src
+        if (Test-Path $src) { Copy-Item -LiteralPath $src -Destination (Join-Path $script:backupDir $f) -Force }
+    }
+    $script:ordersHashBefore = Get-TreeHash (Join-Path $script:appDataDir "orders")
+
+    # settings.json: тема прогона, «Что нового» прочитано текущей версией
+    # (или НЕ прочитано при -SimulateFirstRun), обновление не «висит».
+    $fixture = Join-Path $script:fixturesDir "settings.json"
+    if (-not (Test-Path $fixture)) {
+        throw "нет фикстуры профиля $fixture — без неё кадры зависели бы от профиля машины"
+    }
+    $settings = [System.IO.File]::ReadAllText($fixture) | ConvertFrom-Json
+    $settings.Theme = if ($theme -eq "light") { "light" } else { "dark" }
+    $version = "<нет>"
+    try {
+        $csproj = Join-Path (Split-Path $PSScriptRoot -Parent) "MosquitoNetCalculator/MosquitoNetCalculator.csproj"
+        $m = [regex]::Match([System.IO.File]::ReadAllText($csproj), '<Version>([^<]+)</Version>')
+        if ($m.Success) { $version = $m.Groups[1].Value.Trim() }
+    } catch { }
+    $settings.LastSeenVersion = if ($SimulateFirstRun) { "0.0.0" } else { $version }
+    Write-Utf8NoBom (Join-Path $script:appDataDir "settings.json") ($settings | ConvertTo-Json -Depth 6)
+    Write-Host "[i] профиль подменён фикстурой: тема $($settings.Theme), локация «$($settings.LocationName)», префикс «$($settings.ContractPrefix)», LastSeenVersion $($settings.LastSeenVersion)$(if ($SimulateFirstRun) { ' (сценарий «первый запуск после обновления»)' })"
+
+    # prices.json — из фикстуры: цены меняют тоталы и печатное КП.
+    $pricesFixture = Join-Path $script:fixturesDir "prices.json"
+    if (Test-Path $pricesFixture) {
+        Copy-Item -LiteralPath $pricesFixture -Destination (Join-Path $script:appDataDir "prices.json") -Force
+    }
+    # ai-settings.json: оригинал берём за основу (там ключи провайдеров и история),
+    # но кэш моделей помечаем СВЕЖИМ — иначе приложение пойдёт в сеть за списком
+    # моделей прямо во время прогона, и кадры станут зависимы от интернета.
+    $aiSrc = Join-Path $script:appDataDir "ai-settings.json"
+    try {
+        $ai = if (Test-Path (Join-Path $script:backupDir "ai-settings.json")) {
+            [System.IO.File]::ReadAllText((Join-Path $script:backupDir "ai-settings.json")) | ConvertFrom-Json
+        } else { New-Object psobject }
+        $ai | Add-Member -NotePropertyName CachedModelsAt -NotePropertyValue ([DateTime]::UtcNow.ToString("o")) -Force
+        Write-Utf8NoBom $aiSrc ($ai | ConvertTo-Json -Depth 8)
+    } catch {
+        Write-Host "[warn] не удалось подставить свежий кэш моделей в ai-settings.json: $($_.Exception.Message.Split("`n")[0])"
+    }
+}
+function Assert-UserDataUntouched {
+    if ($KeepProfile) { return }
+    $after = Get-TreeHash (Join-Path $script:appDataDir "orders")
+    if ($after -ne $script:ordersHashBefore) {
+        throw ("прогон изменил РЕАЛЬНОЕ хранилище заказов ($script:ordersHashBefore -> $after). " +
+               "Это брак харнесса, а не приложения: рабочие данные пользователя трогать нельзя")
+    }
+    Write-Host "[i] хранилище заказов не тронуто (хеш $after)"
+}
+function Restore-Profile {
+    if ($KeepProfile) { return }
+    $bad = New-Object System.Collections.Generic.List[string]
+    foreach ($f in $script:profileFiles) {
+        $bak = Join-Path $script:backupDir $f
+        $dst = Join-Path $script:appDataDir $f
+        try {
+            if (Test-Path $bak) { Copy-Item -LiteralPath $bak -Destination $dst -Force }
+            elseif (Test-Path $dst) { Remove-Item -LiteralPath $dst -Force }
+        } catch { $bad.Add("$f (не скопирован: $($_.Exception.Message.Split("`n")[0]))") }
+        $now = Get-FileHash16 $dst
+        if ($now -ne $script:profileHashes[$f]) { $bad.Add("$f ($($script:profileHashes[$f]) -> $now)") }
+    }
+    if ($bad.Count -eq 0) {
+        if (Test-Path $script:backupDir) { Remove-Item -Recurse -Force $script:backupDir -ErrorAction SilentlyContinue }
+        Write-Host "[i] профиль восстановлен байт-в-байт: $($script:profileFiles -join ', ')"
+    } else {
+        Write-Host ("[guard] ПРОФИЛЬ НЕ ВОССТАНОВЛЕН: " + ($bad -join "; "))
+        Write-Host "         оригиналы сохранены здесь: $script:backupDir — верните их вручную"
+    }
+}
+
 $proc = $null
 try {
+    Prepare-PinnedProfile $Theme
     $proc = Start-Process -FilePath $exe -PassThru
     $win = $null
     $sw = [Diagnostics.Stopwatch]::StartNew()
@@ -1308,6 +1517,15 @@ try {
         Write-Host ("  не отправлены (фокус не наш): " + ($script:keysSkipped -join "; "))
         Write-Host "  Значит, сцены диалогов на этой прогонке проверены ТОЛЬКО через UIA — про нажатия они ничего не говорят."
     }
+    Assert-UserDataUntouched
+    if ($Verify) {
+        $gate = Join-Path $PSScriptRoot "verify-baselines.ps1"
+        Write-Host "[gate] сравнение кадров с базлайнами: $OutDir против .tools/shots"
+        & powershell -NoProfile -ExecutionPolicy Bypass -File $gate -Ref ".tools/shots" -Run $OutDir -Filter "*-$Theme.png"
+        if ($LASTEXITCODE -ne 0) {
+            throw "кадры разошлись с базлайнами (verify-baselines.ps1). Расхождение кадра означает РЕАЛЬНОЕ изменение вида — разбери его, а базлайны перезаписывай осознанно"
+        }
+    }
     Write-Host "DONE theme=$Theme pid=$($proc.Id)"
 }
 finally {
@@ -1321,5 +1539,12 @@ finally {
     if ($proc -and -not $proc.HasExited) {
         try { $proc.Kill() } catch {}
         $proc.WaitForExit(5000) | Out-Null
+    }
+    # Профиль возвращаем ПОСЛЕ остановки приложения: иначе оно успело бы записать
+    # в подставленные файлы ещё раз (приветствие AI-чата, тема, кэш моделей).
+    try { Restore-Profile } catch { Write-Host "[guard] восстановление профиля упало: $($_.Exception.Message.Split("`n")[0])" }
+    # Кадры режима проверки — расходный материал: эталоны живут в .tools/shots.
+    if ($script:ownScratchOutDir -and (Test-Path $OutDir)) {
+        Remove-Item -Recurse -Force $OutDir -ErrorAction SilentlyContinue
     }
 }

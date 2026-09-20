@@ -68,3 +68,6 @@ release-artifacts/
 ## One-off UI audit captures (uiverify/audit runs; tracked baselines live in .tools/shots/)
 .tools/audit-dark/
 .tools/audit-light/
+## Scratch-кадры режима проверки харнесса (-Verify) — не базлайны
+.tools/_verify-*/
+.tools/_det*/
