@@ -133,6 +133,19 @@ namespace MosquitoNetCalculator.Tests.Design
         }
 
         /// <summary>
+        /// Квадратность доказывают равные значения — числа или ОДИН И ТОТ ЖЕ
+        /// токен размера в обоих атрибутах: <c>{StaticResource Space.Xl}</c>
+        /// слева и справа означает «та же величина», а не «похожая».
+        /// </summary>
+        private static bool SameSize(string a, string b)
+        {
+            if (a == b) return true;
+            var keyA = Regex.Match(a, "\\{(?:Static|Dynamic)Resource ([A-Za-z0-9._]+)\\}");
+            var keyB = Regex.Match(b, "\\{(?:Static|Dynamic)Resource ([A-Za-z0-9._]+)\\}");
+            return keyA.Success && keyB.Success && keyA.Groups[1].Value == keyB.Groups[1].Value;
+        }
+
+        /// <summary>
         /// Pill — только квадратные элементы. Статически проверить «элемент
         /// квадратный» нельзя, но можно потребовать явные равные Width и Height
         /// в том же теге: именно на этом сломался бы бейдж с Padding вместо
@@ -157,9 +170,9 @@ namespace MosquitoNetCalculator.Tests.Design
                 {
                     if (!m.Value.Contains("Radius.Pill")) continue;
 
-                    var w = Regex.Match(m.Value, "Width=\"([0-9.]+)\"");
-                    var h = Regex.Match(m.Value, "Height=\"([0-9.]+)\"");
-                    if (!w.Success || !h.Success || w.Groups[1].Value != h.Groups[1].Value)
+                    var w = Regex.Match(m.Value, "Width=\"([^\"]+)\"");
+                    var h = Regex.Match(m.Value, "Height=\"([^\"]+)\"");
+                    if (!w.Success || !h.Success || !SameSize(w.Groups[1].Value, h.Groups[1].Value))
                     {
                         string rel = Path.GetRelativePath(appDir, file).Replace('\\', '/');
                         offenders.Add($"{rel}: {Regex.Replace(m.Value, "\\s+", " ").Trim()}");

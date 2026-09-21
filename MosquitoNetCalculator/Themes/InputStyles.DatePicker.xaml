@@ -3,6 +3,99 @@
     <!-- ═══════════════════════════════════════════════════════ -->
     <!-- DATEPICKER                                              -->
     <!-- ═══════════════════════════════════════════════════════ -->
+    <!-- ── Клетка дня: пилюля-круг; selected — акцент, today —
+         контур акцента, соседние месяцы приглушены.
+
+         Ключ обязателен и стиль назначается СВОЙСТВОМ Calendar
+         (CalendarDayButtonStyle/CalendarButtonStyle). 42 клетки дня и 12 клеток
+         месяца код CalendarItem создаёт в рантайме — до таких кнопок не
+         доходят ни неявные стили из ресурсов приложения, ни стили из
+         ресурсов шаблона — они фактически не применяются, и остаётся
+         дефолт Aero2 с жёстко вшитыми светлыми кистями (замер —
+         CalendarThemeTests). Поэтому стили здесь с явными ключами, а
+         CalendarStyle стиля DatePicker ниже раздаёт их через DynamicResource. -->
+    <Style x:Key="Calendar.DayButton" TargetType="CalendarDayButton">
+        <Setter Property="Width" Value="{StaticResource Space.Xl}"/>
+        <Setter Property="Height" Value="{StaticResource Space.Xl}"/>
+        <Setter Property="FontSize" Value="{StaticResource Type.Caption}"/>
+        <Setter Property="Foreground" Value="{DynamicResource TextPrimary}"/>
+        <Setter Property="FocusVisualStyle" Value="{StaticResource FluentFocusVisual}"/>
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="CalendarDayButton">
+                    <!-- Рамка всегда 1px: transparent по умолчанию, акцент
+                         для «сегодня» — без сдвига вёрстки. -->
+                    <!-- Размеры заданы явно теми же токенами, что и у самой
+                         кнопки: пилюля честна только на квадрате, и это
+                         должно быть видно в разметке (страж RadiusShapeTests). -->
+                    <Border x:Name="Bd"
+                            Width="{StaticResource Space.Xl}"
+                            Height="{StaticResource Space.Xl}"
+                            Background="Transparent"
+                            BorderBrush="Transparent"
+                            BorderThickness="1"
+                            CornerRadius="{DynamicResource Radius.Pill}">
+                        <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                    </Border>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsInactive" Value="True">
+                            <Setter Property="Foreground" Value="{DynamicResource TextMuted}"/>
+                        </Trigger>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter TargetName="Bd" Property="Background" Value="{DynamicResource RowHover}"/>
+                        </Trigger>
+                        <Trigger Property="IsPressed" Value="True">
+                            <Setter TargetName="Bd" Property="Background" Value="{DynamicResource HeaderPress}"/>
+                        </Trigger>
+                        <Trigger Property="IsEnabled" Value="False">
+                            <Setter Property="Foreground" Value="{DynamicResource TextMuted}"/>
+                        </Trigger>
+                        <Trigger Property="IsToday" Value="True">
+                            <Setter TargetName="Bd" Property="BorderBrush" Value="{DynamicResource Accent}"/>
+                        </Trigger>
+                        <!-- Последним: selected перекрывает и ховер, и today-контур. -->
+                        <Trigger Property="IsSelected" Value="True">
+                            <Setter TargetName="Bd" Property="Background" Value="{DynamicResource Accent}"/>
+                            <Setter Property="Foreground" Value="{DynamicResource OnAccent}"/>
+                            <Setter TargetName="Bd" Property="BorderBrush" Value="Transparent"/>
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <!-- ── Клетка месяца/года (режимы по клику на шапку) ── -->
+    <Style x:Key="Calendar.MonthCell" TargetType="CalendarButton">
+        <Setter Property="Height" Value="{StaticResource Space.Xl}"/>
+        <Setter Property="Margin" Value="{DynamicResource Gap.InlineSm}"/>
+        <Setter Property="FontSize" Value="{StaticResource Type.Caption}"/>
+        <Setter Property="Foreground" Value="{DynamicResource TextPrimary}"/>
+        <Setter Property="FocusVisualStyle" Value="{StaticResource FluentFocusVisual}"/>
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="CalendarButton">
+                    <Border x:Name="Bd" Background="Transparent"
+                            CornerRadius="{DynamicResource Radius.Md}"
+                            Padding="{DynamicResource Pad.Pill}">
+                        <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                    </Border>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsInactive" Value="True">
+                            <Setter Property="Foreground" Value="{DynamicResource TextMuted}"/>
+                        </Trigger>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter TargetName="Bd" Property="Background" Value="{DynamicResource RowHover}"/>
+                        </Trigger>
+                        <Trigger Property="IsPressed" Value="True">
+                            <Setter TargetName="Bd" Property="Background" Value="{DynamicResource HeaderPress}"/>
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
     <Style TargetType="DatePicker">
         <Setter Property="FontSize" Value="{StaticResource Type.Body}"/>
         <Setter Property="Height" Value="32"/>
@@ -10,14 +103,48 @@
         <Setter Property="BorderThickness" Value="1"/>
         <Setter Property="Background" Value="{DynamicResource Surface}"/>
         <Setter Property="Padding" Value="0"/>
+        <!-- Полный шаблон календаря. Раньше стилизовали только фон/рамку
+             Calendar, а внутренние части (CalendarItem, CalendarDayButton,
+             CalendarButton) рисовал дефолтный шаблон Aero2 с жёстко вшитыми
+             светлыми кистями — на тёмной теме выпадал белый квадрат.
+             ВАЖНО: ребёнком PART_Popup обязан быть САМ Calendar — DatePicker
+             берёт календарь как popup.Child as Calendar и любой другой
+             контейнер молча заменяет своим, БЕЗ стиля (замер —
+             CalendarThemeTests). Поэтому хром попапа (поверхность, рамка,
+             скругление) рисует сам Calendar: его стиль — ниже в CalendarStyle,
+             шаблон — Border вокруг CalendarItem. -->
         <Setter Property="CalendarStyle">
             <Setter.Value>
                 <Style TargetType="Calendar">
+                    <!-- Хром попапа — на самом Calendar (см. комментарий выше). -->
                     <Setter Property="Background" Value="{DynamicResource Surface}"/>
-                    <Setter Property="Foreground" Value="{DynamicResource TextPrimary}"/>
                     <Setter Property="BorderBrush" Value="{DynamicResource Border}"/>
                     <Setter Property="BorderThickness" Value="1"/>
-                    <Setter Property="FontSize" Value="11"/>
+                    <Setter Property="Foreground" Value="{DynamicResource TextPrimary}"/>
+                    <Setter Property="FontFamily" Value="{DynamicResource Font.Text}"/>
+                    <Setter Property="FontSize" Value="{StaticResource Type.Caption}"/>
+                    <!-- Клетки дня/месяца создаёт код: единственный способ
+                         донести до них стиль — эти два свойства Calendar. -->
+                    <Setter Property="CalendarDayButtonStyle" Value="{DynamicResource Calendar.DayButton}"/>
+                    <Setter Property="CalendarButtonStyle" Value="{DynamicResource Calendar.MonthCell}"/>
+                    <Setter Property="Template">
+                        <Setter.Value>
+                            <ControlTemplate TargetType="Calendar">
+                                <Border x:Name="Chrome"
+                                        Background="{TemplateBinding Background}"
+                                        BorderBrush="{TemplateBinding BorderBrush}"
+                                        BorderThickness="{TemplateBinding BorderThickness}"
+                                        CornerRadius="{DynamicResource Radius.Md}"
+                                        Margin="0,2,0,0"
+                                        SnapsToDevicePixels="True">
+                                    <CalendarItem x:Name="PART_CalendarItem"
+                                                  Style="{DynamicResource Calendar.Item}"
+                                                  Background="Transparent"
+                                                  BorderThickness="0"/>
+                                </Border>
+                            </ControlTemplate>
+                        </Setter.Value>
+                    </Setter>
                 </Style>
             </Setter.Value>
         </Setter>
@@ -61,21 +188,16 @@
                                 </ControlTemplate>
                             </ToggleButton.Template>
                         </ToggleButton>
+                        <!-- Ребёнок попапа — именно Calendar: DatePicker берёт
+                             календарь как popup.Child as Calendar, и любой
+                             другой контейнер он заменит своим, без стиля. -->
                         <Popup x:Name="PART_Popup"
                                AllowsTransparency="True"
                                IsOpen="{Binding IsDropDownOpen, Mode=TwoWay, RelativeSource={RelativeSource TemplatedParent}}"
                                Placement="Bottom"
                                PopupAnimation="Slide"
                                StaysOpen="False">
-                            <Border Background="{DynamicResource Surface}"
-                                    BorderBrush="{DynamicResource Border}"
-                                    BorderThickness="1"
-                                    CornerRadius="{DynamicResource Radius.Md}"
-                                    Margin="0,2,0,0"
-                                    Padding="0"
-                                    SnapsToDevicePixels="True">
-                                <Calendar Style="{Binding CalendarStyle, RelativeSource={RelativeSource TemplatedParent}}"/>
-                            </Border>
+                            <Calendar Style="{Binding CalendarStyle, RelativeSource={RelativeSource TemplatedParent}}"/>
                         </Popup>
                     </Grid>
                     <ControlTemplate.Triggers>
@@ -117,4 +239,160 @@
             </Setter.Value>
         </Setter>
     </Style>
+
+    <!-- ── Контейнер (шапка + сетка месяца/года) ────── -->
+    <Style x:Key="Calendar.Item" TargetType="CalendarItem">
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="CalendarItem">
+                    <ControlTemplate.Resources>
+                        <!-- Подписи дней недели (строка 0 сетки месяца): их
+                             создаёт код CalendarItem, искомый ключ — компонентный
+                             ресурс DayTitleTemplate (замер через рефлексию:
+                             CalendarItem.DayTitleTemplateResourceKey). Ключ обязан
+                             лежать в РЕСУРСАХ ШАБЛОНА, как в дефолтной теме. -->
+                        <DataTemplate x:Key="{ComponentResourceKey ResourceId=DayTitleTemplate, TypeInTargetAssembly={x:Type CalendarItem}}">
+                            <TextBlock Text="{Binding}"
+                                       Width="{StaticResource Space.Xl}"
+                                       TextAlignment="Center"
+                                       FontSize="{StaticResource Type.Caption}"
+                                       FontWeight="Medium"
+                                       Foreground="{DynamicResource TextMuted}"/>
+                        </DataTemplate>
+
+                    </ControlTemplate.Resources>
+                    <Grid x:Name="PART_Root">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                        </Grid.RowDefinitions>
+                        <!-- Шапка: ← месяц/год → -->
+                        <Grid Margin="{DynamicResource Pad.Section}">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+                            <Button x:Name="PART_PreviousButton"
+                                    Width="{StaticResource Space.Xl}"
+                                    Height="{StaticResource Space.Xl}"
+                                    Focusable="False">
+                                <Button.Template>
+                                    <ControlTemplate TargetType="Button">
+                                        <Border x:Name="Bd" Background="Transparent"
+                                                CornerRadius="{DynamicResource Radius.Sm}">
+                                            <Path Data="M8,2 L3,7 L8,12"
+                                                  Stroke="{DynamicResource TextMuted}" StrokeThickness="1.5"
+                                                  StrokeLineJoin="Round" StrokeStartLineCap="Round" StrokeEndLineCap="Round"
+                                                  HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                        </Border>
+                                        <ControlTemplate.Triggers>
+                                            <Trigger Property="IsMouseOver" Value="True">
+                                                <Setter TargetName="Bd" Property="Background" Value="{DynamicResource RowHover}"/>
+                                            </Trigger>
+                                            <Trigger Property="IsPressed" Value="True">
+                                                <Setter TargetName="Bd" Property="Background" Value="{DynamicResource HeaderPress}"/>
+                                            </Trigger>
+                                            <Trigger Property="IsEnabled" Value="False">
+                                                <Setter Property="Foreground" Value="{DynamicResource TextMuted}"/>
+                                            </Trigger>
+                                        </ControlTemplate.Triggers>
+                                    </ControlTemplate>
+                                </Button.Template>
+                            </Button>
+                            <!-- Клик по заголовку — режим вверх (год → декада);
+                                 в декаде код отключает кнопку. -->
+                            <Button x:Name="PART_HeaderButton" Grid.Column="1" Focusable="False">
+                                <Button.Template>
+                                    <ControlTemplate TargetType="Button">
+                                        <Border x:Name="Bd" Background="Transparent"
+                                                CornerRadius="{DynamicResource Radius.Sm}"
+                                                Padding="{DynamicResource Pad.Pill}">
+                                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"
+                                                              TextBlock.FontSize="{StaticResource Type.Body}"
+                                                              TextBlock.FontWeight="Medium"
+                                                              TextBlock.Foreground="{DynamicResource TextPrimary}"/>
+                                        </Border>
+                                        <ControlTemplate.Triggers>
+                                            <Trigger Property="IsMouseOver" Value="True">
+                                                <Setter TargetName="Bd" Property="Background" Value="{DynamicResource RowHover}"/>
+                                            </Trigger>
+                                            <Trigger Property="IsPressed" Value="True">
+                                                <Setter TargetName="Bd" Property="Background" Value="{DynamicResource HeaderPress}"/>
+                                            </Trigger>
+                                            <Trigger Property="IsEnabled" Value="False">
+                                                <Setter Property="TextElement.Foreground" Value="{DynamicResource TextMuted}"/>
+                                            </Trigger>
+                                        </ControlTemplate.Triggers>
+                                    </ControlTemplate>
+                                </Button.Template>
+                            </Button>
+                            <Button x:Name="PART_NextButton" Grid.Column="2"
+                                    Width="{StaticResource Space.Xl}"
+                                    Height="{StaticResource Space.Xl}"
+                                    Focusable="False">
+                                <Button.Template>
+                                    <ControlTemplate TargetType="Button">
+                                        <Border x:Name="Bd" Background="Transparent"
+                                                CornerRadius="{DynamicResource Radius.Sm}">
+                                            <Path Data="M4,2 L9,7 L4,12"
+                                                  Stroke="{DynamicResource TextMuted}" StrokeThickness="1.5"
+                                                  StrokeLineJoin="Round" StrokeStartLineCap="Round" StrokeEndLineCap="Round"
+                                                  HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                        </Border>
+                                        <ControlTemplate.Triggers>
+                                            <Trigger Property="IsMouseOver" Value="True">
+                                                <Setter TargetName="Bd" Property="Background" Value="{DynamicResource RowHover}"/>
+                                            </Trigger>
+                                            <Trigger Property="IsPressed" Value="True">
+                                                <Setter TargetName="Bd" Property="Background" Value="{DynamicResource HeaderPress}"/>
+                                            </Trigger>
+                                            <Trigger Property="IsEnabled" Value="False">
+                                                <Setter Property="Foreground" Value="{DynamicResource TextMuted}"/>
+                                            </Trigger>
+                                        </ControlTemplate.Triggers>
+                                    </ControlTemplate>
+                                </Button.Template>
+                            </Button>
+                        </Grid>
+                        <!-- Сетка месяца 7×7: строка 0 — дни недели (создаёт
+                             код Calendar по DayTitleTemplate), строки 1–6 —
+                             42 CalendarDayButton. -->
+                        <Grid x:Name="PART_MonthView" Grid.Row="1" Grid.ColumnSpan="3"
+                              Visibility="Visible"
+                              Margin="{DynamicResource Pad.Section}">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto"/><ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="Auto"/><ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="Auto"/><ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/><RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/><RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/><RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                            </Grid.RowDefinitions>
+                        </Grid>
+                        <!-- Сетка года/декады 4×3: 12 CalendarButton создаёт код. -->
+                        <Grid x:Name="PART_YearView" Grid.Row="1" Grid.ColumnSpan="3"
+                              Visibility="Hidden"
+                              Margin="{DynamicResource Pad.Section}">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/><ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="*"/><ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/><RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                            </Grid.RowDefinitions>
+                        </Grid>
+                        <Rectangle x:Name="PART_DisabledVisual" Grid.RowSpan="2"
+                                   Fill="Transparent" IsHitTestVisible="False"/>
+                    </Grid>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
 </ResourceDictionary>
