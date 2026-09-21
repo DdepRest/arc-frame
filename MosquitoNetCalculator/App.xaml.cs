@@ -327,7 +327,18 @@ namespace MosquitoNetCalculator
                 depth++;
             }
 
-            MessageBox.Show(sb.ToString(), "Ошибка", MessageBoxButton.OK, MessageBoxImage.Error);
+            // Диалог приложения опирается на ресурсы/стили, которые при аварии
+            // (особенно на старте, до словарей) сами могут быть сломаны —
+            // поэтому последний рубеж прежний: системный MessageBox, от
+            // приложения не зависящий.
+            try
+            {
+                DialogService.ShowMessage(sb.ToString(), "Ошибка");
+            }
+            catch
+            {
+                MessageBox.Show(sb.ToString(), "Ошибка", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
         }
     }
 }

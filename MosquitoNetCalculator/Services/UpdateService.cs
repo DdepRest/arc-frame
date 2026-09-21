@@ -466,11 +466,9 @@ namespace MosquitoNetCalculator.Services
                     }
                     else
                     {
-                        MessageBox.Show(
+                        DialogService.ShowMessage(
                             $"Не удалось скачать обновление:\n{reason}",
-                            "Ошибка скачивания",
-                            MessageBoxButton.OK,
-                            MessageBoxImage.Error);
+                            "Ошибка скачивания");
                     }
                     return;
                 }
@@ -497,11 +495,9 @@ namespace MosquitoNetCalculator.Services
                     }
                     else
                     {
-                        MessageBox.Show(
+                        DialogService.ShowMessage(
                             $"Не удалось установить обновление:\n{reason}",
-                            "Ошибка установки",
-                            MessageBoxButton.OK,
-                            MessageBoxImage.Warning);
+                            "Ошибка установки");
                     }
                     return;
                 }
@@ -561,11 +557,9 @@ namespace MosquitoNetCalculator.Services
                     }
                     else
                     {
-                        MessageBox.Show(
+                        DialogService.ShowMessage(
                             "Установка обновления отменена. Запустите программу с правами администратора или обратитесь к ответственному за установку.",
-                            "Отменено",
-                            MessageBoxButton.OK,
-                            MessageBoxImage.Warning);
+                            "Отменено");
                     }
                     return;
                 }
@@ -585,11 +579,9 @@ namespace MosquitoNetCalculator.Services
                 }
                 else
                 {
-                    MessageBox.Show(
+                    DialogService.ShowMessage(
                         $"Не удалось проверить обновления:\n{errorMsg}",
-                        "Ошибка обновления",
-                        MessageBoxButton.OK,
-                        MessageBoxImage.Error);
+                        "Ошибка обновления");
                 }
                 Debug.WriteLine($"[UpdateService] Check failed: {ex}");
             }
