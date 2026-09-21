@@ -141,6 +141,7 @@
 | `FactoryTextServiceTests.cs` | Текст "На завод". |
 | `UpdateServiceTests.cs` | Парсинг версий, fallback'ы. |
 | `UpdateLogTests.cs` | Загрузка истории обновлений. |
+| `UpdateLogVoiceTests.cs` | Голос пользовательской записи об обновлении: техжаргон в `update-log.json`/`releases.json` — ошибка сборки. |
 | `PriceServiceTests.cs` | Загрузка цен, миграции. |
 | `OrderStorageServiceTests.cs` | Сохранение/загрузка заказов. |
 | `AppSettingsServiceTests.cs` | Настройки. |

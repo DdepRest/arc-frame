@@ -4,6 +4,19 @@
 #
 # Использование:
 #   powershell -ExecutionPolicy Bypass -File tools/release/generate-update-log.ps1
+#
+# ПОЛИТИКА ТЕКСТА (почему так, а не иначе — GOTCHAS §36 и §39):
+#   * CHANGELOG.md — технический журнал для разработчика (имена файлов, замеры,
+#     ссылки на GOTCHAS, счётчики тестов).
+#   * update-log.json читает ПОЛЬЗОВАТЕЛЬ: окно «Что нового» после обновления и
+#     вкладка «Обновления». Формулировки там — курируемые (написаны человеком
+#     для человека), и скрипт НЕ имеет права затирать их техническим текстом
+#     из CHANGELOG (регрессия 3.53.0: в «Что нового» уехал весь технический разбор).
+#   * Поэтому: версия и ДАТА всегда из CHANGELOG (там финализируется дата релиза),
+#     а title/changes/type — из json, если запись этой версии в json уже есть.
+#   * Запись, которой в json нет, создаётся из CHANGELOG как ЧЕРНОВИК, и её
+#     обязан вычитать человек: техжаргон в пользовательской записи роняет страж
+#     MosquitoNetCalculator.Tests/Services/UpdateLogVoiceTests.cs.
 
 [CmdletBinding()]
 param()
@@ -91,12 +104,16 @@ if ($updates.Count -eq 0) {
     exit 1
 }
 
-# Мержим с существующим json. Для версий, датированных в CHANGELOG, свежие
-# дата/заголовок/пункты берутся ИЗ CHANGELOG (иначе устаревшая запись 3.53.0
-# от 14.09 пережила бы финализацию секции), но ПОЛЕ type остаётся курируемым:
-# таксономию чипов («Новинка»/«Улучшение»/«Исправление»/«Техническое»)
-# эвристика по тексту не восстанавливает. Версии, которых в CHANGELOG нет
-# (история до введения дат), переносятся в json как есть.
+# Мержим с существующим json по политике текста из шапки скрипта:
+#   * version/date — из CHANGELOG (финализированная дата секции релиза);
+#   * title/changes — курированный пользовательский текст из json, если запись
+#     уже есть (технический текст CHANGELOG не подменяет его);
+#   * type — из json (таксономию чипов «Новинка»/«Улучшение»/«Исправление»/
+#     «Техническое» эвристика по тексту не восстанавливает);
+#   * записи нет в json — берём секцию CHANGELOG как ЧЕРНОВИК (warning ниже).
+# Версии, которых в CHANGELOG нет (история до введения дат), переносятся как есть.
+$drafts = @()
+$curated = 0
 $existingByVersion = @{}
 if (Test-Path -LiteralPath $updateLogPath) {
     try {
@@ -104,9 +121,15 @@ if (Test-Path -LiteralPath $updateLogPath) {
         foreach ($e in @($existing)) { $existingByVersion[[string]$e.version] = $e }
         foreach ($u in $updates) {
             $v = [string]$u.version
-            if ($existingByVersion.ContainsKey($v) -and $existingByVersion[$v].type) {
-                $u.type = [string]$existingByVersion[$v].type
+            if (-not $existingByVersion.ContainsKey($v)) {
+                $drafts += $v
+                continue
             }
+            $e = $existingByVersion[$v]
+            if ($e.type) { $u.type = [string]$e.type }
+            if ($e.title) { $u.title = [string]$e.title }
+            if ($e.changes) { $u.changes = @($e.changes) }
+            $curated++
         }
     } catch {
         Write-Warning "Существующий $updateLogPath не разобран — перезаписываю только из CHANGELOG: $($_.Exception.Message)"
@@ -126,3 +149,10 @@ $utf8NoBom = New-Object System.Text.UTF8Encoding($false)
 Write-Host "Generated: $updateLogPath" -ForegroundColor Green
 Write-Host "Versions: $($updates.Count)" -ForegroundColor Gray
 Write-Host "Latest: $($updates[0].version) ($($updates[0].date))" -ForegroundColor Gray
+Write-Host "Curated user text kept from json: $curated" -ForegroundColor Gray
+if ($drafts.Count -gt 0) {
+    Write-Warning ("Взято из CHANGELOG как ЧЕРНОВИК (нет курированной записи в json): " +
+                   ($drafts -join ', ') +
+                   ". Вычитайте текст для пользователя — технический текст CHANGELOG" +
+                   " в «Что нового» попадать не должен (страж UpdateLogVoiceTests).")
+}
