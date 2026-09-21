@@ -36,7 +36,9 @@ $updated = 0
 $skipped = 0
 foreach ($f in $mdFiles) {
     $content = [System.IO.File]::ReadAllText($f.FullName)   # детектит BOM
-    $hadBom  = $content.StartsWith([char]0xFEFF)
+    # Не "$content.StartsWith([char]0xFEFF)": в Windows PowerShell 5.1 этот вызов
+    # на строке БЕЗ BOM возвращает True, и файл получал BOM при записи (GOTCHAS §41).
+    $hadBom  = ($content.Length -gt 0 -and ([int]$content[0]) -eq 0xFEFF)
 
     # Ищем заголовок «## Last verified» (якорь на начало строки, как в validate-docs #10)
     $headerMatch = [regex]::Match($content, '(?m)^## Last verified')

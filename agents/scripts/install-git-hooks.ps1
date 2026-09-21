@@ -2,8 +2,9 @@
 #
 # Ставит pre-commit, который вызывает sync-last-verified.ps1 -Staged: при коммите
 # дата «Last verified» в тронутых agents/docs проставляется САМА (днём коммита), а
-# файл заново попадает в индекс. Ручной шаг «правка документа → не забыть дату»
-# больше не нужен, и validate-docs.ps1 #7 не ругается (GOTCHAS §40).
+# в индекс уходит только эта строка (незастейдженные правки в коммит не попадают —
+# GOTCHAS §41). Ручной шаг «правка документа → не забыть дату» больше не нужен,
+# и validate-docs.ps1 #7 не ругается (GOTCHAS §40).
 #
 # Usage: powershell -ExecutionPolicy Bypass -File install-git-hooks.ps1 [-Force] [-DryRun]
 #   -Force   — перезаписать чужой pre-commit (по умолчанию скрипт откажется)
@@ -28,8 +29,8 @@ $marker = "A.R.C. pre-commit: sync-last-verified.ps1"
 $script = @"
 #!/bin/sh
 # $marker (установлен agents/scripts/install-git-hooks.ps1)
-# Дату «Last verified» в agents/docs ставит сам скрипт (днём коммита) и заново
-# кладёт файлы в индекс — вручную проставлять дату после правки документа не нужно.
+# Дату «Last verified» в agents/docs ставит сам скрипт (днём коммита) и кладёт в
+# индекс только эту строку — незастейдженные правки документа не трогая.
 if command -v powershell >/dev/null 2>&1; then
     powershell -NoProfile -ExecutionPolicy Bypass -File "agents/scripts/sync-last-verified.ps1" -Staged || exit 1
 fi

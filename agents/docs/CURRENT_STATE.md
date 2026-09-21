@@ -160,8 +160,12 @@ AGENT.md / AGENTS.md / CLAUDE.md / GEMINI.md
 - `agents/scripts/render-matrix.ps1` — JSON → DOCUMENTATION_MATRIX.md.
 - `agents/scripts/arc-check.ps1` — pre-commit проверка docs.
 - `agents/scripts/sync-version.ps1` — версия из csproj → `Last verified`.
+- `agents/scripts/sync-last-verified.ps1` — дата «Last verified» для тронутых docs (`-Check` — проверка без записи); в `-Staged` в индекс идёт только строка записи.
+- `agents/scripts/install-git-hooks.ps1` — ставит локальный `pre-commit` (даты в docs обновляются на коммите; хуки не версионируются).
 
 ## Last verified
+2026-09-21 (v3.53.0) — хук даты «Last verified» кладёт в индекс только свою строку: незастейдженные правки больше не уезжают в чужой коммит (сценарий staged+unstaged), BOM-детект (`StartsWith([char]0xFEFF)`) исправлен в обоих скриптах; §41.
+
 2026-09-21 (v3.53.0) — «История обновлений»: записи 3.50.0–3.53.0 переписаны пользовательским языком (технический разбор остался в CHANGELOG), `generate-update-log.ps1` больше не затирает курированный текст (из CHANGELOG берёт только версию и дату), новый страж `Services/UpdateLogVoiceTests` (+5 тестов, порог 3.50.0); §39.
 
 2026-09-20 (v3.53.0) — релизная подготовка: секция 3.53.0 в CHANGELOG датирована (2026-09-20), `update-log.json` перегенерирован (73 записи, таксономия типов сохранена), починен generate-update-log.ps1 (BOM + идемпотентный мерж), изоляция профиля и стражи харнесса (§30, §35–§37).
