@@ -86,6 +86,8 @@ agents/scripts/what-to-update.ps1 $(git diff --name-only)   # Что обнов�
                                                              # С флагом -RunAiTests реально запускает AI-регрессии
 agents/scripts/validate-docs.ps1                             # 10+ проверок консистентности (вкл. self-maintenance, мягкая)
 agents/scripts/sync-version.ps1                               # Синхронизация версии из csproj во все agents/docs (Last verified)
+agents/scripts/sync-last-verified.ps1                         # Дата «Last verified» для изменённых docs (-Check — проверка; ставится pre-commit хуком)
+agents/scripts/install-git-hooks.ps1                          # Ставит pre-commit: даты в docs обновляются на коммите
 tools/release/generate-update-log.ps1                         # CHANGELOG.md → update-log.json
 agents/scripts/render-matrix.ps1                             # JSON → DOCUMENTATION_MATRIX.md
 agents/scripts/arc-check.ps1                                 # Проверка docs перед коммитом
@@ -102,6 +104,8 @@ agents/scripts/arc-check.ps1                                 # Проверка 
 - `ai-agent-mode-plan.md` — полный план AI Agent Mode (13 этапов: Этап 0–12)
 
 ## Last verified
+2026-09-21 (v3.53.0) — новый инструмент: sync-last-verified.ps1 и install-git-hooks.ps1 — дата ставится на коммите (GOTCHAS §40).
+
 2026-09-14 (v3.53.0) — auto-synced from csproj (sync-version.ps1, CONTROL#13).
 
 2026-09-14 (v3.52.0) — auto-synced from csproj (sync-version.ps1, CONTROL#13).

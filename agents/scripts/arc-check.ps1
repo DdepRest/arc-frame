@@ -122,6 +122,20 @@ if ($bigFiles.Count -gt 0) {
 
 Write-Host ""
 
+# 6. «Last verified»: дата обновляется вместе с правкой документа
+# (CONTROL#13 + GOTCHAS §40 — при правке текста sync-version.ps1 документ пропускает,
+#  поэтому дату ставит sync-last-verified.ps1, а на коммите — git pre-commit)
+Write-Host "[6] Sync «Last verified» for changed docs..." -ForegroundColor Yellow
+$syncScript = Join-Path $PSScriptRoot "sync-last-verified.ps1"
+if (Test-Path -LiteralPath $syncScript) {
+    $syncOutput = & powershell -ExecutionPolicy Bypass -File $syncScript 2>&1
+    Write-Host ("  " + (($syncOutput -join "`n  ").TrimEnd())) -ForegroundColor Gray
+} else {
+    Write-Host "  SKIP: sync-last-verified.ps1 not found" -ForegroundColor Gray
+}
+
+Write-Host ""
+
 # Summary
 Write-Host "====================================" -ForegroundColor Cyan
 if ($issues -eq 0) {

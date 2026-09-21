@@ -177,9 +177,20 @@ tools/release/update-releases-json.ps1
 | 1.5 | Обновить `CHANGELOG.md` | секция `Unreleased` → `## X.Y.Z — YYYY-MM-DD` |
 | 1.6 | Обновить `update-log.json`: текст ДЛЯ ПОЛЬЗОВАТЕЛЯ (что стало лучше, без техжаргона) | ручная правка |
 | 1.7 | Обновить `releases.json` (полная запись version+date+type+title+changes+url+size+sha256+mirrorUrl-плейсхолдер) | ручная правка |
-| 1.8 | Обновить `CURRENT_STATE.md` | версия+Last verified |
+| 1.8 | Обновить `CURRENT_STATE.md` (дату «Last verified» ставит `sync-last-verified.ps1`) | ручная правка |
 | 1.9 | Запустить тесты | `dotnet test MosquitoNetCalculator.sln -c Release` |
 | 1.10 | Показать владельцу финальный отчёт | ждать явного подтверждения |
+
+#### 1.8 — дата «Last verified» ставится автоматически
+
+Дату не проставляют руками: `agents/scripts/sync-last-verified.ps1` вставляет
+сегодняшнюю дату и версию из csproj первой записью в секцию `## Last verified`
+тронутых `agents/docs/*.md` (идемпотентно, BOM и концы строк файла сохраняются).
+Локальный `pre-commit` (ставится `agents/scripts/install-git-hooks.ps1`) делает это
+на каждом коммите — днём коммита, потому что именно её сверяет `validate-docs.ps1` #7.
+Без хука: `sync-last-verified.ps1 -All` перед финальным отчётом; `-Check` — проверка
+без записи (exit 1, если дата отстала от последнего коммита файла). `sync-version.ps1`
+(CONTROL#13) остаётся релизным случаем — сменой версии. Разбор — GOTCHAS §40.
 
 #### 1.6 — голос записи: что можно писать в «Что нового»
 

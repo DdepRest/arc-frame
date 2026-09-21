@@ -1,4 +1,4 @@
-# A.R.C. Agent System
+﻿# A.R.C. Agent System
 
 Единая папка системы агентов проекта. Всё, что нужно AI-агенту для работы в репозитории, лежит здесь — не разбросано по корню.
 
@@ -22,7 +22,9 @@ agents/
     ├── what-to-update.ps1         ← какие docs обновить при изменении файлов
     ├── gensymbols.ps1             ← генерация SYMBOL_INDEX.md из .cs
     ├── render-matrix.ps1          ← DOCUMENTATION_MATRIX.md из JSON
-    └── sync-version.ps1           ← версия из csproj → «## Last verified» всех docs
+    ├── sync-version.ps1           ← версия из csproj → «## Last verified» всех docs
+    ├── sync-last-verified.ps1     ← дата «Last verified» для изменённых docs (-Check — проверка)
+    └── install-git-hooks.ps1      ← pre-commit → даты в docs обновляются на коммите
 ```
 
 ## Как использовать (для агента)
@@ -40,6 +42,7 @@ agents/
 powershell -ExecutionPolicy Bypass -File agents/scripts/validate-docs.ps1
 powershell -ExecutionPolicy Bypass -File agents/scripts/arc-check.ps1
 agents/scripts/sync-version.ps1        # после релиза
+agents/scripts/install-git-hooks.ps1   # один раз на клон/worktree — дата в docs ставится на коммите
 ```
 
 ## Не заходить
@@ -57,5 +60,7 @@ agents/scripts/sync-version.ps1        # после релиза
 - **`AGENTS.md` в корне** — тонкий wrapper-указатель на этот файл (конвенция агентских инструментов требует его в корне).
 
 ## Last verified
+2026-09-21 (v3.53.0) — в scripts/ добавлены sync-last-verified.ps1 и install-git-hooks.ps1.
+
 
 2026-08-10 — миграция `agents/docs/` + корневые скрипты → `agents/`; `validate-docs.ps1` — 0 issues.

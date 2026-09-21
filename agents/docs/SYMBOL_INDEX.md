@@ -26,25 +26,28 @@
 | MessageDialogWindow | class | Controls/MessageDialogWindow.xaml.cs | Props: SelectedResult |
 | NumericUpDownControl | class | Controls/NumericUpDownControl.xaml.cs | |
 | OfficeRowFilter | static class | Controls/AdminPanelControl.Filter.cs | | Methods: Convert, ConvertBack, Matches | Static: M:Matches |
-| OrderItemsControl | class | Controls/OrderItemsControl.xaml.cs | | Methods: PopulateProductChips, ToggleBadgeInfoPopup | Static: M:ToggleBadgeInfoPopup |
-| OrdersHistoryControl | class | Controls/OrdersHistoryControl.xaml.cs | | Methods: SetOrdersCount |
+| OrderItemsControl | class | Controls/OrderItemsControl.xaml.cs | | Methods: PopulateProductChips, SetTableHeadVisible, ToggleBadgeInfoPopup, UpdatePositionsCount | Static: M:ToggleBadgeInfoPopup |
+| OrdersHistoryControl | class | Controls/OrdersHistoryControl.xaml.cs | | Methods: ReapplyFilters, ResetFilters, SetOrdersCount |
 | PricesControl | class | Controls/PricesControl.xaml.cs | |
-| PrintPreviewControl | class | Controls/PrintPreviewControl.xaml.cs | | Methods: CollectSettings, GetSettings, Initialize |
-| QuickAddControl | class | Controls/QuickAddControl.xaml.cs | | Methods: HighlightRequiredIfEmpty, TryParseQuickNumber | Static: M:TryParseQuickNumber |
+| PrintPreviewControl | class | Controls/PrintPreviewControl.xaml.cs | | Methods: CollectSettings, GetSettings, Initialize, TriggerPdfExport, TriggerPrinterPrint, TriggerPrinterPrintWithProductionCopy |
+| QuickAddControl | class | Controls/QuickAddControl.xaml.cs | | Methods: ClearRequiredHighlight, HighlightRequiredIfEmpty, SetRequiredHighlight, TryParseQuickNumber | Static: M:ClearRequiredHighlight, M:SetRequiredHighlight, M:TryParseQuickNumber |
+| QuickAddFieldError | enum | Controls/QuickAddControl.AddItem.cs | | Methods: GetRequiredFieldError | Static: M:GetRequiredFieldError |
 | SendToFactoryWindow | class | Controls/SendToFactoryWindow.xaml.cs | |
 | SidebarControl | class | Controls/SidebarControl.xaml.cs | |
 | SlopeEconomyDetailsWindow | class | Controls/SlopeEconomyDetailsWindow.xaml.cs | | Methods: LoadData |
 | SlopePanelControl | class | Controls/SlopePanelControl.xaml.cs | Props: TotalWindowCountInOrder | Methods: BuildMaterialSummaryRows, ComputePanelTotal, ComputeTotalSavings, LoadForEdit, PrefillDimensions, Reset, SetPriceService | Static: M:BuildMaterialSummaryRows, M:ComputePanelTotal, M:ComputeTotalSavings |
 | TitleBarControl | class | Controls/TitleBarControl.xaml.cs | | Methods: RefreshUpdateBadge, UpdateSettingsMenu |
-| TotalCardControl | class | Controls/TotalCardControl.xaml.cs | |
+| TotalCardControl | class | Controls/TotalCardControl.xaml.cs | | Methods: UpdatePositionsMeta |
 | UpdateAvailableWindow | class | Controls/UpdateAvailableWindow.xaml.cs | Props: Accepted |
-| UpdatesTabControl | class | Controls/UpdatesTabControl.xaml.cs | | Methods: Mark | Static: M:Mark |
+| UpdatesListLogic | static class | Controls/UpdatesListLogic.cs | | Methods: ApplyExpandedDefaults, BuildCopyText, BuildPredicate, ClassicCountText, ConfigureView, CountText, ResolveChipSelection, SetAllExpanded | Static: M:ApplyExpandedDefaults, M:BuildCopyText, M:BuildPredicate, M:ClassicCountText, M:ConfigureView, M:CountText, M:ResolveChipSelection, M:SetAllExpanded |
+| UpdatesTabControl | class | Controls/UpdatesTabControl.xaml.cs | | Methods: Line | Static: M:Line |
 | WhatsNewWindow | class | Controls/WhatsNewWindow.xaml.cs | |
 
 ### Converters
 
 | DimensionConverter | class | Converters/DimensionConverter.cs | | Methods: Convert, ConvertBack |
 | InverseBoolConverter | class | Converters/InverseBoolConverter.cs | | Methods: Convert, ConvertBack |
+| IsMyVersionConverter | class | Converters/IsMyVersionConverter.cs | | Methods: Convert, ConvertBack |
 | MoneyConverter | class | Converters/MoneyConverter.cs | | Methods: Convert, ConvertBack |
 | NonEmptyStringToVisibilityConverter | class | Converters/BoolVisibilityConverter.cs | | Methods: Convert, ConvertBack |
 | OfficeStatusToBadgeForegroundConverter | class | Converters/OfficeStatusConverters.cs | | Methods: Convert, ConvertBack |
@@ -52,14 +55,15 @@
 | RussianDateConverter | class | Converters/RussianDateConverter.cs | | Methods: Convert, ConvertBack |
 | StatusToBadgeBackgroundConverter | class | Converters/StatusToBadgeBackgroundConverter.cs | | Methods: Convert, ConvertBack |
 | StatusToBadgeForegroundConverter | class | Converters/StatusToBadgeForegroundConverter.cs | | Methods: Convert, ConvertBack |
-| UppercaseConverter | sealed class | Converters/UppercaseConverter.cs | | Methods: Convert, ConvertBack |
-| UppercaseHeaderTemplate | static class | Converters/UppercaseHeaderTemplate.cs | | Methods: Template, Apply | Static: P:Template, M:Apply |
 | UpdateTypeToBrushConverter | class | Converters/UpdateTypeToBrushConverter.cs | | Methods: Convert, ConvertBack |
 | UpdateTypeToIconConverter | class | Converters/UpdateTypeToIconConverter.cs | | Methods: Convert, ConvertBack |
+| UppercaseHeaderTemplate | static class | Converters/UppercaseHeaderTemplate.cs | | Methods: Apply | Static: M:Apply |
 
 ### Helpers
 
-| DataGridColumnAutoSizer | static class | Helpers/DataGridColumnAutoSizer.cs | | Methods: FindCol, SetColumnMinWidth, StripSortIndicator | Static: M:FindCol, M:SetColumnMinWidth, M:StripSortIndicator |
+| DataGridColumnAutoSizer | static class | Helpers/DataGridColumnAutoSizer.cs | | Methods: FindCol, MeasureHeaderWidth, SetColumnMinWidth, StripSortIndicator | Static: M:FindCol, M:MeasureHeaderWidth, M:SetColumnMinWidth, M:StripSortIndicator |
+| Motion | static class | Helpers/Motion.cs | | Methods: Run | Static: M:Run |
+| Radii | static class | Helpers/Radii.cs | |
 
 ### Models
 
@@ -131,7 +135,7 @@
 
 ### MosquitoNetCalculator/MainWindow.TitleDirty.cs
 
-| MainWindow | class | MainWindow.TitleDirty.cs | | Methods: MarkClean, MarkDirty, OpenWelcomeWindow, PushUndo, UpdateBaseTitle, UpdateUndoRedoHint |
+| MainWindow | class | MainWindow.TitleDirty.cs | | Methods: MarkClean, MarkDirty, OpenWelcomeWindow, PushUndo, Redo, Undo, UpdateBaseTitle, UpdateUndoRedoHint |
 
 ### MosquitoNetCalculator/MainWindow.Totals.cs
 
@@ -143,7 +147,7 @@
 
 ### MosquitoNetCalculator/MainWindow.xaml.cs
 
-| MainWindow | class | MainWindow.xaml.cs | Props: CurrentOrderId, IsNewOrder, LastPrintSettings, Sidebar, SuppressPrefixSave, ViewModel | Methods: CloseAllOverlays, CloseSlopeOverlay, EditSlopeItem, NavigateToCalculation, RefreshNavBadges, SelectProductFromChip, SetActiveNavButton, ShowAdminPanel, ShowPrintOverlay, ShowSlopeOverlay, ToggleSidebarOverlay, UpdateEmptyState |
+| MainWindow | class | MainWindow.xaml.cs | Props: CurrentOrderId, IsNewOrder, LastPrintSettings, Sidebar, SuppressPrefixSave, ViewModel | Methods: CloseAllOverlays, CloseSlopeOverlay, EditSlopeItem, NavigateToCalculation, OpenUpdatesTab, RefreshNavBadges, SelectProductFromChip, SetActiveNavButton, ShowAdminPanel, ShowPrintOverlay, ShowSlopeOverlay, ToggleSidebarOverlay, UpdateEmptyState |
 
 ### MosquitoNetCalculator/PrintPreviewWindow.xaml.cs
 
@@ -174,14 +178,16 @@
 | AmountInWordsService | static class | Services/AmountInWordsService.cs | | Methods: Convert | Static: M:Convert |
 | AnwisSizeCalculator | static class | Services/AnwisSizeCalculator.cs | | Methods: ApplyCalcHeight, ApplyCalcWidth, ReverseCalcHeight, ReverseCalcWidth | Static: M:ApplyCalcHeight, M:ApplyCalcWidth, M:ReverseCalcHeight, M:ReverseCalcWidth |
 | AnwisSizeService | static class | Services/AnwisSizeService.cs | | Methods: GetSectionHeader, IsApplicable | Static: M:GetSectionHeader, M:IsApplicable |
-| AppSettingsService | static class | Services/AppSettingsService.cs | Props: ContractPrefix, DeviceId, FirstRunComplete, IncludeProductionCopy, LastColor, LastReportedPrefix, LastSeenVersion, LocationName, OfficeReportGistId, OfficeReportToken, PendingUpdateVersion, SettingsPath, SlopeBetaBannerHidden, Theme, UpdateUrl | Methods: HideSlopeBetaBanner, IsFirstRun, IsSlopeBetaBannerHidden, LoadContractPrefix, LoadIncludeProductionCopy, LoadLastColor, LoadLastReportedPrefix, LoadLastSeenVersion, LoadLocationName, LoadOfficeReportGistId, LoadOfficeReportToken, LoadOrCreateDeviceId, LoadPendingUpdateVersion, LoadTheme, LoadUpdateUrl, MarkFirstRunComplete, SaveContractPrefix, SaveIncludeProductionCopy, SaveLastColor, SaveLastReportedPrefix, SaveLastSeenVersion, SaveLocationName, SaveOfficeReportGistId, SaveOfficeReportToken, SavePendingUpdateVersion, SaveTheme, SaveUpdateUrl, VerifyAdminPassword | Static: M:HideSlopeBetaBanner, M:IsFirstRun, M:IsSlopeBetaBannerHidden, M:LoadContractPrefix, M:LoadIncludeProductionCopy, M:LoadLastColor, M:LoadLastReportedPrefix, M:LoadLastSeenVersion, M:LoadLocationName, M:LoadOfficeReportGistId, M:LoadOfficeReportToken, M:LoadOrCreateDeviceId, M:LoadPendingUpdateVersion, M:LoadTheme, M:LoadUpdateUrl, M:MarkFirstRunComplete, M:SaveContractPrefix, M:SaveIncludeProductionCopy, M:SaveLastColor, M:SaveLastReportedPrefix, M:SaveLastSeenVersion, M:SaveLocationName, M:SaveOfficeReportGistId, M:SaveOfficeReportToken, M:SavePendingUpdateVersion, M:SaveTheme, M:SaveUpdateUrl, M:VerifyAdminPassword, P:SettingsPath |
+| AppFontService | static class | Services/AppFontService.cs | | Methods: CreateIconFamily, CreateInterFamily, CreateMonoFamily, Install | Static: M:CreateIconFamily, M:CreateInterFamily, M:CreateMonoFamily, M:Install |
+| AppSettingsService | static class | Services/AppSettingsService.cs | Props: ContractPrefix, DeviceId, FirstRunComplete, IncludeProductionCopy, InstalledFontVersion, LastColor, LastReportedPrefix, LastSeenVersion, LocationName, OfficeReportGistId, OfficeReportToken, PendingUpdateVersion, SettingsPath, SlopeBetaBannerHidden, Theme, UpdateUrl | Methods: HideSlopeBetaBanner, IsFirstRun, IsSlopeBetaBannerHidden, LoadContractPrefix, LoadIncludeProductionCopy, LoadInstalledFontVersion, LoadLastColor, LoadLastReportedPrefix, LoadLastSeenVersion, LoadLocationName, LoadOfficeReportGistId, LoadOfficeReportToken, LoadOrCreateDeviceId, LoadPendingUpdateVersion, LoadTheme, LoadUpdateUrl, MarkFirstRunComplete, SaveContractPrefix, SaveIncludeProductionCopy, SaveInstalledFontVersion, SaveLastColor, SaveLastReportedPrefix, SaveLastSeenVersion, SaveLocationName, SaveOfficeReportGistId, SaveOfficeReportToken, SavePendingUpdateVersion, SaveTheme, SaveUpdateUrl, VerifyAdminPassword | Static: M:HideSlopeBetaBanner, M:IsFirstRun, M:IsSlopeBetaBannerHidden, M:LoadContractPrefix, M:LoadIncludeProductionCopy, M:LoadInstalledFontVersion, M:LoadLastColor, M:LoadLastReportedPrefix, M:LoadLastSeenVersion, M:LoadLocationName, M:LoadOfficeReportGistId, M:LoadOfficeReportToken, M:LoadOrCreateDeviceId, M:LoadPendingUpdateVersion, M:LoadTheme, M:LoadUpdateUrl, M:MarkFirstRunComplete, M:SaveContractPrefix, M:SaveIncludeProductionCopy, M:SaveInstalledFontVersion, M:SaveLastColor, M:SaveLastReportedPrefix, M:SaveLastSeenVersion, M:SaveLocationName, M:SaveOfficeReportGistId, M:SaveOfficeReportToken, M:SavePendingUpdateVersion, M:SaveTheme, M:SaveUpdateUrl, M:VerifyAdminPassword, P:SettingsPath |
 | AttachmentOcrService | static class | Services/AttachmentOcrService.cs | Props: FailureReason, Text | Methods: CombineResults, ExtractAsync, TryDecodeDataUrl | Static: M:CombineResults, M:ExtractAsync, M:TryDecodeDataUrl |
 | DependencyCheckerService | static class | Services/DependencyCheckerService.cs | | Methods: IsVCRedistInstalled | Static: M:IsVCRedistInstalled |
 | DeviceLastSeenHint | static class | Services/DeviceLastSeenHint.cs | | Methods: Text | Static: M:Text |
-| DialogService | static class | Services/DialogService.cs | | Methods: CreateFluentCloseButton, ShowConfirm, ShowSaveDiscardCancel, ShowUpdateAvailable | Static: M:CreateFluentCloseButton, M:ShowConfirm, M:ShowSaveDiscardCancel, M:ShowUpdateAvailable |
+| DialogService | static class | Services/DialogService.cs | | Methods: BuildConfirmDestructive, CreateFluentCloseButton, ShowConfirm, ShowConfirmDestructive, ShowMessage, ShowSaveDiscardCancel, ShowUpdateAvailable | Static: M:BuildConfirmDestructive, M:CreateFluentCloseButton, M:ShowConfirm, M:ShowConfirmDestructive, M:ShowMessage, M:ShowSaveDiscardCancel, M:ShowUpdateAvailable |
 | DrawingService | static class | Services/DrawingService.cs | | Methods: CreateDrawingImageElement, GetDrawingImage, GetDrawingSvg, WrapForCentering | Static: M:CreateDrawingImageElement, M:GetDrawingImage, M:GetDrawingSvg, M:WrapForCentering |
 | FixedDocumentBuilder | static class | Services/FixedDocumentBuilder.cs | | Methods: Build | Static: M:Build |
 | FlowDocumentBuilder | class | Services/FlowDocumentBuilder.cs | | Methods: Build |
+| FontSelfInstallService | static class | Services/FontSelfInstallService.cs | Props: FontsKeyOpener, InstallDir, LastInstallWasFake | Methods: AddFontResource, EnsureInstalled, InstallBundle, IsFamilyInstalled, RegistryValueName, ResetFakeFlag, SendMessageTimeout | Static: M:AddFontResource, M:EnsureInstalled, M:InstallBundle, M:IsFamilyInstalled, M:RegistryValueName, M:ResetFakeFlag, M:SendMessageTimeout, P:FontsKeyOpener, P:InstallDir, P:LastInstallWasFake |
 | IdleDetector | static class | Services/IdleDetector.cs | | Methods: GetIdleTime | Static: M:GetIdleTime |
 | MissingField | enum | Services/AiPlanSafetyPolicy.cs | | Methods: Classify, IsMissingAnwisMode, IsMissingDimensions, IsMissingInstallation, IsUntargetedUpdate, MissingReasonText, NeedsClarification | Static: M:Classify, M:IsMissingAnwisMode, M:IsMissingDimensions, M:IsMissingInstallation, M:IsUntargetedUpdate, M:MissingReasonText, M:NeedsClarification |
 | MoneyFormatService | static class | Services/MoneyFormatService.cs | | Methods: Format, FormatWhole, TryParse, TryParseInt | Static: M:Format, M:FormatWhole, M:TryParse, M:TryParseInt |
@@ -230,7 +236,7 @@
 
 | Symbol | File(s) |
 |---|---|
-| $k | ViewModels/CalculationViewModel.cs |
+| $k | MainWindow.Totals.cs |
 | $sym | Models/AiCommand.cs, Models/OrderItem.Dto.cs |
 | $sym | Models/AiCommand.cs, Models/OrderItem.Dto.cs |
 | $sym | Models/AiCommand.cs, Models/OrderItem.Dto.cs |
@@ -281,4 +287,4 @@ Context phase: grep SYMBOL_INDEX.md for the class/method you need
 
 ## Last generated
 
-2026-09-07 (gensymbols.ps1)
+2026-09-21 (gensymbols.ps1)
