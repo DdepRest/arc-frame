@@ -166,6 +166,8 @@
 - Вся структура `MosquitoNetCalculator/` и `MosquitoNetCalculator.Tests/`.
 
 ## Last verified
+2026-09-21 (v3.53.0) — в таблицу тестов добавлен `Services/UpdateLogVoiceTests.cs` (страж голоса пользовательской записи об обновлении).
+
 2026-09-14 (v3.53.0) — auto-synced from csproj (sync-version.ps1, CONTROL#13).
 
 2026-09-14 (v3.52.0) — auto-synced from csproj (sync-version.ps1, CONTROL#13).
