@@ -1,4 +1,7 @@
 @echo off
+REM UTF-8 codepage: cmd parses this file as cp866 by default and fails silently
+REM on the Cyrillic production-stamp PNG path when run from bash/CI (GOTCHAS S42).
+chcp 65001 >nul
 echo ============================================
 echo  MosquitoNetCalculator - Build Script
 echo  Version: %DATE% (GitHub Releases auto-update)
