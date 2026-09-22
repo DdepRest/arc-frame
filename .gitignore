@@ -71,3 +71,7 @@ release-artifacts/
 ## Scratch-кадры режима проверки харнесса (-Verify) — не базлайны
 .tools/_verify-*/
 .tools/_det*/
+
+## codebase-memory-mcp — локальный граф знаний (артефакты реиндекссятся локально,
+## в репо не коммитим; иначе graph.db.zst раздувает историю при каждом обновлении)
+.codebase-memory/
