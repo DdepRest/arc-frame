@@ -43,13 +43,15 @@ namespace MosquitoNetCalculator.Controls
 
         /// <summary>Убрать устройства, ВЕРНУВШИЕСЯ с отчётом, и обновить маркер.
         /// Отвязанное устройство после удаления файла в отчётах ОТСУТСТВУЕТ —
-        /// отсутствие в списке это «ещё не вернулся», не «вернулся».</summary>
+        /// отсутствие в списке это «ещё не вернулся», не «вернулся». Правило
+        /// «кто считается вернувшимся» — <see cref="Services.AdminPanelLogic.JustUnboundReturned"/>;
+        /// контрол только применяет результат к своему состоянию.</summary>
         internal void PruneJustUnbound()
         {
             if (_justUnbound.Count == 0) return;
 
             var reporting = Rows.SelectMany(r => r.Devices).Select(d => d.DeviceId).ToHashSet();
-            var returned = _justUnbound.Keys.Where(reporting.Contains).ToList();
+            var returned = AdminPanelLogic.JustUnboundReturned(_justUnbound.Keys, reporting);
             foreach (var id in returned)
                 _justUnbound.Remove(id);
             UpdateJustUnboundText();
