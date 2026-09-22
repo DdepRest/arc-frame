@@ -36,10 +36,18 @@ namespace MosquitoNetCalculator.Tests.Services
         [Fact]
         public void Yesterday_ShowsLocalTime()
         {
-            var now = DateTimeOffset.Parse("2026-09-06T21:00:00+03:00");
-            var hint = DeviceLastSeenHint.Text(Utc("2026-09-05T07:10:00Z"), now.ToOffset(TimeSpan.Zero));
+            // Рантайм может жить в любом поясе (локально +03, CI-раннер — UTC):
+            // оба инстанса строим от TimeZoneInfo.Local, а не от смещения автора.
+            // Ожидаем «вчера 23:59» — отчёт рендерится в свой собственный момент
+            // (его же смещение), поэтому строка стабильна в любом фиксированном
+            // поясе; возраст 12ч01м проходит порог StaleHintAfter = 12ч.
+            var localReport = new DateTimeOffset(2026, 9, 5, 23, 59, 0,
+                TimeZoneInfo.Local.GetUtcOffset(new DateTime(2026, 9, 5, 23, 59, 0)));
+            var localNow = new DateTimeOffset(2026, 9, 6, 12, 0, 0,
+                TimeZoneInfo.Local.GetUtcOffset(new DateTime(2026, 9, 6, 12, 0, 0)));
+            var hint = DeviceLastSeenHint.Text(localReport.ToUniversalTime(), localNow.ToUniversalTime());
             Assert.Contains("вчера", hint);
-            Assert.Contains("10:10", hint);
+            Assert.Contains("23:59", hint);
             Assert.StartsWith("· ", hint);
         }
 
