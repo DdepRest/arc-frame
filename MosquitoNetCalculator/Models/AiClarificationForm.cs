@@ -248,13 +248,7 @@ namespace MosquitoNetCalculator.Models
         /// </summary>
         // PreFillFromRequest/PreFillFromReply/PreFillFromCommand removed — see AiClarificationPrefill.
 
-        private static string InstallationLabel(int mode) => mode switch
-        {
-            0 => "С монтажом",
-            1 => "Без монтажа",
-            2 => "В конструкцию",
-            _ => "Не указывать"
-        };
+        // InstallationLabel removed — see AiKeywordLexicon.InstallationLabel (single source of truth).
 
         // DetectColor / DetectAnwisMode removed — see AiKeywordLexicon.
 
