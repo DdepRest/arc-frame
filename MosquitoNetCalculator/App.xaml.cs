@@ -242,6 +242,14 @@ namespace MosquitoNetCalculator
                 // Fire-and-forget after the main window is visible so
                 // toast notifications have a valid owner.
                 _ = UpdateService.CheckOnStartupAsync();
+
+                // ── Портабельный запуск без VC++ (DependencyCheckerService) ──
+                // Инсталлятор гарантирует VC++ Redistributable; запуск БЕЗ
+                // установки — нет. Тост только у портабельных пользователей
+                // без редистрибутива: печать КП (QuestPDF) и OCR (Tesseract)
+                // там падали бы с тёмными сообщениями. Реестр читается в фоне —
+                // старт не задерживается; любые ошибки глотаются сервисом.
+                Task.Run(() => DependencyCheckerService.NotifyIfMissingOnPortable());
             }
             catch (Exception ex)
             {
