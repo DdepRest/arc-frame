@@ -156,8 +156,12 @@ namespace MosquitoNetCalculator.Services
                 }
 
                 // Build a fresh brush at the old colour so the animation
-                // interpolates from the correct starting point.
-                var newBrush = oldColor.HasValue
+                // interpolates from the correct starting point. БЕЗ анимации
+                // (animate=false) кисть должна создаваться СРАЗУ в целевом
+                // цвете: ниже её цвет никто не двигает — v3.53.0-a11y ловушка
+                // (gate !ReducedMotion) оставляла кисть в старой теме навсегда
+                // на устройствах с выключенными анимациями Windows.
+                var newBrush = (animate && oldColor.HasValue)
                     ? new SolidColorBrush(oldColor.Value)
                     : new SolidColorBrush(newColor);
 

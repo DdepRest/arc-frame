@@ -35,7 +35,7 @@
 | SidebarControl | class | Controls/SidebarControl.xaml.cs | |
 | SlopeEconomyDetailsWindow | class | Controls/SlopeEconomyDetailsWindow.xaml.cs | | Methods: LoadData |
 | SlopePanelControl | class | Controls/SlopePanelControl.xaml.cs | Props: TotalWindowCountInOrder | Methods: BuildMaterialSummaryRows, ComputePanelTotal, ComputeTotalSavings, LoadForEdit, PrefillDimensions, Reset, SetPriceService | Static: M:BuildMaterialSummaryRows, M:ComputePanelTotal, M:ComputeTotalSavings |
-| TemplatesWindow | class | Controls/TemplatesWindow.xaml.cs | |
+| TemplatesWindow | class | Controls/TemplatesWindow.xaml.cs | | Methods: RebuildGridTopFields |
 | TitleBarControl | class | Controls/TitleBarControl.xaml.cs | | Methods: RefreshUpdateBadge, UpdateSettingsMenu |
 | TotalCardControl | class | Controls/TotalCardControl.xaml.cs | | Methods: UpdatePositionsMeta |
 | UpdateAvailableWindow | class | Controls/UpdateAvailableWindow.xaml.cs | Props: Accepted |
@@ -286,4 +286,4 @@ Context phase: grep SYMBOL_INDEX.md for the class/method you need
 
 ## Last generated
 
-2026-09-23 (gensymbols.ps1)
+2026-09-24 (gensymbols.ps1)

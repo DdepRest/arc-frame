@@ -146,6 +146,7 @@
 | `PriceServiceTests.cs` | Загрузка цен, миграции. |
 | `OrderStorageServiceTests.cs` | Сохранение/загрузка заказов. |
 | `AppSettingsServiceTests.cs` | Настройки. |
+| `ThemeApplyTests.cs` | Применение темы: без анимации кисти доходят до целевого цвета (регрессия v3.53.0 — тема не применялась при выключенных анимациях Windows, GOTCHAS §44). |
 | `ManualChecklistTests.cs` | Интеграционные проверки. |
 | `AiAssistantViewModelTests.cs` | VM AI-ассистента: отправка, стриминг, `SubmitClarificationForm`, план→подтверждение→выполнение, slash-команды не блокируют композер. |
 | `AiClarificationFormTests.cs` | Модель формы уточнения: списки, валидация, сборка команды. |
