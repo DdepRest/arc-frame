@@ -1,12 +1,12 @@
 ﻿# Changelog
 
-## Unreleased (v3.54)
+## 3.53.1 — 2026-09-24
 
-### Фикс: тема не применялась при выключенных анимациях Windows (v3.53.0-hotfix кандидат)
+### Фикс: тема не применялась при выключенных анимациях Windows
 
 На устройствах с системной настройкой «отключить анимации» (Специальные возможности → Visual effects → Animation effects off; `SystemParameters.ClientAreaAnimation = false`) после обновления до 3.53.0 приложение оставалось в дефолтной палитре `Brushes.xaml` — у тёмных пользователей: светлый контент + тёмный сайдбар и панель «ИТОГО». Причина: коммит a11y (gate `!Motion.ReducedMotion` в `ThemeService.ApplyTheme`) сделал `animate=false`, а slow-path создавал кисть **в старом цвете** («для интерполяции от старого к новому») — без анимации её цвет никто не двигал. Фикс: без анимации кисть создаётся сразу в целевом цвете. Страж: `ThemeApplyTests.ApplyTheme_SetsBrushesToTargetColors_WithoutAnimation` (проверен на откаченном фиксе — ловит баг).
 
-### Фикс: «Выберите тип сетки.» на заполненной форме (v3.54-fix2)
+### Фикс: «Выберите тип сетки.» на заполненной форме
 
 В шаблоне «Окно» нажатие «Добавить в заказ» сразу после открытия чек-листа (с заполненными только размерами) падало с тостом «Выберите тип сетки.», хотя тип визуально выбран (Anwis). Причина: в `TemplatesWindow.RebuildGridTopFields` начальная установка `cmbType.SelectedIndex` происходит **до** подписки на `SelectionChanged` — событие при программной установке не срабатывает, и `_state.GridProductIndex` оставался −1 («не выбран»). Сводка при этом показывала цену Anwis, потому что `ResolveProductName` зажимает −1 через `Math.Clamp`. Фикс: после первичной установки индекс и режим Anwis синхронизируются явно (`_state.GridProductIndex = cmbType.SelectedIndex`, `_state.GridAnwisMode = …`); источник цветов вынесен в internal-перегрузку `RebuildGridTopFields(Func<string, List<string>?>)` — тестовый шов для STA-тестов без `MainWindow`. Стражи: `TemplatesWindowTests.RebuildGridTopFields_SyncsStateBeforeAnyInteraction` и `…_NonAnwisType_KeepsIndexInSync` (валидация проходит без единого касания выпадающих списков); UIA-скрипт `.tools/check-templates-window.ps1` дополнен проверкой №3 — «Добавить в заказ» без касания списков должен закрыть окно. E2E-сценарий с включённым отливом (добавление → состав таблицы из 4 позиций → откат одним Ctrl+Z) — скрипт `.tools/check-templates-e2e-otliv.ps1`. Прогон **2390/2390**, сборка 0/0.
 

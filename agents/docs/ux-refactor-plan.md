@@ -1,4 +1,4 @@
-﻿# UX Refactor Plan — A.R.C. Frame v3.41
+# UX Refactor Plan — A.R.C. Frame v3.41
 
 ## Цель
 
@@ -211,6 +211,8 @@
 ---
 
 ## Last verified
+2026-09-24 (v3.53.1) — обновлено содержимое (sync-last-verified.ps1, CONTROL#13).
+
 2026-09-14 (v3.53.0) — auto-synced from csproj (sync-version.ps1, CONTROL#13).
 
 2026-09-14 (v3.52.0) — auto-synced from csproj (sync-version.ps1, CONTROL#13).

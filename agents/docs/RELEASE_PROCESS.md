@@ -1,4 +1,4 @@
-﻿# RELEASE_PROCESS.md
+# RELEASE_PROCESS.md
 
 ## Где хранится версия программы
 
@@ -351,6 +351,8 @@ git commit -m "release: update releases.json for vX.Y.Z"
 - `extract-release-notes.ps1`
 
 ## Last verified
+2026-09-24 (v3.53.1) — обновлено содержимое (sync-last-verified.ps1, CONTROL#13).
+
 2026-09-21 (v3.53.0) — шаг 1.6 уточнён: что можно писать в «Что нового», страж `UpdateLogVoiceTests`, политика `generate-update-log.ps1` (GOTCHAS §39).
 
 2026-09-14 (v3.53.0) — auto-synced from csproj (sync-version.ps1, CONTROL#13).

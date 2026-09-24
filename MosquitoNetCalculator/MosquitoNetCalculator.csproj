@@ -14,7 +14,7 @@
          процесс остаётся System-DPI-aware и «мылится» при переносе окна
          между мониторами с разным масштабом. -->
     <ApplicationManifest>app.manifest</ApplicationManifest>
-    <Version>3.53.0</Version>
+    <Version>3.53.1</Version>
     <RuntimeIdentifiers>win-x64</RuntimeIdentifiers>
     <!-- Treat every compiler / NuGet warning as an error so the build fails
          closed if any future change reintroduces a warning. The current

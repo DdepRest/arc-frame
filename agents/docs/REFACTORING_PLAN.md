@@ -1,4 +1,4 @@
-﻿# План системного рефакторинга — A.R.C. Frame
+# План системного рефакторинга — A.R.C. Frame
 
 ## 1. Executive summary
 
@@ -395,6 +395,8 @@ powershell -ExecutionPolicy Bypass -File agents/scripts/validate-docs.ps1
 - `MosquitoNetCalculator/Models/OrderItem.cs`
 
 ## Last verified
+2026-09-24 (v3.53.1) — обновлено содержимое (sync-last-verified.ps1, CONTROL#13).
+
 2026-09-14 (v3.53.0) — auto-synced from csproj (sync-version.ps1, CONTROL#13).
 
 2026-09-14 (v3.52.0) — auto-synced from csproj (sync-version.ps1, CONTROL#13).

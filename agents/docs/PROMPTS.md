@@ -1,4 +1,4 @@
-﻿# PROMPTS.md — готовые prompt-шаблоны
+# PROMPTS.md — готовые prompt-шаблоны
 
 Вынесены из `MULTI_AGENT_ARC_CALC_CONTROL.md`. Используй для типовых сценариев.
 
@@ -239,6 +239,8 @@ powershell -ExecutionPolicy Bypass -File agents/scripts/validate-docs.ps1
 - `agents/docs/MULTI_AGENT_ARC_CALC_CONTROL.md` (исходные секции 9–13)
 
 ## Last verified
+2026-09-24 (v3.53.1) — обновлено содержимое (sync-last-verified.ps1, CONTROL#13).
+
 2026-09-14 (v3.53.0) — auto-synced from csproj (sync-version.ps1, CONTROL#13).
 
 2026-09-14 (v3.52.0) — auto-synced from csproj (sync-version.ps1, CONTROL#13).

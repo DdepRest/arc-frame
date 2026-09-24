@@ -1,4 +1,4 @@
-﻿# Multi-Agent Control Plan — A.R.C. / расчёты товаров, размеров, Anwis, КП, завод
+# Multi-Agent Control Plan — A.R.C. / расчёты товаров, размеров, Anwis, КП, завод
 
 Этот документ адаптирует AI-самоконтроль под проект, который делают разные агенты.
 
@@ -407,6 +407,8 @@ REFACTORING_PLAN.md
 - `validate-docs.ps1` — валидация документации
 
 ## Last verified
+2026-09-24 (v3.53.1) — обновлено содержимое (sync-last-verified.ps1, CONTROL#13).
+
 2026-09-21 (v3.53.0) — синхронизация даты «Last verified» вынесена в sync-last-verified.ps1 + git pre-commit (GOTCHAS §40).
 
 2026-09-14 (v3.53.0) — auto-synced from csproj (sync-version.ps1, CONTROL#13).

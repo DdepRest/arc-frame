@@ -1,4 +1,4 @@
-﻿# AUTO_UPDATE — План исправлений (v3.47.2 → v3.48.x)
+# AUTO_UPDATE — План исправлений (v3.47.2 → v3.48.x)
 
 > Многоэтапный план устранения 9 проблем, выявленных в brainstorm-анализе
 > (`AUTO_UPDATE.md` + обзор кода на 2026-07-22).
@@ -868,6 +868,8 @@ Phase 1+2+3 → v3.48.0; Phase 4 → v3.49.0; Phase 5+6 → v3.50.0.
 ---
 
 ## Last verified
+2026-09-24 (v3.53.1) — обновлено содержимое (sync-last-verified.ps1, CONTROL#13).
+
 2026-09-14 (v3.53.0) — auto-synced from csproj (sync-version.ps1, CONTROL#13).
 
 2026-09-14 (v3.52.0) — auto-synced from csproj (sync-version.ps1, CONTROL#13).

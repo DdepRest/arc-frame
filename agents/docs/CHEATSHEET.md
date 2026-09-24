@@ -1,4 +1,4 @@
-﻿# CHEATSHEET — критические правила (читай перед любой задачей)
+# CHEATSHEET — критические правила (читай перед любой задачей)
 
 Правила без объяснений. Подробности — по ссылкам.
 
@@ -104,6 +104,8 @@ agents/scripts/arc-check.ps1                                 # Проверка 
 - `ai-agent-mode-plan.md` — полный план AI Agent Mode (13 этапов: Этап 0–12)
 
 ## Last verified
+2026-09-24 (v3.53.1) — обновлено содержимое (sync-last-verified.ps1, CONTROL#13).
+
 2026-09-21 (v3.53.0) — новый инструмент: sync-last-verified.ps1 и install-git-hooks.ps1 — дата ставится на коммите (GOTCHAS §40).
 
 2026-09-14 (v3.53.0) — auto-synced from csproj (sync-version.ps1, CONTROL#13).
