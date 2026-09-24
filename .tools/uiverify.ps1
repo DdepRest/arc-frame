@@ -1318,7 +1318,11 @@ try {
     # Warning lifetime is 6 s: hover EARLY, then shot at +4 s must show the
     # toast and shot at +7 s must STILL show it only if hover pauses the
     # countdown. After unhovering, the toast must disappear.
-    Invoke-ActionBarButton "На завод"
+    # v3.54: кнопка «На завод» заменена на «Шаблоны» — сцена 08 ловит тот же
+    # warning-тост пустого заказа через любую кнопку ActionBar без побочного
+    # эффекта; «Шаблоны» для пустого заказа безопаснее (окно выбора без тоста),
+    # поэтому используем «Печать КП» (тот же guard «Добавьте хотя бы одну позицию»).
+    Invoke-ActionBarButton "Печать КП"
     $wr = Get-WinRect
     Move-At ($wr.X + $wr.W - 180) ($wr.Y + $wr.H - 60)
     Start-Sleep -Milliseconds 900

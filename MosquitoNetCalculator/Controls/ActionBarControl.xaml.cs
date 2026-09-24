@@ -172,24 +172,15 @@ namespace MosquitoNetCalculator.Controls
             mw.UpdateEmptyState();
         }
 
-        private void BtnSendToFactory_Click(object sender, RoutedEventArgs e)
+        private void BtnTemplates_Click(object sender, RoutedEventArgs e)
         {
-            if (!TryGetMainWindow(nameof(BtnSendToFactory_Click), out var mw)) return;
-            var allItems = mw.OrderItems.Where(i => !string.IsNullOrEmpty(i.Name) && i.Total > 0).ToList();
-            if (allItems.Count == 0)
-            {
-                ToastService.ShowToast("Добавьте хотя бы одну позицию.", ToastType.Warning);
-                return;
-            }
+            if (!TryGetMainWindow(nameof(BtnTemplates_Click), out var mw)) return;
 
-            string address = mw.ClientInfo.ClientAddress ?? "";
-            var additionalKps = mw.ClientInfo.AdditionalKps
-                .Where(kp => kp.IsActive)
-                .ToList();
-
-            var selectableItems = FactoryTextService.BuildSelectableItems(allItems, additionalKps);
-
-            var window = new SendToFactoryWindow(address, selectableItems)
+            // Шаблоны (замена «На завод», v3.54): быстрое добавление готового
+            // набора позиций. Каталог — чистый OrderTemplateService, UI —
+            // модальное окно. Добавление в заказ выполняет само окно после
+            // подтверждения пользователя (атомарно, один Undo-шаг).
+            var window = new TemplatesWindow(mw)
             {
                 Owner = mw
             };

@@ -1,4 +1,4 @@
-﻿# CALCULATION_LOGIC.md
+﻿﻿# CALCULATION_LOGIC.md
 
 ## Где находится расчёт стоимости
 
@@ -342,26 +342,15 @@ if (HasImpost)
 
 ---
 
-## Как расчёт связан с отправкой на завод
+## Как расчёт связан с заводом (после v3.54)
 
-`FactoryTextService.Generate` использует `item.Размеры.ШиринаЗавод` / `ВысотаЗавод` для Anwis и обычные `Width`/`Height` для остальных.
+Генератор текста «На завод» (`FactoryTextService` + `SendToFactoryWindow`) **удалён** вместе с кнопкой (v3.54): менеджеры перестали им пользоваться, вместо неё — кнопка «Шаблоны» (`OrderTemplateService` + `TemplatesWindow`, быстрое добавление набора позиций).
 
-### Auto-selection: какие товары попадают в партию по умолчанию
+Что осталось и остаётся важным:
 
-`FactoryTextService.BuildSelectableItems` строит список чекбоксов для диалога «На завод».
-По умолчанию галочка **включена** для товаров, которые фабрика реально изготавливает из сетки/профиля:
-
-| Категория | Товары | По умолчанию |
-|-----------|-------|--------------|
-| Сетки (производство) | Anwis, На навесах, Оконная на метал. крепл., Козырёк, Дверная сетка | ✅ включён |
-| Готовые элементы (НЕ производство) | **Отлив**, Короб, Уплотнение, Откос материал | ❌ выключен |
-| Услуги / штучные | ПСУЛ, Работа, Доставка, Брус, Пояс | ❌ выключен |
-
-Контракт зафиксирован в коде: `FactoryTextService.notForProduction` HashSet.
-**Отлив перенесён из «производственных» в «готовый элемент» (Unreleased, план. v3.41.x)** — это готовый оконный слив/подоконник,
-а не сетчатое полотно, поэтому пользователь явно включает его галочкой перед отправкой партии.
-Покрыто `FactoryTextServiceTests.BuildSelectableItems_NonProduction_IsNotSelected("Отлив")` и
-`ManualChecklistTests.Check12_BuildSelectableItems_Production_On_NonProduction_Off`.
+- **Заводские размеры живут в модели**: `AnwisSize.ШиринаЗавод`/`ВысотаЗавод` (расчёт − 20 мм) — часть трёхслойной системы размеров Anwis. Их формулы не трогать (см. раздел «4 типа размеров» выше).
+- Объяснение пилюль режимов Anwis (`AnwisSizeService.GetExplanation`) по-прежнему показывает строку «На завод (копия): расчёт − 20 мм → W×H» — это обучение пользователя размерной модели, не отправка на производство. Покрыто `AnwisSizeServiceTests`.
+- Кнопка «Шаблоны» НЕ участвует в расчётах: она собирает параметры позиций (тип/цвет/режим/размеры/цена из прайса) и добавляет их штатным `CalculationViewModel.AddItem` — дальше работают обычные формулы (Anwis-коррекция, импост, монтаж). Контракт: атомарное добавление с одним PushUndo на весь шаблон.
 
 ---
 
@@ -798,10 +787,11 @@ double perWindowSum = SlopeData.Sandwich.Sum + SlopeData.Foam.Sum
 - `MosquitoNetCalculator/ViewModels/CalculationViewModel.cs`
 - `MosquitoNetCalculator/Services/PriceService.cs`
 - `MosquitoNetCalculator/Services/PrintService.cs`
-- `MosquitoNetCalculator/Services/FactoryTextService.cs`
 - `MosquitoNetCalculator/Models/OrderItem.cs` (Width/Height setter'ы, ШиринаВвод/ВысотаВвод)
 
 ## Last verified
+2026-09-24 (v3.53.0) — обновлено содержимое (sync-last-verified.ps1, CONTROL#13).
+
 2026-09-14 (v3.53.0) — auto-synced from csproj (sync-version.ps1, CONTROL#13).
 
 2026-09-14 (v3.52.0) — auto-synced from csproj (sync-version.ps1, CONTROL#13).

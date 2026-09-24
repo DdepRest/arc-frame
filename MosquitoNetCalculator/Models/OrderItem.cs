@@ -376,14 +376,14 @@ namespace MosquitoNetCalculator.Models
         /// v3.50.2: screen name WITHOUT the surcharge suffixes — the grid row
         /// already shows the «АК +2000» / «ИМ» badges with click popups, so a
         /// duplicated «(Антикошка)» / «(Импост)» label was visual noise.
-        /// Printed КП and «На завод» texts (FlowDocumentBuilder,
-        /// PdfExportService, FactoryTextService) take the opposite,
-        /// <see cref="PrintDisplayName"/>, which keeps the full annotation.
+        /// Printed artifacts (FlowDocumentBuilder, PdfExportService) take the
+        /// opposite, <see cref="PrintDisplayName"/>, which keeps the full
+        /// annotation. (v3.54: «На завод»/FactoryTextService удалён.)
         /// </summary>
         public string DisplayName => Name;
 
         /// <summary>
-        /// Full display name for печатное КП and «На завод» — appends
+        /// Full display name for печатное КП — appends
         /// "(Антикошка)" when <see cref="IsAnticat"/> is true and "(Импост)"
         /// when <see cref="HasImpost"/> is true.
         /// </summary>

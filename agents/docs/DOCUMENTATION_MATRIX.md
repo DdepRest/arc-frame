@@ -55,7 +55,7 @@ Or run: agents/scripts/what-to-update.ps1 (git diff --name-only) -- the script r
 |---|---|
 | `Services/PriceService.cs` | `GOTCHAS.md#4`, `CALCULATION_LOGIC.md#цены`, `CURRENT_STATE.md`, `CHANGELOG.md` |
 | `Services/PrintService.cs` | `GOTCHAS.md#6`, `CALCULATION_LOGIC.md#КП`, `CURRENT_STATE.md`, `CHANGELOG.md` |
-| `Services/FactoryTextService.cs` | `GOTCHAS.md#завод`, `CALCULATION_LOGIC.md#завод`, `CALCULATION_TEST_CASES.md`, `CHANGELOG.md` |
+| `Services/OrderTemplateService.cs` | `MODULES.md`, `CURRENT_STATE.md`, `CHANGELOG.md` |
 | `Services/UpdateService.cs` | `AUTO_UPDATE.md`, `GOTCHAS.md#5`, `GOTCHAS.md#8`, `RELEASE_PROCESS.md`, `CHANGELOG.md` |
 | `Services/WatchdogService.cs` | `AUTO_UPDATE.md`, `GOTCHAS.md#5`, `RELEASE_PROCESS.md`, `CHANGELOG.md` |
 | `Services/UpdateLog.cs` | `CURRENT_STATE.md` |
@@ -101,7 +101,7 @@ Or run: agents/scripts/what-to-update.ps1 (git diff --name-only) -- the script r
 | `Controls/PricesControl.*` | `CURRENT_STATE.md`, `CHANGELOG.md` |
 | `Controls/UpdatesTabControl.*` | `CURRENT_STATE.md`, `CHANGELOG.md` |
 | `Controls/TotalCardControl.*` | `CURRENT_STATE.md` |
-| `Controls/SendToFactoryWindow.*` | `CURRENT_STATE.md`, `CHANGELOG.md` |
+| `Controls/TemplatesWindow.*` | `CURRENT_STATE.md`, `CHANGELOG.md` |
 | `Controls/AnwisContextMenuBuilder.cs` | `CURRENT_STATE.md`, `CHANGELOG.md` |
 | `Controls/AiAssistantControl.*` | `CURRENT_STATE.md`, `CHANGELOG.md` (streaming chat UI, model badges, plan preview card with Выполнить/Отмена and Отменить действие) |
 | `Controls/AiApiKeyDialog.*` | `CURRENT_STATE.md`, `CHANGELOG.md` (AI keys, model catalog and auto-select UX) |
@@ -184,4 +184,4 @@ Use agents/scripts/what-to-update.ps1 to get the list of docs to update - the sc
 
 ## Last verified
 
-2026-09-14 (generated from JSON)
+2026-09-23 (generated from JSON)

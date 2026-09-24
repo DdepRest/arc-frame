@@ -175,11 +175,10 @@
       ]
     },
     {
-      "file": "Services/FactoryTextService.cs",
+      "file": "Services/OrderTemplateService.cs",
       "docs": [
-        "GOTCHAS.md#завод",
-        "CALCULATION_LOGIC.md#завод",
-        "CALCULATION_TEST_CASES.md",
+        "MODULES.md",
+        "CURRENT_STATE.md",
         "CHANGELOG.md"
       ]
     },
@@ -378,7 +377,7 @@
       ]
     },
     {
-      "file": "Controls/SendToFactoryWindow.*",
+      "file": "Controls/TemplatesWindow.*",
       "docs": [
         "CURRENT_STATE.md",
         "CHANGELOG.md"

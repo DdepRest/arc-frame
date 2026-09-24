@@ -51,7 +51,8 @@ namespace MosquitoNetCalculator.Services
         };
 
         /// <summary>
-        /// Заголовок секции Anwis для FactoryTextService.
+        /// Заголовок секции Anwis по режиму (был нужен FactoryTextService,
+        /// после v3.54 используется только тестами словаря).
         /// Пример: "Anwis, размер проёма (ББ 60)".
         /// </summary>
         public static string GetSectionHeader(AnwisSizeMode mode)

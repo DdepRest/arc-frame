@@ -1,4 +1,4 @@
-﻿# INTENTS.md — mapping намерений на файлы
+﻿﻿# INTENTS.md — mapping намерений на файлы
 
 > How AI agents use this: On the Intake phase, after understanding the user's request, check this table to jump directly to relevant files instead of full codebase exploration.
 
@@ -12,7 +12,8 @@
 | Изменить боковую панель (клиент, договор) | `SidebarControl.xaml`, `SidebarControl.xaml.cs`, `ClientInfo.cs` |
 | Изменить итоговую карточку | `TotalCardControl.xaml`, `TotalCardControl.xaml.cs`, `CalculationViewModel.cs` |
 | Изменить панель действий | `ActionBarControl.xaml`, `ActionBarControl.xaml.cs` |
-| Изменить диалог «На завод» | `SendToFactoryWindow.xaml`, `SendToFactoryWindow.xaml.cs`, `FactoryTextService.cs` |
+| Изменить кнопку/окно «Шаблоны» | `Controls/TemplatesWindow.xaml(.cs)`, `Services/OrderTemplateService.cs`, `ActionBarControl.xaml(.cs)` (кнопка) |
+| Добавить новый шаблон в каталог | `Services/OrderTemplateService.cs` (`All` — новая запись `OrderTemplate`; UI не меняется) |
 | Изменить вкладку «Заказы» | `OrdersHistoryControl.xaml`, `OrdersHistoryControl.xaml.cs`, `OrdersHistoryViewModel.cs` |
 | Изменить тему/цвета | `Themes/Brushes.xaml`, `ThemeService.cs`, `DECISIONS.md#10`, `GOTCHAS.md#7` |
 | Открыть/изменить админ-панель (вкладки «Обновления»/«Статистика», устройства офиса) | `Controls/AdminPanelControl.xaml(.cs)` (TabControl — новые секции добавляются сюда), `Services/OfficeReportService.cs` (gist-канал, per-device файлы), `Models/OfficeDeviceRow.cs` (устройство офиса), `Services/OfficeStatusCalculator.cs` (статусы по устройствам), `Services/OfficeStatsCalculator.cs` (статистика заказов, сумма по устройствам), `Services/OfficeReportScheduler.cs` (периодическая отправка каждые 30 мин), `MainWindow.xaml` (NavBtnAdmin/AdminOverlay; отчёт при фоновой проверке обновлений), `Controls/TitleBarControl.xaml.cs` (отчёт при ручной проверке), `Controls/AdminPasswordWindow.xaml(.cs)` (вход по паролю) |
@@ -54,8 +55,7 @@
 
 | Пользователь хочет | Смотреть файлы |
 |---|---|
-| Изменить текст «На завод» | `FactoryTextService.cs`, `SendToFactoryWindow.xaml` |
-| Изменить группировку товаров | `FactoryTextService.cs` (Generate), `CALCULATION_LOGIC.md#завод` |
+| Текст «На завод» | УДАЛЁН (v3.54): `FactoryTextService`/`SendToFactoryWindow` больше нет; заводские размеры (−20 мм) живут в `AnwisSize.cs` и объяснении режимов (`AnwisSizeService.GetExplanation`) |
 
 ## Сохранение / загрузка
 
@@ -142,6 +142,8 @@ Intake phase: user describes intent
 - `INTENTS.md` — this file
 
 ## Last verified
+2026-09-24 (v3.53.0) — обновлено содержимое (sync-last-verified.ps1, CONTROL#13).
+
 2026-09-14 (v3.53.0) — auto-synced from csproj (sync-version.ps1, CONTROL#13).
 
 2026-09-14 (v3.52.0) — auto-synced from csproj (sync-version.ps1, CONTROL#13).

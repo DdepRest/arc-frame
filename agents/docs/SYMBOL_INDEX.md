@@ -32,10 +32,10 @@
 | PrintPreviewControl | class | Controls/PrintPreviewControl.xaml.cs | | Methods: CollectSettings, GetSettings, Initialize, TriggerPdfExport, TriggerPrinterPrint, TriggerPrinterPrintWithProductionCopy |
 | QuickAddControl | class | Controls/QuickAddControl.xaml.cs | | Methods: ClearRequiredHighlight, HighlightRequiredIfEmpty, SetRequiredHighlight, TryParseQuickNumber | Static: M:ClearRequiredHighlight, M:SetRequiredHighlight, M:TryParseQuickNumber |
 | QuickAddFieldError | enum | Controls/QuickAddControl.AddItem.cs | | Methods: GetRequiredFieldError | Static: M:GetRequiredFieldError |
-| SendToFactoryWindow | class | Controls/SendToFactoryWindow.xaml.cs | |
 | SidebarControl | class | Controls/SidebarControl.xaml.cs | |
 | SlopeEconomyDetailsWindow | class | Controls/SlopeEconomyDetailsWindow.xaml.cs | | Methods: LoadData |
 | SlopePanelControl | class | Controls/SlopePanelControl.xaml.cs | Props: TotalWindowCountInOrder | Methods: BuildMaterialSummaryRows, ComputePanelTotal, ComputeTotalSavings, LoadForEdit, PrefillDimensions, Reset, SetPriceService | Static: M:BuildMaterialSummaryRows, M:ComputePanelTotal, M:ComputeTotalSavings |
+| TemplatesWindow | class | Controls/TemplatesWindow.xaml.cs | |
 | TitleBarControl | class | Controls/TitleBarControl.xaml.cs | | Methods: RefreshUpdateBadge, UpdateSettingsMenu |
 | TotalCardControl | class | Controls/TotalCardControl.xaml.cs | | Methods: UpdatePositionsMeta |
 | UpdateAvailableWindow | class | Controls/UpdateAvailableWindow.xaml.cs | Props: Accepted |
@@ -200,6 +200,7 @@
 | OrderGridPresenter | static class | Services/OrderGridPresenter.cs | | Methods: ApplySortIndicators, GetColumnSortKey, IsHeaderClick, RefreshOrdersGrid | Static: M:ApplySortIndicators, M:GetColumnSortKey, M:IsHeaderClick, M:RefreshOrdersGrid |
 | OrderImportExportService | class | Services/OrderImportExportService.cs | | Methods: BuildSingleOrderFileName, CopyOrder, DeepCloneOrder, ExportAllOrders, ExportSingleOrder, ImportOrders | Static: M:BuildSingleOrderFileName, M:DeepCloneOrder |
 | OrderStorageService | class | Services/OrderStorageService.cs | Props: OrdersDir | Methods: DeleteOrder, ExportOrders, GenerateContractNumber, GenerateCopyContractNumber, GetNextOrderNumber, LoadAllOrders, LoadOrder, SaveOrder | Static: P:OrdersDir |
+| OrderTemplateService | class | Services/OrderTemplateService.cs | Props: Anticat, AnwisMode, Color, DefaultChecked, DeliveryAmount, DeliveryEnabled, DeliveryQuantity, GridAnticat, GridAnwisMode, GridColor, GridHeight, GridProductIndex, GridQuantity, GridWidth, Height, Hint, Id, InstallationMode, IsAvailable, IsCheckedLocked, LastErrorRow, Name, OtlivColor, OtlivEnabled, OtlivHeight, OtlivInstallationMode, OtlivQuantity, OtlivWidth, Price, ProductName, PsulEnabled, PsulHeight, PsulQuantity, PsulWidth, Quantity, RowKey, Rows, Subtitle, Type, Width | Methods: BuildItemSpecs, GetValidationError, ResolveProductName, ResolveRowPrice | Static: M:ResolveRowPrice |
 | PageSelection | static class | Services/PageSelection.cs | | Methods: GetSelectedSourcePages | Static: M:GetSelectedSourcePages |
 | PdfExportService | class | Services/PdfExportService.cs | | Methods: Compose, Export |
 | PriceService | class | Services/PriceService.cs | Props: PricesPath | Methods: DefaultPricesSnapshot, GetColorsForProduct, GetPrice, GetProductNames, LoadPrices, SavePrices | Static: M:DefaultPricesSnapshot, P:PricesPath |
@@ -207,7 +208,6 @@
 | PrintQueueManager | static class | Services/PrintQueueManager.cs | | Methods: GetDefaultPrinterName, GetInstalledPrinterNames, GetInstalledPrintQueues, ResolvePrintQueue, SendToQueue | Static: M:GetDefaultPrinterName, M:GetInstalledPrinterNames, M:GetInstalledPrintQueues, M:ResolvePrintQueue, M:SendToQueue |
 | PrintService | class | Services/PrintService.cs | | Methods: BuildFixedDocument, BuildFlowDocument, CreateDrawingImageElement, ExportPdf, GetDefaultPrinterName, GetInstalledPrinterNames, GetInstalledPrintQueues, ResolvePrintQueue, SendToQueue, WrapForCentering | Static: M:BuildFixedDocument, M:CreateDrawingImageElement, M:GetDefaultPrinterName, M:GetInstalledPrinterNames, M:GetInstalledPrintQueues, M:ResolvePrintQueue, M:SendToQueue, M:WrapForCentering |
 | ProductionStampImage | static class | Services/ProductionStampImage.cs | | Methods: TryGetPath, TryLoadBytes | Static: M:TryGetPath, M:TryLoadBytes |
-| SelectableItem | class | Services/FactoryTextService.cs | Props: AdditionalKp, Detail, DisplayName, IsSelected, OrderItem | Methods: BuildSelectableItems, Generate | Static: M:BuildSelectableItems, M:Generate |
 | SlopeCalculatorService | static class | Services/SlopeCalculatorService.cs | | Methods: Calculate, GetPenoplexSheets, OptimizeStrips, OptimizeStripsForMultipleWindows, OptimizeStripsForMultipleWindows3Sides, OptimizeStripsForPerimeter, RecalculateSealantAndTape, UpdateInPlace | Static: M:Calculate, M:GetPenoplexSheets, M:OptimizeStrips, M:OptimizeStripsForMultipleWindows, M:OptimizeStripsForMultipleWindows3Sides, M:OptimizeStripsForPerimeter, M:RecalculateSealantAndTape, M:UpdateInPlace |
 | SlopeEconomyCalculator | static class | Services/SlopeEconomyCalculator.cs | | Methods: CalculateDetails, CalculateTotalSaved | Static: M:CalculateDetails, M:CalculateTotalSaved |
 | SlopeSummaryCalculator | static class | Services/SlopeSummaryCalculator.cs | | Methods: BuildMaterialSummaryRows, ComputePanelTotal, ComputeTotalSavings | Static: M:BuildMaterialSummaryRows, M:ComputePanelTotal, M:ComputeTotalSavings |
@@ -237,12 +237,12 @@
 | Symbol | File(s) |
 |---|---|
 | $k | MainWindow.Totals.cs |
-| $sym | Models/AiCommand.cs, Models/OrderItem.Dto.cs |
-| $sym | Models/AiCommand.cs, Models/OrderItem.Dto.cs |
-| $sym | Models/AiCommand.cs, Models/OrderItem.Dto.cs |
-| $sym | Models/AiCommand.cs, Models/OrderItem.Dto.cs |
-| $sym | Models/OrderItem.Dto.cs, Services/AiModelCatalogClient.cs |
-| $sym | Models/AiCommand.cs, Models/OrderItem.Dto.cs |
+| $sym | Models/AiCommand.cs, Models/OrderItem.Dto.cs, Services/OrderTemplateService.cs |
+| $sym | Models/AiCommand.cs, Models/OrderItem.Dto.cs, Services/OrderTemplateService.cs |
+| $sym | Models/AiCommand.cs, Models/OrderItem.Dto.cs, Services/OrderTemplateService.cs |
+| $sym | Models/AiCommand.cs, Models/OrderItem.Dto.cs, Services/OrderTemplateService.cs |
+| $sym | Models/OrderItem.Dto.cs, Services/AiModelCatalogClient.cs, Services/OrderTemplateService.cs |
+| $sym | Models/AiCommand.cs, Models/OrderItem.Dto.cs, Services/OrderTemplateService.cs |
 | $k | Controls/SlopePanelControl.xaml.cs, Services/SlopeSummaryCalculator.cs |
 | $k | Services/AiFactsProvider.cs |
 | $methKey | Models/ProductCatalog.cs, Services/AiFactsProvider.cs |
@@ -251,14 +251,13 @@
 | $methKey | Models/ProductCatalog.cs, Services/AiFactsProvider.cs |
 | $methKey | Models/AdditionalKpItem.cs |
 | $sym | Models/OrderItem.Dto.cs |
-| $sym | Models/AiCommand.cs, Models/OrderItem.Dto.cs |
+| $sym | Models/AiCommand.cs, Models/OrderItem.Dto.cs, Services/OrderTemplateService.cs |
 | $sym | Models/OrderItem.Dto.cs |
 | $methKey | MainWindow.Pricing.cs, Services/PriceService.cs, ViewModels/MainWindowViewModel.cs, ViewModels/PricesViewModel.cs |
 | $methKey | Services/PriceService.cs, ViewModels/PricesViewModel.cs |
 | $methKey | Services/AiFactsProvider.cs, Services/PriceService.cs, ViewModels/PricesViewModel.cs |
 | $k | Services/PriceService.cs |
-| $methKey | Services/FactoryTextService.cs |
-| $methKey | Services/FactoryTextService.cs |
+| $k | Services/AiCommandParser.cs |
 | $methKey | ViewModels/CalculationViewModel.cs |
 | $methKey | ViewModels/CalculationViewModel.cs |
 | $methKey | ViewModels/CalculationViewModel.cs |
@@ -287,4 +286,4 @@ Context phase: grep SYMBOL_INDEX.md for the class/method you need
 
 ## Last generated
 
-2026-09-22 (gensymbols.ps1)
+2026-09-23 (gensymbols.ps1)

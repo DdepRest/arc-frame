@@ -1791,8 +1791,8 @@ namespace MosquitoNetCalculator.Tests.Models
         public void Размеры_NonAnwis_DisplayEqualsCalc(string name)
         {
             // For non-Anwis products, Отображение and Расчёт layers are identity.
-            // (Завод layer = calc − 20 is never read for non-Anwis —
-            //  FactoryTextService gates on IsApplicable before accessing it.)
+            // (Завод layer = calc − 20 остаётся в модели — «AnwisSize» — но
+            //  потребители заводского текста удалены в v3.54.)
             var item = new OrderItem { Name = name, Width = 250, Height = 0 };
             var s = item.Размеры;
             Assert.Equal(item.Width, s.ШиринаОтображение);
