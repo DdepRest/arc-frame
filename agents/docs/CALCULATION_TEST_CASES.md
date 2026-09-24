@@ -1,4 +1,4 @@
-﻿﻿# CALCULATION_TEST_CASES.md
+# CALCULATION_TEST_CASES.md
 
 ## Назначение
 

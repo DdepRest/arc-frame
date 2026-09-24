@@ -1,4 +1,4 @@
-﻿﻿# INTENTS.md — mapping намерений на файлы
+# INTENTS.md — mapping намерений на файлы
 
 > How AI agents use this: On the Intake phase, after understanding the user's request, check this table to jump directly to relevant files instead of full codebase exploration.
 

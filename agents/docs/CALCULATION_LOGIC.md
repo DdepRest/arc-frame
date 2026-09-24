@@ -1,4 +1,4 @@
-﻿﻿# CALCULATION_LOGIC.md
+# CALCULATION_LOGIC.md
 
 ## Где находится расчёт стоимости
 

@@ -71,6 +71,8 @@ release-artifacts/
 ## Scratch-кадры режима проверки харнесса (-Verify) — не базлайны
 .tools/_verify-*/
 .tools/_det*/
+## One-off проверки окна шаблонов (check-templates-*.ps1) — не базлайны
+.tools/shots/templates-*.png
 
 ## codebase-memory-mcp — локальный граф знаний (артефакты реиндекссятся локально,
 ## в репо не коммитим; иначе graph.db.zst раздувает историю при каждом обновлении)
