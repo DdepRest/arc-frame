@@ -51,28 +51,33 @@ namespace MosquitoNetCalculator.Controls
                 VerticalAlignment = VerticalAlignment.Center
             });
 
-            var typeBrush = item.Type switch
+            // Тип может быть композитом («Новинка + Исправление») — рисуем
+            // по бейджу на каждый тип (v3.53.1, решение владельца).
+            foreach (var type in item.Types)
             {
-                "Новинка" => (Brush?)Application.Current?.TryFindResource("Success") ?? Brushes.Green,
-                "Исправление" => (Brush?)Application.Current?.TryFindResource("Danger") ?? Brushes.Red,
-                _ => (Brush?)Application.Current?.TryFindResource("Warning") ?? Brushes.Orange
-            };
-
-            panel.Children.Add(new Border
-            {
-                Background = typeBrush,
-                CornerRadius = Radii.Element,
-                Padding = new Thickness(6, 1, 6, 1),
-                Margin = new Thickness(8, 0, 0, 0),
-                VerticalAlignment = VerticalAlignment.Center,
-                Child = new TextBlock
+                var typeBrush = type switch
                 {
-                    Text = item.Type,
-                    FontSize = 11,
-                    FontWeight = FontWeights.SemiBold,
-                    Foreground = (Brush?)Application.Current?.TryFindResource("OnAccent") ?? Brushes.White
-                }
-            });
+                    "Новинка" => (Brush?)Application.Current?.TryFindResource("Success") ?? Brushes.Green,
+                    "Исправление" => (Brush?)Application.Current?.TryFindResource("Danger") ?? Brushes.Red,
+                    _ => (Brush?)Application.Current?.TryFindResource("Warning") ?? Brushes.Orange
+                };
+
+                panel.Children.Add(new Border
+                {
+                    Background = typeBrush,
+                    CornerRadius = Radii.Element,
+                    Padding = new Thickness(6, 1, 6, 1),
+                    Margin = new Thickness(8, 0, 0, 0),
+                    VerticalAlignment = VerticalAlignment.Center,
+                    Child = new TextBlock
+                    {
+                        Text = type,
+                        FontSize = 11,
+                        FontWeight = FontWeights.SemiBold,
+                        Foreground = (Brush?)Application.Current?.TryFindResource("OnAccent") ?? Brushes.White
+                    }
+                });
+            }
 
             if (item.Date != default)
             {

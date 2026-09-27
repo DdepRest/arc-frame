@@ -70,7 +70,10 @@ namespace MosquitoNetCalculator.Controls
             return item =>
             {
                 if (item == null) return false;
-                if (byType && !string.Equals(item.Type, typeFilter, StringComparison.Ordinal))
+                // Композитный тип («Новинка + Исправление») совпадает по ЛЮБОМУ
+                // из своих типов — запись про смесь попадает и в «Новинки»,
+                // и в «Исправления».
+                if (byType && !item.HasType(typeFilter!))
                     return false;
                 if (!byQuery) return true;
                 if (Contains(item.Version, q)) return true;

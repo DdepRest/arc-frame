@@ -209,7 +209,12 @@ namespace MosquitoNetCalculator.Tests.Controls
             // Border — рамка обводит скруглённый контур, поэтому полоса
             // повторяет радиус карточки (11 = 12 радиуса карточки минус 1px
             // её рамки). Пиксели проверяет CardStripeCornerTests.
-            Assert.Contains("ConverterParameter=strong", xaml);
+            // v3.53.1: полоса красится через MultiBinding (композитный тип
+            // «Новинка + Исправление» — конвертер берёт первый тип записи).
+            Assert.Contains("MultiBinding Converter=\"{StaticResource UpdateTypeBrush}\" ConverterParameter=\"strong\"", xaml);
+            Assert.Contains("ConverterParameter=soft", xaml);
+            // Бейджи типов: ItemsControl по Types — по бейджу на каждый тип записи.
+            Assert.Contains("ItemsSource=\"{Binding Types}\"", xaml);
             string cardMarkup = System.Text.RegularExpressions.Regex.Replace(xaml, @"\s+", " ");
             // v3.53: радиус берётся токеном, а не числом на месте — инвариант
             // «радиус карточки минус 1px рамки» живёт в Radius.StripeInner

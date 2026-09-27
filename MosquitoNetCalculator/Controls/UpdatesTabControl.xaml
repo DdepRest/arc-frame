@@ -283,8 +283,13 @@
                                          скруглённого дизайна (регрессия — CardStripeCornerTests).
                                          CornerRadius 11 = 12 (радиус карточки) минус 1px её рамки. -->
                                     <Border BorderThickness="4,0,0,0"
-                                            CornerRadius="{DynamicResource Radius.StripeInner}"
-                                            BorderBrush="{Binding Type, Converter={StaticResource UpdateTypeBrush}, ConverterParameter=strong}">
+                                            CornerRadius="{DynamicResource Radius.StripeInner}">
+                                        <Border.BorderBrush>
+                                            <MultiBinding Converter="{StaticResource UpdateTypeBrush}" ConverterParameter="strong">
+                                                <Binding Path="."/>
+                                                <Binding Path="."/>
+                                            </MultiBinding>
+                                        </Border.BorderBrush>
                                     <StackPanel Margin="14,10,16,12">
 
                                         <!-- ─── Компактная строка (клик — разворот) ─── -->
@@ -299,25 +304,39 @@
                                                 <ColumnDefinition Width="Auto"/>
                                             </Grid.ColumnDefinitions>
 
-                                            <!-- Бейдж типа (компактный) -->
-                                            <Border Grid.Column="0"
-                                                    VerticalAlignment="Center"
-                                                    CornerRadius="{DynamicResource Radius.Md}"
-                                                    Padding="7,3"
-                                                    Background="{Binding Type, Converter={StaticResource UpdateTypeBrush}, ConverterParameter=soft}">
-                                                <StackPanel Orientation="Horizontal">
-                                                    <TextBlock Text="{Binding Type, Converter={StaticResource UpdateTypeIcon}}"
-                                                               FontFamily="{DynamicResource Font.Icon}"
-                                                               FontSize="11"
-                                                               VerticalAlignment="Center"
-                                                               Foreground="{Binding Type, Converter={StaticResource UpdateTypeBrush}, ConverterParameter=fg}"/>
-                                                    <TextBlock Text="{Binding Type}"
-                                                               FontSize="11" FontWeight="SemiBold"
-                                                               VerticalAlignment="Center"
-                                                               Margin="5,0,0,0"
-                                                               Foreground="{Binding Type, Converter={StaticResource UpdateTypeBrush}, ConverterParameter=fg}"/>
-                                                </StackPanel>
-                                            </Border>
+                                            <!-- Бейдж типа (компактный): Type может быть
+                                                 композитом («Новинка + Исправление») — ItemsControl
+                                                 рисует по бейджу на каждый тип записи. -->
+                                            <ItemsControl Grid.Column="0" VerticalAlignment="Center"
+                                                          ItemsSource="{Binding Types}"
+                                                          Focusable="False">
+                                                <ItemsControl.ItemsPanel>
+                                                    <ItemsPanelTemplate>
+                                                        <StackPanel Orientation="Horizontal"/>
+                                                    </ItemsPanelTemplate>
+                                                </ItemsControl.ItemsPanel>
+                                                <ItemsControl.ItemTemplate>
+                                                    <DataTemplate>
+                                                        <Border CornerRadius="{DynamicResource Radius.Md}"
+                                                                Padding="7,3"
+                                                                BorderThickness="0,0,6,0" BorderBrush="Transparent"
+                                                                Background="{Binding Converter={StaticResource UpdateTypeBrush}, ConverterParameter=soft}">
+                                                            <StackPanel Orientation="Horizontal">
+                                                                <TextBlock Text="{Binding Converter={StaticResource UpdateTypeIcon}}"
+                                                                           FontFamily="{DynamicResource Font.Icon}"
+                                                                           FontSize="11"
+                                                                           VerticalAlignment="Center"
+                                                                           Foreground="{Binding Converter={StaticResource UpdateTypeBrush}, ConverterParameter=fg}"/>
+                                                                <TextBlock Text="{Binding}"
+                                                                           FontSize="11" FontWeight="SemiBold"
+                                                                           VerticalAlignment="Center"
+                                                                           Margin="5,0,0,0"
+                                                                           Foreground="{Binding Converter={StaticResource UpdateTypeBrush}, ConverterParameter=fg}"/>
+                                                            </StackPanel>
+                                                        </Border>
+                                                    </DataTemplate>
+                                                </ItemsControl.ItemTemplate>
+                                            </ItemsControl>
 
                                             <!-- Версия -->
                                             <TextBlock Grid.Column="1"

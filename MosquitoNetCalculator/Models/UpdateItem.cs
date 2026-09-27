@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
+using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Text.Json.Serialization;
 
@@ -32,6 +33,32 @@ namespace MosquitoNetCalculator.Models
         public string Type { get; set; } = "";
         public string Title { get; set; } = "";
         public List<string> Changes { get; set; } = new();
+
+        /// <summary>
+        /// Типы записи для отрисовки бейджей. Строка <see cref="Type"/> может быть
+        /// КОМПОЗИТОМ: «Новинка + Исправление» — релиз содержит и новое, и починенное
+        /// (v3.53.1, решение владельца: смешанный релиз не должен носить бейдж одного
+        /// типа). Композит парсится здесь, в одном месте; сериализуется по-прежнему
+        /// только строка Type — контракт update-log.json/releases.json не меняется.
+        /// Фильтр-чип «Новинки» находит запись по ЛЮБОМУ из её типов.
+        /// </summary>
+        public IReadOnlyList<string> Types
+        {
+            get
+            {
+                if (string.IsNullOrWhiteSpace(Type)) return new[] { "" };
+                var parts = Type.Split('+')
+                    .Select(t => t.Trim())
+                    .Where(t => t.Length > 0)
+                    .Distinct()
+                    .ToArray();
+                return parts.Length > 0 ? parts : new[] { Type };
+            }
+        }
+
+        /// <summary>Запись относится к типу-фильтру (композит совпадает по любому из типов).</summary>
+        public bool HasType(string type)
+            => !string.IsNullOrEmpty(type) && Types.Contains(type, StringComparer.Ordinal);
 
         private bool _isLatest;
 
