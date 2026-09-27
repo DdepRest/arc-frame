@@ -122,7 +122,7 @@
                         <RowDefinition Height="*"/>
                     </Grid.RowDefinitions>
                     <TextBlock Grid.Row="0"
-                               Text="Выберите шаблон — позиции добавятся в заказ одним набором"
+                               Text="Шаблон подсказывает, что обычно входит в расчёт изделия, — и добавляет отмеченное в заказ одним набором"
                                FontSize="11" Foreground="{DynamicResource TextMuted}"
                                Margin="20,14,20,10" TextWrapping="Wrap"/>
                     <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto"

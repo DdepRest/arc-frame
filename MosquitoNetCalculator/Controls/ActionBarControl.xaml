@@ -157,6 +157,20 @@
                     </StackPanel>
                 </Button>
 
+                <!-- UX-13 (v3.53.1, owner request): «Шаблоны» подняты в первичную
+                     зону панели — шаблон это подсказка комплектности расчёта, а не
+                     вспомогательное действие; стиль как у «Заказчика» (PrimaryButton). -->
+                <Button x:Name="BtnTemplates"
+                        Style="{DynamicResource ClientInfoButton}"
+                        Click="BtnTemplates_Click" Margin="0,0,6,0"
+                        AutomationProperties.Name="Шаблоны"
+                        ToolTip="Шаблон подсказывает, что обычно входит в расчёт изделия (сетка, лента, доставка, отлив) — и добавляет отмеченное в заказ одним набором">
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock Style="{DynamicResource FluentIconButton}" Text="&#xE8A5;"/>
+                        <TextBlock Text="Шаблоны"/>
+                    </StackPanel>
+                </Button>
+
                 <!-- Separator -->
                 <Rectangle Width="1" Height="20" Fill="{DynamicResource Border}" Margin="8,0"/>
 
@@ -185,22 +199,13 @@
                 <Rectangle Width="1" Height="20" Fill="{DynamicResource Border}" Margin="8,0"/>
 
                 <!-- Cluster 2: Secondary -->
-                <Button Style="{DynamicResource GhostButton}"
+                <Button x:Name="BtnNewOrder" x:FieldModifier="public"
+                        Style="{DynamicResource GhostButton}"
                         Click="BtnNewOrder_Click" Margin="0,0,6,0"
                         ToolTip="Создать новый заказ (сначала сохраните текущий)">
                     <StackPanel Orientation="Horizontal">
                         <TextBlock Style="{DynamicResource FluentIconButton}" Text="&#xE710;"/>
                         <TextBlock Text="Новый заказ"/>
-                    </StackPanel>
-                </Button>
-                <Button x:Name="BtnTemplates"
-                        Style="{DynamicResource GhostButton}"
-                        Click="BtnTemplates_Click" Margin="0,0,6,0"
-                        AutomationProperties.Name="Шаблоны"
-                        ToolTip="Быстрое добавление набора позиций по шаблону (Окно, Балконный блок, Рама, Француз)">
-                    <StackPanel Orientation="Horizontal">
-                        <TextBlock Style="{DynamicResource FluentIconButton}" Text="&#xE8A5;"/>
-                        <TextBlock Text="Шаблоны"/>
                     </StackPanel>
                 </Button>
             </StackPanel>

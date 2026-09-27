@@ -61,7 +61,7 @@ namespace MosquitoNetCalculator.Services
             {
                 Id = "window",
                 Name = "Окно",
-                Subtitle = "Сетка + ПСУЛ + Доставка + Отлив",
+                Subtitle = "Что обычно входит в расчёт окна: сетка, лента ПСУЛ, доставка, отлив",
                 IsAvailable = true,
                 Rows = new List<TemplateRow>
                 {

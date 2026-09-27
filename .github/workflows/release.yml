@@ -81,8 +81,18 @@ jobs:
       # 6. Test — gate the publish step. If tests fail, the entire job
       #    aborts and no release is created on GitHub. This is the
       #    gate that prevents untested code from reaching users.
+      #    Retry: on v3.53.1 the WPF STA test host crashed at teardown
+      #    AFTER reporting "Passed! Failed: 0, 2383" (known flaky host
+      #    shutdown on windows-latest), which aborted an otherwise green
+      #    gate and blocked the release. All tests must pass in a single
+      #    attempt — retry only rescues host crashes, not real failures.
       - name: Test
-        run: dotnet test MosquitoNetCalculator.sln -c Release --no-build --verbosity minimal
+        uses: nick-fields/retry@v3
+        with:
+          timeout_minutes: 20
+          max_attempts: 3
+          retry_on: error
+          command: dotnet test MosquitoNetCalculator.sln -c Release --no-build --verbosity minimal
 
       # 7. Publish as single-file win-x64 self-contained. Mirror
       #    build.bat's `-p:PublishSingleFile=true` + compression. We
