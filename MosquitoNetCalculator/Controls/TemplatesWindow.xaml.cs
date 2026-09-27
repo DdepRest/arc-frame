@@ -84,6 +84,11 @@ namespace MosquitoNetCalculator.Controls
                 if (col == 0)
                 {
                     currentRow = new Grid { Margin = new Thickness(0, 0, 0, 12) };
+                    // БЕЗ ЭТИХ КОЛОНОК обе карточки пары падают в одну ячейку
+                    // и накладываются друг на друга (регрессия витрины).
+                    currentRow.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+                    currentRow.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(12) });
+                    currentRow.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
                     grid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
                     Grid.SetRow(currentRow, grid.RowDefinitions.Count - 1);
                     grid.Children.Add(currentRow);
@@ -149,13 +154,15 @@ namespace MosquitoNetCalculator.Controls
             }
             grid.Children.Add(topRow);
 
-            // Название + подзаголовок.
+            // Название + подзаголовок. Перенос названия обязателен:
+            // «Балконный блок» не влезает в колонку в одну строку.
             grid.Children.Add(new TextBlock
             {
                 Text = template.Name,
                 FontSize = 14,
                 FontWeight = FontWeights.SemiBold,
-                Foreground = (Brush)FindResource("TextPrimary")
+                Foreground = (Brush)FindResource("TextPrimary"),
+                TextWrapping = TextWrapping.Wrap
             });
 
             var subtitleRow = template.IsAvailable
