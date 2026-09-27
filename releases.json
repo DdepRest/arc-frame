@@ -1,13 +1,13 @@
 {
-  "latest": "3.53.0",
+  "latest": "3.53.1",
   "minRequired": "",
   "releases": [
     {
       "version": "3.53.1",
-      "date": "2026-09-24",
+      "date": "2026-09-27",
       "url": "https://github.com/DdepRest/arc-frame/releases/download/v3.53.1/ARC-Frame-3.53.1-full.zip",
-      "sha256": "PLACEHOLDER_CI",
-      "size": 0,
+      "sha256": "db92c67bf8baaa3b2c0d82ef8c664b4aafd9c28858caafbac28d46c82180e329",
+      "size": 93772587,
       "type": "Обновление",
       "title": "Тёмная тема и новые шаблоны заказа",
       "changes": [
