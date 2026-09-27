@@ -37,18 +37,19 @@ namespace MosquitoNetCalculator.Tests.Services
         {
             var window = OrderTemplateService.All.Single(t => t.Id == "window");
 
+            // Порядок строк — по решению владельца (v3.53.1): Сетка → Отлив → ПСУЛ → Доставка.
             Assert.Equal(
-                new[] { OrderTemplateService.OrderTemplateGridProduct, "ПСУЛ", "Доставка", "Отлив" },
+                new[] { OrderTemplateService.OrderTemplateGridProduct, "Отлив", "ПСУЛ", "Доставка" },
                 window.Rows.Select(r => r.ProductName));
 
-            // Дефолты: сетка/ПСУЛ/доставка включены, отлив opt-in;
+            // Дефолты: все четыре включены (отлив теперь тоже — решение владельца);
             // сетка — обязательная (нельзя выключить).
             Assert.True(window.Rows[0].DefaultChecked);
             Assert.True(window.Rows[0].IsCheckedLocked);
             Assert.True(window.Rows[1].DefaultChecked);
             Assert.False(window.Rows[1].IsCheckedLocked);
             Assert.True(window.Rows[2].DefaultChecked);
-            Assert.False(window.Rows[3].DefaultChecked);
+            Assert.True(window.Rows[3].DefaultChecked);
         }
 
         [Fact]
@@ -154,19 +155,21 @@ namespace MosquitoNetCalculator.Tests.Services
         // ── Сборка позиций ──────────────────────────────────────────
 
         [Fact]
-        public void BuildSpecs_DefaultWindow_ProducesThreeRows()
+        public void BuildSpecs_DefaultWindow_ProducesFourRows_InOwnerOrder()
         {
             var window = OrderTemplateService.All.Single(t => t.Id == "window");
             var state = new OrderTemplateService
             {
                 GridProductIndex = 0, GridWidth = 800, GridHeight = 1200,
+                OtlivEnabled = true, OtlivWidth = 800, OtlivHeight = 120,
                 PsulWidth = 800, PsulHeight = 1200
             };
 
             var specs = state.BuildItemSpecs(window, CatalogPrice());
 
+            // Порядок позиций в заказе — порядок строк шаблона: Сетка → Отлив → ПСУЛ → Доставка.
             Assert.Equal(
-                new[] { "grid", "psul", "delivery" },
+                new[] { "grid", "otliv", "psul", "delivery" },
                 specs.Select(s => s.RowKey));
             Assert.Equal("Anwis", specs[0].Type); // первый тип в списке
         }

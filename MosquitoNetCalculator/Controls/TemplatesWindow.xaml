@@ -21,15 +21,17 @@
             </DoubleAnimation>
         </Storyboard>
 
-        <!-- Карточка шаблона на витрине: hover как у пунктов меню печати. -->
+        <!-- Карточка шаблона на витрине: крупная, с иконкой товара,
+             hover с подъёмом рамки (v3.53.1, улучшение UX по фидбеку владельца). -->
         <Style x:Key="TemplateCard" TargetType="Button">
             <Setter Property="Background" Value="{DynamicResource GhostBg}"/>
             <Setter Property="Foreground" Value="{DynamicResource TextPrimary}"/>
             <Setter Property="BorderBrush" Value="{DynamicResource Border}"/>
             <Setter Property="BorderThickness" Value="1"/>
             <Setter Property="Cursor" Value="Hand"/>
-            <Setter Property="Padding" Value="14,12"/>
+            <Setter Property="Padding" Value="16,14"/>
             <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
+            <Setter Property="VerticalContentAlignment" Value="Stretch"/>
             <Setter Property="FocusVisualStyle" Value="{StaticResource FluentFocusVisual}"/>
             <Setter Property="Template">
                 <Setter.Value>
@@ -40,7 +42,7 @@
                                 CornerRadius="{DynamicResource Radius.Md}"
                                 Padding="{TemplateBinding Padding}"
                                 SnapsToDevicePixels="True">
-                            <ContentPresenter HorizontalAlignment="Stretch" VerticalAlignment="Center"/>
+                            <ContentPresenter HorizontalAlignment="Stretch" VerticalAlignment="Stretch"/>
                         </Border>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsMouseOver" Value="True">
@@ -49,6 +51,7 @@
                             </Trigger>
                             <Trigger Property="IsPressed" Value="True">
                                 <Setter TargetName="Bd" Property="Background" Value="{DynamicResource AccentLight}"/>
+                                <Setter TargetName="Bd" Property="Opacity" Value="0.9"/>
                             </Trigger>
                             <Trigger Property="IsEnabled" Value="False">
                                 <Setter TargetName="Bd" Property="Opacity" Value="0.55"/>
@@ -58,6 +61,17 @@
                     </ControlTemplate>
                 </Setter.Value>
             </Setter>
+        </Style>
+
+        <!-- Иконка товара в карточке: круглая подложка + глиф (единый стиль
+             с пунктами меню печати). -->
+        <Style x:Key="TemplateCardIcon" TargetType="Border">
+            <Setter Property="Width" Value="40"/>
+            <Setter Property="Height" Value="40"/>
+            <Setter Property="CornerRadius" Value="{DynamicResource Radius.Card}"/>
+            <Setter Property="Background" Value="{DynamicResource AccentLight}"/>
+            <Setter Property="VerticalAlignment" Value="Center"/>
+            <Setter Property="HorizontalAlignment" Value="Center"/>
         </Style>
     </Window.Resources>
 
@@ -121,10 +135,14 @@
                         <RowDefinition Height="Auto"/>
                         <RowDefinition Height="*"/>
                     </Grid.RowDefinitions>
-                    <TextBlock Grid.Row="0"
-                               Text="Шаблон подсказывает, что обычно входит в расчёт изделия, — и добавляет отмеченное в заказ одним набором"
-                               FontSize="11" Foreground="{DynamicResource TextMuted}"
-                               Margin="20,14,20,10" TextWrapping="Wrap"/>
+                    <StackPanel Grid.Row="0" Margin="20,14,20,12">
+                        <TextBlock Text="Что добавим в заказ"
+                                   FontSize="14" FontWeight="SemiBold"
+                                   Foreground="{DynamicResource TextPrimary}"/>
+                        <TextBlock Text="Шаблон подсказывает, что обычно входит в расчёт изделия, — и добавляет отмеченное в заказ одним набором"
+                                   FontSize="11" Foreground="{DynamicResource TextMuted}"
+                                   Margin="0,2,0,0" TextWrapping="Wrap"/>
+                    </StackPanel>
                     <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto"
                                   HorizontalScrollBarVisibility="Disabled">
                         <StackPanel x:Name="GalleryPanel" Margin="20,0,20,16"/>
@@ -184,26 +202,35 @@
                         </Grid>
                     </Border>
 
-                    <StackPanel Grid.Row="3" Orientation="Horizontal"
-                                HorizontalAlignment="Right" Margin="20,12,20,16">
-                        <Button x:Name="BtnCancel"
-                                Content="Отмена"
-                                Style="{DynamicResource GhostButton}"
-                                Click="BtnCancel_Click"
-                                IsCancel="True"
-                                FontSize="12" Padding="16,7"
-                                Margin="0,0,10,0"/>
-                        <Button x:Name="BtnApply" Style="{DynamicResource PrimaryButton}"
-                                Click="BtnApply_Click"
-                                FontSize="12" Padding="18,7">
-                            <StackPanel Orientation="Horizontal">
-                                <TextBlock Text="&#xE710;" FontSize="14"
-                                           FontFamily="{DynamicResource Font.Icon}"
-                                           Margin="{DynamicResource Gap.Inline}" VerticalAlignment="Center"/>
-                                <TextBlock Text="Добавить в заказ" VerticalAlignment="Center"/>
-                            </StackPanel>
-                        </Button>
-                    </StackPanel>
+                    <Grid Grid.Row="3" Margin="20,12,20,16">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+                        <TextBlock Grid.Column="0" VerticalAlignment="Center"
+                                   FontSize="11" Foreground="{DynamicResource TextMuted}"
+                                   Text="Ctrl+Z откатит весь шаблон одним действием"/>
+                        <StackPanel Grid.Column="1" Orientation="Horizontal">
+                            <Button x:Name="BtnCancel"
+                                    Content="Отмена"
+                                    Style="{DynamicResource GhostButton}"
+                                    Click="BtnCancel_Click"
+                                    IsCancel="True"
+                                    FontSize="12" Padding="16,7"
+                                    Margin="0,0,10,0"/>
+                            <Button x:Name="BtnApply" Style="{DynamicResource PrimaryButton}"
+                                    Click="BtnApply_Click"
+                                    AutomationProperties.Name="Добавить в заказ"
+                                    FontSize="12" Padding="18,7">
+                                <StackPanel Orientation="Horizontal">
+                                    <TextBlock Text="&#xE710;" FontSize="14"
+                                               FontFamily="{DynamicResource Font.Icon}"
+                                               Margin="{DynamicResource Gap.Inline}" VerticalAlignment="Center"/>
+                                    <TextBlock x:Name="TxtApplyLabel" Text="Добавить в заказ" VerticalAlignment="Center"/>
+                                </StackPanel>
+                            </Button>
+                        </StackPanel>
+                    </Grid>
                 </Grid>
             </Grid>
         </Grid>

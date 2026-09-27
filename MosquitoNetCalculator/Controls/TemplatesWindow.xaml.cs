@@ -32,7 +32,7 @@ namespace MosquitoNetCalculator.Controls
         private readonly Dictionary<string, TextBox> _widthBoxes = new();
         private readonly Dictionary<string, TextBox> _heightBoxes = new();
         private readonly Dictionary<string, CheckBox> _rowToggles = new();
-        private readonly Dictionary<string, TextBlock> _statusTexts = new();
+        private readonly Dictionary<string, Border> _statusPills = new();
         private readonly Dictionary<string, StackPanel> _fieldPanelsByProduct = new();
 
         // Верхняя часть полей «Сетки» (тип/цвет/режим/антикошка): пересобирается
@@ -57,61 +57,129 @@ namespace MosquitoNetCalculator.Controls
         // VIEW 1 — витрина шаблонов
         // ─────────────────────────────────────────────────────────
 
+        /// <summary>Глифы товаров для карточек витрины (Segoe Fluent Icons).</summary>
+        private static readonly Dictionary<string, string> TemplateGlyphs = new()
+        {
+            ["window"] = "\uE71D",      // окно
+            ["balcony"] = "\uE72E",     // двери/балкон
+            ["frame"] = "\uE8A5",       // рамка
+            ["french"] = "\uE719",      // шторы
+        };
+
         private void BuildGallery()
         {
             GalleryPanel.Children.Clear();
+
+            // Витрина — сетка 2×N: карточки крупные, с иконкой товара и
+            // счётчиком позиций у доступных шаблонов (UX по фидбеку владельца).
+            var grid = new Grid();
+            grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+            grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(12) });
+            grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+            int row = -1, col = 0;
+            Grid? currentRow = null;
+
             foreach (var template in OrderTemplateService.All)
             {
-                var card = new Button { Style = (Style)FindResource("TemplateCard"), Margin = new Thickness(0, 0, 0, 10) };
-
-                var stack = new StackPanel();
-                var titleRow = new StackPanel { Orientation = Orientation.Horizontal };
-                titleRow.Children.Add(new TextBlock
+                if (col == 0)
                 {
-                    Text = template.Name,
-                    FontSize = 14,
-                    FontWeight = FontWeights.SemiBold,
-                    Foreground = (Brush)FindResource("TextPrimary"),
-                    VerticalAlignment = VerticalAlignment.Center
-                });
-
-                if (!template.IsAvailable)
-                {
-                    titleRow.Children.Add(new Border
-                    {
-                        Background = (Brush)FindResource("BadgeWarningBg"),
-                        CornerRadius = (CornerRadius)FindResource("Radius.Capsule"),
-                        Padding = new Thickness(8, 2, 8, 2),
-                        Margin = new Thickness(8, 0, 0, 0),
-                        VerticalAlignment = VerticalAlignment.Center,
-                        Child = new TextBlock
-                        {
-                            Text = "Скоро",
-                            FontSize = 11,
-                            Foreground = (Brush)FindResource("BadgeWarningFg")
-                        }
-                    });
+                    currentRow = new Grid { Margin = new Thickness(0, 0, 0, 12) };
+                    grid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
+                    Grid.SetRow(currentRow, grid.RowDefinitions.Count - 1);
+                    grid.Children.Add(currentRow);
+                    row++;
                 }
-                stack.Children.Add(titleRow);
 
-                stack.Children.Add(new TextBlock
-                {
-                    Text = template.IsAvailable ? template.Subtitle : "Шаблон в подготовке",
-                    FontSize = 11,
-                    Foreground = (Brush)FindResource("TextMuted"),
-                    Margin = new Thickness(0, 3, 0, 0),
-                    TextWrapping = TextWrapping.Wrap
-                });
+                var card = BuildGalleryCard(template);
+                Grid.SetColumn(card, col == 0 ? 0 : 2);
+                currentRow!.Children.Add(card);
 
-                card.Content = stack;
-                card.IsEnabled = template.IsAvailable;
-                card.Click += (_, _) => OpenChecklist(template);
-                card.ToolTip = template.IsAvailable
-                    ? $"Открыть шаблон «{template.Name}»"
-                    : "Шаблон пока недоступен";
-                AutomationProperties.SetName(card, $"Шаблон {template.Name}");
-                GalleryPanel.Children.Add(card);
+                col = (col + 1) % 2;
             }
+
+            GalleryPanel.Children.Add(grid);
+        }
+
+        private Button BuildGalleryCard(OrderTemplateService.OrderTemplate template)
+        {
+            var card = new Button { Style = (Style)FindResource("TemplateCard") };
+
+            var grid = new Grid { Margin = new Thickness(0) };
+            grid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
+            grid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
+            grid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
+
+            // Иконка + бейдж «Скоро» в одной строке.
+            var topRow = new Grid { Margin = new Thickness(0, 0, 0, 10) };
+            topRow.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+            topRow.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+            topRow.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+
+            topRow.Children.Add(new Border
+            {
+                Style = (Style)FindResource("TemplateCardIcon"),
+                Child = new TextBlock
+                {
+                    Text = TemplateGlyphs.GetValueOrDefault(template.Id, "\uE8A5"),
+                    FontFamily = (FontFamily)FindResource("Font.Icon"),
+                    FontSize = 20,
+                    Foreground = (Brush)FindResource("Accent"),
+                    HorizontalAlignment = HorizontalAlignment.Center,
+                    VerticalAlignment = VerticalAlignment.Center
+                }
+            });
+
+            if (!template.IsAvailable)
+            {
+                var soon = new Border
+                {
+                    Background = (Brush)FindResource("BadgeWarningBg"),
+                    CornerRadius = (CornerRadius)FindResource("Radius.Capsule"),
+                    Padding = new Thickness(8, 2, 8, 2),
+                    VerticalAlignment = VerticalAlignment.Center,
+                    Child = new TextBlock
+                    {
+                        Text = "Скоро",
+                        FontSize = 11,
+                        Foreground = (Brush)FindResource("BadgeWarningFg")
+                    }
+                };
+                Grid.SetColumn(soon, 2);
+                topRow.Children.Add(soon);
+            }
+            grid.Children.Add(topRow);
+
+            // Название + подзаголовок.
+            grid.Children.Add(new TextBlock
+            {
+                Text = template.Name,
+                FontSize = 14,
+                FontWeight = FontWeights.SemiBold,
+                Foreground = (Brush)FindResource("TextPrimary")
+            });
+
+            var subtitleRow = template.IsAvailable
+                ? template.Subtitle
+                : "Шаблон в подготовке";
+            grid.Children.Add(new TextBlock
+            {
+                Text = subtitleRow,
+                FontSize = 11,
+                Foreground = (Brush)FindResource("TextMuted"),
+                Margin = new Thickness(0, 3, 0, 0),
+                TextWrapping = TextWrapping.Wrap
+            });
+            Grid.SetRow(grid.Children[1], 1);
+            Grid.SetRow(grid.Children[2], 2);
+
+            card.Content = grid;
+            card.IsEnabled = template.IsAvailable;
+            card.Click += (_, _) => OpenChecklist(template);
+            card.ToolTip = template.IsAvailable
+                ? $"Открыть шаблон «{template.Name}»"
+                : "Шаблон пока недоступен";
+            AutomationProperties.SetName(card, $"Шаблон {template.Name}");
+            return card;
         }
 
         private void OpenChecklist(OrderTemplateService.OrderTemplate template)
@@ -146,18 +214,32 @@ namespace MosquitoNetCalculator.Controls
             _widthBoxes.Clear();
             _heightBoxes.Clear();
             _rowToggles.Clear();
-            _statusTexts.Clear();
+            _statusPills.Clear();
             _fieldPanelsByProduct.Clear();
             _gridTopPanel = null;
 
             if (_template == null) return;
+            int stepNumber = 0;
             foreach (var row in _template.Rows)
             {
                 bool isGrid = row.ProductName == OrderTemplateService.OrderTemplateGridProduct;
                 bool enabled = isGrid || row.DefaultChecked;
+                stepNumber++;
 
-                // Шапка строки: [switch] Название+подсказка … статус справа.
+                // Ловушка (та же, что была с GridProductIndex): переключатель
+                // стартует включённым БЕЗ клика — OnRowToggled не вызывается.
+                // Синхронизируем состояние строки явно, иначе OtlivEnabled=false
+                // при видимой включённой строке и позиция не попадает в заказ.
+                switch (row.ProductName)
+                {
+                    case "ПСУЛ": _state.PsulEnabled = enabled; break;
+                    case "Доставка": _state.DeliveryEnabled = enabled; break;
+                    case "Отлив": _state.OtlivEnabled = enabled; break;
+                }
+
+                // Шапка строки: [switch] Номер+Название+подсказка … статус-пилюля справа.
                 var header = new Grid();
+                header.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
                 header.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
                 header.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
                 header.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
@@ -175,6 +257,29 @@ namespace MosquitoNetCalculator.Controls
                 toggle.Unchecked += (_, _) => OnRowToggled(row.ProductName, false);
                 _rowToggles[row.ProductName] = toggle;
                 header.Children.Add(toggle); // column 0
+
+                // Номер шага: чек-лист «проклацывается» сверху вниз — номер
+                // помогает видеть порядок и объём (UX по фидбеку владельца).
+                var stepBadge = new Border
+                {
+                    Width = 22,
+                    Height = 22,
+                    CornerRadius = (CornerRadius)FindResource("Radius.Capsule"),
+                    Background = (Brush)FindResource("BadgeDefaultBg"),
+                    VerticalAlignment = VerticalAlignment.Center,
+                    Margin = new Thickness(10, 0, 0, 0),
+                    Child = new TextBlock
+                    {
+                        Text = stepNumber.ToString(),
+                        FontSize = 11,
+                        FontWeight = FontWeights.SemiBold,
+                        Foreground = (Brush)FindResource("BadgeDefaultFg"),
+                        HorizontalAlignment = HorizontalAlignment.Center,
+                        VerticalAlignment = VerticalAlignment.Center
+                    }
+                };
+                Grid.SetColumn(stepBadge, 1);
+                header.Children.Add(stepBadge);
 
                 var titleStack = new StackPanel { Margin = new Thickness(8, 0, 0, 0), VerticalAlignment = VerticalAlignment.Center };
                 var title = new TextBlock
@@ -196,19 +301,26 @@ namespace MosquitoNetCalculator.Controls
                         TextWrapping = TextWrapping.Wrap
                     });
                 }
-                Grid.SetColumn(titleStack, 1);
+                Grid.SetColumn(titleStack, 2);
                 header.Children.Add(titleStack);
 
-                var status = new TextBlock
+                // Статус — пилюля с цветовой семантикой (зелёная «добавится» /
+                // серая «не требуется») вместо простого текста (UX).
+                var statusPill = new Border
                 {
-                    FontSize = 11,
-                    Foreground = (Brush)FindResource("TextSecondary"),
+                    CornerRadius = (CornerRadius)FindResource("Radius.Capsule"),
+                    Padding = new Thickness(10, 2, 10, 2),
                     VerticalAlignment = VerticalAlignment.Center,
-                    Margin = new Thickness(12, 0, 0, 0)
+                    Margin = new Thickness(12, 0, 0, 0),
+                    Child = new TextBlock
+                    {
+                        FontSize = 11,
+                        TextAlignment = TextAlignment.Center
+                    }
                 };
-                Grid.SetColumn(status, 2);
-                header.Children.Add(status);
-                _statusTexts[row.ProductName] = status;
+                Grid.SetColumn(statusPill, 3);
+                header.Children.Add(statusPill);
+                _statusPills[row.ProductName] = statusPill;
 
                 // Поля строки — с отступом под текст названия (switch 40 + 8).
                 var fields = new StackPanel { Margin = new Thickness(48, 6, 4, 2) };
@@ -535,12 +647,18 @@ namespace MosquitoNetCalculator.Controls
                 fields.Visibility = isEnabled ? Visibility.Visible : Visibility.Collapsed;
             }
 
-            if (_statusTexts.TryGetValue(productName, out var status))
+            if (_statusPills.TryGetValue(productName, out var pill))
             {
-                status.Text = isEnabled
-                    ? (productName == OrderTemplateService.OrderTemplateGridProduct ? "" : "Добавится")
-                    : "Не требуется";
-                status.Foreground = (Brush)FindResource(isEnabled ? "TextSecondary" : "TextMuted");
+                bool isGrid = productName == OrderTemplateService.OrderTemplateGridProduct;
+                string text = !isEnabled ? "Не требуется"
+                    : isGrid ? "Обязательно"
+                    : "Добавится";
+                var textBlock = (TextBlock)pill.Child;
+                textBlock.Text = text;
+                textBlock.Foreground = (Brush)FindResource(
+                    isEnabled ? (isGrid ? "BadgeDefaultFg" : "BadgeSuccessFg") : "TextMuted");
+                pill.Background = (Brush)FindResource(
+                    isEnabled ? (isGrid ? "BadgeDefaultBg" : "BadgeSuccessBg") : "ChipBg");
             }
         }
 
@@ -571,6 +689,7 @@ namespace MosquitoNetCalculator.Controls
 
             TxtSummaryCount.Text = $"Добавится позиций: {count}";
             TxtSummaryTotal.Text = total > 0 ? $"≈ {MoneyFormatService.Format(total)} ₽" : "";
+            TxtApplyLabel.Text = count > 0 ? $"Добавить: {count}" : "Добавить в заказ";
             BtnApply.IsEnabled = true;
         }
 

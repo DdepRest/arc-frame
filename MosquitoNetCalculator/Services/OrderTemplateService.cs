@@ -61,7 +61,7 @@ namespace MosquitoNetCalculator.Services
             {
                 Id = "window",
                 Name = "Окно",
-                Subtitle = "Что обычно входит в расчёт окна: сетка, лента ПСУЛ, доставка, отлив",
+                Subtitle = "Сетка, отлив, лента ПСУЛ и доставка — в порядке монтажа",
                 IsAvailable = true,
                 Rows = new List<TemplateRow>
                 {
@@ -72,6 +72,15 @@ namespace MosquitoNetCalculator.Services
                         Hint = "Москитная сетка на окно — выберите тип и размеры",
                         DefaultChecked = true,
                         IsCheckedLocked = true
+                    },
+                    // Отлив — второй по порядку монтажа, включён по умолчанию
+                    // (v3.53.1, решение владельца).
+                    new()
+                    {
+                        ProductName = "Отлив",
+                        Hint = "Отлив на окно — размеры и монтаж",
+                        DefaultChecked = true,
+                        IsCheckedLocked = false
                     },
                     // ПСУЛ — уплотнительная лента по периметру монтажного шва.
                     new()
@@ -87,15 +96,6 @@ namespace MosquitoNetCalculator.Services
                         ProductName = "Доставка",
                         Hint = "Доставка до объекта",
                         DefaultChecked = true,
-                        IsCheckedLocked = false
-                    },
-                    // Отлив — opt-in (как в прежнем «На завод»: готовый подоконник
-                    // не изготавливается, пользователь включает осознанно).
-                    new()
-                    {
-                        ProductName = "Отлив",
-                        Hint = "Подоконник отлив (металл/пластик)",
-                        DefaultChecked = false,
                         IsCheckedLocked = false
                     }
                 }
