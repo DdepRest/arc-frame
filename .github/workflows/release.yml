@@ -302,5 +302,10 @@ jobs:
           git config user.name "github-actions[bot]"
           git add releases.json
           git commit -m "release: update releases.json manifest for ${{ steps.version.outputs.VERSION }}"
-          git pull --rebase origin main
+          # -X theirs: при конфликте ребейза побеждает МАНИФЕСТ ОТ CI (свежие
+          # url/sha/size для только что собранного ZIP). Тексты (type/title/
+          # changes) CI не перезаписывает — они совпадают с тегом, откуда и
+          # приходят. Без -X theirs ребейз падает, если main успел тронуть
+          # releases.json после тега (случилось на v3.53.1: anti-404 коммит).
+          git pull --rebase -X theirs origin main
           git push origin HEAD:main
