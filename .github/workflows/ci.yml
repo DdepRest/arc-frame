@@ -57,8 +57,17 @@ jobs:
       #    (prevents stale DLLs from a previous test run). xUnit's
       #    [Collection("STA")] in ProgressBarUpdateAnimatorTests.cs
       #    handles WPF STA isolation internally — no project-config needed.
+      #    Retry (v3.53.1): same STA teardown host crash as release.yml —
+      #    the run reports "Passed! Failed: 0" and then the host dies,
+      #    failing an otherwise green gate. Retry rescues host crashes,
+      #    not real failures.
       - name: Test
-        run: dotnet test MosquitoNetCalculator.sln -c Release --no-build --verbosity minimal
+        uses: nick-fields/retry@v3
+        with:
+          timeout_minutes: 20
+          max_attempts: 3
+          retry_on: error
+          command: dotnet test MosquitoNetCalculator.sln -c Release --no-build --verbosity minimal
 
       # 6. Upload build artifacts so release workflow can reuse them
       #    (optional — release.yml rebuilds from tag for reproducibility).
