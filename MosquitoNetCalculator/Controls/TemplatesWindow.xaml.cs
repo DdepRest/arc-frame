@@ -27,6 +27,10 @@ namespace MosquitoNetCalculator.Controls
         private readonly OrderTemplateService _state = new();
         private OrderTemplateService.OrderTemplate? _template;
 
+        /// <summary>Высота чек-листа (запоминается между показами): витрина —
+        /// компактная по контенту (SizeToContent=Height), чек-лист — высокий.</summary>
+        private double _checklistHeight = 700;
+
         // Контролы строк чек-листа (ключ → контрол) для валидации-подсветки
         // и пересчёта сводки.
         private readonly Dictionary<string, TextBox> _widthBoxes = new();
@@ -202,13 +206,25 @@ namespace MosquitoNetCalculator.Controls
         {
             GalleryView.Visibility = Visibility.Collapsed;
             ChecklistView.Visibility = Visibility.Visible;
+            // Витрина должна быть компактной по контенту (фидбек владельца:
+            // пустое пространство внизу окна), чек-лист — высоким: пользовательскую
+            // высоту чек-листа помним между показами.
+            SizeToContent = SizeToContent.Manual;
+            Height = _checklistHeight;
         }
 
         private void ShowGalleryView()
         {
+            // Уходя с чек-листа, запоминаем его текущую высоту: пока окно
+            // ещё в режиме Manual, ActualHeight — это высота чек-листа
+            // (в т.ч. пользовательская, после ресайза: WPF сам снимает
+            // SizeToContent при перетаскивании границы).
+            if (SizeToContent == SizeToContent.Manual) _checklistHeight = ActualHeight;
             ChecklistView.Visibility = Visibility.Collapsed;
             GalleryView.Visibility = Visibility.Visible;
             _template = null;
+            // Обратно на витрину — окно сжимается под контент.
+            SizeToContent = SizeToContent.Height;
         }
 
         // ─────────────────────────────────────────────────────────
@@ -230,7 +246,7 @@ namespace MosquitoNetCalculator.Controls
             foreach (var row in _template.Rows)
             {
                 bool isGrid = row.ProductName == OrderTemplateService.OrderTemplateGridProduct;
-                bool enabled = isGrid || row.DefaultChecked;
+                bool enabled = row.DefaultChecked;
                 stepNumber++;
 
                 // Ловушка (та же, что была с GridProductIndex): переключатель
@@ -243,6 +259,7 @@ namespace MosquitoNetCalculator.Controls
                     case "Доставка": _state.DeliveryEnabled = enabled; break;
                     case "Отлив": _state.OtlivEnabled = enabled; break;
                 }
+                if (isGrid) _state.GridEnabled = enabled;
 
                 // Шапка строки: [switch] Номер+Название+подсказка … статус-пилюля справа.
                 var header = new Grid();
@@ -636,7 +653,12 @@ namespace MosquitoNetCalculator.Controls
 
         private void OnRowToggled(string productName, bool isEnabled)
         {
-            if (productName == OrderTemplateService.OrderTemplateGridProduct) return; // сетка всегда включена
+            // Сетка больше не locked-on: строка выключается как остальные
+            // (v3.53.1, финальная итерация по фидбеку владельца).
+            if (productName == OrderTemplateService.OrderTemplateGridProduct)
+            {
+                _state.GridEnabled = isEnabled;
+            }
             switch (productName)
             {
                 case "ПСУЛ": _state.PsulEnabled = isEnabled; break;
@@ -656,16 +678,13 @@ namespace MosquitoNetCalculator.Controls
 
             if (_statusPills.TryGetValue(productName, out var pill))
             {
-                bool isGrid = productName == OrderTemplateService.OrderTemplateGridProduct;
-                string text = !isEnabled ? "Не требуется"
-                    : isGrid ? "Обязательно"
-                    : "Добавится";
+                string text = isEnabled ? "Добавится" : "Не требуется";
                 var textBlock = (TextBlock)pill.Child;
                 textBlock.Text = text;
                 textBlock.Foreground = (Brush)FindResource(
-                    isEnabled ? (isGrid ? "BadgeDefaultFg" : "BadgeSuccessFg") : "TextMuted");
+                    isEnabled ? "BadgeSuccessFg" : "TextMuted");
                 pill.Background = (Brush)FindResource(
-                    isEnabled ? (isGrid ? "BadgeDefaultBg" : "BadgeSuccessBg") : "ChipBg");
+                    isEnabled ? "BadgeSuccessBg" : "ChipBg");
             }
         }
 

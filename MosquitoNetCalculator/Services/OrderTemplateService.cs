@@ -65,13 +65,15 @@ namespace MosquitoNetCalculator.Services
                 IsAvailable = true,
                 Rows = new List<TemplateRow>
                 {
-                    // Сетка — обязательная основа: главная строка шаблона.
+                    // Сетка — основа шаблона, но НЕ обязательная: если сетка
+                    // не нужна, строка выключается переключателем, как остальные
+                    // (v3.53.1, финальная итерация по фидбеку владельца).
                     new()
                     {
                         ProductName = OrderTemplateGridProduct,
                         Hint = "Москитная сетка на окно — выберите тип и размеры",
                         DefaultChecked = true,
-                        IsCheckedLocked = true
+                        IsCheckedLocked = false
                     },
                     // Отлив — второй по порядку монтажа, включён по умолчанию
                     // (v3.53.1, решение владельца).
@@ -146,6 +148,9 @@ namespace MosquitoNetCalculator.Services
         // Состояние чек-листа (заполняет UI)
         // ─────────────────────────────────────────────────────────
 
+        /// <summary>Строка «Сетка» включена (по умолчанию — да; выключается переключателем).</summary>
+        public bool GridEnabled { get; set; } = true;
+
         /// <summary>Выбранный тип сетки: индекс в <see cref="GridProductChoices"/>, -1 = не выбран.</summary>
         public int GridProductIndex { get; set; } = -1;
 
@@ -201,13 +206,17 @@ namespace MosquitoNetCalculator.Services
         {
             LastErrorRow = null;
 
-            // Сетка: тип + размеры обязательны всегда (строка locked-on).
-            if (GridProductIndex < 0 || GridProductIndex >= GridProductChoices.Length)
-                return Fail("grid-type", "Выберите тип сетки.");
-            if (GridWidth <= 0 || GridHeight <= 0)
-                return Fail("grid-size", "Укажите размеры сетки.");
-            if (GridQuantity <= 0)
-                return Fail("grid-size", "Количество сеток должно быть больше нуля.");
+            // Сетка: тип + размеры проверяются ТОЛЬКО у включённой строки
+            // (строка больше не locked-on — выключенная сетка не мешает).
+            if (GridEnabled)
+            {
+                if (GridProductIndex < 0 || GridProductIndex >= GridProductChoices.Length)
+                    return Fail("grid-type", "Выберите тип сетки.");
+                if (GridWidth <= 0 || GridHeight <= 0)
+                    return Fail("grid-size", "Укажите размеры сетки.");
+                if (GridQuantity <= 0)
+                    return Fail("grid-size", "Количество сеток должно быть больше нуля.");
+            }
 
             if (PsulEnabled)
             {
@@ -329,21 +338,24 @@ namespace MosquitoNetCalculator.Services
 
                     default:
                         // Строка «Сетка» → реальный товар (Anwis / На навесах / …).
-                        // Сетка обязательна и всегда включена.
-                        bool isAnwis = AnwisSizeService.IsApplicable(product);
-                        string color = isAnwis || !OrderItem.NoColorProducts.Contains(product) ? GridColor : string.Empty;
-                        specs.Add(new TemplateItemSpec
+                        // Позиция попадает в заказ только у включённой строки.
+                        if (GridEnabled)
                         {
-                            RowKey = "grid",
-                            Type = product,
-                            Color = color,
-                            Width = GridWidth,
-                            Height = GridHeight,
-                            Quantity = GridQuantity,
-                            Price = ResolveRowPrice(product, color, catalogPrice),
-                            AnwisMode = isAnwis ? GridAnwisMode : null,
-                            Anticat = isAnwis && GridAnticat
-                        });
+                            bool isAnwis = AnwisSizeService.IsApplicable(product);
+                            string color = isAnwis || !OrderItem.NoColorProducts.Contains(product) ? GridColor : string.Empty;
+                            specs.Add(new TemplateItemSpec
+                            {
+                                RowKey = "grid",
+                                Type = product,
+                                Color = color,
+                                Width = GridWidth,
+                                Height = GridHeight,
+                                Quantity = GridQuantity,
+                                Price = ResolveRowPrice(product, color, catalogPrice),
+                                AnwisMode = isAnwis ? GridAnwisMode : null,
+                                Anticat = isAnwis && GridAnticat
+                            });
+                        }
                         break;
                 }
             }

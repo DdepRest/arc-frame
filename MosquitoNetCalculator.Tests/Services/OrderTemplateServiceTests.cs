@@ -42,14 +42,11 @@ namespace MosquitoNetCalculator.Tests.Services
                 new[] { OrderTemplateService.OrderTemplateGridProduct, "Отлив", "ПСУЛ", "Доставка" },
                 window.Rows.Select(r => r.ProductName));
 
-            // Дефолты: все четыре включены (отлив теперь тоже — решение владельца);
-            // сетка — обязательная (нельзя выключить).
-            Assert.True(window.Rows[0].DefaultChecked);
-            Assert.True(window.Rows[0].IsCheckedLocked);
-            Assert.True(window.Rows[1].DefaultChecked);
-            Assert.False(window.Rows[1].IsCheckedLocked);
-            Assert.True(window.Rows[2].DefaultChecked);
-            Assert.True(window.Rows[3].DefaultChecked);
+            // Дефолты: все четыре включены (отлив теперь тоже — решение владельца).
+            // НИ одна строка не залочена: сетка тоже выключается (финальная
+            // итерация 3.53.1 — «Сетка — не обязательная, её можно убирать»).
+            Assert.All(window.Rows, r => Assert.True(r.DefaultChecked));
+            Assert.All(window.Rows, r => Assert.False(r.IsCheckedLocked));
         }
 
         [Fact]
@@ -94,6 +91,23 @@ namespace MosquitoNetCalculator.Tests.Services
                 GridProductIndex = 0, GridWidth = 800, GridHeight = 1200,
                 OtlivEnabled = false,
                 OtlivWidth = 0, OtlivHeight = 0
+            };
+            Assert.Null(state.GetValidationError());
+        }
+
+        [Fact]
+        public void Validate_DisabledGrid_IsNotValidated()
+        {
+            // Сетка выключена — ни тип, ни размеры не требуются,
+            // даже если поля сетки пустые.
+            var state = new OrderTemplateService
+            {
+                GridEnabled = false,
+                GridProductIndex = -1,
+                GridWidth = 0, GridHeight = 0,
+                OtlivEnabled = false,
+                PsulEnabled = false,
+                DeliveryEnabled = false
             };
             Assert.Null(state.GetValidationError());
         }
@@ -243,6 +257,25 @@ namespace MosquitoNetCalculator.Tests.Services
             Assert.Equal("Дверная сетка", grid.Type);
             Assert.Null(grid.AnwisMode);       // не-Anwis: режим не задаётся
             Assert.False(grid.Anticat);        // и Антикошка не включается
+        }
+
+        [Fact]
+        public void BuildSpecs_DisabledGrid_IsExcluded_OthersKept()
+        {
+            // Сетка выключена — в заказ идут только остальные позиции.
+            var window = OrderTemplateService.All.Single(t => t.Id == "window");
+            var state = new OrderTemplateService
+            {
+                GridEnabled = false,
+                GridProductIndex = 0, GridWidth = 800, GridHeight = 1200,
+                OtlivEnabled = true, OtlivWidth = 800, OtlivHeight = 120,
+                PsulWidth = 800, PsulHeight = 1200
+            };
+
+            var specs = state.BuildItemSpecs(window, CatalogPrice());
+
+            Assert.DoesNotContain(specs, s => s.RowKey == "grid");
+            Assert.Equal(new[] { "otliv", "psul", "delivery" }, specs.Select(s => s.RowKey));
         }
 
         [Fact]
