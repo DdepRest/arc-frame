@@ -76,18 +76,29 @@
         </Style>
     </Window.Resources>
 
-    <Border x:Name="RootBorder" Background="{DynamicResource Surface}"
-            BorderBrush="{DynamicResource Border}" BorderThickness="1"
-            CornerRadius="{DynamicResource Radius.Lg}" Margin="8" Opacity="0">
-        <Border.Effect>
-            <DropShadowEffect BlurRadius="24" ShadowDepth="3" Opacity="0.10"
-                              Color="{DynamicResource ShadowColor}"/>
-        </Border.Effect>
-        <Grid>
-            <Grid.RowDefinitions>
-                <RowDefinition Height="Auto"/>  <!-- Title bar -->
-                <RowDefinition Height="*"/>      <!-- View host -->
-            </Grid.RowDefinitions>
+    <!-- v3.53.1: тень — на отдельной пустой подложке (ниже, z-порядок по
+         порядку объявления), RootBorder с текстом БЕЗ Effect: DropShadowEffect
+         на корневом Border растрировал всё окно в текстуру и убивал ClearType
+         («расплывшие» шрифты). Анимация открытия осталась на RootBorder.
+         Подложка инлайн (не общий ресурс): у окна может быть владелец с тем же
+         окном открытым дважды, а Border из ресурса нельзя класть в два места. -->
+    <Grid>
+        <Border Background="{DynamicResource Surface}"
+                BorderBrush="{DynamicResource Border}" BorderThickness="1"
+                CornerRadius="{DynamicResource Radius.Lg}" Margin="{DynamicResource Gap.Window}">
+            <Border.Effect>
+                <DropShadowEffect BlurRadius="24" ShadowDepth="3" Opacity="0.10"
+                                  Color="{DynamicResource ShadowColor}"/>
+            </Border.Effect>
+        </Border>
+        <Border x:Name="RootBorder" Background="{DynamicResource Surface}"
+                BorderBrush="{DynamicResource Border}" BorderThickness="1"
+                CornerRadius="{DynamicResource Radius.Lg}" Margin="{DynamicResource Gap.Window}" Opacity="0">
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>  <!-- Title bar -->
+                    <RowDefinition Height="*"/>      <!-- View host -->
+                </Grid.RowDefinitions>
 
             <!-- ══════════════════════════════════════════════════ -->
             <!-- TITLE BAR                                          -->
@@ -236,4 +247,5 @@
             </Grid>
         </Grid>
     </Border>
+    </Grid>
 </Window>

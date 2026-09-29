@@ -12,13 +12,19 @@
         AllowsTransparency="True"
         Background="Transparent"
         >
-    <Border Background="{DynamicResource Surface}" ClipToBounds="True"
-            BorderBrush="{DynamicResource Border}" BorderThickness="1"
-            CornerRadius="{DynamicResource Radius.Lg}" Padding="4" Margin="8">
-        <Border.Effect>
-            <DropShadowEffect Color="{DynamicResource ShadowColor}" BlurRadius="20" ShadowDepth="2" Opacity="0.12"/>
-        </Border.Effect>
-        <Grid>
+    <!-- Тень на подложке, контент без Effect (ClearType-фикс, см. MiscStyles). -->
+    <Grid>
+        <Border Background="{DynamicResource Surface}"
+                BorderBrush="{DynamicResource Border}" BorderThickness="1"
+                CornerRadius="{DynamicResource Radius.Lg}" Margin="{DynamicResource Gap.Window}">
+            <Border.Effect>
+                <DropShadowEffect Color="{DynamicResource ShadowColor}" BlurRadius="20" ShadowDepth="2" Opacity="0.12"/>
+            </Border.Effect>
+        </Border>
+        <Border Background="{DynamicResource Surface}" ClipToBounds="True"
+                BorderBrush="{DynamicResource Border}" BorderThickness="1"
+                CornerRadius="{DynamicResource Radius.Lg}" Padding="4" Margin="{DynamicResource Gap.Window}">
+            <Grid>
             <Grid.RowDefinitions>
                 <RowDefinition Height="Auto"/>
                 <RowDefinition Height="*"/>
@@ -91,4 +97,5 @@
             </StackPanel>
         </Grid>
     </Border>
+    </Grid>
 </Window>

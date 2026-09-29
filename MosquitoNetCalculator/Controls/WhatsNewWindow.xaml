@@ -12,19 +12,23 @@
         ShowInTaskbar="False"
         SizeToContent="Height"
         KeyDown="Window_KeyDown">
-    <Border Background="{DynamicResource Surface}"
-            BorderBrush="{DynamicResource Border}"
-            BorderThickness="1"
-            CornerRadius="{DynamicResource Radius.Lg}"
-            Margin="8"
-            SnapsToDevicePixels="True">
-        <Border.Effect>
-            <DropShadowEffect BlurRadius="20"
-                              ShadowDepth="2"
-                              Opacity="0.25"
-                              Color="{DynamicResource ShadowColor}"/>
-        </Border.Effect>
-        <Grid>
+    <!-- Тень на пустой подложке, контент без Effect (ClearType-фикс). -->
+    <Grid>
+        <Border Background="{DynamicResource Surface}"
+                BorderBrush="{DynamicResource Border}" BorderThickness="1"
+                CornerRadius="{DynamicResource Radius.Lg}" Margin="{DynamicResource Gap.Window}">
+            <Border.Effect>
+                <DropShadowEffect BlurRadius="20" ShadowDepth="2" Opacity="0.25"
+                                  Color="{DynamicResource ShadowColor}"/>
+            </Border.Effect>
+        </Border>
+        <Border Background="{DynamicResource Surface}"
+                BorderBrush="{DynamicResource Border}"
+                BorderThickness="1"
+                CornerRadius="{DynamicResource Radius.Lg}"
+                Margin="{DynamicResource Gap.Window}"
+                SnapsToDevicePixels="True">
+            <Grid>
             <Grid.RowDefinitions>
                 <RowDefinition Height="Auto"/>
                 <RowDefinition Height="Auto"/>
@@ -116,4 +120,5 @@
             </StackPanel>
         </Grid>
     </Border>
+    </Grid>
 </Window>
