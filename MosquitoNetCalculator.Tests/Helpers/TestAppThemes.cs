@@ -1,5 +1,7 @@
 using System;
+using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Threading;
 using System.Windows;
 using System.Windows.Controls;
@@ -100,6 +102,27 @@ namespace MosquitoNetCalculator.Tests.Helpers
 
         private static readonly object Gate = new();
 
+        /// <summary>
+        /// Диагностика кросс-поточных падений (v3.53.1): пишем, с какого
+        /// потока поднимается приложение и кому принадлежат ключевые
+        /// ресурсы. Файл лежит рядом с тест-сборкой; удаляется при
+        /// следующем прогоне. После отлова «вора» выводится из эксплуатации.
+        /// </summary>
+        internal static void Diag(string message)
+        {
+            try
+            {
+                var path = Path.Combine(AppContext.BaseDirectory, "sta-diag.log");
+                var tid = Thread.CurrentThread.ManagedThreadId;
+                File.AppendAllText(path,
+                    $"{DateTime.Now:HH:mm:ss.fff} t{tid} {message}{Environment.NewLine}");
+            }
+            catch
+            {
+                // диагностика не должна ронять тесты
+            }
+        }
+
         private static void EnsureCore()
         {
             if (HasThemedApplication()) return;
@@ -109,6 +132,7 @@ namespace MosquitoNetCalculator.Tests.Helpers
             ResetStatics();
 
             var application = new Application { ShutdownMode = ShutdownMode.OnExplicitShutdown };
+            Diag($"APP-CREATED app=#{application.GetHashCode()} workerStack={Environment.StackTrace.Split(Environment.NewLine).Length}");
 
             foreach (var name in Dictionaries)
             {
@@ -119,6 +143,7 @@ namespace MosquitoNetCalculator.Tests.Helpers
             }
 
             RegisterConverters(application);
+            MaterializeResources(application);
 
             // Та же подмена токена Font.Text, что делает App.OnStartup:
             // вшитый Inter задаётся кодом (в XAML абсолютный pack-URI для
@@ -157,7 +182,24 @@ namespace MosquitoNetCalculator.Tests.Helpers
         /// Чистит оба статических слота WPF безусловно (в отличие от проверки
         /// одного <c>Application.Current</c>) — это и есть лечение «отравленного»
         /// состояния. Если WPF переименует поля, бросает actionable-ошибку.
-        /// </summary>
+        ///
+        /// <para><b>Плюс два шага, без которых сброс НЕ лечит</b> (бисект на
+        /// циклах «new Application → Shutdown» — именно так падали тесты
+        /// в 3.53.1):</para>
+        /// <list type="number">
+        /// <item>Флаг <c>_isShuttingDown</c> — статический, остаётся
+        /// <c>true</c> после чужого Shutdown и определяет, во что выльется
+        /// следующая загрузка ресурса (см. п. 4);</item>
+        /// <item>Пакет ресурсов <c>pack://application:,,,/</c>:
+        /// <c>DoShutdown()</c> зовёт <c>PreloadedPackages.Clear()</c>, а
+        /// регистрируется пакет ТОЛЬКО в статическом конструкторе
+        /// <c>Application</c> — один раз на процесс. После чужого Shutdown
+        /// любой <c>LoadComponent</c> (конструктор любого окна) получает
+        /// null-пакет из <c>Application.GetResourcePackage</c> и падает:
+        /// с флагом завершения — ловимой InvalidOperationException
+        /// «Идет завершение работы объекта Application», без него (новый
+        /// Application его сбрасывает) — FailFast и СБОЙ ХОСТА.</item>
+        /// </list>
         internal static void ResetStatics()
         {
             var appType = typeof(Application);
@@ -180,6 +222,82 @@ namespace MosquitoNetCalculator.Tests.Helpers
                     appType.FullName + " (" + appType.Assembly.GetName().FullName + ") — " +
                     "WPF переименовал приватное поле, поправьте TestAppThemes.ResetStatics.");
             refField.SetValue(null, null);
+
+            // 3. Статический флаг завершения — иначе у GetResourcePackage
+            //    ломается ветка инварианта (см. п. 4 в summary).
+            appType.GetField("_isShuttingDown", PrivateStatic)?.SetValue(null, false);
+
+            // 4. Ключевое: вернуть пакет ресурсов, унесённый DoShutdown().
+            RestorePreloadedResourcePackage();
+        }
+
+        /// <summary>
+        /// Возвращает пакет <c>pack://application:,,,/</c> в
+        /// <c>PreloadedPackages</c>, если Shutdown его унёс (идемпотентно:
+        /// при живом пакете — no-op).
+        ///
+        /// Внутренний API WPF вызывается зеркалом: публичного способа
+        /// «перерегистрировать пакет» у WPF нет — регистрация живёт в
+        /// статическом конструкторе Application и выполняется ровно один
+        /// раз на процесс. Типы ищем по имени среди загруженных сборок
+        /// (<c>PreloadedPackages</c> — в PresentationCore, а не там, где
+        /// Application), методы — по имени и числу параметров.
+        /// </summary>
+        private static void RestorePreloadedResourcePackage()
+        {
+            var preloadedType = FindLoadedType("MS.Internal.IO.Packaging.PreloadedPackages")
+                ?? throw new InvalidOperationException(
+                    "TestAppThemes: тип MS.Internal.IO.Packaging.PreloadedPackages не найден " +
+                    "в загруженных сборках — WPF переименовал его, поправьте " +
+                    "TestAppThemes.RestorePreloadedResourcePackage.");
+
+            const System.Reflection.BindingFlags StaticAny =
+                System.Reflection.BindingFlags.Static |
+                System.Reflection.BindingFlags.Public |
+                System.Reflection.BindingFlags.NonPublic;
+
+            var getPackage = preloadedType.GetMethods(StaticAny)
+                .FirstOrDefault(m => m.Name == "GetPackage" && m.GetParameters().Length == 1)
+                ?? throw new InvalidOperationException(
+                    "TestAppThemes: PreloadedPackages.GetPackage не найден — API WPF изменился.");
+
+            // Тот же способ получить URI, что у WPF в ApplicationInit().
+            var packAppBase = new Uri("pack://application:,,,/", UriKind.Absolute);
+            var packageUri = System.IO.Packaging.PackUriHelper.GetPackageUri(packAppBase);
+
+            if (getPackage.Invoke(null, new object[] { packageUri }) != null)
+                return; // пакет на месте — восстановление не требуется
+
+            var containerType = FindLoadedType("MS.Internal.AppModel.ResourceContainer")
+                ?? throw new InvalidOperationException(
+                    "TestAppThemes: тип MS.Internal.AppModel.ResourceContainer не найден — " +
+                    "WPF переименовал его, поправьте TestAppThemes.RestorePreloadedResourcePackage.");
+            var container = Activator.CreateInstance(containerType, nonPublic: true)
+                ?? throw new InvalidOperationException(
+                    "TestAppThemes: new ResourceContainer() вернул null — API WPF изменился.");
+
+            var addPackage = preloadedType.GetMethods(StaticAny)
+                .FirstOrDefault(m => m.Name == "AddPackage" && m.GetParameters().Length == 3)
+                ?? throw new InvalidOperationException(
+                    "TestAppThemes: PreloadedPackages.AddPackage не найден — API WPF изменился.");
+            addPackage.Invoke(null, new object[] { packageUri, container, true });
+        }
+
+        private static Type? FindLoadedType(string fullName)
+        {
+            foreach (var assembly in AppDomain.CurrentDomain.GetAssemblies())
+            {
+                try
+                {
+                    var type = assembly.GetType(fullName, throwOnError: false);
+                    if (type != null) return type;
+                }
+                catch
+                {
+                    // повреждённая/недоступная сборка — пропускаем
+                }
+            }
+            return null;
         }
 
         /// <summary>
@@ -196,14 +314,82 @@ namespace MosquitoNetCalculator.Tests.Helpers
             flagField.SetValue(null, true);
         }
 
+        /// <summary>
+        /// Рекурсивно собирает ключи всех словарей приложения и читает каждый
+        /// через <see cref="Application.TryFindResource"/> — на воркере.
+        ///
+        /// <para>ВАЖНО: чтение через индексер словаря НЕ материализует BAML-
+        /// deferred записи — индексер возвращает обёртку DeferredResourceReference,
+        /// а не Freezable (ловушка об это уже споткнулась). Разворачивает
+        /// deferred-значения только поиск уровня Application: он и используется.
+        /// Материализованная кисть принадлежит воркеру, и чужие потоки после
+        /// этого могут её только ЧИТАТЬ (легально) — гонки владения нет.</para>
+        /// </summary>
+        private static void MaterializeResources(Application application)
+        {
+            var keys = new List<object>();
+            CollectKeys(application.Resources, keys);
+
+            foreach (var key in keys)
+            {
+                try { _ = application.TryFindResource(key); }
+                catch { /* битый ресурс — как был, тесты скажут сами */ }
+            }
+        }
+
+        private static void CollectKeys(System.Windows.ResourceDictionary dictionary, List<object> keys)
+        {
+            foreach (var key in dictionary.Keys)
+                keys.Add(key);
+
+            foreach (var merged in dictionary.MergedDictionaries)
+                CollectKeys(merged, keys);
+        }
+
         /// <summary>Живое приложение с уже загруженными темами?</summary>
         private static bool HasThemedApplication()
         {
             try
             {
                 var current = Application.Current;
-                return current != null
-                    && current.Resources["Surface"] != null
+                if (current == null) { Diag("PROBE app=null"); return false; }
+
+                // Ловушка «вора»: если владелец ключевых ресурсов — не текущий
+                // (рабочий) поток, кто-то материализовал кисть мимо воркера.
+                // Бросаем СО СТЕКОМ: xUnit покажет виновника по имени теста.
+                int? surfaceOwner = null;
+                try
+                {
+                    surfaceOwner = (current.Resources["Surface"] as System.Windows.Freezable)
+                        ?.Dispatcher?.Thread?.ManagedThreadId;
+                }
+                catch (Exception ex) { Diag($"PROBE-OWNERSHIP-READ-FAILED {ex.GetType().Name}: {ex.Message}"); }
+
+                var currentTid = Thread.CurrentThread.ManagedThreadId;
+                Diag($"PROBE app=#{current.GetHashCode()} surfaceOwner=t{surfaceOwner} " +
+                     $"probe=t{currentTid} " +
+                     $"appDispatcher=t{current.Dispatcher.Thread.ManagedThreadId} " +
+                     $"hasShutdown={current.Dispatcher.HasShutdownStarted}");
+
+                if (surfaceOwner.HasValue && surfaceOwner.Value != currentTid)
+                {
+                    // Журналируем и продолжаем: материализация на воркере выше
+                    // делает чужие касания read-only (легальными), а FailFast
+                    // здесь убивал прогон изнутри активного теста-жертвы, не
+                    // называя настоящего виновника.
+                    Diag($"THIEF-DETECTED surfaceOwner=t{surfaceOwner.Value} probe=t{currentTid} " +
+                         "stack=" + Environment.StackTrace.Replace(Environment.NewLine, " | "));
+                }
+
+                // Глушимое/умершее приложение непригодно: LoadComponent такого
+                // экземпляра роняет окно InvalidOperationException
+                // «Идет завершение работы объекта Application» (и FailFast-вариант
+                // в Application.GetResourcePackage — краш testhost на CI).
+                // Лечится только НОВЫМ приложением — считаем ресурсы протухшими.
+                var dispatcher = current.Dispatcher;
+                if (dispatcher.HasShutdownStarted || dispatcher.HasShutdownFinished) return false;
+
+                return current.Resources["Surface"] != null
                     && current.Resources["GhostButton"] != null;
             }
             catch (InvalidOperationException)

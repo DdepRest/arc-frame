@@ -39,6 +39,86 @@ namespace MosquitoNetCalculator.Tests.Helpers
             });
         }
 
+        /// <summary>
+        /// Главный страж стабильности тест-хоста (краши в 3.53.1).
+        ///
+        /// <para>Цикл «new Application → Shutdown» (его делает
+        /// <c>AppLifecycleTests</c>) навсегда уносит пакет ресурсов
+        /// <c>pack://application:,,,/</c>: <c>DoShutdown()</c> зовёт
+        /// <c>PreloadedPackages.Clear()</c>, а регистрируется пакет только в
+        /// статическом конструкторе <c>Application</c> — один раз на процесс.
+        /// После этого конструктор любого окна в том же процессе падает:
+        /// сначала ловимой InvalidOperationException
+        /// «Идет завершение работы объекта Application», а если при этом уже
+        /// создано новое Application (оно сбрасывает флаг
+        /// <c>_isShuttingDown</c>) — FailFast из
+        /// <c>Application.GetResourcePackage</c>, который убивает testhost
+        /// целиком (на CI — «Сбой хост-процесса теста» на середине прогона,
+        /// Failed: 0, все попытки).</para>
+        ///
+        /// <para>Лечение — <see cref="TestAppThemes.ResetStatics"/>:
+        /// сбрасывает оба слота + <c>_isShuttingDown</c> и восстанавливает
+        /// пакет зеркалом внутреннего API WPF. Проверка здесь живьём: после
+        /// цикла окно обязано строиться.</para>
+        ///
+        /// <para>ВАЖНО: падает этот тест не «красным», а СБОЕМ ХОСТА — так
+        /// и проявлялся оригинал; лечится только RestorePreloadedResourcePackage.</para>
+        /// </summary>
+        [Fact]
+        public void ShutdownCycle_ResetStatics_RestoresResourcePackage_SoNextWindowBuilds()
+        {
+            TestAppThemes.RunOnSta(() =>
+            {
+                // 1. Рабочее состояние: окно строится.
+                AssertWindowBuilds("до цикла Shutdown");
+
+                // 2. Цикл «new Application → Shutdown» — как в AppLifecycleTests.
+                //    Прокрутка диспетчера обязательна: именно в ShutdownCallback
+                //    выполняется DoShutdown() → PreloadedPackages.Clear().
+                TestAppThemes.ResetStatics();
+                var app = new Application { ShutdownMode = ShutdownMode.OnExplicitShutdown };
+                app.Shutdown();
+                PumpDispatcher(TimeSpan.FromMilliseconds(600));
+
+                // 3. Сброс (восстанавливает пакет) и обычный бутстрап.
+                TestAppThemes.ResetStatics();
+                TestAppThemes.Ensure();
+                Assert.NotNull(Application.Current);
+
+                // 4. Строящееся окно — тот самый симптом, что без п. 2–3
+                //    ронял хост FailFast'ом.
+                AssertWindowBuilds("после цикла Shutdown");
+            }, 60_000);
+        }
+
+        private static void AssertWindowBuilds(string stage)
+        {
+            var buttons = new System.Collections.Generic.List<global::MosquitoNetCalculator.Services.DialogButton<object>>
+            {
+                new("OK", true, false, false, "PrimaryButton")
+            };
+            try
+            {
+                var window = new global::MosquitoNetCalculator.Controls.MessageDialogWindow("Тест", "Тест", buttons);
+                window.Close();
+            }
+            catch (Exception ex)
+            {
+                throw new InvalidOperationException(
+                    $"Окно не построилось ({stage}) — пакет ресурсов приложения " +
+                    $"не восстановлен: {ex.GetType().Name}: {ex.Message}", ex);
+            }
+        }
+
+        private static void PumpDispatcher(TimeSpan timeout)
+        {
+            var frame = new System.Windows.Threading.DispatcherFrame();
+            var timer = new System.Windows.Threading.DispatcherTimer { Interval = timeout };
+            timer.Tick += (_, _) => { timer.Stop(); frame.Continue = false; };
+            timer.Start();
+            System.Windows.Threading.Dispatcher.PushFrame(frame);
+        }
+
         [Theory]
         [InlineData(1)]
         [InlineData(2)]

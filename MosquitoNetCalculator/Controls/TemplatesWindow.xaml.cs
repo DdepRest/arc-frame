@@ -7,6 +7,7 @@ using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Animation;
+using System.Windows.Shapes;
 using MosquitoNetCalculator.Helpers;
 using MosquitoNetCalculator.Models;
 using MosquitoNetCalculator.Services;
@@ -61,14 +62,50 @@ namespace MosquitoNetCalculator.Controls
         // VIEW 1 — витрина шаблонов
         // ─────────────────────────────────────────────────────────
 
-        /// <summary>Глифы товаров для карточек витрины (Segoe Fluent Icons).</summary>
-        private static readonly Dictionary<string, string> TemplateGlyphs = new()
+        /// <summary>
+        /// Векторные пиктограммы товаров для карточек витрины (24×24, контур).
+        ///
+        /// Фидбек владельца: шрифтовые глифы (E71D/E72E/…) рисовали что
+        /// угодно, только не товары — «иконки никак не связаны с тем, о чём
+        /// речь». Поэтому рисуем сами: окно — расстекловка крест-накрест,
+        /// балконный блок — дверь с наддверной перемычкой и ручкой, рама —
+        /// профиль из двух контуров, француз — три узкие створки во всю
+        /// высоту. Смысл читается без шрифтов и одинаково на Win10/Win11.
+        /// </summary>
+        private static readonly IReadOnlyDictionary<string, string> TemplateIconPaths = new Dictionary<string, string>
         {
-            ["window"] = "\uE71D",      // окно
-            ["balcony"] = "\uE72E",     // двери/балкон
-            ["frame"] = "\uE8A5",       // рамка
-            ["french"] = "\uE719",      // шторы
+            ["window"] = "M3.5,3 H20.5 V21 H3.5 Z M12,3 V21 M3.5,12 H20.5",
+            ["balcony"] = "M3,2 H21 V22 H3 Z M3,8 H21 M17.5,14.5 V16.5",
+            ["frame"] = "M3,3 H21 V21 H3 Z M6.5,6.5 H17.5 V17.5 H6.5 Z",
+            ["french"] = "M5,2 H19 V22 H5 Z M9.7,2 V22 M14.3,2 V22",
         };
+
+        /// <summary>Пиктограмма шаблона: контурный Path по геометрии каталога.</summary>
+        private Path BuildTemplateIcon(string templateId)
+        {
+            var data = TemplateIconPaths.TryGetValue(templateId, out var path)
+                ? path
+                : TemplateIconPaths["window"];
+            var icon = new Path
+            {
+                Data = Geometry.Parse(data),
+                StrokeThickness = 1.7,
+                StrokeStartLineCap = PenLineCap.Round,
+                StrokeEndLineCap = PenLineCap.Round,
+                StrokeLineJoin = PenLineJoin.Round,
+                // Геометрия нарисована в системе 24×24 — Stretch.Uniform
+                // вписывает её в квадрат 22×22 целиком, без смещения в угол.
+                Stretch = Stretch.Uniform,
+                Width = 22,
+                Height = 22,
+                HorizontalAlignment = HorizontalAlignment.Center,
+                VerticalAlignment = VerticalAlignment.Center
+            };
+            // Кодовый эквивалент DynamicResource: смена темы перекрасит
+            // контур без пересоздания окна.
+            icon.SetResourceReference(Shape.StrokeProperty, "Accent");
+            return icon;
+        }
 
         private void BuildGallery()
         {
@@ -127,15 +164,7 @@ namespace MosquitoNetCalculator.Controls
             topRow.Children.Add(new Border
             {
                 Style = (Style)FindResource("TemplateCardIcon"),
-                Child = new TextBlock
-                {
-                    Text = TemplateGlyphs.GetValueOrDefault(template.Id, "\uE8A5"),
-                    FontFamily = (FontFamily)FindResource("Font.Icon"),
-                    FontSize = 20,
-                    Foreground = (Brush)FindResource("Accent"),
-                    HorizontalAlignment = HorizontalAlignment.Center,
-                    VerticalAlignment = VerticalAlignment.Center
-                }
+                Child = BuildTemplateIcon(template.Id)
             });
 
             if (!template.IsAvailable)

@@ -8,6 +8,7 @@ using System.Windows.Threading;
 using System.Xml.Linq;
 using MosquitoNetCalculator.Services;
 using Xunit;
+using MosquitoNetCalculator.Tests.Helpers;
 
 namespace MosquitoNetCalculator.Tests.App
 {
@@ -150,11 +151,9 @@ namespace MosquitoNetCalculator.Tests.App
             // We use a dedicated STA thread because WPF Window requires an
             // apartment-threaded dispatcher loop, and xUnit's runner is MTA.
 
-            Exception? caught = null;
-            var gate = new ManualResetEventSlim(false);
             var result = new LifecycleResult();
 
-            var t = new Thread(() =>
+            WpfTestHelper.RunOnSta(() =>
             {
                 try
                 {
@@ -193,7 +192,6 @@ namespace MosquitoNetCalculator.Tests.App
 
                     PumpDispatcher(TimeSpan.FromSeconds(3));
                 }
-                catch (Exception ex) { caught = ex; }
                 finally
                 {
                     // Tear down the static WPF Application reference so the next STA
@@ -203,16 +201,25 @@ namespace MosquitoNetCalculator.Tests.App
                     // explicitly rather than masking it as a generic body failure.
                     try { ClearWpfApplicationStatic(); }
                     catch (Exception ex) { result.CleanupError = ex; }
-                    gate.Set();
+
+                    // ВАЖНО: одного сброса статиков НЕДОСТАТОЧНО. После цикла
+                    // «new Application → Shutdown» WPF навсегда уносит пакет
+                    // ресурсов pack://application:,,,/ (DoShutdown →
+                    // PreloadedPackages.Clear(), а регистрируется он в статическом
+                    // конструкторе Application — один раз на процесс). Дальше
+                    // конструктор любого окна падает: FailFast из
+                    // Application.GetResourcePackage (сбой хоста) либо
+                    // InvalidOperationException «Идет завершение работы объекта
+                    // Application». ResetStatics() (вызван выше) восстанавливает
+                    // пакет и флаги — а Ensure() поднимает общее приложение с
+                    // темами для тестов, идущих после этого класса и ходящих в
+                    // WpfTestHelper.RunOnSta напрямую (MessageDialogWindowTests,
+                    // OrderGridPresenterTests — бутстрап они не вызывают).
+                    try { Helpers.TestAppThemes.Ensure(); }
+                    catch (Exception ex) { result.CleanupError ??= ex; }
                 }
-            });
+            }, 20_000);
 
-            t.SetApartmentState(ApartmentState.STA);
-            t.Start();
-            Assert.True(gate.Wait(TimeSpan.FromSeconds(20)), "STA test thread did not finish in time");
-            t.Join();
-
-            Assert.Null(caught);
             Assert.Null(result.CleanupError);
             Assert.True(result.AuxClosed, "Auxiliary window closed");
             Assert.True(result.MainOpened, "Main window opened");

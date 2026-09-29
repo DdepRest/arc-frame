@@ -30,6 +30,9 @@
   <ItemGroup>
     <!-- Golden offline AI regression suite (real manager phrases + recorded model responses). -->
     <None Update="AI\golden-cases.json" CopyToOutputDirectory="PreserveNewest" />
+    <!-- Конфиг раннера читается из папки сборки: последовательно, без параллельных
+         коллекций — WPF STA-коллекции в параллели роняли testhost на CI (3.53.1). -->
+    <None Update="xunit.runner.json" CopyToOutputDirectory="PreserveNewest" />
     <!-- Fixture for the bundled-Tesseract OCR smoke test (rendered text). -->
     <None Update="fixtures\ocr-fixture.png" CopyToOutputDirectory="PreserveNewest" />
     <!-- Электронная печать «В ПРОИЗВОДСТВО» — сцена в тестах FixedDocumentBuilder.

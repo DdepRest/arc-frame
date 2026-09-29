@@ -5,6 +5,7 @@ using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
 using MosquitoNetCalculator.Controls;
 using Xunit;
+using MosquitoNetCalculator.Tests.Helpers;
 
 namespace MosquitoNetCalculator.Tests.Controls
 {
@@ -30,27 +31,10 @@ namespace MosquitoNetCalculator.Tests.Controls
         /// </summary>
         private static void RunOnStaThread(Action action)
         {
-            Exception? caught = null;
-            using var gate = new ManualResetEventSlim(false);
-
-            var t = new Thread(() =>
-            {
-                try
-                {
-                    action();
-                }
-                catch (Exception ex) { caught = ex; }
-                finally { gate.Set(); }
-            });
-
-            t.SetApartmentState(ApartmentState.STA);
-            t.Start();
-
-            if (!gate.Wait(TimeSpan.FromSeconds(10)))
-                throw new TimeoutException("STA thread did not finish within 10 seconds.");
-
-            if (caught != null)
-                throw caught;
+            // Единая STA-нить процесса (WpfTestHelper): ресурсы WPF
+            // создаются и применяются на одном диспетчере — без кросс-поточных
+            // VerifyAccess-падений. 10 с — прежний таймаут.
+            WpfTestHelper.RunOnSta(action, 10_000);
         }
 
         [Theory]

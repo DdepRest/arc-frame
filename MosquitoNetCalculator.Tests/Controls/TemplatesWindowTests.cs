@@ -1,7 +1,10 @@
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
+using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Media;
 using MosquitoNetCalculator.Controls;
 using MosquitoNetCalculator.Services;
 using MosquitoNetCalculator.Tests.Helpers;
@@ -130,6 +133,92 @@ namespace MosquitoNetCalculator.Tests.Controls
                     var grid = specs.Single(s => s.RowKey == "grid");
                     Assert.Equal("На навесах", grid.Type);
                     Assert.Null(grid.AnwisMode);
+                }
+                finally
+                {
+                    window.Close();
+                }
+            });
+        }
+
+        // ── Регрессия по фидбеку владельца: «иконки какие-то… они вообще
+        // никак не связаны с тем, о чём речь» ──
+        //
+        // Карточки витрины обязаны рисовать ВЕКТОРНУЮ пиктограмму товара
+        // (Path с геометрией 24×24: окно с расстекловкой, блок «дверь+окно»,
+        // профиль рамы, три створки «француза»), а не шрифтовой глиф Segoe
+        // Fluent Icons — тот показывал что угодно, только не товар.
+        // Страж: в слоте иконки каждой карточки лежит Path, и рисунки
+        // у карточек разные.
+
+        private static IEnumerable<DependencyObject> Descendants(DependencyObject root)
+        {
+            // Логическое + визуальное дерево: карточка — Button с ещё не
+            // применённым шаблоном, у него визуальных детей нет, а содержимое
+            // (слот иконки) живёт в логическом дереве Content'а.
+            var seen = new HashSet<DependencyObject>();
+            var stack = new Stack<DependencyObject>();
+            stack.Push(root);
+
+            while (stack.Count > 0)
+            {
+                var node = stack.Pop();
+
+                // Логическое дерево отдаёт и не-визуальные узлы (RowDefinition,
+                // Setter) — VisualTreeHelper на них бросает.
+                if (node is Visual)
+                {
+                    int visualCount = VisualTreeHelper.GetChildrenCount(node);
+                    for (int i = 0; i < visualCount; i++)
+                    {
+                        var child = VisualTreeHelper.GetChild(node, i);
+                        if (seen.Add(child)) stack.Push(child);
+                    }
+                }
+
+                foreach (var child in LogicalTreeHelper.GetChildren(node).OfType<DependencyObject>())
+                {
+                    if (seen.Add(child)) stack.Push(child);
+                }
+            }
+
+            return seen;
+        }
+
+        [Fact]
+        public void GalleryCards_UseVectorPictograms_NotFontGlyphs()
+        {
+            TestAppThemes.RunOnSta(() =>
+            {
+                var window = new TemplatesWindow(null!);
+                try
+                {
+                    var iconStyle = window.FindResource("TemplateCardIcon");
+                    var cards = Descendants(window.GalleryPanel).OfType<Button>().ToList();
+                    Assert.Equal(OrderTemplateService.All.Count(), cards.Count);
+
+                    var drawings = new List<string>();
+                    for (int i = 0; i < cards.Count; i++)
+                    {
+                        var iconSlot = Descendants(cards[i]).OfType<Border>()
+                            .FirstOrDefault(b => ReferenceEquals(b.Style, iconStyle));
+                        Assert.True(iconSlot != null, $"карточка {i}: слот иконки не найден");
+
+                        var pictogram = iconSlot!.Child as System.Windows.Shapes.Path;
+                        Assert.True(pictogram != null,
+                            $"карточка {i}: в слоте иконки не Path (шрифтовой глиф вернулся?)");
+
+                        var geometry = pictogram!.Data;
+                        Assert.True(geometry != null &&
+                                    geometry.ToString()!.IndexOf('M') >= 0,
+                            $"карточка {i}: пиктограмма без геометрии");
+                        Assert.NotNull(pictogram.Stroke); // контур красится токеном темы
+
+                        drawings.Add(geometry!.ToString()!);
+                    }
+
+                    // У каждой карточки — СВОЙ рисунок, а не одинаковая заглушка.
+                    Assert.Equal(cards.Count, drawings.Distinct(StringComparer.Ordinal).Count());
                 }
                 finally
                 {

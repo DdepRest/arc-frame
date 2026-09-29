@@ -293,7 +293,7 @@ namespace MosquitoNetCalculator.Tests.Helpers
         // ─── STA dispatcher pump + window factory ─────────────────────
 
         /// <summary>
-        /// Runs <paramref name="action"/> on a freshly-spun STA thread.
+        /// Runs <paramref name="action"/> on the shared process-wide STA thread.
         /// No <see cref="Application"/> is created — the animator unit tests
         /// don't need WPF shell resources (TryFindResource handles a null
         /// <c>Application.Current</c> by returning null, which is exactly
@@ -302,32 +302,11 @@ namespace MosquitoNetCalculator.Tests.Helpers
         /// </summary>
         private static void RunInSTA(Action action)
         {
-            Exception? caught = null;
-            var gate = new ManualResetEventSlim();
-
-            var t = new Thread(() =>
-            {
-                try
-                {
-                    // No Application needed. FrameworkElement.TryFindResource
-                    // handles a null Application.Current gracefully — it just
-                    // returns null. That's exactly the path we want to test
-                    // (the fallback Visibility/Opacity flip when no Storyboard
-                    // is found). Creating a WPF Application here would also
-                    // fight AppLifecycleTests which creates its own.
-                    action();
-                }
-                catch (Exception ex) { caught = ex; }
-                finally { gate.Set(); }
-            });
-
-            t.SetApartmentState(ApartmentState.STA);
-            t.Start();
-            Assert.True(gate.Wait(TimeSpan.FromSeconds(30)),
-                "STA test thread did not finish in time");
-            t.Join();
-
-            Assert.Null(caught);
+            // Единая STA-нить процесса (WpfTestHelper): ресурсы WPF
+            // создаются и применяются на одном диспетчере — без кросс-поточных
+            // VerifyAccess-падений. ensure: false — приложение НЕ поднимаем
+            // (см. summary выше). 30 с — прежний таймаут.
+            WpfTestHelper.RunOnSta(action, 30_000, ensure: false);
         }
 
         /// <summary>
