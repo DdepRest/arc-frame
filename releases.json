@@ -4,10 +4,10 @@
   "releases": [
     {
       "version": "3.53.1",
-      "date": "2026-09-27",
+      "date": "2026-09-29",
       "url": "https://github.com/DdepRest/arc-frame/releases/download/v3.53.1/ARC-Frame-3.53.1-full.zip",
-      "sha256": "14734d5a425e595fd2ee0485945e5219f6a36e4740d5c19d080f4453a5e4a7b0",
-      "size": 93774826,
+      "sha256": "66b49b9ed05d9ef3eebd1f198a32d1f7b6bba9a576472538c4741ff1c66a10c8",
+      "size": 93051875,
       "type": "Новинка + Исправление",
       "title": "Шаблоны расчёта и исправленная тёмная тема",
       "changes": [
