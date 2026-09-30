@@ -357,6 +357,8 @@ git commit -m "release: update releases.json for vX.Y.Z"
 - `extract-release-notes.ps1`
 
 ## Last verified
+2026-09-30 (v3.53.2) — auto-synced from csproj (sync-version.ps1, CONTROL#13).
+
 2026-09-27 (v3.53.1) — обновлено содержимое (sync-last-verified.ps1, CONTROL#13).
 
 2026-09-24 (v3.53.1) — обновлено содержимое (sync-last-verified.ps1, CONTROL#13).

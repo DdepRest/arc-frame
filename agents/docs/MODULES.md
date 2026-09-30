@@ -169,6 +169,8 @@
 - Вся структура `MosquitoNetCalculator/` и `MosquitoNetCalculator.Tests/`.
 
 ## Last verified
+2026-09-30 (v3.53.2) — auto-synced from csproj (sync-version.ps1, CONTROL#13).
+
 2026-09-27 (v3.53.1) — auto-synced from csproj (sync-version.ps1, CONTROL#13).
 
 2026-09-24 (v3.53.0) — обновлено содержимое (sync-last-verified.ps1, CONTROL#13).

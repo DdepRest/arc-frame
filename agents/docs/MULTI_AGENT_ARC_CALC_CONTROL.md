@@ -407,6 +407,8 @@ REFACTORING_PLAN.md
 - `validate-docs.ps1` — валидация документации
 
 ## Last verified
+2026-09-30 (v3.53.2) — auto-synced from csproj (sync-version.ps1, CONTROL#13).
+
 2026-09-24 (v3.53.1) — обновлено содержимое (sync-last-verified.ps1, CONTROL#13).
 
 2026-09-21 (v3.53.0) — синхронизация даты «Last verified» вынесена в sync-last-verified.ps1 + git pre-commit (GOTCHAS §40).
