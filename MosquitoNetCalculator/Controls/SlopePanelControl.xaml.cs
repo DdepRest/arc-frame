@@ -40,7 +40,7 @@ namespace MosquitoNetCalculator.Controls
 
         /// <summary>Цены для расчёта (из PriceService).</summary>
         public (double Sandwich, double Foam, double Sealant, double Tape, double Start, double FProfile, double Penoplex, double Labor)
-            Prices { get; set; } = (1200, 750, 350, 135, 135, 250, 450, 670);
+            Prices { get; set; } = (1200, 750, 350, 135, 135, 250, 500, 670);
 
         /// <summary>Заголовок карточки сводки: "Итого на N откосов"</summary>
         public string SummaryTitle => _currentCalculation != null

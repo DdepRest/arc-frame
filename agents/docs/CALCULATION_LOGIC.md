@@ -790,6 +790,8 @@ double perWindowSum = SlopeData.Sandwich.Sum + SlopeData.Foam.Sum
 - `MosquitoNetCalculator/Models/OrderItem.cs` (Width/Height setter'ы, ШиринаВвод/ВысотаВвод)
 
 ## Last verified
+2026-09-30 — цена «Пеноплекс (откос)» повышена 450 → 500 ₽/лист (разрешение владельца, релиз в пути): `DefaultPrices` + новая Migration 7 в `ApplyMigrations` (поднимает ТОЛЬКО точный legacy-дефолт 450, пользовательские цены не трогает), fallback-дефолты `SlopeCalculatorService.Calculate/UpdateInPlace`, `SlopeOverlayCoordinator.LoadSlopePrices`, `SlopePanelControl.Prices`, эталонный `prices.json`. Тест: `LoadPrices_Migration7_BumpsPenoplexDefault450To500`. Прецедент — Migration 6, «Работа за откос» 600 → 670.
+
 2026-09-30 (v3.53.2) — auto-synced from csproj (sync-version.ps1, CONTROL#13).
 
 2026-09-27 (v3.53.1) — auto-synced from csproj (sync-version.ps1, CONTROL#13).

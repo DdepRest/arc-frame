@@ -39,7 +39,7 @@ namespace MosquitoNetCalculator.Services
         /// - Скотч (откос): без цвета, 135 руб/моток
         /// - Старт (откос): без цвета, 135 руб/полоса 3 м
         /// - F-планка (откос): без цвета, 250 руб/полоса 3 м
-        /// - Пеноплекс (откос): без цвета, 450 руб/лист
+        /// - Пеноплекс (откос): без цвета, 500 руб/лист
         /// - Работа за откос (цена за м.п.): без цвета, 670 руб/м.п.
         /// </summary>
         private static readonly List<PriceItem> DefaultPrices = new()
@@ -112,7 +112,8 @@ namespace MosquitoNetCalculator.Services
             new PriceItem { Name = "Скотч (откос)", Color = "", Price = 135 },
             new PriceItem { Name = "Старт (откос)", Color = "", Price = 135 },
             new PriceItem { Name = "F-планка (откос)", Color = "", Price = 250 },
-            new PriceItem { Name = "Пеноплекс (откос)", Color = "", Price = 450 },
+            // Пеноплекс — без цвета, цена за лист (v3.54: 450 → 500)
+            new PriceItem { Name = "Пеноплекс (откос)", Color = "", Price = 500 },
             // Работа за откос — без цвета, цена за м.п. (v3.49.0: 600 → 670)
             new PriceItem { Name = "Работа за откос", Color = "", Price = 670 },
         };
@@ -295,6 +296,19 @@ namespace MosquitoNetCalculator.Services
                 if (p.Name == "Работа за откос" && string.IsNullOrEmpty(p.Color) && p.Price == 600)
                 {
                     p.Price = 670;
+                    changed = true;
+                }
+            }
+
+            // ── Migration 7: bump "Пеноплекс (откос)" 450 → 500 (v3.54) ──
+            // Same rule as Migration 6: only the exact legacy default 450 is
+            // migrated; user-customized prices (e.g. 480) and entries that are
+            // already 500 are left untouched.
+            foreach (var p in prices)
+            {
+                if (p.Name == "Пеноплекс (откос)" && string.IsNullOrEmpty(p.Color) && p.Price == 450)
+                {
+                    p.Price = 500;
                     changed = true;
                 }
             }

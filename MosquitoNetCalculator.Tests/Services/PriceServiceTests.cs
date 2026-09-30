@@ -342,5 +342,28 @@ namespace MosquitoNetCalculator.Tests.Services
             Assert.Contains(prices, p => p.Name == "Работа за откос" && p.Price == 650);
             Assert.DoesNotContain(prices, p => p.Name == "Работа за откос" && p.Price == 600);
         }
+
+        // ─── Migration 7 (v3.54): «Пеноплекс (откос)» 450 → 500 ₽/лист ─────
+        // Same rule as Migration 6: only the exact legacy default (450, no
+        // color) is bumped. User-customized prices (e.g. 480) must survive
+        // the upgrade untouched, and entries already at the new default must
+        // not be re-touched.
+        [Fact]
+        public void LoadPrices_Migration7_BumpsPenoplexDefault450To500()
+        {
+            var legacy = new List<PriceItem>
+            {
+                new() { Name = "Пеноплекс (откос)", Color = "", Price = 450 }, // legacy default → 500
+                new() { Name = "Пеноплекс (откос)", Color = "", Price = 480 }, // user-customized → stays
+                new() { Name = "Пеноплекс (откос)", Color = "", Price = 500 }, // already new default → stays
+            };
+            File.WriteAllText(_pricesPath, JsonSerializer.Serialize(legacy));
+
+            var prices = _service.LoadPrices();
+
+            Assert.Contains(prices, p => p.Name == "Пеноплекс (откос)" && p.Price == 500);
+            Assert.Contains(prices, p => p.Name == "Пеноплекс (откос)" && p.Price == 480);
+            Assert.DoesNotContain(prices, p => p.Name == "Пеноплекс (откос)" && p.Price == 450);
+        }
     }
 }

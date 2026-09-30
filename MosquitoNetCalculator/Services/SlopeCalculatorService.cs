@@ -42,7 +42,7 @@ namespace MosquitoNetCalculator.Services
             double tapePrice = 135,
             double startPrice = 135,
             double fProfilePrice = 250,
-            double penoplexPrice = 450,
+            double penoplexPrice = 500,
             double laborPrice = 670)
         {
             // v3.43.3: единый helper _ApplyDefaults покрывает все 10 материалов
@@ -280,7 +280,7 @@ namespace MosquitoNetCalculator.Services
             double tapePrice = 135,
             double startPrice = 135,
             double fProfilePrice = 250,
-            double penoplexPrice = 450,
+            double penoplexPrice = 500,
             double laborPrice = 670)
         {
             if (calc == null) throw new ArgumentNullException(nameof(calc));

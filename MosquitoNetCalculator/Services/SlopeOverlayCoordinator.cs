@@ -185,7 +185,7 @@ namespace MosquitoNetCalculator.Services
                 Tape:       prices.GetPrice("Скотч (откос)", "") > 0 ? prices.GetPrice("Скотч (откос)", "") : 135,
                 Start:      prices.GetPrice("Старт (откос)", "") > 0 ? prices.GetPrice("Старт (откос)", "") : 135,
                 FProfile:   prices.GetPrice("F-планка (откос)", "") > 0 ? prices.GetPrice("F-планка (откос)", "") : 250,
-                Penoplex:   prices.GetPrice("Пеноплекс (откос)", "") > 0 ? prices.GetPrice("Пеноплекс (откос)", "") : 450,
+                Penoplex:   prices.GetPrice("Пеноплекс (откос)", "") > 0 ? prices.GetPrice("Пеноплекс (откос)", "") : 500,
                 Labor:      prices.GetPrice("Работа за откос", "") > 0 ? prices.GetPrice("Работа за откос", "") : 670
             );
         }
