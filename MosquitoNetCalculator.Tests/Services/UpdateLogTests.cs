@@ -23,10 +23,22 @@ namespace MosquitoNetCalculator.Tests.Services
         {
             var items = UpdateLog.AllNewestFirst();
 
-            // The latest version in the JSON is 3.54.0 — update this when bumping.
-            // AllNewestFirst_VersionsInDescendingOrder below already proves ordering
-            // is correct, but this lock-in catches accidental version-string typos.
-            Assert.Equal("3.54.0", items[0].Version);
+            // Lock-in WITHOUT a hardcoded version pin (hardcoded pins went stale
+            // twice: 3.53.2 shipped with the pin still on 3.53.1, and the release
+            // CI gate failed only because its 20-min timeout masked the cause).
+            // Expected value = UpdateService.CurrentVersion, resolved from
+            // <Version> in the .csproj — the same source the auto-update dialog
+            // compares against (RELEASE_PROCESS explicitly forbids brittle pins).
+            // If this fails right after a release bump, the new update-log.json
+            // entry is missing or its version/date contradict the csproj.
+            var expected = UpdateService.CurrentVersion.ToString();
+            Assert.True(items.Count > 0, "update-log.json must not be empty");
+            Assert.True(items[0].IsLatest, "items[0] must be the latest entry");
+            Assert.True(
+                new Version(items[0].Version) == UpdateService.CurrentVersion,
+                $"Newest update-log entry is {items[0].Version}, but the app version " +
+                $"(csproj <Version>) is {expected}. Add an update-log.json entry for " +
+                $"{expected} (append at the end) or fix the version/date mismatch.");
         }
 
         [Fact]
@@ -157,8 +169,10 @@ namespace MosquitoNetCalculator.Tests.Services
         [Fact]
         public void GetChangesSince_LatestVersion_ReturnsEmpty()
         {
-            // 3.54.0 — новейшая запись в JSON (обновлять при каждом bump).
-            var changes = UpdateLog.GetChangesSince(new Version(3, 54, 0));
+            // "Latest" = the app version from the .csproj (no hardcoded pin —
+            // see AllNewestFirst_FirstItemIsNewest). GetChangesSince(current)
+            // must be empty: nothing in the log is newer than the app itself.
+            var changes = UpdateLog.GetChangesSince(UpdateService.CurrentVersion);
 
             Assert.NotNull(changes);
             Assert.Empty(changes);
