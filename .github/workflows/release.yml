@@ -81,18 +81,53 @@ jobs:
       # 6. Test — gate the publish step. If tests fail, the entire job
       #    aborts and no release is created on GitHub. This is the
       #    gate that prevents untested code from reaching users.
+      #    --blame-hang: a hung test host is killed after 5 minutes
+      #    instead of silently burning the whole 20-minute step
+      #    timeout, and the in-flight test is named in
+      #    TestResults/<guid>/Sequence.xml (uploaded on failure by the
+      #    step below). Healthy full runs take ~2 minutes (2410 tests)
+      #    and STA tests self-cap at 30s, so 5 minutes is 10x the
+      #    longest legitimate test.
       #    Retry: on v3.53.1 the WPF STA test host crashed at teardown
       #    AFTER reporting "Passed! Failed: 0, 2383" (known flaky host
       #    shutdown on windows-latest), which aborted an otherwise green
       #    gate and blocked the release. All tests must pass in a single
       #    attempt — retry only rescues host crashes, not real failures.
+      #    Caveat: nick-fields/retry does NOT retry a step timeout — a
+      #    hung attempt fails the step on the first try, so the blame
+      #    timeout above is the real hang guard.
+      #    v3.54.0 release run (2026-09-30, run 36708886850): full runs
+      #    hung with zero output for the entire 20 minutes — the single
+      #    STA worker (3c90a09) parked in Queue.GetConsumingEnumerable()
+      #    never pumped its dispatcher, so UpdateService's blocking
+      #    Dispatcher.Invoke from a background thread waited forever
+      #    (RunUpdateFlowAsync sets IsChecking on an xUnit threadpool
+      #    thread). Fixed in code: WpfTestHelper idle-pumps the worker's
+      #    dispatcher via Dispatcher.PushFrame; UpdateService marshals
+      #    with BeginInvoke instead of Invoke.
       - name: Test
         uses: nick-fields/retry@v3
         with:
           timeout_minutes: 20
           max_attempts: 3
           retry_on: error
-          command: dotnet test MosquitoNetCalculator.sln -c Release --no-build --verbosity minimal
+          command: dotnet test MosquitoNetCalculator.sln -c Release --no-build --verbosity minimal --blame-hang --blame-hang-timeout 5min --blame-hang-dump-type none
+
+      # 6b. Keep VSTest blame diagnostics on failure. A hung host is
+      #     killed by --blame-hang above and the in-flight test is
+      #     named in TestResults/<guid>/Sequence.xml — but the
+      #     workspace is discarded with the failed job, so without
+      #     this upload the culprit is unreachable from CI.
+      - name: Upload test diagnostics
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-diagnostics
+          path: |
+            **/TestResults/*.xml
+            **/TestResults/*.dmp
+          if-no-files-found: ignore
+          retention-days: 14
 
       # 7. Publish as single-file win-x64 self-contained. Mirror
       #    build.bat's `-p:PublishSingleFile=true` + compression. We

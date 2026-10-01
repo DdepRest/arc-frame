@@ -1,5 +1,11 @@
 ﻿# Changelog
 
+## Unreleased — v3.54.1
+
+### CI / тестовый хост
+
+- **Висы полных прогонов тестов с 27.09 (20-минутный таймаут CI) — диагностирован и исправлен.** Единственная STA-нить `WpfTestHelper` между запросами парковалась в `Queue.GetConsumingEnumerable()` и не качала dispatcher приложения. `RunUpdateFlowAsync` ставит `IsChecking` с threadpool-нити xUnit, а сеттер маршализовал `Dispatcher.Invoke` на этот неперекачиваемый dispatcher — вечный deadlock: тест никогда не завершался, прогон висел до таймаута (в CI — 20 минут, локально — бесконечно). Класс в изоляции был зелёным (`Application.Current` ещё null), а в полном прогоне ранее выполненные WPF-тесты уже создали приложение на STA-воркере — это взаимодействие, а не отдельный тест (blame-hang назвал `RunUpdateFlowAsync_ConfirmedDialog_...`). Фикс в две стороны: (1) `WpfTestHelper` в простое качает dispatcher воркера через `Dispatcher.PushFrame` (окна по 50 мс, выход по `DispatcherTimer`); (2) `UpdateService` (`IsChecking`/`DownloadProgress`/`IsDownloading`) маршализует события через `BeginInvoke` — уведомление UI не должно блокировать фоновый поток проверки. Полный прогон: 2410/2410 за 1m17s (вместо вечного виса). Шаги Test в ci.yml и release.yml теперь гоняют с `--blame-hang --blame-hang-timeout 5min`: будущий вис убьёт хост за 5 минут и назовёт виновный тест в `TestResults/<guid>/Sequence.xml` (артефакт `test-diagnostics` сохраняется при провале).
+
 ## 3.54.0 — 2026-09-30
 
 ### Цены

@@ -61,13 +61,37 @@ jobs:
       #    the run reports "Passed! Failed: 0" and then the host dies,
       #    failing an otherwise green gate. Retry rescues host crashes,
       #    not real failures.
+      #    --blame-hang (v3.54.1): main CI runs hung with zero output
+      #    from 27.09 (last green 27.09 11:22 UTC, first failure
+      #    28.09, run 36397580663) — the single STA worker parked in
+      #    Queue.GetConsumingEnumerable() never pumped its dispatcher,
+      #    so UpdateService's blocking Dispatcher.Invoke from a
+      #    background thread waited forever. Fixed in code (WpfTestHelper
+      #    idle-pump + UpdateService BeginInvoke); blame-hang is the
+      #    guard: a future hang dies after 5 minutes and names the
+      #    in-flight test in TestResults/<guid>/Sequence.xml instead
+      #    of burning the whole 20-minute job timeout.
       - name: Test
         uses: nick-fields/retry@v3
         with:
           timeout_minutes: 20
           max_attempts: 3
           retry_on: error
-          command: dotnet test MosquitoNetCalculator.sln -c Release --no-build --verbosity minimal
+          command: dotnet test MosquitoNetCalculator.sln -c Release --no-build --verbosity minimal --blame-hang --blame-hang-timeout 5min --blame-hang-dump-type none
+
+      # 5b. Keep VSTest blame diagnostics on failure — the workspace
+      #     is discarded with the failed job, so without this upload
+      #     the culprit named in Sequence.xml is unreachable from CI.
+      - name: Upload test diagnostics
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-diagnostics
+          path: |
+            **/TestResults/*.xml
+            **/TestResults/*.dmp
+          if-no-files-found: ignore
+          retention-days: 14
 
       # 6. Upload build artifacts so release workflow can reuse them
       #    (optional — release.yml rebuilds from tag for reproducibility).

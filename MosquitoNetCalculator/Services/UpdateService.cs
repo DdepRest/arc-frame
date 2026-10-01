@@ -73,7 +73,17 @@ namespace MosquitoNetCalculator.Services
             private set
             {
                 _isChecking = value;
-                Application.Current?.Dispatcher.Invoke(() =>
+                // BeginInvoke, не Invoke: сеттер дёргают с фонового
+                // потока (CheckInBackgroundAsync/RunUpdateFlowAsync).
+                // Блокирующий Invoke держит фоновый поток до ответа
+                // UI-потока — deadlock, если UI-поток сам ждёт этот
+                // поток (sync-over-async), а в тестовом хосте — вечный
+                // вис, пока STA-воркер занят телом другого теста.
+                // Событие UI-уведомления — ровно тот случай, когда
+                // BeginInvoke корректен: подписчики (биндинги
+                // MainWindow) получат его на UI-потоке чуть позже,
+                // не блокируя поток проверки.
+                Application.Current?.Dispatcher.BeginInvoke(() =>
                     CheckingChanged?.Invoke(null, EventArgs.Empty));
             }
         }
@@ -88,7 +98,9 @@ namespace MosquitoNetCalculator.Services
             private set
             {
                 _downloadProgress = value;
-                Application.Current?.Dispatcher.Invoke(() =>
+                // BeginInvoke — см. IsChecking: фоновый поток
+                // загрузки не блокируется на UI-потоке.
+                Application.Current?.Dispatcher.BeginInvoke(() =>
                     ProgressChanged?.Invoke(null, EventArgs.Empty));
             }
         }
@@ -103,7 +115,9 @@ namespace MosquitoNetCalculator.Services
             private set
             {
                 _isDownloading = value;
-                Application.Current?.Dispatcher.Invoke(() =>
+                // BeginInvoke — см. IsChecking: фоновый поток
+                // загрузки не блокируется на UI-потоке.
+                Application.Current?.Dispatcher.BeginInvoke(() =>
                     ProgressChanged?.Invoke(null, EventArgs.Empty));
             }
         }

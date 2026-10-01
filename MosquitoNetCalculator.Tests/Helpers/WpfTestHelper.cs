@@ -27,6 +27,17 @@ namespace MosquitoNetCalculator.Tests.Helpers
     /// все STA-тела сериализуются ещё и процесс-глобальным
     /// <see cref="WpfGate"/> — его держит вызывающий поток на время ожидания,
     /// а тело выполняет рабочая нить.</para>
+    ///
+    /// <para><b>Простой = прокачка dispatcher (v3.54.1, висы полных
+    /// прогонов).</b> Между запросами воркер качает СВОЙ dispatcher
+    /// (<c>Dispatcher.PushFrame</c>), а не паркуется в ожидании очереди.
+    /// Блокирующий <c>Dispatcher.Invoke</c> с фонового потока на dispatcher
+    /// приложения иначе ждёт ВЕЧНО: нить в ожидании очереди не пропускает
+    /// ни одной операции dispatcher. Именно это вешало полные прогоны
+    /// с 27.09: async-поток <c>UpdateService.RunUpdateFlowAsync</c> ставил
+    /// <c>IsChecking</c>, сеттер маршализовал <c>Application.Current?.
+    /// Dispatcher.Invoke</c> на неперекачиваемый dispatcher — и весь
+    /// прогон стоял (локально бесконечно, в CI — 20-минутный таймаут).</para>
     /// </summary>
     public static class WpfTestHelper
     {
@@ -34,6 +45,15 @@ namespace MosquitoNetCalculator.Tests.Helpers
         /// Процесс-глобальный замок WPF-тестов (см. summary выше).
         /// </summary>
         internal static readonly object WpfGate = new();
+
+        /// <summary>
+        /// Интервал между взятиями запросов из очереди. В простое
+        /// воркер качает dispatcher ровно столько же — фоновые
+        /// потоки, маршализующие на приложение (Dispatcher.Invoke
+        /// из UpdateService и т.п.), получают ответ в пределах
+        /// этого окна, а не вечно.
+        /// </summary>
+        private const int IdlePumpIntervalMs = 50;
 
         private sealed class StaRequest
         {
@@ -54,9 +74,11 @@ namespace MosquitoNetCalculator.Tests.Helpers
                 {
                     // Никогда не роняем процесс: исключение из цикла обрывает
                     // обслуживание всех будущих тестов.
-                    try
+                try
+                {
+                    while (!Queue.IsCompleted)
                     {
-                        foreach (var req in Queue.GetConsumingEnumerable())
+                        if (Queue.TryTake(out var req, TimeSpan.FromMilliseconds(IdlePumpIntervalMs)))
                         {
                             try { req.Result = req.Work!(); }
                             catch (Exception ex)
@@ -80,7 +102,61 @@ namespace MosquitoNetCalculator.Tests.Helpers
                             }
                             finally { req.Done.Set(); }
                         }
+                        else
+                        {
+                            // Простой: гоняем dispatcher ВОРКЕРНОЙ нити.
+                            // Без этого фоновые потоки, маршализующие на
+                            // dispatcher приложения (блокирующий
+                            // Dispatcher.Invoke в сеттерах UpdateService
+                            // IsChecking/DownloadProgress/IsDownloading и
+                            // им подобные), ждут ВЕЧНО: нить, крученная
+                            // в ожидании очереди, не пропускает ни одной
+                            // операции dispatcher. Именно это вешало
+                            // полные прогоны с 27.09 (v3.53.1):
+                            // RunUpdateFlowAsync на threadpool-нити xUnit
+                            // ставил IsChecking → Invoke → вечный ожидание
+                            // → async-тест никогда не завершался.
+                            // PushFrame качает dispatcher вызывающей
+                            // (этой STA) нити. Перегрузки с таймаутом
+                            // в WPF для .NET 8 нет, поэтому фрейм
+                            // закрывает DispatcherTimer через
+                            // IdlePumpIntervalMs — окно прокачки
+                            // ограничено, очередь проверяется заново.
+                            try
+                            {
+                                var frame = new System.Windows.Threading.DispatcherFrame(false);
+                                var exitTimer = new System.Windows.Threading.DispatcherTimer(
+                                    System.Windows.Threading.DispatcherPriority.Background)
+                                {
+                                    Interval = TimeSpan.FromMilliseconds(IdlePumpIntervalMs),
+                                };
+                                exitTimer.Tick += (_, _) =>
+                                {
+                                    exitTimer.Stop();
+                                    frame.Continue = false;
+                                };
+                                exitTimer.Start();
+                                try
+                                {
+                                    System.Windows.Threading.Dispatcher.PushFrame(frame);
+                                }
+                                finally
+                                {
+                                    exitTimer.Stop();
+                                }
+                            }
+                            catch (Exception ex)
+                            {
+                                // Отложенный BeginInvoke-калбэк (например,
+                                // от уже закрытого тестом окна) упал в
+                                // простое — не убиваем воркер из-за
+                                // чужого callback'а.
+                                TestAppThemes.Diag(
+                                    "PUMP-ERROR " + ex.GetType().Name + ": " + ex.Message);
+                            }
+                        }
                     }
+                }
                     catch
                     {
                         // Queue.Dispose() или завершение процесса — выходим.
@@ -174,6 +250,17 @@ namespace MosquitoNetCalculator.Tests.Helpers
             {
                 // best effort — таймаут и так означает красный прогон
             }
+
+            // Замыкаем очередь: как только застрявшее тело вернётся,
+            // цикл воркера выходит (IsCompleted) и нить ЗАВЕРШАЕТСЯ,
+            // вместо того чтобы жить вечно фоновой зомби-нитью. Зомби
+            // мог догнать свой Ensure()/ResetStatics() уже после
+            // замены и пересоздать Application на СВОЕЙ нити — новый
+            // воркер получал чужие ресурсы (THIEF-DETECTED в
+            // sta-diag.log → CROSS-THREAD-FAIL и FailFast краш хоста
+            // на CI). CompleteAdding сужает это окно до ~100 мс.
+            try { failed.Queue.CompleteAdding(); }
+            catch { /* уже завершена */ }
         }
     }
 }
