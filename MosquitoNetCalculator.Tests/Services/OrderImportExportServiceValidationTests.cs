@@ -82,5 +82,34 @@ namespace MosquitoNetCalculator.Tests.Services
             var result = _service.CopyOrder(null);
             Assert.Null(result);
         }
+
+        // ─── MergeImport: hostile order id ───────────────────
+
+        [Fact]
+        public void MergeImport_OrderWithTraversalId_ThrowsAndPersistsNothing()
+        {
+            // The import dialog accepts «Все файлы (*.*)», so a JSON file the
+            // user picked can carry an Id like «../../evil». SaveOrder must
+            // reject it (CWE-22) and persist nothing — inside or outside the
+            // orders directory. ImportOrders catches the InvalidDataException
+            // and shows «Ошибка импорта: …» instead of crashing.
+            var vm = new OrdersHistoryViewModel();
+            var hostile = new OrderData { Id = "../../evil", ClientName = "Hostile" };
+            string escapeTarget = Path.GetFullPath(Path.Combine(_testOrdersDir, "..", "evil.json"));
+
+            try
+            {
+                Assert.Throws<InvalidDataException>(
+                    () => vm.MergeImport(new List<OrderData> { hostile }));
+
+                Assert.False(File.Exists(escapeTarget), $"«../../evil» escaped to {escapeTarget}");
+                Assert.Empty(Directory.GetFiles(_testOrdersDir, "*.json"));
+                Assert.Empty(vm.LoadAllOrders());
+            }
+            finally
+            {
+                if (File.Exists(escapeTarget)) File.Delete(escapeTarget);
+            }
+        }
     }
 }

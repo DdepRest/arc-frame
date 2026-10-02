@@ -74,6 +74,19 @@ release-artifacts/
 ## One-off проверки окна шаблонов (check-templates-*.ps1) — не базлайны
 .tools/shots/templates-*.png
 
+## Локальный инструментарий ILSpy (декомпилятор + его NuGet-стор: 68 файлов бинарей,
+## в публичный репо не нужны — ставятся локально)
+.tools/.store/
+.tools/ilspycmd.exe
+
+## Scratch-кадры ручных прогонов: базлайны в .tools/shots/ отслеживаются (
+## 01-main-*.png и т.п.), а файлы с «_» — нет — та же конвенция, что
+## .tools/_verify-*/ и .tools/_det*/
+.tools/shots/_*
+
+## Установщик codebase-memory-mcp — локальный инструмент, не часть проекта
+/install.ps1
+
 ## codebase-memory-mcp — локальный граф знаний (артефакты реиндекссятся локально,
 ## в репо не коммитим; иначе graph.db.zst раздувает историю при каждом обновлении)
 .codebase-memory/

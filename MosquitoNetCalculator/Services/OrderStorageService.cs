@@ -43,10 +43,73 @@ namespace MosquitoNetCalculator.Services
                 Directory.CreateDirectory(OrdersDir);
         }
 
+        // ──── Path safety (CWE-22) ────
+
+        /// <summary>
+        /// Canonicalizes an order id to the «D» GUID form used for file names.
+        /// Single source of truth for the id rule, shared by
+        /// <see cref="ResolveOrderFilePath"/> (throws on a bad id) and
+        /// <see cref="LoadAllOrders"/> (skips such a file).
+        /// </summary>
+        private static bool TryCanonicalizeOrderId(string? orderId, out string canonicalId)
+        {
+            canonicalId = string.Empty;
+            if (string.IsNullOrWhiteSpace(orderId) || !Guid.TryParse(orderId, out var parsedId))
+                return false;
+
+            canonicalId = parsedId.ToString("D");
+            return true;
+        }
+
+        /// <summary>
+        /// Maps an order id to its file under <see cref="OrdersDir"/> and
+        /// guarantees the result stays inside that directory.
+        /// <para>
+        /// Ids must be GUIDs. Every production writer creates them with
+        /// <c>Guid.NewGuid().ToString()</c> (canonical «D» form), so a
+        /// non-GUID id can only arrive from hand-edited or hostile import
+        /// JSON — where arbitrary text would allow separators, «..», NTFS
+        /// alternate-data-stream names («a.json:stream») and reserved device
+        /// names. Re-formatting the parsed GUID also unifies non-canonical
+        /// spellings (uppercase, braces, «N»/«P» forms) onto one file.
+        /// </para>
+        /// </summary>
+        /// <exception cref="InvalidDataException">
+        /// The id is empty / not a GUID, or the resolved path would escape
+        /// <see cref="OrdersDir"/>.
+        /// </exception>
+        private static string ResolveOrderFilePath(string? orderId)
+        {
+            if (!TryCanonicalizeOrderId(orderId, out string canonicalId))
+                throw new InvalidDataException($"Некорректный идентификатор заказа: «{orderId}».");
+
+            string fileName = canonicalId + ".json";
+
+            // OrdersDir is a mutable static (tests redirect it) and may be
+            // relative — resolve it against the current directory first, then
+            // drop trailing separators so the containment check below can
+            // append exactly one.
+            string directoryResolved = Path.GetFullPath(OrdersDir)
+                .TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
+            string filePath = Path.GetFullPath(Path.Combine(directoryResolved, fileName));
+
+            // Defence in depth: a canonical GUID cannot contain separators, so
+            // this cannot trigger today. Keep it so a future change to the
+            // canonicalisation above can't silently reopen traversal.
+            string directoryWithSeparator = directoryResolved + Path.DirectorySeparatorChar;
+            if (!filePath.StartsWith(directoryWithSeparator, StringComparison.OrdinalIgnoreCase))
+                throw new InvalidDataException(
+                    $"Путь к файлу заказа выходит за пределы каталога заказов: «{orderId}».");
+
+            return filePath;
+        }
+
         public string SaveOrder(OrderData order)
         {
+            // Validate + resolve the id BEFORE any mutation or IO, so a
+            // rejected id leaves both the order object and the disk untouched.
+            string filePath = ResolveOrderFilePath(order.Id);
             order.UpdatedAt = DateTime.Now;
-            string filePath = Path.Combine(OrdersDir, $"{order.Id}.json");
             string json = JsonSerializer.Serialize(order, JsonOptions);
             // File IO is performed under the cache lock so a concurrent LoadAllOrders
             // can't read files, then have its result overwritten by a SaveOrder that
@@ -64,7 +127,7 @@ namespace MosquitoNetCalculator.Services
 
         public OrderData? LoadOrder(string orderId)
         {
-            string filePath = Path.Combine(OrdersDir, $"{orderId}.json");
+            string filePath = ResolveOrderFilePath(orderId);
             if (!File.Exists(filePath)) return null;
 
             string json = File.ReadAllText(filePath, System.Text.Encoding.UTF8);
@@ -98,8 +161,27 @@ namespace MosquitoNetCalculator.Services
                         string json = File.ReadAllText(file, System.Text.Encoding.UTF8);
                         // Symmetric with the write path — see JsonOptions comment.
                         var order = JsonSerializer.Deserialize<OrderData>(json, JsonOptions);
-                        if (order != null)
-                            orders.Add(order);
+                        if (order == null) continue;
+
+                        // Only list the orders LoadOrder / DeleteOrder can actually
+                        // reach: both build the path from the id via
+                        // ResolveOrderFilePath, so a file whose id is not a GUID —
+                        // or whose id does not match its own file name (a hand-
+                        // renamed copy) — would appear in the history yet never
+                        // open or delete. Same policy as corrupted JSON below:
+                        // skip it, log it, leave the file on disk.
+                        if (!TryCanonicalizeOrderId(order.Id, out string canonicalId))
+                        {
+                            System.Diagnostics.Debug.WriteLine($"[OrderStorage] skip invalid id: {file}");
+                            continue;
+                        }
+                        if (!string.Equals(canonicalId, Path.GetFileNameWithoutExtension(file), StringComparison.OrdinalIgnoreCase))
+                        {
+                            System.Diagnostics.Debug.WriteLine($"[OrderStorage] skip id/filename mismatch: {file}");
+                            continue;
+                        }
+
+                        orders.Add(order);
                     }
                     catch (Exception ex) { System.Diagnostics.Debug.WriteLine($"[OrderStorage] skip corrupted: {file} — {ex.Message}"); }
                 }
@@ -111,7 +193,7 @@ namespace MosquitoNetCalculator.Services
 
         public void DeleteOrder(string orderId)
         {
-            string filePath = Path.Combine(OrdersDir, $"{orderId}.json");
+            string filePath = ResolveOrderFilePath(orderId);
             // Same lock-during-IO rationale as SaveOrder: invalidate the cache atomically
             // with the file deletion so a concurrent LoadAllOrders can't return a list
             // that still contains the just-deleted order.

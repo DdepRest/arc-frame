@@ -95,7 +95,10 @@ namespace MosquitoNetCalculator.Tests.Services
         [Fact]
         public void LoadOrder_ReturnsNull_ForNonExistent()
         {
-            var result = _service.LoadOrder("non-existent-id-12345");
+            // A well-formed id with no file behind it → null. (A malformed id
+            // is a different case — it is rejected outright, see the
+            // path-traversal guard tests below.)
+            var result = _service.LoadOrder(Guid.NewGuid().ToString());
             Assert.Null(result);
         }
 
@@ -146,7 +149,9 @@ namespace MosquitoNetCalculator.Tests.Services
         [Fact]
         public void DeleteOrder_DoesNotThrow_ForNonExistent()
         {
-            var exception = Record.Exception(() => _service.DeleteOrder("non-existent-id"));
+            // Same split as LoadOrder: a valid GUID that has no file is a
+            // no-op, a malformed id throws (guard tests below).
+            var exception = Record.Exception(() => _service.DeleteOrder(Guid.NewGuid().ToString()));
             Assert.Null(exception);
         }
 
@@ -497,8 +502,9 @@ namespace MosquitoNetCalculator.Tests.Services
             // Simulate an order saved before "Дверная сетка" was introduced.
             // The JSON has InstallationDeduction=500 (old default) for Anwis —
             // loading must NOT upgrade it to 600 (the new Дверная сетка default).
+            string orderId = Guid.NewGuid().ToString();
             string oldJson = @"{
-  ""Id"": ""old-order-anwis"",
+  ""Id"": """ + orderId + @""",
   ""ClientName"": ""Старый заказ"",
   ""ContractNumber"": ""1-100"",
   ""Status"": ""Подтверждён"",
@@ -531,11 +537,11 @@ namespace MosquitoNetCalculator.Tests.Services
 }";
             // Write the raw JSON directly to bypass SaveOrder's update of UpdatedAt etc.
             string filePath = System.IO.Path.Combine(
-                OrderStorageService.OrdersDir, "old-order-anwis.json");
+                OrderStorageService.OrdersDir, $"{orderId}.json");
             System.IO.File.WriteAllText(filePath, oldJson, System.Text.Encoding.UTF8);
 
             // Load via fresh instance to bypass cache
-            var loaded = new OrderStorageService().LoadOrder("old-order-anwis");
+            var loaded = new OrderStorageService().LoadOrder(orderId);
             Assert.NotNull(loaded);
             Assert.Equal(2, loaded!.Items.Count);
 
@@ -562,8 +568,9 @@ namespace MosquitoNetCalculator.Tests.Services
             // Simulate a very old order where InstallationDeduction / InstallationSurcharge
             // fields are completely absent from the JSON. DTO defaults to −500 —
             // loading must NOT apply any product-specific default. Missing fields → DTO default (−500).
+            string orderId = Guid.NewGuid().ToString();
             string oldJson = @"{
-  ""Id"": ""old-order-missing-fields"",
+  ""Id"": """ + orderId + @""",
   ""ClientName"": ""Древний заказ"",
   ""ContractNumber"": ""1-50"",
   ""Items"": [
@@ -580,10 +587,10 @@ namespace MosquitoNetCalculator.Tests.Services
   ]
 }";
             string filePath = System.IO.Path.Combine(
-                OrderStorageService.OrdersDir, "old-order-missing-fields.json");
+                OrderStorageService.OrdersDir, $"{orderId}.json");
             System.IO.File.WriteAllText(filePath, oldJson, System.Text.Encoding.UTF8);
 
-            var loaded = new OrderStorageService().LoadOrder("old-order-missing-fields");
+            var loaded = new OrderStorageService().LoadOrder(orderId);
             Assert.NotNull(loaded);
             Assert.Single(loaded!.Items);
 
@@ -680,6 +687,282 @@ namespace MosquitoNetCalculator.Tests.Services
             Assert.Equal("Работа", loaded.Items[1].Name);
             Assert.Equal(5000, loaded.Items[1].Price);
             Assert.True(loaded.Items[1].IsActive);
+        }
+
+        // ──── Path-traversal guards (CWE-22) ─────────────────────────
+        // The id travels from an import JSON file (the import dialog accepts
+        // «Все файлы (*.*)») through OrdersHistoryViewModel.MergeImport into
+        // SaveOrder / LoadOrder / DeleteOrder. Before these guards an id like
+        // «../../evil» made Path.Combine escape the orders directory and let
+        // the caller write (or read, or delete) a file anywhere the process
+        // could reach. The contract now: an id must be a GUID.
+
+        [Fact]
+        public void SaveOrder_IdWithPathSeparators_Throws_AndWritesNothingOutside()
+        {
+            // Payloads a hostile import file could carry. «C:\...» is a rooted
+            // path — Path.Combine would discard the orders directory entirely.
+            string?[] hostileIds =
+            {
+                null, "", "   ", "..", "../evil", "..\\evil", "../../evil",
+                "sub/evil", "sub\\evil", "C:\\Windows\\Temp\\evil",
+                "evil.json:stream"   // NTFS alternate data stream
+            };
+
+            string outsidePath = Path.GetFullPath(Path.Combine(_ordersDir, "..", "evil.json"));
+            try
+            {
+                foreach (string? hostileId in hostileIds)
+                {
+                    // What the pre-fix code would have written for this id:
+                    string wouldBeVulnerablePath = Path.GetFullPath(Path.Combine(_ordersDir, hostileId + ".json"));
+                    Assert.Throws<InvalidDataException>(() => _service.SaveOrder(new OrderData { Id = hostileId! }));
+                    Assert.False(File.Exists(wouldBeVulnerablePath),
+                        $"SaveOrder wrote outside the orders directory: {wouldBeVulnerablePath}");
+                }
+
+                Assert.False(File.Exists(outsidePath), "SaveOrder escaped the orders directory");
+                // Every id was rejected, so nothing landed inside either.
+                Assert.Empty(Directory.GetFiles(_ordersDir, "*.json"));
+            }
+            finally
+            {
+                if (File.Exists(outsidePath)) File.Delete(outsidePath);
+            }
+        }
+
+        [Fact]
+        public void SaveOrder_IdWithTraversalToParentDir_Rejected()
+        {
+            // «../../evil» would resolve two levels above the test binary.
+            // The negative control: a legitimate save in the SAME test still
+            // lands inside orders/ — proving the rejection is id-driven and
+            // not a blanket failure of SaveOrder.
+            var hostile = new OrderData { Id = "../../evil" };
+            string escapeTarget = Path.GetFullPath(Path.Combine(_ordersDir, "..", "..", "evil.json"));
+            try
+            {
+                Assert.Throws<InvalidDataException>(() => _service.SaveOrder(hostile));
+                Assert.False(File.Exists(escapeTarget), $"«../../evil» escaped to {escapeTarget}");
+
+                var legit = new OrderData { Id = Guid.NewGuid().ToString(), ClientName = "Контроль" };
+                string savedPath = _service.SaveOrder(legit);
+                Assert.Equal(Path.Combine(_ordersDir, legit.Id + ".json"), savedPath);
+                Assert.True(File.Exists(savedPath));
+                Assert.Single(Directory.GetFiles(_ordersDir, "*.json"));
+            }
+            finally
+            {
+                if (File.Exists(escapeTarget)) File.Delete(escapeTarget);
+            }
+        }
+
+        [Fact]
+        public void LoadOrder_IdWithPathSeparators_Throws_WithoutTouchingDisk()
+        {
+            // A hostile id must not READ outside orders/ either. Plant a decoy
+            // at the traversal target: the guard has to fire before
+            // File.Exists / ReadAllText ever see it.
+            string decoyPath = Path.GetFullPath(Path.Combine(_ordersDir, "..", "evil.json"));
+            File.WriteAllText(decoyPath,
+                @"{ ""Id"": ""decoy"", ""ClientName"": ""Утёк"" }", System.Text.Encoding.UTF8);
+            try
+            {
+                Assert.Throws<InvalidDataException>(() => _service.LoadOrder("../evil"));
+                Assert.Throws<InvalidDataException>(() => _service.LoadOrder("..\\evil"));
+                Assert.Throws<InvalidDataException>(() => _service.LoadOrder("evil.json"));
+            }
+            finally
+            {
+                if (File.Exists(decoyPath)) File.Delete(decoyPath);
+            }
+        }
+
+        [Fact]
+        public void DeleteOrder_IdWithPathSeparators_DoesNotDelete_Anything()
+        {
+            // Sentinel outside the orders directory: a vulnerable DeleteOrder
+            // with id «../sentinel» would have deleted it.
+            var order = new OrderData { Id = Guid.NewGuid().ToString() };
+            _service.SaveOrder(order);
+            string sentinelPath = Path.GetFullPath(Path.Combine(_ordersDir, "..", "sentinel.json"));
+            File.WriteAllText(sentinelPath, "sentinel", System.Text.Encoding.UTF8);
+            try
+            {
+                Assert.Throws<InvalidDataException>(() => _service.DeleteOrder("../sentinel"));
+                Assert.Throws<InvalidDataException>(() => _service.DeleteOrder("..\\sentinel"));
+                Assert.True(File.Exists(sentinelPath),
+                    "DeleteOrder deleted a file outside the orders directory");
+                // The legitimate order is untouched as well.
+                Assert.True(File.Exists(Path.Combine(_ordersDir, order.Id + ".json")));
+            }
+            finally
+            {
+                if (File.Exists(sentinelPath)) File.Delete(sentinelPath);
+            }
+        }
+
+        [Fact]
+        public void SaveOrder_LegacyGuidId_StillWorks()
+        {
+            // Regression: orders on disk (all 61 in the audited install, and
+            // every order this app has ever written) use the canonical
+            // lowercase «D» GUID form. Tightening the id check must not
+            // break them.
+            string legacyId = Guid.NewGuid().ToString("D");   // canonical on-disk format
+            var order = new OrderData { Id = legacyId, ClientName = "Legacy" };
+
+            string savedPath = _service.SaveOrder(order);
+
+            Assert.Equal(Path.Combine(_ordersDir, legacyId + ".json"), savedPath);
+            Assert.True(File.Exists(savedPath));
+            var loaded = _service.LoadOrder(legacyId);
+            Assert.NotNull(loaded);
+            Assert.Equal("Legacy", loaded!.ClientName);
+
+            // Delete resolves the same id to the same file.
+            _service.DeleteOrder(legacyId);
+            Assert.False(File.Exists(savedPath));
+        }
+
+        [Fact]
+        public void SaveOrder_UppercaseId_CanonicalizesToSameFile()
+        {
+            // Non-canonical spellings (uppercase here) must map onto the same
+            // file as the canonical form — otherwise an import could create
+            // «AB…json» next to «ab…json» and the two would drift apart.
+            var guid = Guid.NewGuid();
+            string canonicalId = guid.ToString("D");
+            string uppercaseId = canonicalId.ToUpperInvariant();
+
+            _service.SaveOrder(new OrderData { Id = uppercaseId, ClientName = "Uppercase" });
+
+            // Exactly one file, named canonically.
+            string[] files = Directory.GetFiles(_ordersDir, "*.json");
+            Assert.Single(files);
+            Assert.Equal(canonicalId + ".json", Path.GetFileName(files[0]));
+
+            // Both spellings resolve to it (the in-memory Id is left as-is).
+            Assert.NotNull(_service.LoadOrder(uppercaseId));
+            Assert.NotNull(new OrderStorageService().LoadOrder(canonicalId));
+        }
+
+        [Fact]
+        public void SaveOrder_WritesNothingOutsideOrdersDir()
+        {
+            // The guard must leave the filesystem literally untouched on
+            // rejection: no file inside orders/, and no new entry in the
+            // parent directory the traversals point at.
+            string parentDir = Path.GetFullPath(Path.Combine(_ordersDir, ".."));
+            var filesBefore = Directory.GetFiles(parentDir).ToHashSet(StringComparer.OrdinalIgnoreCase);
+            var dirsBefore = Directory.GetDirectories(parentDir).ToHashSet(StringComparer.OrdinalIgnoreCase);
+
+            string?[] payloads = { "../evil", "../../evil", "..\\evil", "sub/../evil", "evil.json:stream" };
+            foreach (string? payload in payloads)
+            {
+                var hostile = new OrderData { Id = payload!, ClientName = "Hostile" };
+                Assert.Throws<InvalidDataException>(() => _service.SaveOrder(hostile));
+            }
+
+            Assert.Empty(Directory.GetFiles(_ordersDir));
+            Assert.True(filesBefore.SetEquals(Directory.GetFiles(parentDir)),
+                "a file appeared next to the orders directory");
+            Assert.True(dirsBefore.SetEquals(Directory.GetDirectories(parentDir)),
+                "a directory appeared next to the orders directory");
+        }
+
+        // ──── LoadAllOrders: skip unreachable files ──────────────────
+        // An order is listed only if LoadOrder / DeleteOrder can reach it —
+        // both build the path from the embedded id. A file that fails that
+        // check follows the same policy as corrupted JSON: skipped, logged,
+        // and left on disk (a read never deletes anything). The ignored
+        // population is real for OTHER installs: every production writer
+        // emits canonical GUIDs, so a non-GUID id can only come from an old
+        // build or from hand-editing — verified on this machine (61/61 GUID),
+        // not on the multi-office fleet.
+
+        [Fact]
+        public void LoadAllOrders_NonGuidId_SkippedWithoutDeletingFile()
+        {
+            string filePath = WriteRawOrderFile("bad-id", @"{ ""Id"": ""bad/id"", ""ClientName"": ""Hostile"" }");
+
+            var all = new OrderStorageService().LoadAllOrders();
+
+            Assert.Empty(all);
+            Assert.True(File.Exists(filePath), "a skipped file must stay on disk");
+        }
+
+        [Fact]
+        public void LoadAllOrders_IdFilenameMismatch_Skipped()
+        {
+            // Both ids are valid GUIDs, but the file was hand-renamed: the
+            // service resolves <id>.json, so this file could never be opened
+            // or deleted — listing it would only produce error toasts.
+            var fileId = Guid.NewGuid();
+            var otherId = Guid.NewGuid();
+            string filePath = WriteRawOrderFile(otherId.ToString("D"),
+                $@"{{ ""Id"": ""{fileId:D}"", ""ClientName"": ""Renamed copy"" }}");
+
+            var all = new OrderStorageService().LoadAllOrders();
+
+            Assert.Empty(all);
+            Assert.True(File.Exists(filePath));
+        }
+
+        [Fact]
+        public void LoadAllOrders_CorruptedFile_StillSkipped()
+        {
+            // Regression: the pre-existing policy for unparseable JSON must
+            // survive the new id checks.
+            string filePath = WriteRawOrderFile("corrupted", "{ this is not json");
+
+            var all = new OrderStorageService().LoadAllOrders();
+
+            Assert.Empty(all);
+            Assert.True(File.Exists(filePath), "a skipped file must stay on disk");
+        }
+
+        [Fact]
+        public void LoadAllOrders_ValidGuidMatchingFilename_Included()
+        {
+            // Regression: the ordinary on-disk shape (canonical GUID in the
+            // name AND in the JSON) keeps loading.
+            var id = Guid.NewGuid();
+            WriteRawOrderFile(id.ToString("D"),
+                $@"{{ ""Id"": ""{id:D}"", ""ClientName"": ""Валидный"" }}");
+
+            var all = new OrderStorageService().LoadAllOrders();
+
+            Assert.Single(all);
+            Assert.Equal(id.ToString("D"), all[0].Id);
+            Assert.Equal("Валидный", all[0].ClientName);
+        }
+
+        [Fact]
+        public void LoadAllOrders_MixedValidAndInvalid_ReturnsOnlyValid()
+        {
+            string badPath = WriteRawOrderFile("bad-id", @"{ ""Id"": ""bad/id"" }");
+            var goodId = Guid.NewGuid();
+            WriteRawOrderFile(goodId.ToString("D"), $@"{{ ""Id"": ""{goodId:D}"" }}");
+
+            var all = new OrderStorageService().LoadAllOrders();
+
+            Assert.Single(all);
+            Assert.Equal(goodId.ToString("D"), all[0].Id);
+            Assert.True(File.Exists(badPath), "skipped files must stay on disk");
+        }
+
+        /// <summary>
+        /// Writes a raw order JSON file into the per-test orders directory,
+        /// bypassing <c>SaveOrder</c> (which rejects anything but a canonical
+        /// GUID id). Returns the full path so tests can assert the file
+        /// survives a skip.
+        /// </summary>
+        private string WriteRawOrderFile(string fileNameWithoutExtension, string json)
+        {
+            string path = Path.Combine(_ordersDir, fileNameWithoutExtension + ".json");
+            File.WriteAllText(path, json, System.Text.Encoding.UTF8);
+            return path;
         }
     }
 }

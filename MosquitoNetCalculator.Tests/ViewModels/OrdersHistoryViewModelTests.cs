@@ -101,7 +101,9 @@ namespace MosquitoNetCalculator.Tests.ViewModels
         {
             var fileOrders = new List<OrderData>
             {
-                new() { Id = "new-1", ClientName = "New Client" }
+                // Ids must be GUIDs — OrderStorageService rejects anything else
+                // (CWE-22 guard). Duplicate detection still keys on Id.
+                new() { Id = Guid.NewGuid().ToString(), ClientName = "New Client" }
             };
             var imported = _vm.MergeImport(fileOrders);
             Assert.Single(imported);
@@ -111,12 +113,13 @@ namespace MosquitoNetCalculator.Tests.ViewModels
         [Fact]
         public void MergeImport_SkipsOlderDuplicates()
         {
-            var existing = new OrderData { Id = "same-id", UpdatedAt = DateTime.Now };
+            string id = Guid.NewGuid().ToString();
+            var existing = new OrderData { Id = id, UpdatedAt = DateTime.Now };
             _vm.SaveOrder(existing);
 
             var fileOrders = new List<OrderData>
             {
-                new() { Id = "same-id", UpdatedAt = DateTime.Now.AddHours(-1) }
+                new() { Id = id, UpdatedAt = DateTime.Now.AddHours(-1) }
             };
             var imported = _vm.MergeImport(fileOrders);
             Assert.Empty(imported);
@@ -125,12 +128,13 @@ namespace MosquitoNetCalculator.Tests.ViewModels
         [Fact]
         public void MergeImport_ImportsNewerDuplicates()
         {
-            var existing = new OrderData { Id = "same-id", UpdatedAt = DateTime.Now.AddHours(-2), ClientName = "Old" };
+            string id = Guid.NewGuid().ToString();
+            var existing = new OrderData { Id = id, UpdatedAt = DateTime.Now.AddHours(-2), ClientName = "Old" };
             _vm.SaveOrder(existing);
 
             var fileOrders = new List<OrderData>
             {
-                new() { Id = "same-id", UpdatedAt = DateTime.Now, ClientName = "Updated" }
+                new() { Id = id, UpdatedAt = DateTime.Now, ClientName = "Updated" }
             };
             var imported = _vm.MergeImport(fileOrders);
             Assert.Single(imported);
