@@ -11,6 +11,14 @@ on:
   pull_request:
     branches: [main]
   workflow_dispatch:
+    inputs:
+      # K-1 measurement (see release plan): run the full suite WITHOUT
+      # nick-fields/retry to observe real per-run failures. Dispatch-only —
+      # push/PR gates below keep retry×3 untouched.
+      no_retry:
+        description: 'K-1: run tests without retry (measurement only)'
+        type: boolean
+        default: false
 
 # Cancel in-progress CI on the same ref when a new commit lands.
 # Saves Runner-minutes on PRs that get force-pushed.
@@ -71,13 +79,33 @@ jobs:
       #    guard: a future hang dies after 5 minutes and names the
       #    in-flight test in TestResults/<guid>/Sequence.xml instead
       #    of burning the whole 20-minute job timeout.
+      # 5a. K-1 measurement path (dispatch input no_retry only): the SAME
+      #     command, but straight — no retry wrapper — so one flaky run
+      #     fails the workflow and shows up in `gh run list`. Used by the
+      #     5-run measurement; push/PR runs never enter this step.
+      - name: Test (no retry, K-1)
+        if: ${{ github.event_name == 'workflow_dispatch' && inputs.no_retry }}
+        run: dotnet test MosquitoNetCalculator.sln -c Release --no-build --verbosity minimal --blame-hang --blame-hang-timeout 5min --blame-hang-dump-type none
+
       - name: Test
+        if: ${{ !(github.event_name == 'workflow_dispatch' && inputs.no_retry) }}
         uses: nick-fields/retry@v3
         with:
           timeout_minutes: 20
           max_attempts: 3
           retry_on: error
           command: dotnet test MosquitoNetCalculator.sln -c Release --no-build --verbosity minimal --blame-hang --blame-hang-timeout 5min --blame-hang-dump-type none
+
+      # 5a-b. Ship sta-diag.log with EVERY K-1 run (success or failure) —
+      #       the THIEF-DETECTED / ownership trail is the measurement signal.
+      - name: Upload sta-diag (K-1)
+        if: ${{ !cancelled() && github.event_name == 'workflow_dispatch' && inputs.no_retry }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: sta-diag
+          path: '**/sta-diag.log'
+          if-no-files-found: warn
+          retention-days: 7
 
       # 5b. Keep VSTest blame diagnostics on failure — the workspace
       #     is discarded with the failed job, so without this upload
