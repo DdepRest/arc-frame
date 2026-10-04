@@ -37,11 +37,19 @@ jobs:
     name: Build, Test, Publish, Release
     # ⚠ Single-owner-repo caveat: this job pushes the manifest commit to
     # main directly via `git push origin HEAD:main` using GITHUB_TOKEN.
-    # GITHUB_TOKEN is exempt from branch-protection rules — bypassing the
-    # code-review safety net that protects multi-collaborator repos. For
-    # this single-owner repo it's acceptable; if collaborators are added,
-    # switch to a PR-based manifest update (e.g. a separate `manifest-update.yml`
-    # triggered on `release: published` that opens a PR instead of pushing).
+    # NOTE: GITHUB_TOKEN is NOT exempt from branch-protection rules — it is
+    # subject to them like any other actor (GH013 for "Require a pull
+    # request", GH006 for "Require status checks"; bypass lists are only
+    # available for organization repos). The branch protection on `main`
+    # therefore deliberately enables only "Do not allow force pushes" and
+    # "Do not allow deletions" — both compatible with this fast-forward
+    # manifest push (force-push exists only in the `refs/tags/…` ref, which
+    # branch rules do not cover).
+    # If "Require a pull request" / "Require status checks" are ever needed,
+    # first switch to a PR-based manifest update (e.g. a separate
+    # `manifest-update.yml` triggered on `release: published` that opens a PR
+    # via peter-evans/create-pull-request instead of pushing directly).
+    # See: https://docs.github.com/en/repositories/configuring-branches-and-merges-in-your-repository/managing-branches-protection/troubleshooting-required-status-checks
     timeout-minutes: 30
     runs-on: windows-latest
 
