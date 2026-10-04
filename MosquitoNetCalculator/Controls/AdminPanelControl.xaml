@@ -864,8 +864,9 @@
             </TabItem>
 
             <!-- ─── Хранилище (токен отчётов) ───
-                 V1: токен вводится через UI и хранится в settings.json
-                 (AppSettingsService.SaveOfficeReportToken) — НЕ вшивается в сборку.
+                 Токен вшивается в сборку автоматически (env OFFICE_REPORT_TOKEN /
+                 файл .office-report-token), ввод через UI и хранение в settings.json
+                 (AppSettingsService.SaveOfficeReportToken) — запасной канал.
                  Статус следует за OfficeReportService.IsConfigured. -->
             <TabItem>
                 <TabItem.Header>

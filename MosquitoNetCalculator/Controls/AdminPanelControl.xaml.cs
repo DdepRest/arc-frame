@@ -120,11 +120,12 @@ namespace MosquitoNetCalculator.Controls
                     BtnRefresh.IsEnabled = false;
                 }
                 BannerNoConnection.Visibility = Visibility.Collapsed;
-                // V1: баннер «не настроено» живёт по IsConfigured — каждый рефреш
-                // сначала скрывает его, а ветка ниже снова покажет, если токена нет.
-                // Раньше баннер показывался, но НИКОГДА не скрывался — после
-                // ввода токена он висел до перезапуска программы.
-                BannerNotConfigured.Visibility = Visibility.Collapsed;
+                // Каждый рефреш заново применяет состояние «токен настроен» —
+                // единый владелец UpdateTokenStatus (и панели статуса, и баннер):
+                // пока токен есть — баннер скрыт; токена нет — виден сразу.
+                // Раньше тернарник «показать/скрыть» был продублирован здесь
+                // и в обработчиках сохранения/очистки.
+                UpdateTokenStatus();
 
                 if (!OfficeReportService.IsConfigured)
                 {
@@ -135,7 +136,6 @@ namespace MosquitoNetCalculator.Controls
                     TxtSummaryBadge.Text = string.Empty;
                     TxtStatsTotal.Text = "Всего заказов: —";
                     TxtStatsTotalBadge.Text = string.Empty;
-                    BannerNotConfigured.Visibility = Visibility.Visible;
                     UpdateEmptyStates();
                     return;
                 }
@@ -224,16 +224,23 @@ namespace MosquitoNetCalculator.Controls
         }
 
         /// <summary>
-        /// Обновляет пару панелей статуса на вкладке «Хранилище» по текущему
-        /// <see cref="OfficeReportService.IsConfigured"/> (V1: токен вводится
-        /// через UI, а не вшивается в сборку). Вызывается из конструктора
-        /// и после сохранения/очистки токена.
+        /// Единственный владелец состояния «токен настроен»: панели статуса
+        /// вкладки «Хранилище» и баннер <c>BannerNotConfigured</c> применяются
+        /// по текущему <see cref="OfficeReportService.IsConfigured"/> — токен
+        /// вшивается в сборку, а ввод через UI (settings.json) его перекрывает.
+        /// Зовётся из конструктора, каждого рефреша и после сохранения/очистки
+        /// токена: раньше тернарник «показать/скрыть баннер» был продублирован
+        /// в трёх местах, и ветка скрытия в рефреше ничем не была покрыта.
         /// </summary>
         internal void UpdateTokenStatus()
         {
             bool configured = OfficeReportService.IsConfigured;
             TokenStatusOk.Visibility = configured ? Visibility.Visible : Visibility.Collapsed;
             TokenStatusMissing.Visibility = configured ? Visibility.Collapsed : Visibility.Visible;
+            // Фикс старого бага держится здесь: баннер когда-то показывался и
+            // НИКОГДА не скрывался — после ввода токена висел до перезапуска.
+            // Показ и скрытие живут в одном месте, поэтому покрыты одним тестом.
+            BannerNotConfigured.Visibility = configured ? Visibility.Collapsed : Visibility.Visible;
         }
 
         /// <summary>
@@ -253,9 +260,6 @@ namespace MosquitoNetCalculator.Controls
             AppSettingsService.SaveOfficeReportToken(raw);
             TxtToken.Clear();
             UpdateTokenStatus();
-            BannerNotConfigured.Visibility = OfficeReportService.IsConfigured
-                ? Visibility.Collapsed
-                : Visibility.Visible;
             TxtTokenCheckStatus.Text = "Токен сохранён в настройках этого ПК.";
             ToastService.ShowToast("Токен сохранён", ToastType.Success);
         }
@@ -299,9 +303,6 @@ namespace MosquitoNetCalculator.Controls
             TxtToken.Clear();
             TxtTokenCheckStatus.Text = string.Empty;
             UpdateTokenStatus();
-            BannerNotConfigured.Visibility = OfficeReportService.IsConfigured
-                ? Visibility.Collapsed
-                : Visibility.Visible;
             ToastService.ShowToast("Токен очищен", ToastType.Info);
         }
 

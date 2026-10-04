@@ -235,5 +235,88 @@ namespace MosquitoNetCalculator.Tests.Controls
                 AssertStatusMatchesIsConfigured(root);
             });
         }
+
+        /// <summary>
+        /// Единый владелец состояния «токен настроен»:
+        /// <see cref="AdminPanelControl.UpdateTokenStatus"/> применяет И панели
+        /// статуса, И баннер BannerNotConfigured — раньше тернарник «показать/
+        /// скрыть баннер» был продублирован в RefreshAsync и обоих обработчиках,
+        /// а ветка «рефреш сначала скрывает баннер» не выполнялась ни одним тестом
+        /// (RefreshAsync без DI-шва при настроенном токене уходит в живую сеть).
+        ///
+        /// Переходы configured → unconfigured → configured. Старый баг (баннер
+        /// показан и «висит» до перезапуска) ловится принудительным ложным
+        /// состоянием перед вызовом: метод обязан починить видимость в обе стороны.
+        /// </summary>
+        [Fact]
+        public void UpdateTokenStatus_AppliesStatusAndBanner_AcrossTransitions()
+        {
+            TestAppThemes.RunOnSta(() =>
+            {
+                var panel = OpenTokenTab(out var root);
+                var banner = Find<Border>(root, "BannerNotConfigured");
+                Assert.NotNull(banner);
+
+                // 1) configured: токен сохранён → баннер обязан скрыться, даже
+                //    если «залип» показанным (старый баг — не скрывался вообще).
+                AppSettingsService.SaveOfficeReportToken("transition-token-a");
+                Assert.True(OfficeReportService.IsConfigured);
+                banner!.Visibility = Visibility.Visible;
+                panel.UpdateTokenStatus();
+                Assert.Equal(Visibility.Collapsed, banner.Visibility);
+                AssertStatusMatchesIsConfigured(root);
+
+                // 2) unconfigured: токен из настроек убран. На вшитой сборке
+                //    (env/.office-report-token) IsConfigured остаётся true —
+                //    состояние недостижимо без DI-шва, инвариант остаётся
+                //    главным; на безтокенной сборке (CI) баннер обязан показаться.
+                AppSettingsService.SaveOfficeReportToken(null);
+                panel.UpdateTokenStatus();
+                AssertStatusMatchesIsConfigured(root);
+                if (!OfficeReportService.IsConfigured)
+                    Assert.Equal(Visibility.Visible, banner.Visibility);
+
+                // 3) configured снова: повторное сохранение снова скрывает баннер,
+                //    опять из ложного «показан».
+                AppSettingsService.SaveOfficeReportToken("transition-token-b");
+                banner.Visibility = Visibility.Visible;
+                panel.UpdateTokenStatus();
+                Assert.Equal(Visibility.Collapsed, banner.Visibility);
+                AssertStatusMatchesIsConfigured(root);
+            });
+        }
+
+        /// <summary>
+        /// Реальная ветка RefreshAsync «каждый рефреш заново применяет состояние
+        /// баннера». Выполняется только когда токена нет: этот путь проходит БЕЗ
+        /// сети (все сетевые шаги закрыты ранним return по IsConfigured) и
+        /// синхронно — до первого await дело не доходит. На вшитой сборке
+        /// unconfigured недостижим, а настроенная панель без DI-шва уходит в
+        /// живую сеть (пункт аудита, вне этой правки) — рефреш не вызывается.
+        /// </summary>
+        [Fact]
+        public void RefreshAsync_WithoutToken_ReappliesBanner_WithoutNetwork()
+        {
+            TestAppThemes.RunOnSta(() =>
+            {
+                if (OfficeReportService.IsConfigured)
+                    return; // вшитый токен: ветка уходит в живую сеть без DI-шва
+
+                var panel = OpenTokenTab(out var root);
+                var banner = Find<Border>(root, "BannerNotConfigured");
+                Assert.NotNull(banner);
+
+                // Симулируем «баннер скрыт» до рефреша — рефреш обязан применить
+                // состояние по факту: токена нет → показать.
+                banner!.Visibility = Visibility.Collapsed;
+                var refresh = panel.RefreshAsync(quiet: true);
+                Assert.True(refresh.IsCompleted,
+                    "ветка без токена обязана проходить синхронно, без сети и ожидания");
+                refresh.GetAwaiter().GetResult();
+
+                Assert.Equal(Visibility.Visible, banner.Visibility);
+                AssertStatusMatchesIsConfigured(root);
+            });
+        }
     }
 }
