@@ -288,13 +288,18 @@ jobs:
           }
 
           if (-not $found) {
-            # Fallback: prepend a minimal entry (shouldn't happen if releases.json is prepped)
+            # Fallback: prepend a minimal entry (shouldn't happen if releases.json is prepped).
+            # User-facing text: the update dialog shows title/changes — no dev jargon
+            # (guarded by UpdateLogVoiceTests.ReleasesJson_UserFacingEntries_HaveNoDevJargon).
             $json.releases = @(@{
               version   = $version
               date      = (Get-Date -Format 'yyyy-MM-dd')
               type      = 'Исправление'
-              title     = "v$version release"
-              changes   = @('Auto-published via .github/workflows/release.yml')
+              title     = 'Технические исправления'
+              changes   = @(
+                'Исправления стабильности и внутренние улучшения.',
+                'Обновление устанавливается как обычно — данные, заказы и настройки остаются на месте.'
+              )
               url       = $url
               size      = $size
               sha256    = $sha
