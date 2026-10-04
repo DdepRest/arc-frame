@@ -5,7 +5,7 @@
     {
       "version": "3.54.2",
       "mirrorUrl": "https://raw.githubusercontent.com/DdepRest/arc-frame/mirror-latest/ARC-Frame-3.54.2-full.zip",
-      "sha256": "",
+      "sha256": "83c4830d72e524f9e4b27f5f251eab95f548c2229831a96a820d39c22eb7e051",
       "title": "Надёжная установка обновлений",
       "type": "Исправление",
       "url": "https://github.com/DdepRest/arc-frame/releases/download/v3.54.2/ARC-Frame-3.54.2-full.zip",
@@ -13,7 +13,7 @@
       "changes": [
         "Исправлено: автообновление программы теперь надёжно завершает установку с первого раза — окно обновления больше не появляется повторно после перезапуска."
       ],
-      "size": 0
+      "size": 93785019
     },
     {
       "version": "3.54.1",
