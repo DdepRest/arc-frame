@@ -82,6 +82,57 @@ namespace MosquitoNetCalculator.Services
         /// </summary>
         public static bool IsConfigured => !string.IsNullOrWhiteSpace(GistToken);
 
+        /// <summary>Результат живой проверки токена (кнопка «Проверить» в админ-панели).</summary>
+        /// <param name="Ok">Токен дал доступ к хранилищу.</param>
+        /// <param name="Detail">Человеческая причина на русском — сразу в UI.</param>
+        public readonly record struct TokenVerifyResult(bool Ok, string Detail);
+
+        /// <summary>
+        /// Живая проверка токена: GET /gists/{id} с bearer-токеном из параметра
+        /// (не с сохранённым <see cref="GistToken"/> — проверяется именно то,
+        /// что пользователь ввёл, до сохранения). Никогда не бросает исключений.
+        /// </summary>
+        internal static async Task<TokenVerifyResult> VerifyTokenAsync(
+            string token, HttpClient? httpClient = null)
+        {
+            if (string.IsNullOrWhiteSpace(token))
+                return new TokenVerifyResult(false, "Токен пуст — вставьте значение.");
+
+            var ownsClient = httpClient == null;
+            var http = httpClient ?? UpdateManifestClient.CreateConfiguredHttpClient(TimeSpan.FromSeconds(15));
+            try
+            {
+                using var request = new HttpRequestMessage(HttpMethod.Get, GistApiUrl);
+                request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
+                request.Headers.UserAgent.ParseAdd("MosquitoNetCalculator/3.0");
+                var response = await http.SendAsync(request).ConfigureAwait(false);
+
+                return response.StatusCode switch
+                {
+                    System.Net.HttpStatusCode.OK =>
+                        new TokenVerifyResult(true, "✓ Токен подтверждён — доступ к хранилищу есть."),
+                    System.Net.HttpStatusCode.Unauthorized or System.Net.HttpStatusCode.Forbidden =>
+                        new TokenVerifyResult(false, "Токен отклонён (401/403) — проверьте права Gists: Read and write."),
+                    System.Net.HttpStatusCode.NotFound =>
+                        new TokenVerifyResult(false, "Хранилище не найдено этим токеном (404) — проверьте, что токен от нужного аккаунта."),
+                    _ => new TokenVerifyResult(false, $"Сервер ответил HTTP {(int)response.StatusCode} — попробуйте позже."),
+                };
+            }
+            catch (TaskCanceledException)
+            {
+                return new TokenVerifyResult(false, "Сеть не отвечает — проверьте подключение и попробуйте ещё раз.");
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"[OfficeReport] token verify failed: {ex.Message}");
+                return new TokenVerifyResult(false, $"Не удалось проверить токен: {ex.Message}");
+            }
+            finally
+            {
+                if (ownsClient) http.Dispose();
+            }
+        }
+
         private static string GistApiUrl => $"https://api.github.com/gists/{ResolvedGistId}";
 
         /// <summary>

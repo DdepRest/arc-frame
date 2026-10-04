@@ -122,7 +122,7 @@
                                FontSize="12"
                                Foreground="{DynamicResource BadgeWarningFg}"
                                TextWrapping="Wrap"
-                               Text="Токен хранилища отчётов не настроен: отчёты не отправляются, панель недоступна. Владельцу нужно встроить токен в сборку (env OFFICE_REPORT_TOKEN или файл .office-report-token — см. csproj)."/>
+                               Text="Токен хранилища отчётов не настроен: отчёты не отправляются, панель недоступна. Введите токен на вкладке «Хранилище»."/>
                 </StackPanel>
             </Border>
 
@@ -147,7 +147,7 @@
         <!-- ═══════════════════════════════════════════════════════ -->
         <!-- ВКЛАДКИ                                                 -->
         <!-- ═══════════════════════════════════════════════════════ -->
-        <TabControl Grid.Row="2" Margin="16,0,16,16">
+        <TabControl x:Name="PanelTabs" Grid.Row="2" Margin="16,0,16,16">
             <!-- ─── Обновления ─── -->
             <TabItem>
                 <TabItem.Header>
@@ -861,6 +861,109 @@
                         </Grid>
                     </ScrollViewer>
                 </Grid>
+            </TabItem>
+
+            <!-- ─── Хранилище (токен отчётов) ───
+                 V1: токен вводится через UI и хранится в settings.json
+                 (AppSettingsService.SaveOfficeReportToken) — НЕ вшивается в сборку.
+                 Статус следует за OfficeReportService.IsConfigured. -->
+            <TabItem>
+                <TabItem.Header>
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock Text="&#xE713;" Style="{StaticResource FluentIconTab}" Foreground="{DynamicResource Accent}"/>
+                        <TextBlock Text="Хранилище"/>
+                    </StackPanel>
+                </TabItem.Header>
+                <ScrollViewer VerticalScrollBarVisibility="Auto"
+                              HorizontalScrollBarVisibility="Disabled"
+                              Focusable="False">
+                    <StackPanel Margin="{DynamicResource Gap.BlockTop}">
+
+                        <!-- Статус токена: две панели, переключаются по IsConfigured -->
+                        <Border Background="{DynamicResource Surface}"
+                                BorderBrush="{DynamicResource Border}"
+                                BorderThickness="1"
+                                CornerRadius="{DynamicResource Radius.Lg}"
+                                Padding="{DynamicResource Pad.Header}"
+                                Margin="{DynamicResource Gap.Block}">
+                            <StackPanel>
+                                <StackPanel x:Name="TokenStatusOk" Orientation="Horizontal" Visibility="Collapsed">
+                                    <TextBlock Text="&#xE73E;" Style="{StaticResource FluentIcon}"
+                                               Foreground="{DynamicResource Success}" Margin="{DynamicResource Gap.Inline}"/>
+                                    <StackPanel>
+                                        <TextBlock Text="Токен настроен"
+                                                   FontSize="{StaticResource Type.BodyLg}" FontWeight="SemiBold"
+                                                   Foreground="{DynamicResource TextPrimary}"/>
+                                        <TextBlock Text="Отчёты офисов уходят в хранилище автоматически."
+                                                   FontSize="{StaticResource Type.Caption}"
+                                                   Foreground="{DynamicResource TextMuted}" TextWrapping="Wrap"/>
+                                    </StackPanel>
+                                </StackPanel>
+                                <StackPanel x:Name="TokenStatusMissing" Orientation="Horizontal">
+                                    <TextBlock Text="&#xE7BA;" Style="{StaticResource FluentIcon}"
+                                               Foreground="{DynamicResource BadgeWarningFg}" Margin="{DynamicResource Gap.Inline}"/>
+                                    <StackPanel>
+                                        <TextBlock Text="Токен не настроен"
+                                                   FontSize="{StaticResource Type.BodyLg}" FontWeight="SemiBold"
+                                                   Foreground="{DynamicResource TextPrimary}"/>
+                                        <TextBlock Text="Отчёты не отправляются — вставьте токен ниже."
+                                                   FontSize="{StaticResource Type.Caption}"
+                                                   Foreground="{DynamicResource BadgeWarningFg}" TextWrapping="Wrap"/>
+                                    </StackPanel>
+                                </StackPanel>
+                            </StackPanel>
+                        </Border>
+
+                        <!-- Поле токена: PasswordBox маскирует значение,
+                             сохранение идёт только в settings.json этого ПК -->
+                        <Border Background="{DynamicResource Surface}"
+                                BorderBrush="{DynamicResource Border}"
+                                BorderThickness="1"
+                                CornerRadius="{DynamicResource Radius.Lg}"
+                                Padding="{DynamicResource Pad.Header}"
+                                Margin="{DynamicResource Gap.Block}">
+                            <StackPanel>
+                                <TextBlock Text="ТОКЕН ДОСТУПА"
+                                           FontSize="{StaticResource Type.Caption}" FontWeight="Bold"
+                                           Foreground="{DynamicResource TextMuted}"
+                                           Margin="{DynamicResource Gap.BlockSm}"/>
+                                <PasswordBox x:Name="TxtToken"
+                                             Height="32"
+                                             Padding="{DynamicResource Pad.Row}"
+                                             FontSize="{StaticResource Type.Body}"
+                                             BorderThickness="1"
+                                             BorderBrush="{DynamicResource Border}"
+                                             Background="{DynamicResource Surface}"
+                                             Foreground="{DynamicResource TextPrimary}"
+                                             VerticalContentAlignment="Center"
+                                             AutomationProperties.Name="Токен хранилища отчётов"/>
+                                <TextBlock Text="Как получить токен: GitHub → Settings → Developer settings → Fine-grained tokens. Права: Account permissions → Gists: Read and write, доступ к репозиториям не нужен. Токен хранится в настройках этого ПК и не входит в сборку."
+                                           FontSize="{StaticResource Type.Caption}"
+                                           Foreground="{DynamicResource TextMuted}"
+                                           TextWrapping="Wrap"
+                                           Margin="{DynamicResource Gap.BlockTop}"/>
+                                <StackPanel Orientation="Horizontal" Margin="{DynamicResource Gap.BlockTop}">
+                                    <Button x:Name="BtnTokenSave" Content="Сохранить"
+                                            Style="{StaticResource AccentBorderButton}"
+                                            Click="BtnTokenSave_Click"/>
+                                    <Button x:Name="BtnTokenCheck" Content="Проверить"
+                                            Style="{StaticResource GhostButton}"
+                                            Margin="{DynamicResource Gap.Left}"
+                                            Click="BtnTokenCheck_Click"/>
+                                    <Button x:Name="BtnTokenClear" Content="Очистить"
+                                            Style="{StaticResource GhostButton}"
+                                            Margin="{DynamicResource Gap.Left}"
+                                            Click="BtnTokenClear_Click"/>
+                                </StackPanel>
+                                <TextBlock x:Name="TxtTokenCheckStatus" Text=""
+                                           FontSize="{StaticResource Type.Caption}"
+                                           Foreground="{DynamicResource TextMuted}"
+                                           TextWrapping="Wrap"
+                                           Margin="{DynamicResource Gap.BlockTop}"/>
+                            </StackPanel>
+                        </Border>
+                    </StackPanel>
+                </ScrollViewer>
             </TabItem>
         </TabControl>
     </Grid>

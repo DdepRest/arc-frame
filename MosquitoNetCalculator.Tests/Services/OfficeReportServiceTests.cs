@@ -376,6 +376,77 @@ namespace MosquitoNetCalculator.Tests.Services
             Assert.Equal("test-gist-token-123", OfficeReportService.GistToken);
         }
 
+        // ── VerifyTokenAsync (кнопка «Проверить» в админ-панели, V1) ─────────
+
+        [Fact]
+        public async Task VerifyTokenAsync_EmptyToken_FailsWithoutHttpCall()
+        {
+            // Пустой токен не должен уходить в сеть вообще.
+            bool called = false;
+            var handler = new TestHttpMessageHandler(_ => { called = true; return new HttpResponseMessage(HttpStatusCode.OK); });
+            using var http = new HttpClient(handler);
+
+            var result = await OfficeReportService.VerifyTokenAsync("   ", http);
+
+            Assert.False(result.Ok);
+            Assert.False(called, "пустой токен не должен порождать HTTP-запрос");
+        }
+
+        [Fact]
+        public async Task VerifyTokenAsync_Ok_SendsBearerOfGivenToken_NotSettingsToken()
+        {
+            // Проверяется ИМЕННО введённый токен, а не сохранённый GistToken.
+            HttpRequestMessage? captured = null;
+            var handler = new TestHttpMessageHandler(req => { captured = req; return new HttpResponseMessage(HttpStatusCode.OK); });
+            using var http = new HttpClient(handler);
+
+            var result = await OfficeReportService.VerifyTokenAsync("freshly-pasted-token", http);
+
+            Assert.True(result.Ok);
+            Assert.NotNull(captured);
+            Assert.Equal(HttpMethod.Get, captured!.Method);
+            Assert.Equal("Bearer freshly-pasted-token", captured.Headers.Authorization!.ToString());
+            Assert.Contains("/gists/" + OfficeReportService.GistId, captured.RequestUri!.ToString());
+        }
+
+        [Theory]
+        [InlineData(HttpStatusCode.Unauthorized)]
+        [InlineData(HttpStatusCode.Forbidden)]
+        public async Task VerifyTokenAsync_AuthRejected_FailsWithPermissionHint(HttpStatusCode status)
+        {
+            var handler = new TestHttpMessageHandler(_ => new HttpResponseMessage(status));
+            using var http = new HttpClient(handler);
+
+            var result = await OfficeReportService.VerifyTokenAsync("bad-token", http);
+
+            Assert.False(result.Ok);
+            Assert.Contains("Gists", result.Detail);
+        }
+
+        [Fact]
+        public async Task VerifyTokenAsync_NotFound_FailsWithOwnerHint()
+        {
+            var handler = new TestHttpMessageHandler(_ => new HttpResponseMessage(HttpStatusCode.NotFound));
+            using var http = new HttpClient(handler);
+
+            var result = await OfficeReportService.VerifyTokenAsync("foreign-token", http);
+
+            Assert.False(result.Ok);
+            Assert.Contains("404", result.Detail);
+        }
+
+        [Fact]
+        public async Task VerifyTokenAsync_NetworkError_FailsWithRussianReason()
+        {
+            var handler = new TestHttpMessageHandler(_ => throw new HttpRequestException("down"));
+            using var http = new HttpClient(handler);
+
+            var result = await OfficeReportService.VerifyTokenAsync("any", http);
+
+            Assert.False(result.Ok);
+            Assert.False(string.IsNullOrWhiteSpace(result.Detail));
+        }
+
         [Fact]
         public async Task SendReportAsync_Success_PatchesOwnDeviceFileWithBearerToken()
         {

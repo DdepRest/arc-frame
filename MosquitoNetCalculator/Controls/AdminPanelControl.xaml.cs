@@ -60,6 +60,7 @@ namespace MosquitoNetCalculator.Controls
             InitializeComponent();
             DataContext = this;
             InitializeOfficesView();
+            UpdateTokenStatus();
 
             // Клик на любой элемент списка офисов → пробуем распознать устаревший ряд
             // и скопировать напоминание. Один обработчик на ItemsControl ловит клик
@@ -119,6 +120,11 @@ namespace MosquitoNetCalculator.Controls
                     BtnRefresh.IsEnabled = false;
                 }
                 BannerNoConnection.Visibility = Visibility.Collapsed;
+                // V1: баннер «не настроено» живёт по IsConfigured — каждый рефреш
+                // сначала скрывает его, а ветка ниже снова покажет, если токена нет.
+                // Раньше баннер показывался, но НИКОГДА не скрывался — после
+                // ввода токена он висел до перезапуска программы.
+                BannerNotConfigured.Visibility = Visibility.Collapsed;
 
                 if (!OfficeReportService.IsConfigured)
                 {
@@ -215,6 +221,88 @@ namespace MosquitoNetCalculator.Controls
                 // Тик обратного отсчёта в шапке — на каждом рефреше/тике.
                 UpdateRefreshStatusText();
             }
+        }
+
+        /// <summary>
+        /// Обновляет пару панелей статуса на вкладке «Хранилище» по текущему
+        /// <see cref="OfficeReportService.IsConfigured"/> (V1: токен вводится
+        /// через UI, а не вшивается в сборку). Вызывается из конструктора
+        /// и после сохранения/очистки токена.
+        /// </summary>
+        internal void UpdateTokenStatus()
+        {
+            bool configured = OfficeReportService.IsConfigured;
+            TokenStatusOk.Visibility = configured ? Visibility.Visible : Visibility.Collapsed;
+            TokenStatusMissing.Visibility = configured ? Visibility.Collapsed : Visibility.Visible;
+        }
+
+        /// <summary>
+        /// Сохранить введённый токен в settings.json этого ПК. Пустое поле —
+        /// явный отказ (очистка только кнопкой «Очистить»): сохранение не
+        /// должно молча стирать работающий токен.
+        /// </summary>
+        private void BtnTokenSave_Click(object sender, RoutedEventArgs e)
+        {
+            var raw = (TxtToken.Password ?? string.Empty).Trim();
+            if (raw.Length == 0)
+            {
+                TxtTokenCheckStatus.Text = "Поле пустое — вставьте токен или нажмите «Очистить».";
+                return;
+            }
+
+            AppSettingsService.SaveOfficeReportToken(raw);
+            TxtToken.Clear();
+            UpdateTokenStatus();
+            BannerNotConfigured.Visibility = OfficeReportService.IsConfigured
+                ? Visibility.Collapsed
+                : Visibility.Visible;
+            TxtTokenCheckStatus.Text = "Токен сохранён в настройках этого ПК.";
+            ToastService.ShowToast("Токен сохранён", ToastType.Success);
+        }
+
+        /// <summary>
+        /// Живая проверка токена: GET /gists с bearer-токеном из поля
+        /// (или сохранённого, если поле пустое) — без сохранения.
+        /// </summary>
+        private async void BtnTokenCheck_Click(object sender, RoutedEventArgs e)
+        {
+            var token = (TxtToken.Password ?? string.Empty).Trim();
+            if (token.Length == 0)
+                token = OfficeReportService.GistToken;
+            if (token.Length == 0)
+            {
+                TxtTokenCheckStatus.Text = "Токен не задан — вставьте значение или сохраните его.";
+                return;
+            }
+
+            BtnTokenCheck.IsEnabled = false;
+            TxtTokenCheckStatus.Text = "Проверка…";
+            try
+            {
+                var result = await OfficeReportService.VerifyTokenAsync(token).ConfigureAwait(true);
+                TxtTokenCheckStatus.Text = result.Detail;
+            }
+            finally
+            {
+                BtnTokenCheck.IsEnabled = true;
+            }
+        }
+
+        /// <summary>
+        /// Явная очистка токена из settings.json. На машине со встроенным
+        /// токеном (dev-сборка, до шага 3 V1) IsConfigured останется true —
+        /// статус честно покажет фактическое состояние.
+        /// </summary>
+        private void BtnTokenClear_Click(object sender, RoutedEventArgs e)
+        {
+            AppSettingsService.SaveOfficeReportToken(null);
+            TxtToken.Clear();
+            TxtTokenCheckStatus.Text = string.Empty;
+            UpdateTokenStatus();
+            BannerNotConfigured.Visibility = OfficeReportService.IsConfigured
+                ? Visibility.Collapsed
+                : Visibility.Visible;
+            ToastService.ShowToast("Токен очищен", ToastType.Info);
         }
 
         /// <summary>
