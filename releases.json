@@ -1,7 +1,21 @@
 {
-  "latest": "3.54.2",
+  "latest": "3.54.3",
   "minRequired": "",
   "releases": [
+    {
+      "mirrorUrl": "https://raw.githubusercontent.com/DdepRest/arc-frame/mirror-latest/ARC-Frame-3.54.3-full.zip",
+      "date": "2026-10-04",
+      "version": "3.54.3",
+      "changes": [
+        "Исправления стабильности и внутренние улучшения.",
+        "Обновление устанавливается как обычно — данные, заказы и настройки остаются на месте."
+      ],
+      "size": 93784903,
+      "type": "Исправление",
+      "title": "Технические исправления",
+      "url": "https://github.com/DdepRest/arc-frame/releases/download/v3.54.3/ARC-Frame-3.54.3-full.zip",
+      "sha256": "c34341a54737a30020bb2bf1394aef84742ef70961d3eee3852fc3ac8c164f74"
+    },
     {
       "version": "3.54.2",
       "mirrorUrl": "https://raw.githubusercontent.com/DdepRest/arc-frame/mirror-latest/ARC-Frame-3.54.2-full.zip",
