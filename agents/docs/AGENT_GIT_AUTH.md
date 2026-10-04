@@ -96,6 +96,8 @@ git config --global --remove-section 'credential.https://gist.github.com'
 - `gh` (`C:/Program Files/GitHub CLI/gh.exe`) — credential helper
 
 ## Last verified
+2026-10-04 (v3.54.3) — auto-synced from csproj (sync-version.ps1, CONTROL#13).
+
 2026-10-04 (v3.54.2) — auto-synced from csproj (sync-version.ps1, CONTROL#13).
 
 2026-10-04 (v3.54.0) — новый документ: авторизация git у агентов (gh credential helper) — что настроено, где, проверка, откат.

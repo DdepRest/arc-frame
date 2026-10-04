@@ -792,6 +792,8 @@ double perWindowSum = SlopeData.Sandwich.Sum + SlopeData.Foam.Sum
 - `MosquitoNetCalculator/Models/OrderItem.cs` (Width/Height setter'ы, ШиринаВвод/ВысотаВвод)
 
 ## Last verified
+2026-10-04 (v3.54.3) — auto-synced from csproj (sync-version.ps1, CONTROL#13).
+
 2026-10-04 (v3.54.2) — auto-synced from csproj (sync-version.ps1, CONTROL#13).
 
 2026-10-01 (v3.54.0) — обновлено содержимое (sync-last-verified.ps1, CONTROL#13).

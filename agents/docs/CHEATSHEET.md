@@ -105,6 +105,8 @@ agents/scripts/arc-check.ps1                                 # Проверка 
 - `ai-agent-mode-plan.md` — полный план AI Agent Mode (13 этапов: Этап 0–12)
 
 ## Last verified
+2026-10-04 (v3.54.3) — auto-synced from csproj (sync-version.ps1, CONTROL#13).
+
 2026-10-04 (v3.54.2) — auto-synced from csproj (sync-version.ps1, CONTROL#13).
 
 2026-10-04 (v3.54.0) — обновлено содержимое (sync-last-verified.ps1, CONTROL#13).

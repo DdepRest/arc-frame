@@ -1,5 +1,7 @@
 # CURRENT_STATE.md
 
+**Версия: 3.54.3**
+
 ## Что сейчас выглядит рабочим
 
 - **Аудит deadlock-класса «фон ↔ UI» закрыт обеими половинами + фикс мёртвого VC++-тоста (Unreleased, v3.54.1):** (1) фон→UI — все блокирующие `Dispatcher.Invoke` безопасны (`OnUpdateDetected` — по инварианту события fire всегда на UI-потоке → инлайн; `FixedDocumentBuilder` — dispatcher вызывающей нити; AI-стриминг `wait:true` — все `SendMessageAsync` через await); (2) UI→фон — в продакшене ноль блокирующих идиом (`.Wait()`/`GetAwaiter().GetResult()`/`SynchronizationContext.Send`/`WaitOne`/`Task.WaitAll`/`Thread.Join` отсутствуют; оба `.Result` — post-await чтения завершённых тасков; три `Thread.Sleep` ждут внешний мир — AV/файлы/другой процесс, цикл не замыкается). Реальный баг всплыл и исправлен: `NotifyIfMissingOnPortable` из `Task.Run` звал `ShowToast` напрямую → VerifyAccess бросал внутрь catch сервиса → тост «Скачать VC++» никогда не показывался портабельным пользователям; фикс choke-point — `ToastService.DeferToUiThread` (фоновый вызов → `BeginInvoke` на dispatcher владельца, UI-вызов инлайн; naive-фикс блокирующим Invoke создал бы класс deadlock v3.54.1). Харденинги: XML-инвариант `UpdateService.UpdateDetected` («fire всегда на UI-потоке; новый фоновый fire-site запрещён — marshal'ить сам fire») и shutdown-guard в `InvokeOnUi` AI-стриминга (`HasShutdownStarted` + exception filter). Страж — `DependencyCheckerServiceTests.NotifyIfMissingOnPortable_FromBackgroundThread_QueuesToastOnUiThread`. Разбор и правило — GOTCHAS §45. Сборка 0/0, полный прогон **2411/2411**.
@@ -174,6 +176,8 @@ AGENT.md / AGENTS.md / CLAUDE.md / GEMINI.md
 - `agents/scripts/install-git-hooks.ps1` — ставит локальный `pre-commit` (даты в docs обновляются на коммите; хуки не версионируются).
 
 ## Last verified
+2026-10-04 (v3.54.3) — auto-synced from csproj (sync-version.ps1, CONTROL#13).
+
 2026-10-04 (v3.54.2) — auto-synced from csproj (sync-version.ps1, CONTROL#13).
 
 2026-10-01 (v3.54.0) — обновлено содержимое (sync-last-verified.ps1, CONTROL#13).
