@@ -76,6 +76,23 @@ jobs:
         shell: bash
         run: echo "VERSION=${GITHUB_REF_NAME#v}" >> "$GITHUB_OUTPUT"
 
+      # 3b. Guard against releasing unbumped versions: ensure tag version matches
+      #     <Version> in MosquitoNetCalculator.csproj and an entry exists in update-log.json.
+      - name: Validate version consistency
+        shell: pwsh
+        run: |
+          $version = "${{ steps.version.outputs.VERSION }}"
+          [xml]$csproj = Get-Content MosquitoNetCalculator/MosquitoNetCalculator.csproj
+          $csprojVersion = $csproj.Project.PropertyGroup.Version
+          if ($csprojVersion -ne $version) {
+            throw "VERSION MISMATCH: Git tag is 'v$version', but csproj <Version> is '$csprojVersion'. Update MosquitoNetCalculator.csproj before releasing!"
+          }
+          $log = Get-Content MosquitoNetCalculator/Resources/update-log.json -Raw | ConvertFrom-Json
+          if (-not ($log | Where-Object { $_.version -eq $version })) {
+            throw "UPDATE-LOG MISMATCH: update-log.json does not contain an entry for version '$version'!"
+          }
+          Write-Host "Version consistency validation passed: $version"
+
       # 4. Restore both projects at solution level.
       - name: Restore
         run: dotnet restore MosquitoNetCalculator.sln
@@ -164,11 +181,13 @@ jobs:
           OFFICE_REPORT_TOKEN: ${{ secrets.OFFICE_REPORT_TOKEN }}
         shell: pwsh
         run: |
+          $version = "${{ steps.version.outputs.VERSION }}"
           dotnet publish MosquitoNetCalculator/MosquitoNetCalculator.csproj `
             -c Release -r win-x64 --self-contained `
             -p:PublishSingleFile=true `
             -p:EnableCompressionInSingleFile=true `
             -p:DebugType=embedded `
+            -p:Version=$version `
             -o publish
 
       # 8. Create the ZIP that ships to users. Same content set as

@@ -53,11 +53,6 @@ namespace MosquitoNetCalculator.Services
         internal static Func<RegistryKey?>? VCRedistKeyOpener =
             () => TryOpen(Registry.LocalMachine, VCRedistKeyPath);
 
-        /// <summary>
-        /// Портабельный запуск без VC++ → warning-тост с кнопкой «Скачать».
-        /// Установленным пользователям и машинам с VC++ — тишина. Вызывать
-        /// после инициализации тостов (окно видимо), фон не блокирует.
-        /// </summary>
         /// <summary>Показывать ли тост: ПОРТАБЕЛЬНЫЙ запуск И VC++ отсутствует.
         /// Установленным — тишина всегда (инсталлятор уже гарантировал);
         /// ошибки реестра = тишина (диагностика не должна шуметь).</summary>
@@ -73,6 +68,18 @@ namespace MosquitoNetCalculator.Services
             }
         }
 
+        /// <summary>
+        /// Портабельный запуск без VC++ → warning-тост с кнопкой «Скачать».
+        /// Установленным пользователям и машинам с VC++ — тишина. Вызывать
+        /// после инициализации тостов (окно видимо), фон не блокирует.
+        /// <para>Вызывается из Task.Run (App.OnStartup): ShowToast
+        /// маршализует себя сам на dispatcher владельца (см.
+        /// ToastService.DeferToUiThread), фоновая нить не блокируется, тост
+        /// приземляется на UI-потоке. Регресс-страж
+        /// NotifyIfMissingOnPortable_FromBackgroundThread_QueuesToastOnUiThread:
+        /// до фикса VerifyAccess бросал внутрь catch'а ниже — тост молча
+        /// не появлялся.</para>
+        /// </summary>
         internal static void NotifyIfMissingOnPortable()
         {
             try

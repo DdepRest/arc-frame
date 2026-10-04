@@ -61,6 +61,7 @@ AI Agent Mode            CURRENT_STATE → «AI Agent Mode — Progress» + ai-a
 AI-регрессии (релиз)     dotnet test --filter AiGoldenCase|AiPlan|AiTelemetry
                          (или what-to-update.ps1 -RunAiTests)
 Навигация по коду        SYMBOL_INDEX.md (index классов/методов/свойств)
+Авторизация git (push)   AGENT_GIT_AUTH.md (gh credential helper — иначе push виснет)
 Понимание намерений       INTENTS.md (mapping фраз на файлы)
 Всё остальное            CURRENT_STATE
 Тривиально (≤10 строк)   Только CHEATSHEET, затем grep GOTCHAS.md по имени изменённого файла
@@ -104,6 +105,10 @@ agents/scripts/arc-check.ps1                                 # Проверка 
 - `ai-agent-mode-plan.md` — полный план AI Agent Mode (13 этапов: Этап 0–12)
 
 ## Last verified
+2026-10-04 (v3.54.2) — auto-synced from csproj (sync-version.ps1, CONTROL#13).
+
+2026-10-04 (v3.54.0) — обновлено содержимое (sync-last-verified.ps1, CONTROL#13).
+
 2026-09-30 (v3.53.2) — auto-synced from csproj (sync-version.ps1, CONTROL#13).
 
 2026-09-24 (v3.53.1) — обновлено содержимое (sync-last-verified.ps1, CONTROL#13).

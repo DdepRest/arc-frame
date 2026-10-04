@@ -1,6 +1,10 @@
 using System;
+using System.Threading.Tasks;
+using System.Windows.Controls;
+using System.Windows.Threading;
 using Microsoft.Win32;
 using MosquitoNetCalculator.Services;
+using MosquitoNetCalculator.Tests.Helpers;
 using Xunit;
 
 namespace MosquitoNetCalculator.Tests.Services
@@ -138,6 +142,56 @@ namespace MosquitoNetCalculator.Tests.Services
             DependencyCheckerService.VCRedistKeyOpener = () =>
                 throw new System.UnauthorizedAccessException("политика");
             Assert.False(DependencyCheckerService.NotifyIsNeeded());
+        }
+
+        // ── NotifyIfMissingOnPortable: показ тоста С ФОНОВОЙ НИТИ ───────────
+
+        [Fact]
+        public void NotifyIfMissingOnPortable_FromBackgroundThread_QueuesToastOnUiThread()
+        {
+            // Регресс v3.54.1: NotifyIfMissingOnPortable запускается из
+            // Task.Run в App.OnStartup, а ShowToast трогает визуальное дерево.
+            // Без маршалинга (VerifyAccess) с threadpool-нити бросалось
+            // InvalidOperationException, которое глотал catch сервиса: тост
+            // «Скачать VC++» МОЛЧА не появлялся ни у одного портабельного
+            // пользователя. Тест зовёт ровно production-путь (фоновая нить)
+            // и докачивает dispatcher'ом рамкой — тост обязан приземлиться.
+            Registry.CurrentUser.DeleteSubKeyTree(_uninstallHivePath, throwOnMissingSubKey: false);
+
+            WpfTestHelper.RunOnSta(() =>
+            {
+                var canvas = new Grid();
+                try
+                {
+                    ToastService.Initialize(canvas);
+
+                    // 1) Фоновая нить — как Task.Run в App.OnStartup. Тело
+                    //    (реестр + BeginInvoke) НЕ зависит от dispatcher'а,
+                    //    поэтому Wait тут не может зависнуть.
+                    var bg = Task.Run(DependencyCheckerService.NotifyIfMissingOnPortable);
+                    Assert.True(bg.Wait(5000), "фоновая проверка не завершилась за 5 с");
+
+                    // 2) BeginInvoke от фоновой нити уже в очереди — качаем
+                    //    dispatcher рамкой: Normal-приоритетный тост отработает
+                    //    раньше Background-таймера выхода из фрейма.
+                    var frame = new DispatcherFrame(false);
+                    var exit = new DispatcherTimer(DispatcherPriority.Background)
+                    {
+                        Interval = TimeSpan.FromMilliseconds(50),
+                    };
+                    exit.Tick += (_, _) => { exit.Stop(); frame.Continue = false; };
+                    exit.Start();
+                    Dispatcher.PushFrame(frame);
+
+                    // До фикса здесь 0 детей (исключение тонуло в catch сервиса).
+                    Assert.Single(canvas.Children);
+                }
+                finally
+                {
+                    // Cleanup Main scope — как в ToastServiceTests (внутри RunOnSta).
+                    ToastService.UnregisterCanvas(ToastService.MainScope);
+                }
+            });
         }
     }
 }

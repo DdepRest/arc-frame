@@ -375,7 +375,7 @@ if (HasImpost)
 │  UpdateCheckScheduler (timer)                                        │
 │      │  every 30 min  OR  after 10 min idle                          │
 │      ▼                                                               │
-│  UpdateService.CheckInBackgroundAsync  (background thread)           │
+│  UpdateService.CheckInBackgroundAsync  (UI thread)                   │
 │      │  FetchManifestAsync(HttpClient)            → releases.json     │
 │      │  GetAvailableUpdate(manifest, CurrentVersion)                 │
 │      ▼                                                               │
@@ -396,6 +396,8 @@ if (HasImpost)
 ┌──────────────────────────────────────────────────────────────────────┐
 │  MainWindow.OnUpdateDetected  (MainWindow.Progress.cs, partial)      │
 │      │  Dispatcher.Invoke (sync, НЕ BeginInvoke)                     │
+│      │   ↳ fire всегда на UI-потоке (инвариант UpdateDetected,       │
+│      │     GOTCHAS §45) → Invoke инлайн, ожидания фоновых нитей нет  │
 │      │   ↳ sync нужен: AddNewUpdate — синхронный 3-step,             │
 │      │     WPF рендер происходит ПОСЛЕ полного вызова →              │
 │      │     нет промежуточного состояния «0 карточек IsLatest».        │
@@ -790,6 +792,10 @@ double perWindowSum = SlopeData.Sandwich.Sum + SlopeData.Foam.Sum
 - `MosquitoNetCalculator/Models/OrderItem.cs` (Width/Height setter'ы, ШиринаВвод/ВысотаВвод)
 
 ## Last verified
+2026-10-04 (v3.54.2) — auto-synced from csproj (sync-version.ps1, CONTROL#13).
+
+2026-10-01 (v3.54.0) — обновлено содержимое (sync-last-verified.ps1, CONTROL#13).
+
 2026-09-30 — цена «Пеноплекс (откос)» повышена 450 → 500 ₽/лист (разрешение владельца, релиз в пути): `DefaultPrices` + новая Migration 7 в `ApplyMigrations` (поднимает ТОЛЬКО точный legacy-дефолт 450, пользовательские цены не трогает), fallback-дефолты `SlopeCalculatorService.Calculate/UpdateInPlace`, `SlopeOverlayCoordinator.LoadSlopePrices`, `SlopePanelControl.Prices`, эталонный `prices.json`. Тест: `LoadPrices_Migration7_BumpsPenoplexDefault450To500`. Прецедент — Migration 6, «Работа за откос» 600 → 670.
 
 2026-09-30 (v3.53.2) — auto-synced from csproj (sync-version.ps1, CONTROL#13).

@@ -124,6 +124,7 @@
 | Изменил процессы (релиз/автообновление) | `RELEASE_PROCESS.md`, `AUTO_UPDATE.md` → CONTROL#13 |
 | Изменил саму систему документации (правила/routing) | `MULTI_AGENT_ARC_CALC_CONTROL.md`, `CHEATSHEET.md`, `AGENTS.md`, `CURRENT_STATE.md` → CONTROL#13 |
 | Не уверен, обновлять ли docs | Run: `agents/scripts/what-to-update.ps1 $(git diff --name-only)`; если система неактуальна — обязан обновить → CONTROL#13 |
+| Git push виснет / просит логин (авторизация) | `AGENT_GIT_AUTH.md` — gh credential helper: что настроено, как проверить, как откатить |
 
 ---
 
@@ -142,6 +143,10 @@ Intake phase: user describes intent
 - `INTENTS.md` — this file
 
 ## Last verified
+2026-10-04 (v3.54.2) — auto-synced from csproj (sync-version.ps1, CONTROL#13).
+
+2026-10-04 (v3.54.0) — обновлено содержимое (sync-last-verified.ps1, CONTROL#13).
+
 2026-09-30 (v3.53.2) — auto-synced from csproj (sync-version.ps1, CONTROL#13).
 
 2026-09-27 (v3.53.1) — auto-synced from csproj (sync-version.ps1, CONTROL#13).

@@ -270,6 +270,8 @@ hex-цветов, ссылок на GOTCHAS, названий классов п�
 
 ### Git push sequence (если remote отстаёт или есть конфликт)
 
+> Если `git push` **зависает** на запросе учётных данных (в агентской оболочке GCM уходит в интерактив без `/dev/tty`) — это НЕ конфликт с remote: авторизация настроена через `gh`. Что настроено, как проверить и как откатить — `AGENT_GIT_AUTH.md`.
+
 Частая ошибка: после коммита кода+документации `git push` падает с `error: failed to push some refs`. Это значит, что в remote main есть коммиты, которых нет локально (например, другой процесс влил что-то в main параллельно). Решение:
 
 ```bash
@@ -357,6 +359,10 @@ git commit -m "release: update releases.json for vX.Y.Z"
 - `extract-release-notes.ps1`
 
 ## Last verified
+2026-10-04 (v3.54.2) — auto-synced from csproj (sync-version.ps1, CONTROL#13).
+
+2026-10-04 (v3.54.0) — обновлено содержимое (sync-last-verified.ps1, CONTROL#13).
+
 2026-10-01 (v3.54.0) — обновлено содержимое (sync-last-verified.ps1, CONTROL#13).
 
 2026-09-30 (v3.53.2) — auto-synced from csproj (sync-version.ps1, CONTROL#13).

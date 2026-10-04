@@ -144,6 +144,19 @@ namespace MosquitoNetCalculator.Services
         /// UI dispatcher to surface a "Доступно обновление vX.Y.Z" card in
         /// the Updates tab without restarting.
         ///
+        /// <para><b>Thread invariant (аудит 2026-10-01):</b> событие пожарится
+        /// ВСЕГДА на UI-потоке — оба источника (<see cref="CheckInBackgroundAsync"/>
+        /// из тика DispatcherTimer и <see cref="RunUpdateFlowAsync"/> из
+        /// стартапа/кнопки/тоста) продолжаются через ConfigureAwait(true) на
+        /// том же dispatcher'е. Подписчик вправе на это рассчитывать:
+        /// синхронный Dispatcher.Invoke в MainWindow.OnUpdateDetected на
+        /// UI-потоке инлайновый и не ждёт ни одной фоновой нити. НОВЫЙ
+        /// fire-site с фонового потока ЗАПРЕЩЁН: маршализуй сам fire —
+        /// Application.Current?.Dispatcher.BeginInvoke(() => FireUpdateDetected(...)) —
+        /// и никогда не превращай Invoke подписчика в кросс-поточное ожидание
+        /// (класс вечного виса v3.54.1, GOTCHAS §45).
+        /// </para>
+        ///
         /// Subscribers MUST unsubscribe from <see cref="MainWindow.Closed"/>
         /// — a static source on a per-window subscriber creates a strong
         /// root that otherwise outlives the window.

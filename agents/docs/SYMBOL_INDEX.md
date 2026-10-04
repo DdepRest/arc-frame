@@ -14,7 +14,7 @@
 
 | ActionBarControl | class | Controls/ActionBarControl.xaml.cs | | Methods: BtnSaveOrder_Click |
 | AdditionalKpsControl | class | Controls/AdditionalKpsControl.xaml.cs | |
-| AdminPanelControl | class | Controls/AdminPanelControl.xaml.cs | Props: Rows, StatsRows | Methods: RefreshAsync, RefreshInBackgroundAsync, StartAsync, StopAutoRefresh, UpdateEmptyStates |
+| AdminPanelControl | class | Controls/AdminPanelControl.xaml.cs | Props: Rows, StatsRows | Methods: RefreshAsync, RefreshInBackgroundAsync, StartAsync, StopAutoRefresh, UpdateEmptyStates, UpdateTokenStatus |
 | AdminPasswordWindow | class | Controls/AdminPasswordWindow.xaml.cs | |
 | AiApiKeyDialog | class | Controls/AiApiKeyDialog.xaml.cs | Props: ApiKey, SelectedModels |
 | AiAssistantControl | class | Controls/AiAssistantControl.xaml.cs | |
@@ -87,7 +87,7 @@
 | ReleaseInfo | class | Models/UpdateManifest.cs | Props: Changes, Date, MirrorUrl, Sha256, Size, Title, Type, Url, Version |
 | SlopeCalculationData | class | Models/SlopeCalculation.cs | Props: DepthM, FoamPrice, FoamQuantity, FProfilePrice, FProfileQuantity, HeightMm, IsManualOverride, IsProfileEconomyApplied, LaborPrice, LaborQuantity, LaminatinaLaborPrice, LaminatinaLaborQuantity, LaminatinaPrice, LaminatinaQuantity, PenoplexPrice, PenoplexQuantity, SandwichPrice, SandwichQuantity, SealantPrice, SealantQuantity, StartProfilePrice, StartProfileQuantity, TapePrice, TapeQuantity, WidthMm, WindowCount | Methods: FromSlopeCalculation, ToSlopeCalculation | Static: M:FromSlopeCalculation |
 | SlopeCalculationExtensions | static class | Models/SlopeCalculationExtensions.cs | | Methods: DeepClone | Static: M:DeepClone |
-| UpdateItem | class | Models/UpdateItem.cs | Props: Changes, Date, Title, Type, Version |
+| UpdateItem | class | Models/UpdateItem.cs | Props: Changes, Date, Title, Type, Version | Methods: HasType |
 
 ### MosquitoNetCalculator/App.xaml.cs
 
@@ -194,13 +194,13 @@
 | NotesFormatter | static class | Services/NotesFormatter.cs | | Methods: Parse | Static: M:Parse |
 | NotesRenderer | static class | Services/NotesRenderer.cs | | Methods: ToInlines | Static: M:ToInlines |
 | OfficeDeviceGrouping | static class | Services/OfficeDeviceGrouping.cs | | Methods: DeviceKey, DistinctDevices | Static: M:DeviceKey, M:DistinctDevices |
-| OfficeReportService | static class | Services/OfficeReportService.cs | | Methods: CleanupDuplicatesAsync, CleanupStaleDuplicatesAsync, ComputeDuplicateFilesToDelete, ComputeOldOfficeFilesToDelete, ComputeStaleBindingsToDelete, ComputeStaleDuplicateFilesToDelete, DeleteReportFilesAsync, FetchReportFilesAsync, FetchReportsAsync, OfficeReportFile, ParseReportFiles, ParseReports, ReportFileName, SendReportAsync | Static: M:CleanupDuplicatesAsync, M:CleanupStaleDuplicatesAsync, M:ComputeDuplicateFilesToDelete, M:ComputeOldOfficeFilesToDelete, M:ComputeStaleBindingsToDelete, M:ComputeStaleDuplicateFilesToDelete, M:DeleteReportFilesAsync, M:FetchReportFilesAsync, M:FetchReportsAsync, M:ParseReportFiles, M:ParseReports, M:ReportFileName, M:SendReportAsync |
+| OfficeReportService | static class | Services/OfficeReportService.cs | | Methods: CleanupDuplicatesAsync, CleanupStaleDuplicatesAsync, ComputeDuplicateFilesToDelete, ComputeOldOfficeFilesToDelete, ComputeStaleBindingsToDelete, ComputeStaleDuplicateFilesToDelete, DeleteReportFilesAsync, FetchReportFilesAsync, FetchReportsAsync, OfficeReportFile, ParseReportFiles, ParseReports, ReportFileName, SendReportAsync, TokenVerifyResult, VerifyTokenAsync | Static: M:CleanupDuplicatesAsync, M:CleanupStaleDuplicatesAsync, M:ComputeDuplicateFilesToDelete, M:ComputeOldOfficeFilesToDelete, M:ComputeStaleBindingsToDelete, M:ComputeStaleDuplicateFilesToDelete, M:DeleteReportFilesAsync, M:FetchReportFilesAsync, M:FetchReportsAsync, M:ParseReportFiles, M:ParseReports, M:ReportFileName, M:SendReportAsync, M:VerifyTokenAsync |
 | OfficeStatsCalculator | static class | Services/OfficeStatsCalculator.cs | | Methods: BuildRows, SumOrderCounts | Static: M:BuildRows, M:SumOrderCounts |
 | OfficeStatusCalculator | static class | Services/OfficeStatusCalculator.cs | | Methods: BuildRows | Static: M:BuildRows |
 | OrderGridPresenter | static class | Services/OrderGridPresenter.cs | | Methods: ApplySortIndicators, GetColumnSortKey, IsHeaderClick, RefreshOrdersGrid | Static: M:ApplySortIndicators, M:GetColumnSortKey, M:IsHeaderClick, M:RefreshOrdersGrid |
 | OrderImportExportService | class | Services/OrderImportExportService.cs | | Methods: BuildSingleOrderFileName, CopyOrder, DeepCloneOrder, ExportAllOrders, ExportSingleOrder, ImportOrders | Static: M:BuildSingleOrderFileName, M:DeepCloneOrder |
 | OrderStorageService | class | Services/OrderStorageService.cs | Props: OrdersDir | Methods: DeleteOrder, ExportOrders, GenerateContractNumber, GenerateCopyContractNumber, GetNextOrderNumber, LoadAllOrders, LoadOrder, SaveOrder | Static: P:OrdersDir |
-| OrderTemplateService | class | Services/OrderTemplateService.cs | Props: Anticat, AnwisMode, Color, DefaultChecked, DeliveryAmount, DeliveryEnabled, DeliveryQuantity, GridAnticat, GridAnwisMode, GridColor, GridHeight, GridProductIndex, GridQuantity, GridWidth, Height, Hint, Id, InstallationMode, IsAvailable, IsCheckedLocked, LastErrorRow, Name, OtlivColor, OtlivEnabled, OtlivHeight, OtlivInstallationMode, OtlivQuantity, OtlivWidth, Price, ProductName, PsulEnabled, PsulHeight, PsulQuantity, PsulWidth, Quantity, RowKey, Rows, Subtitle, Type, Width | Methods: BuildItemSpecs, GetValidationError, ResolveProductName, ResolveRowPrice | Static: M:ResolveRowPrice |
+| OrderTemplateService | class | Services/OrderTemplateService.cs | Props: Anticat, AnwisMode, Color, DefaultChecked, DeliveryAmount, DeliveryEnabled, DeliveryQuantity, GridAnticat, GridAnwisMode, GridColor, GridEnabled, GridHeight, GridProductIndex, GridQuantity, GridWidth, Height, Hint, Id, InstallationMode, IsAvailable, IsCheckedLocked, LastErrorRow, Name, OtlivColor, OtlivEnabled, OtlivHeight, OtlivInstallationMode, OtlivQuantity, OtlivWidth, Price, ProductName, PsulEnabled, PsulHeight, PsulQuantity, PsulWidth, Quantity, RowKey, Rows, Subtitle, Type, Width | Methods: BuildItemSpecs, GetValidationError, ResolveProductName, ResolveRowPrice | Static: M:ResolveRowPrice |
 | PageSelection | static class | Services/PageSelection.cs | | Methods: GetSelectedSourcePages | Static: M:GetSelectedSourcePages |
 | PdfExportService | class | Services/PdfExportService.cs | | Methods: Compose, Export |
 | PriceService | class | Services/PriceService.cs | Props: PricesPath | Methods: DefaultPricesSnapshot, GetColorsForProduct, GetPrice, GetProductNames, LoadPrices, SavePrices | Static: M:DefaultPricesSnapshot, P:PricesPath |
@@ -286,4 +286,4 @@ Context phase: grep SYMBOL_INDEX.md for the class/method you need
 
 ## Last generated
 
-2026-09-24 (gensymbols.ps1)
+2026-10-04 (gensymbols.ps1)

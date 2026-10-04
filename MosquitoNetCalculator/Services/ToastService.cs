@@ -122,6 +122,32 @@ namespace MosquitoNetCalculator.Services
             foreach (var b in orphans) _toastScopeMap.Remove(b);
         }
 
+        /// <summary>
+        /// v3.54.1 (аудит deadlock-класса): маршалинг в точке входа. Публичные
+        /// ShowToast трогают визуальное дерево (canvas, FindResource), чей
+        /// dispatcher — UI-поток; вызов с фоновой нити (например,
+        /// DependencyCheckerService из Task.Run в App.OnStartup) без этой
+        /// проверки падал в VerifyAccess и МОЛЧА терялся в catch вызывающего —
+        /// тост не появлялся. BeginInvoke, не Invoke: уведомление UI не должно
+        /// блокировать фоновую нить (тот же инвариант, что в сеттерах
+        /// UpdateService). UI-вызов (CheckAccess) идёт инлайн — поведение
+        /// существующих мест не меняется; рекурсия после BeginInvoke невозможна:
+        /// на UI-потоке CheckAccess() == true. Мёртвый dispatcher — тихий drop:
+        /// обновлять некого.
+        /// </summary>
+        /// <returns>true — вызывающему нужно вернуться (работа отложена на
+        /// dispatcher или бессмысленна); false — выполняйте тело инлайн.</returns>
+        private static bool DeferToUiThread(Action rerun)
+        {
+            var app = Application.Current;
+            if (app == null) return false; // тесты без приложения — путь как раньше
+            if (app.Dispatcher.CheckAccess()) return false; // UI-поток — инлайн
+            if (app.Dispatcher.HasShutdownStarted || app.Dispatcher.HasShutdownFinished)
+                return true; // dispatcher умирает — дропаем тихо
+            app.Dispatcher.BeginInvoke(rerun);
+            return true;
+        }
+
         public static void ShowToast(string message, ToastType type = ToastType.Info, int durationMs = 0)
             => ShowToast(MainScope, message, type, durationMs);
 
@@ -137,6 +163,8 @@ namespace MosquitoNetCalculator.Services
         /// <summary>Scoped variant of the action toast (v3.50).</summary>
         public static void ShowToast(string scope, string message, ToastType type, string actionLabel, Action onAction, int durationMs = 8000)
         {
+            // v3.54.1: фоновый вызов → на dispatcher владельца, UI — инлайн.
+            if (DeferToUiThread(() => ShowToast(scope, message, type, actionLabel, onAction, durationMs))) return;
             if (!_canvases.TryGetValue(scope, out var canvas) || canvas == null) return;
             if (durationMs <= 0) durationMs = DefaultDurationMs(type);
 
@@ -158,6 +186,8 @@ namespace MosquitoNetCalculator.Services
         /// </summary>
         public static void ShowToast(string scope, string message, ToastType type = ToastType.Info, int durationMs = 0)
         {
+            // v3.54.1: фоновый вызов → на dispatcher владельца, UI — инлайн.
+            if (DeferToUiThread(() => ShowToast(scope, message, type, durationMs))) return;
             if (!_canvases.TryGetValue(scope, out var canvas) || canvas == null) return;
             if (durationMs <= 0) durationMs = DefaultDurationMs(type);
 
@@ -358,6 +388,8 @@ namespace MosquitoNetCalculator.Services
             Action onUpdate,
             Action onLater)
         {
+            // v3.54.1: фоновый вызов → на dispatcher владельца, UI — инлайн.
+            if (DeferToUiThread(() => ShowUpdateNotification(version, changelogCount, onUpdate, onLater))) return;
             if (!_canvases.TryGetValue(MainScope, out var canvas) || canvas == null) return;
 
             // NOTE: persistent toast — no DispatcherTimer is scheduled here.

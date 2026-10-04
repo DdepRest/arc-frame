@@ -347,10 +347,27 @@ namespace MosquitoNetCalculator.ViewModels
                     return;
                 }
 
-                if (wait)
-                    dispatcher.Invoke(action, DispatcherPriority.Normal);
-                else
-                    dispatcher.BeginInvoke(action, DispatcherPriority.Background);
+                // Гонка shutdown (аудит 2026-10-01, GOTCHAS §45): приложение
+                // закрылось, пока стрим ещё в полёте — Invoke/BeginInvoke
+                // бросают InvalidOperationException вместо маршалинга. UI уже
+                // умер, обновлять некого: тихо выходим, а не роняем async void.
+                if (dispatcher.HasShutdownStarted || dispatcher.HasShutdownFinished)
+                    return;
+
+                try
+                {
+                    if (wait)
+                        dispatcher.Invoke(action, DispatcherPriority.Normal);
+                    else
+                        dispatcher.BeginInvoke(action, DispatcherPriority.Background);
+                }
+                catch (InvalidOperationException) when (
+                    dispatcher.HasShutdownStarted || dispatcher.HasShutdownFinished)
+                {
+                    // Началось между проверкой выше и Invoke — тот же drop.
+                    System.Diagnostics.Debug.WriteLine(
+                        "[AI] UI update dropped — dispatcher shutting down.");
+                }
             }
 
             if (dispatcher != null)

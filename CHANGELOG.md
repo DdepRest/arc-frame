@@ -1,6 +1,14 @@
-﻿# Changelog
+# Changelog
 
-## Unreleased — v3.54.1
+## 3.54.2 — 2026-10-04
+
+### Исправления
+
+- **Автообновление: устранён бесконечный цикл обновления.** В релизе v3.54.1 бинарник в архиве имел версию 3.54.0 из-за отсутствия bump'а `<Version>` в .csproj перед установкой тега. Приложение скачивало обновление, перезапускалось со старой версией 3.54.0 и снова предлагало обновление. В `release.yml` добавлен автоматический шаг-страж, сверяющий версию тега с `<Version>` в csproj и записью в `update-log.json`, а в `dotnet publish` добавлен явный флаг `-p:Version`. Релиз 3.54.2 выпущен для корректного выхода клиентов из цикла обновлений.
+
+- **VC++-тост портабельного запуска был мёртв — фикс в choke-point `ShowToast`.** `DependencyCheckerService.NotifyIfMissingOnPortable` вызывается из `Task.Run` в `App.OnStartup`, а `ShowToast` трогает визуальное дерево (canvas, FindResource) напрямую: с threadpool-нити первый же доступ бросал `InvalidOperationException` (VerifyAccess), и тост «Скачать VC++» **молча** терялся в catch сервиса — ни один портабельный пользователь его не видел. Фикс по прецеденту сеттеров UpdateService (v3.54.1): в `ToastService` добавлен `DeferToUiThread` — все публичные `ShowToast`/`ShowUpdateNotification` при вызове не с dispatcher'а владельца ставят на него `BeginInvoke` и возвращаются (фон не блокируется, UI-вызовы идут инлайн без изменений). Одной точкой закрыты и текущий баг, и любой будущий фоновый вызывающий; naive-фикс блокирующим `Invoke` создал бы ровно тот класс deadlock, что чистился в v3.54.1. Страж — `DependencyCheckerServiceTests.NotifyIfMissingOnPortable_FromBackgroundThread_QueuesToastOnUiThread` (production-путь с фоновой нити → pump рамкой → тост на canvas; без фикса — 0 детей).
+
+- **Аудит deadlock-класса закрыт обеими половинами; два харденинга.** Первая половина (фон ждёт UI): все блокирующие `Dispatcher.Invoke` перечислены и безопасны — `OnUpdateDetected` по инварианту исполняется только на UI-потоке (inline no-op), `FixedDocumentBuilder` дёргает свой же dispatcher, AI-стриминг `wait:true` безопасен, пока все `SendMessageAsync` — `await`. Вторая половина (UI ждёт фон): в продакшене НОЛЬ блокирующих идиом (`.Wait()`, `GetAwaiter().GetResult()`, `SynchronizationContext.Send`, `WaitOne`, `Task.WaitAll/Any`, `Thread.Join`); оба `.Result` — post-await чтения завершённых тасков; три `Thread.Sleep` ждут внешний мир (AV/файлы/другой процесс) — цикл не замыкается. Два харденинга по итогам: (1) XML-док `UpdateService.UpdateDetected` зафиксировал инвариант «факелится только на UI-потоке; новый фоновый fire-site запрещён — marshal'ить сам fire»; (2) `InvokeOnUi` в AI-стриминге защитил от гонки shutdown dispatcher'а (`HasShutdownStarted/HasShutdownFinished` + exception filter — закрытие приложения во время стрима больше не бросает в async void). Полный разбор — GOTCHAS §45.
 
 ### CI / тестовый хост
 

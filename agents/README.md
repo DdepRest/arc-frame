@@ -7,9 +7,10 @@
 ```
 agents/
 ├── README.md                     ← этот файл (точка входа)
-├── docs/                         ← проектная память и правила (21 файл)
+├── docs/                         ← проектная память и правила (22 файла)
 │   ├── MULTI_AGENT_ARC_CALC_CONTROL.md  ← source of truth (routing + CONTROL §1–13)
 │   ├── CHEATSHEET.md                    ← быстрый вход, критические правила (читай первым!)
+│   ├── AGENT_GIT_AUTH.md                ← авторизация пушей агентов (gh credential helper)
 │   ├── INTENTS.md                       ← mapping намерений → файлы
 │   ├── SYMBOL_INDEX.md                  ← индекс классов (авто-генерация)
 │   ├── DOCUMENTATION_MATRIX.md          ← «файл → документы» (из JSON)
@@ -60,6 +61,7 @@ agents/scripts/install-git-hooks.ps1   # один раз на клон/worktree 
 - **`AGENTS.md` в корне** — тонкий wrapper-указатель на этот файл (конвенция агентских инструментов требует его в корне).
 
 ## Last verified
+2026-10-04 (v3.54.0) — добавлен `AGENT_GIT_AUTH.md` (авторизация пушей через `gh`); строки routing в `CHEATSHEET.md`/`INTENTS.md`; скрипты не менялись.
 2026-09-21 (v3.53.0) — в scripts/ добавлены sync-last-verified.ps1 и install-git-hooks.ps1.
 
 

@@ -1588,6 +1588,33 @@ ZIP не создаётся, повторный запуск падает ров
 
 ---
 
+### 45. Deadlock-класс «фон ↔ UI»: обе половины условия и аудит 2026-10-01 (ВЫСОКИЙ)
+
+**Где:** фоновые события → UI (`UpdateService`/`FireUpdateDetected`, `ToastService`, `AiAssistantViewModel.Streaming.InvokeOnUi`, `FixedDocumentBuilder`) и синхронные ожидания на UI-потоке (`.Result`, `.Wait()`, `SynchronizationContext.Send`).
+
+**Что может случиться.** Deadlock этого класса требует ЦИКЛА: UI-поток синхронно ждёт фоновую работу, а та — UI-поток (блокирующий `Dispatcher.Invoke` на неперекачиваемый dispatcher). Один конец цикла без другого не виснет. История: v3.54.1 — сеттеры `UpdateService` делали блокирующий `Invoke` с threadpool-нити, а STA-воркер тестов между запросами стоял в `Queue.GetConsumingEnumerable()` — вечный вис полных прогонов (фикс: idle-pump `PushFrame` в воркере + `BeginInvoke` в сеттерах).
+
+**Аудит (2026-10-01, обе половины чисты; что проверено и почему):**
+- *Первая половина (фон → UI).* `MainWindow.OnUpdateDetected` — sync `Dispatcher.Invoke`, но событие `UpdateDetected` пожарится ВСЕГДА на UI-потоке (оба источника — continuations через `ConfigureAwait(true)` от DispatcherTimer/стартапа/кнопки) → инлайн, ожидания нет; инвариант зафиксирован в XML-доке события. `FixedDocumentBuilder` использует `Dispatcher.CurrentDispatcher` — dispatcher САМОЙ вызывающей нити, Invoke на нём инлайн по определению. AI-стриминг `InvokeOnUi(wait:true)` — единственный настоящий блокирующий Invoke с фоновой нити: безопасен, пока ВСЕ `SendMessageAsync` — `await` (sync-over-async на UI его и убьёт). `ToastService` — само-маршалинг `DeferToUiThread` (см. ниже).
+- *Вторая половина (UI → фон).* Поиском по продакшену: ноль `.Wait()`, `GetAwaiter().GetResult()`, `SynchronizationContext.Send/Post`, `WaitOne`, `Task.WaitAll/Any`, `Thread.Join`, `SpinUntil`. Оба `.Result` (`AdminPanelControl.RefreshAsync`, `AiApiKeyDialog.BtnTestKeys_Click`) — post-await чтения УЖЕ завершённых тасков (не блокируют). `Thread.Sleep` ×3: FontSelfInstall (в `Task.Run`), `WatchdogService.ExtractWithRetry` (ждёт внешний AV-лок, bounded 250/750/1500 мс — freeze-класс перед рестартом, не deadlock), AppSettingsService device-id (ждёт другой процесс). Тесты: `WpfTestHelper.RunOnSta` — timeout 30 с + `ReplaceWorker` — любой вис становится красным тестом, а не вечным hang'ом.
+- *Найденный и исправленный баг:* `NotifyIfMissingOnPortable` из `Task.Run` → `ShowToast` → VerifyAccess → исключение тонуло в catch → тост «Скачать VC++» никогда не показывался. Фикс — `ToastService.DeferToUiThread` во всех публичных точках входа: фоновый вызов ставит `BeginInvoke` на dispatcher владельца и возвращается (UI-вызовы инлайн, рекурсии нет — на UI CheckAccess()==true). Страж `DependencyCheckerServiceTests.NotifyIfMissingOnPortable_FromBackgroundThread_QueuesToastOnUiThread`.
+
+**Правило.** Никогда не создавать второй конец цикла: (1) новый fire-site события с фонового потока — marshal'ить САМ FIRE (`BeginInvoke(() => Fire...)`), не полагаясь на Invoke подписчика; (2) UI-потоку — только `await`, никаких `.Result`/`.Wait()` на тасках, зависящих от UI (модальные `ShowDialog` и idle-pump воркера качают dispatcher — блокирующий Invoke обслуживается); (3) сервис, трогающий UI, маршализует себя в точке входа (`DeferToUiThread`, сеттеры `UpdateService`), а не требует дисциплины от каждого вызывающего; (4) правка, добавляющая любой из этих паттернов, обязана пройти обе половины аудита.
+
+---
+
+### 46. Пароль админ-панели вшит в сборку и уже опубликован: принятый риск, а не защита (СРЕДНИЙ — ПРИНЯТЫЙ РИСК)
+
+**Где:** `AppSettingsService.cs` — `EmbeddedAdminPassword` и `VerifyAdminPassword`; вход в панель: `AdminPasswordWindow`, `TitleBarControl`, `MainWindow.AI`, `MainWindow`. Рядом — вшитый токен gist: `MosquitoNetCalculator.csproj` (target `GenerateOfficeReportToken`) → `OfficeReportService`.
+
+**Состояние (аудит 2026-10-02):** пароль `AZ123123Az` лежит константой в сборке, проверка — обычное `==`, без задержки и счётчика попыток. Значение **уже опубликовано** и лежит в публичной истории минимум дважды: `OfficeAdminPasswordTests.cs` (`EmbeddedAdminPassword_IsNewOwnerPassword`) и `CHANGELOG.md` (v3.53.1). Поэтому замена константы на хеш ничего не скрывает — секрет остаётся grep-абельным.
+
+**Почему принято как риск.** Панель закрывает только UI (напоминания, ручная очистка дублей); реальная запись в gist идёт автоматически при старте и по планировщику (`MainWindow` → `OfficeReportService.SendReportAsync`) с токеном, вшитым в ту же сборку. У кого есть бинарь — уже имеет доступ к gist без пароля. `FixedTimeEquals` и lockout в локальном однопользовательском приложении модель угроз не меняют: тайминг-атака требует кода в процессе, а блокировка бьёт по менеджеру офиса, забывшему пароль.
+
+**Правило.** Пароль панели — дверца от случайного клика, а не граница безопасности; не считать его защитой офисных данных и не «укреплять» хешем/lockout ради вида. Настоящая граница — вынос токена gist из сборки (ввод один раз на ПК, хранение через DPAPI) и/или локальный override пароля через `settings.json` по образцу override'а токена (`OfficeReportService` читает settings раньше вшитой константы).
+
+---
+
 ## Риски по категориям
 
 | Категория | Риск | Уровень |
@@ -1634,6 +1661,8 @@ ZIP не создаётся, повторный запуск падает ров
 | Сборка | Удалённый из шапки `build.bat` `chcp 65001` возвращает тихий exit 1 из bash/CI: cmd парсит батник в cp866 и не находит путь ВПРОИЗВОДСТВО.png (§42) | СРЕДНИЙ |
 | Тесты | Хардкод смещения автора в тестах времени: локально зелёный, CI в UTC красный — ожидание строить от `TimeZoneInfo.Local`, не литералом (§43) | ВЫСОКИЙ |
 | Тема | Ветке «без анимации» нужен свой путь конечного состояния: кисть без `BeginAnimation` остаётся в стартовом цвете — на машинах с выключенными анимациями тема не применялась (§44) | ВЫСОКИЙ |
+| UI | Deadlock-класс «фон ↔ UI»: новый фоновый fire-site или sync-over-async на UI (`.Result`/`.Wait`) — цикл и вечный вис; наивный Invoke вместо marshal'а fire/choke-point (§45) | ВЫСОКИЙ |
+| Безопасность | Пароль админ-панели вшит и опубликован (тесты/CHANGELOG): закрывает только UI, а gist-запись идёт автоотправкой с вшитым токеном — укреплять хешем/lockout бессмысленно (§46) | СРЕДНИЙ |
 ## Source files
 
 - `MosquitoNetCalculator/Models/OrderItem.cs`
@@ -1651,6 +1680,10 @@ ZIP не создаётся, повторный запуск падает ров
 ---
 
 ## Last verified
+2026-10-04 (v3.54.2) — auto-synced from csproj (sync-version.ps1, CONTROL#13).
+
+2026-10-01 (v3.54.0) — обновлено содержимое (sync-last-verified.ps1, CONTROL#13).
+
 2026-09-30 (v3.53.2) — auto-synced from csproj (sync-version.ps1, CONTROL#13).
 
 2026-09-27 (v3.53.1) — auto-synced from csproj (sync-version.ps1, CONTROL#13).
