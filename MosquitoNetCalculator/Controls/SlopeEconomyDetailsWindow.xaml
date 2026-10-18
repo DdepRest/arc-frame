@@ -42,7 +42,7 @@
                     Background="{DynamicResource HeaderBg}"
                     CornerRadius="{DynamicResource Radius.CardHeader}"
                     Height="32"
-                    Padding="14,0"
+                    Padding="{DynamicResource Pad.InputH}"
                     MouseLeftButtonDown="TitleBar_MouseLeftButtonDown">
                 <Grid>
                     <Grid.ColumnDefinitions>
@@ -50,7 +50,7 @@
                         <ColumnDefinition Width="Auto"/>
                     </Grid.ColumnDefinitions>
                     <TextBlock Text="Детали экономии"
-                               FontSize="12"
+                               FontSize="{StaticResource Type.Body}"
                                FontWeight="SemiBold"
                                Foreground="{DynamicResource TextPrimary}"
                                VerticalAlignment="Center"
@@ -60,20 +60,20 @@
                             Width="40" Height="40"
                             Style="{DynamicResource DialogCloseButton}"
                             Click="CloseButton_Click">
-                        <TextBlock Text="&#xE8BB;" FontFamily="{DynamicResource Font.Icon}" FontSize="11"/>
+                        <TextBlock Text="&#xE8BB;" FontFamily="{DynamicResource Font.Icon}" FontSize="{StaticResource Type.Caption}"/>
                     </Button>
                 </Grid>
             </Border>
 
             <!-- Header -->
-            <StackPanel Grid.Row="1" Margin="24,18,24,0">
+            <StackPanel Grid.Row="1" Margin="{DynamicResource Gap.EconomyDialog}">
                 <TextBlock Text="Расчёт экономии по всем откосам в заказе"
-                           FontSize="12"
+                           FontSize="{StaticResource Type.Body}"
                            FontWeight="SemiBold"
                            Foreground="{DynamicResource TextPrimary}"
                            TextWrapping="Wrap"/>
                 <TextBlock x:Name="TxtTotalSlopes"
-                           FontSize="11"
+                           FontSize="{StaticResource Type.Caption}"
                            Foreground="{DynamicResource TextMuted}"
                            Margin="{DynamicResource Gap.BlockTop}"/>
             </StackPanel>
@@ -84,7 +84,7 @@
                     BorderBrush="{DynamicResource Border}"
                     BorderThickness="1"
                     CornerRadius="{DynamicResource Radius.Md}"
-                    Margin="24,14,24,0"
+                    Margin="{DynamicResource Gap.EconomyDialog}"
                     SnapsToDevicePixels="True">
                 <Grid>
                     <Grid.RowDefinitions>
@@ -93,7 +93,7 @@
                     </Grid.RowDefinitions>
 
                     <!-- Header -->
-                    <Grid Grid.Row="0" Background="{DynamicResource HeaderBg}" Margin="0">
+                    <Grid Grid.Row="0" Background="{DynamicResource HeaderBg}" Margin="{DynamicResource Gap.None}">
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="*"/>
                             <ColumnDefinition Width="70"/>
@@ -101,23 +101,23 @@
                             <ColumnDefinition Width="70"/>
                             <ColumnDefinition Width="80"/>
                         </Grid.ColumnDefinitions>
-                        <TextBlock Grid.Column="0" Text="Материал" FontSize="11" FontWeight="SemiBold" Foreground="{DynamicResource TextSecondary}" Margin="10,8,4,8" VerticalAlignment="Center"/>
-                        <TextBlock Grid.Column="1" Text="Без экон." FontSize="11" FontWeight="SemiBold" Foreground="{DynamicResource TextSecondary}" HorizontalAlignment="Right" Margin="4,8,10,8" VerticalAlignment="Center"/>
-                        <TextBlock Grid.Column="2" Text="С экон." FontSize="11" FontWeight="SemiBold" Foreground="{DynamicResource TextSecondary}" HorizontalAlignment="Right" Margin="4,8,10,8" VerticalAlignment="Center"/>
-                        <TextBlock Grid.Column="3" Text="Экон." FontSize="11" FontWeight="SemiBold" Foreground="{DynamicResource TextSecondary}" HorizontalAlignment="Right" Margin="4,8,10,8" VerticalAlignment="Center"/>
-                        <TextBlock Grid.Column="4" Text="Сумма" FontSize="11" FontWeight="SemiBold" Foreground="{DynamicResource TextSecondary}" HorizontalAlignment="Right" Margin="4,8,10,8" VerticalAlignment="Center"/>
+                        <TextBlock Grid.Column="0" Text="Материал" FontSize="{StaticResource Type.Caption}" FontWeight="SemiBold" Foreground="{DynamicResource TextSecondary}" Margin="{DynamicResource Gap.CellLeft}" VerticalAlignment="Center"/>
+                        <TextBlock Grid.Column="1" Text="Без экон." FontSize="{StaticResource Type.Caption}" FontWeight="SemiBold" Foreground="{DynamicResource TextSecondary}" HorizontalAlignment="Right" Margin="{DynamicResource Gap.CellRight}" VerticalAlignment="Center"/>
+                        <TextBlock Grid.Column="2" Text="С экон." FontSize="{StaticResource Type.Caption}" FontWeight="SemiBold" Foreground="{DynamicResource TextSecondary}" HorizontalAlignment="Right" Margin="{DynamicResource Gap.CellRight}" VerticalAlignment="Center"/>
+                        <TextBlock Grid.Column="3" Text="Экон." FontSize="{StaticResource Type.Caption}" FontWeight="SemiBold" Foreground="{DynamicResource TextSecondary}" HorizontalAlignment="Right" Margin="{DynamicResource Gap.CellRight}" VerticalAlignment="Center"/>
+                        <TextBlock Grid.Column="4" Text="Сумма" FontSize="{StaticResource Type.Caption}" FontWeight="SemiBold" Foreground="{DynamicResource TextSecondary}" HorizontalAlignment="Right" Margin="{DynamicResource Gap.CellRight}" VerticalAlignment="Center"/>
                     </Grid>
 
                     <!-- Rows -->
-                    <ItemsControl x:Name="DetailsItems" Grid.Row="1" Margin="0">
+                    <ItemsControl x:Name="DetailsItems" Grid.Row="1" Margin="{DynamicResource Gap.None}">
                         <ItemsControl.ItemTemplate>
                             <DataTemplate>
-                                <Border BorderBrush="{DynamicResource Border}" BorderThickness="0,0,0,1" Padding="0">
+                                <Border BorderBrush="{DynamicResource Border}" BorderThickness="0,0,0,1" Padding="{DynamicResource Pad.None}">
                                     <Border.ToolTip>
                                         <ToolTip MaxWidth="320">
                                             <TextBlock Text="{Binding Tooltip}"
                                                        TextWrapping="Wrap"
-                                                       FontSize="11"
+                                                       FontSize="{StaticResource Type.Caption}"
                                                        Foreground="{DynamicResource TextPrimary}"/>
                                         </ToolTip>
                                     </Border.ToolTip>
@@ -129,14 +129,14 @@
                                             <ColumnDefinition Width="70"/>
                                             <ColumnDefinition Width="80"/>
                                         </Grid.ColumnDefinitions>
-                                        <StackPanel Grid.Column="0" VerticalAlignment="Center" Margin="10,8,4,8">
-                                            <TextBlock Text="{Binding MaterialName}" FontSize="11" FontWeight="SemiBold" Foreground="{DynamicResource TextPrimary}" TextTrimming="CharacterEllipsis"/>
-                                            <TextBlock Text="{Binding Unit}" FontSize="11" Foreground="{DynamicResource TextMuted}" Margin="0,2,0,0"/>
+                                        <StackPanel Grid.Column="0" VerticalAlignment="Center" Margin="{DynamicResource Gap.CellLeft}">
+                                            <TextBlock Text="{Binding MaterialName}" FontSize="{StaticResource Type.Caption}" FontWeight="SemiBold" Foreground="{DynamicResource TextPrimary}" TextTrimming="CharacterEllipsis"/>
+                                            <TextBlock Text="{Binding Unit}" FontSize="{StaticResource Type.Caption}" Foreground="{DynamicResource TextMuted}" Margin="{DynamicResource Gap.BlockTopSm}"/>
                                         </StackPanel>
-                                        <TextBlock Grid.Column="1" Text="{Binding QtyWithoutEconomy}" FontSize="11" Foreground="{DynamicResource TextSecondary}" HorizontalAlignment="Right" Margin="4,8,10,8" VerticalAlignment="Center" TextTrimming="CharacterEllipsis"/>
-                                        <TextBlock Grid.Column="2" Text="{Binding QtyWithEconomy}" FontSize="11" Foreground="{DynamicResource TextSecondary}" HorizontalAlignment="Right" Margin="4,8,10,8" VerticalAlignment="Center" TextTrimming="CharacterEllipsis"/>
-                                        <TextBlock Grid.Column="3" Text="{Binding QtySaved}" FontSize="11" Foreground="{DynamicResource EconomyGreen}" HorizontalAlignment="Right" Margin="4,8,10,8" VerticalAlignment="Center" TextTrimming="CharacterEllipsis"/>
-                                        <TextBlock Grid.Column="4" Text="{Binding AmountSavedDisplay}" FontSize="11" FontWeight="SemiBold" Foreground="{DynamicResource EconomyGreen}" HorizontalAlignment="Right" Margin="4,8,10,8" VerticalAlignment="Center" TextTrimming="CharacterEllipsis"/>
+                                        <TextBlock Grid.Column="1" Text="{Binding QtyWithoutEconomy}" FontSize="{StaticResource Type.Caption}" Foreground="{DynamicResource TextSecondary}" HorizontalAlignment="Right" Margin="{DynamicResource Gap.CellRight}" VerticalAlignment="Center" TextTrimming="CharacterEllipsis"/>
+                                        <TextBlock Grid.Column="2" Text="{Binding QtyWithEconomy}" FontSize="{StaticResource Type.Caption}" Foreground="{DynamicResource TextSecondary}" HorizontalAlignment="Right" Margin="{DynamicResource Gap.CellRight}" VerticalAlignment="Center" TextTrimming="CharacterEllipsis"/>
+                                        <TextBlock Grid.Column="3" Text="{Binding QtySaved}" FontSize="{StaticResource Type.Caption}" Foreground="{DynamicResource EconomyGreen}" HorizontalAlignment="Right" Margin="{DynamicResource Gap.CellRight}" VerticalAlignment="Center" TextTrimming="CharacterEllipsis"/>
+                                        <TextBlock Grid.Column="4" Text="{Binding AmountSavedDisplay}" FontSize="{StaticResource Type.Caption}" FontWeight="SemiBold" Foreground="{DynamicResource EconomyGreen}" HorizontalAlignment="Right" Margin="{DynamicResource Gap.CellRight}" VerticalAlignment="Center" TextTrimming="CharacterEllipsis"/>
                                     </Grid>
                                 </Border>
                             </DataTemplate>
@@ -149,8 +149,8 @@
             <Border Grid.Row="3"
                     Background="{DynamicResource EconomyGreenLight}"
                     CornerRadius="{DynamicResource Radius.Md}"
-                    Padding="12,10"
-                    Margin="24,14,24,0">
+                    Padding="{DynamicResource Pad.Card}"
+                    Margin="{DynamicResource Gap.EconomyDialog}">
                 <Grid>
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto"/>
@@ -164,13 +164,13 @@
                     <!-- Общая экономия -->
                     <TextBlock Grid.Row="0" Grid.Column="0"
                                x:Name="TxtTotalSavedLabel" Text="Общая экономия:"
-                               FontSize="12"
+                               FontSize="{StaticResource Type.Body}"
                                FontWeight="SemiBold"
                                Foreground="{DynamicResource EconomyGreen}"
                                VerticalAlignment="Center"/>
                     <TextBlock x:Name="TxtTotalSaved"
                                Grid.Row="0" Grid.Column="1"
-                               FontSize="12"
+                               FontSize="{StaticResource Type.Body}"
                                FontWeight="Bold"
                                Foreground="{DynamicResource EconomyGreen}"
                                VerticalAlignment="Center"/>
@@ -178,13 +178,13 @@
                     <!-- Экономия на 1 откос -->
                     <TextBlock Grid.Row="1" Grid.Column="0"
                                x:Name="TxtTotalSavedPerSlopeLabel" Text="Экономия на 1 откос:"
-                               FontSize="11"
+                               FontSize="{StaticResource Type.Caption}"
                                Foreground="{DynamicResource EconomyGreen}"
                                VerticalAlignment="Center"
                                Margin="{DynamicResource Gap.BlockTop}"/>
                     <TextBlock x:Name="TxtTotalSavedPerSlope"
                                Grid.Row="1" Grid.Column="1"
-                               FontSize="11"
+                               FontSize="{StaticResource Type.Caption}"
                                Foreground="{DynamicResource EconomyGreen}"
                                VerticalAlignment="Center"
                                Margin="{DynamicResource Gap.BlockTop}"/>
@@ -195,12 +195,12 @@
             <StackPanel Grid.Row="4"
                         Orientation="Horizontal"
                         HorizontalAlignment="Right"
-                        Margin="24,18,24,20">
+                        Margin="{DynamicResource Gap.EconomyDialogFooter}">
                 <Button Content="Закрыть"
                         Style="{DynamicResource GhostButton}"
                         MinWidth="90"
-                        Padding="16,7"
-                        FontSize="12"
+                        Padding="{DynamicResource Pad.Header}"
+                        FontSize="{StaticResource Type.Body}"
                         Click="CloseButton_Click"/>
             </StackPanel>
         </Grid>

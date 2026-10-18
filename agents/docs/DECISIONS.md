@@ -161,6 +161,20 @@
 
 **Когда принято:** 2026-08-04 (Unreleased, AI Agent Mode).
 
+---
+
+### 14. Архитектура Studio Workspace, навигационный роутер и неблокирующий инспектор (UI Redesign)
+
+**Решение:**
+- Переход от модальных блокирующих шторок (Scrim overlays) к Studio Workspace: компактный рельс навигации (52px по умолчанию с возможностью разворачивания), разделение на Workspaces (Расчёт, Заказы, Цены) и контекстные неблокирующие док-панели (Инспектор клиента/Sidebar).
+- Ввод QuickAdd сжат в компактный двухрядный Action Bar (~96px вместо 200px), возвращая ~100px пространства таблице заказа.
+- Калькулятор откосов трансформирован в просторный двухколоночный сплит-экран (860px) с параметрами слева и спецификацией/раскроем справа.
+- Внедрён INavigationRouter / NavigationRouter во ViewModel для декуплирования навигации от прямого манипулирования видимостью контролов из code-behind.
+
+**Почему:** Устранение дефицита вертикального пространства на ноутбуках (1200x760), исключение модальных барьеров при заполнении клиента, сохранение 100% бизнес-инвариантов и 0 нарушений токенов дизайна.
+
+**Когда принято:** 2026-10-09 (v3.55.0).
+
 ## Source files
 
 - `MosquitoNetCalculator/MosquitoNetCalculator.csproj`
@@ -169,8 +183,20 @@
 - `MosquitoNetCalculator/Services/UpdateService.cs`
 - `MosquitoNetCalculator/Services/ThemeService.cs`
 - `MosquitoNetCalculator/Services/PrintService.cs`
+- `MosquitoNetCalculator/Services/INavigationRouter.cs`
+- `MosquitoNetCalculator/Services/NavigationRouter.cs`
 
 ## Last verified
+2026-10-18 (v3.55.1) — обновлено содержимое (sync-last-verified.ps1, CONTROL#13).
+
+2026-10-12 (v3.55.1) — обновлено содержимое (sync-last-verified.ps1, CONTROL#13).
+
+2026-10-11 (v3.55.1) — auto-synced from csproj (sync-version.ps1, CONTROL#13).
+
+2026-10-11 (v3.55.0) — обновлено содержимое (sync-last-verified.ps1, CONTROL#13).
+
+2026-10-09 (v3.55.0) — редизайн UI архитектуры: Studio Workspace, NavigationRouter, компактный QuickAdd, сплит-откосы (CONTROL#13).
+
 2026-10-04 (v3.54.3) — auto-synced from csproj (sync-version.ps1, CONTROL#13).
 
 2026-10-04 (v3.54.2) — auto-synced from csproj (sync-version.ps1, CONTROL#13).

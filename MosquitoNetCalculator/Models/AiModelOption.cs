@@ -7,7 +7,8 @@ namespace MosquitoNetCalculator.Models
     public enum AiProvider
     {
         OpenRouter = 0,
-        Nvidia = 1
+        Nvidia = 1,
+        FreeLlmApi = 2
     }
 
     /// <summary>

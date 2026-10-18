@@ -94,7 +94,10 @@ namespace MosquitoNetCalculator
         {
             if (OrdersHistoryControl.OrdersGrid.SelectedItem is not OrderData order) return;
 
-            if (!DialogService.ShowConfirm($"Открыть заказ \u00AB{order.ContractNumber}\u00BB \u2014 {order.ClientName}?\n\nТекущие данные будут заменены.", "Открыть заказ", this)) return;
+            var orderDescription = !string.IsNullOrWhiteSpace(order.ClientPhone)
+                ? $" \u2014 {order.ClientPhone}"
+                : (!string.IsNullOrWhiteSpace(order.ClientAddress) ? $" \u2014 {order.ClientAddress}" : "");
+            if (!DialogService.ShowConfirm($"Открыть заказ \u00AB{order.ContractNumber}\u00BB{orderDescription}?\n\nТекущие данные будут заменены.", "Открыть заказ", this)) return;
 
             CurrentOrderId = order.Id;
             IsNewOrder = false;
@@ -105,7 +108,6 @@ namespace MosquitoNetCalculator
 
                 ViewModel.UndoRedo.SuppressDirtyChanges(() =>
                 {
-                    ClientInfo.ClientName = order.ClientName;
                     ClientInfo.ClientPhone = order.ClientPhone;
                     ClientInfo.ClientAddress = order.ClientAddress;
                     ClientInfo.ContractNumber = order.ContractNumber;
@@ -203,7 +205,10 @@ namespace MosquitoNetCalculator
         {
             if (OrdersHistoryControl.OrdersGrid.SelectedItem is not OrderData order) return;
 
-            if (DialogService.ShowConfirmDestructive($"Удалить заказ \u00AB{order.ContractNumber}\u00BB \u2014 {order.ClientName}?\n\nЭто действие нельзя отменить.", "Удалить", "Удалить заказ", this))
+            var orderDescription = !string.IsNullOrWhiteSpace(order.ClientPhone)
+                ? $" \u2014 {order.ClientPhone}"
+                : (!string.IsNullOrWhiteSpace(order.ClientAddress) ? $" \u2014 {order.ClientAddress}" : "");
+            if (DialogService.ShowConfirmDestructive($"Удалить заказ \u00AB{order.ContractNumber}\u00BB{orderDescription}?\n\nЭто действие нельзя отменить.", "Удалить", "Удалить заказ", this))
             {
                 ViewModel.OrdersVM.DeleteOrder(order.Id);
                 RefreshOrdersList();

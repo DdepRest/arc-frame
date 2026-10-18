@@ -26,6 +26,7 @@ namespace MosquitoNetCalculator.Controls
 
         // ─── Edit-mode state (v3.43.5) ────────────────────────────
         private bool _isEditMode;
+        private bool _isResetting;
         private OrderItem? _editMaterialItem;
         private OrderItem? _editLaborItem;
 
@@ -91,7 +92,7 @@ namespace MosquitoNetCalculator.Controls
             // Раньше был TextBox.TextChanged на отдельном поле «Кол-во окон»;
             // NumericUpDown держит значение в Value (int), и подписчик реагирует
             // на изменение через routed event — чище, чем парсить Text каждый раз.
-            if (!IsInitialized) return;
+            if (!IsInitialized || _isResetting) return;
             UpdateCalculation();
         }
 
@@ -180,28 +181,36 @@ namespace MosquitoNetCalculator.Controls
         /// </summary>
         public void Reset()
         {
-            _isEditMode = false;
-            _editMaterialItem = null;
-            _editLaborItem = null;
-            TxtHeight.Text = "";
-            TxtWidth.Text = "";
-            TxtDepth.Text = "";
-            TxtDepthHint.Text = "";
-            TxtHeightHint.Text = "";
-            TxtWidthHint.Text = "";
-            NumWindowCount.Value = 1;
-            _currentCalculation = null;
-            BtnIcon.Text = "\uE710";  // Fluent Add icon
-            BtnText.Text = "Добавить в КП";
-            ChkApplyEconomy.Visibility = Visibility.Collapsed;
+            _isResetting = true;
+            try
+            {
+                _isEditMode = false;
+                _editMaterialItem = null;
+                _editLaborItem = null;
+                TxtHeight.Text = "";
+                TxtWidth.Text = "";
+                TxtDepth.Text = "";
+                TxtDepthHint.Text = "";
+                TxtHeightHint.Text = "";
+                TxtWidthHint.Text = "";
+                NumWindowCount.Value = 1;
+                _currentCalculation = null;
+                BtnIcon.Text = "\uE710";  // Fluent Add icon
+                BtnText.Text = "Добавить в КП";
+                ChkApplyEconomy.Visibility = Visibility.Collapsed;
+            }
+            finally
+            {
+                _isResetting = false;
+            }
             UpdateCalculation();
         }
 
         private void Input_TextChanged(object sender, TextChangedEventArgs e)
         {
             // Guard: XAML-парсер может вызвать TextChanged во время InitializeComponent,
-            // когда визуальное дерево ещё не полностью создано.
-            if (!IsInitialized) return;
+            // либо поля сбрасываются пакетно в Reset().
+            if (!IsInitialized || _isResetting) return;
             UpdateCalculation();
         }
 

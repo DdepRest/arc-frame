@@ -9,12 +9,15 @@ using Xunit;
 namespace MosquitoNetCalculator.Tests.Helpers
 {
     /// <summary>
-    /// xUnit collection marker — forces every test in the "STA" collection
+    /// xUnit collection marker — forces every test in the "WPF_UI" collection
     /// to run sequentially (no parallelism between STA classes). Without this,
     /// xUnit running different test classes in parallel would race on
     /// <see cref="Application.Current"/>, an AppDomain-wide static, and the
     /// second STA test would either crash or silently do nothing.
     /// </summary>
+    [CollectionDefinition("WPF_UI", DisableParallelization = true)]
+    public class WpfUiTestCollection { }
+
     [CollectionDefinition("STA", DisableParallelization = true)]
     public class STAWindowTestCollection { }
 
@@ -30,11 +33,11 @@ namespace MosquitoNetCalculator.Tests.Helpers
     /// read/write. We run each test on a dedicated STA thread, but
     /// <see cref="Application.Current"/> is a single AppDomain-wide static,
     /// so concurrent STA test classes would race. The
-    /// <see cref="STAWindowTestCollection"/> declaration above disables
+    /// <see cref="WpfUiTestCollection"/> declaration above disables
     /// test-collection parallelism so multiple STA tests share one Application
     /// instance cleanly.
     /// </summary>
-    [Collection("STA")]
+    [Collection("WPF_UI")]
     public class ProgressBarUpdateAnimatorTests
     {
         // ─── Exception swallow contracts (regression for v3.40.0) ─────

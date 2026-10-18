@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -184,52 +184,7 @@ namespace MosquitoNetCalculator.Tests.Controls
                 ClickChip(panel, "ChipFilterAll");
 
                 Assert.Equal(5, ItemCount(panel.OfficesList));
-                Assert.True(Find<Button>(panel, "BtnRemindAll")!.IsEnabled);
-            });
-        }
-
-        [Fact]
-        public void Playtest_OutdatedCardClick_CopiesReminderText()
-        {
-            RunOnSta(() =>
-            {
-                var panel = OpenPanelWithData(out _);
-
-                // Клик по устаревшей карточке офиса (первая строка в Rows — Outdated).
-                var firstCard = FindOfficeCardByPrefix(panel, "2");
-                Assert.NotNull(firstCard);
-                firstCard!.RaiseEvent(new MouseButtonEventArgs(Mouse.PrimaryDevice, 0, MouseButton.Left)
-                { RoutedEvent = Control.PreviewMouseLeftButtonUpEvent });
-
-                var text = Clipboard.GetText();
-                Assert.Contains("Рудакова 76", text);
-                Assert.Contains("3.48.7", text);
-            });
-        }
-
-        [Fact]
-        public void Playtest_RemindAllButton_CopiesCombinedMessage_DisabledWithoutOutdated()
-        {
-            RunOnSta(() =>
-            {
-                var panel = OpenPanelWithData(out _);
-
-                var btn = Find<Button>(panel, "BtnRemindAll");
-                Assert.True(btn!.IsEnabled);
-                btn.RaiseEvent(new RoutedEventArgs(ButtonBase.ClickEvent));
-
-                var text = Clipboard.GetText();
-                Assert.Contains("Рудакова 76", text);
-                Assert.Contains("Красношапки 44", text);
-                // В сообщении — версии УСТАРЕВШИХ устройств (3.48.7), не актуальных.
-                Assert.Contains("3.48.7", text);
-                Assert.DoesNotContain("3.49.0", text);
-
-                // Все офисы актуальны → кнопка дизейблится (UpdateQuickActionsState).
-                panel.Rows.Clear();
-                panel.Rows.Add(new OfficeStatusRow { Prefix = "1", LocationName = "x", Status = OfficeStatus.UpToDate, DeviceCount = 1 });
-                panel.UpdateQuickActionsState();
-                Assert.False(btn.IsEnabled);
+                Assert.True(Find<Button>(panel, "BtnUnbindMode")!.IsEnabled);
             });
         }
 
@@ -291,7 +246,7 @@ namespace MosquitoNetCalculator.Tests.Controls
 
                 Assert.Equal(Visibility.Visible, Find<StackPanel>(panel, "UpdatesEmpty")!.Visibility);
                 Assert.Equal(Visibility.Collapsed, panel.OfficesList.Visibility);
-                Assert.False(Find<Button>(panel, "BtnRemindAll")!.IsEnabled);
+                Assert.False(Find<Button>(panel, "BtnUnbindMode")!.IsEnabled);
             });
         }        [Fact]
         public void Playtest_JustUnboundMarker_ShowsAfterUnbind_HidesWhenDeviceReportsBack()

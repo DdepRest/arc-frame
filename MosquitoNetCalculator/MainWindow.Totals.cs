@@ -114,6 +114,8 @@ namespace MosquitoNetCalculator
             {
                 _lastZeroItemsWarningKey = null;
             }
+
+            RecalculateOrderGridColumnWidths();
         }
     }
 }

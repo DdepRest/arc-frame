@@ -24,7 +24,9 @@ namespace MosquitoNetCalculator.ViewModels
         {
             if (msg.ClarificationForm is not { } form) return;
 
-            if (!form.TryBuildCommand(out var command, out var error))
+            // One command PER SIZE ROW: a card pre-filled from a screenshot with
+            // two positions must propose both of them, not just the first.
+            if (!form.TryBuildCommands(out var commands, out var error))
             {
                 // Show the validation problem inline instead of a silent no-op.
                 Messages.Add(new AiChatMessage
@@ -35,13 +37,13 @@ namespace MosquitoNetCalculator.ViewModels
                 return;
             }
 
-            // «Don't invent» audit-trail: after the form succeeds the command
-            // is safe by construction, but we still run the safety policy
+            // «Don't invent» audit-trail: after the form succeeds the commands
+            // are safe by construction, but we still run the safety policy
             // exactly once through the central source so a regression in
             // form validation cannot slip through silently. Lock the path
             // with a test; if the assertion ever fires the form is leaking
             // an unsafe command into the preview pipeline.
-            var builtCommands = new[] { command! };
+            var builtCommands = commands.ToArray();
             var leftover = AiPlanSafetyPolicy.Classify(builtCommands, form.BuildSummaryText());
             if (leftover != AiPlanSafetyPolicy.MissingField.None)
             {
@@ -65,9 +67,9 @@ namespace MosquitoNetCalculator.ViewModels
             });
 
             // Plan preview. Nothing touches the order until the user confirms —
-            // the plan card shows the exact parameters with «Выполнить»/«Отмена».
-            var plan = AiPlanBuilder.FromCommand(
-                command!,
+            // the plan card lists every position with «Выполнить»/«Отмена».
+            var plan = AiPlanBuilder.FromCommands(
+                builtCommands,
                 sourceUserText: Messages.LastOrDefault(m => m.IsUser)?.Text,
                 reply: "Проверьте параметры и нажмите «Выполнить».");
             // Run the validator so NeedsClarification / MissingField flags are

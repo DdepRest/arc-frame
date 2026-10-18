@@ -53,22 +53,22 @@ namespace MosquitoNetCalculator.Tests.Models
         }
 
         [Fact]
-        public void PropertyChanged_Fired_OnClientNameChange()
+        public void PropertyChanged_Fired_OnClientPhoneChange()
         {
             var info = new ClientInfo();
             string? changed = null;
             info.PropertyChanged += (s, e) => changed = e.PropertyName;
-            info.ClientName = "Test";
-            Assert.Equal("ClientName", changed);
+            info.ClientPhone = "+7 900 123-45-67";
+            Assert.Equal("ClientPhone", changed);
         }
 
         [Fact]
         public void PropertyChanged_NotFired_WhenSameValue()
         {
-            var info = new ClientInfo { ClientName = "Test" };
+            var info = new ClientInfo { ClientPhone = "+7 900 123-45-67" };
             int count = 0;
             info.PropertyChanged += (s, e) => count++;
-            info.ClientName = "Test";
+            info.ClientPhone = "+7 900 123-45-67";
             Assert.Equal(0, count);
         }
 
@@ -116,7 +116,6 @@ namespace MosquitoNetCalculator.Tests.Models
         public void DefaultPropertyValues()
         {
             var info = new ClientInfo();
-            Assert.Equal("", info.ClientName);
             Assert.Equal("", info.ClientPhone);
             Assert.Equal("", info.ClientAddress);
             Assert.Equal("", info.ContractNumber);
@@ -155,20 +154,19 @@ namespace MosquitoNetCalculator.Tests.Models
         }
 
         [Fact]
-        public void IsClientInfoFilled_False_WhenOnlyNameFilled()
+        public void IsClientInfoFilled_False_WhenOnlyPhoneFilled()
         {
-            var info = new ClientInfo { ClientName = "Иван" };
+            var info = new ClientInfo { ClientPhone = "+7 900 123-45-67" };
             Assert.False(info.IsClientInfoFilled);
         }
 
         [Theory]
-        [InlineData("", "", "")]
-        [InlineData("   ", "   ", "   ")]
-        public void IsClientInfoFilled_False_WhenWhitespaceOnly(string name, string phone, string address)
+        [InlineData("", "")]
+        [InlineData("   ", "   ")]
+        public void IsClientInfoFilled_False_WhenWhitespaceOnly(string phone, string address)
         {
             var info = new ClientInfo
             {
-                ClientName = name,
                 ClientPhone = phone,
                 ClientAddress = address,
                 ContractNumber = "1-2026",
@@ -181,7 +179,6 @@ namespace MosquitoNetCalculator.Tests.Models
         {
             var info = new ClientInfo
             {
-                ClientName = "Иван Петров",
                 ClientPhone = "+7 900 123-45-67",
                 ClientAddress = "ул. Ленина, 1",
                 ContractNumber = "1-2026",
@@ -190,16 +187,15 @@ namespace MosquitoNetCalculator.Tests.Models
         }
 
         [Fact]
-        public void IsClientInfoFilled_InpcFires_OnNameChange()
+        public void IsClientInfoFilled_InpcFires_OnPhoneChange()
         {
             var info = new ClientInfo();
             bool? last = null;
             info.PropertyChanged += (s, e) => { if (e.PropertyName == nameof(ClientInfo.IsClientInfoFilled)) last = info.IsClientInfoFilled; };
 
-            info.ClientName = "Иван";
-            Assert.False(last!.Value); // still missing phone/address/contract
-
             info.ClientPhone = "+7 900 123-45-67";
+            Assert.False(last!.Value); // still missing address/contract
+
             info.ClientAddress = "ул. Ленина, 1";
             info.ContractNumber = "1-2026";
             Assert.True(last.Value); // last raise reflects the final state

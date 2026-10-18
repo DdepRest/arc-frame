@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
 using MosquitoNetCalculator.Models;
@@ -43,29 +44,77 @@ namespace MosquitoNetCalculator.Services
             if (installation >= 0)
                 form.SelectedInstallation = AiKeywordLexicon.InstallationLabel(installation);
 
-            // Parse each field independently. OCR can lose a dimension separator,
-            // but that must not discard a reliable quantity («1»/«1 шт») or other
-            // fields already present in the same text.
-            var dim = AiKeywordLexicon.DimensionRegex.Match(request);
-            if (dim.Success)
+            // Every size the request names becomes a row of its own: one screenshot
+            // (or one line) regularly carries several positions — «ПМС Anwis, бел.
+            // 1 304x1593» and «ПМС Anwis, бел. 1 724x1593» — and all of them must
+            // reach the order. Parsing per size also keeps a reliable quantity
+            // («4 шт», «4 739х1116») attached to the size it belongs to.
+            var entries = AiKeywordLexicon.ParseSizeEntries(request);
+            var applicableEntries = form.IsAnwis || form.SelectedType != "Свой товар"
+                ? entries.Where(e => !e.IsGlassUnit).ToList()
+                : entries;
+            ApplySizeEntries(form, applicableEntries);
+            if (applicableEntries.Count == 0 && entries.Count == 0)
             {
-                form.WidthText = dim.Groups[1].Value;
-                form.HeightText = dim.Groups[2].Value;
+                // No readable pair (OCR glued the digits: «3711217»): the
+                // dimensions stay empty for manual entry, but a quantity that IS
+                // readable («2 шт») must not be thrown away with them.
+                var quantity = AiKeywordLexicon.QuantityRegex.Match(request);
+                if (quantity.Success)
+                    form.QuantityText = quantity.Groups[1].Value;
+            }
+        }
+
+        /// <summary>
+        /// Writes sizes read from one source into the card's rows, growing the
+        /// list when the source names more positions than the card already holds.
+        /// Sources are applied in priority order (parsed commands → model reply
+        /// → the user's own words), so a later source reshapes the SAME rows and
+        /// the user always wins.
+        /// </summary>
+        internal static void ApplySizeEntries(
+            AiClarificationForm form, IReadOnlyList<AiKeywordLexicon.AiSizeEntry> entries)
+        {
+            if (entries.Count == 0) return;
+            form.EnsureSizeRows(entries.Count);
+            for (int i = 0; i < entries.Count; i++)
+            {
+                var row = form.SizeRows[i];
+                row.WidthText = entries[i].Width.ToString(CultureInfo.InvariantCulture);
+                row.HeightText = entries[i].Height.ToString(CultureInfo.InvariantCulture);
+                row.QuantityText = FormatQuantity(entries[i].Quantity);
+            }
+        }
+
+        /// <summary>
+        /// Pre-fills the size rows from the AddItem parameters the model already
+        /// produced. One row per parsed position, so a model that DID understand
+        /// the two-position screenshot is not flattened back to a single item by
+        /// the card. The Anwis size mode is deliberately NOT copied: the card
+        /// exists precisely because that mode must be re-picked by the user.
+        /// </summary>
+        internal static void FromCommands(AiClarificationForm form, IReadOnlyList<AiCommandParams>? commands)
+        {
+            if (commands is not { Count: > 0 }) return;
+
+            var first = commands[0];
+            if (first != null)
+            {
+                if (!string.IsNullOrWhiteSpace(first.Type) && form.ProductTypes.Contains(first.Type))
+                    form.SelectedType = first.Type;
+                if (!string.IsNullOrWhiteSpace(first.Color) && form.Colors.Contains(first.Color))
+                    form.SelectedColor = first.Color;
             }
 
-            // «4 шт 739х1116» wins over a bare leading number; otherwise a
-            // number right before the size («4 739х1116») is treated as count.
-            var q = AiKeywordLexicon.QuantityRegex.Match(request);
-            if (q.Success)
+            form.EnsureSizeRows(commands.Count);
+            for (int i = 0; i < commands.Count; i++)
             {
-                form.QuantityText = q.Groups[1].Value;
-            }
-            else if (dim.Success)
-            {
-                var beforeSize = request.Substring(0, dim.Index);
-                var leading = AiKeywordLexicon.LeadingNumberRegex.Match(beforeSize);
-                if (leading.Success)
-                    form.QuantityText = leading.Groups[1].Value;
+                var p = commands[i];
+                if (p == null) continue;
+                var row = form.SizeRows[i];
+                if (p.Width > 0) row.WidthText = p.Width.ToString(CultureInfo.InvariantCulture);
+                if (p.Height > 0) row.HeightText = p.Height.ToString(CultureInfo.InvariantCulture);
+                if (p.Quantity > 0) row.QuantityText = FormatQuantity(p.Quantity);
             }
         }
 
@@ -82,29 +131,45 @@ namespace MosquitoNetCalculator.Services
             if (string.IsNullOrWhiteSpace(reply)) return;
             var t = reply!.ToLowerInvariant();
 
-            // Narrow the selected product only when the reply names exactly one
-            // family (e.g. «Отлив»). Mesh requests resolve to several products,
-            // so the default selection stays untouched.
-            var family = AiClarificationForm.FilterProductsForRequest(reply);
-            if (family.Count == 1 && form.ProductTypes.Contains(family[0]))
-                form.SelectedType = family[0];
+            // Narrow the selected product:
+            // 1) Explicit mention of Anwis / анвис:
+            if ((t.Contains("anwis", StringComparison.Ordinal) || t.Contains("анвис", StringComparison.Ordinal))
+                && form.ProductTypes.Contains("Anwis"))
+            {
+                form.SelectedType = "Anwis";
+            }
+            else
+            {
+                // 2) Narrow when the reply names exactly one family (e.g. «Отлив»).
+                var family = AiClarificationForm.FilterProductsForRequest(reply);
+                if (family.Count == 1 && form.ProductTypes.Contains(family[0]))
+                    form.SelectedType = family[0];
+            }
 
             var color = AiKeywordLexicon.DetectColor(t);
             if (color != null && form.Colors.Contains(color))
                 form.SelectedColor = color;
 
-            var dim = AiKeywordLexicon.DimensionRegex.Match(reply);
-            if (dim.Success)
+            // A reply that lists several confirmed pairs («371×1217 и 619×1295»)
+            // fills several rows — the model may well have read the whole picture
+            // even when the local OCR saw only part of it.
+            // Glass unit dimensions («СП 615×1303») must NEVER be prefilled
+            // into mosquito net forms!
+            var entries = AiKeywordLexicon.ParseSizeEntries(reply);
+            var applicableEntries = form.IsAnwis || form.SelectedType != "Свой товар"
+                ? entries.Where(e => !e.IsGlassUnit).ToList()
+                : entries;
+            ApplySizeEntries(form, applicableEntries);
+            if (applicableEntries.Count == 0 && entries.Count == 0)
             {
-                form.WidthText = dim.Groups[1].Value;
-                form.HeightText = dim.Groups[2].Value;
+                // Keep quantity parsing independent from dimensions: a vision
+                // reply may reliably state «1 шт» even when it omitted or
+                // damaged the size. Don't inherit quantity if all entries
+                // were glass units.
+                var quantity = AiKeywordLexicon.QuantityRegex.Match(reply);
+                if (quantity.Success)
+                    form.QuantityText = quantity.Groups[1].Value;
             }
-
-            // Keep quantity parsing independent from dimensions: a vision reply
-            // may reliably state «1 шт» even when it omitted or damaged the size.
-            var q = AiKeywordLexicon.QuantityRegex.Match(reply);
-            if (q.Success)
-                form.QuantityText = q.Groups[1].Value;
         }
 
         /// <summary>

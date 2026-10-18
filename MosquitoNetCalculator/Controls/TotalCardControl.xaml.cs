@@ -29,7 +29,7 @@ namespace MosquitoNetCalculator.Controls
             TxtPositionsMeta.Text = count > 0 ? $"Позиций: {count}" : string.Empty;
         }
 
-        private void BtnCopyTotal_Click(object sender, RoutedEventArgs e)
+        private async void BtnCopyTotal_Click(object sender, RoutedEventArgs e)
         {
             try
             {
@@ -37,6 +37,15 @@ namespace MosquitoNetCalculator.Controls
                 if (string.IsNullOrWhiteSpace(amount)) return;
                 Clipboard.SetText(amount);
                 ToastService.ShowToast("Сумма скопирована в буфер обмена", ToastType.Success);
+
+                if (TxtCopyIcon != null)
+                {
+                    TxtCopyIcon.Text = "\uE73E";
+                    TxtCopyIcon.Foreground = (System.Windows.Media.Brush)FindResource("Success");
+                    await System.Threading.Tasks.Task.Delay(1000);
+                    TxtCopyIcon.Text = "\uE8C8";
+                    TxtCopyIcon.ClearValue(TextBlock.ForegroundProperty);
+                }
             }
             catch { ToastService.ShowToast("Не удалось скопировать", ToastType.Warning); }
         }

@@ -203,9 +203,9 @@ namespace MosquitoNetCalculator.Models
             ? "—"
             : _installationMode switch
             {
-                0 => "\u2713",
-                1 => "\u2717",
-                _ => "В"
+                0 => "Вкл",
+                1 => "Без",
+                _ => "ВК"
             };
 
         /// <summary>
@@ -229,8 +229,8 @@ namespace MosquitoNetCalculator.Models
                 ? "+" + Services.MoneyFormatService.FormatWhole(InstallationRowTotal)
                 : "−" + Services.MoneyFormatService.FormatWhole(-InstallationRowTotal);
 
-        /// <summary>Single-line text of the КП print column: glyph + row amount ("✓ +750");
-        /// bare glyph when amount is 0; "—" when not applicable.</summary>
+        /// <summary>Single-line text of the КП print column: label + row amount ("Вкл +750", "Без −500", "ВК −500");
+        /// bare label when amount is 0; "—" when not applicable.</summary>
         public string KpInstallationCellText => InstallationAmountDisplay == ""
             ? KpInstallationDisplay
             : $"{KpInstallationDisplay} {InstallationAmountDisplay}";
@@ -288,7 +288,7 @@ namespace MosquitoNetCalculator.Models
 
         /// <summary>Short readable label shown on the installation toggle button in the DataGrid.
         /// UX-06: cryptic V/X/В glyphs forced users into tooltips; short words are
-        /// self-explanatory (print glyph in КП stays unchanged — KpInstallationDisplay).
+        /// self-explanatory. Print column in КП is unified with these labels (KpInstallationDisplay).
         /// «ВК» = «в конструкцию», disambiguated by tooltip + accent color.</summary>
         public string InstallationButtonLabel => !IsInstallationApplicable
             ? "—"

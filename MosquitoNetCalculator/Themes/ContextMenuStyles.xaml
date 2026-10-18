@@ -1,4 +1,4 @@
-﻿<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
                     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
         <!-- ═══════════════════════════════════════════════════════ -->
         <!-- CONTEXT MENU — Fluent Design                            -->
@@ -25,11 +25,11 @@
                                 BorderThickness="{Binding BorderThickness, RelativeSource={RelativeSource TemplatedParent}}"
                                 CornerRadius="{DynamicResource Radius.Md}"
                                 SnapsToDevicePixels="True"
-                                Margin="0,2,0,0">
+                                Margin="{DynamicResource Gap.BlockTopSm}">
                             <ScrollViewer VerticalScrollBarVisibility="Auto"
                                           HorizontalScrollBarVisibility="Disabled"
                                           CanContentScroll="True"
-                                          Padding="0">
+                                          Padding="{DynamicResource Pad.None}">
                                 <StackPanel IsItemsHost="True"
                                             ClipToBounds="True"/>
                             </ScrollViewer>
@@ -53,7 +53,7 @@
                 <Setter.Value>
                     <ControlTemplate TargetType="MenuItem">
                         <Border x:Name="Bd" Background="Transparent"
-                                CornerRadius="{DynamicResource Radius.Sm}" Margin="1,0"
+                                CornerRadius="{DynamicResource Radius.Sm}" Margin="{DynamicResource Gap.SeparatorH}"
                                 Padding="{Binding Padding, RelativeSource={RelativeSource TemplatedParent}}"
                                 SnapsToDevicePixels="True">
                             <ContentPresenter ContentSource="Header"

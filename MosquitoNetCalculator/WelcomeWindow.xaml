@@ -15,7 +15,7 @@
         Background="Transparent">
     <Border Background="{DynamicResource Surface}"
             BorderBrush="{DynamicResource Border}" BorderThickness="1"
-            CornerRadius="{DynamicResource Radius.Lg}" Padding="4" Margin="8">
+            CornerRadius="{DynamicResource Radius.Lg}" Padding="{DynamicResource Pad.ControlSm}" Margin="{DynamicResource Gap.Window}">
         <Border.Effect>
             <DropShadowEffect Color="{DynamicResource ShadowColor}" BlurRadius="20" ShadowDepth="2" Opacity="0.12"/>
         </Border.Effect>
@@ -30,7 +30,7 @@
                     Background="{DynamicResource HeaderBg}"
                     CornerRadius="{DynamicResource Radius.CardHeader}"
                     Height="32"
-                    Padding="14,0,0,0"
+                    Padding="{DynamicResource Pad.TitleBar}"
                     MouseLeftButtonDown="TitleBar_MouseLeftButtonDown">
                 <Grid>
                     <Grid.ColumnDefinitions>
@@ -40,7 +40,7 @@
                     </Grid.ColumnDefinitions>
                     <TextBlock Grid.Column="0"
                                Text="Добро пожаловать в A.R.C. Frame"
-                               FontSize="12" FontWeight="SemiBold"
+                               FontSize="{StaticResource Type.Body}" FontWeight="SemiBold"
                                Foreground="{DynamicResource TextPrimary}"
                                VerticalAlignment="Center" HorizontalAlignment="Left"/>
                     <!-- Theme toggle button -->
@@ -48,7 +48,7 @@
                             x:Name="BtnTheme"
                             Width="32" Height="32" Background="Transparent"
                             BorderThickness="0" Cursor="Hand"
-                            Padding="0" Margin="0"
+                            Padding="{DynamicResource Pad.None}" Margin="{DynamicResource Gap.None}"
                             HorizontalContentAlignment="Center"
                             VerticalContentAlignment="Center"
                             Foreground="{DynamicResource TextPrimary}"
@@ -97,9 +97,9 @@
                         </Button.Template>
                         <TextBlock x:Name="TxtThemeIcon"
                                    Text="&#xE706;"
-                                   FontFamily="{DynamicResource Font.Icon}" FontSize="11"
+                                   FontFamily="{DynamicResource Font.Icon}" FontSize="{StaticResource Type.Caption}"
                                    HorizontalAlignment="Center" VerticalAlignment="Center"
-                                   Margin="0"/>
+                                   Margin="{DynamicResource Gap.None}"/>
                     </Button>
                     <!-- Close button. UX-14: shared DialogCloseButton (was a private
                          60-line copy); локальный ToolTip перекрывает сеттер стиля. -->
@@ -108,15 +108,15 @@
                             Style="{DynamicResource DialogCloseButton}"
                             ToolTip="Закрыть"
                             Click="BtnClose_Click">
-                        <TextBlock Text="&#xE8BB;" FontFamily="{DynamicResource Font.Icon}" FontSize="11"
+                        <TextBlock Text="&#xE8BB;" FontFamily="{DynamicResource Font.Icon}" FontSize="{StaticResource Type.Caption}"
                                    HorizontalAlignment="Center" VerticalAlignment="Center"
-                                   Margin="0"/>
+                                   Margin="{DynamicResource Gap.None}"/>
                     </Button>
                 </Grid>
             </Border>
 
             <!-- Content area (Grid: header / list* / preview / button) -->
-            <Grid Grid.Row="1" Margin="20,14,20,16">
+            <Grid Grid.Row="1" Margin="{DynamicResource Gap.WelcomeGrid}">
                 <Grid.RowDefinitions>
                     <RowDefinition Height="Auto"/>
                     <RowDefinition Height="*"/>
@@ -127,11 +127,11 @@
                 <!-- Header -->
                 <StackPanel Grid.Row="0">
                     <TextBlock Text="Выберите своё местоположение"
-                               FontSize="16" FontWeight="SemiBold"
+                               FontSize="{StaticResource Type.Subtitle}" FontWeight="SemiBold"
                                Foreground="{DynamicResource TextPrimary}"
                                Margin="{DynamicResource Gap.BlockSm}"/>
                     <TextBlock Text="Это определит нумерацию договоров."
-                               FontSize="12"
+                               FontSize="{StaticResource Type.Body}"
                                Foreground="{DynamicResource TextMuted}"
                                TextWrapping="Wrap"
                                Margin="{DynamicResource Gap.BlockLg}"/>
@@ -175,7 +175,7 @@
                                     BorderBrush="{DynamicResource Border}"
                                     BorderThickness="1.5"
                                     CornerRadius="{DynamicResource Radius.Md}"
-                                    Padding="14,12"
+                                    Padding="{DynamicResource Pad.WelcomeCard}"
                                     Margin="{DynamicResource Gap.Block}"
                                     Cursor="Hand">
                                 <Grid>
@@ -201,11 +201,11 @@
                                     </Ellipse>
                                     <TextBlock Grid.Column="1" Grid.Row="0"
                                                Text="{Binding LocationName}"
-                                               FontSize="12" FontWeight="Medium"
+                                               FontSize="{StaticResource Type.Body}" FontWeight="Medium"
                                                Foreground="{DynamicResource TextPrimary}"
-                                               Margin="0,0,0,2"/>
+                                               Margin="{DynamicResource Gap.BlockHair}"/>
                                     <TextBlock Grid.Column="1" Grid.Row="1"
-                                               FontSize="11"
+                                               FontSize="{StaticResource Type.Caption}"
                                                Foreground="{DynamicResource TextMuted}">
                                         <Run Text="Префикс договора: "/>
                                         <!-- Mode=OneWay is required: Run.Text's default
@@ -264,16 +264,16 @@
                         BorderBrush="{DynamicResource SubtleBorder}"
                         BorderThickness="1"
                         CornerRadius="{DynamicResource Radius.Md}"
-                        Padding="14,10"
-                        Margin="0,10,0,0">
+                        Padding="{DynamicResource Pad.WelcomeAction}"
+                        Margin="{DynamicResource Gap.BlockTop10}">
                     <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
                         <TextBlock Text="Номер договора: "
-                                   FontSize="12"
+                                   FontSize="{StaticResource Type.Body}"
                                    Foreground="{DynamicResource TextSecondary}"
                                    VerticalAlignment="Center"/>
                         <TextBlock x:Name="PreviewContractNumber"
                                    Text="1-1"
-                                   FontSize="12" FontWeight="Bold"
+                                   FontSize="{StaticResource Type.Body}" FontWeight="Bold"
                                    Foreground="{DynamicResource Accent}"
                                    VerticalAlignment="Center"/>
                     </StackPanel>
@@ -286,9 +286,9 @@
                         Style="{DynamicResource PrimaryButton}"
                         HorizontalAlignment="Center"
                         MinWidth="180"
-                        Margin="0,10,0,0"
-                        Padding="16,9"
-                        FontSize="14"
+                        Margin="{DynamicResource Gap.BlockTop10}"
+                        Padding="{DynamicResource Pad.WelcomeApply}"
+                        FontSize="{StaticResource Type.BodyLg}"
                         IsDefault="True"
                         Click="BtnContinue_Click"/>
             </Grid>

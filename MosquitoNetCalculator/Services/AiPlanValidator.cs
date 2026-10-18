@@ -122,6 +122,33 @@ namespace MosquitoNetCalculator.Services
                 case AiCommandType.DeleteLast:
                 case AiCommandType.ClearAll:
                 case AiCommandType.ListProducts:
+                case AiCommandType.SetClientInfo:
+                case AiCommandType.SaveOrder:
+                case AiCommandType.PrintKp:
+                case AiCommandType.ExportPdf:
+                    break;
+                case AiCommandType.UpdateItemByIndex:
+                    if (p.ItemIndex <= 0)
+                        errors.Add("Номер строки должен быть положительным числом (например, 1).");
+                    if (!HasAnyUpdate(p) && !p.UpdateWidth.HasValue && !p.UpdateHeight.HasValue && !p.UpdateQuantity.HasValue && !p.IsAnticat.HasValue && !p.IsActive.HasValue)
+                        errors.Add("Не указаны параметры для изменения строки.");
+                    if (p.UpdateWidth.HasValue && p.UpdateWidth.Value <= 0)
+                        errors.Add("Ширина должна быть положительной.");
+                    if (p.UpdateHeight.HasValue && p.UpdateHeight.Value <= 0)
+                        errors.Add("Высота должна быть положительной.");
+                    if (p.UpdateQuantity.HasValue && p.UpdateQuantity.Value <= 0)
+                        errors.Add("Количество должно быть больше 0.");
+                    break;
+                case AiCommandType.DeleteItemByIndex:
+                case AiCommandType.ToggleItemActive:
+                    if (p.ItemIndex <= 0)
+                        errors.Add("Номер строки должен быть положительным числом (например, 1).");
+                    break;
+                case AiCommandType.ApplyTemplate:
+                    if (string.IsNullOrWhiteSpace(p.TemplateId))
+                        errors.Add("Не указан идентификатор шаблона.");
+                    else if (!OrderTemplateService.All.Any(t => t.Id.Equals(p.TemplateId, StringComparison.OrdinalIgnoreCase)))
+                        errors.Add($"Шаблон «{p.TemplateId}» не найден в системе (доступны: window, balcony, frame, french).");
                     break;
                 default:
                     errors.Add("Неизвестный тип действия.");
@@ -136,10 +163,14 @@ namespace MosquitoNetCalculator.Services
             // «Свой товар» is the only free-form add: the user typed the name,
             // dimensions and quantity are optional. Everything else must exist
             // in the catalog.
-            if (!p.IsCustomProduct && !AiOrderContext.IsKnownProduct(p.Type))
+            if (!p.IsCustomProduct)
             {
-                errors.Add($"Товар «{p.Type}» отсутствует в каталоге.");
-                return; // nothing else can be trusted
+                p.Type = ProductCatalog.NormalizeProductName(p.Type);
+                if (!AiOrderContext.IsKnownProduct(p.Type))
+                {
+                    errors.Add($"Товар «{p.Type}» отсутствует в каталоге.");
+                    return; // nothing else can be trusted
+                }
             }
 
             bool manual = ProductCatalog.IsManualPiece(p.Type) || p.IsCustomProduct;
@@ -151,6 +182,13 @@ namespace MosquitoNetCalculator.Services
                 errors.Add("Недопустимый режим монтажа.");
 
             // Color: known palette is a hint; an empty color means the default.
+            if (string.IsNullOrWhiteSpace(p.Color) && !ProductCatalog.IsNoColor(p.Type))
+            {
+                var defColor = AiFactsProvider.GetDefaultColor(p.Type);
+                if (!string.IsNullOrWhiteSpace(defColor))
+                    p.Color = defColor;
+            }
+
             if (KnownColors.TryGetValue(p.Type, out var colors)
                 && !string.IsNullOrWhiteSpace(p.Color)
                 && !colors.Contains(p.Color, StringComparer.OrdinalIgnoreCase)

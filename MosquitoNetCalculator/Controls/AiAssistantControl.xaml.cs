@@ -2,6 +2,8 @@ using System;
 using System.Collections.Generic;
 using System.Collections.Specialized;
 using System.Diagnostics.CodeAnalysis;
+using System.IO;
+using Microsoft.Win32;
 using System.Linq;
 using System.Runtime.InteropServices;
 using System.Threading.Tasks;
@@ -311,6 +313,41 @@ namespace MosquitoNetCalculator.Controls
             _vm?.SubmitClarificationForm(msg);
         }
 
+        /// <summary>
+        /// «＋ Добавить размер» on the clarification card — one more position. The
+        /// card builds one add-item per size row, so a request naming several
+        /// sizes no longer loses all but the first one.
+        /// </summary>
+        private void BtnAddSizeRow_Click(object sender, RoutedEventArgs e)
+        {
+            if (sender is FrameworkElement { DataContext: AiChatMessage msg }
+                && msg.ClarificationForm is { } form)
+            {
+                form.AddSizeRow();
+            }
+        }
+
+        /// <summary>
+        /// «✕» on a size row — drops that position. The card always keeps one
+        /// row, and the button is hidden while only one exists.
+        /// </summary>
+        private void BtnRemoveSizeRow_Click(object sender, RoutedEventArgs e)
+        {
+            if (sender is not FrameworkElement fe) return;
+            if (fe.Tag is not AiClarificationSizeRow row) return;
+            // The «✕» sits INSIDE the size-row template, so its DataContext is the
+            // row itself — the message that owns the card is found by walking up
+            // the visual tree (the card Border carries it).
+            for (DependencyObject? node = fe; node != null; node = VisualTreeHelper.GetParent(node))
+            {
+                if (node is FrameworkElement { DataContext: AiChatMessage { ClarificationForm: { } form } })
+                {
+                    form.RemoveSizeRow(row);
+                    return;
+                }
+            }
+        }
+
         /// <summary>«Выполнить» on the plan card → confirm and fire PlanReceived.</summary>
         private void BtnConfirmPlan_Click(object sender, RoutedEventArgs e)
         {
@@ -330,6 +367,28 @@ namespace MosquitoNetCalculator.Controls
         {
             if (sender is FrameworkElement { DataContext: AiChatMessage msg })
                 _vm?.RequestUndo(msg);
+        }
+
+        /// <summary>✕ on an individual step in the plan card → remove it from the plan.</summary>
+        private void BtnRemovePlanStep_Click(object sender, RoutedEventArgs e)
+        {
+            if (sender is FrameworkElement fe && fe.Tag is AiActionStep step)
+            {
+                var cur = fe.Parent as DependencyObject;
+                while (cur != null)
+                {
+                    if (cur is FrameworkElement { DataContext: AiChatMessage msg } && msg.ActionPlan != null)
+                    {
+                        msg.ActionPlan.RemoveStep(step);
+                        if (msg.ActionPlan.Steps.Count == 0)
+                        {
+                            _vm?.CancelPlan(msg);
+                        }
+                        break;
+                    }
+                    cur = VisualTreeHelper.GetParent(cur);
+                }
+            }
         }
 
         private async void BtnSendOrCancel_Click(object sender, RoutedEventArgs e)
@@ -473,24 +532,132 @@ namespace MosquitoNetCalculator.Controls
             TxtInput.Focus();
         }
 
+        /// <summary>
+        /// Captures an image from the clipboard, optimizes it via <see cref="AiImageOptimizer"/>
+        /// (formerly PngBitmapEncoder producing data:image/png DataUrl, now downscaled JPEG for efficiency),
+        /// and stages it as an attachment in the composer.
+        /// </summary>
         private bool TryPasteImageFromClipboard()
         {
             if (!Clipboard.ContainsImage()) return false;
             var image = Clipboard.GetImage();
             if (image == null) return false;
-
-            using var stream = new System.IO.MemoryStream();
-            var encoder = new System.Windows.Media.Imaging.PngBitmapEncoder();
-            encoder.Frames.Add(System.Windows.Media.Imaging.BitmapFrame.Create(image));
-            encoder.Save(stream);
-            var base64 = Convert.ToBase64String(stream.ToArray());
             if (DataContext is not AiAssistantViewModel vm) return false;
-            vm.AddAttachmentWithOcr(new AiImageAttachment
+
+            try
             {
-                DataUrl = "data:image/png;base64," + base64,
-                FileName = "clipboard.png"
-            });
-            return true;
+                var opt = AiImageOptimizer.OptimizeBitmap(image);
+                vm.AddAttachmentWithOcr(new AiImageAttachment
+                {
+                    DataUrl = opt.DataUrl,
+                    FileName = "Снимок экрана.jpg",
+                    SizeLabel = opt.SizeLabel,
+                    Thumbnail = image
+                });
+                return true;
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"[AI] Clipboard image optimize failed: {ex}");
+                return false;
+            }
+        }
+
+        private void BtnAttach_Click(object sender, RoutedEventArgs e)
+        {
+            var dlg = new OpenFileDialog
+            {
+                Filter = "Изображения (*.png;*.jpg;*.jpeg;*.webp;*.bmp)|*.png;*.jpg;*.jpeg;*.webp;*.bmp|Все файлы (*.*)|*.*",
+                Multiselect = true,
+                Title = "Выберите изображение или бланк замера"
+            };
+
+            if (dlg.ShowDialog() == true && dlg.FileNames != null)
+            {
+                foreach (var file in dlg.FileNames)
+                {
+                    AttachImageFile(file);
+                }
+            }
+        }
+
+        private void AttachImageFile(string filePath)
+        {
+            if (string.IsNullOrWhiteSpace(filePath) || !File.Exists(filePath)) return;
+            if (DataContext is not AiAssistantViewModel vm) return;
+
+            try
+            {
+                var opt = AiImageOptimizer.OptimizeFile(filePath);
+                var bi = new System.Windows.Media.Imaging.BitmapImage();
+                bi.BeginInit();
+                bi.StreamSource = new MemoryStream(opt.Bytes);
+                bi.CacheOption = System.Windows.Media.Imaging.BitmapCacheOption.OnLoad;
+                bi.EndInit();
+                bi.Freeze();
+
+                var attachment = new AiImageAttachment
+                {
+                    FileName = Path.GetFileName(filePath),
+                    DataUrl = opt.DataUrl,
+                    SizeLabel = opt.SizeLabel,
+                    Thumbnail = bi
+                };
+                vm.AddAttachmentWithOcr(attachment);
+            }
+            catch (Exception ex)
+            {
+                ToastService.ShowToast(ToastService.AiScope, $"Ошибка загрузки изображения: {ex.Message}", ToastType.Error);
+            }
+        }
+
+        private void AttachmentThumbnail_Click(object sender, MouseButtonEventArgs e)
+        {
+            if (sender is FrameworkElement { Tag: AiChatAttachmentPreview preview })
+            {
+                var win = !string.IsNullOrWhiteSpace(preview.FullDataUrl)
+                    ? new AiImagePreviewWindow(preview.FullDataUrl, preview.FileName, preview.SizeLabel)
+                    : new AiImagePreviewWindow(preview.Thumbnail, preview.FileName, preview.SizeLabel);
+                win.Owner = Window.GetWindow(this);
+                win.ShowDialog();
+                e.Handled = true;
+            }
+        }
+
+        private void Composer_PreviewDragOver(object sender, DragEventArgs e)
+        {
+            if (e.Data.GetDataPresent(DataFormats.FileDrop))
+            {
+                e.Effects = DragDropEffects.Copy;
+                e.Handled = true;
+            }
+        }
+
+        private void Composer_Drop(object sender, DragEventArgs e)
+        {
+            if (e.Data.GetDataPresent(DataFormats.FileDrop))
+            {
+                if (e.Data.GetData(DataFormats.FileDrop) is string[] files)
+                {
+                    foreach (var file in files)
+                    {
+                        var ext = Path.GetExtension(file).ToLowerInvariant();
+                        if (ext is ".png" or ".jpg" or ".jpeg" or ".webp" or ".bmp")
+                        {
+                            AttachImageFile(file);
+                        }
+                    }
+                    e.Handled = true;
+                }
+            }
+        }
+
+        private void BtnRemoveAttachment_Click(object sender, RoutedEventArgs e)
+        {
+            if (sender is FrameworkElement { DataContext: AiImageAttachment att } && DataContext is AiAssistantViewModel vm)
+            {
+                vm.RemoveAttachment(att);
+            }
         }
 
         private void SlashCommandList_PreviewMouseLeftButtonUp(object sender, MouseButtonEventArgs e)

@@ -69,15 +69,18 @@
 | `OfficeStatsCalculator.cs` | Чистая логика секции «Статистика»: кол-во заказов по офисам (сумма по всем устройствам) из тех же отчётов. | — |
 | `OfficeReportScheduler.cs` | Периодическая отправка отчёта офиса каждые 2 часа, пока программа открыта (редкие считки: запуск программы + раз в 2 ч). | Контракт Start/Stop/ShouldSendAt — по образцу UpdateCheckScheduler. |
 | `DeviceLastSeenHint.cs` | Чистая функция «время последнего отчёта устройства» → текст подсказки чипа («· вчера 09:10», «· 3 дн. назад») для отчётов старше 12 ч; свежим устройствам подсказка не нужна. | Порог 12 ч и формат даты — вид чипов устройств админки. |
-| `AdminPanelLogic.cs` | ЧИСТАЯ политика панели «Обновления» (без WPF и IO, единственный владелец фраз и правил «что показывать»): пустые состояния (`IsNoData/IsFilterNoMatch/EmptyTitle/EmptyHint`), подсказка сводной карточки (`SummaryHint`), маркер «недавно отвязаны» (`JustUnboundText/JustUnboundReturned`), тексты напоминаний (`SingleReminderText/BulkReminderText/VersionLine/FallbackDownloadUrl`), шапка «обновлено … · авто …» (`RefreshStatusText`). | Тексты/пороги — поведение панели; контрол только применяет результаты. Владельцы состояния зафиксированы в шапке модуля (gist — OfficeReportService, строки — OfficeStatusCalculator, vis — контрол). |
+| `AdminPanelLogic.cs` | ЧИСТАЯ политика панели «Обновления» (без WPF и IO, единственный владелец фраз и правил «что показывать»): пустые состояния (`IsNoData/IsFilterNoMatch/EmptyTitle/EmptyHint`), маркер «недавно отвязаны» (`JustUnboundText/JustUnboundReturned`), шапка «обновлено … · авто …» (`RefreshStatusText`). | Тексты/пороги — поведение панели; контрол только применяет результаты. Владельцы состояния зафиксированы в шапке модуля (gist — OfficeReportService, строки — OfficeStatusCalculator, vis — контрол). |
 | `AnwisSizeService.cs` | UI-словари для Anwis (метки, подсказки, описания режимов). | Тексты подсказок — не критично, но должны соответствовать формулам в AnwisSize. |
 | `AmountInWordsService.cs` | Сумма прописью для КП. | Тексты — влияет на официальный документ. |
 | `MoneyFormatService.cs` | Форматирование денежных сумм (разделитель тысяч, копейки). | — |
+| `NotesDocumentBuilder.cs` / `NotesMarkupWriter.cs` | Конвертация примечаний в обе стороны: сохранённая строка разметки (`NotesFormatter`) ⇄ документ редактора (`FlowDocument`), чтобы пользователь видел форматирование, а не маркеры. | Формат хранения примечаний общий с печатью КП и PDF: синтаксис менять только вместе с `NotesFormatter` и печатным слоем. |
 | `ThemeService.cs` | Переключение и сохранение темы (светлая/тёмная). | — |
 | `DialogService.cs` | Fluent-диалоги (подтверждение, ввод, уведомления). | — |
 | `ToastService.cs` | Всплывающие тост-уведомления. | — |
 | `UndoRedoService.cs` | Undo/Redo через стек снимков. | — |
-| `AiAssistantService.cs` | Сетевые вызовы к OpenRouter/NVIDIA: стриминг, ретраи до 3 раз, гарантированный NVIDIA-фолбэк, стандартная модель `openrouter/free` (Free Models Router, иммунитет к кэшу недоступности), авто-обновление каталога при старте и self-heal (второй проход после `forceRefresh` при полном отказе), колбэк `onStreamInfo` с метриками. | Ключи, URL провайдеров, попытки — влияют на доступность AI. |
+| `AiAssistantService.cs` | Сетевые вызовы к OpenRouter/NVIDIA: стриминг, ретраи до 3 раз, гарантированный NVIDIA-фолбэк, стандартная модель `openrouter/free` (Free Models Router, иммунитет к кэшу недоступности), авто-обновление каталога при старте и self-heal (второй проход после `forceRefresh` при полном отказе), колбэк `onStreamInfo` с метриками, диагноз пустого 2xx-ответа (`DescribeEmptyCompletion`: `text/html` → «веб-страница вместо API», в сводке — фактический URL FreeLLMAPI). | Ключи, URL провайдеров, попытки — влияют на доступность AI. |
+| `AiKeyValidator.cs` | Провайдер-хелперы (ключ/имя/провайдер модели/URL) и честная проверка ключа `TestApiKeyAsync`: OpenRouter `/auth/key`, NVIDIA — минимальный чат, FreeLLMAPI — ДВУХэтапно (JSON-каталог `/v1/models` + живой чат с `choices`; HTML-200 → «это веб-страница, а не API — нужен /v1»). Нормализация адреса шлюза — `BuildFreeLlmApiChatUrl`/`BuildFreeLlmApiModelsUrl`/`NormalizeFreeLlmApiBase` (база без `/v1` получает `/v1`; явные `/v1`, `/v1beta`, `/chat/completions`, `/models` уважаются). | Схема адресов FreeLLMAPI (шлюз отдаёт 200+HTML на любой путь вне /v1 — адрес без префикса выглядит рабочим) и тексты ошибок — влияют на доступность AI. |
+| `AiModelCatalogClient.cs` | Загрузка каталогов OpenRouter / NVIDIA / FreeLLMAPI, free- и chat-фильтры (`IsZeroPrice`, `IsGeneralChatModel`, `IsChatModel`, `IsFreeLlmChatModel` — отсев генераторов/embeddings/rerank шлюза, роутеры `auto*`/`fusion` остаются), синхронизация с сохранённым выбором (`ReconcileSavedModels`), Vision-эвристика. | Формат каталогов провайдеров и фильтры — влияют на список моделей и маршрутизацию. |
 | `AiCommandParser.cs` | Парсинг JSON-ответа LLM: legacy-формат (single action) и plan-mode (`mode`/`steps`). | Контракт JSON — синхронизировать с промптом LLM. |
 | `AiPlanBuilder.cs` | Собирает `AiActionPlan` из команд (одиночной или пакета), строит preview-текст шагов, определяет `RequiresConfirmation`. | Preview должен показывать пользователю, что именно будет выполнено. |
 | `AiPlanValidator.cs` | Локальная проверка параметров команд до выполнения (каталог, цвет, размеры, цель обновления/удаления). | Валидация — последний рубеж перед мутацией заказа. |
@@ -169,6 +172,18 @@
 - Вся структура `MosquitoNetCalculator/` и `MosquitoNetCalculator.Tests/`.
 
 ## Last verified
+2026-10-18 (v3.55.1) — обновлено содержимое (sync-last-verified.ps1, CONTROL#13).
+
+2026-10-12 (v3.55.1) — обновлено содержимое (sync-last-verified.ps1, CONTROL#13).
+
+2026-10-11 (v3.55.1) — auto-synced from csproj (sync-version.ps1, CONTROL#13).
+
+2026-10-11 (v3.55.0) — обновлено содержимое (sync-last-verified.ps1, CONTROL#13).
+
+2026-10-08 (v3.55.0) — auto-synced from csproj (sync-version.ps1, CONTROL#13).
+
+2026-10-08 (v3.54.3) — обновлено содержимое (sync-last-verified.ps1, CONTROL#13).
+
 2026-10-04 (v3.54.3) — auto-synced from csproj (sync-version.ps1, CONTROL#13).
 
 2026-10-04 (v3.54.2) — auto-synced from csproj (sync-version.ps1, CONTROL#13).

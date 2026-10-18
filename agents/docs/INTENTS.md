@@ -10,6 +10,7 @@
 | Изменить панель быстрого ввода (QuickAdd) | `QuickAddControl.xaml`, `QuickAddControl.xaml.cs`, `OrderItem.cs` (продуктовые set'ы) |
 | Изменить таблицу заказов (DataGrid) | `OrderItemsControl.xaml`, `OrderItemsControl.xaml.cs`, `MainWindow.DataGrid.cs`, `GOTCHAS.md#19` (конвертер в шаблоне) |
 | Изменить боковую панель (клиент, договор) | `SidebarControl.xaml`, `SidebarControl.xaml.cs`, `ClientInfo.cs` |
+| Форматировать примечания (жирный/курсив/цвет/список) — без видимых маркеров | `Controls/SidebarControl.xaml(.cs)` (редактор `RtfNotes` + команды форматирования), `Services/NotesFormatter.cs` (синтаксис хранимой строки), `Services/NotesDocumentBuilder.cs` ⇄ `Services/NotesMarkupWriter.cs` (конвертация markup ⇄ документ редактора), `GOTCHAS.md#48` |
 | Изменить итоговую карточку | `TotalCardControl.xaml`, `TotalCardControl.xaml.cs`, `CalculationViewModel.cs` |
 | Изменить панель действий | `ActionBarControl.xaml`, `ActionBarControl.xaml.cs` |
 | Изменить кнопку/окно «Шаблоны» | `Controls/TemplatesWindow.xaml(.cs)`, `Services/OrderTemplateService.cs`, `ActionBarControl.xaml(.cs)` (кнопка) |
@@ -143,6 +144,18 @@ Intake phase: user describes intent
 - `INTENTS.md` — this file
 
 ## Last verified
+2026-10-18 (v3.55.1) — обновлено содержимое (sync-last-verified.ps1, CONTROL#13).
+
+2026-10-12 (v3.55.1) — обновлено содержимое (sync-last-verified.ps1, CONTROL#13).
+
+2026-10-11 (v3.55.1) — auto-synced from csproj (sync-version.ps1, CONTROL#13).
+
+2026-10-11 (v3.55.0) — обновлено содержимое (sync-last-verified.ps1, CONTROL#13).
+
+2026-10-08 (v3.55.0) — auto-synced from csproj (sync-version.ps1, CONTROL#13).
+
+2026-10-08 (v3.54.3) — обновлено содержимое (sync-last-verified.ps1, CONTROL#13).
+
 2026-10-04 (v3.54.3) — auto-synced from csproj (sync-version.ps1, CONTROL#13).
 
 2026-10-04 (v3.54.2) — auto-synced from csproj (sync-version.ps1, CONTROL#13).

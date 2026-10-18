@@ -1,4 +1,4 @@
-﻿<UserControl x:Class="MosquitoNetCalculator.Controls.AiAssistantControl"
+<UserControl x:Class="MosquitoNetCalculator.Controls.AiAssistantControl"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:local="clr-namespace:MosquitoNetCalculator.Converters"
@@ -69,7 +69,7 @@
              the TextBox drive smooth auto-growth from 1 line up to ~6 lines
              (~150 px) so long prompts stay readable. -->
         <Style x:Key="AiInputTextBox" TargetType="TextBox">
-            <Setter Property="FontSize" Value="14"/>
+            <Setter Property="FontSize" Value="{StaticResource Type.BodyLg}"/>
             <Setter Property="CaretBrush" Value="{DynamicResource Accent}"/>
             <Setter Property="Foreground" Value="{DynamicResource TextPrimary}"/>
             <Setter Property="Background" Value="Transparent"/>
@@ -81,7 +81,7 @@
                 <Setter.Value>
                     <ControlTemplate TargetType="TextBox">
                         <ScrollViewer x:Name="PART_ContentHost"
-                                      Margin="9,7,9,4"
+                                      Margin="{DynamicResource Pad.Input}"
                                       Focusable="False"
                                       HorizontalScrollBarVisibility="Hidden"
                                       VerticalScrollBarVisibility="Auto"/>
@@ -93,7 +93,7 @@
 
     <Border Background="{DynamicResource Surface}"
             CornerRadius="{DynamicResource Radius.Lg}"
-            Margin="8,8,0,8"
+            Margin="{DynamicResource Gap.Sidebar}"
             BorderBrush="{DynamicResource Border}"
             BorderThickness="1"
             Style="{DynamicResource Card}">
@@ -106,7 +106,7 @@
             <!-- Conversation -->
             <ScrollViewer x:Name="ChatScroll"
                           Grid.Row="0"
-                          Padding="12,14,12,8"
+                          Padding="{DynamicResource Pad.Card}"
                           VerticalScrollBarVisibility="Auto"
                           HorizontalScrollBarVisibility="Disabled"
                           ScrollChanged="ChatScroll_ScrollChanged"
@@ -116,10 +116,10 @@
                          50 instead of rendering the whole history at open time. -->
                     <Button x:Name="BtnLoadOlder"
                             HorizontalAlignment="Center"
-                            Margin="0,0,0,10"
-                            Padding="14,5"
+                            Margin="{DynamicResource Gap.BlockLg}"
+                            Padding="{DynamicResource Pad.Row}"
                             Style="{DynamicResource GhostButton}"
-                            FontSize="11"
+                            FontSize="{StaticResource Type.Caption}"
                             Visibility="{Binding HasOlderHiddenMessages, Converter={StaticResource BoolToVisibility}}"
                             Click="BtnLoadOlder_Click"
                             ToolTip="Показать предыдущие сообщения"
@@ -159,14 +159,14 @@
                                                 CornerRadius="{DynamicResource Radius.Xl}">
                                             <TextBlock Text="&#xE99A;"
                                                        FontFamily="{DynamicResource Font.Icon}"
-                                                       FontSize="12"
+                                                       FontSize="{StaticResource Type.Body}"
                                                        Foreground="{DynamicResource OnAccent}"
                                                        HorizontalAlignment="Center"
                                                        VerticalAlignment="Center"/>
                                         </Border>
 
                                         <Border Grid.Column="1"
-                                                Padding="11,9"
+                                                Padding="{DynamicResource Pad.Card}"
                                                 HorizontalAlignment="Stretch"
                                                 Background="{DynamicResource SectionBg}"
                                                 BorderBrush="{DynamicResource SubtleBorder}"
@@ -178,7 +178,7 @@
                                                         BorderBrush="{DynamicResource Accent}"
                                                         BorderThickness="1"
                                                         CornerRadius="{DynamicResource Radius.Md}"
-                                                        Padding="8,6"
+                                                        Padding="{DynamicResource Pad.Control}"
                                                         Margin="{DynamicResource Gap.Block}"
                                                         Visibility="{Binding IsAction, Converter={StaticResource BoolToVisibility}}">
                                                     <Grid>
@@ -189,13 +189,13 @@
                                                         <TextBlock Grid.Column="0"
                                                                    Text="&#xE930;"
                                                                    FontFamily="{DynamicResource Font.Icon}"
-                                                                   FontSize="12"
+                                                                   FontSize="{StaticResource Type.Body}"
                                                                    Foreground="{DynamicResource Accent}"
                                                                    VerticalAlignment="Top"
-                                                                   Margin="0,1,6,0"/>
+                                                                   Margin="{DynamicResource Gap.Inline}"/>
                                                         <TextBlock Grid.Column="1"
                                                                    Text="{Binding ActionSummary}"
-                                                                   FontSize="12"
+                                                                   FontSize="{StaticResource Type.Body}"
                                                                    FontWeight="SemiBold"
                                                                    Foreground="{DynamicResource Accent}"
                                                                    TextWrapping="Wrap"
@@ -210,7 +210,7 @@
                                                 <TextBlock controls:MarkdownRenderer.Text="{Binding DisplayText}"
                                                            Tag="{Binding}"
                                                            TextWrapping="Wrap"
-                                                           FontSize="14"
+                                                           FontSize="{StaticResource Type.BodyLg}"
                                                            LineHeight="21"
                                                            Foreground="{DynamicResource TextPrimary}"/>
 
@@ -219,87 +219,111 @@
                                                      Bindings live on AiChatMessage.ClarificationForm; the submit
                                                      button builds an AddItem command without a second LLM call. -->
                                                 <Border CornerRadius="{DynamicResource Radius.Md}"
-                                                        Padding="10"
-                                                        Margin="0,10,0,0"
+                                                        Padding="{DynamicResource Pad.Section}"
+                                                        Margin="{DynamicResource Gap.BlockTopLg}"
                                                         Background="{DynamicResource Surface}"
                                                         BorderBrush="{DynamicResource Border}"
                                                         BorderThickness="1"
                                                         Visibility="{Binding HasClarificationForm, Converter={StaticResource BoolToVisibility}}">
                                                     <StackPanel>
                                                         <TextBlock Text="📝 Заполните параметры"
-                                                                   FontSize="12" FontWeight="SemiBold"
+                                                                   FontSize="{StaticResource Type.Body}" FontWeight="SemiBold"
                                                                    Foreground="{DynamicResource TextPrimary}"
                                                                    Margin="{DynamicResource Gap.Block}"/>
 
                                                         <!-- Тип -->
-                                                        <TextBlock Text="Тип" FontSize="11"
-                                                                   Foreground="{DynamicResource TextMuted}" Margin="0,0,0,2"/>
+                                                        <TextBlock Text="Тип" FontSize="{StaticResource Type.Caption}"
+                                                                   Foreground="{DynamicResource TextMuted}" Margin="{DynamicResource Gap.BlockTopSm}"/>
                                                         <ComboBox ItemsSource="{Binding ClarificationForm.ProductTypes}"
                                                                   SelectedItem="{Binding ClarificationForm.SelectedType, UpdateSourceTrigger=PropertyChanged}"
-                                                                  Height="28" FontSize="12" Margin="0,0,0,7"
+                                                                  Height="28" FontSize="{StaticResource Type.Body}" Margin="{DynamicResource Gap.Block}"
                                                                   AutomationProperties.Name="Тип товара"/>
 
-                                                        <!-- Размеры -->
-                                                        <TextBlock Text="Размеры, мм" FontSize="11"
-                                                                   Foreground="{DynamicResource TextMuted}" Margin="0,0,0,2"/>
-                                                        <Grid Margin="0,0,0,7">
-                                                            <Grid.ColumnDefinitions>
-                                                                <ColumnDefinition Width="*"/>
-                                                                <ColumnDefinition Width="Auto"/>
-                                                                <ColumnDefinition Width="*"/>
-                                                            </Grid.ColumnDefinitions>
-                                                            <TextBox Text="{Binding ClarificationForm.WidthText, UpdateSourceTrigger=PropertyChanged}"
-                                                                     Height="28" FontSize="12"
-                                                                     AutomationProperties.Name="Ширина"/>
-                                                            <TextBlock Grid.Column="1" Text="×" FontSize="12"
-                                                                       Foreground="{DynamicResource TextMuted}"
-                                                                       VerticalAlignment="Center" Margin="6,0"/>
-                                                            <TextBox Grid.Column="2"
-                                                                     Text="{Binding ClarificationForm.HeightText, UpdateSourceTrigger=PropertyChanged}"
-                                                                     Height="28" FontSize="12"
-                                                                     AutomationProperties.Name="Высота"/>
-                                                        </Grid>
+                                                        <!-- Размеры: ОДНА строка — ОДНА позиция. Запрос/скриншот часто
+                                                             содержит несколько размеров («ПМС Anwis, бел. 1 304x1593» и
+                                                             «1 724x1593») — все они попадут в заказ, а не только первый. -->
+                                                        <TextBlock Text="Размеры, мм · количество, шт." FontSize="{StaticResource Type.Caption}"
+                                                                   Foreground="{DynamicResource TextMuted}" Margin="{DynamicResource Gap.BlockTopSm}"/>
+                                                        <ItemsControl ItemsSource="{Binding ClarificationForm.SizeRows}">
+                                                            <ItemsControl.ItemTemplate>
+                                                                <DataTemplate>
+                                                                    <Grid Margin="{DynamicResource Gap.Block}">
+                                                                        <Grid.ColumnDefinitions>
+                                                                            <ColumnDefinition Width="*"/>
+                                                                            <ColumnDefinition Width="Auto"/>
+                                                                            <ColumnDefinition Width="*"/>
+                                                                            <ColumnDefinition Width="52"/>
+                                                                            <ColumnDefinition Width="Auto"/>
+                                                                        </Grid.ColumnDefinitions>
+                                                                        <TextBox Text="{Binding WidthText, UpdateSourceTrigger=PropertyChanged}"
+                                                                                 Height="28" FontSize="{StaticResource Type.Body}"
+                                                                                 AutomationProperties.Name="Ширина"/>
+                                                                        <TextBlock Grid.Column="1" Text="×" FontSize="{StaticResource Type.Body}"
+                                                                                   Foreground="{DynamicResource TextMuted}"
+                                                                                   VerticalAlignment="Center" Margin="{DynamicResource Gap.InlineSm}"/>
+                                                                        <TextBox Grid.Column="2"
+                                                                                 Text="{Binding HeightText, UpdateSourceTrigger=PropertyChanged}"
+                                                                                 Height="28" FontSize="{StaticResource Type.Body}"
+                                                                                 AutomationProperties.Name="Высота"/>
+                                                                        <TextBox Grid.Column="3"
+                                                                                 Text="{Binding QuantityText, UpdateSourceTrigger=PropertyChanged}"
+                                                                                 Height="28" FontSize="{StaticResource Type.Body}"
+                                                                                 Margin="{DynamicResource Gap.Left}"
+                                                                                 AutomationProperties.Name="Количество"/>
+                                                                        <!-- Убрать размер может только карточка из нескольких позиций:
+                                                                             последняя строка остаётся всегда. -->
+                                                                        <Button Grid.Column="4" Content="✕"
+                                                                                Click="BtnRemoveSizeRow_Click" Tag="{Binding}"
+                                                                                Height="28" MinWidth="28" FontSize="{StaticResource Type.Body}"
+                                                                                Margin="{DynamicResource Gap.LeftSm}"
+                                                                                ToolTip="Убрать этот размер"
+                                                                                Style="{StaticResource GhostButton}"
+                                                                                Visibility="{Binding DataContext.ClarificationForm.HasExtraSizes, RelativeSource={RelativeSource AncestorType=ItemsControl}, Converter={StaticResource BoolToVisibility}}"
+                                                                                AutomationProperties.Name="Убрать размер"/>
+                                                                    </Grid>
+                                                                </DataTemplate>
+                                                            </ItemsControl.ItemTemplate>
+                                                        </ItemsControl>
+                                                        <Button Content="＋ Добавить размер"
+                                                                Click="BtnAddSizeRow_Click"
+                                                                Height="26" FontSize="{StaticResource Type.Caption}"
+                                                                Margin="{DynamicResource Gap.BlockSm}"
+                                                                Style="{StaticResource GhostButton}"
+                                                                AutomationProperties.Name="Добавить размер"/>
 
                                                         <!-- Цвет -->
-                                                        <TextBlock Text="Цвет" FontSize="11"
-                                                                   Foreground="{DynamicResource TextMuted}" Margin="0,0,0,2"
+                                                        <TextBlock Text="Цвет" FontSize="{StaticResource Type.Caption}"
+                                                                   Foreground="{DynamicResource TextMuted}" Margin="{DynamicResource Gap.BlockTopSm}"
                                                                    Visibility="{Binding ClarificationForm.ShowColor, Converter={StaticResource BoolToVisibility}}"/>
                                                         <ComboBox ItemsSource="{Binding ClarificationForm.Colors}"
                                                                   SelectedItem="{Binding ClarificationForm.SelectedColor, UpdateSourceTrigger=PropertyChanged}"
-                                                                  Height="28" FontSize="12" Margin="0,0,0,7"
+                                                                  Height="28" FontSize="{StaticResource Type.Body}" Margin="{DynamicResource Gap.Block}"
                                                                   Visibility="{Binding ClarificationForm.ShowColor, Converter={StaticResource BoolToVisibility}}"
                                                                   AutomationProperties.Name="Цвет"/>
 
-                                                        <!-- Количество -->
-                                                        <TextBlock Text="Количество" FontSize="11"
-                                                                   Foreground="{DynamicResource TextMuted}" Margin="0,0,0,2"/>
-                                                        <TextBox Text="{Binding ClarificationForm.QuantityText, UpdateSourceTrigger=PropertyChanged}"
-                                                                 Height="28" FontSize="12" Margin="0,0,0,7"
-                                                                 AutomationProperties.Name="Количество"/>
-
                                                         <!-- Anwis mode (only for Anwis products) -->
                                                         <StackPanel Visibility="{Binding ClarificationForm.IsAnwis, Converter={StaticResource BoolToVisibility}}">
-                                                            <TextBlock Text="Режим Anwis" FontSize="11"
-                                                                       Foreground="{DynamicResource TextMuted}" Margin="0,0,0,2"/>
+                                                            <TextBlock Text="Режим Anwis" FontSize="{StaticResource Type.Caption}"
+                                                                       Foreground="{DynamicResource TextMuted}" Margin="{DynamicResource Gap.BlockTopSm}"/>
                                                             <ComboBox ItemsSource="{Binding ClarificationForm.AnwisModeOptions}"
                                                                       SelectedItem="{Binding ClarificationForm.SelectedAnwisMode, UpdateSourceTrigger=PropertyChanged}"
-                                                                      Height="28" FontSize="12" Margin="0,0,0,7"
+                                                                      Height="28" FontSize="{StaticResource Type.Body}" Margin="{DynamicResource Gap.Block}"
                                                                       AutomationProperties.Name="Режим Anwis"/>
                                                         </StackPanel>
 
                                                         <!-- Монтаж (only for installation-eligible products) -->
                                                         <StackPanel Visibility="{Binding ClarificationForm.ShowInstallation, Converter={StaticResource BoolToVisibility}}">
-                                                            <TextBlock Text="Монтаж" FontSize="11"
-                                                                       Foreground="{DynamicResource TextMuted}" Margin="0,0,0,2"/>
+                                                            <TextBlock Text="Монтаж" FontSize="{StaticResource Type.Caption}"
+                                                                       Foreground="{DynamicResource TextMuted}" Margin="{DynamicResource Gap.BlockTopSm}"/>
                                                             <ComboBox ItemsSource="{Binding ClarificationForm.InstallationOptions}"
                                                                       SelectedItem="{Binding ClarificationForm.SelectedInstallation, UpdateSourceTrigger=PropertyChanged}"
-                                                                      Height="28" FontSize="12" Margin="0,0,0,7"
+                                                                      Height="28" FontSize="{StaticResource Type.Body}" Margin="{DynamicResource Gap.Block}"
                                                                       AutomationProperties.Name="Монтаж"/>
                                                         </StackPanel>
 
                                                         <Button Content="Добавить в расчёт"
-                                                                Height="30" FontSize="12"
-                                                                Margin="0,3,0,0"
+                                                                Height="30" FontSize="{StaticResource Type.Body}"
+                                                                Margin="{DynamicResource Gap.BlockTopSm}"
                                                                 Click="BtnSubmitClarification_Click"
                                                                 Style="{StaticResource PrimaryButton}"
                                                                 AutomationProperties.Name="Добавить в расчёт"/>
@@ -309,8 +333,8 @@
                                                 <!-- Plan preview card: shown when the AI produced actions and the
                                                      user must confirm before anything touches the order. -->
                                                 <Border CornerRadius="{DynamicResource Radius.Md}"
-                                                        Padding="10"
-                                                        Margin="0,10,0,0"
+                                                        Padding="{DynamicResource Pad.Section}"
+                                                        Margin="{DynamicResource Gap.BlockTopLg}"
                                                         Background="{DynamicResource AccentLight}"
                                                         BorderBrush="{DynamicResource Accent}"
                                                         BorderThickness="1"
@@ -318,44 +342,158 @@
                                                     <StackPanel>
                                                         <StackPanel Orientation="Horizontal">
                                                             <TextBlock Text="📋 План действий"
-                                                                       FontSize="12" FontWeight="SemiBold"
+                                                                       FontSize="{StaticResource Type.Body}" FontWeight="SemiBold"
                                                                        Foreground="{DynamicResource TextPrimary}"
                                                                        VerticalAlignment="Center"/>
-                                                            <Border CornerRadius="{DynamicResource Radius.Sm}" Padding="5,2" Margin="{DynamicResource Gap.Left}"
+                                                            <Border CornerRadius="{DynamicResource Radius.Sm}" Padding="{DynamicResource Pad.ControlSm}" Margin="{DynamicResource Gap.Left}"
                                                                     Background="{DynamicResource ChipBg}">
-                                                                <TextBlock Text="ПОДТВЕРДИТЕ" FontSize="9" FontWeight="Bold"
+                                                                <TextBlock Text="ПОДТВЕРДИТЕ" FontSize="{StaticResource Type.Monogram}" FontWeight="Bold"
                                                                            Foreground="{DynamicResource Accent}"/>
                                                             </Border>
                                                         </StackPanel>
                                                         <TextBlock Text="Действие ещё не выполнено — заказ не изменится, пока вы не нажмёте «Выполнить»."
-                                                                   FontSize="11"
+                                                                   FontSize="{StaticResource Type.Caption}"
                                                                    Foreground="{DynamicResource TextSecondary}"
                                                                    TextWrapping="Wrap"
-                                                                   Margin="0,3,0,6"/>
+                                                                   Margin="{DynamicResource Gap.Block}"/>
                                                         <ItemsControl ItemsSource="{Binding ActionPlan.Steps}">
                                                             <ItemsControl.ItemTemplate>
                                                                 <DataTemplate>
-                                                                    <StackPanel Orientation="Horizontal" Margin="0,1">
-                                                                        <TextBlock Text="• " FontSize="12"
-                                                                                   Foreground="{DynamicResource Accent}"
-                                                                                   VerticalAlignment="Top"/>
-                                                                        <TextBlock Text="{Binding PreviewText}"
-                                                                                   FontSize="12"
-                                                                                   Foreground="{DynamicResource TextPrimary}"
-                                                                                   TextWrapping="Wrap"/>
-                                                                    </StackPanel>
+                                                                    <Grid Margin="0,2,0,4">
+                                                                        <!-- Editable card for product items (AddItem / UpdateItem) -->
+                                                                        <Border Visibility="{Binding IsItemStep, Converter={StaticResource BoolToVisibility}}"
+                                                                                Background="{DynamicResource Surface}"
+                                                                                BorderBrush="{DynamicResource SubtleBorder}"
+                                                                                BorderThickness="1"
+                                                                                CornerRadius="{DynamicResource Radius.Sm}"
+                                                                                Padding="8,6">
+                                                                            <Grid>
+                                                                                <Grid.RowDefinitions>
+                                                                                    <RowDefinition Height="Auto"/>
+                                                                                    <RowDefinition Height="Auto"/>
+                                                                                </Grid.RowDefinitions>
+                                                                                <!-- Row 1: Header / Name / Badges / Discrepancy warning / Delete button -->
+                                                                                <Grid Grid.Row="0">
+                                                                                    <Grid.ColumnDefinitions>
+                                                                                        <ColumnDefinition Width="Auto"/>
+                                                                                        <ColumnDefinition Width="Auto"/>
+                                                                                        <ColumnDefinition Width="*"/>
+                                                                                        <ColumnDefinition Width="Auto"/>
+                                                                                        <ColumnDefinition Width="Auto"/>
+                                                                                    </Grid.ColumnDefinitions>
+                                                                                    <TextBlock Grid.Column="0" Text="📦 " VerticalAlignment="Center" FontSize="{StaticResource Type.Caption}"/>
+                                                                                    <TextBlock Grid.Column="1" Text="{Binding ItemHeader}" FontWeight="SemiBold"
+                                                                                               FontSize="{StaticResource Type.Caption}" Foreground="{DynamicResource TextPrimary}"
+                                                                                               VerticalAlignment="Center" Margin="0,0,6,0" TextTrimming="CharacterEllipsis"/>
+                                                                                    <!-- Badges (Anticat, AnwisMode, Installation) -->
+                                                                                    <WrapPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center">
+                                                                                        <!-- Anticat badge -->
+                                                                                        <Border Visibility="{Binding IsAnticat, Converter={StaticResource BoolToVisibility}}"
+                                                                                                Background="#EBF8FF" BorderBrush="#BEE3F8" BorderThickness="1"
+                                                                                                CornerRadius="3" Padding="4,1" Margin="2,0">
+                                                                                            <TextBlock Text="🐱 Антикошка" FontSize="10" Foreground="#2B6CB0"/>
+                                                                                        </Border>
+                                                                                        <!-- Anwis size mode badge -->
+                                                                                        <Border Visibility="{Binding IsAnwis, Converter={StaticResource BoolToVisibility}}"
+                                                                                                Background="{DynamicResource SurfaceSubtle}" BorderBrush="{DynamicResource SubtleBorder}" BorderThickness="1"
+                                                                                                CornerRadius="3" Padding="4,1" Margin="2,0" ToolTip="Режим замера Anwis">
+                                                                                            <TextBlock Text="{Binding AnwisModeLabel}" FontSize="10" Foreground="{DynamicResource TextMuted}"/>
+                                                                                        </Border>
+                                                                                        <!-- Installation badge -->
+                                                                                        <Border Visibility="{Binding HasInstallationLabel, Converter={StaticResource BoolToVisibility}}"
+                                                                                                Background="{DynamicResource SurfaceSubtle}" BorderBrush="{DynamicResource SubtleBorder}" BorderThickness="1"
+                                                                                                CornerRadius="3" Padding="4,1" Margin="2,0">
+                                                                                            <TextBlock Text="{Binding InstallationLabel}" FontSize="10" Foreground="{DynamicResource TextMuted}"/>
+                                                                                        </Border>
+                                                                                    </WrapPanel>
+                                                                                    <!-- Discrepancy warning if models disagreed -->
+                                                                                    <Border Grid.Column="3" Visibility="{Binding HasDiscrepancy, Converter={StaticResource BoolToVisibility}}"
+                                                                                            Background="#FFF3CD" BorderBrush="#FFEEBA" BorderThickness="1"
+                                                                                            CornerRadius="3" Padding="4,1" Margin="4,0" ToolTip="{Binding DiscrepancyWarning}">
+                                                                                        <TextBlock Text="⚠️ Проверьте размер" FontSize="10" Foreground="#856404"/>
+                                                                                    </Border>
+                                                                                    <!-- Delete step button -->
+                                                                                    <Button Grid.Column="4" Width="22" Height="22" Click="BtnRemovePlanStep_Click"
+                                                                                            Tag="{Binding}" ToolTip="Удалить эту позицию из плана"
+                                                                                            Style="{StaticResource FlatIconButton}" Foreground="{DynamicResource TextMuted}">
+                                                                                        <TextBlock Text="✕" FontSize="11"/>
+                                                                                    </Button>
+                                                                                </Grid>
+                                                                                <!-- Row 2: Editable inputs: Width, Height, Quantity, Color -->
+                                                                                <Grid Grid.Row="1" Margin="0,6,0,2">
+                                                                                    <Grid.ColumnDefinitions>
+                                                                                        <ColumnDefinition Width="Auto"/>
+                                                                                        <ColumnDefinition Width="48"/>
+                                                                                        <ColumnDefinition Width="Auto"/>
+                                                                                        <ColumnDefinition Width="48"/>
+                                                                                        <ColumnDefinition Width="Auto"/>
+                                                                                        <ColumnDefinition Width="38"/>
+                                                                                        <ColumnDefinition Width="Auto"/>
+                                                                                        <ColumnDefinition Width="*"/>
+                                                                                    </Grid.ColumnDefinitions>
+                                                                                    <TextBlock Grid.Column="0" Text="Ш:" FontSize="{StaticResource Type.Caption}"
+                                                                                               Foreground="{DynamicResource TextMuted}" VerticalAlignment="Center" Margin="0,0,3,0"/>
+                                                                                    <TextBox Grid.Column="1" Text="{Binding Width, UpdateSourceTrigger=PropertyChanged}"
+                                                                                             Height="24" FontSize="{StaticResource Type.Caption}" VerticalContentAlignment="Center"
+                                                                                             HorizontalContentAlignment="Center"/>
+                                                                                    <TextBlock Grid.Column="2" Text="В:" FontSize="{StaticResource Type.Caption}"
+                                                                                               Foreground="{DynamicResource TextMuted}" VerticalAlignment="Center" Margin="6,0,3,0"/>
+                                                                                    <TextBox Grid.Column="3" Text="{Binding Height, UpdateSourceTrigger=PropertyChanged}"
+                                                                                             Height="24" FontSize="{StaticResource Type.Caption}" VerticalContentAlignment="Center"
+                                                                                             HorizontalContentAlignment="Center"/>
+                                                                                    <TextBlock Grid.Column="4" Text="Шт:" FontSize="{StaticResource Type.Caption}"
+                                                                                               Foreground="{DynamicResource TextMuted}" VerticalAlignment="Center" Margin="6,0,3,0"/>
+                                                                                    <TextBox Grid.Column="5" Text="{Binding Quantity, UpdateSourceTrigger=PropertyChanged}"
+                                                                                             Height="24" FontSize="{StaticResource Type.Caption}" VerticalContentAlignment="Center"
+                                                                                             HorizontalContentAlignment="Center"/>
+                                                                                    <TextBlock Grid.Column="6" Text="Цвет:" FontSize="{StaticResource Type.Caption}"
+                                                                                               Foreground="{DynamicResource TextMuted}" VerticalAlignment="Center" Margin="6,0,3,0"/>
+                                                                                    <ComboBox Grid.Column="7"
+                                                                                              Height="24"
+                                                                                              FontSize="{StaticResource Type.Caption}"
+                                                                                              Style="{DynamicResource QuickCombo}"
+                                                                                              ItemsSource="{Binding AvailableColors}"
+                                                                                              Text="{Binding Color, UpdateSourceTrigger=PropertyChanged}"
+                                                                                              SelectedItem="{Binding Color, UpdateSourceTrigger=PropertyChanged}"
+                                                                                              IsEditable="True"/>
+                                                                                </Grid>
+                                                                            </Grid>
+                                                                        </Border>
+
+                                                                        <!-- Default display for non-item steps (e.g. ClientInfo, ClearAll, etc.) -->
+                                                                        <Grid Visibility="{Binding IsItemStep, Converter={StaticResource InverseBoolVisibility}}"
+                                                                              Margin="{DynamicResource Gap.Micro}">
+                                                                            <Grid.ColumnDefinitions>
+                                                                                <ColumnDefinition Width="Auto"/>
+                                                                                <ColumnDefinition Width="*"/>
+                                                                                <ColumnDefinition Width="Auto"/>
+                                                                            </Grid.ColumnDefinitions>
+                                                                            <TextBlock Grid.Column="0" Text="• " FontSize="{StaticResource Type.Body}"
+                                                                                       Foreground="{DynamicResource Accent}"
+                                                                                       VerticalAlignment="Top" Margin="0,0,6,0"/>
+                                                                            <TextBlock Grid.Column="1" Text="{Binding PreviewText}"
+                                                                                       FontSize="{StaticResource Type.Body}"
+                                                                                       Foreground="{DynamicResource TextPrimary}"
+                                                                                       TextWrapping="Wrap"/>
+                                                                            <Button Grid.Column="2" Width="22" Height="22" Click="BtnRemovePlanStep_Click"
+                                                                                    Tag="{Binding}" ToolTip="Удалить это действие из плана"
+                                                                                    Style="{StaticResource FlatIconButton}" Foreground="{DynamicResource TextMuted}">
+                                                                                <TextBlock Text="✕" FontSize="11"/>
+                                                                            </Button>
+                                                                        </Grid>
+                                                                    </Grid>
                                                                 </DataTemplate>
                                                             </ItemsControl.ItemTemplate>
                                                         </ItemsControl>
-                                                        <StackPanel Orientation="Horizontal" Margin="0,8,0,0">
+                                                        <StackPanel Orientation="Horizontal" Margin="{DynamicResource Gap.Top}">
                                                             <Button Content="Выполнить"
-                                                                    Height="30" FontSize="12"
+                                                                    Height="30" FontSize="{StaticResource Type.Body}"
                                                                     Margin="{DynamicResource Gap.Inline}"
                                                                     Click="BtnConfirmPlan_Click"
                                                                     Style="{StaticResource PrimaryButton}"
                                                                     AutomationProperties.Name="Выполнить план"/>
                                                             <Button Content="Отмена"
-                                                                    Height="30" FontSize="12"
+                                                                    Height="30" FontSize="{StaticResource Type.Body}"
                                                                     Click="BtnCancelPlan_Click"
                                                                     Style="{StaticResource DialogOutlineButton}"
                                                                     AutomationProperties.Name="Отменить план"/>
@@ -365,20 +503,20 @@
 
                                                 <!-- Executed plan: summary + «Отменить действие» (one Undo step). -->
                                                 <Border CornerRadius="{DynamicResource Radius.Md}"
-                                                        Padding="10"
-                                                        Margin="0,10,0,0"
+                                                        Padding="{DynamicResource Pad.Section}"
+                                                        Margin="{DynamicResource Gap.BlockTopLg}"
                                                         Background="{DynamicResource Surface}"
                                                         BorderBrush="{DynamicResource Border}"
                                                         BorderThickness="1"
                                                         Visibility="{Binding ShowExecutedPlan, Converter={StaticResource BoolToVisibility}}">
                                                     <StackPanel>
                                                         <TextBlock Text="{Binding ExecutionResult.Summary}"
-                                                                   FontSize="12" FontWeight="SemiBold"
+                                                                   FontSize="{StaticResource Type.Body}" FontWeight="SemiBold"
                                                                    Foreground="{DynamicResource TextPrimary}"
                                                                    TextWrapping="Wrap"/>
                                                         <Button Content="↩ Отменить действие"
-                                                                Height="28" FontSize="11"
-                                                                Margin="0,8,0,0"
+                                                                Height="28" FontSize="{StaticResource Type.Caption}"
+                                                                Margin="{DynamicResource Gap.Top}"
                                                                 HorizontalAlignment="Left"
                                                                 Click="BtnUndoPlan_Click"
                                                                 Visibility="{Binding CanUndo, Converter={StaticResource BoolToVisibility}}"
@@ -390,14 +528,14 @@
 
                                                 <!-- Rejected/cancelled plan. -->
                                                 <Border CornerRadius="{DynamicResource Radius.Md}"
-                                                        Padding="10"
-                                                        Margin="0,10,0,0"
+                                                        Padding="{DynamicResource Pad.Section}"
+                                                        Margin="{DynamicResource Gap.BlockTopLg}"
                                                         Background="{DynamicResource Surface}"
                                                         BorderBrush="{DynamicResource SubtleBorder}"
                                                         BorderThickness="1"
                                                         Visibility="{Binding ShowCancelledPlan, Converter={StaticResource BoolToVisibility}}">
                                                     <TextBlock Text="Отменено — заказ не изменён."
-                                                               FontSize="11"
+                                                               FontSize="{StaticResource Type.Caption}"
                                                                Foreground="{DynamicResource TextMuted}"/>
                                                 </Border>
 
@@ -405,17 +543,17 @@
                                                      labels and request telemetry are intentionally hidden from
                                                      the user-facing AI panel. -->
                                                 <TextBlock Text="{Binding Timestamp, StringFormat='{}{0:HH:mm}'}"
-                                                           FontSize="11"
+                                                           FontSize="{StaticResource Type.Caption}"
                                                            Foreground="{DynamicResource TextMuted}"
                                                            HorizontalAlignment="Right"
                                                            VerticalAlignment="Center"
-                                                           Margin="0,6,0,0"/>
+                                                           Margin="{DynamicResource Gap.BlockTop}"/>
                                             </StackPanel>
                                         </Border>
 
                                         <Button Grid.Column="2"
                                                 Width="30" Height="30"
-                                                Margin="6,0,0,0"
+                                                Margin="{DynamicResource Gap.LeftSm}"
                                                 VerticalAlignment="Top"
                                                 Focusable="True"
                                                 IsTabStop="True"
@@ -426,7 +564,7 @@
                                                 Background="Transparent"
                                                 Foreground="{DynamicResource TextMuted}"
                                                 FontFamily="{DynamicResource Font.Icon}"
-                                                FontSize="12"
+                                                FontSize="{StaticResource Type.Body}"
                                                 Content="&#xE8C8;"
                                                 FocusVisualStyle="{StaticResource AiAssistantFocusVisual}">
                                             <Button.Style>
@@ -456,7 +594,7 @@
 
                                         <Button Grid.Column="0"
                                                 Width="30" Height="30"
-                                                Margin="0,0,6,0"
+                                                Margin="{DynamicResource Gap.Inline}"
                                                 VerticalAlignment="Top"
                                                 Focusable="True"
                                                 IsTabStop="True"
@@ -468,7 +606,7 @@
                                                 BorderThickness="0"
                                                 Foreground="{DynamicResource TextMuted}"
                                                 FontFamily="{DynamicResource Font.Icon}"
-                                                FontSize="12"
+                                                FontSize="{StaticResource Type.Body}"
                                                 Content="&#xE8C8;">
                                             <Button.Style>
                                                     <Style TargetType="Button" BasedOn="{StaticResource FlatIconButton}">
@@ -487,20 +625,69 @@
                                         </Button>
 
                                         <Border Grid.Column="1"
-                                                Padding="11,9"
+                                                Padding="{DynamicResource Pad.Card}"
                                                 HorizontalAlignment="Stretch"
                                                 Background="{DynamicResource Accent}"
                                                 CornerRadius="{DynamicResource Radius.BubbleReceived}">
                                             <StackPanel>
+                                                <!-- Visual previews of attached images -->
+                                                <ItemsControl ItemsSource="{Binding Attachments}"
+                                                              Visibility="{Binding HasAttachments, Converter={StaticResource BoolToVisibility}}"
+                                                              Margin="0,0,0,6">
+                                                    <ItemsControl.ItemsPanel>
+                                                        <ItemsPanelTemplate>
+                                                            <WrapPanel Orientation="Horizontal"/>
+                                                        </ItemsPanelTemplate>
+                                                    </ItemsControl.ItemsPanel>
+                                                    <ItemsControl.ItemTemplate>
+                                                        <DataTemplate>
+                                                            <Border Margin="0,0,6,6"
+                                                                    CornerRadius="{DynamicResource Radius.Md}"
+                                                                    Background="#26FFFFFF"
+                                                                    BorderBrush="#40FFFFFF"
+                                                                    BorderThickness="1"
+                                                                    Padding="4"
+                                                                    MaxWidth="260"
+                                                                    Cursor="Hand"
+                                                                    Tag="{Binding}"
+                                                                    ToolTip="Нажмите, чтобы открыть изображение на весь экран (с зумом)"
+                                                                    PreviewMouseLeftButtonDown="AttachmentThumbnail_Click">
+                                                                <StackPanel>
+                                                                    <Border CornerRadius="{DynamicResource Radius.Sm}"
+                                                                            ClipToBounds="True"
+                                                                            MaxHeight="160"
+                                                                            Background="#1A000000">
+                                                                        <Image Source="{Binding Thumbnail}"
+                                                                               Stretch="Uniform"
+                                                                               MaxHeight="160"
+                                                                               HorizontalAlignment="Center"/>
+                                                                    </Border>
+                                                                    <StackPanel Orientation="Horizontal" Margin="2,4,2,2">
+                                                                        <TextBlock Text="📷" FontSize="{StaticResource Type.Caption}"
+                                                                                   Foreground="{DynamicResource OnAccent}"
+                                                                                   Margin="0,0,4,0"/>
+                                                                        <TextBlock Text="{Binding FileName}"
+                                                                                   FontSize="{StaticResource Type.Caption}"
+                                                                                   Foreground="{DynamicResource OnAccent}"
+                                                                                   Opacity="0.9"
+                                                                                   TextTrimming="CharacterEllipsis"
+                                                                                   MaxWidth="180"/>
+                                                                    </StackPanel>
+                                                                </StackPanel>
+                                                            </Border>
+                                                        </DataTemplate>
+                                                    </ItemsControl.ItemTemplate>
+                                                </ItemsControl>
+
                                                 <TextBlock Text="{Binding Text}"
                                                            TextWrapping="Wrap"
-                                                           FontSize="14"
+                                                           FontSize="{StaticResource Type.BodyLg}"
                                                            LineHeight="21"
                                                            Foreground="{DynamicResource OnAccent}"/>
                                                 <TextBlock Text="{Binding Timestamp, StringFormat='{}{0:HH:mm}'}"
-                                                           Margin="0,5,0,0"
+                                                           Margin="{DynamicResource Gap.BlockTop}"
                                                            HorizontalAlignment="Right"
-                                                           FontSize="11"
+                                                           FontSize="{StaticResource Type.Caption}"
                                                            Foreground="{DynamicResource OnAccent}"
                                                            Opacity="0.72"/>
                                             </StackPanel>
@@ -516,7 +703,7 @@
                                                 CornerRadius="{DynamicResource Radius.Xl}">
                                             <TextBlock Text="&#xE77B;"
                                                        FontFamily="{DynamicResource Font.Icon}"
-                                                       FontSize="12"
+                                                       FontSize="{StaticResource Type.Body}"
                                                        Foreground="{DynamicResource TextMuted}"
                                                        HorizontalAlignment="Center"
                                                        VerticalAlignment="Center"/>
@@ -535,7 +722,7 @@
                     Grid.Row="0"
                     Width="36"
                     Height="36"
-                    Margin="0,0,16,14"
+                    Margin="{DynamicResource Gap.DialogHost}"
                     HorizontalAlignment="Right"
                     VerticalAlignment="Bottom"
                     Panel.ZIndex="2"
@@ -558,7 +745,7 @@
                                 CornerRadius="{DynamicResource Radius.Xl}">
                             <TextBlock Text="&#xE70D;"
                                        FontFamily="{DynamicResource Font.Icon}"
-                                       FontSize="12"
+                                       FontSize="{StaticResource Type.Body}"
                                        FontWeight="Bold"
                                        Foreground="{TemplateBinding Foreground}"
                                        HorizontalAlignment="Center"
@@ -582,8 +769,8 @@
                  conversation so it cannot disappear inside a scrolled ItemsControl. -->
             <Border x:Name="TypingIndicator"
                     Grid.Row="0"
-                    Margin="14,0,14,12"
-                    Padding="11,7"
+                    Margin="{DynamicResource Gap.PanelSection}"
+                    Padding="{DynamicResource Pad.Row}"
                     HorizontalAlignment="Left"
                     VerticalAlignment="Bottom"
                     Panel.ZIndex="3"
@@ -595,19 +782,19 @@
                     AutomationProperties.LiveSetting="Polite"
                     AutomationProperties.Name="Состояние ответа AI">
                 <StackPanel Orientation="Horizontal">
-                    <Ellipse x:Name="Dot1" Width="5" Height="5" Fill="{DynamicResource Accent}" Margin="0,0,3,0" Opacity="0.45">
+                    <Ellipse x:Name="Dot1" Width="5" Height="5" Fill="{DynamicResource Accent}" Margin="{DynamicResource Gap.InlineSm}" Opacity="0.45">
                         <Ellipse.Triggers>
                             <EventTrigger RoutedEvent="Loaded"><BeginStoryboard x:Name="Dot1PulseBegin" Storyboard="{StaticResource DotPulse}"/></EventTrigger>
                             <EventTrigger RoutedEvent="Unloaded"><StopStoryboard BeginStoryboardName="Dot1PulseBegin"/></EventTrigger>
                         </Ellipse.Triggers>
                     </Ellipse>
-                    <Ellipse x:Name="Dot2" Width="5" Height="5" Fill="{DynamicResource Accent}" Margin="3,0" Opacity="0.45">
+                    <Ellipse x:Name="Dot2" Width="5" Height="5" Fill="{DynamicResource Accent}" Margin="{DynamicResource Gap.InlineSm}" Opacity="0.45">
                         <Ellipse.Triggers>
                             <EventTrigger RoutedEvent="Loaded"><BeginStoryboard x:Name="Dot2PulseBegin" Storyboard="{StaticResource DotPulse2}"/></EventTrigger>
                             <EventTrigger RoutedEvent="Unloaded"><StopStoryboard BeginStoryboardName="Dot2PulseBegin"/></EventTrigger>
                         </Ellipse.Triggers>
                     </Ellipse>
-                    <Ellipse x:Name="Dot3" Width="5" Height="5" Fill="{DynamicResource Accent}" Margin="3,0,8,0" Opacity="0.45">
+                    <Ellipse x:Name="Dot3" Width="5" Height="5" Fill="{DynamicResource Accent}" Margin="{DynamicResource Gap.Inline}" Opacity="0.45">
                         <Ellipse.Triggers>
                             <EventTrigger RoutedEvent="Loaded"><BeginStoryboard x:Name="Dot3PulseBegin" Storyboard="{StaticResource DotPulse3}"/></EventTrigger>
                             <EventTrigger RoutedEvent="Unloaded"><StopStoryboard BeginStoryboardName="Dot3PulseBegin"/></EventTrigger>
@@ -615,7 +802,7 @@
                     </Ellipse>
                     <TextBlock x:Name="BusyStatusText"
                                Text="{Binding StatusText}"
-                               FontSize="12"
+                               FontSize="{StaticResource Type.Body}"
                                FontWeight="SemiBold"
                                Foreground="{DynamicResource TextSecondary}"
                                VerticalAlignment="Center"/>
@@ -623,388 +810,446 @@
             </Border>
 
             <!-- Composer -->
+            <!-- Composer -->
             <Border Grid.Row="1"
-                    Padding="10,9,10,10"
+                    Padding="{DynamicResource Pad.Card}"
                     Background="{DynamicResource SectionBg}"
-                    CornerRadius="{DynamicResource Radius.Bottom}">
+                    CornerRadius="{DynamicResource Radius.Bottom}"
+                    AllowDrop="True"
+                    PreviewDragOver="Composer_PreviewDragOver"
+                    Drop="Composer_Drop">
                 <Grid>
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="Auto"/>
-                        <ColumnDefinition Width="*"/>
-                        <ColumnDefinition Width="Auto"/>
-                    </Grid.ColumnDefinitions>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                    </Grid.RowDefinitions>
 
-                    <Button x:Name="BtnClearChat"
-                            Grid.Column="0"
-                            Width="36" Height="36"
-                            Margin="0,0,5,0"
-                            Background="Transparent"
-                            BorderThickness="0"
-                            Cursor="Hand"
-                            Click="BtnClearChat_Click"
-                            ToolTip="Очистить чат"
-                            AutomationProperties.Name="Очистить чат"
-                            FocusVisualStyle="{StaticResource AiAssistantFocusVisual}">
-                        <Button.Template>
-                            <ControlTemplate TargetType="Button">
-                                <Border x:Name="ClearBorder" Background="Transparent" CornerRadius="{DynamicResource Radius.Md}"
-                                        RenderTransformOrigin="0.5,0.5">
-                                    <Border.RenderTransform>
-                                        <ScaleTransform/>
-                                    </Border.RenderTransform>
-                                    <TextBlock Text="&#xE74D;"
-                                               FontFamily="{DynamicResource Font.Icon}"
-                                               FontSize="12"
-                                               HorizontalAlignment="Center"
-                                               VerticalAlignment="Center"
-                                               Foreground="{TemplateBinding Foreground}"/>
-                                </Border>
-                                <ControlTemplate.Triggers>
-                                    <Trigger Property="IsMouseOver" Value="True">
-                                        <Setter TargetName="ClearBorder" Property="Background" Value="{DynamicResource DangerLight}"/>
-                                        <Setter Property="Foreground" Value="{DynamicResource Danger}"/>
-                                        <Trigger.EnterActions>
-                                            <BeginStoryboard>
-                                                <Storyboard>
-                                                    <DoubleAnimation Storyboard.TargetName="ClearBorder"
-                                                                     Storyboard.TargetProperty="(UIElement.RenderTransform).(ScaleTransform.ScaleX)"
-                                                                     To="1.12" Duration="{StaticResource Motion.Fast}">
-                                                        <DoubleAnimation.EasingFunction>
-                                                            <CubicEase EasingMode="EaseOut"/>
-                                                        </DoubleAnimation.EasingFunction>
-                                                    </DoubleAnimation>
-                                                    <DoubleAnimation Storyboard.TargetName="ClearBorder"
-                                                                     Storyboard.TargetProperty="(UIElement.RenderTransform).(ScaleTransform.ScaleY)"
-                                                                     To="1.12" Duration="{StaticResource Motion.Fast}">
-                                                        <DoubleAnimation.EasingFunction>
-                                                            <CubicEase EasingMode="EaseOut"/>
-                                                        </DoubleAnimation.EasingFunction>
-                                                    </DoubleAnimation>
-                                                </Storyboard>
-                                            </BeginStoryboard>
-                                        </Trigger.EnterActions>
-                                        <Trigger.ExitActions>
-                                            <BeginStoryboard>
-                                                <Storyboard>
-                                                    <DoubleAnimation Storyboard.TargetName="ClearBorder"
-                                                                     Storyboard.TargetProperty="(UIElement.RenderTransform).(ScaleTransform.ScaleX)"
-                                                                     To="1.0" Duration="{StaticResource Motion.Base}">
-                                                        <DoubleAnimation.EasingFunction>
-                                                            <CubicEase EasingMode="EaseOut"/>
-                                                        </DoubleAnimation.EasingFunction>
-                                                    </DoubleAnimation>
-                                                    <DoubleAnimation Storyboard.TargetName="ClearBorder"
-                                                                     Storyboard.TargetProperty="(UIElement.RenderTransform).(ScaleTransform.ScaleY)"
-                                                                     To="1.0" Duration="{StaticResource Motion.Base}">
-                                                        <DoubleAnimation.EasingFunction>
-                                                            <CubicEase EasingMode="EaseOut"/>
-                                                        </DoubleAnimation.EasingFunction>
-                                                    </DoubleAnimation>
-                                                </Storyboard>
-                                            </BeginStoryboard>
-                                        </Trigger.ExitActions>
-                                    </Trigger>
-                                    <Trigger Property="IsPressed" Value="True">
-                                        <Setter TargetName="ClearBorder" Property="Background" Value="{DynamicResource Danger}"/>
-                                        <Setter Property="Foreground" Value="{DynamicResource OnDanger}"/>
-                                        <Trigger.EnterActions>
-                                            <BeginStoryboard>
-                                                <Storyboard>
-                                                    <DoubleAnimation Storyboard.TargetName="ClearBorder"
-                                                                     Storyboard.TargetProperty="(UIElement.RenderTransform).(ScaleTransform.ScaleX)"
-                                                                     To="0.92" Duration="{StaticResource Motion.Fast}">
-                                                        <DoubleAnimation.EasingFunction>
-                                                            <CubicEase EasingMode="EaseOut"/>
-                                                        </DoubleAnimation.EasingFunction>
-                                                    </DoubleAnimation>
-                                                    <DoubleAnimation Storyboard.TargetName="ClearBorder"
-                                                                     Storyboard.TargetProperty="(UIElement.RenderTransform).(ScaleTransform.ScaleY)"
-                                                                     To="0.92" Duration="{StaticResource Motion.Fast}">
-                                                        <DoubleAnimation.EasingFunction>
-                                                            <CubicEase EasingMode="EaseOut"/>
-                                                        </DoubleAnimation.EasingFunction>
-                                                    </DoubleAnimation>
-                                                </Storyboard>
-                                            </BeginStoryboard>
-                                        </Trigger.EnterActions>
-                                    </Trigger>
-                                </ControlTemplate.Triggers>
-                            </ControlTemplate>
-                        </Button.Template>
-                    </Button>
-
-                    <Border x:Name="InputBorder"
-                            Grid.Column="1"
-                            MinHeight="40"
-                            Background="{DynamicResource Surface}"
-                            BorderThickness="1"
-                            CornerRadius="{DynamicResource Radius.Lg}">
-                        <Border.Style>
-                            <Style TargetType="Border">
-                                <Setter Property="BorderBrush" Value="{DynamicResource Border}"/>
-                                <Style.Triggers>
-                                    <Trigger Property="IsMouseOver" Value="True">
-                                        <Setter Property="BorderBrush" Value="{DynamicResource BorderHover}"/>
-                                    </Trigger>
-                                    <Trigger Property="IsKeyboardFocusWithin" Value="True">
-                                        <Setter Property="BorderBrush" Value="{DynamicResource Accent}"/>
-                                    </Trigger>
-                                </Style.Triggers>
-                            </Style>
-                        </Border.Style>
-                        <Grid>
-                            <Grid.RowDefinitions>
-                                <RowDefinition Height="*"/>
-                                <RowDefinition Height="Auto"/>
-                            </Grid.RowDefinitions>
-                            <TextBox x:Name="TxtInput"
-                                     Grid.Row="0"
-                                     Style="{StaticResource AiInputTextBox}"
-                                     MinHeight="40"
-                                     MaxHeight="150"
-                                     Padding="0"
-                                     PreviewKeyDown="TxtInput_PreviewKeyDown"
-                                     TextChanged="TxtInput_TextChanged"
-                                     GotKeyboardFocus="TxtInput_GotKeyboardFocus"
-                                     LostKeyboardFocus="TxtInput_LostKeyboardFocus"
-                                     Text="{Binding InputText, UpdateSourceTrigger=PropertyChanged}"
-                                     AutomationProperties.Name="Спросите что-нибудь"
-                                     ToolTip="Введите вопрос. Enter — отправить; Shift+Enter — новая строка. Пока ассистент отвечает, можно спокойно набирать следующее сообщение."/>
-                            <!-- Placeholder aligns EXACTLY with the TextBox text start
-                                 (same 9,7 padding, top-aligned) so the caret and the
-                                 hint never appear on different lines. Hidden as soon
-                                 as the field is focused or has text. -->
-                            <TextBlock x:Name="TxtPlaceholder"
-                                       Text="Спросите что-нибудь..."
-                                       Grid.Row="0"
-                                       Margin="9,7,9,0"
-                                       VerticalAlignment="Top"
-                                       FontSize="14"
-                                       Foreground="{DynamicResource TextMuted}"
-                                       IsHitTestVisible="False"
-                                       Visibility="Visible"/>
-                            <!-- Input footer: permanent Enter/Shift+Enter hint on the
-                                 left; the character counter overlays it on the right
-                                 once a long message is being composed. -->
-                            <Grid Grid.Row="1" Margin="9,1,9,3">
-                                <TextBlock Text="Enter — отправить · Shift+Enter — новая строка"
-                                           FontSize="11"
-                                           Foreground="{DynamicResource TextMuted}"
-                                           Opacity="0.72"
-                                           VerticalAlignment="Center"
-                                           IsHitTestVisible="False"
-                                           Visibility="{Binding InputText, Converter={StaticResource StringEmptyToVisibility}}"/>
-                                <TextBlock x:Name="TxtCharCount"
-                                           Text="{Binding InputText.Length, StringFormat='{}{0} симв.'}"
-                                           HorizontalAlignment="Right"
-                                           FontSize="11"
-                                           Foreground="{DynamicResource TextMuted}"
-                                           VerticalAlignment="Center"
-                                           Visibility="Collapsed"/>
-                            </Grid>
-                        </Grid>
-                    </Border>
-
-                    <!-- Slash-command autocomplete: opens above the composer as
-                         soon as the current word starts with '/', lists matching
-                         commands with descriptions (catalog from
-                         AiLocalCommandRouter.Commands). Arrow keys navigate,
-                         Enter/Tab inserts, Esc closes. -->
-                    <Popup x:Name="SlashPopup"
-                           PlacementTarget="{Binding ElementName=InputBorder}"
-                           Placement="Top"
-                           AllowsTransparency="True"
-                           StaysOpen="True"
-                           IsOpen="False"
-                           MaxWidth="440"
-                           MinWidth="300"
-                           HorizontalOffset="0"
-                           VerticalOffset="-4">
-                        <Border CornerRadius="{DynamicResource Radius.Lg}"
-                                Padding="5"
-                                Background="{DynamicResource Surface}"
-                                BorderBrush="{DynamicResource Border}"
-                                BorderThickness="1"
-                                MaxHeight="250">
-                            <ListBox x:Name="SlashCommandList"
-                                     Background="Transparent"
-                                     BorderThickness="0"
-                                     Padding="0"
-                                     ScrollViewer.HorizontalScrollBarVisibility="Disabled"
-                                     KeyboardNavigation.DirectionalNavigation="None"
-                                     PreviewMouseLeftButtonUp="SlashCommandList_PreviewMouseLeftButtonUp">
-                                <ListBox.ItemContainerStyle>
-                                    <Style TargetType="ListBoxItem">
-                                        <Setter Property="Padding" Value="8,6"/>
-                                        <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
-                                        <Setter Property="Background" Value="Transparent"/>
-                                        <Setter Property="BorderThickness" Value="3,0,0,0"/>
-                                        <Setter Property="BorderBrush" Value="Transparent"/>
-                                        <Style.Triggers>
-                                            <Trigger Property="IsMouseOver" Value="True">
-                                                <Setter Property="Background" Value="{DynamicResource RowHover}"/>
-                                            </Trigger>
-                                            <DataTrigger Binding="{Binding IsSelected, RelativeSource={RelativeSource Self}}" Value="True">
-                                                <Setter Property="Background" Value="{DynamicResource RowAltSelected}"/>
-                                                <Setter Property="BorderBrush" Value="{DynamicResource Accent}"/>
-                                            </DataTrigger>
-                                        </Style.Triggers>
-                                    </Style>
-                                </ListBox.ItemContainerStyle>
-                                <ListBox.ItemTemplate>
-                                    <DataTemplate>
-                                        <Grid>
-                                            <Grid.ColumnDefinitions>
-                                                <ColumnDefinition Width="Auto"/>
-                                                <ColumnDefinition Width="*"/>
-                                            </Grid.ColumnDefinitions>
-                                            <TextBlock Grid.Column="0"
-                                                       Text="{Binding Command}"
-                                                       FontFamily="{DynamicResource Font.Mono}"
-                                                       FontSize="12"
-                                                       FontWeight="SemiBold"
-                                                       Foreground="{DynamicResource Accent}"
-                                                       VerticalAlignment="Center"/>
-                                            <TextBlock Grid.Column="1"
-                                                       Text="{Binding Description}"
-                                                       FontSize="11"
-                                                       Foreground="{DynamicResource TextMuted}"
-                                                       Margin="10,0,0,0"
+                    <!-- Attachments preview tray -->
+                    <StackPanel Grid.Row="0"
+                                Visibility="{Binding HasAttachments, Converter={StaticResource BoolToVisibility}}"
+                                Margin="{DynamicResource Gap.Block}">
+                        <ItemsControl ItemsSource="{Binding Attachments}">
+                            <ItemsControl.ItemsPanel>
+                                <ItemsPanelTemplate>
+                                    <WrapPanel Orientation="Horizontal"/>
+                                </ItemsPanelTemplate>
+                            </ItemsControl.ItemsPanel>
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <Border Margin="{DynamicResource Gap.InlineSm}"
+                                            Padding="{DynamicResource Pad.ControlSm}"
+                                            Background="{DynamicResource Surface}"
+                                            BorderBrush="{DynamicResource Border}"
+                                            BorderThickness="1"
+                                            CornerRadius="{DynamicResource Radius.Md}">
+                                        <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                            <Border Width="22" Height="22" Margin="{DynamicResource Gap.InlineSm}"
+                                                    CornerRadius="{DynamicResource Radius.Sm}" ClipToBounds="True" Background="{DynamicResource CardBg}">
+                                                <Image Source="{Binding Thumbnail}" Stretch="UniformToFill"/>
+                                            </Border>
+                                            <TextBlock Text="{Binding FileName}"
+                                                       FontSize="{StaticResource Type.Caption}"
+                                                       Foreground="{DynamicResource TextPrimary}"
+                                                       MaxWidth="120"
                                                        TextTrimming="CharacterEllipsis"
                                                        VerticalAlignment="Center"/>
-                                        </Grid>
-                                    </DataTemplate>
-                                </ListBox.ItemTemplate>
-                            </ListBox>
-                        </Border>
-                    </Popup>
+                                            <TextBlock Text="{Binding SizeLabel, StringFormat=' ({0})'}"
+                                                       FontSize="{StaticResource Type.Caption}"
+                                                       Foreground="{DynamicResource TextMuted}"
+                                                       Margin="{DynamicResource Gap.InlineSm}"
+                                                       VerticalAlignment="Center"/>
+                                            <TextBlock Text="{Binding OcrStatusGlyph}"
+                                                       ToolTip="{Binding OcrStatusToolTip}"
+                                                       FontSize="{StaticResource Type.Caption}"
+                                                       Foreground="{DynamicResource Accent}"
+                                                       Margin="{DynamicResource Gap.InlineSm}"
+                                                       VerticalAlignment="Center"/>
+                                            <Button Width="18" Height="18"
+                                                    Padding="{DynamicResource Pad.None}"
+                                                    Background="Transparent"
+                                                    BorderThickness="0"
+                                                    Cursor="Hand"
+                                                    Click="BtnRemoveAttachment_Click"
+                                                    ToolTip="Удалить изображение"
+                                                    AutomationProperties.Name="Удалить вложение">
+                                                <TextBlock Text="✕" FontSize="{StaticResource Type.Caption}" Foreground="{DynamicResource TextMuted}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                            </Button>
+                                        </StackPanel>
+                                    </Border>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                    </StackPanel>
 
-                    <Button x:Name="BtnSend"
-                            Grid.Column="2"
-                            Width="36" Height="36"
-                            Margin="5,0,0,0"
-                            Click="BtnSendOrCancel_Click"
-                            IsEnabled="{Binding CanSendOrCancel}"
-                            ToolTip="Отправить (Enter)"
-                            AutomationProperties.Name="Отправить сообщение"
-                            Cursor="Hand"
-                            FocusVisualStyle="{StaticResource AiAssistantFocusVisual}">
-                        <Button.Style>
-                            <Style TargetType="Button">
-                                <Setter Property="Background" Value="{DynamicResource Accent}"/>
-                                <Setter Property="BorderThickness" Value="0"/>
-                                <Setter Property="Foreground" Value="{DynamicResource OnAccent}"/>
-                                <Setter Property="Template">
-                                    <Setter.Value>
-                                        <ControlTemplate TargetType="Button">
-                                            <Border x:Name="SendBorder"
-                                                    Background="{TemplateBinding Background}"
-                                                    CornerRadius="{DynamicResource Radius.Md}"
-                                                    RenderTransformOrigin="0.5,0.5">
-                                                <Border.RenderTransform>
-                                                    <ScaleTransform/>
-                                                </Border.RenderTransform>
-                                                <TextBlock x:Name="SendGlyph"
-                                                           Text="&#xE724;"
-                                                           FontFamily="{DynamicResource Font.Icon}"
-                                                           FontSize="16"
-                                                           HorizontalAlignment="Center"
-                                                           VerticalAlignment="Center"
-                                                           Foreground="{TemplateBinding Foreground}"/>
-                                            </Border>
-                                            <ControlTemplate.Triggers>
+                                        <!-- Composer Grid: Row 0 is Input Card, Row 1 is subtle hint -->
+                    <Grid Grid.Row="1">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                        </Grid.RowDefinitions>
+
+                        <!-- Unified Input Card -->
+                        <Border x:Name="InputBorder"
+                                Grid.Row="0"
+                                Background="{DynamicResource Surface}"
+                                BorderThickness="1"
+                                CornerRadius="{DynamicResource Radius.Lg}">
+                            <Border.Style>
+                                <Style TargetType="Border">
+                                    <Setter Property="BorderBrush" Value="{DynamicResource Border}"/>
+                                    <Style.Triggers>
+                                        <Trigger Property="IsMouseOver" Value="True">
+                                            <Setter Property="BorderBrush" Value="{DynamicResource BorderHover}"/>
+                                        </Trigger>
+                                        <Trigger Property="IsKeyboardFocusWithin" Value="True">
+                                            <Setter Property="BorderBrush" Value="{DynamicResource Accent}"/>
+                                        </Trigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </Border.Style>
+
+                            <Grid>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="*"/>
+                                    <RowDefinition Height="Auto"/>
+                                </Grid.RowDefinitions>
+
+                                <!-- Text box & placeholder -->
+                                <Grid Grid.Row="0" MinHeight="44">
+                                    <TextBox x:Name="TxtInput"
+                                             Style="{StaticResource AiInputTextBox}"
+                                             MinHeight="44"
+                                             MaxHeight="140"
+                                             Padding="{DynamicResource Pad.None}"
+                                             PreviewKeyDown="TxtInput_PreviewKeyDown"
+                                             TextChanged="TxtInput_TextChanged"
+                                             GotKeyboardFocus="TxtInput_GotKeyboardFocus"
+                                             LostKeyboardFocus="TxtInput_LostKeyboardFocus"
+                                             Text="{Binding InputText, UpdateSourceTrigger=PropertyChanged}"
+                                             AutomationProperties.Name="Спросите что-нибудь"
+                                             ToolTip="Введите вопрос. Enter — отправить; Shift+Enter — новая строка. Пока ассистент отвечает, можно спокойно набирать следующее сообщение."/>
+                                    <TextBlock x:Name="TxtPlaceholder"
+                                               Text="Спросите что-нибудь..."
+                                               Margin="{DynamicResource Pad.Input}"
+                                               VerticalAlignment="Top"
+                                               FontSize="{StaticResource Type.BodyLg}"
+                                               Foreground="{DynamicResource TextMuted}"
+                                               IsHitTestVisible="False"
+                                               Visibility="Visible"/>
+                                </Grid>
+
+                                <!-- Toolbar row inside card: attachments/clear on left, counter and send on right -->
+                                <Grid Grid.Row="1" Margin="{DynamicResource Pad.ControlSm}">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="Auto"/>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                    </Grid.ColumnDefinitions>
+
+                                    <!-- Action buttons -->
+                                    <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center">
+                                        <Button x:Name="BtnAttach"
+                                                Width="30" Height="30"
+                                                Margin="{DynamicResource Gap.InlineSm}"
+                                                Background="Transparent"
+                                                BorderThickness="0"
+                                                Cursor="Hand"
+                                                Click="BtnAttach_Click"
+                                                ToolTip="Прикрепить изображение или бланк замера"
+                                                AutomationProperties.Name="Прикрепить изображение"
+                                                FocusVisualStyle="{StaticResource AiAssistantFocusVisual}">
+                                            <Button.Template>
+                                                <ControlTemplate TargetType="Button">
+                                                    <Border x:Name="AttachBorder" Background="Transparent" CornerRadius="{DynamicResource Radius.Md}"
+                                                            RenderTransformOrigin="0.5,0.5">
+                                                        <Border.RenderTransform>
+                                                            <ScaleTransform/>
+                                                        </Border.RenderTransform>
+                                                        <TextBlock Text="&#xE723;"
+                                                                   FontFamily="{DynamicResource Font.Icon}"
+                                                                   FontSize="{StaticResource Type.Body}"
+                                                                   HorizontalAlignment="Center"
+                                                                   VerticalAlignment="Center"
+                                                                   Foreground="{DynamicResource TextSecondary}"/>
+                                                    </Border>
+                                                    <ControlTemplate.Triggers>
+                                                        <Trigger Property="IsMouseOver" Value="True">
+                                                            <Setter TargetName="AttachBorder" Property="Background" Value="{DynamicResource RowHover}"/>
+                                                            <Setter Property="Foreground" Value="{DynamicResource Accent}"/>
+                                                        </Trigger>
+                                                        <Trigger Property="IsPressed" Value="True">
+                                                            <Setter TargetName="AttachBorder" Property="Background" Value="{DynamicResource AccentLight}"/>
+                                                            <Setter Property="Foreground" Value="{DynamicResource Accent}"/>
+                                                        </Trigger>
+                                                    </ControlTemplate.Triggers>
+                                                </ControlTemplate>
+                                            </Button.Template>
+                                        </Button>
+
+                                        <Button x:Name="BtnClearChat"
+                                                Width="30" Height="30"
+                                                Margin="{DynamicResource Gap.InlineSm}"
+                                                Background="Transparent"
+                                                BorderThickness="0"
+                                                Cursor="Hand"
+                                                Click="BtnClearChat_Click"
+                                                ToolTip="Очистить чат"
+                                                AutomationProperties.Name="Очистить чат"
+                                                FocusVisualStyle="{StaticResource AiAssistantFocusVisual}">
+                                            <Button.Template>
+                                                <ControlTemplate TargetType="Button">
+                                                    <Border x:Name="ClearBorder" Background="Transparent" CornerRadius="{DynamicResource Radius.Md}"
+                                                            RenderTransformOrigin="0.5,0.5">
+                                                        <Border.RenderTransform>
+                                                            <ScaleTransform/>
+                                                        </Border.RenderTransform>
+                                                        <TextBlock Text="&#xE74D;"
+                                                                   FontFamily="{DynamicResource Font.Icon}"
+                                                                   FontSize="{StaticResource Type.Body}"
+                                                                   HorizontalAlignment="Center"
+                                                                   VerticalAlignment="Center"
+                                                                   Foreground="{DynamicResource TextSecondary}"/>
+                                                    </Border>
+                                                    <ControlTemplate.Triggers>
+                                                        <Trigger Property="IsMouseOver" Value="True">
+                                                            <Setter TargetName="ClearBorder" Property="Background" Value="{DynamicResource DangerLight}"/>
+                                                            <Setter Property="Foreground" Value="{DynamicResource Danger}"/>
+                                                        </Trigger>
+                                                        <Trigger Property="IsPressed" Value="True">
+                                                            <Setter TargetName="ClearBorder" Property="Background" Value="{DynamicResource Danger}"/>
+                                                            <Setter Property="Foreground" Value="{DynamicResource OnDanger}"/>
+                                                        </Trigger>
+                                                    </ControlTemplate.Triggers>
+                                                </ControlTemplate>
+                                            </Button.Template>
+                                        </Button>
+                                    </StackPanel>
+
+                                    <!-- Character count -->
+                                    <TextBlock x:Name="TxtCharCount"
+                                               Grid.Column="1"
+                                               Text="{Binding InputText.Length, StringFormat='{}{0} симв.'}"
+                                               HorizontalAlignment="Right"
+                                               Margin="{DynamicResource Gap.Inline}"
+                                               FontSize="{StaticResource Type.Caption}"
+                                               Foreground="{DynamicResource TextMuted}"
+                                               VerticalAlignment="Center"
+                                               Visibility="Collapsed"/>
+
+                                    <!-- Send / Cancel button -->
+                                    <Button x:Name="BtnSend"
+                                            Grid.Column="2"
+                                            Width="32" Height="32"
+                                            Click="BtnSendOrCancel_Click"
+                                            IsEnabled="{Binding CanSendOrCancel}"
+                                            ToolTip="Отправить (Enter)"
+                                            AutomationProperties.Name="Отправить сообщение"
+                                            Cursor="Hand"
+                                            FocusVisualStyle="{StaticResource AiAssistantFocusVisual}">
+                                        <Button.Style>
+                                            <Style TargetType="Button">
+                                                <Setter Property="Background" Value="{DynamicResource Accent}"/>
+                                                <Setter Property="BorderThickness" Value="0"/>
+                                                <Setter Property="Foreground" Value="{DynamicResource OnAccent}"/>
+                                                <Setter Property="Template">
+                                                    <Setter.Value>
+                                                        <ControlTemplate TargetType="Button">
+                                                            <Border x:Name="SendBorder"
+                                                                    Background="{TemplateBinding Background}"
+                                                                    CornerRadius="{DynamicResource Radius.Md}"
+                                                                    RenderTransformOrigin="0.5,0.5">
+                                                                <Border.RenderTransform>
+                                                                    <ScaleTransform/>
+                                                                </Border.RenderTransform>
+                                                                <TextBlock x:Name="SendGlyph"
+                                                                           Text="&#xE724;"
+                                                                           FontFamily="{DynamicResource Font.Icon}"
+                                                                           FontSize="{StaticResource Type.Subtitle}"
+                                                                           HorizontalAlignment="Center"
+                                                                           VerticalAlignment="Center"
+                                                                           Foreground="{TemplateBinding Foreground}"/>
+                                                            </Border>
+                                                            <ControlTemplate.Triggers>
+                                                                <Trigger Property="IsMouseOver" Value="True">
+                                                                    <Setter TargetName="SendBorder" Property="Background" Value="{DynamicResource AccentHover}"/>
+                                                                    <Trigger.EnterActions>
+                                                                        <BeginStoryboard>
+                                                                            <Storyboard>
+                                                                                <DoubleAnimation Storyboard.TargetName="SendBorder"
+                                                                                                 Storyboard.TargetProperty="(UIElement.RenderTransform).(ScaleTransform.ScaleX)"
+                                                                                                 To="1.08" Duration="{StaticResource Motion.Base}">
+                                                                                    <DoubleAnimation.EasingFunction>
+                                                                                        <CubicEase EasingMode="EaseOut"/>
+                                                                                    </DoubleAnimation.EasingFunction>
+                                                                                </DoubleAnimation>
+                                                                                <DoubleAnimation Storyboard.TargetName="SendBorder"
+                                                                                                 Storyboard.TargetProperty="(UIElement.RenderTransform).(ScaleTransform.ScaleY)"
+                                                                                                 To="1.08" Duration="{StaticResource Motion.Base}">
+                                                                                    <DoubleAnimation.EasingFunction>
+                                                                                        <CubicEase EasingMode="EaseOut"/>
+                                                                                    </DoubleAnimation.EasingFunction>
+                                                                                </DoubleAnimation>
+                                                                            </Storyboard>
+                                                                        </BeginStoryboard>
+                                                                    </Trigger.EnterActions>
+                                                                    <Trigger.ExitActions>
+                                                                        <BeginStoryboard>
+                                                                            <Storyboard>
+                                                                                <DoubleAnimation Storyboard.TargetName="SendBorder"
+                                                                                                 Storyboard.TargetProperty="(UIElement.RenderTransform).(ScaleTransform.ScaleX)"
+                                                                                                 To="1.0" Duration="{StaticResource Motion.Slow}">
+                                                                                    <DoubleAnimation.EasingFunction>
+                                                                                        <CubicEase EasingMode="EaseOut"/>
+                                                                                    </DoubleAnimation.EasingFunction>
+                                                                                </DoubleAnimation>
+                                                                                <DoubleAnimation Storyboard.TargetName="SendBorder"
+                                                                                                 Storyboard.TargetProperty="(UIElement.RenderTransform).(ScaleTransform.ScaleY)"
+                                                                                                 To="1.0" Duration="{StaticResource Motion.Slow}">
+                                                                                    <DoubleAnimation.EasingFunction>
+                                                                                        <CubicEase EasingMode="EaseOut"/>
+                                                                                    </DoubleAnimation.EasingFunction>
+                                                                                </DoubleAnimation>
+                                                                            </Storyboard>
+                                                                        </BeginStoryboard>
+                                                                    </Trigger.ExitActions>
+                                                                </Trigger>
+                                                                <Trigger Property="IsPressed" Value="True">
+                                                                    <Setter TargetName="SendBorder" Property="Background" Value="{DynamicResource AccentPress}"/>
+                                                                    <Trigger.EnterActions>
+                                                                        <BeginStoryboard>
+                                                                            <Storyboard>
+                                                                                <DoubleAnimation Storyboard.TargetName="SendBorder"
+                                                                                                 Storyboard.TargetProperty="(UIElement.RenderTransform).(ScaleTransform.ScaleX)"
+                                                                                                 To="0.95" Duration="{StaticResource Motion.Fast}">
+                                                                                    <DoubleAnimation.EasingFunction>
+                                                                                        <CubicEase EasingMode="EaseOut"/>
+                                                                                    </DoubleAnimation.EasingFunction>
+                                                                                </DoubleAnimation>
+                                                                                <DoubleAnimation Storyboard.TargetName="SendBorder"
+                                                                                                 Storyboard.TargetProperty="(UIElement.RenderTransform).(ScaleTransform.ScaleY)"
+                                                                                                 To="0.95" Duration="{StaticResource Motion.Fast}">
+                                                                                    <DoubleAnimation.EasingFunction>
+                                                                                        <CubicEase EasingMode="EaseOut"/>
+                                                                                    </DoubleAnimation.EasingFunction>
+                                                                                </DoubleAnimation>
+                                                                            </Storyboard>
+                                                                        </BeginStoryboard>
+                                                                    </Trigger.EnterActions>
+                                                                </Trigger>
+                                                                <DataTrigger Binding="{Binding IsBusy}" Value="True">
+                                                                    <Setter TargetName="SendGlyph" Property="Text" Value="&#xE71A;"/>
+                                                                    <Setter TargetName="SendBorder" Property="Background" Value="{DynamicResource Danger}"/>
+                                                                    <Setter Property="ToolTip" Value="Отменить запрос"/>
+                                                                    <Setter Property="AutomationProperties.Name" Value="Отменить запрос"/>
+                                                                </DataTrigger>
+                                                                <MultiDataTrigger>
+                                                                    <MultiDataTrigger.Conditions>
+                                                                        <Condition Binding="{Binding IsBusy}" Value="True"/>
+                                                                        <Condition Binding="{Binding RelativeSource={RelativeSource Self}, Path=IsMouseOver}" Value="True"/>
+                                                                    </MultiDataTrigger.Conditions>
+                                                                    <Setter TargetName="SendBorder" Property="Background" Value="{DynamicResource DangerHover}"/>
+                                                                </MultiDataTrigger>
+                                                                <Trigger Property="IsEnabled" Value="False">
+                                                                    <Setter TargetName="SendBorder" Property="Background" Value="{DynamicResource RowHover}"/>
+                                                                    <Setter Property="Foreground" Value="{DynamicResource TextMuted}"/>
+                                                                </Trigger>
+                                                            </ControlTemplate.Triggers>
+                                                        </ControlTemplate>
+                                                    </Setter.Value>
+                                                </Setter>
+                                            </Style>
+                                        </Button.Style>
+                                    </Button>
+                                </Grid>
+                            </Grid>
+                        </Border>
+
+                        <!-- Slash-command autocomplete: opens above the composer as
+                             soon as the current word starts with '/', lists matching
+                             commands with descriptions (catalog from
+                             AiLocalCommandRouter.Commands). Arrow keys navigate,
+                             Enter/Tab inserts, Esc closes. -->
+                        <Popup x:Name="SlashPopup"
+                               PlacementTarget="{Binding ElementName=InputBorder}"
+                               Placement="Top"
+                               AllowsTransparency="True"
+                               StaysOpen="True"
+                               IsOpen="False"
+                               MaxWidth="440"
+                               MinWidth="300"
+                               HorizontalOffset="0"
+                               VerticalOffset="-4">
+                            <Border CornerRadius="{DynamicResource Radius.Lg}"
+                                    Padding="{DynamicResource Pad.ControlSm}"
+                                    Background="{DynamicResource Surface}"
+                                    BorderBrush="{DynamicResource Border}"
+                                    BorderThickness="1"
+                                    MaxHeight="250">
+                                <ListBox x:Name="SlashCommandList"
+                                         Background="Transparent"
+                                         BorderThickness="0"
+                                         Padding="{DynamicResource Pad.None}"
+                                         ScrollViewer.HorizontalScrollBarVisibility="Disabled"
+                                         KeyboardNavigation.DirectionalNavigation="None"
+                                         PreviewMouseLeftButtonUp="SlashCommandList_PreviewMouseLeftButtonUp">
+                                    <ListBox.ItemContainerStyle>
+                                        <Style TargetType="ListBoxItem">
+                                            <Setter Property="Padding" Value="8,6"/>
+                                            <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
+                                            <Setter Property="Background" Value="Transparent"/>
+                                            <Setter Property="BorderThickness" Value="3,0,0,0"/>
+                                            <Setter Property="BorderBrush" Value="Transparent"/>
+                                            <Style.Triggers>
                                                 <Trigger Property="IsMouseOver" Value="True">
-                                                    <Setter TargetName="SendBorder" Property="Background" Value="{DynamicResource AccentHover}"/>
-                                                    <Trigger.EnterActions>
-                                                        <BeginStoryboard>
-                                                            <Storyboard>
-                                                                <DoubleAnimation Storyboard.TargetName="SendBorder"
-                                                                                 Storyboard.TargetProperty="(UIElement.RenderTransform).(ScaleTransform.ScaleX)"
-                                                                                 To="1.08" Duration="{StaticResource Motion.Base}">
-                                                                    <DoubleAnimation.EasingFunction>
-                                                                        <CubicEase EasingMode="EaseOut"/>
-                                                                    </DoubleAnimation.EasingFunction>
-                                                                </DoubleAnimation>
-                                                                <DoubleAnimation Storyboard.TargetName="SendBorder"
-                                                                                 Storyboard.TargetProperty="(UIElement.RenderTransform).(ScaleTransform.ScaleY)"
-                                                                                 To="1.08" Duration="{StaticResource Motion.Base}">
-                                                                    <DoubleAnimation.EasingFunction>
-                                                                        <CubicEase EasingMode="EaseOut"/>
-                                                                    </DoubleAnimation.EasingFunction>
-                                                                </DoubleAnimation>
-                                                            </Storyboard>
-                                                        </BeginStoryboard>
-                                                    </Trigger.EnterActions>
-                                                    <Trigger.ExitActions>
-                                                        <BeginStoryboard>
-                                                            <Storyboard>
-                                                                <DoubleAnimation Storyboard.TargetName="SendBorder"
-                                                                                 Storyboard.TargetProperty="(UIElement.RenderTransform).(ScaleTransform.ScaleX)"
-                                                                                 To="1.0" Duration="{StaticResource Motion.Slow}">
-                                                                    <DoubleAnimation.EasingFunction>
-                                                                        <CubicEase EasingMode="EaseOut"/>
-                                                                    </DoubleAnimation.EasingFunction>
-                                                                </DoubleAnimation>
-                                                                <DoubleAnimation Storyboard.TargetName="SendBorder"
-                                                                                 Storyboard.TargetProperty="(UIElement.RenderTransform).(ScaleTransform.ScaleY)"
-                                                                                 To="1.0" Duration="{StaticResource Motion.Slow}">
-                                                                    <DoubleAnimation.EasingFunction>
-                                                                        <CubicEase EasingMode="EaseOut"/>
-                                                                    </DoubleAnimation.EasingFunction>
-                                                                </DoubleAnimation>
-                                                            </Storyboard>
-                                                        </BeginStoryboard>
-                                                    </Trigger.ExitActions>
+                                                    <Setter Property="Background" Value="{DynamicResource RowHover}"/>
                                                 </Trigger>
-                                                <Trigger Property="IsPressed" Value="True">
-                                                    <Setter TargetName="SendBorder" Property="Background" Value="{DynamicResource AccentPress}"/>
-                                                    <Trigger.EnterActions>
-                                                        <BeginStoryboard>
-                                                            <Storyboard>
-                                                                <DoubleAnimation Storyboard.TargetName="SendBorder"
-                                                                                 Storyboard.TargetProperty="(UIElement.RenderTransform).(ScaleTransform.ScaleX)"
-                                                                                 To="0.95" Duration="{StaticResource Motion.Fast}">
-                                                                    <DoubleAnimation.EasingFunction>
-                                                                        <CubicEase EasingMode="EaseOut"/>
-                                                                    </DoubleAnimation.EasingFunction>
-                                                                </DoubleAnimation>
-                                                                <DoubleAnimation Storyboard.TargetName="SendBorder"
-                                                                                 Storyboard.TargetProperty="(UIElement.RenderTransform).(ScaleTransform.ScaleY)"
-                                                                                 To="0.95" Duration="{StaticResource Motion.Fast}">
-                                                                    <DoubleAnimation.EasingFunction>
-                                                                        <CubicEase EasingMode="EaseOut"/>
-                                                                    </DoubleAnimation.EasingFunction>
-                                                                </DoubleAnimation>
-                                                            </Storyboard>
-                                                        </BeginStoryboard>
-                                                    </Trigger.EnterActions>
-                                                </Trigger>
-                                                <DataTrigger Binding="{Binding IsBusy}" Value="True">
-                                                    <Setter TargetName="SendGlyph" Property="Text" Value="&#xE71A;"/>
-                                                    <Setter TargetName="SendBorder" Property="Background" Value="{DynamicResource Danger}"/>
-                                                    <Setter Property="ToolTip" Value="Отменить запрос"/>
-                                                    <Setter Property="AutomationProperties.Name" Value="Отменить запрос"/>
+                                                <DataTrigger Binding="{Binding IsSelected, RelativeSource={RelativeSource Self}}" Value="True">
+                                                    <Setter Property="Background" Value="{DynamicResource RowAltSelected}"/>
+                                                    <Setter Property="BorderBrush" Value="{DynamicResource Accent}"/>
                                                 </DataTrigger>
-                                                <MultiDataTrigger>
-                                                    <MultiDataTrigger.Conditions>
-                                                        <Condition Binding="{Binding IsBusy}" Value="True"/>
-                                                        <Condition Binding="{Binding RelativeSource={RelativeSource Self}, Path=IsMouseOver}" Value="True"/>
-                                                    </MultiDataTrigger.Conditions>
-                                                    <Setter TargetName="SendBorder" Property="Background" Value="{DynamicResource DangerHover}"/>
-                                                </MultiDataTrigger>
-                                                <Trigger Property="IsEnabled" Value="False">
-                                                    <Setter TargetName="SendBorder" Property="Background" Value="{DynamicResource RowHover}"/>
-                                                    <Setter Property="Foreground" Value="{DynamicResource TextMuted}"/>
-                                                </Trigger>
-                                            </ControlTemplate.Triggers>
-                                        </ControlTemplate>
-                                    </Setter.Value>
-                                </Setter>
-                            </Style>
-                        </Button.Style>
-                    </Button>
-                </Grid>
-            </Border>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </ListBox.ItemContainerStyle>
+                                    <ListBox.ItemTemplate>
+                                        <DataTemplate>
+                                            <Grid>
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="Auto"/>
+                                                    <ColumnDefinition Width="*"/>
+                                                </Grid.ColumnDefinitions>
+                                                <TextBlock Grid.Column="0"
+                                                           Text="{Binding Command}"
+                                                           FontFamily="{DynamicResource Font.Mono}"
+                                                           FontSize="{StaticResource Type.Body}"
+                                                           FontWeight="SemiBold"
+                                                           Foreground="{DynamicResource Accent}"
+                                                           VerticalAlignment="Center"/>
+                                                <TextBlock Grid.Column="1"
+                                                           Text="{Binding Description}"
+                                                           FontSize="{StaticResource Type.Caption}"
+                                                           Foreground="{DynamicResource TextMuted}"
+                                                           Margin="{DynamicResource Gap.Left}"
+                                                           TextTrimming="CharacterEllipsis"
+                                                           VerticalAlignment="Center"/>
+                                            </Grid>
+                                        </DataTemplate>
+                                    </ListBox.ItemTemplate>
+                                </ListBox>
+                            </Border>
+                        </Popup>
+
+                        <!-- Subtle Keyboard Shortcut Hint below the card -->
+                        <TextBlock Grid.Row="1"
+                                   Text="Enter — отправить · Shift+Enter — новая строка"
+                                   FontSize="{StaticResource Type.Caption}"
+                                   Foreground="{DynamicResource TextMuted}"
+                                   Opacity="0.75"
+                                   HorizontalAlignment="Center"
+                                   Margin="{DynamicResource Gap.BlockTopSm}"
+                                   IsHitTestVisible="False"/>
+                    </Grid>
+            </Grid>
+        </Border>
 
             <!-- AI-scoped toasts render above both rows without intercepting input. -->
             <Grid x:Name="ToastCanvas"

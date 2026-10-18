@@ -91,7 +91,7 @@ namespace MosquitoNetCalculator.Services
                 // Иконочная семья из одной точки: без фолбэка «Segoe MDL2 Assets»
                 // глиф на Windows 10 — пустой квадрат (GOTCHAS §31).
                 FontFamily = AppFontService.CreateIconFamily(),
-                FontSize = 11
+                FontSize = Typography.Caption
             };
 
             var btn = new Button

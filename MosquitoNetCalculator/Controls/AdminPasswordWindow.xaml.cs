@@ -168,6 +168,7 @@ namespace MosquitoNetCalculator.Controls
                 PasswordBox.Focus();
                 return;
             }
+            AppSettingsService.UnlockAdminSession();
             DialogResult = true;
         }
 

@@ -8,6 +8,7 @@ using System.Printing;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Controls.Primitives;
 using System.Windows.Documents;
 using System.Windows.Input;
 using System.Windows.Media;
@@ -30,6 +31,12 @@ namespace MosquitoNetCalculator.Controls
     {
         private FlowDocument _document;           // original (A4) — для печати
         private FlowDocument? _previewDocument;     // deep-clone — для предпросмотра
+        // Порядок предпросмотра повторяет печать/PDF: страницы 1.._cleanPageCount —
+        // чистый экземпляр КП, дальше (при включённом флажке) — блок «В производство».
+        private int _cleanPageCount;                // страниц чистого экземпляра в предпросмотре
+        private int _productionStartPage;           // 1-based старт блока «В производство» (0 = блока нет)
+        private FlowDocument? _previewBuiltFrom;    // источник последней сборки предпросмотра
+        private bool _previewBuiltWithProduction;   // собран ли предпросмотр с блоком «В производство»
         private PrintService _printService;
         private string _contractNumber;
         private PrintSettings _settings;
@@ -43,6 +50,10 @@ namespace MosquitoNetCalculator.Controls
 
         private FlowDocumentPageViewer? _innerViewer;
         private DependencyPropertyDescriptor? _pageNumberDescriptor;
+        // PageCount валидируется позже MasterPageNumber при замене Document —
+        // держим отдельный descriptor, чтобы индикатор/кнопки обновились сразу,
+        // а не после следующего клика (тот же колбэк OnPageNumberChanged).
+        private DependencyPropertyDescriptor? _pageCountDescriptor;
         private readonly DispatcherTimer _textChangedDebounce = new()
         {
             Interval = TimeSpan.FromMilliseconds(200)
@@ -114,8 +125,21 @@ namespace MosquitoNetCalculator.Controls
             _totalAmount = totalAmount;
             _amountInWords = amountInWords ?? string.Empty;
 
-            _previewDocument = DeepCloneDocument(document);
-            DocumentReader.Document = _previewDocument;
+            // Панель обязана читать СВОИ контролы из настроек при КАЖДОМ открытии,
+            // а не только в OnLoaded: контрол живёт в оверлее постоянно
+            // (Visibility переключается — Loaded повторно не поднимается),
+            // поэтому RestoreSettings() из OnLoaded при повторном открытии не
+            // выполнялся. Результат — рассинхрон: документ собирался по
+            // _settings.IncludeProductionCopy (персистентная галочка), а флажок в
+            // панели оставался выключенным: штамп не показывался нигде, а «Печать»
+            // и «Сохранить PDF», собрав настройки по флажку, выводили один+
+            // экземпляр вместо показанных двух.
+            RestoreSettings();
+
+            // Сборка по ТЕМ ЖЕ настройкам уже могла произойти внутри Checked-события
+            // RestoreSettings (см. RebuildPreviewDocument/alreadyBuilt) — повторный
+            // вызов здесь ничего не пересобирает, только донастраивает overlays.
+            RebuildPreviewDocument(_settings.IncludeProductionCopy);
 
             // Enable PDF save only if we have export data
             SavePdfButton.IsEnabled = _items.Count > 0;
@@ -170,6 +194,146 @@ namespace MosquitoNetCalculator.Controls
         //  Deep clone
         // ═══════════════════════════════════════════════════════════════
 
+        /// <summary>
+        /// Собирает документ предпросмотра в порядке РЕАЛЬНОГО вывода:
+        /// сначала чистый экземпляр КП, затем — отдельным блоком после него —
+        /// копия «В производство». Раньше штамп накладывался поверх ПЕРВОЙ страницы
+        /// чистого КП, и в предпросмотре «В ПРОИЗВОДСТВО» выглядело идущим первым,
+        /// хотя печать и PDF всегда кладут его вторым.
+        /// </summary>
+        /// <param name="includeProductionCopy">Флажок «Добавить копию “В производство”».</param>
+        /// <param name="cleanPageCount">Число страниц чистого экземпляра КП.</param>
+        /// <param name="productionStartPage">1-based номер первого листа производственного
+        /// блока (0 = блока нет — штамп не показывается).</param>
+        internal static FlowDocument BuildPreviewDocument(
+            FlowDocument source,
+            bool includeProductionCopy,
+            out int cleanPageCount,
+            out int productionStartPage,
+            Func<FlowDocument?>? documentFactory = null)
+        {
+            if (source == null) throw new ArgumentNullException(nameof(source));
+
+            var clean = DeepCloneDocument(source);
+            if (ReferenceEquals(clean, source) && documentFactory != null)
+            {
+                var recreated = documentFactory();
+                if (recreated != null)
+                    clean = recreated;
+            }
+
+            cleanPageCount = CountPages(clean);
+            productionStartPage = 0;
+
+            if (includeProductionCopy)
+            {
+                productionStartPage = cleanPageCount > 0 ? cleanPageCount + 1 : 1;
+
+                var production = DeepCloneDocument(source);
+                if (ReferenceEquals(production, source) && documentFactory != null)
+                {
+                    var recreated = documentFactory();
+                    if (recreated != null)
+                        production = recreated;
+                }
+
+                if (!ReferenceEquals(clean, source) && !ReferenceEquals(production, source) && !ReferenceEquals(clean, production))
+                    AppendInstance(clean, production);
+            }
+
+            return clean;
+        }
+
+        /// <summary>
+        /// Дописывает второй экземпляр КП в конец предпросмотра. Первый блок
+        /// получает BreakPageBefore: производственный комплект начинается с НОВОГО
+        /// листа и никогда не «прилипает» к последней странице чистой копии.
+        /// </summary>
+        private static void AppendInstance(FlowDocument target, FlowDocument instance)
+        {
+            bool first = true;
+            while (instance.Blocks.Count > 0)
+            {
+                var block = instance.Blocks.First();   // BlockCollection без индексатора
+                instance.Blocks.Remove(block);
+                if (first)
+                {
+                    block.BreakPageBefore = true;
+                    first = false;
+                }
+                target.Blocks.Add(block);
+            }
+        }
+
+        /// <summary>Число страниц документа (принудительная пагинация, как в печати).</summary>
+        private static int CountPages(FlowDocument doc)
+        {
+            try
+            {
+                var paginator = ((IDocumentPaginatorSource)doc).DocumentPaginator;
+                paginator.ComputePageCount();
+                return Math.Max(0, paginator.PageCount);
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"[PrintPreviewControl] CountPages failed: {ex.Message}");
+                return 0;
+            }
+        }
+
+        /// <summary>
+        /// Пересобирает предпросмотр в порядке «чистое → в производство» и
+        /// синхронизирует overlay штампа/димминг/индикатор страниц.
+        /// </summary>
+        private void RebuildPreviewDocument(bool includeProductionCopy)
+        {
+            if (_document == null || DocumentReader == null) return;
+
+            // Повторная сборка того же документа с тем же флажком не нужна:
+            // RestoreSettings() в Initialize может поднять Checked-событие, которое
+            // уже перестроило документ (см. alreadyBuilt) — повторный вызов это
+            // отсекает.
+            bool alreadyBuilt = ReferenceEquals(_previewBuiltFrom, _document)
+                && _previewBuiltWithProduction == includeProductionCopy
+                && ReferenceEquals(DocumentReader.Document, _previewDocument);
+
+            if (!alreadyBuilt)
+            {
+                _previewDocument = BuildPreviewDocument(
+                    _document,
+                    includeProductionCopy,
+                    out _cleanPageCount,
+                    out _productionStartPage,
+                    documentFactory: () => _printService.BuildFlowDocument(_items, _clientInfo, _totalAmount, _amountInWords));
+                DocumentReader.Document = _previewDocument;
+                _previewBuiltFrom = _document;
+                _previewBuiltWithProduction = includeProductionCopy;
+
+                try
+                {
+                    ((IDocumentPaginatorSource)_previewDocument).DocumentPaginator.ComputePageCount();
+                }
+                catch (Exception ex)
+                {
+                    Debug.WriteLine($"[PrintPreviewControl] Preview repagination failed: {ex.Message}");
+                }
+
+                if (_innerViewer != null)
+                {
+                    try { _innerViewer.GoToPage(1); } catch { /* viewer ещё не отображался */ }
+                }
+            }
+
+            // Обновление — после перепагинации viewer'а: PageCount/MasterPageNumber
+            // при смене Document пересчитываются в следующем проходе layout'а.
+            Dispatcher.BeginInvoke(new Action(() =>
+            {
+                UpdateStampOverlay();
+                UpdateDimmingOverlay();
+                UpdatePageIndicator();
+            }), DispatcherPriority.Loaded);
+        }
+
         private static FlowDocument DeepCloneDocument(FlowDocument source)
         {
             try
@@ -218,6 +382,12 @@ namespace MosquitoNetCalculator.Controls
                 _pageNumberDescriptor.RemoveValueChanged(_innerViewer, OnPageNumberChanged);
                 _pageNumberDescriptor = null;
             }
+
+            if (_pageCountDescriptor != null && _innerViewer != null)
+            {
+                _pageCountDescriptor.RemoveValueChanged(_innerViewer, OnPageNumberChanged);
+                _pageCountDescriptor = null;
+            }
         }
 
         private void CopiesControl_ValueChanged(object? sender, RoutedPropertyChangedEventArgs<int> e)
@@ -242,6 +412,11 @@ namespace MosquitoNetCalculator.Controls
                     FlowDocumentPageViewer.MasterPageNumberProperty,
                     typeof(FlowDocumentPageViewer));
                 _pageNumberDescriptor.AddValueChanged(_innerViewer, OnPageNumberChanged);
+
+                _pageCountDescriptor = DependencyPropertyDescriptor.FromProperty(
+                    FlowDocumentPageViewer.PageCountProperty,
+                    typeof(FlowDocumentPageViewer));
+                _pageCountDescriptor.AddValueChanged(_innerViewer, OnPageNumberChanged);
             }
 
             HideBuiltInToolbar();
@@ -448,7 +623,9 @@ namespace MosquitoNetCalculator.Controls
         private void ProductionCopyCheck_Changed(object sender, RoutedEventArgs e)
         {
             UpdateCopiesMinimum();
-            UpdateStampOverlay();
+            // Пересборка предпросмотра: чистое КП идёт первым, копия
+            // «В производство» — вторым блоком (как реально печатается).
+            RebuildPreviewDocument(ProductionCopyCheck.IsChecked == true);
         }
 
         /// <summary>
@@ -483,7 +660,8 @@ namespace MosquitoNetCalculator.Controls
 
         /// <summary>
         /// Печать ставится только на ПЕРВУЮ страницу производственной копии, поэтому
-        /// в предпросмотре overlay виден лишь на первом листе.
+        /// в предпросмотре overlay виден только на странице _productionStartPage —
+        /// первой странице производственного блока, который идёт ПОСЛЕ чистого КП.
         /// </summary>
         private void GateStampToFirstPage()
         {
@@ -492,7 +670,9 @@ namespace MosquitoNetCalculator.Controls
             bool includeStamp = ProductionCopyCheck.IsChecked == true;
             int currentPage = _innerViewer != null ? _innerViewer.MasterPageNumber : 1;
             StampOverlay.Visibility =
-                (includeStamp && currentPage == 1) ? Visibility.Visible : Visibility.Collapsed;
+                (includeStamp && _productionStartPage > 0 && currentPage == _productionStartPage)
+                    ? Visibility.Visible
+                    : Visibility.Collapsed;
         }
 
         private void ApplyStampScale()
@@ -596,6 +776,13 @@ namespace MosquitoNetCalculator.Controls
                 }
             }
 
+            // Производственный блок печатается ЦЕЛИКОМ вторым (и в физической печати,
+            // и в PDF), поэтому его страницы не гасятся даже при выборе диапазона
+            // или одной страницы — иначе предпросмотр показывал бы ненапечатаемую
+            // копию «В производство».
+            if (isOutOfRange && _productionStartPage > 0 && currentPage >= _productionStartPage)
+                isOutOfRange = false;
+
             if (isOutOfRange)
             {
                 DimmingText.Text = $"Стр. {currentPage} не входит в диапазон печати {rangeText}";
@@ -606,7 +793,14 @@ namespace MosquitoNetCalculator.Controls
                 DimmingOverlay.Visibility = Visibility.Collapsed;
             }
 
-            UpdateRangeHint(totalPages, GetPageCountForRange(totalPages));
+            // Диапазон выбирается по ЧИСТОМУ комплекту (семантика печати), а не по
+            // общему числу страниц предпросмотра — в него уже входит блок
+            // «В производство», который печатается независимо от диапазона.
+            int sourcePages = _cleanPageCount > 0 ? _cleanPageCount : totalPages;
+            int printPages = GetPageCountForRange(sourcePages);
+            if (_productionStartPage > 0)
+                printPages += sourcePages;   // производственный блок печатается целиком
+            UpdateRangeHint(totalPages, printPages);
         }
 
         private void UpdateRangeHint(int totalPages, int rangePages)
@@ -644,16 +838,38 @@ namespace MosquitoNetCalculator.Controls
         //  Page navigation
         // ═══════════════════════════════════════════════════════════════
 
+        // Навигация НЕ полагается на CanGoToNextPage/CanGoToPreviousPage (read-only DP
+        // DocumentViewerBase): после замены Document (пересборка предпросмотра с копией
+        // «В производство») они устаревают — индикатор показывает «1 / 2», а
+        // CanGoToNextPage остаётся false, и клик молча игнорируется (баг «кнопки
+        // переключения страниц не работают»). Переход — через GoToPage по арифметике
+        // от PageCount/MasterPageNumber: CanGoToPage сверяется именно с PageCount — тем
+        // числом, что показано в индикаторе.
         private void PrevPage_Click(object sender, RoutedEventArgs e)
         {
-            if (_innerViewer != null && _innerViewer.CanGoToPreviousPage)
-                _innerViewer.PreviousPage();
+            var viewer = _innerViewer ?? (DocumentReader as FlowDocumentPageViewer);
+            if (viewer == null) return;
+
+            int current = viewer.MasterPageNumber;
+            if (current > 1)
+            {
+                viewer.GoToPage(current - 1);
+                PreviewScroller?.ScrollToVerticalOffset(0);
+            }
         }
 
         private void NextPage_Click(object sender, RoutedEventArgs e)
         {
-            if (_innerViewer != null && _innerViewer.CanGoToNextPage)
-                _innerViewer.NextPage();
+            var viewer = _innerViewer ?? (DocumentReader as FlowDocumentPageViewer);
+            if (viewer == null) return;
+
+            int current = viewer.MasterPageNumber;
+            int total = viewer.PageCount;
+            if (total > 0 && current < total)
+            {
+                viewer.GoToPage(current + 1);
+                PreviewScroller?.ScrollToVerticalOffset(0);
+            }
         }
 
         private void UpdatePageIndicator()
@@ -665,10 +881,13 @@ namespace MosquitoNetCalculator.Controls
 
             PageIndicator.Text = total > 0 ? $"{current} / {total}" : "—";
 
+            // Включение кнопок считается из ТЕХ ЖЕ чисел, что и индикатор
+            // (PageCount/MasterPageNumber), а не из CanGoTo* — эти DP после замены
+            // Document не пересчитываются и врут (см. комментарий в NextPage_Click).
             if (PrevPageBtn != null)
-                PrevPageBtn.IsEnabled = _innerViewer.CanGoToPreviousPage;
+                PrevPageBtn.IsEnabled = current > 1;
             if (NextPageBtn != null)
-                NextPageBtn.IsEnabled = _innerViewer.CanGoToNextPage;
+                NextPageBtn.IsEnabled = total > 0 && current < total;
 
             GateStampToFirstPage();
         }
@@ -730,6 +949,11 @@ namespace MosquitoNetCalculator.Controls
                 // set PageWidth to a value incompatible with FlowDocument's
                 // ColumnWidth=Infinity → paragraph width becomes NaN.
                 ticket.PageMediaSize = new PageMediaSize(PageMediaSizeName.ISOA4);
+                // Явно задаём прямой порядок страниц (1, 2, ...), чтобы чистый экземпляр
+                // всегда печатался первым, а экземпляр «В ПРОИЗВОДСТВО» — вторым,
+                // даже если в настройках драйвера принтера по умолчанию включен Reverse
+                // (например, у струйных Canon G-серии).
+                ticket.PageOrder = PageOrder.Standard;
             }
             catch (Exception ex)
             {
@@ -999,7 +1223,7 @@ namespace MosquitoNetCalculator.Controls
             }
         }
 
-        private static string SanitizeFileName(string name)
+        internal static string SanitizeFileName(string name)
         {
             if (string.IsNullOrEmpty(name)) return string.Empty;
             var invalid = new HashSet<char>(Path.GetInvalidFileNameChars());
@@ -1043,6 +1267,9 @@ namespace MosquitoNetCalculator.Controls
         private void ZoomReset_Click(object sender, RoutedEventArgs e) { _isUserZoom = false; ApplyZoom(ZoomDefault); }
         private void ZoomFit_Click(object sender, RoutedEventArgs e) { _isUserZoom = false; FitToViewport(); }
 
+        private DateTime _lastPageTurnTime = DateTime.MinValue;
+        private const double PageTurnCooldownMs = 180;
+
         private void PreviewScroller_PreviewMouseWheel(object sender, MouseWheelEventArgs e)
         {
             if (Keyboard.IsKeyDown(Key.LeftCtrl) || Keyboard.IsKeyDown(Key.RightCtrl))
@@ -1051,6 +1278,110 @@ namespace MosquitoNetCalculator.Controls
                 _isUserZoom = true;
                 double delta = e.Delta > 0 ? ZoomStep : -ZoomStep;
                 ApplyZoom(_currentZoom + delta);
+                return;
+            }
+
+            if (PreviewScroller == null) return;
+
+            // Shift + Wheel = горизонтальная прокрутка
+            if (Keyboard.IsKeyDown(Key.LeftShift) || Keyboard.IsKeyDown(Key.RightShift))
+            {
+                e.Handled = true;
+                if (PreviewScroller.ScrollableWidth > 0)
+                {
+                    double step = (e.Delta / 120.0) * 60.0;
+                    PreviewScroller.ScrollToHorizontalOffset(
+                        Math.Clamp(PreviewScroller.HorizontalOffset - step, 0, PreviewScroller.ScrollableWidth));
+                }
+                return;
+            }
+
+            // Обычная прокрутка колесом мыши:
+            // Перехватываем событие ДО DocumentReader (FlowDocumentPageViewer),
+            // так как встроенный обработчик FlowDocumentPageViewer при первом же щелчке
+            // колеса насильно скипает страницу через NextPage/PrevPage, не давая прокрутить
+            // лист по вертикали и оставляя камеру в самом конце листа.
+            e.Handled = true;
+
+            int rawDelta = e.Delta;
+            if (rawDelta == 0) return;
+
+            var viewer = _innerViewer ?? (DocumentReader as FlowDocumentPageViewer);
+            int currentPage = viewer != null ? viewer.MasterPageNumber : 1;
+            int totalPages = viewer != null ? viewer.PageCount : 1;
+
+            double currentOffset = PreviewScroller.VerticalOffset;
+            double maxOffset = PreviewScroller.ScrollableHeight;
+
+            // Величина прокрутки за один щелчок колеса: адаптивно по настройкам Windows, минимум 48 DIP
+            double lines = SystemParameters.WheelScrollLines > 0 ? SystemParameters.WheelScrollLines : 3;
+            double stepPerNotch = Math.Max(48.0, lines * 18.0);
+            double scrollAmount = (Math.Abs(rawDelta) / 120.0) * stepPerNotch;
+
+            if (rawDelta < 0)
+            {
+                // Прокрутка ВНИЗ
+                if (maxOffset > 1 && currentOffset < maxOffset - 1)
+                {
+                    // Внутри текущего листа есть куда прокручивать вниз
+                    double newOffset = Math.Min(maxOffset, currentOffset + scrollAmount);
+                    PreviewScroller.ScrollToVerticalOffset(newOffset);
+                }
+                else
+                {
+                    // Достигли самого низа листа (или лист целиком помещается на экране).
+                    // Следующий жест колеса вниз перелистывает на СЛЕДУЮЩУЮ страницу.
+                    if (viewer != null && currentPage < totalPages)
+                    {
+                        var now = DateTime.UtcNow;
+                        if ((now - _lastPageTurnTime).TotalMilliseconds >= PageTurnCooldownMs)
+                        {
+                            _lastPageTurnTime = now;
+                            viewer.GoToPage(currentPage + 1);
+                            // Камера ОБЯЗАНА встать в НАЧАЛО (вверх) нового листа, а не в конец!
+                            PreviewScroller.ScrollToVerticalOffset(0);
+                        }
+                    }
+                }
+            }
+            else
+            {
+                // Прокрутка ВВЕРХ
+                if (currentOffset > 1)
+                {
+                    // Внутри текущего листа есть куда прокручивать вверх
+                    double newOffset = Math.Max(0, currentOffset - scrollAmount);
+                    PreviewScroller.ScrollToVerticalOffset(newOffset);
+                }
+                else
+                {
+                    // Достигли самого верха листа (или лист целиком помещается на экране).
+                    // Следующий жест колеса вверх возвращает на ПРЕДЫДУЩУЮ страницу.
+                    if (viewer != null && currentPage > 1)
+                    {
+                        var now = DateTime.UtcNow;
+                        if ((now - _lastPageTurnTime).TotalMilliseconds >= PageTurnCooldownMs)
+                        {
+                            _lastPageTurnTime = now;
+                            viewer.GoToPage(currentPage - 1);
+                            // При возврате вверх: если предыдущий лист больше экрана,
+                            // ставим камеру в КОНЕЦ (низ) предыдущего листа, чтобы
+                            // пользователь мог непрерывно прокручивать его снизу вверх.
+                            // Если помещается целиком — наверх (0).
+                            if (maxOffset > 1)
+                            {
+                                Dispatcher.BeginInvoke(new Action(() =>
+                                {
+                                    PreviewScroller?.ScrollToBottom();
+                                }), DispatcherPriority.Loaded);
+                            }
+                            else
+                            {
+                                PreviewScroller.ScrollToVerticalOffset(0);
+                            }
+                        }
+                    }
+                }
             }
         }
 
@@ -1120,13 +1451,26 @@ namespace MosquitoNetCalculator.Controls
             {
                 var tray = FindVisualChild<ToolBarTray>(DocumentReader);
                 if (tray != null)
-                {
                     tray.Visibility = Visibility.Collapsed;
-                    return;
-                }
+
                 var toolbar = FindVisualChild<ToolBar>(DocumentReader);
                 if (toolbar != null)
                     toolbar.Visibility = Visibility.Collapsed;
+
+                // В стандартном шаблоне WPF встроенная нижняя панель навигации и зума
+                // лежит внутри DockPanel рядом с Border (в котором хостится DocumentPageView).
+                // Скрываем все элементы DockPanel, кроме контейнера страницы.
+                var dockPanel = FindVisualChild<DockPanel>(DocumentReader);
+                if (dockPanel != null)
+                {
+                    foreach (UIElement child in dockPanel.Children)
+                    {
+                        if (child is not Border b || FindVisualChild<DocumentPageView>(b) == null)
+                        {
+                            child.Visibility = Visibility.Collapsed;
+                        }
+                    }
+                }
             }
             catch (Exception ex)
             {

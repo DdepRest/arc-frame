@@ -15,6 +15,7 @@ namespace MosquitoNetCalculator.Tests.Controls
     /// <summary>
     /// STA tests for the new XAML-based dialog windows.
     /// </summary>
+    [Collection("WPF_UI")]
     public class MessageDialogWindowTests
     {
         [Fact]

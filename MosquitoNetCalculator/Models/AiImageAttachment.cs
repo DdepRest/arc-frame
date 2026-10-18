@@ -16,6 +16,7 @@ namespace MosquitoNetCalculator.Models
         public string FileName { get; init; } = "";
         public string DataUrl { get; init; } = "";
         public string SizeLabel { get; init; } = "";
+        public System.Windows.Media.Imaging.BitmapSource? Thumbnail { get; init; }
 
         /// <summary>OCR result cached at attach time. Null until OCR completes.</summary>
         public string? OcrText

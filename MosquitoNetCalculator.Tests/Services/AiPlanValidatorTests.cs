@@ -37,6 +37,17 @@ namespace MosquitoNetCalculator.Tests.Services
         }
 
         [Fact]
+        public void AddItem_PmsAlias_Passes_AndNormalizesToAnwis()
+        {
+            var plan = AiPlanBuilder.FromCommand(AddItem("ПМС", 390, 893));
+
+            var r = AiPlanValidator.Validate(plan);
+
+            Assert.True(r.IsValid);
+            Assert.Equal("Anwis", plan.Steps[0].Params.Type);
+        }
+
+        [Fact]
         public void AddItem_ZeroSize_Fails()
         {
             var plan = AiPlanBuilder.FromCommand(AddItem("Anwis", 0, 1400));

@@ -253,6 +253,84 @@ namespace MosquitoNetCalculator.Tests.Services
             Assert.Equal("4", m.Groups[1].Value);
         }
 
+        // ── Several positions in one request ───────────────────────────
+
+        [Fact]
+        public void ParseSizeEntries_ScreenshotWithTwoPositions_ReadsBoth()
+        {
+            // The reported case: one screenshot whose text carries two rows of
+            // «ПМС Anwis, бел. 1 <size>». Both must be read — the card used to
+            // keep only the first one.
+            var entries = AiKeywordLexicon.ParseSizeEntries(
+                "ПМС Anwis, бел.\n1 304x1593\nПМС Anwis, бел.\n1 724x1593");
+
+            Assert.Equal(2, entries.Count);
+            Assert.Equal((304, 1593), (entries[0].Width, entries[0].Height));
+            Assert.Equal((724, 1593), (entries[1].Width, entries[1].Height));
+            Assert.All(entries, e => Assert.Equal(1, e.Quantity));
+        }
+
+        [Fact]
+        public void ParseSizeEntries_QuantityStaysWithItsOwnSize()
+        {
+            var entries = AiKeywordLexicon.ParseSizeEntries("2 шт 700х1400 3 шт 900х1600");
+
+            Assert.Equal(2, entries.Count);
+            Assert.Equal(2, entries[0].Quantity);
+            Assert.Equal(3, entries[1].Quantity);
+        }
+
+        [Theory]
+        [InlineData("739×1116 4 шт", 4)]   // count right behind the size
+        [InlineData("Anwis белый 2 шт 739х1116", 2)] // …or right before it
+        [InlineData("4 739х1116", 4)]        // bare number in front
+        [InlineData("сетка 700х1400", 1)]     // nothing named → 1
+        public void ParseSizeEntries_ReadsTheQuantityOfTheSize(string text, double expected)
+        {
+            var entries = AiKeywordLexicon.ParseSizeEntries(text);
+
+            Assert.Single(entries);
+            Assert.Equal(expected, entries[0].Quantity);
+        }
+
+        [Fact]
+        public void ParseSizeEntries_CountOnAnotherLine_DoesNotLeakOntoTheSize()
+        {
+            // «герметик 2 шт» on the next line belongs to another position.
+            var entries = AiKeywordLexicon.ParseSizeEntries("сетка 700х1400\nгерметик 2 шт");
+
+            Assert.Single(entries);
+            Assert.Equal(1, entries[0].Quantity);
+        }
+
+        [Fact]
+        public void ParseSizeEntries_SameSizeTwiceInOneRequest_IsOnePosition()
+        {
+            // The same order is regularly present twice: in the attachment file
+            // name and in the OCR of its pixels. Adding it twice would inflate
+            // the order.
+            var entries = AiKeywordLexicon.ParseSizeEntries(
+                "ПМС Anwis, бел. 1 619x1295.png\nПМС Anwis, бел. 1 619x1295");
+
+            Assert.Single(entries);
+        }
+
+        [Fact]
+        public void ParseSizeEntries_GluedOcrDigits_ReturnsNothing()
+        {
+            // «3711217» — no separator, so the split would be a guess.
+            Assert.Empty(AiKeywordLexicon.ParseSizeEntries("ПМС Anwis, бел. 2 шт 3711217"));
+        }
+
+        [Theory]
+        [InlineData("")]
+        [InlineData("   ")]
+        [InlineData(null)]
+        public void ParseSizeEntries_EmptyText_ReturnsNothing(string? text)
+        {
+            Assert.Empty(AiKeywordLexicon.ParseSizeEntries(text));
+        }
+
         // ── ContainsAny ───────────────────────────────────────────────
 
         [Theory]
@@ -263,6 +341,85 @@ namespace MosquitoNetCalculator.Tests.Services
         public void ContainsAny_FindsKeywordSubstrings(string text, bool expected, string kw)
         {
             Assert.Equal(expected, AiKeywordLexicon.ContainsAny(text, kw));
+        }
+
+        [Theory]
+        [InlineData("Какой режим Anwis использовать для двух сеток 1272×608?", 1272, 608, 2)]
+        [InlineData("сделай две сетки 600х1200", 600, 1200, 2)]
+        [InlineData("три штуки 500*1000", 500, 1000, 3)]
+        public void ParseSizeEntries_RussianNumberWords_DetectsQuantity(string text, int expectedW, int expectedH, double expectedQ)
+        {
+            var entries = AiKeywordLexicon.ParseSizeEntries(text);
+            Assert.Single(entries);
+            Assert.Equal(expectedW, entries[0].Width);
+            Assert.Equal(expectedH, entries[0].Height);
+            Assert.Equal(expectedQ, entries[0].Quantity);
+        }
+
+        [Fact]
+        public void ClarificationPrefill_FromReply_SelectsAnwisAndPrefillsWordQuantity()
+        {
+            var form = new MosquitoNetCalculator.Models.AiClarificationForm(null, null);
+            AiClarificationPrefill.FromReply(form, "Какой режим Anwis использовать для двух сеток 1272×608? ББ60, ББ70, ПП, Проём или Габарит?");
+
+            Assert.Equal("Anwis", form.SelectedType);
+            Assert.Single(form.SizeRows);
+            Assert.Equal("1272", form.SizeRows[0].WidthText);
+            Assert.Equal("608", form.SizeRows[0].HeightText);
+            Assert.Equal("2", form.SizeRows[0].QuantityText);
+        }
+
+        [Fact]
+        public void ParseSizeEntries_WithGlassUnitMentions_IdentifiesGlassUnits()
+        {
+            var text = "Какой режим Anwis использовать для двух сеток 1272×608? ББ60, ББ70, ПП, Проём или Габарит?\n" +
+                       "Также: что сделать со стеклопакетом (СП 615×1303)? Добавить как «Свой товар» или только просчитать сетки?";
+            var entries = AiKeywordLexicon.ParseSizeEntries(text);
+
+            Assert.Equal(2, entries.Count);
+            // Net entry
+            Assert.Equal(1272, entries[0].Width);
+            Assert.Equal(608, entries[0].Height);
+            Assert.Equal(2, entries[0].Quantity);
+            Assert.False(entries[0].IsGlassUnit);
+
+            // Glass unit entry
+            Assert.Equal(615, entries[1].Width);
+            Assert.Equal(1303, entries[1].Height);
+            Assert.Equal(1, entries[1].Quantity);
+            Assert.True(entries[1].IsGlassUnit);
+        }
+
+        [Fact]
+        public void ClarificationPrefill_FromReply_OnlyGlassUnit_DoesNotPrefillAnwisSize()
+        {
+            // Exact scenario from user's bug report: model replied only about Anwis mode options
+            // and asked about glass unit (СП 615×7303). The Anwis card must NOT receive 615×7303!
+            var reply = "Какой режим Anwis использовать? ББ60, ББ70, ПП, Проём или Габарит?\n\n" +
+                        "Также: что сделать со стеклопакетом (СП 615×7303)? Добавить как «Свой товар» или только просчитать сетки?";
+            var form = new MosquitoNetCalculator.Models.AiClarificationForm(null, null);
+            AiClarificationPrefill.FromReply(form, reply);
+
+            Assert.Equal("Anwis", form.SelectedType);
+            // Size rows must remain empty for manual entry — not filled with glass unit 615×7303
+            Assert.Single(form.SizeRows);
+            Assert.Empty(form.SizeRows[0].WidthText);
+            Assert.Empty(form.SizeRows[0].HeightText);
+        }
+
+        [Fact]
+        public void ClarificationPrefill_FromReply_BothNetsAndGlassUnit_PrefillsOnlyNets()
+        {
+            var reply = "Какой режим Anwis использовать для двух сеток 1272×608? ББ60, ББ70, ПП, Проём или Габарит?\n\n" +
+                        "Также: что сделать со стеклопакетом (СП 615×1303)? Добавить как «Свой товар» или только просчитать сетки?";
+            var form = new MosquitoNetCalculator.Models.AiClarificationForm(null, null);
+            AiClarificationPrefill.FromReply(form, reply);
+
+            Assert.Equal("Anwis", form.SelectedType);
+            Assert.Single(form.SizeRows);
+            Assert.Equal("1272", form.SizeRows[0].WidthText);
+            Assert.Equal("608", form.SizeRows[0].HeightText);
+            Assert.Equal("2", form.SizeRows[0].QuantityText);
         }
     }
 }

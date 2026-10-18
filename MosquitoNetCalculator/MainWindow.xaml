@@ -1,4 +1,4 @@
-﻿<Window x:Class="MosquitoNetCalculator.MainWindow"
+<Window x:Class="MosquitoNetCalculator.MainWindow"
         Style="{DynamicResource Window.Shared}"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
@@ -76,8 +76,8 @@
             <Setter Property="BorderThickness" Value="0"/>
             <Setter Property="Foreground" Value="{DynamicResource TextSecondary}"/>
             <Setter Property="Cursor" Value="Hand"/>
-            <Setter Property="FontSize" Value="18"/>
-            <Setter Property="FontFamily" Value="Segoe Fluent Icons, Segoe MDL2 Assets"/>
+            <Setter Property="FontSize" Value="{StaticResource Type.Title}"/>
+            <Setter Property="FontFamily" Value="{DynamicResource Font.Icon}"/>
             <Setter Property="HorizontalContentAlignment" Value="Left"/>
             <Setter Property="VerticalContentAlignment" Value="Center"/>
             <Setter Property="FocusVisualStyle" Value="{StaticResource FluentFocusVisual}"/>
@@ -93,10 +93,10 @@
                                         Background="{DynamicResource Accent}"
                                         CornerRadius="{DynamicResource Radius.CapsuleSm}"
                                         HorizontalAlignment="Left" VerticalAlignment="Center"
-                                        Margin="0,0,0,0" Opacity="0"/>
-                                <ContentPresenter HorizontalAlignment="Left"
+                                        Margin="{DynamicResource Gap.None}" Opacity="0"/>
+                                <ContentPresenter HorizontalAlignment="Stretch"
                                                   VerticalAlignment="Center"
-                                                  Margin="10,0,0,0"/>
+                                                  Margin="{DynamicResource Gap.None}"/>
                             </Grid>
                         </Border>
                         <ControlTemplate.Triggers>
@@ -124,8 +124,8 @@
             <Setter Property="BorderThickness" Value="0"/>
             <Setter Property="Foreground" Value="{DynamicResource TextSecondary}"/>
             <Setter Property="Cursor" Value="Hand"/>
-            <Setter Property="FontFamily" Value="Segoe Fluent Icons, Segoe MDL2 Assets"/>
-            <Setter Property="FontSize" Value="12"/>
+            <Setter Property="FontFamily" Value="{DynamicResource Font.Icon}"/>
+            <Setter Property="FontSize" Value="{StaticResource Type.Body}"/>
             <Setter Property="Content" Value="&#xE8BB;"/>
             <Setter Property="Template">
                 <Setter.Value>
@@ -183,8 +183,8 @@
                 <!-- ═══════════════════════════════════════ -->
                 <!-- PRIMARY: РАСЧЁТ view                    -->
                 <!-- ═══════════════════════════════════════ -->
-                <Grid x:Name="CalculationView" Background="{DynamicResource AppBg}" Margin="160,0,0,0">
-                    <Grid Margin="8,8,8,8">
+                <Grid x:Name="CalculationView" Background="{DynamicResource AppBg}" Margin="{DynamicResource Gap.CalculationView}">
+                    <Grid Margin="{DynamicResource Gap.Window}">
                         <Grid.RowDefinitions>
                             <RowDefinition Height="Auto"/>  <!-- Action bar -->
                             <RowDefinition Height="Auto"/>  <!-- Quick-Add -->
@@ -206,27 +206,27 @@
                         <controls:TotalCardControl x:Name="TotalCardControl" Grid.Row="3"/>
 
                         <!-- Status bar: compact order info + dirty indicator -->
-                        <Border Grid.Row="4" Margin="0,6,0,0" Padding="6,3"
+                        <Border Grid.Row="4" Margin="{DynamicResource Gap.BlockTop}" Padding="{DynamicResource Pad.ControlSm}"
                                 HorizontalAlignment="Stretch" Background="Transparent">
                             <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
                                 <TextBlock x:Name="StatusOrderInfo" Text="Новый заказ"
-                                           FontSize="11" Foreground="{DynamicResource TextMuted}"
+                                           FontSize="{StaticResource Type.Caption}" Foreground="{DynamicResource TextMuted}"
                                            VerticalAlignment="Center"/>
                                 <Border x:Name="StatusDirtyIndicator" Visibility="Collapsed"
                                         Background="{DynamicResource BadgeWarningBg}"
-                                        CornerRadius="{DynamicResource Radius.Capsule}" Padding="7,3" Margin="10,0,0,0"
+                                        CornerRadius="{DynamicResource Radius.Capsule}" Padding="{DynamicResource Pad.Pill}" Margin="{DynamicResource Gap.Left}"
                                         ToolTip="Несохранённые изменения (Ctrl+S)">
                                     <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
                                         <Ellipse Width="6" Height="6" Fill="{DynamicResource BadgeWarningFg}"
-                                                 VerticalAlignment="Center" Margin="0,0,5,0"/>
-                                        <TextBlock Text="Есть изменения" FontSize="11" FontWeight="SemiBold"
+                                                 VerticalAlignment="Center" Margin="{DynamicResource Gap.InlineSm}"/>
+                                        <TextBlock Text="Есть изменения" FontSize="{StaticResource Type.Caption}" FontWeight="SemiBold"
                                                    Foreground="{DynamicResource BadgeWarningFg}"/>
                                     </StackPanel>
                                 </Border>
                                 <!-- Undo/Redo hint -->
                                 <TextBlock x:Name="UndoRedoHint" Visibility="Collapsed"
-                                           FontSize="11" Foreground="{DynamicResource TextMuted}"
-                                           VerticalAlignment="Center" Margin="14,0,0,0"
+                                           FontSize="{StaticResource Type.Caption}" Foreground="{DynamicResource TextMuted}"
+                                           VerticalAlignment="Center" Margin="{DynamicResource Gap.LeftLg}"
                                            ToolTip="Ctrl+Z — отменить последнее действие, Ctrl+Y — повторить"/>
                             </StackPanel>
                         </Border>
@@ -261,9 +261,9 @@
                             <Border Grid.Row="0" Style="{StaticResource OverlayHeader}">
                                 <Grid>
                                     <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                                        <TextBlock Text="&#xE71D;" FontFamily="{DynamicResource Font.Icon}" FontSize="16"
+                                        <TextBlock Text="&#xE71D;" FontFamily="{DynamicResource Font.Icon}" FontSize="{StaticResource Type.Subtitle}"
                                                    Foreground="{DynamicResource Accent}" VerticalAlignment="Center" Margin="{DynamicResource Gap.Inline}"/>
-                                        <TextBlock Text="Заказы" FontSize="14" FontWeight="SemiBold"
+                                        <TextBlock Text="Заказы" FontSize="{StaticResource Type.BodyLg}" FontWeight="SemiBold"
                                                    Foreground="{DynamicResource TextPrimary}" VerticalAlignment="Center"/>
                                         <!-- Orders-count badge: chip-style tag next to «Заказы» title.
                                              Previously a flat gray TextBlock on gray header background —
@@ -272,11 +272,11 @@
                                              the count stands out visually, exactly as the user expects. -->
                                         <Border x:Name="OrdersCountBadge"
                                                 Background="{DynamicResource ChipBg}" CornerRadius="{DynamicResource Radius.Capsule}"
-                                                Padding="10,4" Margin="10,0,0,0"
+                                                Padding="{DynamicResource Pad.Pill}" Margin="{DynamicResource Gap.Left}"
                                                 VerticalAlignment="Center"
                                                 Visibility="Collapsed">
                                             <TextBlock x:Name="OrdersCountText" Text=""
-                                                       FontSize="11" FontWeight="SemiBold"
+                                                       FontSize="{StaticResource Type.Caption}" FontWeight="SemiBold"
                                                        Foreground="{DynamicResource Accent}"
                                                        VerticalAlignment="Center"/>
                                         </Border>
@@ -313,13 +313,13 @@
                             <Border Grid.Row="0" Style="{StaticResource OverlayHeader}">
                                 <Grid>
                                     <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                                        <TextBlock Text="&#xE8C7;" FontFamily="{DynamicResource Font.Icon}" FontSize="16"
+                                        <TextBlock Text="&#xE8C7;" FontFamily="{DynamicResource Font.Icon}" FontSize="{StaticResource Type.Subtitle}"
                                                    Foreground="{DynamicResource Accent}" VerticalAlignment="Center" Margin="{DynamicResource Gap.Inline}"/>
-                                        <TextBlock Text="Цены" FontSize="14" FontWeight="SemiBold"
+                                        <TextBlock Text="Цены" FontSize="{StaticResource Type.BodyLg}" FontWeight="SemiBold"
                                                    Foreground="{DynamicResource TextPrimary}" VerticalAlignment="Center"/>
                                     </StackPanel>
                                     <Button Style="{StaticResource OverlayCloseButton}"
-                                            HorizontalAlignment="Right" Click="CloseOverlay_Click"/>
+                                             HorizontalAlignment="Right" Click="CloseOverlay_Click"/>
                                 </Grid>
                             </Border>
                             <controls:PricesControl x:Name="PricesControl" Grid.Row="1"/>
@@ -349,9 +349,9 @@
                             <Border Grid.Row="0" Style="{StaticResource OverlayHeader}">
                                 <Grid>
                                     <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                                        <TextBlock Text="&#xE81C;" FontFamily="{DynamicResource Font.Icon}" FontSize="16"
+                                        <TextBlock Text="&#xE81C;" FontFamily="{DynamicResource Font.Icon}" FontSize="{StaticResource Type.Subtitle}"
                                                    Foreground="{DynamicResource Accent}" VerticalAlignment="Center" Margin="{DynamicResource Gap.Inline}"/>
-                                        <TextBlock Text="Обновления" FontSize="14" FontWeight="SemiBold"
+                                        <TextBlock Text="Обновления" FontSize="{StaticResource Type.BodyLg}" FontWeight="SemiBold"
                                                    Foreground="{DynamicResource TextPrimary}" VerticalAlignment="Center"/>
                                     </StackPanel>
                                     <Button Style="{StaticResource OverlayCloseButton}"
@@ -385,13 +385,13 @@
                             <Border Grid.Row="0" Style="{StaticResource OverlayHeader}">
                                 <Grid>
                                     <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                                        <TextBlock Text="&#xE8C8;" FontFamily="{DynamicResource Font.Icon}" FontSize="16"
+                                        <TextBlock Text="&#xE8C8;" FontFamily="{DynamicResource Font.Icon}" FontSize="{StaticResource Type.Subtitle}"
                                                    Foreground="{DynamicResource Accent}" VerticalAlignment="Center" Margin="{DynamicResource Gap.Inline}"/>
-                                        <TextBlock Text="Админ-панель" FontSize="14" FontWeight="SemiBold"
+                                        <TextBlock Text="Админ-панель" FontSize="{StaticResource Type.BodyLg}" FontWeight="SemiBold"
                                                    Foreground="{DynamicResource TextPrimary}" VerticalAlignment="Center"/>
                                     </StackPanel>
                                     <Button Style="{StaticResource OverlayCloseButton}"
-                                            HorizontalAlignment="Right" Click="CloseOverlay_Click"/>
+                                             HorizontalAlignment="Right" Click="CloseOverlay_Click"/>
                                 </Grid>
                             </Border>
                             <controls:AdminPanelControl x:Name="AdminPanelControl" Grid.Row="1"/>
@@ -407,7 +407,7 @@
                             MouseLeftButtonDown="BackdropSlope_MouseLeftButtonDown" Cursor="Hand"/>
                     <Border x:Name="SlopePanel"
                             Background="{DynamicResource Surface}"
-                            HorizontalAlignment="Right" Width="480"
+                            HorizontalAlignment="Right" Width="860" MaxWidth="920" MinWidth="720"
                             BorderBrush="{DynamicResource Border}" BorderThickness="1,0,0,0">
                         <Border.RenderTransform>
                             <TranslateTransform x:Name="SlopeSlideTransform" X="0"/>
@@ -422,9 +422,9 @@
                             <Border Grid.Row="0" Style="{StaticResource OverlayHeader}">
                                 <Grid>
                                     <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                                        <TextBlock Text="&#xE83D;" FontFamily="{DynamicResource Font.Icon}" FontSize="16"
+                                        <TextBlock Text="&#xE91B;" FontFamily="{DynamicResource Font.Icon}" FontSize="{StaticResource Type.Subtitle}"
                                                    Foreground="{DynamicResource Accent}" VerticalAlignment="Center" Margin="{DynamicResource Gap.Inline}"/>
-                                        <TextBlock Text="Откосы из сэндвича" FontSize="14" FontWeight="SemiBold"
+                                        <TextBlock Text="Откосы из сэндвича" FontSize="{StaticResource Type.BodyLg}" FontWeight="SemiBold"
                                                    Foreground="{DynamicResource TextPrimary}" VerticalAlignment="Center"/>
                                     </StackPanel>
                                     <Button Style="{StaticResource OverlayCloseButton}"
@@ -460,15 +460,15 @@
                                         <ColumnDefinition Width="Auto"/>
                                     </Grid.ColumnDefinitions>
                                     <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center">
-                                        <TextBlock Text="&#xE99A;" FontFamily="{DynamicResource Font.Icon}" FontSize="16"
+                                        <TextBlock Text="&#xE99A;" FontFamily="{DynamicResource Font.Icon}" FontSize="{StaticResource Type.Subtitle}"
                                                    Foreground="{DynamicResource Accent}" VerticalAlignment="Center" Margin="{DynamicResource Gap.Inline}"/>
-                                        <TextBlock Text="AI Ассистент" FontSize="14" FontWeight="SemiBold"
+                                        <TextBlock Text="AI Ассистент" FontSize="{StaticResource Type.BodyLg}" FontWeight="SemiBold"
                                                    Foreground="{DynamicResource TextPrimary}" VerticalAlignment="Center"/>
-                                        <Border CornerRadius="{DynamicResource Radius.Capsule}" Padding="5,2" Margin="{DynamicResource Gap.Left}"
+                                        <Border CornerRadius="{DynamicResource Radius.Capsule}" Padding="{DynamicResource Pad.ControlSm}" Margin="{DynamicResource Gap.Left}"
                                                 Background="{DynamicResource BadgeWarningBg}"
                                                 BorderBrush="{DynamicResource BadgeWarningFg}" BorderThickness="1"
                                                 ToolTip="AI-функции находятся в стадии тестирования">
-                                            <TextBlock Text="BETA" FontSize="9" FontWeight="Bold"
+                                            <TextBlock Text="BETA" FontSize="{StaticResource Type.Monogram}" FontWeight="Bold"
                                                        Foreground="{DynamicResource BadgeWarningFg}"/>
                                         </Border>
                                     </StackPanel>
@@ -503,9 +503,9 @@
                             <Border Grid.Row="0" Style="{StaticResource OverlayHeader}">
                                 <Grid>
                                     <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                                        <TextBlock Text="&#xE77B;" FontFamily="{DynamicResource Font.Icon}" FontSize="16"
+                                        <TextBlock Text="&#xE77B;" FontFamily="{DynamicResource Font.Icon}" FontSize="{StaticResource Type.Subtitle}"
                                                    Foreground="{DynamicResource Accent}" VerticalAlignment="Center" Margin="{DynamicResource Gap.Inline}"/>
-                                        <TextBlock Text="Заказчик" FontSize="14" FontWeight="SemiBold"
+                                        <TextBlock Text="Заказчик" FontSize="{StaticResource Type.BodyLg}" FontWeight="SemiBold"
                                                    Foreground="{DynamicResource TextPrimary}" VerticalAlignment="Center"/>
                                     </StackPanel>
                                     <Button Style="{StaticResource OverlayCloseButton}"
@@ -540,9 +540,9 @@
                             <Border Grid.Row="0" Style="{StaticResource OverlayHeader}">
                                 <Grid>
                                     <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                                        <TextBlock Text="&#xE7B3;" FontFamily="{DynamicResource Font.Icon}" FontSize="16"
+                                        <TextBlock Text="&#xE7B3;" FontFamily="{DynamicResource Font.Icon}" FontSize="{StaticResource Type.Subtitle}"
                                                    Foreground="{DynamicResource Accent}" VerticalAlignment="Center" Margin="{DynamicResource Gap.Inline}"/>
-                                        <TextBlock Text="Печать КП" FontSize="14" FontWeight="SemiBold"
+                                        <TextBlock Text="Печать КП" FontSize="{StaticResource Type.BodyLg}" FontWeight="SemiBold"
                                                    Foreground="{DynamicResource TextPrimary}" VerticalAlignment="Center"/>
                                     </StackPanel>
                                     <Button Style="{StaticResource OverlayCloseButton}"
@@ -563,166 +563,165 @@
                         BorderBrush="{DynamicResource Border}" BorderThickness="0,0,1,0"
                         ClipToBounds="True"
                         WindowChrome.IsHitTestVisibleInChrome="True">
-                    <StackPanel VerticalAlignment="Top" Margin="6,8,6,0">
+                    <StackPanel VerticalAlignment="Top" Margin="{DynamicResource Gap.NavCluster}">
                         <!-- Explicit toggle: the panel stays expanded until the user collapses it. -->
-                        <Button x:Name="BtnToggleNav" Style="{StaticResource NavButton}" Width="148"
+                        <Button x:Name="BtnToggleNav" Style="{StaticResource NavButton}"
                                 ToolTip="Свернуть панель навигации" Click="BtnToggleNav_Click"
                                 Margin="{DynamicResource Gap.Block}">
                             <Grid>
                                 <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="Auto"/>
+                                    <ColumnDefinition Width="36"/>
                                     <ColumnDefinition Width="*"/>
                                 </Grid.ColumnDefinitions>
-                                <Grid Width="30" Height="28">
+                                <Grid Grid.Column="0" HorizontalAlignment="Center" VerticalAlignment="Center">
                                     <!-- Segoe MDL2 Assets: GlobalNavigationButton. The literal ☰
                                          rendered as a missing-glyph square on some Windows font setups. -->
-                                    <TextBlock Text="&#xE700;" FontFamily="{DynamicResource Font.Icon}" FontSize="16"
+                                    <TextBlock Text="&#xE700;" FontFamily="{DynamicResource Font.Icon}" FontSize="{StaticResource Type.Subtitle}"
                                                HorizontalAlignment="Center" VerticalAlignment="Center"
                                                SnapsToDevicePixels="True"/>
                                 </Grid>
-                                <TextBlock x:Name="NavToggleLabel" Grid.Column="1" Text="Свернуть" Margin="10,0,0,0"
-                                           FontSize="12" VerticalAlignment="Center" FontFamily="{DynamicResource Font.Text}"/>
+                                <TextBlock x:Name="NavToggleLabel" Grid.Column="1" Text="Свернуть" Margin="{DynamicResource Gap.LeftSm}"
+                                           FontSize="{StaticResource Type.Body}" VerticalAlignment="Center" FontFamily="{DynamicResource Font.Text}"/>
                             </Grid>
                         </Button>
                         <!-- v3.50: navigation groups (prototype sidebar) -->
                         <TextBlock x:Name="NavGroupMain" Text="ОСНОВНОЕ"
-                                   FontSize="11" FontWeight="SemiBold" FontFamily="{DynamicResource Font.Text}"
+                                   FontSize="{StaticResource Type.Caption}" FontWeight="SemiBold" FontFamily="{DynamicResource Font.Text}"
                                    Foreground="{DynamicResource TextMuted}"
-                                   Margin="12,6,0,4"/>
+                                   Margin="{DynamicResource Gap.NavSection}"/>
                         <!-- Расчёт -->
-                        <Button x:Name="NavBtnCalc" Style="{StaticResource NavButton}" Width="148"
+                        <Button x:Name="NavBtnCalc" Style="{StaticResource NavButton}"
                                 ToolTip="Расчёт (Ctrl+1)" Click="NavButton_Click" Tag="Calc">
                             <Grid>
                                 <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="Auto"/>
+                                    <ColumnDefinition Width="36"/>
                                     <ColumnDefinition Width="*"/>
                                 </Grid.ColumnDefinitions>
-                                <Grid Grid.Column="0" Width="30" Height="28">
+                                <Grid Grid.Column="0" HorizontalAlignment="Center" VerticalAlignment="Center">
                                     <TextBlock x:Name="NavIconCalc" Text="&#xE1D0;"
-                                               FontSize="20" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                               FontSize="{StaticResource Type.TitleLg}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                                 </Grid>
                                 <TextBlock x:Name="NavLabelCalc" Grid.Column="1" Text="Расчёт" Opacity="1"
-                                           Margin="10,0,0,0" FontSize="12" VerticalAlignment="Center"
+                                           Margin="{DynamicResource Gap.LeftSm}" FontSize="{StaticResource Type.Body}" VerticalAlignment="Center"
                                            FontFamily="{DynamicResource Font.Text}"/>
                             </Grid>
                         </Button>
                         <!-- Заказы -->
-                        <Button x:Name="NavBtnOrders" Style="{StaticResource NavButton}" Width="148"
+                        <Button x:Name="NavBtnOrders" Style="{StaticResource NavButton}"
                                 ToolTip="Заказы (Ctrl+2)" Click="NavButton_Click" Tag="Orders" Margin="{DynamicResource Gap.BlockTop}">
                             <Grid>
                                 <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="Auto"/>
+                                    <ColumnDefinition Width="36"/>
                                     <ColumnDefinition Width="*"/>
                                 </Grid.ColumnDefinitions>
-                                <Grid Grid.Column="0" Width="30" Height="28">
+                                <Grid Grid.Column="0" HorizontalAlignment="Center" VerticalAlignment="Center">
                                     <TextBlock x:Name="NavIconOrders" Text="&#xE71D;"
-                                               FontSize="20" HorizontalAlignment="Center" VerticalAlignment="Center"/>
-
+                                               FontSize="{StaticResource Type.TitleLg}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                                 </Grid>
                                 <TextBlock x:Name="NavLabelOrders" Grid.Column="1" Text="Заказы" Opacity="1"
-                                           Margin="10,0,0,0" FontSize="12" VerticalAlignment="Center"
+                                           Margin="{DynamicResource Gap.LeftSm}" FontSize="{StaticResource Type.Body}" VerticalAlignment="Center"
                                            FontFamily="{DynamicResource Font.Text}"/>
                             </Grid>
                         </Button>
                         <!-- Цены -->
-                        <Button x:Name="NavBtnPrices" Style="{StaticResource NavButton}" Width="148"
+                        <Button x:Name="NavBtnPrices" Style="{StaticResource NavButton}"
                                 ToolTip="Цены (Ctrl+3)" Click="NavButton_Click" Tag="Prices" Margin="{DynamicResource Gap.BlockTop}">
                             <Grid>
                                 <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="Auto"/>
+                                    <ColumnDefinition Width="36"/>
                                     <ColumnDefinition Width="*"/>
                                 </Grid.ColumnDefinitions>
-                                <Grid Grid.Column="0" Width="30" Height="28">
+                                <Grid Grid.Column="0" HorizontalAlignment="Center" VerticalAlignment="Center">
                                     <TextBlock x:Name="NavIconPrices" Text="&#xE8C7;"
-                                               FontSize="20" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                               FontSize="{StaticResource Type.TitleLg}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                                 </Grid>
                                 <TextBlock x:Name="NavLabelPrices" Grid.Column="1" Text="Цены" Opacity="1"
-                                           Margin="10,0,0,0" FontSize="12" VerticalAlignment="Center"
+                                           Margin="{DynamicResource Gap.LeftSm}" FontSize="{StaticResource Type.Body}" VerticalAlignment="Center"
                                            FontFamily="{DynamicResource Font.Text}"/>
                             </Grid>
                         </Button>
                         <!-- Откосы (v3.50: в группе «Основное» — пользовательское требование) -->
-                        <Button x:Name="NavBtnSlope" Style="{StaticResource NavButton}" Width="148"
+                        <Button x:Name="NavBtnSlope" Style="{StaticResource NavButton}"
                                 ToolTip="Откосы из сэндвича — калькулятор" Click="NavSlope_Click" Tag="Slope" Margin="{DynamicResource Gap.BlockTop}">
                             <Grid>
                                 <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="Auto"/>
+                                    <ColumnDefinition Width="36"/>
                                     <ColumnDefinition Width="*"/>
                                 </Grid.ColumnDefinitions>
-                                <Grid Grid.Column="0" Width="30" Height="28">
-                                    <TextBlock x:Name="NavIconSlope" Text="&#xE790;"
-                                               FontSize="20" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                <Grid Grid.Column="0" HorizontalAlignment="Center" VerticalAlignment="Center">
+                                    <TextBlock x:Name="NavIconSlope" Text="&#xE91B;"
+                                               FontSize="{StaticResource Type.TitleLg}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                                 </Grid>
                                 <!-- Автоматический просчёт откосов. -->
                                 <TextBlock x:Name="NavLabelSlope" Grid.Column="1" Text="Авто · Откосы" Opacity="1"
-                                           Margin="10,0,0,0" FontSize="12" VerticalAlignment="Center"
+                                           Margin="{DynamicResource Gap.LeftSm}" FontSize="{StaticResource Type.Body}" VerticalAlignment="Center"
                                            FontFamily="{DynamicResource Font.Text}"/>
                             </Grid>
                         </Button>
                         <!-- Печать -->
-                        <Button x:Name="NavBtnPrint" Style="{StaticResource NavButton}" Width="148"
+                        <Button x:Name="NavBtnPrint" Style="{StaticResource NavButton}"
                                 ToolTip="Печать (Ctrl+5)" Click="NavButton_Click" Tag="Print" Margin="{DynamicResource Gap.BlockTop}">
                             <Grid>
                                 <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="Auto"/>
+                                    <ColumnDefinition Width="36"/>
                                     <ColumnDefinition Width="*"/>
                                 </Grid.ColumnDefinitions>
-                                <Grid Grid.Column="0" Width="30" Height="28">
+                                <Grid Grid.Column="0" HorizontalAlignment="Center" VerticalAlignment="Center">
                                     <TextBlock x:Name="NavIconPrint" Text="&#xE7B3;"
-                                               FontSize="20" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                               FontSize="{StaticResource Type.TitleLg}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                                 </Grid>
                                 <TextBlock x:Name="NavLabelPrint" Grid.Column="1" Text="Печать" Opacity="1"
-                                           Margin="10,0,0,0" FontSize="12" VerticalAlignment="Center"
+                                           Margin="{DynamicResource Gap.LeftSm}" FontSize="{StaticResource Type.Body}" VerticalAlignment="Center"
                                            FontFamily="{DynamicResource Font.Text}"/>
                             </Grid>
                         </Button>
                         <!-- Служебное -->
                         <TextBlock x:Name="NavGroupService" Text="СЛУЖЕБНОЕ"
-                                   FontSize="11" FontWeight="SemiBold" FontFamily="{DynamicResource Font.Text}"
+                                   FontSize="{StaticResource Type.Caption}" FontWeight="SemiBold" FontFamily="{DynamicResource Font.Text}"
                                    Foreground="{DynamicResource TextMuted}"
-                                   Margin="12,14,0,4"/>
+                                   Margin="{DynamicResource Gap.NavSectionLg}"/>
                         <!-- Обновления -->
-                        <Button x:Name="NavBtnUpdates" Style="{StaticResource NavButton}" Width="148"
+                        <Button x:Name="NavBtnUpdates" Style="{StaticResource NavButton}"
                                 ToolTip="Обновления (Ctrl+4)" Click="NavButton_Click" Tag="Updates" Margin="{DynamicResource Gap.BlockTop}">
                             <Grid>
                                 <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="Auto"/>
+                                    <ColumnDefinition Width="36"/>
                                     <ColumnDefinition Width="*"/>
                                 </Grid.ColumnDefinitions>
-                                <Grid Grid.Column="0" Width="30" Height="28">
+                                <Grid Grid.Column="0" HorizontalAlignment="Center" VerticalAlignment="Center">
                                     <TextBlock x:Name="NavIconUpdates" Text="&#xE81C;"
-                                               FontSize="20" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                               FontSize="{StaticResource Type.TitleLg}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                                     <Ellipse x:Name="NavUpdatesDot" Width="8" Height="8" Fill="{DynamicResource NotificationDot}"
                                              HorizontalAlignment="Right" VerticalAlignment="Top"
-                                             Margin="0,2,-4,0" Visibility="Collapsed"
+                                             Margin="{DynamicResource Gap.BadgeOffset}" Visibility="Collapsed"
                                              ToolTip="Доступна новая версия!"/>
                                 </Grid>
                                 <TextBlock x:Name="NavLabelUpdates" Grid.Column="1" Text="Обновления" Opacity="1"
-                                           Margin="10,0,0,0" FontSize="12" VerticalAlignment="Center"
+                                           Margin="{DynamicResource Gap.LeftSm}" FontSize="{StaticResource Type.Body}" VerticalAlignment="Center"
                                            FontFamily="{DynamicResource Font.Text}"/>
                             </Grid>
                         </Button>
                         <!-- AI Ассистент -->
-                        <Button x:Name="NavBtnAi" Style="{StaticResource NavButton}" Width="148"
+                        <Button x:Name="NavBtnAi" Style="{StaticResource NavButton}"
                                 ToolTip="AI Ассистент" Click="NavAi_Click" Tag="AI" Margin="{DynamicResource Gap.BlockTop}">
                             <Grid>
                                 <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="Auto"/>
+                                    <ColumnDefinition Width="36"/>
                                     <ColumnDefinition Width="*"/>
                                 </Grid.ColumnDefinitions>
-                                <Grid Grid.Column="0" Width="30" Height="28">
+                                <Grid Grid.Column="0" HorizontalAlignment="Center" VerticalAlignment="Center">
                                     <TextBlock x:Name="NavIconAi" Text="&#xE99A;"
-                                               FontSize="20" HorizontalAlignment="Center" VerticalAlignment="Center"
+                                               FontSize="{StaticResource Type.TitleLg}" HorizontalAlignment="Center" VerticalAlignment="Center"
                                                Margin="{DynamicResource Gap.BlockSm}"/>
-                                    <TextBlock Text="AI" FontSize="9" FontWeight="Bold"
+                                    <TextBlock Text="AI" FontSize="{StaticResource Type.Monogram}" FontWeight="Bold"
                                                HorizontalAlignment="Center" VerticalAlignment="Bottom"
                                                Foreground="{DynamicResource Accent}"/>
                                 </Grid>
                                 <TextBlock x:Name="NavLabelAi" Grid.Column="1" Opacity="1"
-                                           Margin="10,0,0,0" FontSize="12" VerticalAlignment="Center"
+                                           Margin="{DynamicResource Gap.LeftSm}" FontSize="{StaticResource Type.Body}" VerticalAlignment="Center"
                                            FontFamily="{DynamicResource Font.Text}">
                                     <Run Text="AI"/>
-                                    <Run Text="  BETA" FontSize="9" FontWeight="Bold"
+                                    <Run Text="  BETA" FontSize="{StaticResource Type.Monogram}" FontWeight="Bold"
                                          Foreground="{DynamicResource BadgeWarningFg}"/>
                                 </TextBlock>
                             </Grid>

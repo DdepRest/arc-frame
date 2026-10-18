@@ -47,8 +47,13 @@ namespace MosquitoNetCalculator.Tests.Controls
             Assert.Contains("Binding HasClarificationForm", xaml);
             Assert.Contains("Заполните параметры", xaml);
             Assert.Contains("ClarificationForm.ProductTypes", xaml);
-            Assert.Contains("ClarificationForm.WidthText", xaml);
-            Assert.Contains("ClarificationForm.HeightText", xaml);
+            // Sizes are a LIST — one editable row per position, so a request /
+            // screenshot naming several sizes adds ALL of them.
+            Assert.Contains("ClarificationForm.SizeRows", xaml);
+            Assert.Contains("Binding WidthText", xaml);
+            Assert.Contains("Binding HeightText", xaml);
+            Assert.Contains("BtnAddSizeRow_Click", xaml);
+            Assert.Contains("BtnRemoveSizeRow_Click", xaml);
             Assert.Contains("ClarificationForm.SelectedAnwisMode", xaml);
             Assert.Contains("ClarificationForm.SelectedInstallation", xaml);
             Assert.Contains("BtnSubmitClarification_Click", xaml);
@@ -266,6 +271,44 @@ namespace MosquitoNetCalculator.Tests.Controls
             Assert.Contains("BtnLoadOlder_Click", codeBehind);
             Assert.Contains("LoadOlderMessages()", codeBehind);
             Assert.Contains("const int VisibleCap = 100", viewModel);
+        }
+
+        [Fact]
+        public void CleanDisplayText_HidesThinkingAndJsonBlocks_DuringStreaming()
+        {
+            const string rawStreamWithJson = @"• Просчёт стоимости:
+
+```json
+{
+  ""action"": ""calc_cost"",
+  ""params"": {
+    ""width"": 1500,
+    ""height"": 700
+  }
+}
+```";
+            var cleaned = AiChatMessage.CleanDisplayText(rawStreamWithJson);
+            Assert.Empty(cleaned);
+
+            var msg = new AiChatMessage
+            {
+                Text = rawStreamWithJson,
+                IsStreaming = true
+            };
+            Assert.True(msg.IsRawProtocol);
+            Assert.Empty(msg.DisplayText);
+        }
+
+        [Fact]
+        public void CleanDisplayText_StripsUnclosedThinkTags_AndShowsCleanText()
+        {
+            const string streamingThink = "<think>The user wants to calculate 4 nets\nLet's check the size</think>Я подготовлю расчёт:";
+            var cleaned = AiChatMessage.CleanDisplayText(streamingThink);
+            Assert.Equal("Я подготовлю расчёт:", cleaned);
+
+            const string unclosedThink = "<think>Analyzing image...";
+            var cleanedUnclosed = AiChatMessage.CleanDisplayText(unclosedThink);
+            Assert.Empty(cleanedUnclosed);
         }
 
         private static string LocateSource(string relativePath)

@@ -27,6 +27,7 @@ namespace MosquitoNetCalculator.Tests.Services
     /// fresh per-test scope id (via <see cref="NewScope"/>) prevents
     /// cross-test pollution even when xUnit parallelizes test classes.
     /// </summary>
+    [Collection("WPF_UI")]
     public class ToastServiceTests
     {
         /// <summary>Fresh scope id so each test's mappings don't leak.</summary>

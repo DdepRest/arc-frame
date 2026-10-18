@@ -10,7 +10,6 @@ namespace MosquitoNetCalculator.Models
 {
     public class ClientInfo : INotifyPropertyChanged
     {
-        private string _clientName = string.Empty;
         private string _clientPhone = string.Empty;
         private string _clientAddress = string.Empty;
         private string _contractNumber = string.Empty;
@@ -29,12 +28,6 @@ namespace MosquitoNetCalculator.Models
         // LAST PropertyChanged event still carries the field's own name —
         // existing listeners that record "the last event" (tests, diagnostics)
         // keep observing the property they subscribed for.
-        public string ClientName
-        {
-            get => _clientName;
-            set { if (string.Equals(_clientName, value)) return; _clientName = value; OnPropertyChanged(nameof(IsClientInfoFilled)); OnPropertyChanged(); }
-        }
-
         public string ClientPhone
         {
             get => _clientPhone;
@@ -55,11 +48,10 @@ namespace MosquitoNetCalculator.Models
 
         /// <summary>
         /// UX-07: whether the minimum client data for a print-ready order is filled
-        /// (name, phone, address, contract number). Drives the «Заказчик» button
+        /// (phone, address, contract number). Drives the «Заказчик» button
         /// fill state in the ActionBar — outline while empty, filled once complete.
         /// </summary>
         public bool IsClientInfoFilled =>
-            !string.IsNullOrWhiteSpace(ClientName) &&
             !string.IsNullOrWhiteSpace(ClientPhone) &&
             !string.IsNullOrWhiteSpace(ClientAddress) &&
             !string.IsNullOrWhiteSpace(ContractNumber);

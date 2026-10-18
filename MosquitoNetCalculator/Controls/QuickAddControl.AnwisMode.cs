@@ -134,8 +134,8 @@ namespace MosquitoNetCalculator.Controls
             var r = Application.Current.Resources;
             Brush activeBg = (Brush)r["Accent"];
             Brush activeFg = (Brush)r["OnAccent"];
-            Brush inactiveFg = (Brush)r["TextSecondary"];
-            Brush sepBrush = (Brush)r["SubtleBorder"];
+            Brush inactiveFg = (Brush)r["TextPrimary"];
+            Brush sepBrush = (Brush)r["Border"];
 
             var pills = new[] { PillBB60, PillBB70, PillPP, PillProem, PillGab };
             var seps  = new[] { Sep1, Sep2, Sep3, Sep4 };

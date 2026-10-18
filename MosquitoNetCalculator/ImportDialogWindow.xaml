@@ -23,7 +23,7 @@
         </Border>
         <Border Background="{DynamicResource Surface}" ClipToBounds="True"
                 BorderBrush="{DynamicResource Border}" BorderThickness="1"
-                CornerRadius="{DynamicResource Radius.Lg}" Padding="4" Margin="{DynamicResource Gap.Window}">
+                CornerRadius="{DynamicResource Radius.Lg}" Padding="{DynamicResource Pad.ControlSm}" Margin="{DynamicResource Gap.Window}">
             <Grid>
             <Grid.RowDefinitions>
                 <RowDefinition Height="Auto"/>
@@ -35,7 +35,7 @@
                     Background="{DynamicResource HeaderBg}"
                     CornerRadius="{DynamicResource Radius.CardHeader}"
                     Height="32"
-                    Padding="14,0,0,0"
+                    Padding="{DynamicResource Pad.TitleBar}"
                     MouseLeftButtonDown="TitleBarBorder_MouseLeftButtonDown">
                 <Grid>
                     <Grid.ColumnDefinitions>
@@ -44,7 +44,7 @@
                     </Grid.ColumnDefinitions>
                     <TextBlock Grid.Column="0"
                                Text="{Binding Title, RelativeSource={RelativeSource AncestorType=Window}}"
-                               FontSize="12" FontWeight="SemiBold"
+                               FontSize="{StaticResource Type.Body}" FontWeight="SemiBold"
                                Foreground="{DynamicResource TextPrimary}"
                                VerticalAlignment="Center" HorizontalAlignment="Left"/>
                     <Button Grid.Column="1"
@@ -52,29 +52,29 @@
                             Style="{DynamicResource DialogCloseButton}"
                             ToolTip="Закрыть"
                             Click="BtnClose_Click">
-                        <TextBlock Text="&#xE8BB;" FontFamily="{DynamicResource Font.Icon}" FontSize="11"/>
+                        <TextBlock Text="&#xE8BB;" FontFamily="{DynamicResource Font.Icon}" FontSize="{StaticResource Type.Caption}"/>
                     </Button>
                 </Grid>
             </Border>
 
             <!-- Content -->
-            <StackPanel Grid.Row="1" Margin="16">
+            <StackPanel Grid.Row="1" Margin="{DynamicResource Gap.Panel}">
                 <TextBlock x:Name="HeaderText"
-                           FontSize="12"
+                           FontSize="{StaticResource Type.Body}"
                            Foreground="{DynamicResource TextPrimary}"
                            TextWrapping="Wrap"
-                           Margin="0,0,0,10"/>
+                           Margin="{DynamicResource Gap.Block10}"/>
 
                 <StackPanel Orientation="Horizontal" Margin="{DynamicResource Gap.Block}">
                     <Button x:Name="BtnSelectAll"
                             Content="Выбрать все"
                             Style="{DynamicResource GhostButton}"
-                            FontSize="11"
+                            FontSize="{StaticResource Type.Caption}"
                             Margin="{DynamicResource Gap.Inline}"/>
                     <Button x:Name="BtnDeselectAll"
                             Content="Снять все"
                             Style="{DynamicResource GhostButton}"
-                            FontSize="11"/>
+                            FontSize="{StaticResource Type.Caption}"/>
                 </StackPanel>
 
                 <ScrollViewer MaxHeight="250" VerticalScrollBarVisibility="Auto">

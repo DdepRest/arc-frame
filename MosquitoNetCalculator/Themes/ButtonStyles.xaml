@@ -1,4 +1,4 @@
-﻿<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
                     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
         <!-- ═══════════════════════════════════════════════════════ -->
         <!-- BUTTONS — all calm, proportional                        -->
@@ -8,7 +8,7 @@
         <Style x:Key="PrimaryButton" TargetType="Button">
             <Setter Property="Background" Value="{DynamicResource Accent}"/>
             <Setter Property="Foreground" Value="{DynamicResource OnAccentPrimary}"/>
-            <Setter Property="FontSize" Value="12"/>
+            <Setter Property="FontSize" Value="{StaticResource Type.Body}"/>
             <Setter Property="FontWeight" Value="SemiBold"/>
             <Setter Property="Padding" Value="14,6"/>
             <Setter Property="BorderThickness" Value="0"/>
@@ -38,7 +38,7 @@
         <Style x:Key="SuccessButton" TargetType="Button">
             <Setter Property="Background" Value="{DynamicResource Success}"/>
             <Setter Property="Foreground" Value="{DynamicResource OnSuccess}"/>
-            <Setter Property="FontSize" Value="12"/>
+            <Setter Property="FontSize" Value="{StaticResource Type.Body}"/>
             <Setter Property="FontWeight" Value="SemiBold"/>
             <Setter Property="Padding" Value="14,6"/>
             <Setter Property="BorderThickness" Value="0"/>
@@ -68,7 +68,7 @@
         <Style x:Key="DangerButton" TargetType="Button">
             <Setter Property="Background" Value="{DynamicResource Danger}"/>
             <Setter Property="Foreground" Value="{DynamicResource OnDanger}"/>
-            <Setter Property="FontSize" Value="12"/>
+            <Setter Property="FontSize" Value="{StaticResource Type.Body}"/>
             <Setter Property="FontWeight" Value="SemiBold"/>
             <Setter Property="Padding" Value="14,6"/>
             <Setter Property="BorderThickness" Value="0"/>
@@ -95,7 +95,7 @@
         <Style x:Key="GhostButton" TargetType="Button">
             <Setter Property="Background" Value="{DynamicResource GhostBg}"/>
             <Setter Property="Foreground" Value="{DynamicResource TextPrimary}"/>
-            <Setter Property="FontSize" Value="12"/>
+            <Setter Property="FontSize" Value="{StaticResource Type.Body}"/>
             <Setter Property="FontWeight" Value="SemiBold"/>
             <Setter Property="Padding" Value="14,6"/>
             <Setter Property="BorderThickness" Value="1"/>
@@ -133,7 +133,7 @@
         <Style x:Key="DangerGhostButton" TargetType="Button">
             <Setter Property="Background" Value="{DynamicResource Surface}"/>
             <Setter Property="Foreground" Value="{DynamicResource Danger}"/>
-            <Setter Property="FontSize" Value="12"/>
+            <Setter Property="FontSize" Value="{StaticResource Type.Body}"/>
             <Setter Property="FontWeight" Value="Regular"/>
             <Setter Property="Padding" Value="14,6"/>
             <Setter Property="BorderThickness" Value="1"/>
@@ -158,11 +158,87 @@
             </Setter>
         </Style>
 
+        <!-- SubtleActionButton — modern outlined action with hover highlight (e.g. Заказчик, Шаблоны) -->
+        <Style x:Key="SubtleActionButton" TargetType="Button">
+            <Setter Property="Background" Value="{DynamicResource GhostBg}"/>
+            <Setter Property="Foreground" Value="{DynamicResource TextPrimary}"/>
+            <Setter Property="FontSize" Value="{StaticResource Type.Body}"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="Padding" Value="14,6"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource Border}"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="Bd" Background="{Binding Background, RelativeSource={RelativeSource TemplatedParent}}"
+                                CornerRadius="{DynamicResource Radius.Md}" Padding="{Binding Padding, RelativeSource={RelativeSource TemplatedParent}}"
+                                BorderThickness="1" BorderBrush="{Binding BorderBrush, RelativeSource={RelativeSource TemplatedParent}}"
+                                SnapsToDevicePixels="True">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="Bd" Property="Background" Value="{DynamicResource AccentLight}"/>
+                                <Setter TargetName="Bd" Property="BorderBrush" Value="{DynamicResource Accent}"/>
+                                <Setter Property="Foreground" Value="{DynamicResource Accent}"/>
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter TargetName="Bd" Property="Background" Value="{DynamicResource AccentLight}"/>
+                            </Trigger>
+                            <Trigger Property="IsEnabled" Value="False">
+                                <Setter Property="Opacity" Value="0.4"/>
+                                <Setter Property="Foreground" Value="{DynamicResource TextMuted}"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- DangerSubtleButton — calm secondary button that highlights danger only on hover -->
+        <Style x:Key="DangerSubtleButton" TargetType="Button">
+            <Setter Property="Background" Value="{DynamicResource GhostBg}"/>
+            <Setter Property="Foreground" Value="{DynamicResource TextSecondary}"/>
+            <Setter Property="FontSize" Value="{StaticResource Type.Body}"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="Padding" Value="14,6"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource Border}"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="Bd" Background="{Binding Background, RelativeSource={RelativeSource TemplatedParent}}"
+                                CornerRadius="{DynamicResource Radius.Md}" Padding="{Binding Padding, RelativeSource={RelativeSource TemplatedParent}}"
+                                BorderThickness="1" BorderBrush="{Binding BorderBrush, RelativeSource={RelativeSource TemplatedParent}}"
+                                SnapsToDevicePixels="True">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="Bd" Property="Background" Value="{DynamicResource DangerLight}"/>
+                                <Setter TargetName="Bd" Property="BorderBrush" Value="{DynamicResource Danger}"/>
+                                <Setter Property="Foreground" Value="{DynamicResource Danger}"/>
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter TargetName="Bd" Property="Background" Value="{DynamicResource DangerLight}"/>
+                            </Trigger>
+                            <Trigger Property="IsEnabled" Value="False">
+                                <Setter Property="Opacity" Value="0.4"/>
+                                <Setter Property="Foreground" Value="{DynamicResource TextMuted}"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
         <!-- CompactAdd — Fluent "Add" button in Quick-Add -->
         <Style x:Key="CompactAddButton" TargetType="Button">
             <Setter Property="Background" Value="{DynamicResource Accent}"/>
             <Setter Property="Foreground" Value="{DynamicResource OnAccentPrimary}"/>
-            <Setter Property="FontSize" Value="12"/>
+            <Setter Property="FontSize" Value="{StaticResource Type.Body}"/>
             <Setter Property="FontWeight" Value="SemiBold"/>
             <Setter Property="Padding" Value="16,6"/>
             <Setter Property="BorderThickness" Value="0"/>
@@ -192,7 +268,7 @@
         <Style x:Key="AccentBorderButton" TargetType="Button">
             <Setter Property="Background" Value="{DynamicResource AccentLight}"/>
             <Setter Property="Foreground" Value="{DynamicResource Accent}"/>
-            <Setter Property="FontSize" Value="12"/>
+            <Setter Property="FontSize" Value="{StaticResource Type.Body}"/>
             <Setter Property="FontWeight" Value="SemiBold"/>
             <Setter Property="Padding" Value="14,6"/>
             <Setter Property="BorderThickness" Value="1"/>
@@ -226,7 +302,7 @@
         <Style x:Key="DeleteRowButton" TargetType="Button">
             <Setter Property="Background" Value="Transparent"/>
             <Setter Property="Foreground" Value="{DynamicResource BorderHover}"/>
-            <Setter Property="FontSize" Value="14"/>
+            <Setter Property="FontSize" Value="{StaticResource Type.BodyLg}"/>
             <Setter Property="Padding" Value="5"/>
             <Setter Property="BorderThickness" Value="0"/>
             <Setter Property="Cursor" Value="Hand"/>
@@ -247,7 +323,9 @@
                     </ControlTemplate>
                 </Setter.Value>
             </Setter>
-        </Style>        <!-- DialogOutlineButton — outlined dialog action button (Отмена/Сброс).
+        </Style>
+
+        <!-- DialogOutlineButton — outlined dialog action button (Отмена/Сброс).
              Shared: used by AiApiKeyDialog AND the AI plan card in
              AiAssistantControl, so it must live in the app theme dictionary,
              not in any single window's local resources. -->
@@ -256,7 +334,7 @@
             <Setter Property="Foreground" Value="{DynamicResource TextSecondary}"/>
             <Setter Property="BorderBrush" Value="{DynamicResource Border}"/>
             <Setter Property="BorderThickness" Value="1"/>
-            <Setter Property="FontSize" Value="11"/>
+            <Setter Property="FontSize" Value="{StaticResource Type.Caption}"/>
             <Setter Property="Cursor" Value="Hand"/>
             <Setter Property="Padding" Value="12,0"/>
             <Setter Property="Template">

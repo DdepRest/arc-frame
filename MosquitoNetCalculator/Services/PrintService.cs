@@ -1,6 +1,9 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Printing;
+using System.Threading;
+using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Documents;
@@ -72,6 +75,136 @@ namespace MosquitoNetCalculator.Services
             string contractNumber,
             DateTime contractDate)
             => FixedDocumentBuilder.Build(sourceDoc, settings, contractNumber, contractDate);
+
+        /// <summary>
+        /// Выполняет прямую печать заказа без открытия оверлея предпросмотра.
+        /// Разрешает очередь печати (по имени или по умолчанию), строит документы
+        /// и отправляет задание в спулер Windows.
+        /// </summary>
+        public static PrintResult PrintDirect(
+            List<OrderItem> items,
+            ClientInfo clientInfo,
+            PrintSettings settings,
+            out string resolvedPrinterName)
+        {
+            if (items == null) throw new ArgumentNullException(nameof(items));
+            if (clientInfo == null) throw new ArgumentNullException(nameof(clientInfo));
+            if (settings == null) throw new ArgumentNullException(nameof(settings));
+
+            var queue = string.IsNullOrWhiteSpace(settings.PrinterName)
+                ? ResolvePrintQueue(null)
+                : ResolvePrintQueue(settings.PrinterName);
+            if (queue == null)
+            {
+                resolvedPrinterName = string.Empty;
+                return new PrintResult
+                {
+                    Type = PrintResultType.PrinterError,
+                    UserMessage = "Не удалось определить принтер. Подключите принтер или откройте предпросмотр.",
+                    IsRetryable = false
+                };
+            }
+
+            resolvedPrinterName = queue.FullName;
+
+            var activeItems = items.Where(i => !string.IsNullOrEmpty(i.Name) && i.IsActive && i.Total > 0).ToList();
+            if (activeItems.Count == 0)
+            {
+                return new PrintResult
+                {
+                    Type = PrintResultType.Unknown,
+                    UserMessage = "Нет позиций для печати.",
+                    IsRetryable = false
+                };
+            }
+
+            double total = activeItems.Sum(i => i.TotalWithDeduction);
+            string amountInWords = AmountInWordsService.Convert(total);
+            string contractNumber = clientInfo.ContractNumber ?? "";
+
+            var flowDoc = new FlowDocumentBuilder().Build(activeItems, clientInfo, total, amountInWords);
+            if (flowDoc == null)
+            {
+                return new PrintResult
+                {
+                    Type = PrintResultType.Unknown,
+                    UserMessage = "Не удалось сформировать печатный документ.",
+                    IsRetryable = false
+                };
+            }
+
+            PrintTicket ticket;
+            try
+            {
+                ticket = queue.DefaultPrintTicket.Clone();
+                ticket.OutputColor = settings.Color ? OutputColor.Color : OutputColor.Monochrome;
+                ticket.PageMediaSize = new PageMediaSize(PageMediaSizeName.ISOA4);
+                ticket.PageOrder = PageOrder.Standard;
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"[PrintService] PrintTicket config failed: {ex.Message}");
+                ticket = queue.DefaultPrintTicket;
+            }
+
+            FixedDocument fixedDoc;
+            try
+            {
+                fixedDoc = BuildFixedDocument(flowDoc, settings, contractNumber, DateTime.Now);
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"[PrintService] BuildFixedDocument failed: {ex}");
+                return new PrintResult
+                {
+                    Type = PrintResultType.Unknown,
+                    UserMessage = $"Ошибка подготовки документа к печати: {ex.Message}",
+                    DebugMessage = ex.ToString(),
+                    IsRetryable = false
+                };
+            }
+
+            string jobName = string.IsNullOrWhiteSpace(contractNumber) ? "КП" : $"КП №{contractNumber.Trim()}";
+            return SendToQueue(queue, jobName, fixedDoc.DocumentPaginator, ticket);
+        }
+
+        /// <summary>
+        /// Выполняет прямую печать заказа асинхронно в выделенном STA-потоке,
+        /// полностью исключая зависание и блокировку основного UI-потока.
+        /// </summary>
+        public static Task<(PrintResult Result, string PrinterName)> PrintDirectAsync(
+            List<OrderItem> items,
+            ClientInfo clientInfo,
+            PrintSettings settings)
+        {
+            var tcs = new TaskCompletionSource<(PrintResult, string)>();
+            var thread = new Thread(() =>
+            {
+                try
+                {
+                    var result = PrintDirect(items, clientInfo, settings, out string resolvedName);
+                    tcs.SetResult((result, resolvedName));
+                }
+                catch (Exception ex)
+                {
+                    System.Diagnostics.Debug.WriteLine($"[PrintService] PrintDirectAsync error: {ex}");
+                    tcs.SetResult((new PrintResult
+                    {
+                        Type = PrintResultType.Unknown,
+                        UserMessage = $"Ошибка печати: {ex.Message}",
+                        DebugMessage = ex.ToString(),
+                        IsRetryable = false
+                    }, string.Empty));
+                }
+            })
+            {
+                IsBackground = true,
+                Name = "DirectPrintWorkerThread"
+            };
+            thread.SetApartmentState(ApartmentState.STA);
+            thread.Start();
+            return tcs.Task;
+        }
 
         // Drawing helpers (preserved for backward compatibility).
 

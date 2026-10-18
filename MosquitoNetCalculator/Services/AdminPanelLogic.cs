@@ -37,17 +37,6 @@ namespace MosquitoNetCalculator.Services
                 ? "Измените поиск или выберите фильтр «Все»."
                 : "Запустите программу в каждом офисе — здесь появятся статусы.";
 
-        // ─── Подсказка сводной карточки (единственный владелец фразы) ───
-
-        /// <summary>
-        /// Подсказка аффордансов сводки: описывает оба реальных способа
-        /// отправить напоминание. Пустая строка, когда напоминание не нужно.
-        /// </summary>
-        public static string SummaryHint(int outdatedOffices) =>
-            outdatedOffices > 0
-                ? "«Напоминание всем» — одно сообщение по всем устаревшим офисам; клик по карточке — напоминание только для неё."
-                : "Все устройства в актуальной версии.";
-
         // ─── Маркер «недавно отвязаны» ───
 
         /// <summary>
@@ -63,57 +52,6 @@ namespace MosquitoNetCalculator.Services
         public static IReadOnlyList<string> JustUnboundReturned(
             IEnumerable<string> justUnboundIds, IEnumerable<string> reportingDeviceIds) =>
             justUnboundIds.Intersect(reportingDeviceIds.ToHashSet()).ToList();
-
-        // ─── Тексты напоминаний (буфер обмена) ───
-
-        /// <summary>«доступна новая версия vX» / без «v…», когда GitHub недоступен.</summary>
-        public static string VersionLine(Version? latestVersion) =>
-            latestVersion != null
-                ? $"В программе «A.R.C. Frame» доступна новая версия v{latestVersion}.\n"
-                : "В программе «A.R.C. Frame» доступна новая версия.\n";
-
-        /// <summary>Фолбэк-ссылка, когда адрес скачивания неизвестен.</summary>
-        public const string FallbackDownloadUrl =
-            "(ссылка недоступна — см. последнюю версию в разделе «Обновления»)";
-
-        /// <summary>Одиночное напоминание устаревшему офису (клик по карточке).</summary>
-        public static string SingleReminderText(
-            string locationName, string? outdatedDeviceLabel, string outdatedDeviceVersion,
-            Version? latestVersion, string downloadUrl)
-        {
-            string currentLine = outdatedDeviceLabel != null
-                ? $"На устройстве «{outdatedDeviceLabel}» установлена v{outdatedDeviceVersion}.\n"
-                : $"Текущая версия у вас: v{outdatedDeviceVersion}.\n";
-
-            return
-                "Здравствуйте! 👋\n\n" +
-                VersionLine(latestVersion) +
-                $"Скачайте: {downloadUrl}\n\n" +
-                currentLine +
-                "После обновления программа сама отчитается — спасибо!";
-        }
-
-        /// <summary>Напоминание-дайджест по нескольким устаревшим офисам.</summary>
-        public static string BulkReminderText(
-            IReadOnlyList<(string LocationName, string DeviceLabel, string Version)> outdatedDevices,
-            IReadOnlyList<string> fallbackOfficeLines,
-            Version? latestVersion, string downloadUrl)
-        {
-            var lines = outdatedDevices
-                .Select(d => $"• {d.LocationName} — «{d.DeviceLabel}»: установлена v{d.Version}")
-                .ToList();
-            string body = lines.Count > 0
-                ? string.Join("\n", lines)
-                : string.Join("\n", fallbackOfficeLines);
-
-            return
-                "Здравствуйте! 👋\n\n" +
-                VersionLine(latestVersion) +
-                $"Скачайте: {downloadUrl}\n\n" +
-                "Требуют обновления:\n" +
-                body + "\n\n" +
-                "После обновления программа сама отчитается — спасибо!";
-        }
 
         // ─── Шапка «обновлено … · авто через …» ───
 

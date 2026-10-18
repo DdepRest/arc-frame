@@ -25,6 +25,8 @@ namespace MosquitoNetCalculator.Services
         {
             public string ApiKey { get; set; } = "";
             public string NvidiaApiKey { get; set; } = "";
+            public string FreeLlmApiKey { get; set; } = "";
+            public string FreeLlmApiEndpoint { get; set; } = "http://localhost:3001/v1";
             public string Model { get; set; } = AiAssistantService.OpenRouterFreeRouter;
             public List<string> FallbackModels { get; set; } = new();
             public List<AiModelOption> CachedModels { get; set; } = new();
@@ -32,6 +34,9 @@ namespace MosquitoNetCalculator.Services
             public List<AiModelAvailability> ModelAvailability { get; set; } = new();
             public List<AiChatMessage> ChatHistory { get; set; } = new();
             public bool AutoSelectModel { get; set; } = true;
+            public bool MultiModelConsensus { get; set; } = true;
+            public double Temperature { get; set; } = 0.2;
+            public string QuickPreset { get; set; } = "free";
         }
 
         /// <summary>
@@ -111,6 +116,43 @@ namespace MosquitoNetCalculator.Services
             {
                 var settings = LoadAiSettingsCore();
                 settings.NvidiaApiKey = key?.Trim() ?? "";
+                SaveAiSettingsCore(settings);
+            }
+        }
+
+        public static string LoadAiFreeLlmApiKey()
+        {
+            lock (SettingsLock)
+            {
+                return LoadAiSettingsCore().FreeLlmApiKey ?? "";
+            }
+        }
+
+        public static void SaveAiFreeLlmApiKey(string key)
+        {
+            lock (SettingsLock)
+            {
+                var settings = LoadAiSettingsCore();
+                settings.FreeLlmApiKey = key?.Trim() ?? "";
+                SaveAiSettingsCore(settings);
+            }
+        }
+
+        public static string LoadAiFreeLlmApiEndpoint()
+        {
+            lock (SettingsLock)
+            {
+                var ep = LoadAiSettingsCore().FreeLlmApiEndpoint;
+                return string.IsNullOrWhiteSpace(ep) ? "http://localhost:3001/v1" : ep.Trim();
+            }
+        }
+
+        public static void SaveAiFreeLlmApiEndpoint(string endpoint)
+        {
+            lock (SettingsLock)
+            {
+                var settings = LoadAiSettingsCore();
+                settings.FreeLlmApiEndpoint = string.IsNullOrWhiteSpace(endpoint) ? "http://localhost:3001/v1" : endpoint.Trim();
                 SaveAiSettingsCore(settings);
             }
         }
@@ -264,7 +306,7 @@ namespace MosquitoNetCalculator.Services
             lock (SettingsLock)
             {
                 return LoadAiSettingsCore().ChatHistory
-                    .Where(m => !string.IsNullOrWhiteSpace(m.Text))
+                    .Where(m => !string.IsNullOrWhiteSpace(m.Text) || (m.Attachments != null && m.Attachments.Count > 0) || m.AttachmentCount > 0)
                     .ToList().AsReadOnly();
             }
         }
@@ -272,8 +314,8 @@ namespace MosquitoNetCalculator.Services
         /// <summary>
         /// Persists the AI chat history, keeping only the last <paramref name="maxMessages"/> messages
         /// to prevent the settings file from growing unbounded.
-        /// Empty-text messages are never persisted — a blank bubble has no value
-        /// in a restored conversation.
+        /// Empty-text messages without attachments are never persisted — a blank bubble has no value
+        /// in a restored conversation. Messages with image attachments are preserved.
         /// </summary>
         public static void SaveChatHistory(IEnumerable<AiChatMessage> messages, int maxMessages = 50)
         {
@@ -281,7 +323,7 @@ namespace MosquitoNetCalculator.Services
             {
                 var settings = LoadAiSettingsCore();
                 settings.ChatHistory = messages
-                    .Where(m => !string.IsNullOrWhiteSpace(m.Text))
+                    .Where(m => !string.IsNullOrWhiteSpace(m.Text) || (m.Attachments != null && m.Attachments.Count > 0) || m.AttachmentCount > 0)
                     .TakeLast(maxMessages)
                     .ToList();
                 SaveAiSettingsCore(settings);
@@ -309,6 +351,66 @@ namespace MosquitoNetCalculator.Services
             {
                 var settings = LoadAiSettingsCore();
                 settings.AutoSelectModel = enabled;
+                SaveAiSettingsCore(settings);
+            }
+        }
+
+        /// <summary>
+        /// Returns true when multi-model vision consensus is enabled for drawing recognition.
+        /// </summary>
+        public static bool LoadAiMultiModelConsensus()
+        {
+            lock (SettingsLock)
+            {
+                return LoadAiSettingsCore().MultiModelConsensus;
+            }
+        }
+
+        /// <summary>
+        /// Persists multi-model vision consensus preference.
+        /// </summary>
+        public static void SaveAiMultiModelConsensus(bool enabled)
+        {
+            lock (SettingsLock)
+            {
+                var settings = LoadAiSettingsCore();
+                settings.MultiModelConsensus = enabled;
+                SaveAiSettingsCore(settings);
+            }
+        }
+
+        public static double LoadAiTemperature()
+        {
+            lock (SettingsLock)
+            {
+                return LoadAiSettingsCore().Temperature;
+            }
+        }
+
+        public static void SaveAiTemperature(double val)
+        {
+            lock (SettingsLock)
+            {
+                var settings = LoadAiSettingsCore();
+                settings.Temperature = Math.Clamp(val, 0.0, 1.0);
+                SaveAiSettingsCore(settings);
+            }
+        }
+
+        public static string LoadAiQuickPreset()
+        {
+            lock (SettingsLock)
+            {
+                return LoadAiSettingsCore().QuickPreset ?? "free";
+            }
+        }
+
+        public static void SaveAiQuickPreset(string preset)
+        {
+            lock (SettingsLock)
+            {
+                var settings = LoadAiSettingsCore();
+                settings.QuickPreset = preset ?? "free";
                 SaveAiSettingsCore(settings);
             }
         }

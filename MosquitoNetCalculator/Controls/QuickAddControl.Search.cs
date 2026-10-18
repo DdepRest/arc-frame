@@ -94,7 +94,7 @@ namespace MosquitoNetCalculator.Controls
 
             if (!TryGetMainWindow(nameof(UpdateSearchSuggestions), out var mw)) return;
 
-            string searchText = TxtQuickSearch.Text?.Trim().ToLower() ?? "";
+            string searchText = TxtQuickSearch.Text?.Trim() ?? "";
 
             if (string.IsNullOrEmpty(searchText))
             {
@@ -105,7 +105,7 @@ namespace MosquitoNetCalculator.Controls
             else
             {
                 var filtered = mw.ProductNames
-                    .Where(n => n.ToLower().Contains(searchText))
+                    .Where(n => n.IndexOf(searchText, System.StringComparison.CurrentCultureIgnoreCase) >= 0)
                     .ToList();
 
                 SearchSuggestions.ItemsSource = filtered;

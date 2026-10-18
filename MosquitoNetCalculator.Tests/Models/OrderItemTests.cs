@@ -631,7 +631,7 @@ namespace MosquitoNetCalculator.Tests.Models
             };
             Assert.Equal(750, item.InstallationRowTotal, 2);
             Assert.Equal("+750", item.InstallationAmountDisplay);
-            Assert.StartsWith("✓", item.KpInstallationCellText);
+            Assert.StartsWith("Вкл", item.KpInstallationCellText);
             Assert.Contains("+750", item.KpInstallationCellText);
         }
 
@@ -644,11 +644,11 @@ namespace MosquitoNetCalculator.Tests.Models
             Assert.Equal("", psul.InstallationAmountDisplay);
             Assert.Equal("—", psul.KpInstallationCellText);
 
-            // Anwis по умолчанию (mode 0, ставка 0): ячейка КП как раньше — голый глиф.
+            // Anwis по умолчанию (mode 0, ставка 0): ячейка КП — голая метка «Вкл».
             var anwis = new OrderItem { Name = "Anwis", Width = 599, Height = 1216, Price = 1800 };
             Assert.Equal(0, anwis.InstallationRowTotal);
             Assert.Equal("", anwis.InstallationAmountDisplay);
-            Assert.Equal("✓", anwis.KpInstallationCellText);
+            Assert.Equal("Вкл", anwis.KpInstallationCellText);
         }
 
         [Fact]
@@ -666,7 +666,7 @@ namespace MosquitoNetCalculator.Tests.Models
             Assert.Equal(-1000, item.InstallationRowTotal, 2);
             Assert.StartsWith("−", item.InstallationAmountDisplay);
             Assert.Contains("000", item.InstallationAmountDisplay);
-            Assert.StartsWith("✗", item.KpInstallationCellText);
+            Assert.StartsWith("Без", item.KpInstallationCellText);
             Assert.True(item.KpInstallationCellText.Contains(" −"),
                 $"cell=[{item.KpInstallationCellText}]");
         }
@@ -1114,31 +1114,29 @@ namespace MosquitoNetCalculator.Tests.Models
         // ─── KpInstallationDisplay tests ─────────────────────
 
         [Fact]
-        public void KpInstallationDisplay_Mode0_ReturnsCheckmark()
+        public void KpInstallationDisplay_Mode0_ReturnsVkl()
         {
             var item = new OrderItem { Name = "Anwis", InstallationMode = 0 };
-            Assert.Equal("\u2713", item.KpInstallationDisplay);
+            Assert.Equal("Вкл", item.KpInstallationDisplay);
         }
 
         [Fact]
-        public void KpInstallationDisplay_Mode1_ReturnsBallotX()
+        public void KpInstallationDisplay_Mode1_ReturnsBez()
         {
-            // KP uses the same ✗ (U+2717) for "no installation" that the grid
-            // icon uses, so the column reads as a single visual vocabulary:
-            // ✓ (green) when yes / in-construction, ✗ when no, — when n/a.
+            // KP uses the same "Без" for "no installation" that the grid
+            // button uses, so the column reads as a single visual vocabulary:
+            // "Вкл" when yes, "Без" when no, "ВК" when in-construction, "—" when n/a.
             var item = new OrderItem { Name = "Anwis", InstallationMode = 1 };
-            Assert.Equal("\u2717", item.KpInstallationDisplay);
+            Assert.Equal("Без", item.KpInstallationDisplay);
         }
 
         [Fact]
-        public void KpInstallationDisplay_Mode2_ReturnsVeLetter()
+        public void KpInstallationDisplay_Mode2_ReturnsVk()
         {
             // The printed KP disambiguates mode 2 (В конструкцию) from mode 0
-            // (Монтаж включён) by showing a Cyrillic "В" instead of the same
-            // ✓ checkmark — so the reader can tell the two "yes" modes apart
-            // without having to consult the title attribute.
+            // (Монтаж включён) by showing "ВК" (matching DataGrid button label).
             var item = new OrderItem { Name = "Anwis", InstallationMode = 2 };
-            Assert.Equal("\u0412", item.KpInstallationDisplay);
+            Assert.Equal("ВК", item.KpInstallationDisplay);
         }
 
         // ─── InstallationLabel tests ─────────────────────────

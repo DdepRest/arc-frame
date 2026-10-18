@@ -298,12 +298,45 @@
       "note": "WPF inline renderer for formatted notes"
     },
     {
+      "file": "Services/NotesDocumentBuilder.cs",
+      "docs": [
+        "CURRENT_STATE.md",
+        "CHANGELOG.md"
+      ],
+      "note": "stored notes markup -> editor FlowDocument (WYSIWYG notes field)"
+    },
+    {
+      "file": "Services/NotesMarkupWriter.cs",
+      "docs": [
+        "CURRENT_STATE.md",
+        "CHANGELOG.md"
+      ],
+      "note": "editor FlowDocument -> stored notes markup (round-trip partner)"
+    },
+    {
       "file": "Services/AiAssistantService.cs",
       "docs": [
         "CURRENT_STATE.md",
         "CHANGELOG.md"
       ],
-      "note": "AI streaming, model routing and free-provider fallback"
+      "note": "AI streaming, model routing and free-provider fallback; empty-2xx diagnosis names the endpoint problem"
+    },
+    {
+      "file": "Services/AiKeyValidator.cs",
+      "docs": [
+        "CURRENT_STATE.md",
+        "CHANGELOG.md",
+        "GOTCHAS.md"
+      ],
+      "note": "provider key/URL helpers; FreeLLMAPI endpoint normalization (/v1) + honest catalog/live-chat key test"
+    },
+    {
+      "file": "Services/AiModelCatalogClient.cs",
+      "docs": [
+        "CURRENT_STATE.md",
+        "CHANGELOG.md"
+      ],
+      "note": "provider catalogs, free/chat filters, saved-selection reconciliation"
     },
     {
       "file": "Services/AiModelSelector.cs",
@@ -421,6 +454,14 @@
         "CHANGELOG.md"
       ],
       "note": "interactive parameter card for AI clarification replies"
+    },
+    {
+      "file": "Models/AiClarificationSizeRow.cs",
+      "docs": [
+        "CURRENT_STATE.md",
+        "CHANGELOG.md"
+      ],
+      "note": "one editable size row of the clarification card — one row = one added position"
     },
     {
       "file": "Services/AiCommandParser.cs",

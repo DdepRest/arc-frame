@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
@@ -382,6 +382,13 @@ namespace MosquitoNetCalculator
             _navService = new NavigationService(navButtons, navIcons, navLabels, NavPanel, this,
                 new[] { NavGroupMain, NavGroupService });
 
+            // Рекомендованный режим Studio: компактный иконочный рельс (52px) по умолчанию
+            _navService.Collapse();
+            CalculationView.Margin = new Thickness(52, 0, 0, 0);
+            NavPanel.Width = 52;
+            NavToggleLabel.Visibility = Visibility.Collapsed;
+            BtnToggleNav.ToolTip = "Развернуть панель навигации";
+
             // ── Overlay entries (shared between OverlayManager and coordinators) ──
             _ordersEntry   = new OverlayManager.OverlayEntry(OrdersOverlay,   OrdersPanel,   OrdersBackdrop,   OrdersSlideTransform);
             _pricesEntry   = new OverlayManager.OverlayEntry(PricesOverlay,   PricesPanel,   PricesBackdrop,   PricesSlideTransform);
@@ -433,6 +440,7 @@ namespace MosquitoNetCalculator
         {
             RefreshOrdersList();
             RecalculatePriceGridColumnWidths();
+            RecalculateOrderGridColumnWidths();
             _initialLoadDone = true;
 
             // ── Тихий отчёт офиса в gist (админ-панель) ────────────
@@ -585,12 +593,8 @@ namespace MosquitoNetCalculator
                     break;
                 case "Admin":
                     // Панель видна всем офисам, но вход — только по вшитому паролю.
-                    // Сам диалог AdminPasswordWindow проверяет пароль через
-                    // AppSettingsService.VerifyAdminPassword и при неверном — оставляет
-                    // окно открытым, показывая inline-ошибку. DialogResult=true = только
-                    // при верном пароле.
-                    var enterDialog = new AdminPasswordWindow { Owner = this };
-                    if (enterDialog.ShowDialog() == true)
+                    // После первого успешного ввода сессия разблокируется до перезапуска.
+                    if (AppSettingsService.EnsureAdminUnlocked(this))
                         ShowAdminPanel();
                     break;
                 case "Slope":
@@ -649,7 +653,17 @@ namespace MosquitoNetCalculator
 
             _navService.Toggle();
             bool expanded = _navService.IsExpanded;
-            CalculationView.Margin = new Thickness(expanded ? 160 : 52, 0, 0, 0);
+            double targetLeft = expanded ? 160 : 52;
+            var duration = expanded ? Motion.Slow : Motion.Base;
+
+            var marginAnim = new ThicknessAnimation(
+                new Thickness(targetLeft, 0, 0, 0),
+                duration)
+            {
+                EasingFunction = new CubicEase { EasingMode = expanded ? EasingMode.EaseOut : EasingMode.EaseIn }
+            };
+            CalculationView.BeginAnimation(FrameworkElement.MarginProperty, marginAnim);
+
             NavToggleLabel.Visibility = expanded ? Visibility.Visible : Visibility.Collapsed;
             BtnToggleNav.ToolTip = expanded
                 ? "Свернуть панель навигации"
@@ -760,12 +774,11 @@ namespace MosquitoNetCalculator
             PrintOverlay.Visibility = Visibility.Visible;
             PrintBackdrop.Opacity = 0;
 
-            // Slide from right
-            PrintPanel.Measure(new System.Windows.Size(double.PositiveInfinity, double.PositiveInfinity));
-            double panelWidth = PrintPanel.ActualWidth > 0 ? PrintPanel.ActualWidth : PrintPanel.Width;
+            // Slide from right: PrintPanel.Width уже точно вычислена выше
+            double panelWidth = PrintPanel.Width > 0 ? PrintPanel.Width : 800;
             PrintSlideTransform.X = panelWidth;
 
-            var slideAnim = new DoubleAnimation(0, Motion.Emphasized)
+            var slideAnim = new DoubleAnimation(0, Motion.Slow)
             {
                 EasingFunction = new CubicEase { EasingMode = EasingMode.EaseOut }
             };
@@ -784,6 +797,172 @@ namespace MosquitoNetCalculator
         {
             // CloseAllOverlays already saves settings and unsubscribes safely.
             CloseAllOverlays();
+        }
+
+        private bool _isPrintingDirect;
+
+        /// <summary>
+        /// Выполняет прямую печать заказа без открытия оверлея предпросмотра
+        /// асинхронно в фоновом STA-потоке (без зависания UI).
+        /// </summary>
+        internal async void TriggerPrinterPrint(bool withProductionCopy = false)
+        {
+            if (_isPrintingDirect)
+            {
+                ToastService.ShowToast("Печать уже выполняется...", ToastType.Warning);
+                return;
+            }
+
+            var validItems = OrderItems.Where(i => !string.IsNullOrEmpty(i.Name) && i.IsActive && i.Total > 0).ToList();
+            if (validItems.Count == 0)
+            {
+                ToastService.ShowToast("Добавьте хотя бы одну позицию.", ToastType.Warning);
+                return;
+            }
+
+            var settings = LastPrintSettings.Clone();
+            // 1. «Печать без предпросмотра» -> только «Чистая» копия (IncludeProductionCopy = false)
+            // 2. «Чистая» + «В производство» -> обе копии (IncludeProductionCopy = true)
+            settings.IncludeProductionCopy = withProductionCopy;
+            settings.Copies = Math.Max(1, settings.Copies);
+
+            if (settings.Copies > 10)
+            {
+                if (!DialogService.ShowConfirm(
+                        $"Количество копий ({settings.Copies}) больше 10.\nВы точно хотите распечатать?",
+                        "Печать",
+                        this))
+                    return;
+            }
+
+            if (settings.IncludeProductionCopy && !ProductionStampImage.TryGetPath(out _))
+            {
+                DialogService.ShowMessage(
+                    "Изображение печати «В производство» не найдено.\n" +
+                    "Лист «В производство» будет сформирован без печати.\n\n" +
+                    "Проверьте, что файл v_proizvodstvo.png находится рядом с программой.",
+                    "Печать «В производство»",
+                    this);
+            }
+
+            // Изолированный снимок данных для фонового STA-потока
+            var itemsSnapshot = validItems.Select(i => i.Clone()).ToList();
+            var clientSnapshot = new ClientInfo
+            {
+                ClientPhone = ClientInfo.ClientPhone,
+                ClientAddress = ClientInfo.ClientAddress,
+                ContractNumber = ClientInfo.ContractNumber,
+                ContractDate = ClientInfo.ContractDate,
+                Notes = ClientInfo.Notes,
+                HasAdditionalKp = ClientInfo.HasAdditionalKp
+            };
+            foreach (var kp in ClientInfo.AdditionalKps)
+                clientSnapshot.AdditionalKps.Add(new AdditionalKpItem { Number = kp.Number, Amount = kp.Amount, IsActive = kp.IsActive });
+
+            _isPrintingDirect = true;
+            ToastService.ShowToast(
+                withProductionCopy
+                    ? "Отправка на печать («Чистая» + «В производство»)..."
+                    : "Отправка на печать («Чистая» копия)...",
+                ToastType.Info);
+
+            try
+            {
+                var (result, printerName) = await PrintService.PrintDirectAsync(itemsSnapshot, clientSnapshot, settings);
+                if (result.Type == PrintResultType.Success)
+                {
+                    LastPrintSettings = settings;
+                    string copyInfo = settings.IncludeProductionCopy ? " (+ копия в производство)" : "";
+                    string contractInfo = string.IsNullOrWhiteSpace(clientSnapshot.ContractNumber) ? "" : $" №{clientSnapshot.ContractNumber.Trim()}";
+                    ToastService.ShowToast($"КП{contractInfo} отправлено на печать («{printerName}»){copyInfo}", ToastType.Success);
+                }
+                else
+                {
+                    DialogService.ShowMessage(result.UserMessage, "Ошибка печати", this);
+                }
+            }
+            finally
+            {
+                _isPrintingDirect = false;
+            }
+        }
+
+        internal void TriggerPrinterPrintWithProductionCopy() => TriggerPrinterPrint(withProductionCopy: true);
+
+        /// <summary>
+        /// Экспорт КП в PDF напрямую через диалог сохранения, без открытия оверлея предпросмотра.
+        /// </summary>
+        internal void TriggerPdfExport()
+        {
+            var validItems = OrderItems.Where(i => !string.IsNullOrEmpty(i.Name) && i.IsActive && i.Total > 0).ToList();
+            if (validItems.Count == 0)
+            {
+                ToastService.ShowToast("Добавьте хотя бы одну позицию.", ToastType.Warning);
+                return;
+            }
+
+            double total = validItems.Sum(i => i.TotalWithDeduction);
+            string amountInWords = AmountInWordsService.Convert(total);
+
+            string raw = (ClientInfo.ClientAddress ?? string.Empty).Replace('/', ' ');
+            string address = PrintPreviewControl.SanitizeFileName(raw);
+            if (!string.IsNullOrEmpty(address))
+            {
+                address = address.ToUpperInvariant();
+                address = string.Join(" ", address.Split(' ', StringSplitOptions.RemoveEmptyEntries));
+            }
+            string contractNum = string.IsNullOrWhiteSpace(ClientInfo.ContractNumber) ? "бн" : ClientInfo.ContractNumber.Trim();
+            string defaultName = string.IsNullOrEmpty(address)
+                ? $"КП {contractNum}.pdf"
+                : $"{address} {contractNum}.pdf";
+
+            var dlg = new SaveFileDialog
+            {
+                Title = "Сохранить КП как PDF",
+                Filter = "PDF файлы (*.pdf)|*.pdf|Все файлы (*.*)|*.*",
+                DefaultExt = ".pdf",
+                FileName = defaultName
+            };
+
+            if (dlg.ShowDialog(this) != true) return;
+
+            var settings = LastPrintSettings.Clone();
+            settings.IncludeProductionCopy = AppSettingsService.LoadIncludeProductionCopy();
+            if (settings.Copies <= 0 && !settings.IncludeProductionCopy)
+                settings.Copies = 1;
+
+            if (settings.IncludeProductionCopy && !ProductionStampImage.TryGetPath(out _))
+            {
+                DialogService.ShowMessage(
+                    "Изображение печати «В производство» не найдено.\n" +
+                    "Лист «В производство» будет сформирован без печати.\n\n" +
+                    "Проверьте, что файл v_proizvodstvo.png находится рядом с программой.",
+                    "Печать «В производство»",
+                    this);
+            }
+
+            var previousCursor = Mouse.OverrideCursor;
+            Mouse.OverrideCursor = Cursors.Wait;
+            try
+            {
+                PrintService.ExportPdf(dlg.FileName, validItems, ClientInfo, total, amountInWords, attemptSettings: settings);
+                ToastService.ShowToast($"КП сохранён в PDF:\n{Path.GetFileName(dlg.FileName)}", ToastType.Success);
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"[TriggerPdfExport] ExportPdf failed: {ex}");
+                Clipboard.SetText(ex.ToString());
+                DialogService.ShowMessage(
+                    $"Ошибка при сохранении PDF:\n{ex.Message}\n\n" +
+                    $"Тип: {ex.GetType().Name}\n" +
+                    $"Полный stack trace и QuestPDF layout tree скопированы в буфер обмена.",
+                    "Экспорт PDF",
+                    this);
+            }
+            finally
+            {
+                Mouse.OverrideCursor = previousCursor;
+            }
         }
 
         // ═══════════════════════════════════════════════════════════════
@@ -831,12 +1010,11 @@ namespace MosquitoNetCalculator
 
         private void StartNavBadgeTimer()
         {
-            // 1.5s fallback timer (was 4s). RefreshNavBadges is called explicitly
+            // 30s fallback timer (was 1.5s). RefreshNavBadges is called explicitly
             // from RefreshOrdersList/save/delete paths, so this timer is only a
             // safety net for cases that bypass RefreshOrdersList (e.g. file-system
-            // changes from sync). 1.5s reduces the window during which the badge
-            // shows a stale count after an out-of-band operation.
-            _navBadgeTimer = new System.Windows.Threading.DispatcherTimer { Interval = TimeSpan.FromSeconds(1.5) };
+            // changes from sync). 30s eliminates unnecessary UI thread churn.
+            _navBadgeTimer = new System.Windows.Threading.DispatcherTimer { Interval = TimeSpan.FromSeconds(30) };
             _navBadgeTimer.Tick += (s, e) =>
             {
                 _navBadgeTimer.Stop();

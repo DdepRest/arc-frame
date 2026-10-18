@@ -39,10 +39,17 @@ namespace MosquitoNetCalculator
         // v3.50: finds the delete button in the row visual tree and fades it
         // in/out. WPF Triggers can't reach "row is hovered" from inside a cell
         // template cheaply, and the existing hover infrastructure is already here.
+        // v3.55 perf: cached in ConditionalWeakTable to eliminate repetitive visual tree walks.
+        private static readonly System.Runtime.CompilerServices.ConditionalWeakTable<DataGridRow, Button> _deleteButtons = new();
+
         private static void RevealDeleteRow_MouseEnter(object sender, MouseEventArgs e)
         {
             if (sender is not DataGridRow row) return;
-            var btn = FindChildByName<Button>(row, "DelBtn");
+            if (!_deleteButtons.TryGetValue(row, out var btn))
+            {
+                btn = FindChildByName<Button>(row, "DelBtn");
+                if (btn != null) _deleteButtons.Add(row, btn);
+            }
             if (btn != null)
                 btn.BeginAnimation(UIElement.OpacityProperty,
                     new System.Windows.Media.Animation.DoubleAnimation(1, Motion.Fast));
@@ -51,7 +58,11 @@ namespace MosquitoNetCalculator
         private static void RevealDeleteRow_MouseLeave(object sender, MouseEventArgs e)
         {
             if (sender is not DataGridRow row) return;
-            var btn = FindChildByName<Button>(row, "DelBtn");
+            if (!_deleteButtons.TryGetValue(row, out var btn))
+            {
+                btn = FindChildByName<Button>(row, "DelBtn");
+                if (btn != null) _deleteButtons.Add(row, btn);
+            }
             if (btn != null && !btn.IsMouseOver)
                 btn.BeginAnimation(UIElement.OpacityProperty,
                     new System.Windows.Media.Animation.DoubleAnimation(0, Motion.Base));

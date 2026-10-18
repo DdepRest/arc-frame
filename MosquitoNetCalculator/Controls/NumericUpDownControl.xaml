@@ -5,7 +5,7 @@
         <Style x:Key="GhostRepeatButton" TargetType="RepeatButton">
             <Setter Property="Background" Value="Transparent"/>
             <Setter Property="Foreground" Value="{DynamicResource TextPrimary}"/>
-            <Setter Property="FontSize" Value="14"/>
+            <Setter Property="FontSize" Value="{StaticResource Type.BodyLg}"/>
             <Setter Property="FontWeight" Value="SemiBold"/>
             <Setter Property="BorderThickness" Value="0"/>
             <Setter Property="Cursor" Value="Hand"/>
@@ -67,10 +67,10 @@
                      BorderThickness="0"
                      Foreground="{DynamicResource TextPrimary}"
                      FontWeight="SemiBold"
-                     FontSize="14"
+                     FontSize="{StaticResource Type.BodyLg}"
                      CaretBrush="{DynamicResource Accent}"
                      SelectionBrush="{DynamicResource Accent}"
-                     Margin="4,0"
+                     Margin="{DynamicResource Gap.UpDown}"
                      PreviewTextInput="ValueTextBox_PreviewTextInput"
                      DataObject.Pasting="ValueTextBox_Pasting"
                      LostFocus="ValueTextBox_LostFocus"

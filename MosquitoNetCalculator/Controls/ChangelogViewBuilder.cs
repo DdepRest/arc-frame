@@ -45,7 +45,7 @@ namespace MosquitoNetCalculator.Controls
             panel.Children.Add(new TextBlock
             {
                 Text = $"v{item.Version}",
-                FontSize = 12,
+                FontSize = Typography.Body,
                 FontWeight = FontWeights.SemiBold,
                 Foreground = (Brush?)Application.Current?.TryFindResource("TextPrimary") ?? Brushes.Black,
                 VerticalAlignment = VerticalAlignment.Center
@@ -67,12 +67,12 @@ namespace MosquitoNetCalculator.Controls
                     Background = typeBrush,
                     CornerRadius = Radii.Element,
                     Padding = new Thickness(6, 1, 6, 1),
-                    Margin = new Thickness(8, 0, 0, 0),
+                    Margin = Spacings.Left,
                     VerticalAlignment = VerticalAlignment.Center,
                     Child = new TextBlock
                     {
                         Text = type,
-                        FontSize = 11,
+                        FontSize = Typography.Caption,
                         FontWeight = FontWeights.SemiBold,
                         Foreground = (Brush?)Application.Current?.TryFindResource("OnAccent") ?? Brushes.White
                     }
@@ -84,9 +84,9 @@ namespace MosquitoNetCalculator.Controls
                 panel.Children.Add(new TextBlock
                 {
                     Text = item.Date.ToString("dd.MM.yyyy"),
-                    FontSize = 11,
+                    FontSize = Typography.Caption,
                     Foreground = (Brush?)Application.Current?.TryFindResource("TextMuted") ?? Brushes.Gray,
-                    Margin = new Thickness(8, 0, 0, 0),
+                    Margin = Spacings.Left,
                     VerticalAlignment = VerticalAlignment.Center
                 });
             }
@@ -110,9 +110,9 @@ namespace MosquitoNetCalculator.Controls
             var dot = new TextBlock
             {
                 Text = "•",
-                FontSize = 12,
+                FontSize = Typography.Body,
                 Foreground = (Brush?)Application.Current?.TryFindResource("TextMuted") ?? Brushes.Gray,
-                Margin = new Thickness(0, 0, 6, 0),
+                Margin = Spacings.InlineSm,
                 VerticalAlignment = VerticalAlignment.Top
             };
             Grid.SetColumn(dot, 0);
@@ -121,7 +121,7 @@ namespace MosquitoNetCalculator.Controls
             var tb = new TextBlock
             {
                 Text = text,
-                FontSize = 12,
+                FontSize = Typography.Body,
                 Foreground = (Brush?)Application.Current?.TryFindResource("TextSecondary") ?? Brushes.DarkSlateGray,
                 TextWrapping = TextWrapping.Wrap
             };

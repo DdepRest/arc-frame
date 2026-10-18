@@ -17,6 +17,7 @@ namespace MosquitoNetCalculator.Tests.Services
     /// инжект открывателей (паттерн FontSelfInstallServiceTests — тест НЕ
     /// оставляет значений в реальном реестре).
     /// </summary>
+    [Collection("WPF_UI")]
     public class DependencyCheckerServiceTests : IDisposable
     {
         private readonly Func<RegistryKey?>? _originalUninstallOpener;

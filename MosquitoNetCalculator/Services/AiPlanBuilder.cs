@@ -20,7 +20,11 @@ namespace MosquitoNetCalculator.Services
         public static bool RequiresConfirmation(AiCommand command) => command.Type switch
         {
             AiCommandType.AddItem or AiCommandType.DeleteLast or AiCommandType.DeleteItems
-                or AiCommandType.UpdateItems or AiCommandType.ClearAll => true,
+                or AiCommandType.UpdateItems or AiCommandType.ClearAll
+                or AiCommandType.UpdateItemByIndex or AiCommandType.DeleteItemByIndex
+                or AiCommandType.ToggleItemActive or AiCommandType.SetClientInfo
+                or AiCommandType.ApplyTemplate or AiCommandType.SaveOrder
+                or AiCommandType.PrintKp or AiCommandType.ExportPdf => true,
             _ => false
         };
 
@@ -80,6 +84,14 @@ namespace MosquitoNetCalculator.Services
                 AiCommandType.ListProducts => "📋 Показать список товаров",
                 AiCommandType.CalcSlope => $"🏗 Просчёт откосов: {p.Width}×{p.Height} мм, глубина {p.Depth} мм, {p.Quantity:0.##} отк.",
                 AiCommandType.UpdateItems => BuildUpdatePreview(c),
+                AiCommandType.UpdateItemByIndex => BuildUpdateItemByIndexPreview(c),
+                AiCommandType.DeleteItemByIndex => $"🗑 Удалить строку #{p.ItemIndex}",
+                AiCommandType.ToggleItemActive => $"👁 {(p.IsActive == false ? "Отключить" : "Включить")} строку #{p.ItemIndex}",
+                AiCommandType.SetClientInfo => BuildSetClientInfoPreview(p),
+                AiCommandType.ApplyTemplate => $"📐 Применить шаблон «{p.TemplateId}»{(p.Width > 0 && p.Height > 0 ? $" ({p.Width}×{p.Height} мм)" : "")}",
+                AiCommandType.SaveOrder => "💾 Сохранить заказ",
+                AiCommandType.PrintKp => "🖨 Печать КП",
+                AiCommandType.ExportPdf => "📄 Экспорт КП в PDF",
                 _ => "✅ Действие"
             };
         }
@@ -88,6 +100,7 @@ namespace MosquitoNetCalculator.Services
         {
             var p = c.Params;
             var parts = new List<string> { p.Type };
+            if (p.IsAnticat == true) parts.Add("Антикошка");
             if (!string.IsNullOrWhiteSpace(p.Color)) parts.Add(p.Color);
             bool needsSizes = !ProductCatalog.IsManualPiece(p.Type) && !p.IsCustomProduct;
             // «Свой товар»: only show sizes the user actually entered.
@@ -135,6 +148,32 @@ namespace MosquitoNetCalculator.Services
             if (p.UpdatePrice.HasValue)
                 parts.Add($"цена → {p.UpdatePrice.Value:N0} ₽");
             return "🔄 Изменить " + target + ": " + (parts.Count > 0 ? string.Join(", ", parts) : "—");
+        }
+
+        private static string BuildUpdateItemByIndexPreview(AiCommand c)
+        {
+            var p = c.Params;
+            var parts = new List<string>();
+            if (p.UpdateWidth.HasValue || p.UpdateHeight.HasValue)
+                parts.Add($"размеры → {(p.UpdateWidth?.ToString() ?? "—")}×{(p.UpdateHeight?.ToString() ?? "—")} мм");
+            if (p.UpdateQuantity.HasValue) parts.Add($"кол-во → {FormatQty(p.UpdateQuantity.Value)} шт.");
+            if (p.UpdatePrice.HasValue) parts.Add($"цена → {p.UpdatePrice.Value:N0} ₽");
+            if (p.UpdateColor != null) parts.Add($"цвет → {p.UpdateColor}");
+            if (p.UpdateInstallationMode.HasValue) parts.Add($"монтаж → {p.UpdateInstallationMode.Value switch { 0 => "включён", 1 => "без монтажа", _ => "в конструкцию" }}");
+            if (p.UpdateAnwisMode.HasValue) parts.Add($"Anwis → {AiCommandParser.AnwisModeLabel(p.UpdateAnwisMode.Value)}");
+            if (p.IsAnticat.HasValue) parts.Add($"антикошка → {(p.IsAnticat.Value ? "да" : "нет")}");
+            if (p.IsActive.HasValue) parts.Add($"активность → {(p.IsActive.Value ? "включена" : "отключена")}");
+            return $"🔄 Изменить строку #{p.ItemIndex}: " + (parts.Count > 0 ? string.Join(", ", parts) : "—");
+        }
+
+        private static string BuildSetClientInfoPreview(AiCommandParams p)
+        {
+            var parts = new List<string>();
+            if (!string.IsNullOrWhiteSpace(p.ClientPhone)) parts.Add($"тел: {p.ClientPhone}");
+            if (!string.IsNullOrWhiteSpace(p.ClientAddress)) parts.Add($"адрес: {p.ClientAddress}");
+            if (!string.IsNullOrWhiteSpace(p.ContractNumber)) parts.Add($"договор: {p.ContractNumber}");
+            if (!string.IsNullOrWhiteSpace(p.Notes)) parts.Add($"примечание: {p.Notes}");
+            return "📋 Данные клиента: " + (parts.Count > 0 ? string.Join(", ", parts) : "обновление");
         }
 
         private static string FormatQty(double q)

@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Globalization;
 using System.Linq;
@@ -15,8 +16,13 @@ namespace MosquitoNetCalculator.Models
     ///
     /// The card lets the user pick every parameter with ComboBoxes and text
     /// fields — no need to compose a second prompt. «Добавить в расчёт»
-    /// builds an <see cref="AiCommand"/> AddItem directly, without a second
-    /// round-trip to the LLM.
+    /// builds one <see cref="AiCommand"/> AddItem per size row, without a
+    /// second round-trip to the LLM.
+    ///
+    /// Type / color / Anwis mode / монтаж are chosen once and apply to every
+    /// row; the sizes are a LIST, because one screenshot (or one line) often
+    /// carries several positions («ПМС Anwis, бел. 1 304x1593» + «1 724x1593»)
+    /// and all of them must reach the order.
     ///
     /// Runtime-only UI state: NOT persisted (see <c>[JsonIgnore]</c> on
     /// <see cref="AiChatMessage.ClarificationForm"/>).
@@ -53,10 +59,12 @@ namespace MosquitoNetCalculator.Models
         private string _selectedColor = "Белый";
         private string _selectedAnwisMode = UnspecifiedAnwisMode;
         private string _selectedInstallation = "Не указывать";
-        private string _widthText = string.Empty;
-        private string _heightText = string.Empty;
-        private string _quantityText = "1";
         private string _customNameText = string.Empty;
+
+        // Sizes live in rows (one position each). Row 0 is also exposed through
+        // WidthText/HeightText/QuantityText — the single-position API every
+        // existing caller and test uses stays intact.
+        private readonly ObservableCollection<AiClarificationSizeRow> _sizeRows = new();
 
         // Dimension / quantity / leading-number regexes moved to
         // AiKeywordLexicon (the single source of truth for AI keyword
@@ -70,20 +78,88 @@ namespace MosquitoNetCalculator.Models
         /// a vision model read parameters off a photo but the local OCR/user text
         /// didn't capture them.
         /// </summary>
-        public AiClarificationForm(string? userRequest = null, AiCommandParams? knownParams = null, string? replyText = null)
+        public AiClarificationForm(string? userRequest = null, AiCommandParams? knownParams = null, string? replyText = null, IReadOnlyList<AiCommandParams>? knownCommands = null)
         {
             _productTypes = FilterProductsForRequest(userRequest);
             // Keep the default selection inside the filtered list.
             if (_productTypes.Count > 0 && !_productTypes.Contains(_selectedType))
                 SelectedType = _productTypes[0];
+            AddSizeRow();
             // The model's already-parsed parameters are the most complete source:
             // apply them first so the card is never blank when the raw user text
-            // doesn't spell out every field.
-            AiClarificationPrefill.FromCommand(this, knownParams);
+            // doesn't spell out every field. When the model returned SEVERAL
+            // positions (the screenshot case), every one of them becomes a row.
+            AiClarificationPrefill.FromCommands(this,
+                knownCommands is { Count: > 0 } list
+                    ? list
+                    : knownParams is null ? Array.Empty<AiCommandParams>() : new[] { knownParams });
             // Then the model's prose (it may have seen the photo itself), and
             // finally the user's own words — the user always wins.
             AiClarificationPrefill.FromReply(this, replyText);
             AiClarificationPrefill.FromRequest(this, userRequest);
+        }
+
+        /// <summary>
+        /// Editable size rows of the card — one per position. Always non-empty:
+        /// the first row is the position every legacy caller sees as
+        /// <see cref="WidthText"/>/<see cref="HeightText"/>.
+        /// </summary>
+        public ObservableCollection<AiClarificationSizeRow> SizeRows => _sizeRows;
+
+        /// <summary>True when the card carries more than one size to add.</summary>
+        public bool HasExtraSizes => _sizeRows.Count > 1;
+
+        /// <summary>
+        /// Adds an empty size row (user pressed «+ Добавить размер»). Empty rows
+        /// are ignored by <see cref="TryBuildCommands"/>, so an accidental click
+        /// never blocks the card.
+        /// </summary>
+        public AiClarificationSizeRow AddSizeRow()
+        {
+            var row = new AiClarificationSizeRow();
+            row.PropertyChanged += OnSizeRowPropertyChanged;
+            _sizeRows.Add(row);
+            OnPropertyChanged(nameof(HasExtraSizes));
+            return row;
+        }
+
+        /// <summary>
+        /// Removes a size row. The card always keeps at least one row, so the
+        /// last size can never be deleted by accident.
+        /// </summary>
+        public void RemoveSizeRow(AiClarificationSizeRow row)
+        {
+            if (row == null || _sizeRows.Count <= 1) return;
+            row.PropertyChanged -= OnSizeRowPropertyChanged;
+            int removed = _sizeRows.IndexOf(row);
+            _sizeRows.Remove(row);
+            if (removed == 0)
+            {
+                // Row 0 owns the WidthText/HeightText/QuantityText proxies —
+                // re-notify so bindings show the new first position at once.
+                OnPropertyChanged(nameof(WidthText));
+                OnPropertyChanged(nameof(HeightText));
+                OnPropertyChanged(nameof(QuantityText));
+            }
+            OnPropertyChanged(nameof(HasExtraSizes));
+        }
+
+        /// <summary>Grows the row list to at least <paramref name="count"/> rows.</summary>
+        internal void EnsureSizeRows(int count)
+        {
+            while (_sizeRows.Count < count) AddSizeRow();
+        }
+
+        private void OnSizeRowPropertyChanged(object? sender, PropertyChangedEventArgs e)
+        {
+            // Only row 0 is mirrored by the proxy properties.
+            if (_sizeRows.Count == 0 || !ReferenceEquals(sender, _sizeRows[0])) return;
+            switch (e.PropertyName)
+            {
+                case nameof(AiClarificationSizeRow.WidthText): OnPropertyChanged(nameof(WidthText)); break;
+                case nameof(AiClarificationSizeRow.HeightText): OnPropertyChanged(nameof(HeightText)); break;
+                case nameof(AiClarificationSizeRow.QuantityText): OnPropertyChanged(nameof(QuantityText)); break;
+            }
         }
 
         public IReadOnlyList<string> ProductTypes => _productTypes;
@@ -131,22 +207,26 @@ namespace MosquitoNetCalculator.Models
             set { _selectedInstallation = value; OnPropertyChanged(); }
         }
 
+        /// <summary>
+        /// Width of the first size row. Kept as a first-class field so single-
+        /// position callers (and the UI's primary row) stay unchanged.
+        /// </summary>
         public string WidthText
         {
-            get => _widthText;
-            set { _widthText = value; OnPropertyChanged(); }
+            get => _sizeRows[0].WidthText;
+            set => _sizeRows[0].WidthText = value;
         }
 
         public string HeightText
         {
-            get => _heightText;
-            set { _heightText = value; OnPropertyChanged(); }
+            get => _sizeRows[0].HeightText;
+            set => _sizeRows[0].HeightText = value;
         }
 
         public string QuantityText
         {
-            get => _quantityText;
-            set { _quantityText = value; OnPropertyChanged(); }
+            get => _sizeRows[0].QuantityText;
+            set => _sizeRows[0].QuantityText = value;
         }
 
         /// <summary>Custom product name entered by the user (only visible when IsCustom).</summary>
@@ -402,13 +482,32 @@ namespace MosquitoNetCalculator.Models
         }
 
         /// <summary>
-        /// Builds an AddItem command from the current form values.
+        /// Builds an AddItem command from the current form values — the
+        /// single-position API, kept for the card's primary row and for callers
+        /// that only ever add one item.
         /// </summary>
         /// <param name="command">The resulting command, or null when invalid.</param>
         /// <param name="error">User-facing validation message, or null.</param>
         public bool TryBuildCommand(out AiCommand? command, out string? error)
         {
-            command = null;
+            var ok = TryBuildCommands(out var commands, out error);
+            command = commands.Count > 0 ? commands[0] : null;
+            return ok;
+        }
+
+        /// <summary>
+        /// Builds ONE AddItem command PER SIZE ROW. Type / color / Anwis mode /
+        /// монтаж are picked once and apply to every row; width, height and
+        /// quantity come from each row on its own. This is what makes a single
+        /// screenshot with two positions (or «сетки 700х1400 и 900х1600») add
+        /// both — the old single-triple card silently dropped everything but
+        /// the first size.
+        /// </summary>
+        /// <param name="commands">The resulting commands; empty when invalid.</param>
+        /// <param name="error">User-facing validation message, or null.</param>
+        public bool TryBuildCommands(out IReadOnlyList<AiCommand> commands, out string? error)
+        {
+            commands = Array.Empty<AiCommand>();
             error = null;
 
             if (string.IsNullOrWhiteSpace(SelectedType))
@@ -439,20 +538,23 @@ namespace MosquitoNetCalculator.Models
                     return false;
                 }
                 var customInstallation = ShowInstallation ? ParseInstallation(SelectedInstallation) : -1;
-                command = new AiCommand
+                commands = new[]
                 {
-                    Type = AiCommandType.AddItem,
-                    Params = new AiCommandParams
+                    new AiCommand
                     {
-                        Type = CustomNameText, // use the free-form name as the item type
-                        Color = "",
-                        Width = customWidth,
-                        Height = customHeight,
-                        Quantity = customQty,
-                        Price = 0, // price is entered manually in the order grid
-                        AnwisMode = AnwisSizeMode.Брусбокс60,
-                        InstallationMode = customInstallation,
-                        IsCustomProduct = true
+                        Type = AiCommandType.AddItem,
+                        Params = new AiCommandParams
+                        {
+                            Type = CustomNameText, // use the free-form name as the item type
+                            Color = "",
+                            Width = customWidth,
+                            Height = customHeight,
+                            Quantity = customQty,
+                            Price = 0, // price is entered manually in the order grid
+                            AnwisMode = AnwisSizeMode.Брусбокс60,
+                            InstallationMode = customInstallation,
+                            IsCustomProduct = true
+                        }
                     }
                 };
                 return true;
@@ -484,21 +586,48 @@ namespace MosquitoNetCalculator.Models
             var installation = ShowInstallation ? ParseInstallation(SelectedInstallation) : -1;
             var price = AiCommandParser.GetDefaultPrice(SelectedType, color);
 
-            command = new AiCommand
+            AiCommand Build(int w, int h, double q) => new()
             {
                 Type = AiCommandType.AddItem,
                 Params = new AiCommandParams
                 {
                     Type = SelectedType,
                     Color = color,
-                    Width = width,
-                    Height = height,
-                    Quantity = qty,
+                    Width = w,
+                    Height = h,
+                    Quantity = q,
                     Price = price,
                     AnwisMode = mode,
                     InstallationMode = installation
                 }
             };
+
+            var built = new List<AiCommand> { Build(width, height, qty) };
+
+            // Additional positions — the rest of the sizes read from the request,
+            // the OCR of an attached picture, or the model's own plan.
+            for (int i = 1; i < _sizeRows.Count; i++)
+            {
+                var row = _sizeRows[i];
+                // A row the user added and left blank is not a position: skip it
+                // instead of blocking the whole card.
+                if (row.IsEmpty) continue;
+
+                if (!TryParsePositiveInt(row.WidthText, out int rowWidth)
+                    || !TryParsePositiveInt(row.HeightText, out int rowHeight))
+                {
+                    error = $"⚠ Размер №{i + 1}: укажите ширину и высоту в мм (например 700×1400).";
+                    return false;
+                }
+                if (!TryParseQuantity(row.QuantityText, out double rowQuantity))
+                {
+                    error = $"⚠ Размер №{i + 1}: количество должно быть положительным числом.";
+                    return false;
+                }
+                built.Add(Build(rowWidth, rowHeight, rowQuantity));
+            }
+
+            commands = built;
             return true;
         }
 
@@ -525,7 +654,21 @@ namespace MosquitoNetCalculator.Models
             var parts = new List<string> { SelectedType };
             if (ShowColor && !string.IsNullOrWhiteSpace(SelectedColor))
                 parts.Add(SelectedColor);
-            parts.Add($"{WidthText}×{HeightText} мм");
+
+            // Every size row is echoed: the user must see that two positions
+            // found on one screenshot will both be added.
+            var sizes = new List<string>();
+            for (int i = 0; i < _sizeRows.Count; i++)
+            {
+                var row = _sizeRows[i];
+                if (i > 0 && row.IsEmpty) continue;
+                var size = $"{row.WidthText}×{row.HeightText} мм";
+                if (i > 0 && TryParseQuantity(row.QuantityText, out var rowQty) && rowQty != 1)
+                    size += $" ({FormatQuantity(rowQty)} шт.)";
+                sizes.Add(size);
+            }
+            parts.Add(string.Join(", ", sizes));
+
             if (TryParseQuantity(QuantityText, out var qty) && qty != 1)
                 parts.Add(FormatQuantity(qty) + " шт.");
             if (IsAnwis && SelectedAnwisMode != UnspecifiedAnwisMode)

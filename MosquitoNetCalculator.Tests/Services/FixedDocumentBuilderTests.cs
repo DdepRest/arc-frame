@@ -10,6 +10,7 @@ using Xunit;
 
 namespace MosquitoNetCalculator.Tests.Services
 {
+    [Collection("WPF_UI")]
     public class FixedDocumentBuilderTests
     {
         [Fact]

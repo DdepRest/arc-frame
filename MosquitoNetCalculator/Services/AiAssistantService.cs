@@ -106,6 +106,9 @@ namespace MosquitoNetCalculator.Services
             // Curated snapshot of OpenRouter zero-price chat models. The live
             // runtime list is auto-analyzed from /models on each refresh; this
             // list is only the offline fallback when the catalog can't load.
+            new("google/gemini-2.0-flash-exp:free", "Google Gemini 2.0 Flash (free, vision)") { SupportsVision = true },
+            new("qwen/qwen-2.5-vl-72b-instruct:free", "Qwen 2.5 VL 72B (free, vision)") { SupportsVision = true },
+            new("meta-llama/llama-3.2-11b-vision-instruct:free", "Meta Llama 3.2 11B Vision (free, vision)") { SupportsVision = true },
             new("google/gemma-4-31b-it:free", "Google Gemma 4 31B (free)"),
             new("google/gemma-4-26b-a4b-it:free", "Google Gemma 4 26B (free)"),
             new("nvidia/nemotron-3-super-120b-a12b:free", "NVIDIA Nemotron 3 Super 120B (free)"),
@@ -117,7 +120,14 @@ namespace MosquitoNetCalculator.Services
             new("nvidia/nemotron-3.5-lightning:free", "NVIDIA Nemotron 3.5 Lightning (free)"),
 
             // NVIDIA free-tier model (endpoint: integrate.api.nvidia.com)
-            new("deepseek-ai/deepseek-v4-flash-0731", "DeepSeek V4 Flash (NVIDIA, free)", AiProvider.Nvidia)
+            new("deepseek-ai/deepseek-v4-flash-0731", "DeepSeek V4 Flash (NVIDIA, free)", AiProvider.Nvidia),
+
+            // FreeLLMAPI models (default: http://localhost:3001/v1)
+            new("auto", "FreeLLMAPI: Auto Router", AiProvider.FreeLlmApi),
+            new("auto:fast", "FreeLLMAPI: Fast", AiProvider.FreeLlmApi),
+            new("auto:quality", "FreeLLMAPI: Quality", AiProvider.FreeLlmApi),
+            new("auto:vision", "FreeLLMAPI: Vision", AiProvider.FreeLlmApi) { SupportsVision = true },
+            new("fusion", "FreeLLMAPI: Fusion", AiProvider.FreeLlmApi)
         };
 
         private static readonly JsonSerializerOptions JsonOptions = new()
@@ -130,8 +140,16 @@ namespace MosquitoNetCalculator.Services
         // special tokens instead of text (e.g. a wall of <pad><pad>…). Strip them
         // before they reach the chat bubble.
         private static readonly Regex SpecialTokenRegex = new(
-            @"<\|[^>]*\|>|<pad>|</?s>|<bos>|<eos>|<eot>|<unk>",
+            @"<\|[^>]*\|>|<pad>|</?s>|<bos>|<eos>|<eot>|<unk>|<think>[\s\S]*?</think>|<thought>[\s\S]*?</thought>",
             RegexOptions.IgnoreCase | RegexOptions.Compiled);
+
+        private static readonly Regex RepetitionLoopRegex = new(
+            @"(.{12,100}?)\s*(?:\1\s*){3,}",
+            RegexOptions.Compiled | RegexOptions.Singleline);
+
+        private static readonly Regex NumberedLoopRegex = new(
+            @"((?:[^\n\r\d]{10,80}))\s*\d+[\.:\)]\s*(?:\1\s*\d+[\.:\)]\s*){3,}",
+            RegexOptions.Compiled | RegexOptions.Singleline);
 
         // Updated after a successful catalog load so provider routing also works
         // for models which were not present in the original fallback list.
@@ -166,12 +184,15 @@ namespace MosquitoNetCalculator.Services
             bool forceRefresh = false,
             CancellationToken ct = default,
             TimeSpan? cacheTtl = null,
-            string? nvidiaApiKey = null)
+            string? nvidiaApiKey = null,
+            string? freeLlmApiKey = null,
+            string? freeLlmApiEndpoint = null)
         {
             var ttl = cacheTtl ?? TimeSpan.FromHours(1);
             var (cached, cachedAt) = AppSettingsServiceAi.LoadCachedModels();
             bool hasUserKey = !string.IsNullOrWhiteSpace(apiKey)
-                              || !string.IsNullOrWhiteSpace(nvidiaApiKey);
+                              || !string.IsNullOrWhiteSpace(nvidiaApiKey)
+                              || !string.IsNullOrWhiteSpace(freeLlmApiKey);
             int cachedNvidiaCount = cached.Count(m => m.Provider == AiProvider.Nvidia);
             bool cacheLooksLegacy = cachedNvidiaCount > 0 && cachedNvidiaCount <= 2;
             bool cacheHasBothProviders = cached.Any(m => m.Provider == AiProvider.OpenRouter)
@@ -192,19 +213,28 @@ namespace MosquitoNetCalculator.Services
             var nvidiaKey = string.IsNullOrWhiteSpace(nvidiaApiKey)
                 ? AiKeyValidator.GetApiKey(AiProvider.Nvidia)
                 : nvidiaApiKey.Trim();
+            var flKey = string.IsNullOrWhiteSpace(freeLlmApiKey)
+                ? AiKeyValidator.GetApiKey(AiProvider.FreeLlmApi)
+                : freeLlmApiKey.Trim();
+            var flEndpoint = string.IsNullOrWhiteSpace(freeLlmApiEndpoint)
+                ? AppSettingsServiceAi.LoadAiFreeLlmApiEndpoint()
+                : freeLlmApiEndpoint.Trim();
 
             var openRouterTask = AiModelCatalogClient.FetchOpenRouterModelsAsync(HttpClient, openRouterKey, ct);
             var nvidiaTask = AiModelCatalogClient.FetchNvidiaModelsAsync(HttpClient, nvidiaKey, ct);
-            await Task.WhenAll(openRouterTask, nvidiaTask);
+            var freeLlmTask = AiModelCatalogClient.FetchFreeLlmApiModelsAsync(HttpClient, flKey, flEndpoint, ct);
+            await Task.WhenAll(openRouterTask, nvidiaTask, freeLlmTask);
 
             var openRouter = await openRouterTask;
             var nvidia = await nvidiaTask;
+            var freeLlm = await freeLlmTask;
             var merged = new List<AiModelOption>();
 
             // A failed provider keeps its previous catalog until that provider
             // responds again; a failed refresh must not erase usable selections.
             AddProviderResult(merged, openRouter, cached, AiProvider.OpenRouter);
             AddProviderResult(merged, nvidia, cached, AiProvider.Nvidia);
+            AddProviderResult(merged, freeLlm, cached, AiProvider.FreeLlmApi);
 
             if (merged.Count == 0)
                 merged = FreeModels.ToList();
@@ -282,6 +312,7 @@ namespace MosquitoNetCalculator.Services
             IReadOnlyList<AiModelOption> candidates,
             string? openRouterApiKey = null,
             string? nvidiaApiKey = null,
+            string? freeLlmApiKey = null,
             int maxModelsPerProvider = 6,
             CancellationToken ct = default)
         {
@@ -294,6 +325,9 @@ namespace MosquitoNetCalculator.Services
             var nvKey = string.IsNullOrWhiteSpace(nvidiaApiKey)
                 ? AiKeyValidator.GetApiKey(AiProvider.Nvidia)
                 : nvidiaApiKey.Trim();
+            var flKey = string.IsNullOrWhiteSpace(freeLlmApiKey)
+                ? AiKeyValidator.GetApiKey(AiProvider.FreeLlmApi)
+                : freeLlmApiKey.Trim();
 
             var probeList = new List<(string Id, AiProvider Provider, string Key)>();
             foreach (var model in candidates)
@@ -303,6 +337,11 @@ namespace MosquitoNetCalculator.Services
                 {
                     if (probeList.Count(p => p.Provider == AiProvider.Nvidia) < Math.Max(0, maxModelsPerProvider))
                         probeList.Add((model.Id, AiProvider.Nvidia, nvKey));
+                }
+                else if (model.Provider == AiProvider.FreeLlmApi)
+                {
+                    if (probeList.Count(p => p.Provider == AiProvider.FreeLlmApi) < Math.Max(0, maxModelsPerProvider))
+                        probeList.Add((model.Id, AiProvider.FreeLlmApi, flKey));
                 }
                 else
                 {
@@ -321,6 +360,16 @@ namespace MosquitoNetCalculator.Services
         }
 
         /// <summary>
+        /// Convenience probe overload for measuring latency and model health.
+        /// </summary>
+        public static Task<AiModelAvailability> ProbeModelAsync(string modelId, CancellationToken ct = default)
+        {
+            var provider = AiKeyValidator.GetProviderForModel(modelId);
+            var apiKey = AiKeyValidator.GetApiKey(provider);
+            return ProbeModelAsync(modelId, provider, apiKey, ct);
+        }
+
+        /// <summary>
         /// Sends a minimal "ping" chat request to a single model and reports whether
         /// it answered. A 401/403 means the key is invalid or exhausted, 404 means
         /// the model is unavailable for this account, and a 2xx with a non-empty
@@ -330,7 +379,7 @@ namespace MosquitoNetCalculator.Services
             string modelId,
             AiProvider provider,
             string apiKey,
-            CancellationToken ct)
+            CancellationToken ct = default)
         {
             var result = new AiModelAvailability
             {
@@ -357,7 +406,8 @@ namespace MosquitoNetCalculator.Services
                 {
                     Content = JsonContent.Create(probeRequest, options: JsonOptions)
                 };
-                httpRequest.Headers.Add("Authorization", $"Bearer {apiKey}");
+                if (!string.IsNullOrWhiteSpace(apiKey))
+                    httpRequest.Headers.Add("Authorization", $"Bearer {apiKey}");
                 httpRequest.Headers.Add("HTTP-Referer", "https://arcframe.app");
                 httpRequest.Headers.Add("X-Title", "A.R.C. Frame");
 
@@ -367,10 +417,29 @@ namespace MosquitoNetCalculator.Services
                 if (response.IsSuccessStatusCode)
                 {
                     var body = await response.Content.ReadAsStringAsync(ct);
-                    var completion = JsonSerializer.Deserialize<ChatCompletionResponse>(body, JsonOptions);
-                    var content = GetTextContent(completion?.Choices?.FirstOrDefault()?.Message?.Content);
-                    result.IsAvailable = !string.IsNullOrWhiteSpace(content);
-                    result.Detail = result.IsAvailable ? "OK" : "пустой ответ";
+                    if (AiKeyValidator.LooksLikeWebPage(body))
+                    {
+                        // The FreeLLMAPI gateway serves its dashboard page with
+                        // HTTP 200 for any path outside /v1 — a "success" that
+                        // carries no model answer at all.
+                        result.IsAvailable = false;
+                        result.Detail = "по адресу отвечает веб-страница, а не API — проверьте URL (нужен суффикс /v1)";
+                    }
+                    else
+                    {
+                        try
+                        {
+                            var completion = JsonSerializer.Deserialize<ChatCompletionResponse>(body, JsonOptions);
+                            var content = GetTextContent(completion?.Choices?.FirstOrDefault()?.Message?.Content);
+                            result.IsAvailable = !string.IsNullOrWhiteSpace(content);
+                            result.Detail = result.IsAvailable ? "OK" : "пустой ответ";
+                        }
+                        catch (JsonException)
+                        {
+                            result.IsAvailable = false;
+                            result.Detail = "ответ не является OpenAI-совместимым JSON — проверьте URL";
+                        }
+                    }
                 }
                 else
                 {
@@ -535,12 +604,14 @@ namespace MosquitoNetCalculator.Services
 
             var messages = BuildMessages(userMessage, history, orderContext, imageDataUrls);
 
+            double temp = AppSettingsServiceAi.LoadAiTemperature();
             var request = new ChatCompletionRequest
             {
                 Messages = messages,
-                Temperature = 0.3,
-                MaxTokens = 1024,
-                Stream = true
+                Temperature = temp,
+                MaxTokens = hasImages ? 4096 : 2048,
+                Stream = true,
+                ResponseFormat = hasImages ? new { type = "json_object" } : null
             };
 
             // Pass 1: current chain. If it fully fails, refresh the catalog and
@@ -549,7 +620,8 @@ namespace MosquitoNetCalculator.Services
                     request,
                     ResolveFallbackModels(userMessage, hasImages, hasOcrText),
                     fallbackFailures,
-                    onChunk, onDone, onError, onModelUsed, onStreamInfo, ct))
+                    onChunk, onDone, onError, onModelUsed, onStreamInfo, ct,
+                    hasImages: hasImages))
             {
                 return;
             }
@@ -561,13 +633,15 @@ namespace MosquitoNetCalculator.Services
                 AiKeyValidator.GetApiKey(AiProvider.OpenRouter),
                 forceRefresh: true,
                 ct: ct,
-                nvidiaApiKey: AiKeyValidator.GetApiKey(AiProvider.Nvidia));
+                nvidiaApiKey: AiKeyValidator.GetApiKey(AiProvider.Nvidia),
+                freeLlmApiKey: AiKeyValidator.GetApiKey(AiProvider.FreeLlmApi));
 
             if (await TrySendWithChainAsync(
                     request,
                     ResolveFallbackModels(userMessage, hasImages, hasOcrText),
                     fallbackFailures,
-                    onChunk, onDone, onError, onModelUsed, onStreamInfo, ct))
+                    onChunk, onDone, onError, onModelUsed, onStreamInfo, ct,
+                    hasImages: hasImages))
             {
                 return;
             }
@@ -595,7 +669,8 @@ namespace MosquitoNetCalculator.Services
             Action<string> onError,
             Action<string>? onModelUsed,
             Action<AiStreamInfo>? onStreamInfo,
-            CancellationToken ct)
+            CancellationToken ct,
+            bool hasImages = false)
         {
             int modelsTried = 0;
             foreach (var modelId in fallbackModels)
@@ -607,9 +682,9 @@ namespace MosquitoNetCalculator.Services
                 var apiUrl = AiKeyValidator.GetApiUrl(provider);
 
                 // A fallback model from a provider without a configured key is
-                // unavailable by definition. Skip it without making an anonymous
-                // request or leaking an empty Bearer header.
-                if (string.IsNullOrWhiteSpace(apiKey))
+                // unavailable by definition (except FreeLlmApi which can run without key on localhost).
+                // Skip it without making an anonymous request or leaking an empty Bearer header.
+                if (string.IsNullOrWhiteSpace(apiKey) && provider != AiProvider.FreeLlmApi)
                 {
                     fallbackFailures[provider] = "API-ключ не настроен";
                     continue;
@@ -636,7 +711,8 @@ namespace MosquitoNetCalculator.Services
                         {
                             Content = JsonContent.Create(request, options: JsonOptions)
                         };
-                        httpRequest.Headers.Add("Authorization", $"Bearer {apiKey}");
+                        if (!string.IsNullOrWhiteSpace(apiKey))
+                            httpRequest.Headers.Add("Authorization", $"Bearer {apiKey}");
                         httpRequest.Headers.Add("HTTP-Referer", "https://arcframe.app");
                         httpRequest.Headers.Add("X-Title", "A.R.C. Frame");
 
@@ -649,11 +725,21 @@ namespace MosquitoNetCalculator.Services
                         {
                             await httpResponse.Content.ReadAsStringAsync(ct);
                             int statusCode = (int)httpResponse.StatusCode;
+
+                            // If HTTP 400 occurred and response_format was used, model might not support structured outputs.
+                            // Clear response_format and retry this model immediately without it.
+                            if (statusCode == 400 && request.ResponseFormat != null)
+                            {
+                                System.Diagnostics.Debug.WriteLine($"[AI] Model {request.Model} returned 400 with response_format; retrying without structured output.");
+                                request.ResponseFormat = null;
+                                attempt--;
+                                continue;
+                            }
+
                             // Fatal only for auth errors (401/403) — a wrong key can't be
-                            // fixed by another model. A 404 from NVIDIA means "model not
-                            // available for this account": try the next fallback model
-                            // instead of aborting the whole request.
-                            if (statusCode is 401 or 403 or 404 or 400)
+                            // fixed by another model. A 404 from NVIDIA or 503 from FreeLLMAPI means "model not
+                            // available/configured": record it so fallback chain doesn't get stuck.
+                            if (statusCode is 401 or 403 or 404 or 400 or 503)
                                 RecordModelUnavailable(request.Model, statusCode);
 
                             fallbackFailures[provider] = DescribeProbeFailure(statusCode);
@@ -674,6 +760,8 @@ namespace MosquitoNetCalculator.Services
                             // account) can never succeed on retry — move straight
                             // to the next fallback model.
                             transientFailure = statusCode is 429 or >= 500;
+                            if (transientFailure)
+                                AiModelSelector.ReportModelFailure(request.Model, statusCode);
                         }
                         else
                         {
@@ -683,7 +771,8 @@ namespace MosquitoNetCalculator.Services
                             using var stream = await httpResponse.Content.ReadAsStreamAsync(ct);
                             using var reader = new StreamReader(stream);
                             using var firstTokenCts = CancellationTokenSource.CreateLinkedTokenSource(ct);
-                            firstTokenCts.CancelAfter(TimeSpan.FromMilliseconds(FirstTokenTimeoutMs));
+                            int effectiveWatchdog = hasImages ? Math.Max(25_000, FirstTokenTimeoutMs) : FirstTokenTimeoutMs;
+                            firstTokenCts.CancelAfter(TimeSpan.FromMilliseconds(effectiveWatchdog));
 
                             while (!reader.EndOfStream)
                             {
@@ -728,6 +817,13 @@ namespace MosquitoNetCalculator.Services
                                         });
                                     }
                                     fullText.Append(clean);
+                                    if (HasRepetitiveDegeneration(fullText))
+                                    {
+                                        transientFailure = true;
+                                        skipModel = true;
+                                        fallbackFailures[provider] = "зацикливание генерации (повтор фраз)";
+                                        break;
+                                    }
                                     onChunk(clean);
                                 }
                                 catch (JsonException)
@@ -737,15 +833,33 @@ namespace MosquitoNetCalculator.Services
                             }
 
                             // Stream finished ([DONE] or EOF).
-                            var text = fullText.ToString();
-                            if (text.Length > 0)
+                            if (!skipModel)
                             {
-                                onDone(text);
-                                return true;
+                                var text = fullText.ToString();
+                                if (hasImages && LooksLikeVisionRefusal(text))
+                                {
+                                    System.Diagnostics.Debug.WriteLine($"[AI] Model {request.Model} emitted vision refusal; skipping to next fallback model.");
+                                    fallbackFailures[provider] = "модель не поддерживает изображения (отказ)";
+                                    skipModel = true;
+                                    transientFailure = false;
+                                }
+                                else if (text.Length > 0)
+                                {
+                                    AiModelSelector.ReportModelSuccess(request.Model);
+                                    onDone(text);
+                                    return true;
+                                }
+                                else
+                                {
+                                    // Padding-only / empty response — skip this model.
+                                    // The reason names the actual cause when the endpoint
+                                    // answered with a web page instead of an SSE stream
+                                    // (FreeLLMAPI without the /v1 suffix is the classic
+                                    // case: 200 + dashboard HTML parses to zero tokens).
+                                    fallbackFailures[provider] = DescribeEmptyCompletion(provider, httpResponse, apiUrl);
+                                    skipModel = true;
+                                }
                             }
-                            // Padding-only / empty response — skip this model.
-                            fallbackFailures[provider] = "модели вернули пустой ответ";
-                            skipModel = true;
                         }
                     }
                     catch (OperationCanceledException) when (!ct.IsCancellationRequested)
@@ -754,6 +868,7 @@ namespace MosquitoNetCalculator.Services
                         // never started streaming (hot free vision queue). This is NOT
                         // a user cancel — degrade this attempt as transient so a retry
                         // or the next fallback model takes over instead of hanging.
+                        AiModelSelector.ReportModelFailure(request.Model, 0);
                         transientFailure = true;
                         fallbackFailures[provider] = "нет первого токена (таймаут)";
                     }
@@ -802,6 +917,58 @@ namespace MosquitoNetCalculator.Services
         }
 
         /// <summary>
+        /// Explains a successful (2xx) response that produced no text tokens.
+        /// The common non-obvious cause is a wrong endpoint: the FreeLLMAPI
+        /// gateway answers any path outside /v1 with 200 + index.html, so every
+        /// request "succeeds" while the body is a web page, not an SSE stream.
+        /// </summary>
+        private static string DescribeEmptyCompletion(
+            AiProvider provider,
+            HttpResponseMessage response,
+            string apiUrl)
+        {
+            var mediaType = response.Content?.Headers?.ContentType?.MediaType ?? string.Empty;
+            if (mediaType.Contains("html", StringComparison.OrdinalIgnoreCase))
+            {
+                // The provider summary line already names the effective URL
+                // (see BuildTotalFailureMessage) — don't repeat it here.
+                return provider == AiProvider.FreeLlmApi
+                    ? "по адресу отвечает веб-страница, а не API — проверьте URL (обычно нужен суффикс /v1)"
+                    : "эндпоинт вернул веб-страницу вместо API";
+            }
+
+            return "модели вернули пустой ответ";
+        }
+
+        private static bool HasRepetitiveDegeneration(StringBuilder fullText)
+        {
+            if (fullText.Length < 120) return false;
+            int len = fullText.Length;
+            int checkLen = Math.Min(len, 500);
+            var tail = fullText.ToString(len - checkLen, checkLen);
+            return RepetitionLoopRegex.IsMatch(tail) || NumberedLoopRegex.IsMatch(tail);
+        }
+
+        /// <summary>
+        /// Detects model refusal text indicating it cannot see, read or access the attached image/file,
+        /// e.g. when OpenRouter router forwards multimodal input to a text-only model.
+        /// </summary>
+        internal static bool LooksLikeVisionRefusal(string text)
+        {
+            if (string.IsNullOrWhiteSpace(text)) return false;
+            var t = text.ToLowerInvariant();
+            return ((t.Contains("доступ к") || t.Contains("доступа к") || t.Contains("не имею доступа") || t.Contains("нет доступа") || t.Contains("не могу получить доступ")) &&
+                    (t.Contains("файл") || t.Contains("изображен") || t.Contains("картинк") || t.Contains("снимок") || t.Contains("скриншот") || t.Contains("экрана") || t.Contains("таблиц")))
+                   || ((t.Contains("не могу") || t.Contains("не умею") || t.Contains("не способен")) &&
+                    (t.Contains("просматривать") || t.Contains("распознавать изображение") || t.Contains("видеть картинки") || t.Contains("видеть фото") || t.Contains("видеть изображение") || t.Contains("обрабатывать изображения") || t.Contains("анализировать изображения")))
+                   || t.Contains("поделитесь им с помощью кнопки")
+                   || t.Contains("поделитесь файлом")
+                   || t.Contains("i cannot view images")
+                   || t.Contains("i can't see the image")
+                   || t.Contains("i do not have access to");
+        }
+
+        /// <summary>
         /// Builds the final user-facing error after both passes failed: keeps the
         /// classic first line (compat) and appends the per-provider summary so
         /// the user sees whether OpenRouter, NVIDIA or both are down.
@@ -812,7 +979,16 @@ namespace MosquitoNetCalculator.Services
             if (fallbackFailures != null && fallbackFailures.Count > 0)
             {
                 foreach (var kv in fallbackFailures)
-                    sb.AppendLine($"{AiKeyValidator.ProviderName(kv.Key)}: {kv.Value}.");
+                {
+                    var providerName = AiKeyValidator.ProviderName(kv.Key);
+                    if (kv.Key == AiProvider.FreeLlmApi)
+                    {
+                        var chatUrl = AiKeyValidator.BuildFreeLlmApiChatUrl(
+                            AppSettingsServiceAi.LoadAiFreeLlmApiEndpoint());
+                        providerName += $" ({chatUrl})";
+                    }
+                    sb.AppendLine($"{providerName}: {kv.Value}.");
+                }
                 sb.AppendLine();
             }
             sb.Append("Проверьте интернет-соединение, API-ключ или выберите другие модели в настройках.");
@@ -830,49 +1006,110 @@ namespace MosquitoNetCalculator.Services
             var userSelected = AppSettingsServiceAi.LoadAiFallbackModels();
             bool autoMode = AppSettingsServiceAi.LoadAutoSelectModel();
 
+            // Detect active providers
+            bool hasOpenRouterKey = !string.IsNullOrWhiteSpace(AiKeyValidator.GetApiKey(AiProvider.OpenRouter));
+            bool hasNvidiaKey = !string.IsNullOrWhiteSpace(AiKeyValidator.GetApiKey(AiProvider.Nvidia));
+            bool hasFreeLlm = !string.IsNullOrWhiteSpace(AppSettingsServiceAi.LoadAiFreeLlmApiEndpoint());
+
+            bool IsProviderActive(AiProvider p) => p switch
+            {
+                AiProvider.OpenRouter => hasOpenRouterKey,
+                AiProvider.Nvidia => hasNvidiaKey,
+                AiProvider.FreeLlmApi => hasFreeLlm,
+                _ => false
+            };
+
             IReadOnlyList<string> resolved;
             if (!autoMode)
             {
                 resolved = userSelected.Count == 0
-                    ? new[] { DefaultModel }
+                    ? (hasFreeLlm && !hasOpenRouterKey ? new[] { "auto" } : new[] { DefaultModel })
                     : userSelected;
             }
             else
             {
                 // Auto mode: classify the task and select best models
-                var taskType = AiTaskClassifier.Classify(userMessage);
+                var taskType = AiTaskClassifier.Classify(userMessage, hasImages);
                 var catalog = AvailableModels;
-                var autoOrdered = AiModelSelector.SelectForTask(taskType, catalog);
+                resolved = AiModelSelector.SelectForTask(taskType, catalog, userSelected, IsProviderActive);
 
-                // Merge: user's picks first, then task-ranked models fill the chain
-                var merged = AiModelSelector.MergeWithUserSelection(autoOrdered, userSelected);
-                resolved = merged.Count == 0
-                    ? new[] { DefaultModel }
-                    : merged;
+                if (resolved.Count == 0)
+                {
+                    resolved = hasFreeLlm && !hasOpenRouterKey
+                        ? new[] { hasImages ? "auto:vision" : "auto" }
+                        : new[] { DefaultModel };
+                }
             }
 
             // Auto-analysis: drop models that a recent probe or send-path failure
-            // already marked dead (401/403/404). Never return an empty chain — a
-            // stale cache must not break the request.
+            // already marked dead (401/403/404). Never return an empty chain.
             resolved = ExcludeUnavailable(resolved);
 
-            // Attached images no longer promote slow vision catalog entries:
-            // the Free Models Router (openrouter/free) filters for vision-capable
-            // free models server-side when the request carries image parts, and it
-            // is by far the fastest-to-start entry — promoting individual vision
-            // models made image requests minutes-long while often failing with
-            // padded junk. Local OCR text is merged into the prompt separately.
-            if (autoMode)
+            if (hasImages)
             {
-                resolved = new[] { OpenRouterFreeRouter }
-                    .Concat(resolved.Where(m => !IsRouterModel(m)))
-                    .Distinct(StringComparer.OrdinalIgnoreCase)
+                // When images are attached, ensure models with verified vision capability
+                // are strictly prioritized, so pure text models that emit padding tokens or 400s
+                // are not tried first.
+                var visionModels = resolved.Where(IsVisionCapable).ToList();
+                var fallbackVision = FreeModels
+                    .Where(m => m.SupportsVision == true && IsProviderActive(m.Provider))
+                    .Select(m => m.Id)
                     .ToList();
+
+                var list = new List<string>();
+                if (hasOpenRouterKey) list.Add(OpenRouterFreeRouter);
+                if (hasFreeLlm) list.Add("auto");
+                if (list.Count == 0) list.Add(OpenRouterFreeRouter);
+
+                var userVision = userSelected.Where(IsVisionCapable).ToList();
+                if (userVision.Count > 0)
+                {
+                    resolved = userVision
+                        .Concat(list)
+                        .Concat(visionModels)
+                        .Concat(fallbackVision)
+                        .Distinct(StringComparer.OrdinalIgnoreCase)
+                        .ToList();
+                }
+                else
+                {
+                    resolved = list
+                        .Concat(visionModels)
+                        .Concat(fallbackVision)
+                        .Concat(resolved.Where(IsVisionCapable))
+                        .Distinct(StringComparer.OrdinalIgnoreCase)
+                        .ToList();
+                }
+            }
+            else if (autoMode)
+            {
+                var routers = new List<string>();
+                if (hasFreeLlm && !hasOpenRouterKey)
+                    routers.Add("auto");
+                else if (hasOpenRouterKey)
+                    routers.Add(OpenRouterFreeRouter);
+
+                if (userSelected.Count > 0)
+                {
+                    // User selection was already prioritized in SelectForTask
+                    resolved = resolved.Distinct(StringComparer.OrdinalIgnoreCase).ToList();
+                }
+                else
+                {
+                    resolved = routers
+                        .Concat(resolved.Where(m => !IsRouterModel(m)))
+                        .Distinct(StringComparer.OrdinalIgnoreCase)
+                        .ToList();
+                }
             }
 
-            // Even a manual OpenRouter-only selection must not die when OpenRouter
-            // is down: always append an NVIDIA free model as a second provider.
-            return EnsureNvidiaFallback(resolved);
+            // Append NVIDIA fallback if key is present and none was selected yet
+            if (hasNvidiaKey)
+            {
+                resolved = EnsureNvidiaFallback(resolved);
+            }
+
+            return resolved;
         }
 
         /// <summary>
@@ -941,7 +1178,7 @@ namespace MosquitoNetCalculator.Services
             "vision", "omni", "glm", "-vl"
         };
 
-        private static bool IsVisionCapable(string modelId)
+        internal static bool IsVisionCapable(string modelId)
         {
             // Prefer the catalog's authoritative modality metadata when known;
             // fall back to name heuristics for entries without it (NVIDIA catalog
@@ -972,7 +1209,7 @@ namespace MosquitoNetCalculator.Services
             "embed", "starcoder", "codegemma", "deepseek-coder", "code-instruct",
             "deplot", "diffusion", "safety", "guard", "reward", "parse", "bge-",
             "nomic-", "e5-", "rerank", "recurrentgemma", "fuyu", "dall-e", "flux",
-            "imagen", "midjourney", "sdxl"
+            "imagen", "midjourney", "sdxl", "translate"
         };
 
         internal static bool IsChatModel(string modelId)
@@ -1048,8 +1285,11 @@ namespace MosquitoNetCalculator.Services
                 return userMessage;
 
             var parts = new List<object>(imageDataUrls.Count + 1);
-            if (!string.IsNullOrWhiteSpace(userMessage))
-                parts.Add(new ChatContentTextPart { Text = userMessage });
+            var text = string.IsNullOrWhiteSpace(userMessage)
+                ? "Что на изображении?"
+                : userMessage;
+
+            parts.Add(new ChatContentTextPart { Text = text });
 
             foreach (var url in imageDataUrls)
             {
@@ -1107,7 +1347,7 @@ namespace MosquitoNetCalculator.Services
         /// <summary>
         /// Formats a display name for a model ID used in user-facing messages.
         /// </summary>
-        private static string FormatModelName(string modelId)
+        internal static string FormatModelName(string modelId)
         {
             if (string.IsNullOrWhiteSpace(modelId))
                 return "(неизвестная модель)";
@@ -1256,6 +1496,10 @@ namespace MosquitoNetCalculator.Services
         [JsonPropertyName("stream")]
         [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
         public bool Stream { get; set; }
+
+        [JsonPropertyName("response_format")]
+        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+        public object? ResponseFormat { get; set; }
     }
 
     internal sealed class ChatCompletionResponse

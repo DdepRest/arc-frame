@@ -1,10 +1,12 @@
 using System;
+using System.ComponentModel;
 using System.Diagnostics.CodeAnalysis;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Documents;
 using System.Windows.Input;
 using System.Windows.Media;
+using MosquitoNetCalculator.Models;
 using MosquitoNetCalculator.Services;
 
 namespace MosquitoNetCalculator.Controls
@@ -32,13 +34,29 @@ namespace MosquitoNetCalculator.Controls
             // интерфейсом. Подписка нужна для slow path, где ресурс заменяется
             // новым экземпляром. Отписываемся на Unloaded, иначе статическое
             // событие держало бы контрол живым.
+            // v3.55: редактор примечаний читает и пишет ClientInfo.Notes.
+            // Вставка И перетаскивание — только «как текст» (см. NotesPastingFilter):
+            // Framework поднимает то же событие DataObject.Pasting и на drop,
+            // поэтому отдельного обработчика дропа нет и быть не должно — он
+            // заменил бы родной перенос выделения внутри редактора вставкой копии.
+            DataContextChanged += (_, _) => HookNotesSource();
+            DataObject.AddPastingHandler(RtfNotes, NotesPastingFilter);
+            // Курсор не должен обещать drop, который ничего не вставит (картинка,
+            // файл): гасим такое перетаскивание ещё на DragOver.
+            RtfNotes.AddHandler(DragDrop.PreviewDragOverEvent, new DragEventHandler(RtfNotes_PreviewDragOver));
+
             Loaded += (_, _) =>
             {
                 ThemeService.ThemeChanged -= UpdateStatusDot;
                 ThemeService.ThemeChanged += UpdateStatusDot;
                 UpdateStatusDot();
+                HookNotesSource();
             };
-            Unloaded += (_, _) => ThemeService.ThemeChanged -= UpdateStatusDot;
+            Unloaded += (_, _) =>
+            {
+                ThemeService.ThemeChanged -= UpdateStatusDot;
+                UnhookNotesSource();
+            };
         }
 
         /// <summary>
@@ -102,8 +120,8 @@ namespace MosquitoNetCalculator.Controls
 
         // ─── Notes formatting toolbar ─────────────────────────────
 
-        private void BtnBold_Click(object sender, RoutedEventArgs e) => WrapSelection("**", "**");
-        private void BtnItalic_Click(object sender, RoutedEventArgs e) => WrapSelection("*", "*");
+        private void BtnBold_Click(object sender, RoutedEventArgs e) => RunNotesCommand(EditingCommands.ToggleBold);
+        private void BtnItalic_Click(object sender, RoutedEventArgs e) => RunNotesCommand(EditingCommands.ToggleItalic);
 
         private void BtnColor_Click(object sender, RoutedEventArgs e)
         {
@@ -114,8 +132,7 @@ namespace MosquitoNetCalculator.Controls
         {
             if (sender is Border border && border.Background is SolidColorBrush brush)
             {
-                string hex = $"#{brush.Color.R:X2}{brush.Color.G:X2}{brush.Color.B:X2}";
-                WrapSelection($"[color={hex}]", "[/color]");
+                ApplyNotesColor(brush.Color);
                 ColorPopup.IsOpen = false;
             }
         }
@@ -138,111 +155,231 @@ namespace MosquitoNetCalculator.Controls
             };
             if (dlg.ShowDialog() == System.Windows.Forms.DialogResult.OK)
             {
-                string hex = $"#{dlg.Color.R:X2}{dlg.Color.G:X2}{dlg.Color.B:X2}";
-                AppSettingsService.SaveLastColor(hex);
-                WrapSelection($"[color={hex}]", "[/color]");
+                AppSettingsService.SaveLastColor($"#{dlg.Color.R:X2}{dlg.Color.G:X2}{dlg.Color.B:X2}");
+                ApplyNotesColor(Color.FromRgb(dlg.Color.R, dlg.Color.G, dlg.Color.B));
             }
             ColorPopup.IsOpen = false;
         }
 
+        /// <summary>
+        /// «Очистить форматирование»: как и прежняя regex-очистка разметки, снимает
+        /// всё сразу — и свойства текста, и структуру списка. Поэтому собираем чистый
+        /// текст документа и строим его заново: TextRange.Text маркеров списка не
+        /// содержит, они часть оформления, а не текста.
+        /// </summary>
         private void BtnClear_Click(object sender, RoutedEventArgs e)
         {
-            if (TxtNotes == null) return;
-            var cleaned = System.Text.RegularExpressions.Regex.Replace(TxtNotes.Text,
-                @"\[color=[^\]]*\]|\[/color\]|\*\*|\*|^- ", "",
-                System.Text.RegularExpressions.RegexOptions.Multiline);
-            TxtNotes.Text = cleaned;
-            TxtNotes.Focus();
+            if (RtfNotes?.Document == null) return;
+
+            string plain = new TextRange(RtfNotes.Document.ContentStart, RtfNotes.Document.ContentEnd)
+                .Text
+                .Replace("\r\n", "\n")
+                .Replace('\r', '\n')
+                .TrimEnd('\n');
+
+            LoadNotesIntoEditor(plain);
+            SyncNotesToModel();
+            RtfNotes.Focus();
         }
 
-        private void BtnList_Click(object sender, RoutedEventArgs e)
-        {
-            if (TxtNotes == null) return;
-            int start = TxtNotes.SelectionStart;
-            int lineStart = TxtNotes.Text.LastIndexOf('\n', start == 0 ? 0 : start - 1) + 1;
-            string remainder = lineStart < TxtNotes.Text.Length ? TxtNotes.Text.Substring(lineStart) : "";
+        private void BtnList_Click(object sender, RoutedEventArgs e) => RunNotesCommand(EditingCommands.ToggleBullets);
 
-            if (remainder.StartsWith("- "))
-            {
-                TxtNotes.Text = TxtNotes.Text.Remove(lineStart, 2);
-                TxtNotes.SelectionStart = Math.Max(0, start - 2);
-            }
-            else if (remainder.StartsWith("-"))
-            {
-                TxtNotes.Text = TxtNotes.Text.Remove(lineStart, 1);
-                TxtNotes.SelectionStart = Math.Max(0, start - 1);
-            }
-            else
-            {
-                TxtNotes.Text = TxtNotes.Text.Insert(lineStart, "- ");
-                TxtNotes.SelectionStart = start + 2;
-            }
-            TxtNotes.Focus();
+        // ─── Notes: редактор с форматированием (v3.55) ──────────────────────────
+        //
+        // Поле примечаний — RichTextBox: «Ж» применяет формат к выделению, а не
+        // вставляет маркеры, поэтому «код» разметки пользователь не видит вообще.
+        // Хранимый формат при этом НЕ изменился: в заказе, печати КП и PDF живёт
+        // та же строка, что разбирает NotesFormatter, а редактор лишь конвертирует
+        // её в FlowDocument и обратно (NotesDocumentBuilder / NotesMarkupWriter).
+        // Старые заказы с маркерами открываются как раньше.
+        //
+        // Модель обновляется в четырёх точках: набор текста (TextChanged), команды
+        // форматирования (они НЕ поднимают TextChanged), уход фокуса (страховка на
+        // любой другой путь правки) и смена источника (заказ/сброс/AI).
+
+        private bool _syncingNotes;
+        private ClientInfo? _notesSource;
+
+        /// <summary>
+        /// Выполняет команду форматирования над редактором и сразу отдаёт результат
+        /// в модель: смена форматирования не поднимает TextChanged, поэтому без
+        /// явной синхронизации заказ сохранился бы без неё.
+        /// </summary>
+        private void RunNotesCommand(RoutedUICommand command)
+        {
+            if (RtfNotes == null) return;
+
+            RtfNotes.Focus();
+            if (command.CanExecute(null, RtfNotes))
+                command.Execute(null, RtfNotes);
+
+            SyncNotesToModel();
         }
 
-        private void WrapSelection(string prefix, string suffix)
+        /// <summary>
+        /// Красит выделение. Если выделения нет, TextSelection ставит цвет и на
+        /// каретку — текст, набранный сразу после выбора цвета, тоже будет цветным.
+        /// </summary>
+        private void ApplyNotesColor(Color color)
         {
-            if (TxtNotes == null) return;
-            int start = TxtNotes.SelectionStart;
-            int len = TxtNotes.SelectionLength;
+            if (RtfNotes == null) return;
 
-            if (len == 0)
+            var brush = new SolidColorBrush(color);
+            brush.Freeze();
+
+            RtfNotes.Focus();
+            RtfNotes.Selection.ApplyPropertyValue(TextElement.ForegroundProperty, brush);
+            SyncNotesToModel();
+        }
+
+        private void RtfNotes_TextChanged(object sender, TextChangedEventArgs e) => SyncNotesToModel();
+
+        /// <summary>
+        /// Страховка: форматирование можно сменить и помимо кнопок (контекстное
+        /// меню), а уход фокуса — последняя точка, где правку ещё можно отдать в
+        /// модель до сохранения заказа.
+        /// </summary>
+        private void RtfNotes_LostFocus(object sender, RoutedEventArgs e) => SyncNotesToModel();
+
+        /// <summary>
+        /// Ctrl+B / Ctrl+I идут через те же методы, что и кнопки: встроенные команды
+        /// поменяли бы вид текста, не обновив модель. Ctrl+U глушим осознанно —
+        /// хранимый формат подчёркивания не знает, и после перезагрузки оно бы молча
+        /// пропало.
+        /// </summary>
+        private void RtfNotes_PreviewKeyDown(object sender, KeyEventArgs e)
+        {
+            if ((Keyboard.Modifiers & ModifierKeys.Control) != ModifierKeys.Control) return;
+
+            if (e.Key == Key.B)
             {
-                // No selection — insert empty tag pair so user can type inside.
-                TxtNotes.Text = TxtNotes.Text.Insert(start, prefix + suffix);
-                TxtNotes.SelectionStart = start + prefix.Length;
-                TxtNotes.Focus();
+                RunNotesCommand(EditingCommands.ToggleBold);
+                e.Handled = true;
+            }
+            else if (e.Key == Key.I)
+            {
+                RunNotesCommand(EditingCommands.ToggleItalic);
+                e.Handled = true;
+            }
+            else if (e.Key == Key.U)
+            {
+                e.Handled = true;
+            }
+        }
+
+        /// <summary>
+        /// Барьер «только текст» у редактора примечаний — один на оба входа:
+        /// вставку из буфера и перетаскивание. Framework поднимает то же событие
+        /// <c>DataObject.Pasting</c> и на drop (<c>DataObjectPastingEventArgs.IsDragDrop</c>),
+        /// поэтому дроп отдельного обработчика не требует: после подмены DataObject
+        /// редактор применяет только <see cref="DataFormats.UnicodeText"/> —
+        /// присвоение DataObject сбрасывает FormatToApply на формат нового объекта.
+        ///
+        /// Зачем: чужой шрифт, размер или подчёркивание из Word попали бы в
+        /// документ, а при сохранении молча исчезли (формат знает ровно жирный,
+        /// курсив, цвет и список). Картинка или файл из проводника — тем более:
+        /// хранить их негде, поэтому <c>e.CancelCommand()</c>.
+        ///
+        /// Статический — чтобы тесты звали тот же самый барьер, а не его копию
+        /// (страж <c>SidebarNotesDropTests</c>).
+        /// </summary>
+        internal static void NotesPastingFilter(object sender, DataObjectPastingEventArgs e)
+        {
+            if (!e.DataObject.GetDataPresent(DataFormats.UnicodeText))
+            {
+                e.CancelCommand();
                 return;
             }
 
-            string selected = TxtNotes.Text.Substring(start, len);
-            bool hasNewlines = selected.Contains('\r') || selected.Contains('\n');
-
-            if (hasNewlines)
-            {
-                // Wrap each line individually so the line-based parser applies
-                // formatting to every line, not just the first one.
-                // Empty lines produce e.g. «****» which toggles on/off — net zero,
-                // but the line break is preserved.
-                var lines = selected.Split(new[] { "\r\n", "\r", "\n" }, StringSplitOptions.None);
-                var sb = new System.Text.StringBuilder();
-                for (int i = 0; i < lines.Length; i++)
-                {
-                    sb.Append(prefix).Append(lines[i]).Append(suffix);
-                    if (i < lines.Length - 1)
-                        sb.Append('\n');
-                }
-
-                TxtNotes.Text = TxtNotes.Text.Remove(start, len).Insert(start, sb.ToString());
-                TxtNotes.SelectionStart = start;
-                TxtNotes.SelectionLength = sb.Length;
-            }
-            else
-            {
-                TxtNotes.Text = TxtNotes.Text.Insert(start + len, suffix).Insert(start, prefix);
-                TxtNotes.SelectionStart = start + prefix.Length;
-                TxtNotes.SelectionLength = len;
-            }
-
-            TxtNotes.Focus();
+            var text = e.DataObject.GetData(DataFormats.UnicodeText) as string ?? string.Empty;
+            e.DataObject = new DataObject(DataFormats.UnicodeText, text);
         }
 
-        private void TxtNotes_TextChanged(object sender, TextChangedEventArgs e)
+        /// <summary>
+        /// Перетаскивание без текста (картинка, файл из проводника) гасим ещё до
+        /// drop: иначе курсор обещает вставку, которой заведомо не будет — фильтр
+        /// такой payload отменит. Текстовые drag'и, включая перенос выделения
+        /// внутри редактора, не трогаем: у них своё родное поведение (каретка
+        /// drop, Move/Copy) и формат, который редактор умеет хранить.
+        /// </summary>
+        private void RtfNotes_PreviewDragOver(object sender, DragEventArgs e)
         {
-            if (NotesPreview?.Document == null) return;
-            NotesPreview.Document.Blocks.Clear();
+            if (e.Data == null || e.Data.GetDataPresent(DataFormats.UnicodeText)) return;
 
-            foreach (var line in NotesFormatter.Parse(TxtNotes.Text))
+            e.Effects = DragDropEffects.None;
+            e.Handled = true;
+        }
+
+        /// <summary>
+        /// Подписывается на ClientInfo текущего заказа: загрузка, сброс и AI-правка
+        /// примечаний приходят как PropertyChanged и перерисовывают редактор.
+        /// </summary>
+        private void HookNotesSource()
+        {
+            var info = (DataContext as MainWindow)?.ClientInfo;
+            if (ReferenceEquals(info, _notesSource)) return;
+
+            if (_notesSource != null)
+                _notesSource.PropertyChanged -= OnNotesSourcePropertyChanged;
+
+            _notesSource = info;
+
+            if (_notesSource != null)
+                _notesSource.PropertyChanged += OnNotesSourcePropertyChanged;
+
+            LoadNotesIntoEditor(_notesSource?.Notes);
+        }
+
+        private void UnhookNotesSource()
+        {
+            if (_notesSource == null) return;
+
+            _notesSource.PropertyChanged -= OnNotesSourcePropertyChanged;
+            _notesSource = null;
+        }
+
+        private void OnNotesSourcePropertyChanged(object? sender, PropertyChangedEventArgs e)
+        {
+            if (e.PropertyName == nameof(ClientInfo.Notes))
+                LoadNotesIntoEditor(_notesSource?.Notes);
+        }
+
+        /// <summary>
+        /// Показывает хранимую разметку в редакторе. Программная перестройка
+        /// документа поднимает TextChanged — флаг не даёт ей тут же вернуться в
+        /// модель (иначе получился бы цикл «модель → документ → модель»).
+        /// </summary>
+        private void LoadNotesIntoEditor(string? markup)
+        {
+            if (RtfNotes == null || _syncingNotes) return;
+
+            _syncingNotes = true;
+            try
             {
-                var p = new Paragraph
-                {
-                    Margin = new Thickness(line.IsListItem ? 12 : 0, 0, 0, 2)
-                };
+                RtfNotes.Document = NotesDocumentBuilder.Build(markup);
+            }
+            finally
+            {
+                _syncingNotes = false;
+            }
+        }
 
-                foreach (var inline in NotesRenderer.ToInlines(line))
-                    p.Inlines.Add(inline);
+        /// <summary>
+        /// Отдаёт содержимое редактора в модель в хранимом формате разметки —
+        /// именно её читают сохранение заказа, печать КП и PDF.
+        /// </summary>
+        private void SyncNotesToModel()
+        {
+            if (RtfNotes?.Document == null || _notesSource == null || _syncingNotes) return;
 
-                NotesPreview.Document.Blocks.Add(p);
+            _syncingNotes = true;
+            try
+            {
+                _notesSource.Notes = NotesMarkupWriter.ToMarkup(RtfNotes.Document, RtfNotes.Foreground);
+            }
+            finally
+            {
+                _syncingNotes = false;
             }
         }
     }

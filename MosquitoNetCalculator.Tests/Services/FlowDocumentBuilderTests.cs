@@ -183,7 +183,6 @@ namespace MosquitoNetCalculator.Tests.Services
         {
             var client = new ClientInfo
             {
-                ClientName = "Иванов И.И.",
                 ClientPhone = "+7-999-123-45-67",
                 ClientAddress = "РТУТНАЯ 10"
             };
@@ -208,18 +207,17 @@ namespace MosquitoNetCalculator.Tests.Services
                 Assert.Equal(GridUnitType.Auto, grid.ColumnDefinitions[0].Width.GridUnitType);
                 Assert.Equal(GridUnitType.Star, grid.ColumnDefinitions[1].Width.GridUnitType);
 
-                // 3 rows + 3 bottom-border Rectangles = 9 children
-                Assert.Equal(9, grid.Children.Count);
+                // 2 rows + 2 bottom-border Rectangles = 6 children
+                Assert.Equal(6, grid.Children.Count);
 
                 // Label TextBlocks should be SemiBold
                 var labelTbs = grid.Children.OfType<TextBlock>()
                     .Where(tb => Grid.GetColumn(tb) == 0).ToList();
-                Assert.Equal(3, labelTbs.Count);
+                Assert.Equal(2, labelTbs.Count);
                 Assert.All(labelTbs, tb => Assert.Equal(FontWeights.SemiBold, tb.FontWeight));
 
-                Assert.Equal("Заказчик:", labelTbs[0].Text);
-                Assert.Equal("Телефон:",   labelTbs[1].Text);
-                Assert.Equal("Адрес:",     labelTbs[2].Text);
+                Assert.Equal("Телефон:", labelTbs[0].Text);
+                Assert.Equal("Адрес:",   labelTbs[1].Text);
             });
         }
 
@@ -228,8 +226,7 @@ namespace MosquitoNetCalculator.Tests.Services
         {
             var client = new ClientInfo
             {
-                ClientName = "Иванов И.И.",
-                ClientPhone = "",
+                ClientPhone = "+7-999-123-45-67",
                 ClientAddress = null!
             };
             var items = new List<OrderItem>
@@ -253,7 +250,7 @@ namespace MosquitoNetCalculator.Tests.Services
                 var labels = grid.Children.OfType<TextBlock>()
                     .Where(tb => Grid.GetColumn(tb) == 0).ToList();
                 Assert.Single(labels);
-                Assert.Equal("Заказчик:", labels[0].Text);
+                Assert.Equal("Телефон:", labels[0].Text);
             });
         }
 
@@ -262,7 +259,6 @@ namespace MosquitoNetCalculator.Tests.Services
         {
             var client = new ClientInfo
             {
-                ClientName = null!,
                 ClientPhone = "",
                 ClientAddress = "  "
             };
@@ -287,8 +283,7 @@ namespace MosquitoNetCalculator.Tests.Services
         {
             var client = new ClientInfo
             {
-                ClientName = "Иванов\r\nИ.И.",
-                ClientPhone = null!,
+                ClientPhone = "+7-999\r\n-123",
                 ClientAddress = null!
             };
             var items = new List<OrderItem>
@@ -310,7 +305,7 @@ namespace MosquitoNetCalculator.Tests.Services
                     .First(tb => Grid.GetColumn(tb) == 1);
                 Assert.DoesNotContain("\r\n", valueTb.Text);
                 Assert.DoesNotContain("\n", valueTb.Text);
-                Assert.Equal("Иванов И.И.", valueTb.Text);
+                Assert.Equal("+7-999 -123", valueTb.Text);
             });
         }
 

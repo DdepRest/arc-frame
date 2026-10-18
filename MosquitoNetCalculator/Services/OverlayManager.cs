@@ -69,49 +69,74 @@ namespace MosquitoNetCalculator.Services
         /// Instantly hides any other visible overlay first.
         /// Optionally sets the active nav button via the callback.
         /// </summary>
+        /// <summary>
+        /// Shows an overlay with a slide-in animation and backdrop fade-in.
+        /// Instantly hides any other visible overlay first.
+        /// Optionally sets the active nav button via the callback.
+        /// </summary>
         public void Show(OverlayEntry entry, string? navTag = null)
         {
+            bool anyPreviouslyVisible = false;
             // Close any other open overlay first
             foreach (var ov in _overlays)
             {
                 if (ov != entry && ov.Grid.Visibility == Visibility.Visible)
+                {
+                    anyPreviouslyVisible = true;
                     HideInstant(ov.Grid);
+                }
             }
 
             entry.Grid.Visibility = Visibility.Visible;
-            entry.Backdrop.Opacity = 0;
 
-            // v3.52.0 perf: measure an unrendered panel once, then reuse the
-            // width. Measure(∞) on every open forced a full layout pass of the
-            // panel's subtree right before the slide animation — noticeable on
-            // the heavier overlays (Заказы, Обновления, Админ).
-            double panelWidth;
-            if (entry.Panel.ActualWidth > 0)
+            double panelWidth = GetTargetPanelWidth(entry);
+
+            if (anyPreviouslyVisible)
             {
-                panelWidth = entry.Panel.ActualWidth;
+                // Если оверлей уже был открыт — пользователь уже в режиме боковой панели:
+                // не мигаем бэкдропом и не тащим 800px панель издалека. Снимаем остаточные анимации
+                // и выставляем открытое состояние мгновенно без артефактов и задержек.
+                entry.Backdrop.BeginAnimation(UIElement.OpacityProperty, null);
+                entry.SlideTransform.BeginAnimation(TranslateTransform.XProperty, null);
+                entry.Backdrop.Opacity = 1;
+                entry.SlideTransform.X = 0;
             }
-            else if (!_measuredWidths.TryGetValue(entry, out panelWidth) || panelWidth <= 0)
+            else
             {
-                entry.Panel.Measure(new Size(double.PositiveInfinity, double.PositiveInfinity));
-                panelWidth = entry.Panel.ActualWidth > 0 ? entry.Panel.ActualWidth : 800;
-                _measuredWidths[entry] = panelWidth;
+                entry.Backdrop.Opacity = 0;
+                entry.SlideTransform.X = panelWidth;
+
+                var slideAnim = new DoubleAnimation(0, Motion.Slow)
+                {
+                    EasingFunction = new CubicEase { EasingMode = EasingMode.EaseOut }
+                };
+                entry.SlideTransform.BeginAnimation(TranslateTransform.XProperty, slideAnim);
+
+                var fadeIn = new DoubleAnimation(1, Motion.Base)
+                {
+                    EasingFunction = new CubicEase { EasingMode = EasingMode.EaseOut }
+                };
+                entry.Backdrop.BeginAnimation(UIElement.OpacityProperty, fadeIn);
             }
-            entry.SlideTransform.X = panelWidth;
-
-            var slideAnim = new DoubleAnimation(0, Motion.Emphasized)
-            {
-                EasingFunction = new CubicEase { EasingMode = EasingMode.EaseOut }
-            };
-            entry.SlideTransform.BeginAnimation(TranslateTransform.XProperty, slideAnim);
-
-            var fadeIn = new DoubleAnimation(1, Motion.Base)
-            {
-                EasingFunction = new CubicEase { EasingMode = EasingMode.EaseOut }
-            };
-            entry.Backdrop.BeginAnimation(UIElement.OpacityProperty, fadeIn);
 
             if (navTag != null)
                 _onSetActiveNav(navTag);
+        }
+
+        private double GetTargetPanelWidth(OverlayEntry entry)
+        {
+            if (entry.Panel.ActualWidth > 0)
+                return entry.Panel.ActualWidth;
+
+            if (_measuredWidths.TryGetValue(entry, out double cachedWidth) && cachedWidth > 0)
+                return cachedWidth;
+
+            double targetWidth = entry.Panel.Width > 0 && !double.IsNaN(entry.Panel.Width)
+                ? entry.Panel.Width
+                : (entry.Panel.MaxWidth > 0 && !double.IsInfinity(entry.Panel.MaxWidth) ? entry.Panel.MaxWidth : 800);
+
+            _measuredWidths[entry] = targetWidth;
+            return targetWidth;
         }
 
         // ── CloseAll ─────────────────────────────────────────────────
@@ -133,7 +158,7 @@ namespace MosquitoNetCalculator.Services
                 backdrop.BeginAnimation(UIElement.OpacityProperty, null);
 
                 double panelWidth = panel.ActualWidth > 0 ? panel.ActualWidth : 800;
-                var slideOut = new DoubleAnimation(panelWidth, Motion.Slow)
+                var slideOut = new DoubleAnimation(panelWidth, Motion.Base)
                 {
                     EasingFunction = new CubicEase { EasingMode = EasingMode.EaseIn }
                 };

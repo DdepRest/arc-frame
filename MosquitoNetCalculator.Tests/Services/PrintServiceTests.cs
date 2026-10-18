@@ -87,12 +87,10 @@ namespace MosquitoNetCalculator.Tests.Services
             var items = new List<OrderItem> { new() { Name = "Anwis", Total = 100 } };
             var client = new ClientInfo
             {
-                ClientName = "Иванов И.И.",
                 ClientPhone = "+7 999 123-45-67",
                 ClientAddress = "г. Москва, ул. Пушкина, д. 10"
             };
             var text = BuildAndExtract(items, client, 100, "Сто рублей 00 копеек");
-            Assert.Contains("Иванов И.И.", text);
             Assert.Contains("+7 999 123-45-67", text);
             Assert.Contains("г. Москва", text);
         }
@@ -640,6 +638,47 @@ namespace MosquitoNetCalculator.Tests.Services
         public void PrintResultType_AllValues_AreDefined(PrintResultType type)
         {
             Assert.True(System.Enum.IsDefined(typeof(PrintResultType), type));
+        }
+
+        // ─── PrintDirect tests ─────────────────────────────────────
+
+        [Fact]
+        public void PrintDirect_ThrowsArgumentNullException_OnNullArguments()
+        {
+            Assert.Throws<ArgumentNullException>(() =>
+                PrintService.PrintDirect(null!, new ClientInfo(), new PrintSettings(), out _));
+            Assert.Throws<ArgumentNullException>(() =>
+                PrintService.PrintDirect(new List<OrderItem>(), null!, new PrintSettings(), out _));
+            Assert.Throws<ArgumentNullException>(() =>
+                PrintService.PrintDirect(new List<OrderItem>(), new ClientInfo(), null!, out _));
+        }
+
+        [Fact]
+        public void PrintDirect_ReturnsPrinterError_WhenExplicitPrinterNotFound()
+        {
+            var items = SampleItems();
+            var client = SampleClient();
+            var settings = new PrintSettings { PrinterName = "NonExistentPrinter_xyz_12345" };
+
+            var result = PrintService.PrintDirect(items, client, settings, out var printerName);
+
+            Assert.Equal(PrintResultType.PrinterError, result.Type);
+            Assert.Empty(printerName);
+            Assert.Contains("Не удалось определить принтер", result.UserMessage);
+        }
+
+        [Fact]
+        public async System.Threading.Tasks.Task PrintDirectAsync_ExecutesInStaBackgroundThread_AndReturnsResult()
+        {
+            var items = SampleItems();
+            var client = SampleClient();
+            var settings = new PrintSettings { PrinterName = "NonExistentPrinter_Async_12345" };
+
+            var (result, printerName) = await PrintService.PrintDirectAsync(items, client, settings);
+
+            Assert.Equal(PrintResultType.PrinterError, result.Type);
+            Assert.Empty(printerName);
+            Assert.Contains("Не удалось определить принтер", result.UserMessage);
         }
 
     }

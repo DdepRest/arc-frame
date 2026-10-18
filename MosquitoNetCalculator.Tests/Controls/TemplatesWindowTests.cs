@@ -19,7 +19,7 @@ namespace MosquitoNetCalculator.Tests.Controls
     /// с реальным стеком, а не молча (в рантайме ошибку конструктора окна
     /// глотает DispatcherUnhandledException, и кнопка выглядит «мёртвой»).
     /// </summary>
-    [Collection("STA")]
+    [Collection("WPF_UI")]
     public class TemplatesWindowTests
     {
         [Fact]
@@ -86,10 +86,13 @@ namespace MosquitoNetCalculator.Tests.Controls
                     // Режим Anwis синхронизирован тем же способом.
                     Assert.Equal(AnwisSizeService.DefaultMode, state.GridAnwisMode);
 
-                    // Пользователь вводит только размеры — валидация проходит
+                    // Пользователь вводит размеры и количество — валидация проходит
                     // без единого касания выпадающих списков (сценарий бага).
                     state.GridWidth = 500;
                     state.GridHeight = 1500;
+                    state.GridQuantity = 1;
+                    state.PsulEnabled = false;
+                    state.DeliveryEnabled = false;
                     Assert.Null(state.GetValidationError());
                 }
                 finally
@@ -125,6 +128,9 @@ namespace MosquitoNetCalculator.Tests.Controls
 
                     state.GridWidth = 700;
                     state.GridHeight = 1200;
+                    state.GridQuantity = 1;
+                    state.PsulEnabled = false;
+                    state.DeliveryEnabled = false;
                     Assert.Null(state.GetValidationError());
 
                     var specs = state.BuildItemSpecs(
@@ -219,6 +225,113 @@ namespace MosquitoNetCalculator.Tests.Controls
 
                     // У каждой карточки — СВОЙ рисунок, а не одинаковая заглушка.
                     Assert.Equal(cards.Count, drawings.Distinct(StringComparer.Ordinal).Count());
+                }
+                finally
+                {
+                    window.Close();
+                }
+            });
+        }
+
+        [Fact]
+        public void OpenChecklist_AllFourTemplates_BuildsChecklistWithoutThrowing()
+        {
+            TestAppThemes.RunOnSta(() =>
+            {
+                var window = new TemplatesWindow(null!);
+                try
+                {
+                    var openMethod = typeof(TemplatesWindow)
+                        .GetMethod("OpenChecklist", BindingFlags.Instance | BindingFlags.NonPublic)!;
+                    var backMethod = typeof(TemplatesWindow)
+                        .GetMethod("ShowGalleryView", BindingFlags.Instance | BindingFlags.NonPublic)!;
+
+                    foreach (var template in OrderTemplateService.All)
+                    {
+                        openMethod.Invoke(window, new object[] { template });
+
+                        Assert.Equal(Visibility.Visible, window.ChecklistView.Visibility);
+                        Assert.Equal(Visibility.Collapsed, window.GalleryView.Visibility);
+                        Assert.Equal(template.Rows.Count, window.ChecklistPanel.Children.Count);
+
+                        // Проверяем возврат на витрину
+                        backMethod.Invoke(window, null);
+                        Assert.Equal(Visibility.Collapsed, window.ChecklistView.Visibility);
+                        Assert.Equal(Visibility.Visible, window.GalleryView.Visibility);
+                    }
+                }
+                finally
+                {
+                    window.Close();
+                }
+            });
+        }
+
+        [Fact]
+        public void GalleryView_LayoutAndSizing_IsCompactAndTidy()
+        {
+            TestAppThemes.RunOnSta(() =>
+            {
+                var window = new TemplatesWindow(null!);
+                try
+                {
+                    // Окно настроено на автоматическую подгонку по высоте контента,
+                    // без хардкода 700px и гигантской пустоты внизу.
+                    Assert.Equal(SizeToContent.Height, window.SizeToContent);
+                    Assert.True(double.IsNaN(window.Height));
+
+                    // Каждая карточка содержит горизонтальную раскладку с 3 колонками:
+                    // [иконка 36×36] [название — описание + чипы всех позиций] [бейдж N поз. + шеврон]
+                    var cards = window.GalleryPanel.Children.OfType<Button>().ToList();
+                    Assert.Equal(OrderTemplateService.All.Count(), cards.Count);
+
+                    foreach (var card in cards)
+                    {
+                        var grid = Assert.IsType<Grid>(card.Content);
+                        Assert.Equal(3, grid.ColumnDefinitions.Count);
+
+                        // Проверяем наличие чипов товаров внутри центральной колонки
+                        var contentStack = Assert.IsType<StackPanel>(grid.Children[1]);
+                        var tagsPanel = Assert.IsType<WrapPanel>(contentStack.Children[1]);
+                        Assert.True(tagsPanel.Children.Count > 0);
+
+                        // Проверяем правую колонку: бейдж и шеврон
+                        var rightStack = Assert.IsType<StackPanel>(grid.Children[2]);
+                        var badge = Assert.IsType<Border>(rightStack.Children[0]);
+                        var badgeText = Assert.IsType<TextBlock>(badge.Child);
+                        Assert.Contains("поз.", badgeText.Text);
+                    }
+
+                    // Карточка шаблона «Рама» (8 позиций) обязана содержать теги со множителем (Отлив ×2, Козырёк ×2)
+                    var frameCard = cards.First(c => System.Windows.Automation.AutomationProperties.GetName(c).Contains("Рама"));
+                    var frameGrid = (Grid)frameCard.Content;
+                    var frameTags = (WrapPanel)((StackPanel)frameGrid.Children[1]).Children[1];
+                    var tagTexts = frameTags.Children.OfType<Border>()
+                        .Select(b => ((TextBlock)b.Child).Text)
+                        .ToList();
+
+                    Assert.Contains("Отлив ×2", tagTexts);
+                    Assert.Contains("Козырёк ×2", tagTexts);
+                    Assert.Contains("Anwis", tagTexts);
+                    Assert.Contains("Брус", tagTexts);
+                    Assert.Contains("Короб", tagTexts);
+                    Assert.Contains("Доставка", tagTexts);
+
+                    // Проверяем переключение в чек-лист и обратно:
+                    // В чек-листе высота фиксируется (700px) для скролла, а при возврате
+                    // снова сбрасывается в SizeToContent.Height и Height = NaN.
+                    var openMethod = typeof(TemplatesWindow)
+                        .GetMethod("OpenChecklist", BindingFlags.Instance | BindingFlags.NonPublic)!;
+                    var backMethod = typeof(TemplatesWindow)
+                        .GetMethod("ShowGalleryView", BindingFlags.Instance | BindingFlags.NonPublic)!;
+
+                    openMethod.Invoke(window, new object[] { OrderTemplateService.All.First() });
+                    Assert.Equal(SizeToContent.Manual, window.SizeToContent);
+                    Assert.True(window.Height >= 700);
+
+                    backMethod.Invoke(window, null);
+                    Assert.Equal(SizeToContent.Height, window.SizeToContent);
+                    Assert.True(double.IsNaN(window.Height));
                 }
                 finally
                 {

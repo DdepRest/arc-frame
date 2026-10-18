@@ -1,4 +1,4 @@
-﻿param(
+param(
     [Parameter(Mandatory=$true)][ValidateSet("dark","light")][string]$Theme,
     [string]$OutDir = ".tools/shots",
     # Самопроверка стража «экран здесь наш»: кладёт ПОВЕРХ нашего окна чужое
@@ -805,7 +805,7 @@ function Reset-InputState([IntPtr]$h, [switch]$KeepCursor) {
 # подобие: прошлый прогон записал кадр 04b светлой темы с открытым сайдбаром
 # (в базлайне скрима нет, а записано 235 426 пикселей скрима).
 $script:overlayMarkers = [ordered]@{
-    "клиент" = "TxtClientName"
+    "клиент" = "TxtClientPhone"
     "печать" = "PrintButton"
     "заказы" = "TxtSearchOrders"
     "цены"   = "TxtSearchPrices"
@@ -1337,7 +1337,7 @@ try {
 
     # ── 04 «Заказчик»: open sidebar, capture, fill, capture filled state ──
     Invoke-ActionBarButton "Заказчик"
-    Assert-SceneReady @("TxtClientName") "04a-sidebar-open"
+    Assert-SceneReady @("TxtClientPhone") "04a-sidebar-open"
     Start-Sleep -Milliseconds 500
     # Дата договора — входные данные кадра (см. блок «Фиксированные входные
     # данные кадра» выше): без неё 04a (поле «Дата») и 05 (шапка печатного КП)
@@ -1348,11 +1348,9 @@ try {
         Set-FixedContractDate $win "04a-sidebar-open"
     }
     Shot "04a-sidebar-open-$Theme"
-    $name = Find-ById $win "TxtClientName"
     $phone = Find-ById $win "TxtClientPhone"
     $addr = Find-ById $win "TxtClientAddress"
-    if ($name -and $phone -and $addr) {
-        Set-Value $name "Иван Тестов"
+    if ($phone -and $addr) {
         Set-Value $phone "+7 900 000-00-00"
         Set-Value $addr "ул. Тестовая, 1"
         Start-Sleep -Milliseconds 600

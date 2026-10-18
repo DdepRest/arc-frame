@@ -8,6 +8,7 @@ namespace MosquitoNetCalculator.Services
     {
         Calculator,
         Help,
+        Vision,
         General
     }
 
@@ -33,8 +34,11 @@ namespace MosquitoNetCalculator.Services
             "обновлен", "верси", "настройк", "ключ", "модел", "программ", "функци"
         };
 
-        public static AiTaskType Classify(string? text)
+        public static AiTaskType Classify(string? text, bool hasImages = false)
         {
+            if (hasImages)
+                return AiTaskType.Vision;
+
             if (string.IsNullOrWhiteSpace(text))
                 return AiTaskType.General;
 
@@ -45,5 +49,7 @@ namespace MosquitoNetCalculator.Services
                 return AiTaskType.Help;
             return AiTaskType.General;
         }
+
+        public static AiTaskType Classify(string? text) => Classify(text, false);
     }
 }

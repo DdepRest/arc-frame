@@ -19,7 +19,7 @@ namespace MosquitoNetCalculator.Tests.Services
     /// двигается никакой анимацией — как на машинах с выключенными анимациями.
     /// Живая проверка того же пути — .tools/check-theme-reducedmotion.ps1.
     /// </summary>
-    [Collection("STA")]
+    [Collection("WPF_UI")]
     public class ThemeApplyReducedMotionTests
     {
         [Fact]

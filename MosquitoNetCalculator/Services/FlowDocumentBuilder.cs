@@ -122,8 +122,6 @@ namespace MosquitoNetCalculator.Services
             borderBrush.Freeze();
             var clientFontSize = 10 * 96.0 / 72.0;
 
-            AddClientGridRow(grid, rowDefs, "Заказчик:", clientInfo.ClientName,
-                clientFontSize, borderBrush);
             AddClientGridRow(grid, rowDefs, "Телефон:",   clientInfo.ClientPhone,
                 clientFontSize, borderBrush);
             AddClientGridRow(grid, rowDefs, "Адрес:",     clientInfo.ClientAddress,

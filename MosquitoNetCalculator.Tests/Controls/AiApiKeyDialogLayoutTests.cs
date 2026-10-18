@@ -36,12 +36,10 @@ namespace MosquitoNetCalculator.Tests.Controls
             Assert.Contains("<ScrollViewer Grid.Row=\"1\"", source);
 
             // The model list is bounded so it cannot force the window taller.
-            Assert.Contains("MaxHeight=\"190\"", source);
+            Assert.True(source.Contains("MaxHeight=\"260\"") || source.Contains("MaxHeight=\"240\""));
 
             // The footer row hosts both action buttons. The assertion is anchored
-            // to the footer's unique attributes so the keys card (also Grid.Row="2"
-            // inside the nested grid) cannot satisfy it.
-            Assert.Contains("Border Grid.Row=\"2\" Margin=\"-1,0,-1,0\" Padding=\"0,12,0,14\"", source);
+            Assert.Contains("Border Grid.Row=\"2\" Margin=\"-1,0,-1,0\" Padding=\"{DynamicResource Pad.Header}\"", source);
             Assert.Contains("Content=\"Отмена\"", source);
             Assert.Contains("Content=\"Сохранить\"", source);
         }

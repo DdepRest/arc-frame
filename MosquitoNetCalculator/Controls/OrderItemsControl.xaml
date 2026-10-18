@@ -1,4 +1,4 @@
-﻿<UserControl x:Class="MosquitoNetCalculator.Controls.OrderItemsControl"
+<UserControl x:Class="MosquitoNetCalculator.Controls.OrderItemsControl"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:conv="clr-namespace:MosquitoNetCalculator.Converters">
@@ -13,21 +13,21 @@
              only its fixed card list — an unlisted element would stay invisible. -->
         <Border Grid.Row="0" Background="{DynamicResource Surface}" CornerRadius="{DynamicResource Radius.CardHeader}"
                 BorderBrush="{DynamicResource Border}" BorderThickness="1,1,1,0"
-                Padding="12,5"
+                Padding="{DynamicResource Pad.Row}"
                 x:Name="TableHeadBar">
             <StackPanel Orientation="Horizontal">
-                <TextBlock Text="Позиции заказа" FontSize="12" FontWeight="SemiBold"
+                <TextBlock Text="Позиции заказа" FontSize="{StaticResource Type.Body}" FontWeight="SemiBold"
                            Foreground="{DynamicResource TextPrimary}" VerticalAlignment="Center"/>
                 <Border x:Name="PosCountBadge" Background="{DynamicResource ChipBg}"
-                        CornerRadius="{DynamicResource Radius.Capsule}" Padding="9,3" Margin="10,0,0,0"
+                        CornerRadius="{DynamicResource Radius.Capsule}" Padding="{DynamicResource Pad.Pill}" Margin="{DynamicResource Gap.Left}"
                         VerticalAlignment="Center" Visibility="Collapsed">
-                    <TextBlock x:Name="PosCountText" FontSize="11" FontWeight="SemiBold"
+                    <TextBlock x:Name="PosCountText" FontSize="{StaticResource Type.Caption}" FontWeight="SemiBold"
                                Foreground="{DynamicResource Accent}"/>
                 </Border>
-                <TextBlock FontSize="11" Foreground="{DynamicResource TextMuted}"
-                           VerticalAlignment="Center" Margin="14,0,0,0"
+                <TextBlock FontSize="{StaticResource Type.Caption}" Foreground="{DynamicResource TextMuted}"
+                           VerticalAlignment="Center" Margin="{DynamicResource Gap.LeftLg}"
                            ToolTip="Заблокированные ячейки определяются типом товара">
-                    <Run Text="&#xE72E;" FontFamily="{DynamicResource Font.Icon}" FontSize="11"/>
+                    <Run Text="&#xE72E;" FontFamily="{DynamicResource Font.Icon}" FontSize="{StaticResource Type.Caption}"/>
                     <Run Text=" заблокированные ячейки определяются типом товара"/>
                 </TextBlock>
             </StackPanel>
@@ -37,13 +37,10 @@
                 BorderBrush="{DynamicResource Border}" BorderThickness="1,0,1,1"
                 Opacity="0"
                 ClipToBounds="True">
-            <Border.Clip>
-                <RectangleGeometry Rect="0,0,10000,10000" RadiusX="10" RadiusY="10"/>
-            </Border.Clip>
             <DataGrid x:Name="OrderGrid"
                       ItemsSource="{Binding OrderItems}"
                       MouseDoubleClick="OrderGrid_MouseDoubleClick"
-                      Margin="0"
+                      Margin="{DynamicResource Gap.None}"
                       Background="Transparent"
                       RowBackground="Transparent"
                       AlternatingRowBackground="Transparent"
@@ -52,8 +49,10 @@
                       BorderThickness="0"
                       RowHeaderWidth="0"
                       CanUserReorderColumns="False"
+                      EnableRowVirtualization="True"
                       VirtualizingPanel.IsVirtualizing="True"
                       VirtualizingPanel.VirtualizationMode="Recycling"
+                      VirtualizingPanel.ScrollUnit="Pixel"
                       ScrollViewer.CanContentScroll="True">
                 <DataGrid.RowStyle>
                     <StaticResource ResourceKey="OrderRow"/>
@@ -97,7 +96,7 @@
                                     <Setter.Value>
                                         <ControlTemplate TargetType="DataGridCell">
                                             <Border Background="Transparent" BorderThickness="0" SnapsToDevicePixels="True">
-                                                <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" Margin="0" SnapsToDevicePixels="True"/>
+                                                <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" Margin="{DynamicResource Gap.None}" SnapsToDevicePixels="True"/>
                                             </Border>
                                         </ControlTemplate>
                                     </Setter.Value>
@@ -108,13 +107,13 @@
                             <DataTemplate>
                                 <CheckBox IsChecked="{Binding IsActive, UpdateSourceTrigger=PropertyChanged}"
                                           HorizontalAlignment="Center" VerticalAlignment="Center"
-                                          Margin="0"/>
+                                          Margin="{DynamicResource Gap.None}"/>
                             </DataTemplate>
                         </DataGridTemplateColumn.CellTemplate>
                     </DataGridTemplateColumn>
 
                     <!-- № -->
-                    <DataGridTextColumn Header="&#x2116;" Width="Auto" MinWidth="32"
+                    <DataGridTextColumn Header="&#x2116;" Width="Auto" MinWidth="38"
                                                             Binding="{Binding RowNumber}"
                                                             IsReadOnly="True"
                                                             ElementStyle="{DynamicResource CenterCell}"/>
@@ -128,7 +127,7 @@
                                                Foreground="{DynamicResource TextPrimary}" FontWeight="Medium"
                                                TextWrapping="Wrap"/>
                                     <Border Background="{DynamicResource AccentLight}" CornerRadius="{DynamicResource Radius.Md}"
-                                            Padding="7,2" Margin="6,0,0,0" Cursor="Hand"
+                                            Padding="{DynamicResource Pad.Pill}" Margin="{DynamicResource Gap.LeftSm}" Cursor="Hand"
                                             Visibility="{Binding IsAnwis, Converter={StaticResource BoolToVis}}"
                                             ToolTip="{Binding AnwisSizeToolTip}"
                                             PreviewMouseLeftButtonDown="AnwisModePill_PreviewLeftClick"
@@ -143,7 +142,7 @@
                                             </Style>
                                         </Border.Style>
                                         <TextBlock Text="{Binding AnwisSizeShortLabel}"
-                                                   FontSize="11" FontWeight="SemiBold">
+                                                   FontSize="{StaticResource Type.Caption}" FontWeight="SemiBold">
                                             <TextBlock.Style>
                                                 <Style TargetType="TextBlock">
                                                     <Setter Property="Foreground" Value="{DynamicResource Accent}"/>
@@ -159,7 +158,7 @@
                                 
                                 <!-- ИМ — автоматический импост. Клик — тёмный попап с деталями. -->
                                 <Border Background="{DynamicResource AccentLight}" CornerRadius="{DynamicResource Radius.Md}"
-                                        Padding="7,2" Margin="6,0,0,0" Cursor="Hand"
+                                        Padding="{DynamicResource Pad.Pill}" Margin="{DynamicResource Gap.LeftSm}" Cursor="Hand"
                                         Visibility="{Binding HasImpost, Converter={StaticResource BoolToVis}}"
                                         PreviewMouseLeftButtonDown="BadgeInfo_Click">
                                     <Border.Style>
@@ -172,7 +171,7 @@
                                         </Style>
                                     </Border.Style>
                                     <Grid>
-                                        <TextBlock Text="ИМ" FontSize="11" FontWeight="SemiBold">
+                                        <TextBlock Text="ИМ" FontSize="{StaticResource Type.Caption}" FontWeight="SemiBold">
                                             <TextBlock.Style>
                                                 <Style TargetType="TextBlock">
                                                     <Setter Property="Foreground" Value="{DynamicResource Accent}"/>
@@ -189,8 +188,8 @@
                                                PopupAnimation="Fade">
                                             <Border Background="{DynamicResource Surface}"
                                                     BorderBrush="{DynamicResource Border}" BorderThickness="1"
-                                                    CornerRadius="{DynamicResource Radius.Md}" Padding="10,8" Margin="0,6,0,0" MaxWidth="340">
-                                                <TextBlock Text="{Binding ImpostToolTip}" FontSize="12"
+                                                    CornerRadius="{DynamicResource Radius.Md}" Padding="{DynamicResource Pad.Input}" Margin="{DynamicResource Gap.BlockTop}" MaxWidth="340">
+                                                <TextBlock Text="{Binding ImpostToolTip}" FontSize="{StaticResource Type.Body}"
                                                            Foreground="{DynamicResource TextPrimary}"
                                                            TextWrapping="Wrap"/>
                                             </Border>
@@ -200,7 +199,7 @@
 
                                 <!-- АК — антикошка. Клик — тёмный попап с деталями. -->
                                 <Border Background="{DynamicResource AccentLight}" CornerRadius="{DynamicResource Radius.Md}"
-                                        Padding="7,2" Margin="6,0,0,0" Cursor="Hand"
+                                        Padding="{DynamicResource Pad.Pill}" Margin="{DynamicResource Gap.LeftSm}" Cursor="Hand"
                                         Visibility="{Binding IsAnticat, Converter={StaticResource BoolToVis}}"
                                         PreviewMouseLeftButtonDown="BadgeInfo_Click">
                                     <Border.Style>
@@ -214,7 +213,7 @@
                                     </Border.Style>
                                     <Grid>
                                         <!-- UX-05: self-explanatory label instead of bare "АК" -->
-                                        <TextBlock Text="{Binding AnticatBadgeLabel}" FontSize="11" FontWeight="SemiBold">
+                                        <TextBlock Text="{Binding AnticatBadgeLabel}" FontSize="{StaticResource Type.Caption}" FontWeight="SemiBold">
                                             <TextBlock.Style>
                                                 <Style TargetType="TextBlock">
                                                     <Setter Property="Foreground" Value="{DynamicResource Accent}"/>
@@ -231,8 +230,8 @@
                                                PopupAnimation="Fade">
                                             <Border Background="{DynamicResource Surface}"
                                                     BorderBrush="{DynamicResource Border}" BorderThickness="1"
-                                                    CornerRadius="{DynamicResource Radius.Md}" Padding="10,8" Margin="0,6,0,0" MaxWidth="340">
-                                                <TextBlock Text="{Binding AnticatToolTip}" FontSize="12"
+                                                    CornerRadius="{DynamicResource Radius.Md}" Padding="{DynamicResource Pad.Input}" Margin="{DynamicResource Gap.BlockTop}" MaxWidth="340">
+                                                <TextBlock Text="{Binding AnticatToolTip}" FontSize="{StaticResource Type.Body}"
                                                            Foreground="{DynamicResource TextPrimary}"
                                                            TextWrapping="Wrap"/>
                                             </Border>
@@ -264,7 +263,7 @@
                          max(0,1−30)=0 → reverse=30 → ячейка перезаписывается «30», следующий
                          символ дописывается → «301200». LostFocus применяет формулу один раз при уходе
                          из ячейки. Auto-width для 3-4 значных размеров не критичен.) -->
-                    <DataGridTextColumn Header="Ширина" Width="Auto" MinWidth="70">
+                    <DataGridTextColumn Header="Ширина" Width="Auto" MinWidth="76">
                         <DataGridTextColumn.Binding>
                             <Binding Path="ШиринаВвод" Converter="{StaticResource DimConv}" ConverterParameter=" мм" UpdateSourceTrigger="LostFocus"/>
                         </DataGridTextColumn.Binding>
@@ -289,7 +288,7 @@
                     </DataGridTextColumn>
 
                     <!-- Высота (v3.37.2 (GOTCHAS#15): LostFocus — см. комментарий на Ширине.) -->
-                    <DataGridTextColumn Header="Высота" Width="Auto" MinWidth="70">
+                    <DataGridTextColumn Header="Высота" Width="Auto" MinWidth="74">
                         <DataGridTextColumn.Binding>
                             <Binding Path="ВысотаВвод" Converter="{StaticResource DimConv}" ConverterParameter=" мм" UpdateSourceTrigger="LostFocus"/>
                         </DataGridTextColumn.Binding>
@@ -314,7 +313,7 @@
                     </DataGridTextColumn>
 
                     <!-- Монтаж (toggle per row) -->
-                    <DataGridTemplateColumn Header="Монтаж" Width="Auto" MinWidth="60">
+                    <DataGridTemplateColumn Header="Монтаж" Width="Auto" MinWidth="78">
                         <DataGridTemplateColumn.CellTemplate>
                             <DataTemplate>
                                 <!-- v3.47.1: FlatIconButton — без WPF-овского «хрома» (фон-кнопка),
@@ -337,7 +336,7 @@
                                             FontSize="{StaticResource Type.Caption}"
                                             FontWeight="SemiBold"
                                             MinWidth="34"
-                                            Padding="6,0"
+                                            Padding="{DynamicResource Pad.ControlSmH}"
                                             Height="20"
                                             VerticalAlignment="Center"
                                             HorizontalAlignment="Center"
@@ -351,7 +350,7 @@
                                                Visibility="{Binding InstallationAmountDisplay,
                                                                             Converter={StaticResource NonEmptyToVis}}"
                                                FontSize="{StaticResource Type.Caption}"
-                                               Margin="5,0,0,0"
+                                               Margin="{DynamicResource Gap.LeftSm}"
                                                VerticalAlignment="Center"
                                                Foreground="{DynamicResource TextSecondary}"/>
                                 </StackPanel>
@@ -360,7 +359,7 @@
                     </DataGridTemplateColumn>
 
                     <!-- Кол-во (editable; hidden for amount-only products) -->
-                    <DataGridTextColumn Header="Кол-во" Width="Auto" MinWidth="55">
+                    <DataGridTextColumn Header="Кол-во" Width="Auto" MinWidth="70">
                         <DataGridTextColumn.Binding>
                             <Binding Path="Quantity" Converter="{StaticResource QtyConv}" UpdateSourceTrigger="PropertyChanged"/>
                         </DataGridTextColumn.Binding>
@@ -400,7 +399,7 @@
                     </DataGridTextColumn>
 
                     <!-- Площ./Дл. (hidden for amount-only products; «Свой товар» keeps it visible) -->
-                    <DataGridTextColumn Header="Площ./Дл." Width="Auto" MinWidth="70"
+                    <DataGridTextColumn Header="Площ./Дл." Width="Auto" MinWidth="90"
                                                             Binding="{Binding CalculatedValueDisplay}"
                                                             IsReadOnly="True">
                         <DataGridTextColumn.ElementStyle>
@@ -425,7 +424,7 @@
                     <!-- Цена (editable — user can override the unit price per row).
                          PropertyChanged (not LostFocus) — required for Width="Auto" to grow
                          while user types. See docs/arc/GOTCHAS.md#13. -->
-                    <DataGridTextColumn Header="Цена" Width="Auto" MinWidth="70">
+                    <DataGridTextColumn Header="Цена" Width="Auto" MinWidth="85">
                         <DataGridTextColumn.Binding>
                             <Binding Path="Price" Converter="{StaticResource MoneyConv}" UpdateSourceTrigger="PropertyChanged"/>
                         </DataGridTextColumn.Binding>
@@ -450,7 +449,7 @@
                     </DataGridTextColumn>
 
                     <!-- Сумма (read-only, auto-calculated) -->
-                    <DataGridTextColumn Header="Сумма" Width="Auto" MinWidth="70"
+                    <DataGridTextColumn Header="Сумма" Width="Auto" MinWidth="95"
                                                             Binding="{Binding TotalDisplay}"
                                                             IsReadOnly="True">
                         <DataGridTextColumn.ElementStyle>
@@ -485,7 +484,12 @@
         <!-- Empty state — Fluent illustration with clear action guidance.
              v3.50: MUST overlay the table (Grid.Row=1, same cell as CardTable) —
              without the explicit row it lands in Row 0 and pushes the grid
-             headers below the illustration. -->
+             headers below the illustration.
+             v3.55: карточка позиций имеет высоту строки таблицы, а каталог чипов
+             (пять категорий) в неё не влезает — последние категории обрезались
+             краем карточки, прокрутки не было. Поэтому состояние разбито на две
+             строки: шапка (глиф + заголовок + подсказка) закреплена сверху, а
+             каталог прокручивается внутри ScrollViewer. -->
         <Border x:Name="EmptyState" Grid.Row="1"
                 Opacity="0" Visibility="Collapsed">
             <Border.Style>
@@ -509,67 +513,127 @@
                     </Style.Triggers>
                 </Style>
             </Border.Style>
-            <StackPanel Style="{DynamicResource EmptyState.Panel}" MaxWidth="700">
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/> <!-- шапка состояния -->
+                    <RowDefinition Height="*"/>     <!-- каталог чипов: скролл -->
+                </Grid.RowDefinitions>
+
                 <!-- Иконка + заголовок + подсказка — общие блоки состояния:
-                     одно оформление на все шесть состояний пустоты в продукте. -->
-                <TextBlock Text="&#xE8FD;"
-                           Style="{DynamicResource EmptyState.Icon}"/>
-                <TextBlock Text="Выберите товар"
-                           Style="{DynamicResource EmptyState.Title}"/>
-                <TextBlock Style="{DynamicResource EmptyState.Hint}">
-                    <Run Text="Нажмите на товар — он появится в поле"/>
-                    <Run Text=" «Тип»" Foreground="{DynamicResource Accent}" FontWeight="SemiBold"/>
-                    <Run Text=" выше"/>
-                </TextBlock>
+                     одно оформление на все шесть состояний пустоты в продукте.
+                     Закреплены над каталогом: пока чипы прокручиваются, правило
+                     «нажмите на товар» остаётся на виду. -->
+                <StackPanel Grid.Row="0"
+                            Style="{DynamicResource EmptyState.Panel}"
+                            Margin="{DynamicResource Gap.BlockTopXl}">
+                    <TextBlock Text="&#xE8FD;"
+                               Style="{DynamicResource EmptyState.Icon}"/>
+                    <TextBlock Text="Выберите товар"
+                               Style="{DynamicResource EmptyState.Title}"/>
+                    <TextBlock Style="{DynamicResource EmptyState.Hint}">
+                        <Run Text="Нажмите на товар — он появится в поле"/>
+                        <Run Text=" «Тип»" Foreground="{DynamicResource Accent}" FontWeight="SemiBold"/>
+                        <Run Text=" выше"/>
+                    </TextBlock>
+                </StackPanel>
 
-                <!-- Product chips grid — populated from code-behind -->
-                <ItemsControl x:Name="ProductChipsList" Margin="0,0,0,0" IsTabStop="False">
-                    <ItemsControl.ItemsPanel>
-                        <ItemsPanelTemplate>
-                            <WrapPanel HorizontalAlignment="Center"/>
-                        </ItemsPanelTemplate>
-                    </ItemsControl.ItemsPanel>
-                    <ItemsControl.ItemTemplate>
-                        <DataTemplate>
-                            <Border Background="{DynamicResource QuickBg}" CornerRadius="{DynamicResource Radius.Md}"
-                                    BorderBrush="{DynamicResource Border}" BorderThickness="1"
-                                    Padding="14,8" Margin="4,4" Cursor="Hand"
-                                    SnapsToDevicePixels="True">
-                                <Border.Style>
-                                    <Style TargetType="Border">
-                                        <Style.Triggers>
-                                            <Trigger Property="IsMouseOver" Value="True">
-                                                <Setter Property="Background" Value="{DynamicResource AccentLight}"/>
-                                                <Setter Property="BorderBrush" Value="{DynamicResource Accent}"/>
-                                            </Trigger>
-                                        </Style.Triggers>
-                                    </Style>
-                                </Border.Style>
-                                <TextBlock Text="{Binding}" FontSize="12" FontWeight="Medium"
-                                           Foreground="{DynamicResource TextPrimary}">
-                                    <TextBlock.Style>
-                                        <Style TargetType="TextBlock">
-                                            <Style.Triggers>
-                                                <DataTrigger Binding="{Binding IsMouseOver, RelativeSource={RelativeSource AncestorType=Border}}" Value="True">
-                                                    <Setter Property="Foreground" Value="{DynamicResource Accent}"/>
-                                                </DataTrigger>
-                                            </Style.Triggers>
-                                        </Style>
-                                    </TextBlock.Style>
-                                </TextBlock>
-                            </Border>
-                        </DataTemplate>
-                    </ItemsControl.ItemTemplate>
-                </ItemsControl>
+                <!-- Product chips catalog grouped by categories — единственный
+                     прокручиваемый блок состояния. Горизонтальный скролл выключен:
+                     WrapPanel переносится по ширине вьюпорта, а тонкий
+                     оверлей-скроллбар из ScrollViewerStyles сам появляется,
+                     когда список не влезает в карточку. -->
+                <ScrollViewer Grid.Row="1"
+                              Margin="{DynamicResource Gap.PanelSection}"
+                              VerticalScrollBarVisibility="Auto"
+                              HorizontalScrollBarVisibility="Disabled">
+                    <StackPanel>
+                        <ItemsControl x:Name="ProductChipsList" IsTabStop="False">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <!-- Карточка категории: плитка-иконка + название и
+                                         счётчик товаров справа (чип в стиле «Позиций: N»). -->
+                                    <Border Background="{DynamicResource SectionBg}" BorderBrush="{DynamicResource Border}" BorderThickness="1"
+                                            CornerRadius="{DynamicResource Radius.Md}" Padding="{DynamicResource Pad.Section}"
+                                            Margin="{DynamicResource Gap.Block}">
+                                        <StackPanel>
+                                            <Grid Margin="{DynamicResource Gap.BlockSm}">
+                                                <StackPanel Orientation="Horizontal">
+                                                    <Border Background="{DynamicResource AccentLight}"
+                                                            CornerRadius="{DynamicResource Radius.Sm}"
+                                                            Padding="{DynamicResource Pad.ControlSm}"
+                                                            Margin="{DynamicResource Gap.InlineSm}"
+                                                            VerticalAlignment="Center">
+                                                        <TextBlock Text="{Binding IconGlyph}" FontFamily="{DynamicResource Font.Icon}"
+                                                                   FontSize="{StaticResource Type.Caption}" Foreground="{DynamicResource Accent}"
+                                                                   VerticalAlignment="Center"/>
+                                                    </Border>
+                                                    <TextBlock Text="{Binding Name}" FontSize="{StaticResource Type.Body}" FontWeight="SemiBold"
+                                                               Foreground="{DynamicResource TextSecondary}" VerticalAlignment="Center"/>
+                                                </StackPanel>
+                                                <Border Background="{DynamicResource ChipBg}"
+                                                        CornerRadius="{DynamicResource Radius.Capsule}"
+                                                        Padding="{DynamicResource Pad.Pill}"
+                                                        HorizontalAlignment="Right" VerticalAlignment="Center">
+                                                    <TextBlock Text="{Binding Products.Count}" FontSize="{StaticResource Type.Caption}"
+                                                               FontWeight="SemiBold" Foreground="{DynamicResource Accent}"/>
+                                                </Border>
+                                            </Grid>
+                                            <ItemsControl ItemsSource="{Binding Products}">
+                                                <ItemsControl.ItemsPanel>
+                                                    <ItemsPanelTemplate>
+                                                        <WrapPanel/>
+                                                    </ItemsPanelTemplate>
+                                                </ItemsControl.ItemsPanel>
+                                                <ItemsControl.ItemTemplate>
+                                                    <DataTemplate>
+                                                        <!-- Чип-товар: пилюля вместо прямоугольника,
+                                                             hover — акцентная подложка. -->
+                                                        <Border Background="{DynamicResource Surface}" CornerRadius="{DynamicResource Radius.Capsule}"
+                                                                BorderBrush="{DynamicResource Border}" BorderThickness="1"
+                                                                Padding="{DynamicResource Pad.Button}" Margin="{DynamicResource Pad.ControlSm}" Cursor="Hand"
+                                                                SnapsToDevicePixels="True">
+                                                            <Border.Style>
+                                                                <Style TargetType="Border">
+                                                                    <Style.Triggers>
+                                                                        <Trigger Property="IsMouseOver" Value="True">
+                                                                            <Setter Property="Background" Value="{DynamicResource AccentLight}"/>
+                                                                            <Setter Property="BorderBrush" Value="{DynamicResource Accent}"/>
+                                                                        </Trigger>
+                                                                    </Style.Triggers>
+                                                                </Style>
+                                                            </Border.Style>
+                                                            <TextBlock Text="{Binding}" FontSize="{StaticResource Type.Body}" FontWeight="Medium"
+                                                                       Foreground="{DynamicResource TextPrimary}">
+                                                                <TextBlock.Style>
+                                                                    <Style TargetType="TextBlock">
+                                                                        <Style.Triggers>
+                                                                            <DataTrigger Binding="{Binding IsMouseOver, RelativeSource={RelativeSource AncestorType=Border}}" Value="True">
+                                                                                <Setter Property="Foreground" Value="{DynamicResource Accent}"/>
+                                                                            </DataTrigger>
+                                                                        </Style.Triggers>
+                                                                    </Style>
+                                                                </TextBlock.Style>
+                                                            </TextBlock>
+                                                        </Border>
+                                                    </DataTemplate>
+                                                </ItemsControl.ItemTemplate>
+                                            </ItemsControl>
+                                        </StackPanel>
+                                    </Border>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
 
-                <!-- Subtle hint at bottom -->
-                <TextBlock FontSize="11" Foreground="{DynamicResource TextPrimary}" Opacity="0.7"
-                           HorizontalAlignment="Center" Margin="{DynamicResource Gap.BlockTopLg}">
-                    <Run Text="или используйте"/>
-                    <Run Text=" поиск" Foreground="{DynamicResource Accent}"/>
-                    <Run Text=" выше"/>
-                </TextBlock>
-            </StackPanel>
+                        <!-- Subtle hint at bottom -->
+                        <TextBlock FontSize="{StaticResource Type.Caption}" Foreground="{DynamicResource TextPrimary}" Opacity="0.7"
+                                   HorizontalAlignment="Center" Margin="{DynamicResource Gap.BlockTopLg}">
+                            <Run Text="или используйте"/>
+                            <Run Text=" поиск" Foreground="{DynamicResource Accent}"/>
+                            <Run Text=" выше"/>
+                        </TextBlock>
+                    </StackPanel>
+                </ScrollViewer>
+            </Grid>
         </Border>
     </Grid>
 </UserControl>

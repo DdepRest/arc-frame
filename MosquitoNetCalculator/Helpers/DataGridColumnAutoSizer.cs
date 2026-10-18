@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.CompilerServices;
@@ -17,7 +17,7 @@ namespace MosquitoNetCalculator.Helpers
         /// Размер подписи шапки (токен <c>Type.Caption</c>). Держать в паре с
         /// <c>DataGridColumnHeader</c> в <c>Themes/DataGridStyles.xaml</c>.
         /// </summary>
-        public const double HeaderFontSize = 11;
+        public const double HeaderFontSize = 11; // Matches Typography.Caption
 
         /// <summary>
         /// Объявленный в разметке <c>MinWidth</c>, снятый при ПЕРВОМ обращении
@@ -60,7 +60,7 @@ namespace MosquitoNetCalculator.Helpers
             if (col == null || grid == null) return;
 
             double dpi = VisualTreeHelper.GetDpi(grid).PixelsPerDip;
-            double fontSize = grid.FontSize > 0 ? grid.FontSize : 12;
+            double fontSize = grid.FontSize > 0 ? grid.FontSize : Typography.Body;
             double headerFontSize = HeaderFontSize;
 
             var headerTypeface = new Typeface(grid.FontFamily, grid.FontStyle,

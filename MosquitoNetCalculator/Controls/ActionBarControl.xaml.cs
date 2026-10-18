@@ -55,13 +55,7 @@ namespace MosquitoNetCalculator.Controls
                 return;
             }
 
-            // Build+show the overlay (existing path) offscreen-equivalent: build the
-            // document exactly as ShowPrintOverlay does, then trigger the PDF save
-            // through the control's own button handler. The overlay stays closed —
-            // one-click export as the prototype describes.
-            mw.ShowPrintOverlay();
-            mw.PrintPreviewControl.TriggerPdfExport();
-            mw.CloseAllOverlays();
+            mw.TriggerPdfExport();
         }
 
         private void BtnPrintCaret_Click(object sender, RoutedEventArgs e)
@@ -91,8 +85,7 @@ namespace MosquitoNetCalculator.Controls
                 return;
             }
 
-            mw.ShowPrintOverlay();
-            mw.PrintPreviewControl.TriggerPrinterPrint();
+            mw.TriggerPrinterPrint();
         }
 
         private void BtnPrinterProduction_Click(object sender, RoutedEventArgs e)
@@ -107,10 +100,7 @@ namespace MosquitoNetCalculator.Controls
                 return;
             }
 
-            mw.ShowPrintOverlay();
-            // Force the production copy ON for this attempt (customer set +
-            // stamped «В ПРОИЗВОДСТВО» set), then reuse the normal print path.
-            mw.PrintPreviewControl.TriggerPrinterPrintWithProductionCopy();
+            mw.TriggerPrinterPrintWithProductionCopy();
         }
 
         internal void BtnSaveOrder_Click(object sender, RoutedEventArgs e)
@@ -129,7 +119,6 @@ namespace MosquitoNetCalculator.Controls
                 Id = mw.CurrentOrderId,
                 ContractNumber = mw.ClientInfo.ContractNumber,
                 ContractDate = mw.ClientInfo.ContractDate,
-                ClientName = mw.ClientInfo.ClientName,
                 ClientPhone = mw.ClientInfo.ClientPhone,
                 ClientAddress = mw.ClientInfo.ClientAddress,
                 Notes = mw.ClientInfo.Notes,

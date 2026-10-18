@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Text.Json;
@@ -316,10 +316,10 @@ namespace MosquitoNetCalculator.Services
             ["GlowAccent"]    = "#3878C8",
             ["SuccessShadow"] = "#0F7B3F",
             ["DangerShadow"]  = "#C42B1C",
-            // Total bar
-            ["TotalBg"]       = "#1A1A24",
-            ["TotalText"]     = "#FFFFFF",
-            ["TotalTextMuted"] = "#A0A0AC",
+            // Total bar — organic surface in light theme, deep in dark
+            ["TotalBg"]       = "#FFFFFF",
+            ["TotalText"]     = "#1A1A24",
+            ["TotalTextMuted"] = "#6E6E7A",
             // Quick-add / chips
             ["ChipBg"]        = "#EBF3FC",
             // DataGrid headers — Fluent light

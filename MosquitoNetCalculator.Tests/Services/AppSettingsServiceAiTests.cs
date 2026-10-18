@@ -47,6 +47,21 @@ namespace MosquitoNetCalculator.Tests.Services
         }
 
         [Fact]
+        public void SaveAndLoad_FreeLlmApiKey_Roundtrip()
+        {
+            AppSettingsServiceAi.SaveAiFreeLlmApiKey("freellm-secret");
+            Assert.Equal("freellm-secret", AppSettingsServiceAi.LoadAiFreeLlmApiKey());
+        }
+
+        [Fact]
+        public void SaveAndLoad_FreeLlmApiEndpoint_Roundtrip()
+        {
+            Assert.Equal("http://localhost:3001/v1", AppSettingsServiceAi.LoadAiFreeLlmApiEndpoint());
+            AppSettingsServiceAi.SaveAiFreeLlmApiEndpoint("http://192.168.1.100:8000/v1");
+            Assert.Equal("http://192.168.1.100:8000/v1", AppSettingsServiceAi.LoadAiFreeLlmApiEndpoint());
+        }
+
+        [Fact]
         public void SaveAndLoad_ModelAvailability_Roundtrip()
         {
             var items = new[]
@@ -369,6 +384,43 @@ namespace MosquitoNetCalculator.Tests.Services
             Assert.Equal(2, loaded.Count);
             Assert.Equal("Здравствуйте! Я AI-ассистент.", loaded[0].Text);
             Assert.Equal("Сделай сетку", loaded[1].Text);
+        }
+
+        [Fact]
+        public void SaveAndLoad_ChatHistory_PreservesImageAttachmentsWithoutText()
+        {
+            var messages = new[]
+            {
+                new MosquitoNetCalculator.Models.AiChatMessage
+                {
+                    Text = "", // Empty text!
+                    IsUser = true,
+                    Attachments = new System.Collections.Generic.List<MosquitoNetCalculator.Models.AiChatAttachmentPreview>
+                    {
+                        new MosquitoNetCalculator.Models.AiChatAttachmentPreview
+                        {
+                            FileName = "test.png",
+                            SizeLabel = "100 КБ",
+                            ThumbnailBase64 = "AAAA"
+                        }
+                    }
+                },
+                new MosquitoNetCalculator.Models.AiChatMessage
+                {
+                    Text = "Ответ",
+                    IsUser = false
+                }
+            };
+
+            AppSettingsServiceAi.SaveChatHistory(messages);
+            var loaded = AppSettingsServiceAi.LoadChatHistory();
+
+            Assert.Equal(2, loaded.Count);
+            Assert.True(loaded[0].IsUser);
+            Assert.True(loaded[0].HasAttachments);
+            Assert.Single(loaded[0].Attachments);
+            Assert.Equal("test.png", loaded[0].Attachments[0].FileName);
+            Assert.Equal("Ответ", loaded[1].Text);
         }
     }
 }

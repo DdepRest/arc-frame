@@ -83,22 +83,7 @@ namespace MosquitoNetCalculator.Controls
             .ToDictionary(d => d.DeviceId, d => OfficeReportService.ReportFileName(
                 Rows.First(r => r.Devices.Contains(d)).Prefix, d.DeviceId));
 
-        /// <summary>
-        /// «Отправить напоминание»: собирает ОДНО сообщение по всем устаревшим
-        /// офисам и копирует в буфер. Кнопка дизейблится, когда устаревших нет
-        /// (см. UpdateQuickActionsState).
-        /// </summary>
-        private void BtnRemindAll_Click(object sender, RoutedEventArgs e)
-        {
-            var outdated = Rows.Where(r => r.Status == OfficeStatus.Outdated).ToList();
-            if (outdated.Count == 0)
-            {
-                ToastService.ShowToast("Все офисы в актуальной версии — напоминание не нужно.", ToastType.Success);
-                return;
-            }
 
-            CopyReminders(outdated);
-        }
 
         /// <summary>
         /// Кнопка «Отвязать выбранные»: 1-й клик — вход в режим (чекбоксы на
@@ -210,35 +195,12 @@ namespace MosquitoNetCalculator.Controls
         }
 
         /// <summary>
-        /// Собирает ОДНО сообщение-напоминание по списку устаревших офисов
-        /// и копирует в буфер. Сбор текста —
-        /// <see cref="Services.AdminPanelLogic.BulkReminderText"/>; буфер+тост —
-        /// общий хелпер <see cref="CopyReminderTextToClipboard"/>.
-        /// </summary>
-        private void CopyReminders(IReadOnlyList<OfficeStatusRow> outdatedRows)
-        {
-            var devices = outdatedRows
-                .SelectMany(r => r.Devices.Where(d => d.Status == OfficeStatus.Outdated)
-                    .Select(d => (r.LocationName, d.DeviceLabel, d.Version)))
-                .ToList();
-            var fallback = outdatedRows.Select(r => $"• {r.LocationName} — установлена v{r.Version}").ToList();
-
-            string text = AdminPanelLogic.BulkReminderText(
-                devices, fallback, _latestVersion,
-                _latestDownloadUrl ?? AdminPanelLogic.FallbackDownloadUrl);
-            CopyReminderTextToClipboard(text, $"Офисов в списке: {outdatedRows.Count}. Можно вставить в чат/мессенджер.");
-        }
-
-        /// <summary>
         /// Состояние быстрых действий после обновления данных:
-        /// «Напоминание» доступно, только если есть устаревшие офисы;
         /// если режим отвязки активен — выходим из него (список устройств мог
         /// измениться) и снимаем отметки.
         /// </summary>
         internal void UpdateQuickActionsState()
         {
-            bool hasOutdated = Rows.Any(r => r.Status == OfficeStatus.Outdated);
-            BtnRemindAll.IsEnabled = hasOutdated;
             BtnUnbindMode.IsEnabled = Rows.Count > 0;
             if (_isUnbindMode)
                 ExitUnbindMode();

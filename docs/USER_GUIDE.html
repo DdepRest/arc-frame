@@ -605,6 +605,114 @@ section:first-of-type { border-top: none; }
 
 /* ════════════════════════════════════════════════════════ */
 /*                                                              */
+/*                         TEMPLATES                            */
+/*                                                              */
+/* ════════════════════════════════════════════════════════ */
+
+.templates-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: var(--s-5);
+    margin-bottom: var(--s-6);
+}
+
+.template-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: var(--s-5);
+    display: grid;
+    gap: var(--s-3);
+    transition: all 0.2s;
+}
+
+.template-card:hover {
+    border-color: var(--primary);
+    box-shadow: var(--shadow-sm);
+}
+
+.template-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.template-title {
+    font-size: 17px;
+    font-weight: 700;
+    color: var(--text);
+    display: flex;
+    align-items: center;
+    gap: var(--s-2);
+}
+
+.template-badge {
+    background: var(--primary-bg);
+    color: var(--primary-dark);
+    font-size: 11.5px;
+    font-weight: 700;
+    padding: 3px 8px;
+    border-radius: var(--radius-sm);
+}
+
+.template-desc {
+    font-size: 13.5px;
+    color: var(--text-soft);
+    line-height: 1.5;
+}
+
+.template-items {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-top: var(--s-1);
+}
+
+.template-item-chip {
+    background: var(--surface-alt);
+    color: var(--text);
+    font-size: 12px;
+    font-weight: 500;
+    padding: 3px 8px;
+    border-radius: 999px;
+    border: 1px solid var(--border);
+}
+
+.template-features {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: var(--s-4);
+    margin-top: var(--s-5);
+}
+
+.template-feature {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    padding: var(--s-4);
+    text-align: center;
+}
+
+.template-feature-icon {
+    font-size: 22px;
+    color: var(--primary);
+    margin-bottom: var(--s-2);
+}
+
+.template-feature h4 {
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--text);
+    margin-bottom: 4px;
+}
+
+.template-feature p {
+    font-size: 12.5px;
+    color: var(--text-muted);
+}
+
+/* ════════════════════════════════════════════════════════ */
+/*                                                              */
 /*                          PRODUCTS                           */
 /*                                                              */
 /* ════════════════════════════════════════════════════════ */
@@ -1064,7 +1172,7 @@ footer a:hover { text-decoration: underline; }
     <div class="progress-track" aria-hidden="true">
         <div class="progress-fill" id="progressFill"></div>
     </div>
-    <span class="progress-text" id="progressText">0 / 7 разделов</span>
+    <span class="progress-text" id="progressText">0 / 8 разделов</span>
     <button class="progress-reset" id="progressReset" type="button" aria-label="Сбросить прогресс">↻ Сбросить</button>
 </div>
 
@@ -1077,6 +1185,7 @@ footer a:hover { text-decoration: underline; }
         </a>
         <ul class="nav-links">
             <li><a href="#workflow">Workflow</a></li>
+            <li><a href="#templates">Шаблоны</a></li>
             <li><a href="#calculator">Калькулятор</a></li>
             <li><a href="#products">Продукты</a></li>
             <li><a href="#anwis">Anwis</a></li>
@@ -1089,7 +1198,7 @@ footer a:hover { text-decoration: underline; }
 <!-- ═══ Hero ═══ -->
 <header class="hero" id="hero">
     <div class="container">
-        <div class="hero-eyebrow">Версия 3.38.0 · Онбординг</div>
+        <div class="hero-eyebrow">Версия 3.55.1 · Онбординг</div>
         <h1>A.R.C. Frame<br>Калькулятор КП для москитных сеток</h1>
         <p class="hero-tagline">
             Шесть шагов от пустой таблицы до готового коммерческого предложения.
@@ -1097,7 +1206,7 @@ footer a:hover { text-decoration: underline; }
         </p>
         <div class="hero-buttons">
             <a href="#workflow" class="btn btn-primary">▶ Начать знакомство</a>
-            <a href="#calculator" class="btn btn-secondary">Сразу к калькулятору</a>
+            <a href="#templates" class="btn btn-secondary">Готовые шаблоны расчёта</a>
         </div>
     </div>
 </header>
@@ -1108,7 +1217,7 @@ footer a:hover { text-decoration: underline; }
         <div class="section-head">
             <span class="section-eyebrow">Step-by-step</span>
             <h2 id="workflow-head">Рабочий процесс</h2>
-            <p>Шесть шагов от пустой таблицы до отправки на фабрику — без лишних экранов.</p>
+            <p>Шесть шагов от пустой таблицы до готового расчёта — без лишних экранов.</p>
         </div>
 
         <div class="steps">
@@ -1140,7 +1249,105 @@ footer a:hover { text-decoration: underline; }
             <div class="step">
                 <div class="step-num">6</div>
                 <h3>Сохранение и вывод</h3>
-                <p><strong>Сохранить</strong> <kbd>Ctrl</kbd>+<kbd>S</kbd>, <strong>На завод</strong> для WhatsApp, или <strong>Печать КП</strong> <kbd>Ctrl</kbd>+<kbd>P</kbd>.</p>
+                <p><strong>Сохранить</strong> <kbd>Ctrl</kbd>+<kbd>S</kbd>, <strong>Шаблоны</strong> для типовых конструкций или <strong>Печать КП</strong> <kbd>Ctrl</kbd>+<kbd>P</kbd>.</p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- ═══ Templates ═══ -->
+<section id="templates" data-section aria-labelledby="templates-head">
+    <div class="container">
+        <div class="section-head">
+            <span class="section-eyebrow">Ready-Made Sets</span>
+            <h2 id="templates-head">Шаблоны расчёта</h2>
+            <p>Готовые типовые наборы позиций для ускорения работы менеджера в 3–4 раза.</p>
+        </div>
+
+        <div class="templates-grid">
+            <div class="template-card">
+                <div class="template-head">
+                    <div class="template-title">🪟 Окно</div>
+                    <span class="template-badge">Стандарт</span>
+                </div>
+                <div class="template-desc">
+                    Классический расчёт для стандартного оконного блока. Включает сетку с возможностью выбора ткани «Антикошка» и гибкий выбор режима монтажа.
+                </div>
+                <div class="template-items">
+                    <span class="template-item-chip">Сетка (Anwis / навесы / дверная)</span>
+                    <span class="template-item-chip">Отлив (Вкл / Без / В конструкцию)</span>
+                    <span class="template-item-chip">ПСУЛ</span>
+                    <span class="template-item-chip">Доставка</span>
+                </div>
+            </div>
+
+            <div class="template-card">
+                <div class="template-head">
+                    <div class="template-title">🚪 Балконный блок</div>
+                    <span class="template-badge">Дверь + Окно</span>
+                </div>
+                <div class="template-desc">
+                    Готовый комплект для выхода на балкон. По умолчанию подставляет усиленную дверную сетку и все сопутствующие комплектующие.
+                </div>
+                <div class="template-items">
+                    <span class="template-item-chip">Дверная сетка</span>
+                    <span class="template-item-chip">Отлив</span>
+                    <span class="template-item-chip">ПСУЛ</span>
+                    <span class="template-item-chip">Доставка</span>
+                </div>
+            </div>
+
+            <div class="template-card">
+                <div class="template-head">
+                    <div class="template-title">🖼 Рама</div>
+                    <span class="template-badge">Комплекс</span>
+                </div>
+                <div class="template-desc">
+                    Расширенная конфигурация для сложных оконных рам. Включает двойные позиции отливов и козырьков, брус и короб.
+                </div>
+                <div class="template-items">
+                    <span class="template-item-chip">Сетка Anwis</span>
+                    <span class="template-item-chip">Отлив ×2</span>
+                    <span class="template-item-chip">Козырёк ×2</span>
+                    <span class="template-item-chip">Брус</span>
+                    <span class="template-item-chip">Короб</span>
+                    <span class="template-item-chip">Доставка</span>
+                </div>
+            </div>
+
+            <div class="template-card">
+                <div class="template-head">
+                    <div class="template-title">🏛 Француз</div>
+                    <span class="template-badge">Панорама</span>
+                </div>
+                <div class="template-desc">
+                    Панорамное остекление от пола до потолка. Содержит сетку во весь световой проём, двойной козырёк, соединительный пояс и защитный короб.
+                </div>
+                <div class="template-items">
+                    <span class="template-item-chip">Сетка Anwis</span>
+                    <span class="template-item-chip">Козырёк ×2</span>
+                    <span class="template-item-chip">Пояс</span>
+                    <span class="template-item-chip">Короб</span>
+                    <span class="template-item-chip">Доставка</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="template-features">
+            <div class="template-feature">
+                <div class="template-feature-icon">⚡</div>
+                <h4>Живая стоимость</h4>
+                <p>Каждая строка чек-листа пересчитывает сумму в реальном времени с учётом площади и монтажа.</p>
+            </div>
+            <div class="template-feature">
+                <div class="template-feature-icon">☑</div>
+                <h4>Умный чек-лист</h4>
+                <p>Ненужные позиции отключаются одним кликом («Не требуется»), не попадая в итоговый расчёт.</p>
+            </div>
+            <div class="template-feature">
+                <div class="template-feature-icon">↩</div>
+                <h4>Атомарный откат</h4>
+                <p>Все позиции набора добавляются одним действием и при необходимости отменяются одним Ctrl+Z.</p>
             </div>
         </div>
     </div>
@@ -1302,6 +1509,12 @@ footer a:hover { text-decoration: underline; }
             </div>
             <div class="hotkey">
                 <div class="key-combo">
+                    <span class="key">Ctrl</span><span class="key-plus">+</span><span class="key">Z</span>
+                </div>
+                <div class="hotkey-name">Отменить добавление / действие</div>
+            </div>
+            <div class="hotkey">
+                <div class="key-combo">
                     <span class="key">Enter</span>
                 </div>
                 <div class="hotkey-name">Добавить позицию в таблице</div>
@@ -1310,7 +1523,7 @@ footer a:hover { text-decoration: underline; }
                 <div class="key-combo">
                     <span class="key">Esc</span>
                 </div>
-                <div class="hotkey-name">Закрыть окно «На завод»</div>
+                <div class="hotkey-name">Закрыть активный слой / окно</div>
             </div>
         </div>
     </div>
@@ -1326,9 +1539,9 @@ footer a:hover { text-decoration: underline; }
         </div>
         <ul class="updates-list">
             <li><strong>Автопроверка</strong> при каждом запуске через GitHub Releases.</li>
-            <li><strong>Красная точка</strong> на кнопке «Настройки» при наличии обновления.</li>
+            <li><strong>Красная точка</strong> на кнопке «Настройки» в TitleBar при наличии обновления.</li>
             <li><strong>Скачивание в один клик</strong> с прогресс-полоской под заголовком окна.</li>
-            <li><strong>Все 657 тестов</strong> проходят перед публикацией каждой версии.</li>
+            <li><strong>Более 2400 автоматических тестов</strong> проходят перед публикацией каждой версии.</li>
         </ul>
     </div>
 </section>
@@ -1336,7 +1549,7 @@ footer a:hover { text-decoration: underline; }
 <!-- ═══ Footer ═══ -->
 <footer>
     <div class="container">
-        <strong>A.R.C. Frame v3.38.0</strong> · Калькулятор КП для москитных сеток · <a href="https://github.com/DdepRest/arc-frame/releases">Релизы на GitHub</a>
+        <strong>A.R.C. Frame v3.55.1</strong> · Калькулятор КП для москитных сеток · <a href="https://github.com/DdepRest/arc-frame/releases">Релизы на GitHub</a>
     </div>
 </footer>
 

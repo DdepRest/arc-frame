@@ -77,6 +77,8 @@ namespace MosquitoNetCalculator.Controls
         private MainWindow? TryGetMainWindow()
         {
             if (DataContext is MainWindow mw) return mw;
+            if (Window.GetWindow(this) is MainWindow w) return w;
+            if (Application.Current?.MainWindow is MainWindow amw) return amw;
             System.Diagnostics.Trace.WriteLine($"[TitleBarControl] Cannot resolve MainWindow.");
             return null;
         }
@@ -109,8 +111,7 @@ namespace MosquitoNetCalculator.Controls
             var mw = TryGetMainWindow();
             if (mw == null) return;
 
-            var passwordDialog = new AdminPasswordWindow { Owner = mw };
-            if (passwordDialog.ShowDialog() == true)
+            if (AppSettingsService.EnsureAdminUnlocked(mw))
                 mw.ShowAdminPanel();
         }
 
@@ -119,11 +120,13 @@ namespace MosquitoNetCalculator.Controls
             var owner = GetParentWindow();
             if (owner == null) return;
 
-            var passwordDialog = new AdminPasswordWindow { Owner = owner };
-            if (passwordDialog.ShowDialog() != true) return;
+            if (!AppSettingsService.EnsureAdminUnlocked(owner)) return;
 
             var dialog = new AiApiKeyDialog { Owner = owner };
-            dialog.ShowDialog();
+            if (dialog.ShowDialog() == true)
+            {
+                TryGetMainWindow()?.AiVm?.RefreshApiKeyStatus();
+            }
         }
 
         private async void MenuCheckUpdates_Click(object sender, RoutedEventArgs e)

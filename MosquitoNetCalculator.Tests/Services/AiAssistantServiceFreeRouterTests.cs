@@ -431,6 +431,56 @@ namespace MosquitoNetCalculator.Tests.Services
             Assert.DoesNotContain(errors, e => e.Contains("Проверьте API-ключ", StringComparison.OrdinalIgnoreCase));
         }
 
+        [Fact]
+        public async Task SendStreamingAsync_DegenerateRepetitionLoop_AbortsAndFailsOverToNextModel()
+        {
+            // When a model degenerates into a repetitive token loop (e.g. "Сетки. Файл: Снимок экрана.jpg. 1... 78..."),
+            // the service must detect the loop early, abort the stream, and fail over to the next fallback model.
+            AppSettingsServiceAi.SaveAiFallbackModels(new[] { "first/looping-model", "second/working-model" });
+            AppSettingsServiceAi.SaveAutoSelectModel(false);
+
+            var tried = new List<string>();
+            var handler = new TestHttpMessageHandler(req =>
+            {
+                var body = req.Content?.ReadAsStringAsync().GetAwaiter().GetResult() ?? "";
+                var model = ExtractModel(body);
+                if (model != null) tried.Add(model);
+
+                if (model == "first/looping-model")
+                {
+                    // Stream a repeating phrase that triggers HasRepetitiveDegeneration
+                    var sse = new StringBuilder();
+                    for (int i = 1; i <= 10; i++)
+                    {
+                        sse.Append($"data: {{\"choices\":[{{\"delta\":{{\"content\":\"Сетки. Файл: Снимок экрана.jpg. {i}. \"}}}}]}}\n\n");
+                    }
+                    sse.Append("data: [DONE]\n\n");
+                    return new HttpResponseMessage(HttpStatusCode.OK)
+                    {
+                        Content = new StringContent(sse.ToString(), Encoding.UTF8, "text/event-stream")
+                    };
+                }
+
+                return SseResponse("Вторая модель ответила нормально");
+            });
+            AiAssistantService.HttpClient = new HttpClient(handler);
+
+            var service = new AiAssistantService();
+            string? done = null;
+            var errors = new List<string>();
+            await service.SendStreamingAsync(
+                "Только сетки",
+                new List<(string Role, string Content)>(),
+                _ => { },
+                t => done = t,
+                e => errors.Add(e));
+
+            Assert.Empty(errors);
+            Assert.Equal("Вторая модель ответила нормально", done);
+            Assert.Contains("first/looping-model", tried);
+            Assert.Contains("second/working-model", tried);
+        }
+
         private static string? ExtractModel(string body)
         {
             const string key = "\"model\"";

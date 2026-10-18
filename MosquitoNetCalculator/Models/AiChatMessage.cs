@@ -65,18 +65,110 @@ namespace MosquitoNetCalculator.Models
 
         /// <summary>
         /// Text actually shown in the bubble. While the stream is emitting raw
-        /// JSON (protocol), the bubble shows nothing — the friendly parsed reply
-        /// replaces it at finalization.
+        /// JSON (protocol) or leaked English scratchpads, the bubble suppresses it —
+        /// the friendly parsed reply replaces it at finalization.
         /// </summary>
         [JsonIgnore]
-        public string DisplayText => IsRawProtocol ? "" : Text;
+        public string DisplayText => IsRawProtocol ? "" : CleanDisplayText(Text);
+
+        internal static string CleanDisplayText(string text)
+        {
+            if (string.IsNullOrWhiteSpace(text)) return string.Empty;
+
+            // Strip closed or open (streaming) <think> tags
+            var cleaned = System.Text.RegularExpressions.Regex.Replace(
+                text, @"<think>[\s\S]*?(?:</think>|$)", string.Empty, System.Text.RegularExpressions.RegexOptions.IgnoreCase);
+
+            // Strip closed or open (streaming) <|thought|> tags
+            cleaned = System.Text.RegularExpressions.Regex.Replace(
+                cleaned, @"<\|thought\|>[\s\S]*?(?:<\|endofthought\|>|$)", string.Empty, System.Text.RegularExpressions.RegexOptions.IgnoreCase);
+
+            // Strip "Thinking Process: ..." blocks
+            cleaned = System.Text.RegularExpressions.Regex.Replace(
+                cleaned, @"Thinking Process:[\s\S]*?(?:\n\n\n|\n\n(?=[А-ЯA-Z#•])|$)", string.Empty, System.Text.RegularExpressions.RegexOptions.IgnoreCase);
+
+            // Strip closed or open (streaming) ```json ... ``` blocks
+            cleaned = System.Text.RegularExpressions.Regex.Replace(
+                cleaned, @"```json[\s\S]*?(?:```|$)", string.Empty, System.Text.RegularExpressions.RegexOptions.IgnoreCase);
+
+            // Strip raw inline JSON action blocks { "action": ... }
+            cleaned = System.Text.RegularExpressions.Regex.Replace(
+                cleaned, @"\{[\s\S]*?""action""[\s\S]*?(?:\}|$)", string.Empty, System.Text.RegularExpressions.RegexOptions.IgnoreCase);
+
+            cleaned = cleaned.Trim();
+
+            // If left with only bullets or punctuation (e.g. leftover "• Просчёт стоимости:"), strip them
+            if (IsResidualProtocolHeader(cleaned))
+                return string.Empty;
+
+            if (LooksLikeEnglishScratchpad(cleaned))
+            {
+                var lines = cleaned.Split('\n');
+                int russianLineStart = -1;
+                for (int i = 0; i < lines.Length; i++)
+                {
+                    var line = lines[i].Trim();
+                    if (line.Length > 0 && ((line[0] >= 'А' && line[0] <= 'я') || line[0] == 'Ё' || line[0] == 'ё'))
+                    {
+                        int cyrillicCount = line.Count(c => (c >= 'А' && c <= 'я') || c == 'Ё' || c == 'ё');
+                        int latinCount = line.Count(c => (c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z'));
+                        if (cyrillicCount > latinCount)
+                        {
+                            russianLineStart = i;
+                            break;
+                        }
+                    }
+                }
+
+                if (russianLineStart >= 0)
+                {
+                    return string.Join("\n", lines.Skip(russianLineStart)).Trim();
+                }
+                return string.Empty;
+            }
+            return cleaned;
+        }
+
+        private static bool IsResidualProtocolHeader(string text)
+        {
+            if (string.IsNullOrWhiteSpace(text)) return true;
+            var t = text.Trim();
+            // Headers like "• Просчёт стоимости:", "• Применение шаблона стоимости:", "• Просчёт времени:"
+            if (t.StartsWith("•") || t.StartsWith("-") || t.StartsWith("*"))
+            {
+                var lines = t.Split('\n').Select(l => l.Trim()).Where(l => l.Length > 0).ToList();
+                if (lines.Count > 0 && lines.All(l => l.EndsWith(":") || l.StartsWith("•") || l.StartsWith("-") || l.StartsWith("*")))
+                    return true;
+            }
+            return false;
+        }
+
+        private static bool LooksLikeEnglishScratchpad(string text)
+        {
+            if (string.IsNullOrWhiteSpace(text)) return false;
+            var t = text.TrimStart();
+            return t.StartsWith("The user wants", StringComparison.OrdinalIgnoreCase)
+                || t.StartsWith("Analyze the image", StringComparison.OrdinalIgnoreCase)
+                || t.StartsWith("1. Analyze the image", StringComparison.OrdinalIgnoreCase)
+                || t.StartsWith("Let's analyze", StringComparison.OrdinalIgnoreCase)
+                || t.StartsWith("Based on the sketch", StringComparison.OrdinalIgnoreCase)
+                || t.StartsWith("Based on the image", StringComparison.OrdinalIgnoreCase)
+                || t.StartsWith("Thinking Process", StringComparison.OrdinalIgnoreCase);
+        }
 
         private static bool LooksLikeRawProtocol(string text)
         {
             if (string.IsNullOrWhiteSpace(text)) return false;
             var t = text.TrimStart();
-            return t.StartsWith("{") || t.StartsWith("[")
-                   || t.StartsWith("```json", StringComparison.OrdinalIgnoreCase);
+            if (t.StartsWith("{") || t.StartsWith("[") || t.StartsWith("```json", StringComparison.OrdinalIgnoreCase))
+                return true;
+            // Also treat text as raw protocol if it contains JSON action structures with only minimal prefix
+            if (t.Contains("\"action\":", StringComparison.OrdinalIgnoreCase) || t.Contains("\"steps\":", StringComparison.OrdinalIgnoreCase))
+            {
+                var cleaned = CleanDisplayText(text);
+                return string.IsNullOrWhiteSpace(cleaned);
+            }
+            return false;
         }
 
         public bool IsUser { get; init; }
@@ -264,7 +356,7 @@ namespace MosquitoNetCalculator.Models
         [JsonIgnore]
         public int AttachmentCount
         {
-            get => _attachmentCount;
+            get => _attachmentCount > 0 ? _attachmentCount : (_attachments?.Count ?? 0);
             set
             {
                 if (_attachmentCount == value) return;
@@ -274,9 +366,25 @@ namespace MosquitoNetCalculator.Models
             }
         }
 
+        private List<AiChatAttachmentPreview>? _attachments;
+
+        /// <summary>
+        /// Visual previews of images attached to this message.
+        /// </summary>
+        public List<AiChatAttachmentPreview> Attachments
+        {
+            get => _attachments ??= new List<AiChatAttachmentPreview>();
+            set
+            {
+                _attachments = value;
+                OnPropertyChanged();
+                OnPropertyChanged(nameof(HasAttachments));
+            }
+        }
+
         /// <summary>True when this user message carried at least one image.</summary>
         [JsonIgnore]
-        public bool HasAttachments => AttachmentCount > 0;
+        public bool HasAttachments => (_attachments != null && _attachments.Count > 0) || _attachmentCount > 0;
 
         /// <summary>Filenames of images attached to this user message (runtime-only).</summary>
         [JsonIgnore]
@@ -334,5 +442,58 @@ namespace MosquitoNetCalculator.Models
 
         [JsonConstructor]
         public AiChatMessage() { }
+    }
+
+    /// <summary>
+    /// Visual preview of an image attached to a chat message.
+    /// Preserves thumbnail base64 across application restarts.
+    /// </summary>
+    public sealed class AiChatAttachmentPreview
+    {
+        private System.Windows.Media.ImageSource? _thumbnail;
+
+        [JsonIgnore]
+        public System.Windows.Media.ImageSource? Thumbnail
+        {
+            get
+            {
+                if (_thumbnail == null)
+                {
+                    if (!string.IsNullOrWhiteSpace(ThumbnailBase64))
+                        _thumbnail = CreateBitmapFromBase64(ThumbnailBase64);
+                    else if (!string.IsNullOrWhiteSpace(FullDataUrl))
+                        _thumbnail = CreateBitmapFromBase64(FullDataUrl);
+                }
+                return _thumbnail;
+            }
+            init => _thumbnail = value;
+        }
+
+        public string ThumbnailBase64 { get; set; } = "";
+        public string FileName { get; init; } = "";
+        public string SizeLabel { get; init; } = "";
+        public string FullDataUrl { get; set; } = "";
+
+        private static System.Windows.Media.ImageSource? CreateBitmapFromBase64(string b64)
+        {
+            if (string.IsNullOrWhiteSpace(b64)) return null;
+            try
+            {
+                var comma = b64.IndexOf(',');
+                var raw = comma >= 0 ? b64.Substring(comma + 1) : b64;
+                var bytes = Convert.FromBase64String(raw);
+                var bi = new System.Windows.Media.Imaging.BitmapImage();
+                bi.BeginInit();
+                bi.StreamSource = new System.IO.MemoryStream(bytes);
+                bi.CacheOption = System.Windows.Media.Imaging.BitmapCacheOption.OnLoad;
+                bi.EndInit();
+                bi.Freeze();
+                return bi;
+            }
+            catch
+            {
+                return null;
+            }
+        }
     }
 }

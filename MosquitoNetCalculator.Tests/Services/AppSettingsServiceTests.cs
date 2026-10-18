@@ -177,5 +177,21 @@ namespace MosquitoNetCalculator.Tests.Services
             var second = AppSettingsService.LoadOrCreateDeviceId();
             Assert.Equal(first, second); // тот же ID из файла device-id
         }
+
+        [Fact]
+        public void AdminSession_UnlockAndReset_TracksSessionState()
+        {
+            AppSettingsService.ResetAdminSession();
+            Assert.False(AppSettingsService.IsAdminUnlocked);
+
+            AppSettingsService.UnlockAdminSession();
+            Assert.True(AppSettingsService.IsAdminUnlocked);
+
+            // EnsureAdminUnlocked returns true immediately when already unlocked without dialog
+            Assert.True(AppSettingsService.EnsureAdminUnlocked(null));
+
+            AppSettingsService.ResetAdminSession();
+            Assert.False(AppSettingsService.IsAdminUnlocked);
+        }
     }
 }

@@ -20,6 +20,8 @@ namespace MosquitoNetCalculator
             }, System.Windows.Threading.DispatcherPriority.Background);
         }
 
+        private static string UpperHeader(string header) => header.ToUpperInvariant();
+
         private void RecalculateOrderGridColumnWidthsCore()
         {
             if (OrderItemsControl?.Grid == null) return;
@@ -31,29 +33,30 @@ namespace MosquitoNetCalculator
                 DataGridColumnAutoSizer.SetColumnMinWidth(grid, grid.Columns[11], "", null, 32, 0);
             }
 
-            DataGridColumnAutoSizer.SetColumnMinWidth(grid, DataGridColumnAutoSizer.FindCol(grid, "№"), "№",
+            DataGridColumnAutoSizer.SetColumnMinWidth(grid, DataGridColumnAutoSizer.FindCol(grid, "№"), UpperHeader("№"),
                 OrderItems.Select(i => i.RowNumber.ToString()), headerPad: 20);
-            DataGridColumnAutoSizer.SetColumnMinWidth(grid, DataGridColumnAutoSizer.FindCol(grid, "Наименование"), "Наименование");
-            DataGridColumnAutoSizer.SetColumnMinWidth(grid, DataGridColumnAutoSizer.FindCol(grid, "Цвет"), "Цвет",
+            DataGridColumnAutoSizer.SetColumnMinWidth(grid, DataGridColumnAutoSizer.FindCol(grid, "Наименование"), UpperHeader("Наименование"));
+            DataGridColumnAutoSizer.SetColumnMinWidth(grid, DataGridColumnAutoSizer.FindCol(grid, "Цвет"), UpperHeader("Цвет"),
                 OrderItems.Select(i => i.IsAmountOnly ? "" : i.Color));
-            DataGridColumnAutoSizer.SetColumnMinWidth(grid, DataGridColumnAutoSizer.FindCol(grid, "Ширина"), "Ширина",
+            DataGridColumnAutoSizer.SetColumnMinWidth(grid, DataGridColumnAutoSizer.FindCol(grid, "Ширина"), UpperHeader("Ширина"),
                 OrderItems.Select(i => i.IsAmountOnly ? "" : i.Width > 0 ? $"{i.Width:F0} мм" : ""));
-            DataGridColumnAutoSizer.SetColumnMinWidth(grid, DataGridColumnAutoSizer.FindCol(grid, "Высота"), "Высота",
+            DataGridColumnAutoSizer.SetColumnMinWidth(grid, DataGridColumnAutoSizer.FindCol(grid, "Высота"), UpperHeader("Высота"),
                 OrderItems.Select(i => i.IsAmountOnly ? "" : i.Height > 0 ? $"{i.Height:F0} мм" : ""));
-            DataGridColumnAutoSizer.SetColumnMinWidth(grid, DataGridColumnAutoSizer.FindCol(grid, "Монтаж"), "Монтаж",
+            DataGridColumnAutoSizer.SetColumnMinWidth(grid, DataGridColumnAutoSizer.FindCol(grid, "Монтаж"), UpperHeader("Монтаж"),
                 OrderItems.Select(i => i.InstallationDisplay),
                 contentPad: 40, contentWeight: FontWeights.Bold, contentFontSize: 14);
-            DataGridColumnAutoSizer.SetColumnMinWidth(grid, DataGridColumnAutoSizer.FindCol(grid, "Кол-во"), "Кол-во",
+            DataGridColumnAutoSizer.SetColumnMinWidth(grid, DataGridColumnAutoSizer.FindCol(grid, "Кол-во"), UpperHeader("Кол-во"),
                 OrderItems.Select(i => i.IsAmountOnly ? "" : i.Quantity > 0 ? i.Quantity.ToString("G") : ""),
                 contentPad: 24);
-            DataGridColumnAutoSizer.SetColumnMinWidth(grid, DataGridColumnAutoSizer.FindCol(grid, "Площ./Дл."), "Площ./Дл.",
+            DataGridColumnAutoSizer.SetColumnMinWidth(grid, DataGridColumnAutoSizer.FindCol(grid, "Площ./Дл."), UpperHeader("Площ./Дл."),
                 OrderItems.Select(i => i.CalculatedValueDisplay),
                 contentPad: 24);
-            DataGridColumnAutoSizer.SetColumnMinWidth(grid, DataGridColumnAutoSizer.FindCol(grid, "Цена"), "Цена",
-                OrderItems.Select(i => i.Price > 0 ? MoneyFormatService.Format(i.Price) : ""));
-            DataGridColumnAutoSizer.SetColumnMinWidth(grid, DataGridColumnAutoSizer.FindCol(grid, "Сумма"), "Сумма",
+            DataGridColumnAutoSizer.SetColumnMinWidth(grid, DataGridColumnAutoSizer.FindCol(grid, "Цена"), UpperHeader("Цена"),
+                OrderItems.Select(i => i.Price > 0 ? MoneyFormatService.Format(i.Price) : ""),
+                contentPad: 28);
+            DataGridColumnAutoSizer.SetColumnMinWidth(grid, DataGridColumnAutoSizer.FindCol(grid, "Сумма"), UpperHeader("Сумма"),
                 OrderItems.Select(i => i.TotalDisplay),
-                contentPad: 24, contentWeight: FontWeights.Medium);
+                contentPad: 30, contentWeight: FontWeights.Medium);
         }
     }
 }

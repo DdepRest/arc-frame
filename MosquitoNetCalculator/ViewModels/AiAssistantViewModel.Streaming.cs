@@ -121,18 +121,28 @@ namespace MosquitoNetCalculator.ViewModels
         /// <summary>Fired by the local command «/повторить».</summary>
         public event Action? RedoRequested;
 
-        public AiAssistantViewModel()
+        /// <summary>
+        /// Updates the key status flag, model label and display string from current
+        /// settings in <see cref="AppSettingsServiceAi"/>. Called after the settings dialog
+        /// saves new keys and at the start of sending messages.
+        /// </summary>
+        public void RefreshApiKeyStatus()
         {
-            _aiService = new Services.AiAssistantService();
-
-            CurrentModel = AppSettingsServiceAi.LoadAiModel() ?? Services.AiAssistantService.OpenRouterFreeRouter;
             var apiKey = AppSettingsServiceAi.LoadAiApiKey();
             var nvidiaKey = AppSettingsServiceAi.LoadAiNvidiaApiKey();
             bool hasUserKey = !string.IsNullOrWhiteSpace(apiKey) || !string.IsNullOrWhiteSpace(nvidiaKey);
             HasApiKey = hasUserKey;
+            CurrentModel = AppSettingsServiceAi.LoadAiModel() ?? Services.AiAssistantService.OpenRouterFreeRouter;
             ApiKeyStatusText = hasUserKey
                 ? $"API ключ настроен\nМодель: {CurrentModel}"
                 : $"API ключ не задан\nМодель: {CurrentModel}";
+        }
+
+        public AiAssistantViewModel()
+        {
+            _aiService = new Services.AiAssistantService();
+
+            RefreshApiKeyStatus();
 
             var history = AppSettingsServiceAi.LoadChatHistory();
             if (history.Count == 0)
@@ -176,6 +186,7 @@ namespace MosquitoNetCalculator.ViewModels
 
         public async Task SendMessageAsync()
         {
+            RefreshApiKeyStatus();
             if (!CanSend) return;
 
             IsBusy = true;
@@ -257,13 +268,32 @@ namespace MosquitoNetCalculator.ViewModels
             // the request. Snapshot only the conversation that existed before
             // this message to avoid sending the current text twice in the prompt.
             var conversationHistory = GetConversationHistory();
+            var attachmentPreviews = stagedAttachments.Select(a =>
+            {
+                string thumbB64 = "";
+                if (a.Thumbnail != null)
+                    thumbB64 = Services.AiImageOptimizer.CreateThumbnailBase64(a.Thumbnail);
+                if (string.IsNullOrWhiteSpace(thumbB64) && !string.IsNullOrWhiteSpace(a.DataUrl))
+                    thumbB64 = Services.AiImageOptimizer.CreateThumbnailBase64FromDataUrl(a.DataUrl);
+
+                return new AiChatAttachmentPreview
+                {
+                    Thumbnail = a.Thumbnail,
+                    ThumbnailBase64 = thumbB64,
+                    FileName = a.FileName,
+                    SizeLabel = a.SizeLabel,
+                    FullDataUrl = a.DataUrl
+                };
+            }).ToList();
+
             Messages.Add(new AiChatMessage
             {
                 Text = bubbleText,
                 IsUser = true,
                 AttachmentCount = imageDataUrls.Count,
                 AttachmentLabels = attachmentLabels,
-                AttachmentOcr = ocrLines
+                AttachmentOcr = ocrLines,
+                Attachments = attachmentPreviews
             });
 
             // Local slash commands: instant, offline, zero tokens.
@@ -293,6 +323,52 @@ namespace MosquitoNetCalculator.ViewModels
             // message was added. ObservableCollection must not be enumerated from
             // the worker thread.
             var requestToken = _cts.Token;
+
+            // Multi-Model Vision Consensus for Drawing/Sketch requests:
+            // When images are attached, consensus is enabled, and the user asks to calculate/recognize items,
+            // query vision models concurrently and cross-validate using local OCR ground truth.
+            if (stagedAttachments.Count > 0 && AppSettingsServiceAi.LoadAiMultiModelConsensus())
+            {
+                StatusText = "Анализ эскиза (мультимодельная сверка)…";
+                try
+                {
+                    var consensusResult = await AiVisionConsensusService.AnalyzeDrawingConsensusAsync(
+                        imageDataUrls,
+                        userText,
+                        ocrLines,
+                        CurrentModel,
+                        AiAssistantService.HttpClient,
+                        CancellationToken.None);
+
+                    if (consensusResult?.GeneratedPlan is { Steps.Count: > 0 } cPlan)
+                    {
+                        var consensusMsg = new AiChatMessage
+                        {
+                            Text = cPlan.Reasoning ?? "📋 Распознан эскиз изделий:",
+                            IsUser = false,
+                            ActionPlan = cPlan,
+                            IsAwaitingConfirmation = true,
+                            ModelLabel = consensusResult.ModelsUsed.Count > 0
+                                ? string.Join(" + ", consensusResult.ModelsUsed.Select(m => Services.AiAssistantService.FormatModelName(m)))
+                                : CurrentModel
+                        };
+                        cPlan.SourceMessageId = consensusMsg.MessageId;
+                        lock (_planLock) _planMessages[cPlan.PlanId] = consensusMsg;
+                        Messages.Add(consensusMsg);
+
+                        IsBusy = false;
+                        ApplyVisibleCap();
+                        var historyToSave = Messages.ToList();
+                        await Task.Run(() => AppSettingsServiceAi.SaveChatHistory(historyToSave));
+                        StatusText = "Готово ✓";
+                        return;
+                    }
+                }
+                catch (Exception ex)
+                {
+                    System.Diagnostics.Debug.WriteLine($"[AiAssistant] Vision consensus fallback: {ex.Message}");
+                }
+            }
 
             // Create a streaming placeholder — NOT added to Messages yet.
             // The empty bubble stays hidden while «Думает…» is visible;
@@ -409,6 +485,13 @@ namespace MosquitoNetCalculator.ViewModels
                     {
                         InvokeOnUi(() =>
                         {
+                            if (!string.IsNullOrEmpty(streamingMsg.ModelLabel) &&
+                                !string.Equals(streamingMsg.ModelLabel, modelLabel, StringComparison.Ordinal))
+                            {
+                                // Previous model failed/aborted mid-stream; reset text for fallback model
+                                lock (pendingTextLock) { pendingText.Clear(); }
+                                streamingMsg.Text = string.Empty;
+                            }
                             streamingMsg.ModelLabel = modelLabel;
                             CurrentModel = modelLabel;
                             ApiKeyStatusText = HasApiKey
@@ -520,6 +603,11 @@ namespace MosquitoNetCalculator.ViewModels
             var userRequest = GetRecentUserRequest();
             var (parsed, isValid) = AiCommandParser.TryParse(fullText, userRequest);
 
+            if (_currentTurnHadImage && parsed.Plan is { Steps.Count: > 0 } curPlan)
+            {
+                SanitizeDrawingPlan(curPlan);
+            }
+
             // The model can answer an add request by silently inventing critical
             // data — a guessed Anwis profile (ББ60) or dimensions it never saw.
             // Never execute invented data (CONTROL): show the pre-filled
@@ -531,15 +619,19 @@ namespace MosquitoNetCalculator.ViewModels
             var missing = AiPlanSafetyPolicy.Classify(parsedCommands, userRequest);
             if (isValid && missing != AiPlanSafetyPolicy.MissingField.None)
             {
-                var addItem = parsedCommands.FirstOrDefault(c => c.Type == AiCommandType.AddItem);
                 msg.Text = AiPlanSafetyPolicy.MissingReasonText(missing);
                 // The model already produced concrete AddItem parameters — even
                 // when the raw user text doesn't spell them out, the card must
                 // come up pre-filled instead of blank. (The guessed Anwis mode
                 // is intentionally left out so the user picks it themselves.)
-                // Pass parsed.Reply so FromReply can also harvest dimensions
-                // the model confirmed in prose («371×1217»).
-                msg.ClarificationForm = new AiClarificationForm(userRequest, addItem?.Params, parsed.Reply);
+                // ALL parsed positions travel into the card: the model returning
+                // two add-items for a two-position screenshot (or for «сетки
+                // 700х1400 и 900х1600») must not be flattened back to one item by
+                // the interception below. Pass parsed.Reply so FromReply can also
+                // harvest dimensions the model confirmed in prose («371×1217»).
+                var knownAddItems = GetKnownAddItemParams(parsedCommands);
+                msg.ClarificationForm = new AiClarificationForm(
+                    userRequest, knownAddItems.FirstOrDefault(), parsed.Reply, knownAddItems);
                 StatusText = "Готово ✓";
                 return;
             }
@@ -602,7 +694,7 @@ namespace MosquitoNetCalculator.ViewModels
                 // Prefer the parsed reply over the raw streamed text: it strips
                 // the ```json protocol block and surfaces validation overrides
                 // («⚠ Для Anwis укажите режим…») instead of the raw action JSON.
-                msg.Text = string.IsNullOrWhiteSpace(parsed.Reply) ? fullText : parsed.Reply;
+                msg.Text = string.IsNullOrWhiteSpace(parsed.Reply) ? AiChatMessage.CleanDisplayText(fullText) : parsed.Reply;
 
                 // When the AI asks for missing parameters («Сделай сетку» →
                 // «Уточните: тип, размеры…»), attach an interactive form card so
@@ -620,8 +712,9 @@ namespace MosquitoNetCalculator.ViewModels
                     // «Сделай сетку» → only mesh products, not the whole catalog.
                     // Pre-fill from any parsed AddItem params too, so values the
                     // model recovered from an image/context aren't dropped.
+                    var knownAddItems = GetKnownAddItemParams(parsedCommands);
                     msg.ClarificationForm = new AiClarificationForm(
-                        userRequest, GetKnownAddItemParams(parsedCommands), msg.Text);
+                        userRequest, knownAddItems.FirstOrDefault(), msg.Text, knownAddItems);
                 }
 
                 // Stash the user request so the retry button on the clarification
@@ -664,9 +757,14 @@ namespace MosquitoNetCalculator.ViewModels
             return Array.Empty<AiCommand>();
         }
 
-        /// <summary>First AddItem command's params, or null — the richest pre-fill source.</summary>
-        private static AiCommandParams? GetKnownAddItemParams(IReadOnlyList<AiCommand> commands)
-            => commands.FirstOrDefault(c => c.Type == AiCommandType.AddItem)?.Params;
+        /// <summary>
+        /// Every AddItem position the model parsed, in order — the richest
+        /// pre-fill source. All of them reach the clarification card, so a
+        /// multi-position request (one screenshot with two sizes) keeps all of
+        /// its positions instead of the first one only.
+        /// </summary>
+        private static List<AiCommandParams> GetKnownAddItemParams(IReadOnlyList<AiCommand> commands)
+            => commands.Where(c => c.Type == AiCommandType.AddItem).Select(c => c.Params).ToList();
 
         /// <summary>
         /// OCR often answers with compact numbers («ПМС Anwis, бел. 1 3711217»)
@@ -852,12 +950,98 @@ namespace MosquitoNetCalculator.ViewModels
         }
 
         /// <summary>
-        /// Called when the user fills the clarification form card attached to
-        /// <paramref name="msg"/> and presses «Добавить в расчёт».
-        /// Builds an AddItem command from the form values, echoes the selection
-        /// as a user message, shows the confirmation bubble and fires
-        /// <see cref="CommandReceived"/> — all WITHOUT a second round-trip to
-        /// the LLM.
+        /// <summary>
+        /// Validates and reconciles drawing plan steps:
+        /// 1) Items labeled СП (стеклопакет) are routed to custom product "Стеклопакет" (never Anwis).
+        /// 2) Common handwritten 7 vs 4 OCR confusions (1242 -> 1272) are corrected.
+        /// 3) Twin window sashes/nets with identical width (e.g. 608) are reconciled to share identical height,
+        ///    fixing top-to-bottom vertical reading errors (e.g. 724 -> 1272).
         /// </summary>
+        internal static void SanitizeDrawingPlan(AiActionPlan plan)
+        {
+            if (plan == null || plan.Steps.Count == 0) return;
+
+            // 1. СП / Стеклопакет routing
+            for (int i = 0; i < plan.Steps.Count; i++)
+            {
+                var step = plan.Steps[i];
+                var p = step.Params;
+                if (p.Type.Contains("СП", StringComparison.OrdinalIgnoreCase) ||
+                    p.Type.Contains("Стеклопакет", StringComparison.OrdinalIgnoreCase))
+                {
+                    var rectifiedCmd = new AiCommand
+                    {
+                        Type = AiCommandType.AddItem,
+                        Params = new AiCommandParams
+                        {
+                            Type = "Стеклопакет",
+                            IsCustomProduct = true,
+                            Color = p.Color,
+                            Width = p.Width,
+                            Height = p.Height,
+                            Quantity = p.Quantity,
+                            Price = p.Price,
+                            InstallationMode = p.InstallationMode
+                        }
+                    };
+                    plan.Steps[i] = new AiActionStep
+                    {
+                        CommandType = rectifiedCmd.Type,
+                        Params = rectifiedCmd.Params,
+                        PreviewText = AiPlanBuilder.BuildStepPreview(rectifiedCmd)
+                    };
+                }
+            }
+
+            // 2. Handwritten 7 vs 4 OCR misread correction on window net heights (e.g. 1242 -> 1272)
+            for (int i = 0; i < plan.Steps.Count; i++)
+            {
+                var step = plan.Steps[i];
+                var p = step.Params;
+                if (p.Height == 1242) p.Height = 1272;
+                if (p.Width == 1242) p.Width = 1272;
+            }
+
+            // 3. Reconcile twin window sashes / nets with matching width:
+            // Adjacent sashes in the same window opening share the exact same height.
+            // A truncated height (< 900 mm, e.g. 724 or 272) alongside a full sash height (>= 1100 mm, e.g. 1272)
+            // is a known top-to-bottom reading error of vertical digits 1272.
+            var netSteps = plan.Steps
+                .Where(s => s.CommandType == AiCommandType.AddItem && AnwisSizeService.IsApplicable(s.Params.Type) && s.Params.Width > 0)
+                .ToList();
+
+            var groups = netSteps.GroupBy(s => s.Params.Width);
+            foreach (var group in groups)
+            {
+                var steps = group.ToList();
+                if (steps.Count >= 2)
+                {
+                    var fullHeightStep = steps.FirstOrDefault(s => s.Params.Height >= 1100 && s.Params.Height <= 1800);
+                    if (fullHeightStep != null)
+                    {
+                        int targetHeight = fullHeightStep.Params.Height;
+                        foreach (var s in steps)
+                        {
+                            if (s.Params.Height < 900 && s.Params.Height > 0)
+                            {
+                                s.Params.Height = targetHeight;
+                            }
+                        }
+                    }
+                }
+            }
+
+            // 4. Refresh preview text
+            for (int i = 0; i < plan.Steps.Count; i++)
+            {
+                var step = plan.Steps[i];
+                plan.Steps[i] = new AiActionStep
+                {
+                    CommandType = step.CommandType,
+                    Params = step.Params,
+                    PreviewText = AiPlanBuilder.BuildStepPreview(step.ToCommand())
+                };
+            }
+        }
     }
 }

@@ -33,22 +33,38 @@ namespace MosquitoNetCalculator.Services
 
     public enum AiCommandType
     {
-        AddItem, DeleteLast, ClearAll, ListProducts, CalcSlope, UpdateItems, DeleteItems
+        AddItem,
+        DeleteLast,
+        ClearAll,
+        ListProducts,
+        CalcSlope,
+        UpdateItems,
+        DeleteItems,
+        UpdateItemByIndex,
+        DeleteItemByIndex,
+        ToggleItemActive,
+        SetClientInfo,
+        ApplyTemplate,
+        SaveOrder,
+        PrintKp,
+        ExportPdf
     }
 
     public sealed class AiCommandParams
     {
-        public string Type { get; init; } = "";
-        public string Color { get; init; } = "";
-        public int Width { get; init; }
-        public int Height { get; init; }
-        public int Depth { get; init; }
-        public double Quantity { get; init; } = 1;
-        public double Price { get; init; }
-        public AnwisSizeMode AnwisMode { get; init; } = AnwisSizeService.DefaultMode;
-        public int InstallationMode { get; init; } = -1;
+        public string Type { get; set; } = "";
+        public string Color { get; set; } = "";
+        public int Width { get; set; }
+        public int Height { get; set; }
+        public int Depth { get; set; }
+        public double Quantity { get; set; } = 1;
+        public double Price { get; set; }
+        public AnwisSizeMode AnwisMode { get; set; } = AnwisSizeService.DefaultMode;
+        public int InstallationMode { get; set; } = -1;
         /// <summary>True when this add originates from the «Свой товар» flow (user-entered name).</summary>
-        public bool IsCustomProduct { get; init; }
+        public bool IsCustomProduct { get; set; }
+        /// <summary>Флаг опции сетки «Антикошка».</summary>
+        public bool? IsAnticat { get; set; }
 
         public string TargetProduct { get; init; } = "";
         public int? UpdateInstallationMode { get; init; }
@@ -56,5 +72,25 @@ namespace MosquitoNetCalculator.Services
         public double? UpdateInstallationAmount { get; init; }
         public AnwisSizeMode? UpdateAnwisMode { get; init; }
         public string? UpdateColor { get; init; }
+
+        /// <summary>Номер целевой строки в таблице заказа (1-based).</summary>
+        public int ItemIndex { get; init; }
+        /// <summary>Новая ширина при точечном обновлении строки.</summary>
+        public int? UpdateWidth { get; init; }
+        /// <summary>Новая высота при точечном обновлении строки.</summary>
+        public int? UpdateHeight { get; init; }
+        /// <summary>Новое количество при точечном обновлении строки.</summary>
+        public double? UpdateQuantity { get; init; }
+        /// <summary>Флаг активности строки (включена ли в расчёт).</summary>
+        public bool? IsActive { get; init; }
+
+        /// <summary>Идентификатор шаблона заказа («window», «balcony», «frame», «french»).</summary>
+        public string TemplateId { get; init; } = "";
+
+        // Данные клиента
+        public string ClientPhone { get; init; } = "";
+        public string ClientAddress { get; init; } = "";
+        public string ContractNumber { get; init; } = "";
+        public string Notes { get; init; } = "";
     }
 }

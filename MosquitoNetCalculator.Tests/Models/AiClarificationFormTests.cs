@@ -755,5 +755,136 @@ namespace MosquitoNetCalculator.Tests.Models
             Assert.Contains(AiClarificationForm.CustomProductType, filtered);
             Assert.Contains("Отлив", filtered);
         }
+
+        // ── Several positions in one request ──────────────────────────
+
+        [Fact]
+        public void TwoPositionsFromScreenshot_TryBuildCommands_BuildsOneCommandPerSize()
+        {
+            // The reported bug: one screenshot with «ПМС Anwis, бел. 1 304x1593»
+            // and «ПМС Anwis, бел. 1 724x1593» produced a single position.
+            var form = new AiClarificationForm(
+                "ПМС Anwis, бел.\n1 304x1593\nПМС Anwis, бел.\n1 724x1593")
+            {
+                SelectedAnwisMode = "ПП",
+                SelectedInstallation = "С монтажом"
+            };
+
+            Assert.Equal(2, form.SizeRows.Count);
+            Assert.True(form.HasExtraSizes);
+
+            Assert.True(form.TryBuildCommands(out var commands, out var error), error);
+            Assert.Equal(2, commands.Count);
+
+            Assert.Equal((304, 1593), (commands[0].Params.Width, commands[0].Params.Height));
+            Assert.Equal((724, 1593), (commands[1].Params.Width, commands[1].Params.Height));
+            Assert.All(commands, c =>
+            {
+                Assert.Equal(AiCommandType.AddItem, c.Type);
+                Assert.Equal("Anwis", c.Params.Type);
+                // Shared parameters apply to every row.
+                Assert.Equal(AnwisSizeMode.Профипласт, c.Params.AnwisMode);
+                Assert.Equal(0, c.Params.InstallationMode);
+            });
+        }
+
+        [Fact]
+        public void TryBuildCommands_ParsedPositionsOfTheModel_AreKept()
+        {
+            // The model itself understood the two-position screenshot: both of
+            // its positions must survive the clarification card.
+            var form = new AiClarificationForm(
+                "сделай сетки по размерам",
+                knownParams: null,
+                replyText: null,
+                knownCommands: new[]
+                {
+                    new AiCommandParams { Type = "Anwis", Color = "Белый", Width = 304, Height = 1593, Quantity = 1 },
+                    new AiCommandParams { Type = "Anwis", Color = "Белый", Width = 724, Height = 1593, Quantity = 1 }
+                })
+            {
+                SelectedAnwisMode = "ПП"
+            };
+
+            Assert.Equal(2, form.SizeRows.Count);
+            Assert.Equal("304", form.WidthText);
+            Assert.Equal("724", form.SizeRows[1].WidthText);
+            Assert.True(form.TryBuildCommands(out var commands, out var error), error);
+            Assert.Equal(2, commands.Count);
+        }
+
+        [Fact]
+        public void TryBuildCommands_BlankExtraRow_IsIgnored()
+        {
+            // An empty row the user added but never filled must not block the card.
+            var form = new AiClarificationForm
+            {
+                SelectedAnwisMode = "ПП",
+                WidthText = "700",
+                HeightText = "1400"
+            };
+            form.AddSizeRow();
+
+            Assert.True(form.TryBuildCommands(out var commands, out var error), error);
+            Assert.Single(commands);
+        }
+
+        [Fact]
+        public void TryBuildCommands_BrokenExtraRow_NamesTheRow()
+        {
+            var form = new AiClarificationForm
+            {
+                SelectedAnwisMode = "ПП",
+                WidthText = "700",
+                HeightText = "1400"
+            };
+            var broken = form.AddSizeRow();
+            broken.WidthText = "abc";
+            broken.HeightText = "1600";
+
+            Assert.False(form.TryBuildCommands(out var commands, out var error));
+            Assert.Empty(commands);
+            Assert.Contains("№2", error);
+        }
+
+        [Fact]
+        public void RemoveSizeRow_KeepsAtLeastOneRow()
+        {
+            var form = new AiClarificationForm();
+            var only = form.SizeRows[0];
+
+            form.RemoveSizeRow(only);
+
+            Assert.Single(form.SizeRows);
+            Assert.False(form.HasExtraSizes);
+        }
+
+        [Fact]
+        public void RemoveSizeRow_FirstRow_PromotesTheNextSize()
+        {
+            var form = new AiClarificationForm("сетки 304x1593 и 724x1593");
+
+            form.RemoveSizeRow(form.SizeRows[0]);
+
+            Assert.Single(form.SizeRows);
+            // WidthText/HeightText mirror the first row — the remaining size.
+            Assert.Equal("724", form.WidthText);
+            Assert.Equal("1593", form.HeightText);
+            Assert.False(form.HasExtraSizes);
+        }
+
+        [Fact]
+        public void BuildSummaryText_ListsEverySize()
+        {
+            var form = new AiClarificationForm("ПМС Anwis, бел.\n1 304x1593\nПМС Anwis, бел.\n1 724x1593")
+            {
+                SelectedAnwisMode = "ПП"
+            };
+
+            var summary = form.BuildSummaryText();
+
+            Assert.Contains("304×1593", summary);
+            Assert.Contains("724×1593", summary);
+        }
     }
 }

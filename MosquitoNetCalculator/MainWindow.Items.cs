@@ -6,6 +6,7 @@ using System.Windows.Input;
 using System.Windows.Media;
 using MosquitoNetCalculator.Models;
 using MosquitoNetCalculator.Services;
+using MosquitoNetCalculator.Helpers;
 
 using PrintSettings = MosquitoNetCalculator.Models.PrintSettings;
 
@@ -45,7 +46,6 @@ namespace MosquitoNetCalculator
                 ClientInfo.ContractDate = DateTime.Today;
                 SyncContractPrefix(AppSettingsService.LoadContractPrefix());
 
-                ClientInfo.ClientName = "";
                 ClientInfo.ClientPhone = "";
                 ClientInfo.ClientAddress = "";
                 ClientInfo.Notes = "";
@@ -144,7 +144,7 @@ namespace MosquitoNetCalculator
             {
                 Width = 50,
                 Height = 24,
-                FontSize = 11,
+                FontSize = Typography.Caption,
                 HorizontalContentAlignment = HorizontalAlignment.Center
             };
 
@@ -154,7 +154,7 @@ namespace MosquitoNetCalculator
             {
                 IsChecked = true,
                 VerticalAlignment = VerticalAlignment.Center,
-                Margin = new Thickness(0, 0, 6, 0),
+                Margin = Spacings.InlineSm,
                 ToolTip = "Отмечено = добавить к сумме (+), не отмечено = вычесть из суммы (−)"
             };
             chkSign.SetResourceReference(FrameworkElement.StyleProperty, "SignToggleCheckBox");
@@ -278,14 +278,14 @@ namespace MosquitoNetCalculator
             var deductionPanel = new StackPanel
             {
                 Orientation = Orientation.Horizontal,
-                Margin = new Thickness(4, 2, 4, 2)
+                Margin = Spacings.PadTiny
             };
             deductionPanel.Children.Add(new TextBlock
             {
                 Text = "Сумма:",
                 VerticalAlignment = VerticalAlignment.Center,
-                Margin = new Thickness(0, 0, 4, 0),
-                FontSize = 12
+                Margin = Spacings.InlineSm,
+                FontSize = Typography.Body
             });
             txtDeduction.LostFocus += (_, _) =>
             {
@@ -307,8 +307,8 @@ namespace MosquitoNetCalculator
             {
                 Text = "₽",
                 VerticalAlignment = VerticalAlignment.Center,
-                Margin = new Thickness(2, 0, 0, 0),
-                FontSize = 11
+                Margin = Spacings.HairH,
+                FontSize = Typography.Caption
             });
             deductionItem.Header = deductionPanel;
             menu.Items.Add(deductionItem);

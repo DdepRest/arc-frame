@@ -681,8 +681,10 @@ namespace MosquitoNetCalculator.Tests.App
             // masks the value while still allowing the user to replace it.
             Assert.Contains("<PasswordBox x:Name=\"TxtApiKey\"", xaml);
             Assert.Contains("<PasswordBox x:Name=\"TxtNvidiaKey\"", xaml);
+            Assert.Contains("<PasswordBox x:Name=\"TxtFreeLlmKey\"", xaml);
             Assert.DoesNotContain("<TextBox x:Name=\"TxtApiKey\"", xaml);
             Assert.DoesNotContain("<TextBox x:Name=\"TxtNvidiaKey\"", xaml);
+            Assert.DoesNotContain("<TextBox x:Name=\"TxtFreeLlmKey\"", xaml);
 
             // The status labels may say whether a key is configured, but must not
             // expose any prefix or suffix of the secret.
@@ -693,15 +695,18 @@ namespace MosquitoNetCalculator.Tests.App
             Assert.DoesNotContain("currentKey[..", code);
             Assert.DoesNotContain("currentNvidiaKey[..", code);
 
-            // Both providers must use the same fixed visual mask. Loading the
+            // All providers must use the same fixed visual mask. Loading the
             // real secret into PasswordBox would expose its length and produce
-            // the inconsistent UI where OR and NV show different star counts.
+            // the inconsistent UI where providers show different star counts.
             Assert.Contains("TxtApiKey.Password = DummyPassword", code);
             Assert.Contains("TxtNvidiaKey.Password = DummyPassword", code);
+            Assert.Contains("TxtFreeLlmKey.Password = DummyPassword", code);
             Assert.Contains("private string _savedApiKey", code);
             Assert.Contains("private string _savedNvidiaApiKey", code);
+            Assert.Contains("private string _savedFreeLlmApiKey", code);
             Assert.Contains("_apiKeyMaskActive", code);
             Assert.Contains("_nvidiaKeyMaskActive", code);
+            Assert.Contains("_freeLlmKeyMaskActive", code);
             Assert.DoesNotContain("TxtApiKey.Password = currentKey", code);
             Assert.DoesNotContain("TxtNvidiaKey.Password = currentNvidiaKey", code);
         }
@@ -713,8 +718,10 @@ namespace MosquitoNetCalculator.Tests.App
 
             Assert.Contains("TxtApiKey.Password", code);
             Assert.Contains("TxtNvidiaKey.Password", code);
+            Assert.Contains("TxtFreeLlmKey.Password", code);
             Assert.DoesNotContain("TxtApiKey.Text", code);
             Assert.DoesNotContain("TxtNvidiaKey.Text", code);
+            Assert.DoesNotContain("TxtFreeLlmKey.Text", code);
         }
 
         [Fact]

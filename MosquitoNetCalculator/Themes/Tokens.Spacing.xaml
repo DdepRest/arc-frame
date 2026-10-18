@@ -65,6 +65,103 @@
          обрезался. Раньше значение жило литералом в каждом диалоге. -->
     <Thickness x:Key="Gap.Window">8</Thickness>
 
+    <!-- ── Нулевые отступы (снятие унаследованного отступа) ─────── -->
+    <Thickness x:Key="Gap.None">0</Thickness>
+    <Thickness x:Key="Pad.None">0</Thickness>
+
+    <!-- ── Дополнительные ступенчатые отступы по шкале ─────────────── -->
+    <Thickness x:Key="Gap.BlockXl">0,0,0,16</Thickness>
+    <Thickness x:Key="Gap.BlockTopSm">0,2,0,0</Thickness>
+    <Thickness x:Key="Gap.InlineXl">0,0,16,0</Thickness>
+    <Thickness x:Key="Gap.LeftXl">16,0,0,0</Thickness>
+
+    <!-- Поля контролов ввода и компактных элементов -->
+    <Thickness x:Key="Pad.ControlSm">4</Thickness>
+    <Thickness x:Key="Pad.ControlSmH">8,0</Thickness>
+    <Thickness x:Key="Pad.Control">8,6</Thickness>
+    <Thickness x:Key="Pad.Input">10,8</Thickness>
+    <Thickness x:Key="Pad.InputH">8,0</Thickness>
+    <Thickness x:Key="Pad.ComboText">8,0,28,0</Thickness>
+    <Thickness x:Key="Pad.TabItem">16,8</Thickness>
+    <Thickness x:Key="Pad.TotalCard">20,12</Thickness>
+    <Thickness x:Key="Pad.MenuPopup">6</Thickness>
+
+    <!-- Микро-отступы и разделители (1-2px рамки и оптическая компенсация) -->
+    <Thickness x:Key="Gap.Micro">0,1</Thickness>
+    <Thickness x:Key="Gap.MicroV">0,0,0,1</Thickness>
+    <Thickness x:Key="Gap.Separator">0,2</Thickness>
+    <Thickness x:Key="Gap.SeparatorH">1,0</Thickness>
+    <!-- Вертикальные 6px вокруг разделителя блока таблицы материалов -->
+    <Thickness x:Key="Gap.SeparatorBlock">0,6,0,6</Thickness>
+    <Thickness x:Key="Gap.SeparatorBar">8,0</Thickness>
+    <Thickness x:Key="Gap.HairH">2,0</Thickness>
+    <Thickness x:Key="Gap.LeftHair">2,0,0,0</Thickness>
+    <Thickness x:Key="Gap.RightHair">0,0,2,0</Thickness>
+    <Thickness x:Key="Gap.ToggleSignRight">0,0,8,1</Thickness>
+    <Thickness x:Key="Gap.ToggleSignLeft">8,0,0,1</Thickness>
+    <Thickness x:Key="Gap.InlineH">8,0,8,0</Thickness>
+    <!-- Симметричные горизонтальные 4px (поля Кол-во/Цена в таблице материалов) -->
+    <Thickness x:Key="Gap.InlineHSm">4,0,4,0</Thickness>
+    <Thickness x:Key="Gap.BadgeTopRight">0,4,4,0</Thickness>
+    <Thickness x:Key="Gap.Inline2Xl">0,0,24,0</Thickness>
+    <Thickness x:Key="Gap.Top">0,8,0,0</Thickness>
+    <Thickness x:Key="Gap.BlockTopXl">0,16,0,0</Thickness>
+    <Thickness x:Key="Gap.CurrencyUnit">0,4,8,0</Thickness>
+    <Thickness x:Key="Gap.MenuPopup">0,4,8,8</Thickness>
+    <Thickness x:Key="Gap.Sidebar">8,8,0,8</Thickness>
+    <Thickness x:Key="Gap.Swatch">3</Thickness>
+    <Thickness x:Key="Gap.CalculationView">160,0,0,0</Thickness>
+    <Thickness x:Key="Gap.NavCluster">8,8,8,0</Thickness>
+    <Thickness x:Key="Gap.NavSection">12,6,0,4</Thickness>
+    <Thickness x:Key="Gap.NavSectionLg">12,14,0,4</Thickness>
+    <Thickness x:Key="Gap.BadgeOffset">0,2,-4,0</Thickness>
+    <Thickness x:Key="Gap.DialogHost">16,0,16,16</Thickness>
+    <Thickness x:Key="Gap.PanelSection">16,12</Thickness>
+    <!-- Вертикальный ритм между секциями-карточками панели (полная ширина, без гориз.) -->
+    <Thickness x:Key="Gap.Section">0,12,0,12</Thickness>
+    <Thickness x:Key="Gap.DialogHero">20,40</Thickness>
+    <Thickness x:Key="Pad.SearchBox">32,6,32,6</Thickness>
+    <Thickness x:Key="Pad.DialogBody">20,16,20,8</Thickness>
+    <Thickness x:Key="Gap.EconomyDialog">24,16,24,0</Thickness>
+    <Thickness x:Key="Gap.EconomyDialogFooter">24,16,24,16</Thickness>
+    <Thickness x:Key="Gap.CellLeft">8,8,4,8</Thickness>
+    <Thickness x:Key="Gap.CellRight">4,8,8,8</Thickness>
+    <Thickness x:Key="Gap.UpdateFab">0,0,32,24</Thickness>
+
+    <!-- Диалоговые и вспомогательные отступы (v3.54.4) -->
+    <Thickness x:Key="Gap.Hair">2</Thickness>
+    <Thickness x:Key="Gap.Panel">16</Thickness>
+    <Thickness x:Key="Gap.BlockHair">0,0,0,2</Thickness>
+    <Thickness x:Key="Gap.Block10">0,0,0,10</Thickness>
+    <Thickness x:Key="Gap.BlockTop10">0,10,0,0</Thickness>
+    <Thickness x:Key="Gap.BlockBottomLg">0,8,0,16</Thickness>
+    <Thickness x:Key="Gap.Inline10">0,0,10,0</Thickness>
+    <Thickness x:Key="Gap.Inline14">0,0,14,0</Thickness>
+    <Thickness x:Key="Gap.TitleBarAction">12,0,42,0</Thickness>
+    <Thickness x:Key="Gap.DialogBodyTop">24,24,24,0</Thickness>
+    <Thickness x:Key="Gap.DialogFooter">24,18,24,24</Thickness>
+    <Thickness x:Key="Gap.DialogFooterLg">24,20,24,20</Thickness>
+    <Thickness x:Key="Gap.DialogFooterFlat">24,0,24,20</Thickness>
+    <Thickness x:Key="Gap.DialogContentLg">24,20,24,12</Thickness>
+    <Thickness x:Key="Gap.DialogBanner">24,14,24,0</Thickness>
+    <Thickness x:Key="Gap.WelcomeGrid">20,14,20,16</Thickness>
+    <Thickness x:Key="Gap.TemplatesHeader">20,14,20,12</Thickness>
+    <Thickness x:Key="Gap.TemplatesGallery">20,0,20,16</Thickness>
+    <Thickness x:Key="Gap.TemplatesControls">20,12,20,6</Thickness>
+    <Thickness x:Key="Gap.TemplatesList">20,4,20,8</Thickness>
+    <Thickness x:Key="Gap.TemplatesFooter">20,12,20,16</Thickness>
+    <Thickness x:Key="Gap.TableTop">8,8,8,4</Thickness>
+    <Thickness x:Key="Gap.TableBody">8,0,8,6</Thickness>
+    <Thickness x:Key="Gap.TableBottom">8,0,8,8</Thickness>
+    <!-- Таблица материалов (SlopePanel): шапка и строки -->
+    <Thickness x:Key="Gap.TableHeader">0,14,0,6</Thickness>
+    <Thickness x:Key="Gap.TableRow">0,5,0,5</Thickness>
+    <Thickness x:Key="Gap.TableRowSm">0,2,0,2</Thickness>
+    <Thickness x:Key="Gap.HistoryHeader">8,8,8,6</Thickness>
+    <Thickness x:Key="Gap.HistoryBody">8,0,8,4</Thickness>
+    <Thickness x:Key="Gap.CompactRight">6,0,2,0</Thickness>
+    <Thickness x:Key="Gap.UpDown">4,0</Thickness>
+
     <!-- ── Внутренние поля (Padding) контейнеров ────────────────────── -->
     <!-- Панель/карточка. ВАЖНО: левый инсет 12 согласован с полосой
          статуса (1px рамка + 4px полоса + 12 = 17px), см. Radius.StripeInner. -->
@@ -77,5 +174,31 @@
     <Thickness x:Key="Pad.Pill">10,4</Thickness>
     <!-- Контейнер секции (группа полей) -->
     <Thickness x:Key="Pad.Section">12</Thickness>
+
+    <!-- Дополнительные поля (Padding) компонентов и диалогов -->
+    <Thickness x:Key="Pad.Hair">2,2</Thickness>
+    <Thickness x:Key="Pad.Tiny">4,2</Thickness>
+    <Thickness x:Key="Pad.Badge">8,4</Thickness>
+    <Thickness x:Key="Pad.Chip">8,3</Thickness>
+    <Thickness x:Key="Pad.ButtonSm">10,3</Thickness>
+    <Thickness x:Key="Pad.Button">16,8</Thickness>
+    <Thickness x:Key="Pad.DialogBtn">16,7</Thickness>
+    <Thickness x:Key="Pad.TitleBar">14,0,0,0</Thickness>
+    <Thickness x:Key="Pad.TitleBarH">14,0</Thickness>
+    <Thickness x:Key="Pad.DialogBanner">12,5</Thickness>
+    <Thickness x:Key="Pad.PreviewMini">6,2</Thickness>
+    <Thickness x:Key="Pad.PreviewInput">10,0</Thickness>
+    <Thickness x:Key="Pad.PreviewZoom">8,2</Thickness>
+    <Thickness x:Key="Pad.PreviewPage">24</Thickness>
+    <Thickness x:Key="Pad.PreviewCanvas">40</Thickness>
+    <Thickness x:Key="Pad.Toolbar">12,6</Thickness>
+    <Thickness x:Key="Pad.WelcomeCard">14,12</Thickness>
+    <Thickness x:Key="Pad.WelcomeAction">14,10</Thickness>
+    <Thickness x:Key="Pad.WelcomeApply">16,9</Thickness>
+    <Thickness x:Key="Pad.TemplatesCard">20,8</Thickness>
+    <Thickness x:Key="Pad.TemplatesApply">18,7</Thickness>
+    <Thickness x:Key="Pad.CardSm">14</Thickness>
+    <Thickness x:Key="Pad.InputLargeH">18,0</Thickness>
+
 
 </ResourceDictionary>

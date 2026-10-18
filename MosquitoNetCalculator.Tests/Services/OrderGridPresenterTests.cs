@@ -444,5 +444,94 @@ namespace MosquitoNetCalculator.Tests.Services
                 throw new DirectoryNotFoundException("Не найден корень репозитория.");
             return dir.FullName;
         }
+        /// <summary>
+        /// Разбирает колонки таблицы позиций заказа из разметки: (заголовок, MinWidth, isStar).
+        /// </summary>
+        private static List<(string Header, double MinWidth, bool IsStar)> OrderItemsGridColumns()
+        {
+            string path = Path.Combine(RepoRoot(), "MosquitoNetCalculator", "Controls", "OrderItemsControl.xaml");
+            string xaml = Regex.Replace(File.ReadAllText(path), "<!--.*?-->", string.Empty, RegexOptions.Singleline);
+
+            var result = new List<(string, double, bool)>();
+            foreach (Match m in Regex.Matches(xaml,
+                "<DataGrid(?:Text|Template)Column\\b(?<body>.*?)(?:/>|>)", RegexOptions.Singleline))
+            {
+                var header = Regex.Match(m.Groups["body"].Value, "Header=\"(?<h>[^\"]+)\"");
+                if (!header.Success) continue;
+                string headerText = header.Groups["h"].Value.Replace("&#x2116;", "№");
+                if (string.IsNullOrWhiteSpace(headerText)) continue;
+
+                var min = Regex.Match(m.Groups["body"].Value, "MinWidth=\"(?<w>[0-9.]+)\"");
+                Assert.True(min.Success,
+                    "У колонки «" + headerText + "» нет MinWidth — автосайзер сможет ужать её под подпись шапки.");
+
+                bool isStar = Regex.IsMatch(m.Groups["body"].Value, "Width=\"\\*\"");
+                result.Add((headerText,
+                    double.Parse(min.Groups["w"].Value, System.Globalization.CultureInfo.InvariantCulture),
+                    isStar));
+            }
+
+            return result;
+        }
+
+        /// <summary>
+        /// Страж таблицы позиций: объявленный в разметке MinWidth каждой колонки
+        /// таблицы позиций («Расчёт») обязан вмещать подпись шапки в ВЕРХНЕМ РЕГИСТРЕ
+        /// (шапка рисуется капсом через UppercaseHeaderTemplate), плюс паддинг шапки
+        /// 10+10 и минимальный запас 4px. Без этого колонка на узком окне уходит в
+        /// многоточие («ПЛОЩ./...») или зажёвывает числа (GOTCHAS §33, §34).
+        /// </summary>
+        [Fact]
+        public void Позиции_ОбъявленныйMinWidthКолонок_ВмещаетПодписьШапки()
+        {
+            var columns = OrderItemsGridColumns();
+            Assert.True(columns.Count >= 9, $"Ожидалось не менее 9 колонок с заголовками, найдено {columns.Count}");
+
+            WpfTestHelper.RunOnSta(() =>
+            {
+                var grid = new DataGrid
+                {
+                    FontSize = 12,
+                    FontFamily = AppFontService.CreateInterFamily()
+                };
+
+                var problems = new List<string>();
+                foreach (var (header, minWidth, isStar) in columns)
+                {
+                    if (isStar) continue; // Звезда-колонка («Наименование») динамически занимает всё свободное место
+
+                    double needed = DataGridColumnAutoSizer.MeasureHeaderWidth(
+                                        grid, header.ToUpperInvariant())
+                                    + DataGridColumnAutoSizer.HeaderPadding;
+                    if (minWidth < needed + MinimalSlack)
+                        problems.Add("«" + header + "»: MinWidth " + minWidth +
+                                     " < подпись " + needed.ToString("F1") +
+                                     " + запас " + MinimalSlack);
+                }
+
+                Assert.True(problems.Count == 0,
+                    "На узком окне колонка позиций опускается до объявленного MinWidth, и подпись шапки " +
+                    "уходит в многоточие:\n  " + string.Join("\n  ", problems));
+            });
+        }
+
+        /// <summary>
+        /// Страж числовых колонок «Сумма» и «Цена»: объявленный пол MinWidth обязан
+        /// вмещать четырёх-пятизначные числа (напр. «1 579,40», «12 500,00») с табулярными
+        /// цифрами Inter, правым выравниванием и воздухом 14px слева (Margin 14,0,6,0),
+        /// чтобы числа не зажёвывались и не обрезались слева.
+        /// </summary>
+        [Fact]
+        public void ЧисловыеКолонки_ОбъявленныйMinWidth_ВмещаетЧетырехзначныеСуммы()
+        {
+            var columns = OrderItemsGridColumns();
+            var sumCol = columns.FirstOrDefault(c => c.Header == "Сумма");
+            var priceCol = columns.FirstOrDefault(c => c.Header == "Цена");
+
+            Assert.True(sumCol.MinWidth >= 95,
+                $"Колонка «Сумма» имеет MinWidth={sumCol.MinWidth} < 95 — суммы вида «1 579,40» будут обрезаться слева.");
+            Assert.True(priceCol.MinWidth >= 85,
+                $"Колонка «Цена» имеет MinWidth={priceCol.MinWidth} < 85 — цены вида «15 000,00» будут обрезаться слева.");
+        }
     }
 }

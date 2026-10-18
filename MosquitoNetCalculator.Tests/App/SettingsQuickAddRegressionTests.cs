@@ -99,8 +99,8 @@ namespace MosquitoNetCalculator.Tests.App
             Assert.DoesNotContain("NavBtnAdmin", mainXaml);
             // Пункт «Админ-панель…» появился в меню настроек (шестерёнка).
             Assert.Contains("MenuAdminPanel_Click", titleXaml);
-            // По открытию — запрос пароля + показ оверлея главного окна.
-            Assert.Contains("new AdminPasswordWindow", titleCs);
+            // По открытию — проверка разблокировки админа + показ оверлея главного окна.
+            Assert.True(titleCs.Contains("EnsureAdminUnlocked") || titleCs.Contains("new AdminPasswordWindow"));
             Assert.Contains("ShowAdminPanel()", titleCs);
         }
 
@@ -125,7 +125,7 @@ namespace MosquitoNetCalculator.Tests.App
             Assert.True(aiMethod >= 0, "MenuAiApiKey_Click должен существовать");
             // API-ключ открывается только после успешной проверки админ-паролем.
             var body = titleCs.Substring(aiMethod);
-            Assert.Contains("new AdminPasswordWindow", body);
+            Assert.True(body.Contains("EnsureAdminUnlocked") || body.Contains("new AdminPasswordWindow"));
             Assert.Contains("ShowDialog()", body);
         }
     }

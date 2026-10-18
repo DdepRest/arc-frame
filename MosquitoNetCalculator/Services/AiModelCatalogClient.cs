@@ -158,6 +158,88 @@ namespace MosquitoNetCalculator.Services
             }
         }
 
+        /// <summary>Fetches the catalog from a running FreeLLMAPI instance.</summary>
+        public static async Task<CatalogFetchResult> FetchFreeLlmApiModelsAsync(
+            HttpClient httpClient,
+            string apiKey,
+            string endpoint,
+            CancellationToken ct)
+        {
+            try
+            {
+                // One shared normalizer guarantees the /v1 prefix even when the
+                // user typed a bare gateway address (the Desktop build lives on
+                // http://127.0.0.1:31415 and needs the suffix).
+                var modelsUrl = AiKeyValidator.BuildFreeLlmApiModelsUrl(endpoint);
+
+                using var request = new HttpRequestMessage(HttpMethod.Get, modelsUrl);
+                if (!string.IsNullOrWhiteSpace(apiKey))
+                    request.Headers.Add("Authorization", $"Bearer {apiKey.Trim()}");
+
+                using var response = await httpClient.SendAsync(request, ct);
+                var body = await response.Content.ReadAsStringAsync(ct);
+                if (!response.IsSuccessStatusCode)
+                    return CatalogFetchResult.Failed;
+
+                using var document = JsonDocument.Parse(body);
+                if (!document.RootElement.TryGetProperty("data", out var data)
+                    || data.ValueKind != JsonValueKind.Array)
+                    return CatalogFetchResult.Failed;
+
+                var models = new List<AiModelOption>();
+                foreach (var item in data.EnumerateArray())
+                {
+                    if (!item.TryGetProperty("id", out var idElement)) continue;
+                    var id = idElement.GetString();
+                    if (string.IsNullOrWhiteSpace(id)) continue;
+
+                    // The gateway catalog also lists image/audio/video generators
+                    // and embedding/rerank models. Chat routing must never pick
+                    // those (the request would "succeed" with junk or die with an
+                    // in-band provider error); the virtual routers stay.
+                    if (!IsFreeLlmChatModel(id)) continue;
+
+                    string displayName = id;
+                    foreach (var property in new[] { "name", "display_name", "displayName" })
+                    {
+                        if (item.TryGetProperty(property, out var nameElement)
+                            && nameElement.ValueKind == JsonValueKind.String
+                            && !string.IsNullOrWhiteSpace(nameElement.GetString()))
+                        {
+                            displayName = nameElement.GetString()!;
+                            break;
+                        }
+                    }
+
+                    bool? supportsVision = null;
+                    if (id.Contains("vision", StringComparison.OrdinalIgnoreCase) ||
+                        id.Contains("vl", StringComparison.OrdinalIgnoreCase) ||
+                        id.Contains("gemini", StringComparison.OrdinalIgnoreCase))
+                    {
+                        supportsVision = true;
+                    }
+
+                    models.Add(new AiModelOption(id, displayName, AiProvider.FreeLlmApi)
+                    {
+                        SupportsVision = supportsVision
+                    });
+                }
+
+                return models.Count > 0
+                    ? new CatalogFetchResult(models, true)
+                    : CatalogFetchResult.Failed;
+            }
+            catch (OperationCanceledException) when (ct.IsCancellationRequested)
+            {
+                throw;
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"[AiModelCatalogClient] FreeLLMAPI catalog failed: {ex.Message}");
+                return CatalogFetchResult.Failed;
+            }
+        }
+
         /// <summary>
         /// Reconciles the persisted fallback list against the live catalog —
         /// keeps only IDs that are still in <paramref name="models"/>, falling
@@ -182,6 +264,46 @@ namespace MosquitoNetCalculator.Services
                 valid.Add(models[0].Id);
             AppSettingsServiceAi.SaveAiFallbackModels(valid);
         }
+
+        /// <summary>
+        /// FreeLLMAPI-side filter: keeps conversational entries and drops
+        /// generators/embeddings (image, video, audio, TTS, diffusion, rerank…).
+        /// Unlike the NVIDIA filter this is a NEGATIVE gate only: gateway ids
+        /// such as <c>gpt-4o</c>, <c>glm-5.3</c> or <c>gpt-oss-20b</c> carry none
+        /// of the instruct/chat markers the NVIDIA filter requires, so a positive
+        /// requirement would silently drop valid chat models. Virtual routers
+        /// (<c>auto</c>, <c>auto:*</c>, <c>fusion</c>) are always kept — they
+        /// resolve a working upstream (and its capabilities) per request.
+        /// </summary>
+        internal static bool IsFreeLlmChatModel(string modelId)
+        {
+            if (string.IsNullOrWhiteSpace(modelId)) return false;
+
+            var id = modelId.ToLowerInvariant();
+            if (id == "auto" || id == "fusion"
+                || id.StartsWith("auto:", StringComparison.Ordinal))
+                return true;
+
+            foreach (var marker in FreeLlmNonChatMarkers)
+            {
+                if (id.Contains(marker, StringComparison.Ordinal))
+                    return false;
+            }
+
+            return true;
+        }
+
+        // Families the FreeLLMAPI catalog exposes that can never answer a chat
+        // completion: media generators, speech/transcription, embeddings and
+        // content-safety/moderation models.
+        private static readonly string[] FreeLlmNonChatMarkers =
+        {
+            "embed", "rerank", "tts", "whisper", "speech", "audio", "music",
+            "lyria", "imagen", "image", "diffusion", "sdxl", "flux", "dall-e",
+            "dalle", "midjourney", "video", "sora", "veo", "kling", "runway",
+            "upscal", "background-removal", "moderation", "guard", "safety",
+            "caption", "ocr"
+        };
 
         /// <summary>
         /// Deduplicates the model list by ID (case-insensitive, first wins) and

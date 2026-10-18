@@ -15,7 +15,7 @@ namespace MosquitoNetCalculator.Tests.Services
     /// не применялась вовсе: тёмные пользователи оставались на дефолтной
     /// палитре Brushes.xaml (светлый контент + тёмный сайдбар).
     /// </summary>
-    [Collection("STA")]
+    [Collection("WPF_UI")]
     public class ThemeApplyTests
     {
         [Fact]

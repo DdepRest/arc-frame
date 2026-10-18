@@ -1,9 +1,10 @@
-﻿using System.Windows.Input;
+using System.Windows.Input;
 using System.Collections.Generic;
 using System.Windows;
 using System.Windows.Controls;
 using MosquitoNetCalculator.Models;
 using MosquitoNetCalculator.Services;
+using MosquitoNetCalculator.Helpers;
 
 namespace MosquitoNetCalculator
 {
@@ -28,10 +29,12 @@ namespace MosquitoNetCalculator
                 var cb = new CheckBox
                 {
                     IsChecked = true,
-                    FontSize = 12,
+                    FontSize = Typography.Body,
                     Foreground = (System.Windows.Media.Brush)FindResource("TextPrimary"),
-                    Margin = new Thickness(0, 2, 0, 2),
-                    Content = $"№{order.ContractNumber} — {order.ClientName} — {order.ClientAddress} — {MoneyFormatService.Format(order.TotalAmount)} руб. — {order.UpdatedAt:dd.MM.yy HH:mm}"
+                    Margin = Spacings.HairV,
+                    Content = !string.IsNullOrWhiteSpace(order.ClientPhone)
+                        ? $"№{order.ContractNumber} — {order.ClientPhone} — {order.ClientAddress} — {MoneyFormatService.Format(order.TotalAmount)} руб. — {order.UpdatedAt:dd.MM.yy HH:mm}"
+                        : $"№{order.ContractNumber} — {order.ClientAddress} — {MoneyFormatService.Format(order.TotalAmount)} руб. — {order.UpdatedAt:dd.MM.yy HH:mm}"
                 };
                 _checkboxes.Add(cb);
                 ListStack.Children.Add(cb);

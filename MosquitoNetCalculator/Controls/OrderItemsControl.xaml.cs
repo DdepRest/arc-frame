@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
@@ -67,20 +68,34 @@ namespace MosquitoNetCalculator.Controls
         /// </summary>
         internal void PopulateProductChips(List<string> productNames)
         {
-            ProductChipsList.ItemsSource = productNames;
+            var groups = Models.ProductCatalog.GetVisibleGroups(productNames);
+            var accounted = new HashSet<string>(groups.SelectMany(g => g.Products));
+            var custom = productNames.Where(p => !accounted.Contains(p)).ToList();
+            if (custom.Count > 0)
+            {
+                groups.Add(new Models.ProductGroup
+                {
+                    Name = "Дополнительно",
+                    IconGlyph = "\uE710",
+                    Products = custom
+                });
+            }
+
+            ProductChipsList.ItemsSource = groups;
             ProductChipsList.PreviewMouseLeftButtonDown -= ProductChip_Click;
             ProductChipsList.PreviewMouseLeftButtonDown += ProductChip_Click;
         }
 
         private void ProductChip_Click(object sender, MouseButtonEventArgs e)
         {
-            // Find the ContentPresenter ancestor — its Content is the product name string
-            // (ItemsSource is List<string>, so ContentPresenter.Content = string).
-            // More robust than walking to a TextBlock, which breaks if template changes.
+            // Find the ContentPresenter ancestor whose Content is string (product name)
             var source = e.OriginalSource as DependencyObject;
-            while (source != null && source is not ContentPresenter)
+            while (source != null && !(source is ContentPresenter cp && cp.Content is string))
+            {
                 source = VisualTreeHelper.GetParent(source);
-            if (source is ContentPresenter cp && cp.Content is string productName)
+                if (source == ProductChipsList) break;
+            }
+            if (source is ContentPresenter cpFound && cpFound.Content is string productName)
                 TryForwardToMain(nameof(ProductChip_Click), mw => mw.SelectProductFromChip(productName));
         }
 

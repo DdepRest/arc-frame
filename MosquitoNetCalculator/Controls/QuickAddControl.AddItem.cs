@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Linq;
 using System.Threading.Tasks;
 using System.Windows;
@@ -6,6 +6,7 @@ using System.Windows.Controls;
 using System.Windows.Media;
 using MosquitoNetCalculator.Models;
 using MosquitoNetCalculator.Services;
+using MosquitoNetCalculator.Helpers;
 
 namespace MosquitoNetCalculator.Controls
 {
@@ -475,7 +476,7 @@ namespace MosquitoNetCalculator.Controls
                 btn.Content = new TextBlock
                 {
                     Text = "✔  Добавлено",
-                    FontSize = 12,
+                    FontSize = Typography.Body,
                     FontWeight = FontWeights.SemiBold,
                     Foreground = (Brush)Application.Current.FindResource("OnSuccess")
                 };

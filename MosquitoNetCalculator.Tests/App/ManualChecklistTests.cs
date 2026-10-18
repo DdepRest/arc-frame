@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -210,7 +210,7 @@ namespace MosquitoNetCalculator.Tests.App
             // v3.48.0: 1800 + импост 200 − 500 = 1500.
             Assert.Equal(1500.00, item.TotalWithDeduction, 2);
             Assert.Equal("В конструкцию", item.InstallationLabel);
-            Assert.Equal("В", item.KpInstallationDisplay); // печатный глиф «В»
+            Assert.Equal("ВК", item.KpInstallationDisplay); // печатная метка «ВК»
         }
 
         [Fact]
@@ -415,7 +415,6 @@ namespace MosquitoNetCalculator.Tests.App
 
         private static ClientInfo SampleClient() => new()
         {
-            ClientName = "Иванов",
             ClientPhone = "+7 999 000 00 00",
             ClientAddress = "ул. Ленина, 15",
             ContractNumber = "1-1",
@@ -434,11 +433,10 @@ namespace MosquitoNetCalculator.Tests.App
         }
 
         [Fact]
-        public void Check7_Print_Includes_ClientName_Phone_Address_ContractNumber_Date()
+        public void Check7_Print_Includes_ClientPhone_Address_ContractNumber_Date()
         {
             // §7 — structural checks on the native FlowDocument pipeline.
             var text = BuildAndExtract(SampleItems(), SampleClient(), 1800, "Одна тысяча восемьсот рублей");
-            Assert.Contains("Иванов", text);
             Assert.Contains("+7 999 000 00 00", text);
             Assert.Contains("ул. Ленина, 15", text);
             Assert.Contains("1-1", text);
@@ -496,10 +494,10 @@ namespace MosquitoNetCalculator.Tests.App
                 new() { Name = "Anwis", Color = "Белый", Width = 1000, Height = 1000, Quantity = 1, Price = 1800, InstallationMode = 2 }
             };
             var text = BuildAndExtract(items, SampleClient(), 1300, "Одна тысяча триста рублей");
-            // Print column uses KpInstallationCellText: short glyph "В" (mode 2).
-            // v3.48.3: к глифу добавлена сумма монтажа строки — для дефолтной
-            // ставки режима «В конструкцию» это "В −500"; голый глиф был до v3.48.3.
-            Assert.Contains("В −500", text);
+            // Print column uses KpInstallationCellText: unified label "ВК" (mode 2).
+            // v3.48.3: к метке добавлена сумма монтажа строки — для дефолтной
+            // ставки режима «В конструкцию» это "ВК −500"; голый глиф был до v3.48.3.
+            Assert.Contains("ВК −500", text);
         }
 
         // ═══════════════════════════════════════════════════════════════════

@@ -11,6 +11,7 @@ namespace MosquitoNetCalculator.Models
     {
         public string Name { get; init; } = "";
         public string? Subtitle { get; init; }
+        public string IconGlyph { get; init; } = "\uE8FD";
         public List<string> Products { get; init; } = new();
     }
 
@@ -201,16 +202,64 @@ namespace MosquitoNetCalculator.Models
             !string.IsNullOrEmpty(name) && ImpostApplicableProducts.Contains(name);
 
         /// <summary>
+        /// Maps product abbreviations, slang, and common aliases (such as «ПМС» -> «Anwis»)
+        /// to canonical catalog product names. If no alias is matched, returns the trimmed name as-is.
+        /// </summary>
+        public static string NormalizeProductName(string? name)
+        {
+            if (string.IsNullOrWhiteSpace(name)) return "Anwis";
+            var clean = name.Trim();
+            var lower = clean.ToLowerInvariant();
+
+            // Anwis / ПМС (Полотно москитной сетки / Противомоскитная сетка)
+            if (lower is "пмс" or "пмс anwis" or "пмс анвис" or "мс" or "м/с"
+                or "сетка" or "сетки" or "сетка anwis" or "сетка анвис" or "анвис"
+                or "рамочная сетка" or "москитная сетка" or "москитка")
+                return "Anwis";
+
+            if (lower is "на металле" or "металл" or "метал. крепл" or "оконная на металле" or "оконная на металл")
+                return "Оконная на метал. крепл.";
+
+            if (lower is "на петлях" or "петли" or "навесы" or "навесная")
+                return "На навесах";
+
+            if (lower is "дверная" or "дверная москитка" or "дверная москитная сетка")
+                return "Дверная сетка";
+
+            if (lower is "отливы")
+                return "Отлив";
+
+            if (lower is "козырек" or "козырьки")
+                return "Козырёк";
+
+            if (lower is "короба")
+                return "Короб";
+
+            // If the name already matches a catalog product (case-insensitive), return the canonical casing
+            foreach (var g in UserGroups)
+            {
+                foreach (var p in g.Products)
+                {
+                    if (string.Equals(p, clean, StringComparison.OrdinalIgnoreCase))
+                        return p;
+                }
+            }
+
+            return clean;
+        }
+
+        /// <summary>
         /// True when the product name exists in the fixed UX catalog
-        /// (<see cref="UserGroups"/>). User-added / «Свой товар» names return
-        /// false — those are manual sum rows (Total = Price × Qty), not
+        /// (<see cref="UserGroups"/>) either directly or via a recognized alias (e.g. «ПМС» -> «Anwis»).
+        /// User-added / «Свой товар» names return false — those are manual sum rows (Total = Price × Qty), not
         /// area-based products.
         /// </summary>
         public static bool IsKnownProduct(string? name)
         {
             if (string.IsNullOrEmpty(name)) return false;
+            var normalized = NormalizeProductName(name);
             return UserGroups.Any(g => g.Products.Any(p =>
-                string.Equals(p, name, StringComparison.OrdinalIgnoreCase)));
+                string.Equals(p, normalized, StringComparison.OrdinalIgnoreCase)));
         }
 
         // ─────────────────────────────────────────────────────────
@@ -228,27 +277,32 @@ namespace MosquitoNetCalculator.Models
             new ProductGroup
             {
                 Name = "Москитные сетки",
+                IconGlyph = "\uE737",
                 Products = new List<string> { "Anwis", "На навесах", "Оконная на метал. крепл.", "Дверная сетка" }
             },
             new ProductGroup
             {
                 Name = "Изделия из металла",
                 Subtitle = "Фасадные доборы",
+                IconGlyph = "\uE945",
                 Products = new List<string> { "Отлив", "Козырёк", "Короб" }
             },
             new ProductGroup
             {
                 Name = "Комплектующие и материалы",
+                IconGlyph = "\uE718",
                 Products = new List<string> { "ПСУЛ", "Уплотнение", "Брус", "Пояс", "Материал" }
             },
             new ProductGroup
             {
                 Name = "Откосы",
+                IconGlyph = "\uE81E",
                 Products = new List<string> { "Откос", "Работа за откос" }
             },
             new ProductGroup
             {
                 Name = "Услуги",
+                IconGlyph = "\uE7EE",
                 Products = new List<string> { "Работа", "Доставка" }
             },
         };
@@ -267,6 +321,7 @@ namespace MosquitoNetCalculator.Models
                 {
                     Name = g.Name,
                     Subtitle = g.Subtitle,
+                    IconGlyph = g.IconGlyph,
                     Products = g.Products.Where(p => nameSet.Contains(p)).ToList()
                 })
                 .Where(g => g.Products.Count > 0)

@@ -42,7 +42,7 @@
                     Background="{DynamicResource HeaderBg}"
                     CornerRadius="{DynamicResource Radius.CardHeader}"
                     Height="32"
-                    Padding="14,0"
+                    Padding="{DynamicResource Pad.TitleBarH}"
                     MouseLeftButtonDown="TitleBar_MouseLeftButtonDown">
                 <Grid>
                     <Grid.ColumnDefinitions>
@@ -51,7 +51,7 @@
                     </Grid.ColumnDefinitions>
                     <TextBlock x:Name="TitleText"
                                Grid.Column="0"
-                               FontSize="12"
+                               FontSize="{StaticResource Type.Body}"
                                FontWeight="SemiBold"
                                Foreground="{DynamicResource TextPrimary}"
                                VerticalAlignment="Center"
@@ -63,7 +63,7 @@
                             Width="40" Height="40"
                             Style="{DynamicResource DialogCloseButton}"
                             Click="CloseButton_Click">
-                        <TextBlock Text="&#xE8BB;" FontFamily="{DynamicResource Font.Icon}" FontSize="11"/>
+                        <TextBlock Text="&#xE8BB;" FontFamily="{DynamicResource Font.Icon}" FontSize="{StaticResource Type.Caption}"/>
                     </Button>
                 </Grid>
             </Border>
@@ -71,15 +71,15 @@
             <!-- Message -->
             <TextBlock x:Name="MessageText"
                        Grid.Row="1"
-                       FontSize="12"
+                       FontSize="{StaticResource Type.Body}"
                        Foreground="{DynamicResource TextPrimary}"
                        TextWrapping="Wrap"
-                       Margin="24,20,24,20"/>
+                       Margin="{DynamicResource Gap.DialogFooterLg}"/>
 
             <!-- Buttons -->
             <ItemsControl x:Name="ButtonsPanel"
                           Grid.Row="2"
-                          Margin="24,0,24,20"
+                          Margin="{DynamicResource Gap.DialogFooterFlat}"
                           HorizontalAlignment="Right">
                 <ItemsControl.ItemsPanel>
                     <ItemsPanelTemplate>
@@ -97,9 +97,9 @@
                         <Button Content="{Binding Content}"
                                 Style="{DynamicResource GhostButton}"
                                 MinWidth="90"
-                                Padding="16,7"
+                                Padding="{DynamicResource Pad.DialogBtn}"
                                 Margin="{DynamicResource Gap.Left}"
-                                FontSize="12"
+                                FontSize="{StaticResource Type.Body}"
                                 Click="DialogButton_Click"
                                 Loaded="DialogButton_Loaded"
                                 Tag="{Binding}"/>

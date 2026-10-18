@@ -223,7 +223,7 @@ namespace MosquitoNetCalculator.Services
                 {
                     Text = iconChar,
                     Foreground = Brushes.White,
-                    FontSize = 11,
+                    FontSize = Typography.Caption,
                     FontWeight = FontWeights.Bold,
                     HorizontalAlignment = HorizontalAlignment.Center,
                     VerticalAlignment = VerticalAlignment.Center
@@ -235,7 +235,7 @@ namespace MosquitoNetCalculator.Services
             var textBlock = new TextBlock
             {
                 Text = message,
-                FontSize = 12,
+                FontSize = Typography.Body,
                 Foreground = (Brush?)Application.Current?.FindResource("TextPrimary") ?? Brushes.Black,
                 VerticalAlignment = VerticalAlignment.Center,
                 MaxWidth = 300,
@@ -260,7 +260,7 @@ namespace MosquitoNetCalculator.Services
                 var actionBtn = new Button
                 {
                     Content = actionLabel,
-                    FontSize = 12,
+                    FontSize = Typography.Body,
                     FontWeight = FontWeights.SemiBold,
                     Cursor = Cursors.Hand,
                     Margin = new Thickness(10, 0, 0, 0),
@@ -283,7 +283,7 @@ namespace MosquitoNetCalculator.Services
             {
                 Content = "\uE711",
                 FontFamily = AppFontService.CreateIconFamily(),
-                FontSize = 11,
+                FontSize = Typography.Caption,
                 Cursor = Cursors.Hand,
                 Margin = new Thickness(8, 0, 0, 0),
                 Padding = new Thickness(4, 2, 4, 2),
@@ -455,7 +455,7 @@ namespace MosquitoNetCalculator.Services
                 {
                     Text = iconChar,
                     Foreground = Brushes.White,
-                    FontSize = 11,
+                    FontSize = Typography.Caption,
                     FontWeight = FontWeights.Bold,
                     HorizontalAlignment = HorizontalAlignment.Center,
                     VerticalAlignment = VerticalAlignment.Center,
@@ -465,7 +465,7 @@ namespace MosquitoNetCalculator.Services
             var titleBlock = new TextBlock
             {
                 Text = "Доступно обновление",
-                FontSize = 12,
+                FontSize = Typography.Body,
                 FontWeight = FontWeights.SemiBold,
                 Foreground = (Brush?)Application.Current?.FindResource("TextPrimary") ?? Brushes.Black,
                 Margin = new Thickness(0, 0, 0, 1),
@@ -473,7 +473,7 @@ namespace MosquitoNetCalculator.Services
 
             var detailBlock = new TextBlock
             {
-                FontSize = 11,
+                FontSize = Typography.Caption,
                 Foreground = (Brush?)Application.Current?.FindResource("TextSecondary") ?? Brushes.DarkSlateGray,
                 TextWrapping = TextWrapping.Wrap,
                 MaxWidth = UpdateToastWidth - DetailTextMaxWidthOffset,
@@ -497,9 +497,9 @@ namespace MosquitoNetCalculator.Services
             updateBtn = new Button
             {
                 Content = "Обновить",
-                Padding = new Thickness(14, 6, 14, 6),
-                Margin = new Thickness(0, 0, 6, 0),
-                FontSize = 12,
+                Padding = Spacings.PadControl,
+                Margin = Spacings.InlineSm,
+                FontSize = Typography.Body,
                 FontWeight = FontWeights.SemiBold,
                 Cursor = Cursors.Hand,
                 MinWidth = 80,
@@ -516,9 +516,9 @@ namespace MosquitoNetCalculator.Services
             laterBtn = new Button
             {
                 Content = "Позже",
-                Padding = new Thickness(14, 6, 14, 6),
-                Margin = new Thickness(0, 0, 0, 0),
-                FontSize = 12,
+                Padding = Spacings.PadControl,
+                Margin = Spacings.None,
+                FontSize = Typography.Body,
                 FontWeight = FontWeights.Normal,
                 Cursor = Cursors.Hand,
                 MinWidth = 70,

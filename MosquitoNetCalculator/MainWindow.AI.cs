@@ -15,9 +15,6 @@ namespace MosquitoNetCalculator
         private Controls.AiAssistantWindow? _aiWindow;
         private Services.AiCommandExecutor? _aiCommandExecutor;
 
-        /// <summary>AI assistant and its settings are locked behind the admin password.
-        /// Once verified, the flag stays true for the session lifetime.</summary>
-        private bool _aiPasswordVerified;
 
         // Pre-batch snapshot + plan id of the last executed AI plan. The chat
         // «Отменить действие» button restores exactly this state (guarded so it
@@ -59,7 +56,18 @@ namespace MosquitoNetCalculator
                 showToast: (message, type) => ToastService.ShowToast(message, type),
                 isAiOverlayVisible: () => AiOverlay.Visibility == Visibility.Visible,
                 closeAiAssistant: CloseAiAssistant,
-                openSlopeOverlay: ShowSlopeOverlay);
+                openSlopeOverlay: ShowSlopeOverlay,
+                setClientInfo: (phone, addr, contract, notes) =>
+                {
+                    if (!string.IsNullOrWhiteSpace(phone)) ClientInfo.ClientPhone = phone;
+                    if (!string.IsNullOrWhiteSpace(addr)) ClientInfo.ClientAddress = addr;
+                    if (!string.IsNullOrWhiteSpace(contract)) ClientInfo.ContractNumber = contract;
+                    if (!string.IsNullOrWhiteSpace(notes)) ClientInfo.Notes = notes;
+                },
+                saveOrder: () => ActionBarControl.BtnSaveOrder_Click(this, new RoutedEventArgs()),
+                printKp: () => TriggerPrinterPrintWithProductionCopy(),
+                exportPdf: () => TriggerPdfExport(),
+                getCatalogPrice: (t, c) => PricesVM.GetPrice(t, c));
 
             // Bind the in-panel AI control to the shared ViewModel.
             AiAssistantControl.DataContext = AiVm;
@@ -84,7 +92,8 @@ namespace MosquitoNetCalculator
                 {
                     await AiAssistantService.FetchAvailableModelsAsync(
                         AiKeyValidator.GetApiKey(AiProvider.OpenRouter),
-                        nvidiaApiKey: AiKeyValidator.GetApiKey(AiProvider.Nvidia));
+                        nvidiaApiKey: AiKeyValidator.GetApiKey(AiProvider.Nvidia),
+                        freeLlmApiKey: AiKeyValidator.GetApiKey(AiProvider.FreeLlmApi));
                 }
                 catch (Exception ex)
                 {
@@ -539,13 +548,8 @@ namespace MosquitoNetCalculator
 
         private void NavAi_Click(object sender, RoutedEventArgs e)
         {
-            if (!_aiPasswordVerified)
-            {
-                var enterDialog = new Controls.AdminPasswordWindow { Owner = this };
-                if (enterDialog.ShowDialog() != true)
-                    return;
-                _aiPasswordVerified = true;
-            }
+            if (!AppSettingsService.EnsureAdminUnlocked(this))
+                return;
             ToggleAiOverlay();
         }
 

@@ -41,7 +41,7 @@
                     Background="{DynamicResource HeaderBg}"
                     CornerRadius="{DynamicResource Radius.CardHeader}"
                     Height="32"
-                    Padding="14,0"
+                    Padding="{DynamicResource Pad.TitleBarH}"
                     MouseLeftButtonDown="TitleBar_MouseLeftButtonDown">
                 <Grid>
                     <Grid.ColumnDefinitions>
@@ -50,7 +50,7 @@
                     </Grid.ColumnDefinitions>
                     <TextBlock x:Name="TitleText"
                                Grid.Column="0"
-                               FontSize="12"
+                               FontSize="{StaticResource Type.Body}"
                                FontWeight="SemiBold"
                                Foreground="{DynamicResource TextPrimary}"
                                VerticalAlignment="Center"
@@ -64,48 +64,48 @@
                             Click="CloseButton_Click">
                         <TextBlock Text="&#xE8BB;"
                                    FontFamily="{DynamicResource Font.Icon}"
-                                   FontSize="11"/>
+                                   FontSize="{StaticResource Type.Caption}"/>
                     </Button>
                 </Grid>
             </Border>
 
             <!-- Content: order header + status combo -->
-            <StackPanel Grid.Row="1" Margin="24,20,24,12">
+            <StackPanel Grid.Row="1" Margin="{DynamicResource Gap.DialogContentLg}">
                 <TextBlock x:Name="OrderHeaderText"
                            FontWeight="Bold"
-                           FontSize="14"
+                           FontSize="{StaticResource Type.BodyLg}"
                            Foreground="{DynamicResource TextPrimary}"
                            Margin="{DynamicResource Gap.BlockLg}"
                            TextTrimming="CharacterEllipsis"/>
                 <TextBlock Text="Новый статус:"
-                           FontSize="12"
+                           FontSize="{StaticResource Type.Body}"
                            Foreground="{DynamicResource TextMuted}"
-                           Margin="0,0,0,6"/>
+                           Margin="{DynamicResource Gap.BlockSm}"/>
                 <ComboBox x:Name="StatusCombo"
                           ItemsSource="{x:Static models:OrderStatuses.All}"
-                          FontSize="12"/>
+                          FontSize="{StaticResource Type.Body}"/>
             </StackPanel>
 
             <!-- Buttons -->
             <StackPanel Grid.Row="2"
                         Orientation="Horizontal"
                         HorizontalAlignment="Right"
-                        Margin="24,0,24,20">
+                        Margin="{DynamicResource Gap.DialogFooterFlat}">
                 <Button x:Name="BtnCancel"
                         Style="{DynamicResource GhostButton}"
                         Content="Отмена"
                         MinWidth="90"
-                        Padding="16,7"
+                        Padding="{DynamicResource Pad.DialogBtn}"
                         Margin="{DynamicResource Gap.Inline}"
-                        FontSize="12"
+                        FontSize="{StaticResource Type.Body}"
                         Click="BtnCancel_Click"
                         IsCancel="True"/>
                 <Button x:Name="BtnSave"
                         Style="{DynamicResource PrimaryButton}"
                         Content="Сохранить"
                         MinWidth="90"
-                        Padding="16,7"
-                        FontSize="12"
+                        Padding="{DynamicResource Pad.DialogBtn}"
+                        FontSize="{StaticResource Type.Body}"
                         FontWeight="SemiBold"
                         Click="BtnSave_Click"
                         IsDefault="True"/>

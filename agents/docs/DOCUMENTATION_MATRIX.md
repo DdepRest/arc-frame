@@ -30,6 +30,7 @@ Or run: agents/scripts/what-to-update.ps1 (git diff --name-only) -- the script r
 | `Models/AdditionalKpItem.cs` | `CURRENT_STATE.md` |
 | `Models/AiChatMessage.cs` | `CURRENT_STATE.md`, `CHANGELOG.md` (persisted AI model/provider badge + plan state (awaiting confirmation/executed/cancelled)) |
 | `Models/AiClarificationForm.cs` | `CURRENT_STATE.md`, `CHANGELOG.md` (interactive parameter card for AI clarification replies) |
+| `Models/AiClarificationSizeRow.cs` | `CURRENT_STATE.md`, `CHANGELOG.md` (one editable size row of the clarification card — one row = one added position) |
 | `Models/AiActionPlan.cs` | `CURRENT_STATE.md`, `CHANGELOG.md` (AI Agent Mode: action plan with steps, confirmation and execution state) |
 | `Models/AiOrderContext.cs` | `CURRENT_STATE.md`, `CHANGELOG.md` (AI Agent Mode: rich order snapshot context sent to the LLM) |
 | `Models/AiRequestMetrics.cs` | `CURRENT_STATE.md`, `CHANGELOG.md` (AI Agent Mode: per-request metrics (provider, attempt, fallback)) |
@@ -71,7 +72,11 @@ Or run: agents/scripts/what-to-update.ps1 (git diff --name-only) -- the script r
 | `Services/UndoRedoService.cs` | `GOTCHAS.md#10`, `CURRENT_STATE.md` |
 | `Services/NotesFormatter.cs` | `CURRENT_STATE.md`, `CHANGELOG.md` (lightweight notes markup parser) |
 | `Services/NotesRenderer.cs` | `CURRENT_STATE.md`, `CHANGELOG.md` (WPF inline renderer for formatted notes) |
-| `Services/AiAssistantService.cs` | `CURRENT_STATE.md`, `CHANGELOG.md` (AI streaming, model routing and free-provider fallback) |
+| `Services/NotesDocumentBuilder.cs` | `CURRENT_STATE.md`, `CHANGELOG.md` (stored notes markup -> editor FlowDocument (WYSIWYG notes field)) |
+| `Services/NotesMarkupWriter.cs` | `CURRENT_STATE.md`, `CHANGELOG.md` (editor FlowDocument -> stored notes markup (round-trip partner)) |
+| `Services/AiAssistantService.cs` | `CURRENT_STATE.md`, `CHANGELOG.md` (AI streaming, model routing and free-provider fallback; empty-2xx diagnosis names the endpoint problem) |
+| `Services/AiKeyValidator.cs` | `CURRENT_STATE.md`, `CHANGELOG.md`, `GOTCHAS.md#50` (provider key/URL helpers; FreeLLMAPI endpoint normalization + honest catalog/live-chat test) |
+| `Services/AiModelCatalogClient.cs` | `CURRENT_STATE.md`, `CHANGELOG.md` (provider catalogs, free/chat filters, saved-selection reconciliation) |
 | `Services/AiModelSelector.cs` | `CURRENT_STATE.md`, `CHANGELOG.md` (task-based free-model ranking) |
 | `Services/AiTaskClassifier.cs` | `CURRENT_STATE.md`, `CHANGELOG.md` (local task classification for model selection) |
 | `Services/AiCommandParser.cs` | `CURRENT_STATE.md`, `CHANGELOG.md` (add-item JSON parsing + plan-mode (steps); GetDefaultPrice/GenerateActionConfirmation reused by clarification form) |
@@ -184,4 +189,4 @@ Use agents/scripts/what-to-update.ps1 to get the list of docs to update - the sc
 
 ## Last verified
 
-2026-09-23 (generated from JSON)
+2026-10-08 (generated from JSON)

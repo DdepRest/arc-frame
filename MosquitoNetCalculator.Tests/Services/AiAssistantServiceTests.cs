@@ -158,6 +158,13 @@ namespace MosquitoNetCalculator.Tests.Services
         }
 
         [Fact]
+        public void GetProviderForModel_ReturnsFreeLlmApi_ForFreeLlmApiModelId()
+        {
+            Assert.Equal(AiProvider.FreeLlmApi, AiKeyValidator.GetProviderForModel("auto"));
+            Assert.Equal(AiProvider.FreeLlmApi, AiKeyValidator.GetProviderForModel("auto:fast"));
+        }
+
+        [Fact]
         public void GetProviderForModel_ReturnsOpenRouter_ForOpenRouterOrUnknownModel()
         {
             Assert.Equal(AiProvider.OpenRouter, AiKeyValidator.GetProviderForModel("google/gemma-3-27b-it:free"));
@@ -169,6 +176,7 @@ namespace MosquitoNetCalculator.Tests.Services
         {
             Assert.Equal(string.Empty, AiKeyValidator.GetApiKey(AiProvider.OpenRouter));
             Assert.Equal(string.Empty, AiKeyValidator.GetApiKey(AiProvider.Nvidia));
+            Assert.Equal(string.Empty, AiKeyValidator.GetApiKey(AiProvider.FreeLlmApi));
             Assert.False(AiKeyValidator.HasAnyConfiguredApiKey);
         }
 
@@ -177,9 +185,11 @@ namespace MosquitoNetCalculator.Tests.Services
         {
             AppSettingsServiceAi.SaveAiApiKey("test-openrouter-key");
             AppSettingsServiceAi.SaveAiNvidiaApiKey("test-nvidia-key");
+            AppSettingsServiceAi.SaveAiFreeLlmApiKey("test-freellm-key");
 
             Assert.Equal("test-openrouter-key", AiKeyValidator.GetApiKey(AiProvider.OpenRouter));
             Assert.Equal("test-nvidia-key", AiKeyValidator.GetApiKey(AiProvider.Nvidia));
+            Assert.Equal("test-freellm-key", AiKeyValidator.GetApiKey(AiProvider.FreeLlmApi));
             Assert.True(AiKeyValidator.HasAnyConfiguredApiKey);
         }
 

@@ -81,11 +81,12 @@ namespace MosquitoNetCalculator.Services
         /// system prompt — same fail-soft behaviour as the previous
         /// inline implementation in <c>AiAssistantService</c>.
         /// </summary>
-        public static string AppendRecentUpdates()
+        public static string AppendRecentUpdates(int maxVersions = 5)
         {
             try
             {
-                return FormatUpdateHistory(UpdateLog.AllNewestFirst());
+                var all = UpdateLog.AllNewestFirst();
+                return FormatUpdateHistory(all.Take(maxVersions));
             }
             catch
             {

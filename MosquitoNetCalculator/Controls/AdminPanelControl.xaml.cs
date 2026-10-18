@@ -61,11 +61,6 @@ namespace MosquitoNetCalculator.Controls
             DataContext = this;
             InitializeOfficesView();
             UpdateTokenStatus();
-
-            // Клик на любой элемент списка офисов → пробуем распознать устаревший ряд
-            // и скопировать напоминание. Один обработчик на ItemsControl ловит клик
-            // на любой дочерней карточке, не добавляя команды в каждую строку.
-            OfficesList.PreviewMouseLeftButtonUp += OfficesList_PreviewMouseLeftButtonUp;
         }
 
         /// <summary>
@@ -168,7 +163,6 @@ namespace MosquitoNetCalculator.Controls
                 int upToDateDevices = rows.Sum(r => r.Devices.Count(d => d.Status == OfficeStatus.UpToDate));
                 int outdatedRows = rows.Count(r => r.Status == OfficeStatus.Outdated);
                 TxtSummary.Text = $"{upToDateDevices} из {knownDevices} устройств актуальны";
-                TxtSummaryHint.Text = AdminPanelLogic.SummaryHint(outdatedRows);
                 TxtSummaryBadge.Text = $"{upToDateDevices}/{knownDevices}";
 
                 // Прогресс-бар сводки + состояние быстрых действий.
@@ -445,91 +439,6 @@ namespace MosquitoNetCalculator.Controls
 
                 // Панель показывает актуальное состояние gist после очистки.
                 await RefreshAsync(quiet: false, isInitial: false).ConfigureAwait(true);
-            }
-        }
-
-        /// <summary>
-        /// Клик на любую карточку офиса в «Обновления»: если это устаревший ряд —
-        /// копируем напоминание и показываем тост. Подсказка «Кликните…»
-        /// появляется только для таких карточек, так что логика тут безопасная.
-        /// </summary>
-        private void OfficesList_PreviewMouseLeftButtonUp(object sender, MouseButtonEventArgs e)
-        {
-            // Режим отвязки — работа с чекбоксами, а не «скопировать напоминание».
-            if (_isUnbindMode) return;
-
-            // Поднимаемся по визуальному дереву от OriginalSource до карточки-ItemControl-Item.
-            var dep = e.OriginalSource as DependencyObject;
-            ContentPresenter? presenter = null;
-            while (dep != null)
-            {
-                // Preview-событие туннелирует РАНЬШЕ bubbling-пары: помечаем его
-                // Handled — WPF НЕ поднимет MouseLeftButtonUp у адресата, и тот
-                // навсегда останется с захваченной мышью (панель «зависает»).
-                // Поэтому клики по интерактивным элементам карточки (чекбоксы,
-                // кнопки, поля) — НЕ наши: пропускаем без пометки Handled.
-                if (dep is System.Windows.Controls.CheckBox
-                    || dep is System.Windows.Controls.Primitives.ButtonBase
-                    || dep is System.Windows.Controls.TextBox)
-                    return;
-
-                if (dep is ContentPresenter cp && OfficesList.ItemContainerGenerator.IndexFromContainer(cp) >= 0)
-                {
-                    presenter = cp;
-                    break;
-                }
-                dep = VisualTreeHelper.GetParent(dep) ?? LogicalTreeHelper.GetParent(dep);
-            }
-            if (presenter == null) return;
-
-            var row = presenter.Content as OfficeStatusRow;
-            if (row == null || row.Status != OfficeStatus.Outdated) return;
-
-            e.Handled = true;
-            CopyReminder(row);
-        }
-
-        /// <summary>
-        /// Копирует в буфер обмена напоминание об обновлении для конкретного офиса
-        /// и показывает тост «Напоминание скопировано». Текст —
-        /// <see cref="Services.AdminPanelLogic.SingleReminderText"/>; копирование+тост —
-        /// общий хелпер <see cref="CopyReminderTextToClipboard"/>.
-        /// </summary>
-        private void CopyReminder(OfficeStatusRow row)
-        {
-            // В офисе может быть несколько устройств — напоминание адресуем
-            // конкретному устаревшему ПК (его версия из чипа устройства).
-            var outdatedDevice = row.Devices.FirstOrDefault(d => d.Status == OfficeStatus.Outdated);
-            string text = AdminPanelLogic.SingleReminderText(
-                row.LocationName,
-                outdatedDevice?.DeviceLabel,
-                outdatedDevice?.Version ?? row.Version,
-                _latestVersion,
-                _latestDownloadUrl ?? AdminPanelLogic.FallbackDownloadUrl);
-            CopyReminderTextToClipboard(text, $"Напоминание для «{row.LocationName}». Можно вставить в чат/мессенджер.");
-        }
-
-        /// <summary>Единый путь «текст → буфер → тост» для обоих напоминаний:
-        /// одна обработка капризного Clipboard, один формат тостов.</summary>
-        private void CopyReminderTextToClipboard(string text, string toastBody)
-        {
-            try
-            {
-                Clipboard.SetText(text);
-                ToastService.ShowToast(
-                    "Напоминание скопировано",
-                    toastBody,
-                    ToastType.Success,
-                    durationMs: 4000);
-            }
-            catch (Exception ex)
-            {
-                // Clipboard на Windows иногда бросает — фоллбэк через Toast.
-                ToastService.ShowToast(
-                    "Не удалось скопировать",
-                    ex.Message,
-                    ToastType.Error,
-                    durationMs: 4000);
             }
         }
 

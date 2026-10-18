@@ -17,6 +17,7 @@ namespace MosquitoNetCalculator.ViewModels
         public CalculationViewModel CalcVM { get; } = new();
         public OrdersHistoryViewModel OrdersVM { get; } = new();
         public UndoRedoService UndoRedo => UndoRedoService.Instance;
+        public INavigationRouter Router { get; } = new NavigationRouter();
 
         // Data Properties
         public ClientInfo ClientInfo { get; } = new();
@@ -38,6 +39,11 @@ namespace MosquitoNetCalculator.ViewModels
 
         public MainWindowViewModel()
         {
+            Router.Register(CalcVM, "Calc");
+            Router.Register(OrdersVM, "Orders");
+            Router.Register(PricesVM, "Prices");
+            Router.NavigateTo(CalcVM, "Calc");
+
             // v3.51: первые 5 карточек «Истории обновлений» раскрыты —
             // правило по умолчанию живёт в UpdatesListLogic.DefaultExpandedCards.
             foreach (var entry in UpdateLog.AllNewestFirst(Controls.UpdatesListLogic.DefaultExpandedCards))
@@ -81,7 +87,6 @@ namespace MosquitoNetCalculator.ViewModels
 
             ClientInfo.ContractDate = DateTime.Today;
             string defaultPrefix = AppSettingsService.LoadContractPrefix();
-            ClientInfo.ClientName = "";
             ClientInfo.ClientPhone = "";
             ClientInfo.ClientAddress = "";
             ClientInfo.Notes = "";

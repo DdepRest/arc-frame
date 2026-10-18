@@ -19,12 +19,35 @@ namespace MosquitoNetCalculator.Services
         // Data lives in %AppData%\MosquitoNetCalculator\, not in the app directory.
         // Updates may replace the app directory — user settings must survive,
         // so they go into %AppData%.
-        public static string SettingsPath { get; set; } =
+        private static string _settingsPath =
             Path.Combine(
                 Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
                 "MosquitoNetCalculator",
                 "settings.json");
+
+        public static string SettingsPath
+        {
+            get => _settingsPath;
+            set
+            {
+                lock (_lock)
+                {
+                    _settingsPath = value;
+                    _cachedSettings = null;
+                }
+            }
+        }
         private static readonly object _lock = new();
+        private static Settings? _cachedSettings;
+
+        /// <summary>Сбрасывает кэш настроек в памяти (для тестов и принудительного перечитывания).</summary>
+        public static void InvalidateCache()
+        {
+            lock (_lock)
+            {
+                _cachedSettings = null;
+            }
+        }
 
         private class Settings
         {
@@ -60,21 +83,29 @@ namespace MosquitoNetCalculator.Services
 
         private static Settings LoadSettings()
         {
+            if (_cachedSettings != null) return _cachedSettings;
+
             try
             {
                 if (File.Exists(SettingsPath))
                 {
                     var json = File.ReadAllText(SettingsPath);
                     var settings = JsonSerializer.Deserialize<Settings>(json);
-                    if (settings != null) return settings;
+                    if (settings != null)
+                    {
+                        _cachedSettings = settings;
+                        return settings;
+                    }
                 }
             }
             catch (Exception ex) { System.Diagnostics.Debug.WriteLine($"[AppSettings] load failed: {ex.Message}"); }
-            return new Settings();
+            _cachedSettings = new Settings();
+            return _cachedSettings;
         }
 
         private static void SaveSettings(Settings settings)
         {
+            _cachedSettings = settings;
             try
             {
                 File.WriteAllText(SettingsPath, JsonSerializer.Serialize(settings, new JsonSerializerOptions { WriteIndented = true }));
@@ -441,6 +472,41 @@ namespace MosquitoNetCalculator.Services
 
         /// <summary>Вшитый пароль входа в админ-панель.</summary>
         public const string EmbeddedAdminPassword = "AZ123123Az";
+
+        private static bool _isAdminSessionUnlocked;
+
+        /// <summary>
+        /// Флаг успешной проверки пароля администратора в текущем сеансе работы приложения.
+        /// Сбрасывается при перезапуске программы.
+        /// </summary>
+        public static bool IsAdminUnlocked => _isAdminSessionUnlocked;
+
+        /// <summary>
+        /// Помечает сессию администратора как авторизованную (действует до закрытия приложения).
+        /// </summary>
+        public static void UnlockAdminSession() => _isAdminSessionUnlocked = true;
+
+        /// <summary>
+        /// Сбрасывает авторизацию сессии администратора (для тестов или явного логаута).
+        /// </summary>
+        public static void ResetAdminSession() => _isAdminSessionUnlocked = false;
+
+        /// <summary>
+        /// Запрашивает пароль администратора только если сессия ещё не авторизована.
+        /// Возвращает true, если доступ разрешён (уже введён ранее или успешно подтверждён сейчас).
+        /// </summary>
+        public static bool EnsureAdminUnlocked(System.Windows.Window? owner = null)
+        {
+            if (_isAdminSessionUnlocked) return true;
+
+            var enterDialog = new Controls.AdminPasswordWindow { Owner = owner };
+            if (enterDialog.ShowDialog() == true)
+            {
+                UnlockAdminSession();
+                return true;
+            }
+            return false;
+        }
 
         /// <summary>
         /// Проверяет введённый пароль против вшитого.

@@ -420,6 +420,7 @@ namespace MosquitoNetCalculator.Tests.Helpers
             application.Resources["InverseBool"] = new MosquitoNetCalculator.Converters.InverseBoolConverter();
             application.Resources["BoolVisibility"] = new MosquitoNetCalculator.Converters.BoolVisibilityConverter();
             application.Resources["InverseBoolVisibility"] = new MosquitoNetCalculator.Converters.InverseBoolVisibilityConverter();
+            application.Resources["ChangePartConv"] = new MosquitoNetCalculator.Converters.ChangePartConverter();
         }
 
         private static string LocateSourceProject()

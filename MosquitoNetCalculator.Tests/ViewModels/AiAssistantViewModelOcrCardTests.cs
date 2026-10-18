@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using MosquitoNetCalculator.Models;
+using MosquitoNetCalculator.Services;
 using MosquitoNetCalculator.ViewModels;
 using Xunit;
 
@@ -330,6 +331,88 @@ namespace MosquitoNetCalculator.Tests.ViewModels
             Assert.True(string.IsNullOrEmpty(form.HeightText));
             Assert.Equal("Белый", form.SelectedColor);  // color still pre-filled
             Assert.Equal("1", form.QuantityText);       // quantity still pre-filled
+        }
+
+        // ── Several positions on one screenshot ───────────────────────
+
+        [Fact]
+        public void TwoPositionsOnOneScreenshot_FormCarriesBothAndPlanHasTwoSteps()
+        {
+            // The reported case: the manager sent one screenshot with two rows
+            // («ПМС Anwis, бел. 1 304x1593» and «ПМС Anwis, бел. 1 724x1593»)
+            // and only one position reached the order.
+            var vm = new AiAssistantViewModel();
+            vm.Messages.Add(new AiChatMessage
+            {
+                Text = "",
+                IsUser = true,
+                AttachmentCount = 1,
+                AttachmentLabels = { "Снимок экрана.jpg" },
+                AttachmentOcr = { "ПМС Anwis, бел. 1 304x1593\nПМС Anwis, бел. 1 724x1593" }
+            });
+
+            SetPrivateField(vm, "_currentTurnHadImage", true);
+            SetPrivateField(vm, "_currentTurnHadOcr", true);
+
+            // The model asks for the missing profile instead of adding anything.
+            const string modelReply = "Какой режим Anwis использовать?";
+            var assistantMsg = new AiChatMessage { Text = modelReply, IsUser = false, IsStreaming = true };
+            Finalize(vm, assistantMsg, modelReply);
+
+            var form = assistantMsg.ClarificationForm;
+            Assert.NotNull(form);
+            Assert.Equal(2, form!.SizeRows.Count);
+
+            form.SelectedAnwisMode = "ПП";
+            form.SelectedInstallation = "С монтажом";
+
+            AiActionPlan? plan = null;
+            vm.PlanReceived += p => plan = p;
+            vm.SubmitClarificationForm(assistantMsg);
+
+            // Both positions are on the plan preview card.
+            var confirm = vm.Messages.Last();
+            Assert.True(confirm.HasActionPlan);
+            Assert.Equal(2, confirm.ActionPlan!.Steps.Count);
+            Assert.Null(plan); // nothing runs before «Выполнить»
+
+            vm.ConfirmPlan(confirm);
+
+            Assert.NotNull(plan);
+            Assert.Equal(2, plan!.Steps.Count);
+            Assert.Equal(304, plan.Steps[0].Params.Width);
+            Assert.Equal(724, plan.Steps[1].Params.Width);
+            Assert.Equal(AiCommandType.AddItem, plan.Steps[0].CommandType);
+        }
+
+        [Fact]
+        public void TwoPositionsParsedByTheModel_SurviveTheClarificationCard()
+        {
+            // The model DID understand the picture and returned two add_item
+            // steps; the local «не выдумывай режим» interception must not
+            // flatten them back to a single position.
+            var vm = new AiAssistantViewModel();
+            vm.Messages.Add(new AiChatMessage { Text = "сделай сетки по размерам", IsUser = true });
+
+            const string modelReply = """
+                ```json
+                { "mode": "plan", "reply": "Готов добавить две позиции.", "steps": [
+                  { "action": "add_item", "params": { "type": "Anwis", "color": "Белый", "width": 304, "height": 1593, "quantity": 1, "anwis_mode": "ББ60" } },
+                  { "action": "add_item", "params": { "type": "Anwis", "color": "Белый", "width": 724, "height": 1593, "quantity": 1, "anwis_mode": "ББ60" } }
+                ] }
+                ```
+                """;
+
+            var assistantMsg = new AiChatMessage { Text = modelReply, IsUser = false, IsStreaming = true };
+            Finalize(vm, assistantMsg, modelReply);
+
+            var form = assistantMsg.ClarificationForm;
+            Assert.NotNull(form);
+            Assert.Equal(2, form!.SizeRows.Count);
+            Assert.Equal("304", form.SizeRows[0].WidthText);
+            Assert.Equal("724", form.SizeRows[1].WidthText);
+            // The guessed profile is never copied — the user picks it.
+            Assert.Equal(AiClarificationForm.UnspecifiedAnwisMode, form.SelectedAnwisMode);
         }
     }
 }

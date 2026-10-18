@@ -56,6 +56,9 @@ namespace MosquitoNetCalculator.Services
             new("/повторить", "Повторить отменённое (Ctrl+Y)", "/redo"),
             new("/очистить", "Очистить расчёт (с подтверждением)", "/clear"),
             new("/объясни [последнюю|позицию N|всё]", "Объяснить расчёт", "/explain"),
+            new("/замер", "Правила замера сеток Anwis и светового проёма", "/anwis, /measure"),
+            new("/крепления", "Справка по Z-креплениям и зацепам", "/brackets"),
+            new("/faq", "База знаний и частые вопросы (офлайн)", "/kb"),
             new("/помощь", "Список всех команд", "/help, /helpme")
         };
 
@@ -125,6 +128,15 @@ namespace MosquitoNetCalculator.Services
                 case "/объясни" or "/explain":
                     return ExplainRoute(args);
 
+                case "/замер" or "/anwis" or "/measure":
+                    return Info(AnwisMeasurementText());
+
+                case "/крепления" or "/brackets":
+                    return Info(BracketsText());
+
+                case "/faq" or "/kb":
+                    return Info(FaqText());
+
                 case "/помощь" or "/help" or "/helpme":
                     return Info(HelpText);
 
@@ -136,6 +148,54 @@ namespace MosquitoNetCalculator.Services
                         Message = $"Неизвестная команда «{cmd}». Доступные команды:\n" + HelpText
                     };
             }
+        }
+
+        private static string AnwisMeasurementText()
+        {
+            var sb = new StringBuilder();
+            sb.AppendLine("## 📐 Правила замера и расчёта москитных сеток Anwis (Вставные / Крыло)");
+            sb.AppendLine();
+            sb.AppendLine("Сетки Anwis устанавливаются в световой проём створки изнутри помещения без сверления рамы.");
+            sb.AppendLine();
+            sb.AppendLine("### Режимы расчёта в A.R.C. Frame:");
+            sb.AppendLine("1. **Световой проём (Проём)** — чистый размер между внутренними кромками коробки окна (от резинки до резинки при открытой створке).");
+            sb.AppendLine("   • Габарит сетки вычисляется автоматически прибавлением ширины полочки профиля крыла (+25 мм по периметру).");
+            sb.AppendLine("2. **Габарит** — окончательный размер рамки сетки по внешним краям.");
+            sb.AppendLine("3. **ББ60 (Базовый брус 60 мм)** — замер по фальцу для типовых 60-мм систем (Rehau Euro 60, KBE 58/60, Veka Euroline).");
+            sb.AppendLine("4. **ББ70 (Базовый брус 70 мм)** — замер по фальцу для широких 70–82 мм профилей (Rehau Grazio/Delight, KBE 70, Veka Softline).");
+            sb.AppendLine();
+            sb.AppendLine("💡 **Рекомендация по замеру:** меряйте световой проём в трёх точках (сверху, посередине, снизу) и берите минимальное значение.");
+            return sb.ToString();
+        }
+
+        private static string BracketsText()
+        {
+            var sb = new StringBuilder();
+            sb.AppendLine("## 🔩 Справка по типам креплений москитных сеток");
+            sb.AppendLine();
+            sb.AppendLine("• **Поворотные Z-зацепы (крючки Anwis):** металлические лепестки на заклёпках. Заводятся за наплав рамы изнутри. Доступны размеры зацепов от 3 до 26 мм в зависимости от толщины наплава с уплотнителем.");
+            sb.AppendLine("• **Пластиковые Z-уголки (стандартный наружный монтаж):** пара нижних (малые) и пара верхних (удлинённые) уголков, прикручиваемых на саморезы к внешней стороне рамы.");
+            sb.AppendLine("• **Металлические Z-крепления:** усиленный аналог пластиковых уголков из окрашенной нержавеющей стали (рекомендуется для верхних этажей и ветровых нагрузок).");
+            sb.AppendLine("• **Плунжерные крепления (штоки с пружиной):** используются при невозможности установить наружные уголки (решётки, четверти вплотную).");
+            return sb.ToString();
+        }
+
+        private static string FaqText()
+        {
+            var sb = new StringBuilder();
+            sb.AppendLine("## 📚 База знаний и частые вопросы (FAQ)");
+            sb.AppendLine();
+            sb.AppendLine("• **В чём разница между полотнами FiberGlass, Антикошка (PetScreen) и Антипыль (Poll-Tex)?**");
+            sb.AppendLine("  - *FiberGlass (Стандарт):* серое стекловолокно с ПВХ покрытием, ячейка 1.2×1.2 мм.");
+            sb.AppendLine("  - *Антикошка (PetScreen):* сверхпрочные полиэстеровые нити в 3 раза толще стандарта, выдерживают когти и вес животных.");
+            sb.AppendLine("  - *Антипыль / Антипыльца:* мелкая ячейка 0.25×1.0 мм, задерживает аллергены, дорожную пыль и мошек.");
+            sb.AppendLine();
+            sb.AppendLine("• **Как обозначаются изделия на чертежах?**");
+            sb.AppendLine("  - **«#»** (штриховка / решётка) — москитная сетка.");
+            sb.AppendLine("  - **«СП»** / **«с/п»** — стеклопакет (глухое остекление, не сетка!).");
+            sb.AppendLine();
+            sb.AppendLine("• **Команды управления:** /товары, /цены, /итоги, /замер, /крепления, /отменить (Ctrl+Z).");
+            return sb.ToString();
         }
 
         private static RouteResult ExplainRoute(string args)
@@ -190,7 +250,7 @@ namespace MosquitoNetCalculator.Services
                 sb.AppendLine("Расчёт пуст.");
             if (!string.IsNullOrWhiteSpace(model))
                 sb.AppendLine($"Модель: {model}");
-            var configuredProviders = new[] { AiProvider.OpenRouter, AiProvider.Nvidia }
+            var configuredProviders = new[] { AiProvider.OpenRouter, AiProvider.Nvidia, AiProvider.FreeLlmApi }
                 .Where(provider => !string.IsNullOrWhiteSpace(AiKeyValidator.GetApiKey(provider)))
                 .Select(AiKeyValidator.ProviderName)
                 .ToList();

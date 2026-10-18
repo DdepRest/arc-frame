@@ -139,5 +139,35 @@ namespace MosquitoNetCalculator.Tests.Models
             Assert.False(item.IsWidthOnly);
             Assert.True(item.IsInstallationApplicable);
         }
+
+        [Theory]
+        [InlineData("ПМС", "Anwis")]
+        [InlineData("пмс", "Anwis")]
+        [InlineData("ПМС Anwis", "Anwis")]
+        [InlineData("МС", "Anwis")]
+        [InlineData("м/с", "Anwis")]
+        [InlineData("сетка", "Anwis")]
+        [InlineData("сетка Anwis", "Anwis")]
+        [InlineData("анвис", "Anwis")]
+        [InlineData("козырек", "Козырёк")]
+        [InlineData("отливы", "Отлив")]
+        [InlineData("дверная", "Дверная сетка")]
+        [InlineData("на металле", "Оконная на метал. крепл.")]
+        [InlineData("на петлях", "На навесах")]
+        public void NormalizeProductName_ResolvesCommonAliases(string raw, string expected)
+        {
+            Assert.Equal(expected, ProductCatalog.NormalizeProductName(raw));
+        }
+
+        [Theory]
+        [InlineData("ПМС", true)]
+        [InlineData("пмс", true)]
+        [InlineData("ПМС Anwis", true)]
+        [InlineData("МС", true)]
+        [InlineData("НесуществующийТовар", false)]
+        public void IsKnownProduct_RecognizesAliases(string name, bool expected)
+        {
+            Assert.Equal(expected, ProductCatalog.IsKnownProduct(name));
+        }
     }
 }

@@ -1,5 +1,8 @@
 using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
+using System.ComponentModel;
+using System.Runtime.CompilerServices;
 using MosquitoNetCalculator.Services;
 
 namespace MosquitoNetCalculator.Models
@@ -36,10 +39,14 @@ namespace MosquitoNetCalculator.Models
     /// <summary>
     /// One unit of work inside an <see cref="AiActionPlan"/>. Wraps a single
     /// <see cref="AiCommand"/> plus plan-time bookkeeping (preview text,
-    /// validation messages, per-step status).
+    /// validation messages, per-step status, inline-editable properties).
     /// </summary>
-    public sealed class AiActionStep
+    public sealed class AiActionStep : INotifyPropertyChanged
     {
+        private string _previewText = "";
+        private bool _hasDiscrepancy;
+        private string? _discrepancyWarning;
+
         public string StepId { get; } = Guid.NewGuid().ToString("N");
 
         public AiCommandType CommandType { get; init; }
@@ -47,12 +54,205 @@ namespace MosquitoNetCalculator.Models
         public AiCommandParams Params { get; init; } = new();
 
         /// <summary>Short human-readable description shown in the plan card.</summary>
-        public string PreviewText { get; init; } = "";
+        public string PreviewText
+        {
+            get => string.IsNullOrWhiteSpace(_previewText) ? BuildDynamicPreviewText() : _previewText;
+            init => _previewText = value;
+        }
+
+        public bool IsItemStep => CommandType is AiCommandType.AddItem or AiCommandType.UpdateItemByIndex;
+
+        public string ItemType
+        {
+            get => Params.Type;
+            set
+            {
+                if (Params.Type == value) return;
+                Params.Type = value;
+                OnPropertyChanged();
+                OnPropertyChanged(nameof(IsAnwis));
+                OnPropertyChanged(nameof(AvailableColors));
+                OnPropertyChanged(nameof(HasColorChoices));
+                RefreshPreview();
+            }
+        }
+
+        public IReadOnlyList<string> AvailableColors
+        {
+            get
+            {
+                var colors = Services.AiFactsProvider.GetColorsFor(ItemType);
+                if (colors.Count == 0) return new[] { "Белый", "Коричневый", "Антрацит" };
+                return colors;
+            }
+        }
+
+        public bool HasColorChoices => AvailableColors.Count > 0;
+
+        public int Width
+        {
+            get => Params.Width;
+            set
+            {
+                if (Params.Width == value) return;
+                Params.Width = value;
+                OnPropertyChanged();
+                RefreshPreview();
+            }
+        }
+
+        public int Height
+        {
+            get => Params.Height;
+            set
+            {
+                if (Params.Height == value) return;
+                Params.Height = value;
+                OnPropertyChanged();
+                RefreshPreview();
+            }
+        }
+
+        public string Color
+        {
+            get
+            {
+                if (string.IsNullOrWhiteSpace(Params.Color) && IsItemStep)
+                {
+                    var def = Services.AiFactsProvider.GetDefaultColor(ItemType);
+                    return !string.IsNullOrWhiteSpace(def) ? def : "Белый";
+                }
+                return Params.Color;
+            }
+            set
+            {
+                if (Params.Color == value) return;
+                Params.Color = value;
+                OnPropertyChanged();
+                RefreshPreview();
+            }
+        }
+
+        public double Quantity
+        {
+            get => Params.Quantity;
+            set
+            {
+                if (Math.Abs(Params.Quantity - value) < 0.001) return;
+                Params.Quantity = value;
+                OnPropertyChanged();
+                RefreshPreview();
+            }
+        }
+
+        public AnwisSizeMode AnwisMode
+        {
+            get => Params.AnwisMode;
+            set
+            {
+                if (Params.AnwisMode == value) return;
+                Params.AnwisMode = value;
+                OnPropertyChanged();
+                RefreshPreview();
+            }
+        }
+
+        public int InstallationMode
+        {
+            get => Params.InstallationMode;
+            set
+            {
+                if (Params.InstallationMode == value) return;
+                Params.InstallationMode = value;
+                OnPropertyChanged();
+                RefreshPreview();
+            }
+        }
+
+        public bool IsAnwis => (Params.Type?.Contains("anwis", StringComparison.OrdinalIgnoreCase) ?? false) ||
+                               (Params.Type?.Contains("анвис", StringComparison.OrdinalIgnoreCase) ?? false);
+
+        public bool HasDiscrepancy
+        {
+            get => _hasDiscrepancy;
+            set
+            {
+                if (_hasDiscrepancy == value) return;
+                _hasDiscrepancy = value;
+                OnPropertyChanged();
+            }
+        }
+
+        public string? DiscrepancyWarning
+        {
+            get => _discrepancyWarning;
+            set
+            {
+                if (_discrepancyWarning == value) return;
+                _discrepancyWarning = value;
+                OnPropertyChanged();
+            }
+        }
+
+        public string ItemHeader
+        {
+            get
+            {
+                if (CommandType == AiCommandType.UpdateItemByIndex)
+                    return $"#{Params.ItemIndex}: {Params.Type}";
+                return Params.Type;
+            }
+        }
+
+        public bool IsAnticat => Params.IsAnticat == true;
+
+        public string AnwisModeLabel => Services.AiKeywordLexicon.AnwisModeLabel(Params.AnwisMode);
+
+        public string InstallationLabel => Params.InstallationMode switch
+        {
+            0 => "С монтажом",
+            1 => "Без монтажа",
+            2 => "В конструкцию",
+            _ => ""
+        };
+
+        public bool HasInstallationLabel => !string.IsNullOrEmpty(InstallationLabel);
+
+        private void RefreshPreview()
+        {
+            _previewText = BuildDynamicPreviewText();
+            OnPropertyChanged(nameof(PreviewText));
+            OnPropertyChanged(nameof(ItemHeader));
+            OnPropertyChanged(nameof(IsAnticat));
+            OnPropertyChanged(nameof(AnwisModeLabel));
+            OnPropertyChanged(nameof(InstallationLabel));
+            OnPropertyChanged(nameof(HasInstallationLabel));
+        }
+
+        private string BuildDynamicPreviewText()
+        {
+            if (CommandType == AiCommandType.AddItem)
+            {
+                var sb = new System.Text.StringBuilder();
+                sb.Append($"Добавить {Params.Type}");
+                if (!string.IsNullOrWhiteSpace(Params.Color)) sb.Append($", {Params.Color}");
+                if (Params.Width > 0 && Params.Height > 0) sb.Append($", {Params.Width}×{Params.Height} мм");
+                if (Params.Quantity > 1) sb.Append($" ({Params.Quantity} шт)");
+                if (IsAnwis && Params.AnwisMode != AnwisSizeMode.РазмерПроёма) sb.Append($" [{Params.AnwisMode}]");
+                if (Params.InstallationMode == 0) sb.Append(" с монтажом");
+                return sb.ToString();
+            }
+            return _previewText;
+        }
 
         /// <summary>Local validation messages (empty when the step is valid).</summary>
         public List<string> ValidationMessages { get; } = new();
 
         public AiPlanStatus Status { get; set; } = AiPlanStatus.Draft;
+
+        public event PropertyChangedEventHandler? PropertyChanged;
+        private void OnPropertyChanged([CallerMemberName] string? name = null)
+            => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
 
         /// <summary>Converts the step back to an executable command.</summary>
         public AiCommand ToCommand() => new() { Type = CommandType, Params = Params };
@@ -82,9 +282,18 @@ namespace MosquitoNetCalculator.Models
         /// <summary>The assistant's reply text accompanying the plan.</summary>
         public string ReplyText { get; init; } = "";
 
+        /// <summary>Reasoning or explanation behind the generated plan.</summary>
+        public string? Reasoning { get; set; }
+
         public AiPlanMode Mode { get; init; } = AiPlanMode.Plan;
 
-        public List<AiActionStep> Steps { get; } = new();
+        public ObservableCollection<AiActionStep> Steps { get; } = new();
+
+        public void RemoveStep(AiActionStep step)
+        {
+            if (step != null)
+                Steps.Remove(step);
+        }
 
         /// <summary>
         /// True when the plan must be explicitly confirmed before execution

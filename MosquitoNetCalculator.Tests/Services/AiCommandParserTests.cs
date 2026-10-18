@@ -366,5 +366,32 @@ namespace MosquitoNetCalculator.Tests.Services
             Assert.Equal(1800, response.Action.Params.Price);
             Assert.Equal(AnwisSizeMode.Брусбокс60, response.Action.Params.AnwisMode);
         }
+
+        [Fact]
+        public void TryParse_EnglishChainOfThoughtLeak_ExtractsCommandFromProse()
+        {
+            const string cot =
+                "The user wants to calculate an \"Anwis\" window (проём) with installation (монтаж) based on a hand-drawn sketch.\n" +
+                "1. Analyze the image:\n" +
+                "   Below the rectangle: 607 (width).\n" +
+                "   To the left: 1278 (height).\n" +
+                "   Width = 607 mm, Height = 1278 mm.\n" +
+                "2. Determine the task:\n" +
+                "   Mode: Anwis (from text).\n" +
+                "   Installation mode: монтаж";
+
+            var (response, isValid) = AiCommandParser.TryParse(cot, "проём с монтажом anwis");
+
+            Assert.True(isValid);
+            Assert.NotNull(response.Action);
+            Assert.Equal(AiCommandType.AddItem, response.Action!.Type);
+            Assert.Equal("Anwis", response.Action.Params.Type);
+            Assert.Equal(607, response.Action.Params.Width);
+            Assert.Equal(1278, response.Action.Params.Height);
+            Assert.Equal(AnwisSizeMode.РазмерПроёма, response.Action.Params.AnwisMode);
+            Assert.Equal(0, response.Action.Params.InstallationMode);
+            Assert.Contains("607×1278", response.Reply);
+            Assert.DoesNotContain("The user wants", response.Reply);
+        }
     }
 }

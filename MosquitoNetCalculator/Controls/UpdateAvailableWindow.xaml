@@ -42,7 +42,7 @@
                     Background="{DynamicResource HeaderBg}"
                     CornerRadius="{DynamicResource Radius.CardHeader}"
                     Height="32"
-                    Padding="14,0"
+                    Padding="{DynamicResource Pad.TitleBarH}"
                     MouseLeftButtonDown="TitleBar_MouseLeftButtonDown">
                 <Grid>
                     <Grid.ColumnDefinitions>
@@ -50,7 +50,7 @@
                         <ColumnDefinition Width="Auto"/>
                     </Grid.ColumnDefinitions>
                     <TextBlock Text="Доступно обновление"
-                               FontSize="12"
+                               FontSize="{StaticResource Type.Body}"
                                FontWeight="SemiBold"
                                Foreground="{DynamicResource TextPrimary}"
                                VerticalAlignment="Center"
@@ -60,7 +60,7 @@
                             Width="40" Height="40"
                             Style="{DynamicResource DialogCloseButton}"
                             Click="CloseButton_Click">
-                        <TextBlock Text="&#xE8BB;" FontFamily="{DynamicResource Font.Icon}" FontSize="11"/>
+                        <TextBlock Text="&#xE8BB;" FontFamily="{DynamicResource Font.Icon}" FontSize="{StaticResource Type.Caption}"/>
                     </Button>
                 </Grid>
             </Border>
@@ -69,11 +69,11 @@
             <Border Grid.Row="1"
                     Background="{DynamicResource Accent}"
                     CornerRadius="{DynamicResource Radius.Md}"
-                    Padding="12,5"
+                    Padding="{DynamicResource Pad.DialogBanner}"
                     HorizontalAlignment="Left"
-                    Margin="24,14,24,0">
+                    Margin="{DynamicResource Gap.DialogBanner}">
                 <TextBlock x:Name="VersionText"
-                           FontSize="14"
+                           FontSize="{StaticResource Type.BodyLg}"
                            FontWeight="Bold"
                            Foreground="{DynamicResource OnAccent}"/>
             </Border>
@@ -84,39 +84,39 @@
                           MaxHeight="220"
                           VerticalScrollBarVisibility="Auto"
                           HorizontalScrollBarVisibility="Disabled"
-                          Margin="24,14,24,0">
+                          Margin="{DynamicResource Gap.DialogBanner}">
                 <StackPanel x:Name="ChangelogPanel"/>
             </ScrollViewer>
 
             <TextBlock x:Name="NoChangelogText"
                        Grid.Row="2"
                        Text="Список изменений недоступен."
-                       FontSize="12"
+                       FontSize="{StaticResource Type.Body}"
                        Foreground="{DynamicResource TextMuted}"
                        FontStyle="Italic"
-                       Margin="24,14,24,0"
+                       Margin="{DynamicResource Gap.DialogBanner}"
                        Visibility="Collapsed"/>
 
             <!-- Hint -->
             <TextBlock Grid.Row="3"
                        Text="Приложение будет перезапущено после установки."
-                       FontSize="12"
+                       FontSize="{StaticResource Type.Body}"
                        Foreground="{DynamicResource TextMuted}"
                        TextWrapping="Wrap"
-                       Margin="24,16,24,0"/>
+                       Margin="{DynamicResource Gap.EconomyDialog}"/>
 
             <!-- Buttons -->
             <StackPanel Grid.Row="4"
                         Orientation="Horizontal"
                         HorizontalAlignment="Right"
-                        Margin="24,20,24,20">
+                        Margin="{DynamicResource Gap.DialogFooterLg}">
                 <Button x:Name="BtnCancel"
                         Content="Отмена"
                         Style="{DynamicResource GhostButton}"
                         MinWidth="90"
-                        Padding="16,7"
+                        Padding="{DynamicResource Pad.DialogBtn}"
                         Margin="{DynamicResource Gap.Left}"
-                        FontSize="12"
+                        FontSize="{StaticResource Type.Body}"
                         FontWeight="Normal"
                         Cursor="Hand"
                         IsCancel="True"
@@ -127,13 +127,13 @@
                             Margin="{DynamicResource Gap.LeftSm}"
                             Visibility="Collapsed">
                     <TextBlock Text="Не рекомендуется откладывать"
-                               FontSize="11"
+                               FontSize="{StaticResource Type.Caption}"
                                FontStyle="Italic"
                                Foreground="{DynamicResource TextMuted}"
                                TextWrapping="Wrap"
                                MaxWidth="140"/>
                     <TextBlock Text="обновление надолго"
-                               FontSize="11"
+                               FontSize="{StaticResource Type.Caption}"
                                FontStyle="Italic"
                                Foreground="{DynamicResource TextMuted}"
                                TextWrapping="Wrap"
@@ -143,9 +143,9 @@
                         Content="Скачать и установить"
                         Style="{DynamicResource SuccessButton}"
                         MinWidth="150"
-                        Padding="16,7"
+                        Padding="{DynamicResource Pad.DialogBtn}"
                         Margin="{DynamicResource Gap.Left}"
-                        FontSize="12"
+                        FontSize="{StaticResource Type.Body}"
                         FontWeight="SemiBold"
                         Cursor="Hand"
                         IsDefault="True"

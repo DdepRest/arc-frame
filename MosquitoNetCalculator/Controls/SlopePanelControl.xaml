@@ -1,170 +1,245 @@
-﻿<UserControl x:Class="MosquitoNetCalculator.Controls.SlopePanelControl"
+<UserControl x:Class="MosquitoNetCalculator.Controls.SlopePanelControl"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:controls="clr-namespace:MosquitoNetCalculator.Controls">
-    <Grid Margin="16,0,16,16">
+    <Grid Margin="{DynamicResource Gap.DialogHost}">
         <Grid.RowDefinitions>
             <RowDefinition Height="*"/>
             <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
 
         <!-- ═══════════════════════════════════════════════════════ -->
-        <!-- SCROLLABLE BODY                                         -->
+        <!-- 2-COLUMN SPLIT WORKSPACE BODY                           -->
         <!-- ═══════════════════════════════════════════════════════ -->
-        <ScrollViewer Grid.Row="0"
-                      VerticalScrollBarVisibility="Auto"
-                      HorizontalScrollBarVisibility="Disabled"
-                      Padding="{DynamicResource Gap.BlockLg}">
-            <StackPanel>
+        <Grid Grid.Row="0">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="320"/>
+                <ColumnDefinition Width="*"/>
+            </Grid.ColumnDefinitions>
 
-                <!-- BETA warning banner -->
-                <Border x:Name="BetaBanner"
-                        Background="{DynamicResource BadgeWarningBg}"
-                        BorderBrush="{DynamicResource BadgeWarningFg}"
-                        BorderThickness="1"
-                        CornerRadius="{DynamicResource Radius.Md}"
-                        Margin="0,12,0,12"
-                        Padding="12,10"
-                        SnapsToDevicePixels="True">
-                    <Grid>
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="Auto"/>
-                            <ColumnDefinition Width="*"/>
-                            <ColumnDefinition Width="Auto"/>
-                        </Grid.ColumnDefinitions>
-                        <TextBlock Grid.Column="0"
-                                   Text="&#xE7BA;"
-                                   FontFamily="{DynamicResource Font.Icon}"
-                                   FontSize="18"
-                                   Foreground="{DynamicResource BadgeWarningFg}"
-                                   VerticalAlignment="Top"
-                                   Margin="0,0,10,0"/>
-                        <StackPanel Grid.Column="1">
-                            <TextBlock Text="BETA — Автопросчёт откосов"
-                                       FontSize="12"
-                                       FontWeight="SemiBold"
-                                       Foreground="{DynamicResource BadgeWarningFg}"/>
-                            <TextBlock Text="Функция находится в стадии тестирования. Перепроверьте расчёт откоса вручную перед передачей заказа."
-                                       FontSize="11"
-                                       Foreground="{DynamicResource TextPrimary}"
-                                       TextWrapping="Wrap"
-                                       Margin="{DynamicResource Gap.BlockTop}"/>
-                        </StackPanel>
-                        <Button Grid.Column="2"
-                                x:Name="BtnCloseBetaBanner"
-                                Click="BtnCloseBetaBanner_Click"
-                                Style="{DynamicResource GhostButton}"
-                                Width="24" Height="24"
-                                Padding="0"
-                                VerticalAlignment="Top"
-                                ToolTip="Скрыть предупреждение">
-                            <TextBlock Text="&#xE8BB;"
+            <!-- LEFT COLUMN: Window Parameters & Options -->
+            <ScrollViewer Grid.Column="0"
+                          VerticalScrollBarVisibility="Auto"
+                          HorizontalScrollBarVisibility="Disabled"
+                          Padding="{DynamicResource Gap.Inline}">
+                <StackPanel>
+
+                    <!-- BETA warning banner -->
+                    <Border x:Name="BetaBanner"
+                            Background="{DynamicResource BadgeWarningBg}"
+                            BorderBrush="{DynamicResource BadgeWarningFg}"
+                            BorderThickness="1"
+                            CornerRadius="{DynamicResource Radius.Md}"
+                            Margin="{DynamicResource Gap.Section}"
+                            Padding="{DynamicResource Pad.Card}"
+                            SnapsToDevicePixels="True">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Grid.Column="0"
+                                       Text="&#xE7BA;"
                                        FontFamily="{DynamicResource Font.Icon}"
-                                       FontSize="11"
-                                       Foreground="{DynamicResource BadgeWarningFg}"/>
-                        </Button>
-                    </Grid>
-                </Border>
+                                       FontSize="{StaticResource Type.Title}"
+                                       Foreground="{DynamicResource BadgeWarningFg}"
+                                       VerticalAlignment="Top"
+                                       Margin="{DynamicResource Gap.InlineLg}"/>
+                            <StackPanel Grid.Column="1">
+                                <TextBlock Text="BETA — Автопросчёт откосов"
+                                           FontSize="{StaticResource Type.Body}"
+                                           FontWeight="SemiBold"
+                                           Foreground="{DynamicResource BadgeWarningFg}"/>
+                                <TextBlock Text="Функция находится в стадии тестирования. Перепроверьте расчёт откоса вручную перед передачей заказа."
+                                           FontSize="{StaticResource Type.Caption}"
+                                           Foreground="{DynamicResource TextPrimary}"
+                                           TextWrapping="Wrap"
+                                           Margin="{DynamicResource Gap.BlockTop}"/>
+                            </StackPanel>
+                            <Button Grid.Column="2"
+                                    x:Name="BtnCloseBetaBanner"
+                                    Click="BtnCloseBetaBanner_Click"
+                                    Style="{DynamicResource GhostButton}"
+                                    Width="24" Height="24"
+                                    Padding="{DynamicResource Pad.None}"
+                                    VerticalAlignment="Top"
+                                    ToolTip="Скрыть предупреждение">
+                                <TextBlock Text="&#xE8BB;"
+                                           FontFamily="{DynamicResource Font.Icon}"
+                                           FontSize="{StaticResource Type.Caption}"
+                                           Foreground="{DynamicResource BadgeWarningFg}"/>
+                            </Button>
+                        </Grid>
+                    </Border>
 
-                <!-- CARD 1: РАЗМЕРЫ ОКНА -->
-                <Border Background="{DynamicResource Surface}"
-                        BorderBrush="{DynamicResource Border}"
-                        BorderThickness="1"
-                        CornerRadius="{DynamicResource Radius.Md}"
-                        Margin="0,12,0,12"
-                        SnapsToDevicePixels="True">
-                    <Grid>
-                        <!-- Brand accent strip on left edge -->
-                        <Border Width="4" HorizontalAlignment="Left"
-                                Background="{DynamicResource Accent}"
-                                CornerRadius="{DynamicResource Radius.StripeLeft}"/>
-                        <StackPanel Margin="16,14,16,14">
-                            <!-- Header -->
-                            <StackPanel Orientation="Horizontal" Margin="0,0,0,14">
-                                <TextBlock Text="&#xE7C5;"
-                                           Style="{DynamicResource FluentIconSection}"
-                                           FontSize="14"
-                                           VerticalAlignment="Center"/>
-                                <TextBlock Text="Размеры окна"
-                                           FontSize="12"
+                    <!-- CARD 1: РАЗМЕРЫ ОКНА -->
+                    <Border Background="{DynamicResource Surface}"
+                            BorderBrush="{DynamicResource Border}"
+                            BorderThickness="1"
+                            CornerRadius="{DynamicResource Radius.Md}"
+                            Margin="{DynamicResource Gap.Section}"
+                            SnapsToDevicePixels="True">
+                        <Grid>
+                            <!-- Brand accent strip on left edge -->
+                            <Border Width="4" HorizontalAlignment="Left"
+                                    Background="{DynamicResource Accent}"
+                                    CornerRadius="{DynamicResource Radius.StripeLeft}"/>
+                            <StackPanel Margin="{DynamicResource Gap.PanelSection}">
+                                <!-- Header -->
+                                <StackPanel Orientation="Horizontal" Margin="{DynamicResource Gap.BlockLg}">
+                                    <TextBlock Text="&#xE7C5;"
+                                               Style="{DynamicResource FluentIconSection}"
+                                               FontSize="{StaticResource Type.BodyLg}"
+                                               VerticalAlignment="Center"/>
+                                    <TextBlock Text="Размеры окна"
+                                               FontSize="{StaticResource Type.Body}"
+                                               FontWeight="SemiBold"
+                                               Foreground="{DynamicResource TextPrimary}"
+                                               VerticalAlignment="Center"/>
+                                </StackPanel>
+
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="8"/>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="8"/>
+                                        <ColumnDefinition Width="*"/>
+                                    </Grid.ColumnDefinitions>
+
+                                    <StackPanel Grid.Column="0">
+                                        <TextBlock Text="Высота, мм" Style="{DynamicResource FieldLabel}"/>
+                                        <TextBox x:Name="TxtHeight" Style="{DynamicResource QuickInput}"
+                                                 TextChanged="Input_TextChanged"
+                                                 HorizontalContentAlignment="Right"/>
+                                        <TextBlock x:Name="TxtHeightHint" FontSize="{StaticResource Type.Caption}"
+                                                   Foreground="{DynamicResource TextMuted}"
+                                                   Margin="{DynamicResource Gap.BlockTopSm}"/>
+                                    </StackPanel>
+
+                                    <StackPanel Grid.Column="2">
+                                        <TextBlock Text="Ширина, мм" Style="{DynamicResource FieldLabel}"/>
+                                        <TextBox x:Name="TxtWidth" Style="{DynamicResource QuickInput}"
+                                                 TextChanged="Input_TextChanged"
+                                                 HorizontalContentAlignment="Right"/>
+                                        <TextBlock x:Name="TxtWidthHint" FontSize="{StaticResource Type.Caption}"
+                                                   Foreground="{DynamicResource TextMuted}"
+                                                   Margin="{DynamicResource Gap.BlockTopSm}"/>
+                                    </StackPanel>
+
+                                    <StackPanel Grid.Column="4">
+                                        <TextBlock Text="Глубина" Style="{DynamicResource FieldLabel}"/>
+                                        <TextBox x:Name="TxtDepth" Style="{DynamicResource QuickInput}"
+                                                 TextChanged="Input_TextChanged"
+                                                 HorizontalContentAlignment="Right"/>
+                                        <TextBlock x:Name="TxtDepthHint" FontSize="{StaticResource Type.Caption}"
+                                                   Foreground="{DynamicResource TextMuted}"
+                                                   Margin="{DynamicResource Gap.BlockTopSm}"/>
+                                    </StackPanel>
+                                </Grid>
+
+                                <Grid Margin="{DynamicResource Gap.BlockTopXl}">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="Auto"/>
+                                        <ColumnDefinition Width="*"/>
+                                    </Grid.ColumnDefinitions>
+                                    <TextBlock Grid.Column="0" Text="Кол-во откосов:"
+                                               VerticalAlignment="Center"
+                                               FontSize="{StaticResource Type.Caption}"
+                                               Foreground="{DynamicResource TextSecondary}"
+                                               Margin="{DynamicResource Gap.InlineLg}"/>
+                                    <controls:NumericUpDownControl x:Name="NumWindowCount"
+                                                                   Grid.Column="1"
+                                                                   Value="1"
+                                                                   ValueChanged="NumWindowCount_ValueChanged"
+                                                                   Width="110"
+                                                                   HorizontalAlignment="Left"/>
+                                </Grid>
+                            </StackPanel>
+                        </Grid>
+                    </Border>
+
+                    <!-- CARD: ОПЦИИ И ПАРАМЕТРЫ -->
+                    <Border Background="{DynamicResource Surface}"
+                            BorderBrush="{DynamicResource Border}"
+                            BorderThickness="1"
+                            CornerRadius="{DynamicResource Radius.Md}"
+                            Margin="{DynamicResource Gap.Section}"
+                            SnapsToDevicePixels="True">
+                        <Grid>
+                            <Border Width="4" HorizontalAlignment="Left"
+                                    Background="{DynamicResource Accent}"
+                                    CornerRadius="{DynamicResource Radius.StripeLeft}"/>
+                            <StackPanel Margin="{DynamicResource Gap.PanelSection}">
+                                <TextBlock Text="Опции"
+                                           FontSize="{StaticResource Type.Body}"
                                            FontWeight="SemiBold"
                                            Foreground="{DynamicResource TextPrimary}"
-                                           VerticalAlignment="Center"/>
+                                           Margin="{DynamicResource Gap.Block}"/>
+                                <Button x:Name="BtnAddLaminatina"
+                                        Style="{DynamicResource GhostButton}"
+                                        Click="BtnAddLaminatina_Click"
+                                        IsEnabled="False"
+                                        Height="32"
+                                        Margin="{DynamicResource Gap.BlockSm}">
+                                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                                        <TextBlock Text="&#xE710;"
+                                                   Style="{DynamicResource FluentIconButton}"
+                                                   FontSize="{StaticResource Type.BodyLg}"
+                                                   VerticalAlignment="Center"
+                                                   Margin="{DynamicResource Gap.Inline}"/>
+                                        <TextBlock Text="Порог (Ламинат)"
+                                                   FontWeight="SemiBold"
+                                                   VerticalAlignment="Center"/>
+                                    </StackPanel>
+                                </Button>
+                                <CheckBox x:Name="ChkApplyEconomy"
+                                          IsChecked="True"
+                                          Content="Применить экономию"
+                                          FontSize="{StaticResource Type.Caption}"
+                                          Foreground="{DynamicResource TextSecondary}"
+                                          VerticalAlignment="Center"
+                                          Margin="{DynamicResource Gap.BlockTopSm}"
+                                          Checked="ChkApplyEconomy_Changed"
+                                          Unchecked="ChkApplyEconomy_Changed"/>
+                                <Button x:Name="BtnEconomyDetails"
+                                        Style="{DynamicResource GhostButton}"
+                                        Click="BtnEconomyDetails_Click"
+                                        Margin="{DynamicResource Gap.BlockTopSm}"
+                                        Padding="{DynamicResource Pad.Pill}"
+                                        HorizontalAlignment="Left"
+                                        VerticalAlignment="Center"
+                                        ToolTip="Подробный расчёт экономии по всем откосам в заказе">
+                                    <TextBlock Text="Детали экономии"
+                                               FontSize="{StaticResource Type.Caption}"
+                                               Foreground="{DynamicResource Accent}"/>
+                                </Button>
                             </StackPanel>
+                        </Grid>
+                    </Border>
+                </StackPanel>
+            </ScrollViewer>
 
-                            <Grid>
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="*"/>
-                                    <ColumnDefinition Width="8"/>
-                                    <ColumnDefinition Width="*"/>
-                                    <ColumnDefinition Width="8"/>
-                                    <ColumnDefinition Width="*"/>
-                                </Grid.ColumnDefinitions>
-
-                                <StackPanel Grid.Column="0">
-                                    <TextBlock Text="Высота, мм" Style="{DynamicResource FieldLabel}"/>
-                                    <TextBox x:Name="TxtHeight" Style="{DynamicResource QuickInput}"
-                                             TextChanged="Input_TextChanged"
-                                             HorizontalContentAlignment="Right"/>
-                                    <TextBlock x:Name="TxtHeightHint" FontSize="11"
-                                               Foreground="{DynamicResource TextMuted}"
-                                               Margin="0,3,0,0"/>
-                                </StackPanel>
-
-                                <StackPanel Grid.Column="2">
-                                    <TextBlock Text="Ширина, мм" Style="{DynamicResource FieldLabel}"/>
-                                    <TextBox x:Name="TxtWidth" Style="{DynamicResource QuickInput}"
-                                             TextChanged="Input_TextChanged"
-                                             HorizontalContentAlignment="Right"/>
-                                    <TextBlock x:Name="TxtWidthHint" FontSize="11"
-                                               Foreground="{DynamicResource TextMuted}"
-                                               Margin="0,3,0,0"/>
-                                </StackPanel>
-
-                                <StackPanel Grid.Column="4">
-                                    <TextBlock Text="Глубина" Style="{DynamicResource FieldLabel}"/>
-                                    <TextBox x:Name="TxtDepth" Style="{DynamicResource QuickInput}"
-                                             TextChanged="Input_TextChanged"
-                                             HorizontalContentAlignment="Right"/>
-                                    <TextBlock x:Name="TxtDepthHint" FontSize="11"
-                                               Foreground="{DynamicResource TextMuted}"
-                                               Margin="0,3,0,0"/>
-                                </StackPanel>
-                            </Grid>
-
-                            <Grid Margin="0,16,0,0">
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="Auto"/>
-                                    <ColumnDefinition Width="*"/>
-                                </Grid.ColumnDefinitions>
-                                <TextBlock Grid.Column="0" Text="Кол-во откосов:"
-                                           VerticalAlignment="Center"
-                                           FontSize="11"
-                                           Foreground="{DynamicResource TextSecondary}"
-                                           Margin="0,0,10,0"/>
-                                <controls:NumericUpDownControl x:Name="NumWindowCount"
-                                                               Grid.Column="1"
-                                                               Value="1"
-                                                               ValueChanged="NumWindowCount_ValueChanged"
-                                                               Width="110"
-                                                               HorizontalAlignment="Left"/>
-                            </Grid>
-                        </StackPanel>
-                    </Grid>
-                </Border>
+            <!-- RIGHT COLUMN: Materials BOM & Live Economics -->
+            <ScrollViewer Grid.Column="1"
+                          VerticalScrollBarVisibility="Auto"
+                          HorizontalScrollBarVisibility="Disabled"
+                          Padding="{DynamicResource Gap.Left}">
+                <StackPanel>
 
                 <!-- CARD 2: МАТЕРИАЛЫ -->
                 <Border Background="{DynamicResource Surface}"
                         BorderBrush="{DynamicResource Border}"
                         BorderThickness="1"
                         CornerRadius="{DynamicResource Radius.Md}"
-                        Margin="{DynamicResource Gap.BlockLg}"
+                        Margin="{DynamicResource Gap.Section}"
                         SnapsToDevicePixels="True">
                     <Grid>
                         <Border Width="4" HorizontalAlignment="Left"
                                 Background="{DynamicResource Accent}"
                                 CornerRadius="{DynamicResource Radius.StripeLeft}"/>
-                        <StackPanel Margin="16,14,16,14">
+                        <StackPanel Margin="{DynamicResource Gap.PanelSection}">
 
                             <Grid>
                                 <Grid.ColumnDefinitions>
@@ -174,10 +249,10 @@
                                 <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
                                     <TextBlock Text="&#xE82D;"
                                                Style="{DynamicResource FluentIconSection}"
-                                               FontSize="14"
+                                               FontSize="{StaticResource Type.BodyLg}"
                                                VerticalAlignment="Center"/>
                                     <TextBlock Text="Материалы"
-                                               FontSize="12"
+                                               FontSize="{StaticResource Type.Body}"
                                                FontWeight="SemiBold"
                                                Foreground="{DynamicResource TextPrimary}"
                                                VerticalAlignment="Center"/>
@@ -188,21 +263,21 @@
                                         Style="{DynamicResource GhostButton}"
                                         Click="BtnRecalculate_Click"
                                         ToolTip="Сбросить ручные правки и вернуть авто-формулы"
-                                        Padding="10,5" Height="28">
+                                        Padding="{DynamicResource Pad.Pill}" Height="28">
                                     <StackPanel Orientation="Horizontal">
                                         <TextBlock Text="&#xE72C;"
                                                    Style="{DynamicResource FluentIconButton}"
-                                                   FontSize="12"
+                                                   FontSize="{StaticResource Type.Body}"
                                                    VerticalAlignment="Center"/>
                                         <TextBlock Text="Сбросить"
-                                                   FontSize="11"
+                                                   FontSize="{StaticResource Type.Caption}"
                                                    VerticalAlignment="Center"/>
                                     </StackPanel>
                                 </Button>
                             </Grid>
 
                             <!-- Table header -->
-                            <Grid Margin="0,14,0,6">
+                            <Grid Margin="{DynamicResource Gap.TableHeader}">
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="*"/>
                                     <ColumnDefinition Width="55"/>
@@ -211,16 +286,16 @@
                                 </Grid.ColumnDefinitions>
                                 <TextBlock Grid.Column="0" Text="Позиция"
                                            Style="{DynamicResource SectionLabel}"
-                                           Margin="0"/>
+                                           Margin="{DynamicResource Gap.None}"/>
                                 <TextBlock Grid.Column="1" Text="Кол-во"
                                            Style="{DynamicResource SectionLabel}"
-                                           HorizontalAlignment="Right" Margin="0"/>
+                                           HorizontalAlignment="Right" Margin="{DynamicResource Gap.None}"/>
                                 <TextBlock Grid.Column="2" Text="Цена"
                                            Style="{DynamicResource SectionLabel}"
-                                           HorizontalAlignment="Right" Margin="0"/>
+                                           HorizontalAlignment="Right" Margin="{DynamicResource Gap.None}"/>
                                 <TextBlock Grid.Column="3" Text="Сумма"
                                            Style="{DynamicResource SectionLabel}"
-                                           HorizontalAlignment="Right" Margin="0"/>
+                                           HorizontalAlignment="Right" Margin="{DynamicResource Gap.None}"/>
                             </Grid>
 
                             <!-- v3.43.3 + v3.43.4: Кол-во/Цена редактируемые, чип "ручн." под названием строки
@@ -228,7 +303,7 @@
                             <ItemsControl x:Name="MaterialItems" Margin="{DynamicResource Gap.BlockSm}">
                                 <ItemsControl.ItemTemplate>
                                     <DataTemplate>
-                                        <Grid Margin="0,5,0,5">
+                                        <Grid Margin="{DynamicResource Gap.TableRow}">
                                             <Grid.ColumnDefinitions>
                                                 <ColumnDefinition Width="*"/>
                                                 <ColumnDefinition Width="55"/>
@@ -238,15 +313,15 @@
 
                                             <StackPanel Grid.Column="0" VerticalAlignment="Center">
                                                 <TextBlock Text="{Binding Name}"
-                                                           FontSize="11"
+                                                           FontSize="{StaticResource Type.Caption}"
                                                            Foreground="{DynamicResource TextPrimary}"
                                                            TextTrimming="CharacterEllipsis"/>
                                                 <!-- «ручн.» chip — auto-shows when user edited Qty/Price. -->
                                                 <Border CornerRadius="{DynamicResource Radius.Sm}"
                                                         Background="{DynamicResource ChipBg}"
                                                         HorizontalAlignment="Left"
-                                                        Padding="6,1"
-                                                        Margin="0,3,0,0"
+                                                        Padding="{DynamicResource Pad.Pill}"
+                                                        Margin="{DynamicResource Gap.BlockTopSm}"
                                                         ToolTip="Пользователь изменил вручную — авто-пересчёт не перезапишет">
                                                     <Border.Style>
                                                         <Style TargetType="Border">
@@ -259,7 +334,7 @@
                                                         </Style>
                                                     </Border.Style>
                                                     <TextBlock Text="ручн."
-                                                           FontSize="11"
+                                                           FontSize="{StaticResource Type.Caption}"
                                                            FontWeight="SemiBold"
                                                            Foreground="{DynamicResource Accent}"/>
                                                 </Border>
@@ -272,7 +347,7 @@
                                                      LostFocus="MaterialField_LostFocus"
                                                      HorizontalContentAlignment="Right"
                                                      VerticalContentAlignment="Center"
-                                                     FontSize="11"
+                                                     FontSize="{StaticResource Type.Caption}"
                                                      Margin="{DynamicResource Gap.InlineSm}"/>
                                             <TextBox Grid.Column="2"
                                                      Tag="Price"
@@ -281,11 +356,11 @@
                                                      LostFocus="MaterialField_LostFocus"
                                                      HorizontalContentAlignment="Right"
                                                      VerticalContentAlignment="Center"
-                                                     FontSize="11"
-                                                     Margin="4,0,4,0"/>
+                                                     FontSize="{StaticResource Type.Caption}"
+                                                     Margin="{DynamicResource Gap.InlineHSm}"/>
                                             <TextBlock Grid.Column="3"
                                                        Text="{Binding Sum, StringFormat=N2}"
-                                                       FontSize="11"
+                                                       FontSize="{StaticResource Type.Caption}"
                                                        FontWeight="SemiBold"
                                                        Foreground="{DynamicResource TextPrimary}"
                                                        HorizontalAlignment="Right"
@@ -295,10 +370,10 @@
                                 </ItemsControl.ItemTemplate>
                             </ItemsControl>
 
-                            <Separator Opacity="0.3" Margin="0,6,0,6"/>
+                            <Separator Opacity="0.3" Margin="{DynamicResource Gap.SeparatorBlock}"/>
 
                             <!-- Labor (special row — outside ItemsControl, bound via RelativeSource) -->
-                            <Grid Margin="0,2,0,2">
+                            <Grid Margin="{DynamicResource Gap.TableRowSm}">
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="*"/>
                                     <ColumnDefinition Width="55"/>
@@ -307,13 +382,13 @@
                                 </Grid.ColumnDefinitions>
                                 <StackPanel Grid.Column="0" VerticalAlignment="Center">
                                     <TextBlock Text="Работа"
-                                               FontSize="11"
+                                               FontSize="{StaticResource Type.Caption}"
                                                Foreground="{DynamicResource TextPrimary}"/>
                                     <Border CornerRadius="{DynamicResource Radius.Sm}"
                                             Background="{DynamicResource ChipBg}"
                                             HorizontalAlignment="Left"
-                                            Padding="6,1"
-                                            Margin="0,3,0,0">
+                                            Padding="{DynamicResource Pad.Pill}"
+                                            Margin="{DynamicResource Gap.BlockTopSm}">
                                         <Border.Style>
                                             <Style TargetType="Border">
                                                 <Setter Property="Visibility" Value="Collapsed"/>
@@ -325,7 +400,7 @@
                                             </Style>
                                         </Border.Style>
                                         <TextBlock Text="ручн."
-                                                   FontSize="11"
+                                                   FontSize="{StaticResource Type.Caption}"
                                                    FontWeight="SemiBold"
                                                    Foreground="{DynamicResource Accent}"/>
                                     </Border>
@@ -339,7 +414,7 @@
                                          IsEnabled="{Binding HasCalculation, RelativeSource={RelativeSource AncestorType=UserControl}}"
                                          HorizontalContentAlignment="Right"
                                          VerticalContentAlignment="Center"
-                                         FontSize="11"
+                                         FontSize="{StaticResource Type.Caption}"
                                          Margin="{DynamicResource Gap.InlineSm}"/>
                                 <TextBox Grid.Column="2"
                                          x:Name="TxtLaborPrice"
@@ -350,12 +425,12 @@
                                          IsEnabled="{Binding HasCalculation, RelativeSource={RelativeSource AncestorType=UserControl}}"
                                          HorizontalContentAlignment="Right"
                                          VerticalContentAlignment="Center"
-                                         FontSize="11"
-                                         Margin="4,0,4,0"/>
+                                         FontSize="{StaticResource Type.Caption}"
+                                         Margin="{DynamicResource Gap.InlineHSm}"/>
                                 <TextBlock Grid.Column="3"
                                            x:Name="TxtLaborSumRow"
                                            Text="0.00"
-                                           FontSize="11"
+                                           FontSize="{StaticResource Type.Caption}"
                                            FontWeight="SemiBold"
                                            Foreground="{DynamicResource TextPrimary}"
                                            HorizontalAlignment="Right"
@@ -363,7 +438,7 @@
                             </Grid>
 
                             <!-- Laminatina labor (special row — outside ItemsControl, bound via RelativeSource) -->
-                            <Grid Margin="0,2,0,2">
+                            <Grid Margin="{DynamicResource Gap.TableRowSm}">
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="*"/>
                                     <ColumnDefinition Width="55"/>
@@ -372,13 +447,13 @@
                                 </Grid.ColumnDefinitions>
                                 <StackPanel Grid.Column="0" VerticalAlignment="Center">
                                     <TextBlock Text="Работа за ламинатину"
-                                               FontSize="11"
+                                               FontSize="{StaticResource Type.Caption}"
                                                Foreground="{DynamicResource TextPrimary}"/>
                                     <Border CornerRadius="{DynamicResource Radius.Sm}"
                                             Background="{DynamicResource ChipBg}"
                                             HorizontalAlignment="Left"
-                                            Padding="6,1"
-                                            Margin="0,3,0,0">
+                                            Padding="{DynamicResource Pad.Pill}"
+                                            Margin="{DynamicResource Gap.BlockTopSm}">
                                         <Border.Style>
                                             <Style TargetType="Border">
                                                 <Setter Property="Visibility" Value="Collapsed"/>
@@ -390,7 +465,7 @@
                                             </Style>
                                         </Border.Style>
                                         <TextBlock Text="ручн."
-                                                   FontSize="11"
+                                                   FontSize="{StaticResource Type.Caption}"
                                                    FontWeight="SemiBold"
                                                    Foreground="{DynamicResource Accent}"/>
                                     </Border>
@@ -404,7 +479,7 @@
                                          IsEnabled="{Binding HasCalculation, RelativeSource={RelativeSource AncestorType=UserControl}}"
                                          HorizontalContentAlignment="Right"
                                          VerticalContentAlignment="Center"
-                                         FontSize="11"
+                                         FontSize="{StaticResource Type.Caption}"
                                          Margin="{DynamicResource Gap.InlineSm}"/>
                                 <TextBox Grid.Column="2"
                                          x:Name="TxtLaminatinaLaborPrice"
@@ -415,12 +490,12 @@
                                          IsEnabled="{Binding HasCalculation, RelativeSource={RelativeSource AncestorType=UserControl}}"
                                          HorizontalContentAlignment="Right"
                                          VerticalContentAlignment="Center"
-                                         FontSize="11"
-                                         Margin="4,0,4,0"/>
+                                         FontSize="{StaticResource Type.Caption}"
+                                         Margin="{DynamicResource Gap.InlineHSm}"/>
                                 <TextBlock Grid.Column="3"
                                            x:Name="TxtLaminatinaLaborSumRow"
                                            Text="0.00"
-                                           FontSize="11"
+                                           FontSize="{StaticResource Type.Caption}"
                                            FontWeight="SemiBold"
                                            Foreground="{DynamicResource TextPrimary}"
                                            HorizontalAlignment="Right"
@@ -444,15 +519,15 @@
                         <Border Width="4" HorizontalAlignment="Left"
                                 Background="{DynamicResource Accent}"
                                 CornerRadius="{DynamicResource Radius.StripeLeft}"/>
-                        <StackPanel Margin="16,14,16,14">
+                        <StackPanel Margin="{DynamicResource Gap.PanelSection}">
                             <!-- Header -->
                             <StackPanel Orientation="Horizontal" Margin="{DynamicResource Gap.BlockLg}">
                                 <TextBlock Text="&#xE7B5;"
                                            Style="{DynamicResource FluentIconSection}"
-                                           FontSize="14"
+                                           FontSize="{StaticResource Type.BodyLg}"
                                            VerticalAlignment="Center"/>
                                 <TextBlock Text="{Binding SummaryTitle, RelativeSource={RelativeSource AncestorType=UserControl}}"
-                                           FontSize="12"
+                                           FontSize="{StaticResource Type.Body}"
                                            FontWeight="SemiBold"
                                            Foreground="{DynamicResource TextPrimary}"
                                            VerticalAlignment="Center"/>
@@ -462,7 +537,7 @@
                             <ItemsControl x:Name="SummaryItems" Margin="{DynamicResource Gap.BlockSm}">
                                 <ItemsControl.ItemTemplate>
                                     <DataTemplate>
-                                        <Grid Margin="0,3,0,3">
+                                        <Grid Margin="{DynamicResource Gap.BlockSm}">
                                             <Grid.ColumnDefinitions>
                                                 <ColumnDefinition Width="*"/>
                                                 <ColumnDefinition Width="Auto"/>
@@ -471,20 +546,20 @@
 
                                             <TextBlock Grid.Column="0"
                                                        Text="{Binding Name}"
-                                                       FontSize="11"
+                                                       FontSize="{StaticResource Type.Caption}"
                                                        Foreground="{DynamicResource TextPrimary}"
                                                        VerticalAlignment="Center"
                                                        TextTrimming="CharacterEllipsis"/>
 
-                                            <StackPanel Grid.Column="1" Orientation="Horizontal" Margin="10,0,0,0" VerticalAlignment="Center">
+                                            <StackPanel Grid.Column="1" Orientation="Horizontal" Margin="{DynamicResource Gap.Left}" VerticalAlignment="Center">
                                                 <TextBlock Text="{Binding PerDetail}"
-                                                           FontSize="11"
+                                                           FontSize="{StaticResource Type.Caption}"
                                                            Foreground="{DynamicResource TextSecondary}"
                                                            VerticalAlignment="Center"/>
                                                 <Border CornerRadius="{DynamicResource Radius.Sm}"
                                                         Background="{DynamicResource ChipBg}"
-                                                        Padding="5,1"
-                                                        Margin="6,0,0,0"
+                                                        Padding="{DynamicResource Pad.Pill}"
+                                                        Margin="{DynamicResource Gap.LeftSm}"
                                                         Visibility="{Binding HasNote, Converter={StaticResource BoolToVis}}">
                                                     <ToolTipService.ToolTip>
                                                         <TextBlock Text="{Binding EconomyTooltip}"
@@ -492,7 +567,7 @@
                                                                    MaxWidth="280"/>
                                                     </ToolTipService.ToolTip>
                                                     <TextBlock Text="{Binding Note}"
-                                                               FontSize="11"
+                                                               FontSize="{StaticResource Type.Caption}"
                                                                FontWeight="SemiBold"
                                                                Foreground="{DynamicResource EconomyGreen}"
                                                                VerticalAlignment="Center"/>
@@ -501,7 +576,7 @@
 
                                             <TextBlock Grid.Column="2"
                                                        Text="{Binding TotalDisplay}"
-                                                       FontSize="11"
+                                                       FontSize="{StaticResource Type.Caption}"
                                                        FontWeight="SemiBold"
                                                        Foreground="{DynamicResource TextPrimary}"
                                                        HorizontalAlignment="Right"
@@ -514,11 +589,11 @@
 
                             <!-- Hint when economy is enabled but nothing saved for these dimensions -->
                             <TextBlock x:Name="TxtNoSavingsHint"
-                                       FontSize="11"
+                                       FontSize="{StaticResource Type.Caption}"
                                        FontStyle="Italic"
                                        Foreground="{DynamicResource TextMuted}"
                                        TextWrapping="Wrap"
-                                       Margin="0,6,0,0"
+                                       Margin="{DynamicResource Gap.BlockTop}"
                                        Visibility="Collapsed"
                                        Text="Для этих размеров общий раскрой не даёт дополнительной экономии материалов."/>
                         </StackPanel>
@@ -526,48 +601,50 @@
                 </Border>
             </StackPanel>
         </ScrollViewer>
+    </Grid>
 
-        <!-- ═══════════════════════════════════════════════════════ -->
-        <!-- STICKY FOOTER — totals card + CTA                       -->
-        <!-- ═══════════════════════════════════════════════════════ -->
-        <!-- v3.43.4 (review fix #2): НЕ используем Style="{DynamicResource Card}" —
-             иначе егО IsMouseOver-триггер усиливает тень при любом движении мыши
-             над низом панели → "дышащий" zitter у нижнего края, когда курсор
-             идёт к кнопке «Добавить в КП». v3.52.0: тень убрана — DropShadowEffect
-             рендерится программно и перерисовывается при каждой анимации. -->
-        <Border Grid.Row="1"
-                Background="{DynamicResource Surface}"
-                BorderBrush="{DynamicResource Border}"
-                BorderThickness="1,1,1,0"
-                CornerRadius="{DynamicResource Radius.Top}"
-                Margin="0,0,0,0"
-                SnapsToDevicePixels="True">
-            <StackPanel Margin="16,14,16,12">
+    <!-- ═══════════════════════════════════════════════════════ -->
+    <!-- STICKY FOOTER — totals card + CTA                       -->
+    <!-- ═══════════════════════════════════════════════════════ -->
+    <Border Grid.Row="1"
+            Background="{DynamicResource Surface}"
+            BorderBrush="{DynamicResource Border}"
+            BorderThickness="1,1,1,0"
+            CornerRadius="{DynamicResource Radius.Top}"
+            Margin="{DynamicResource Gap.None}"
+            SnapsToDevicePixels="True">
+        <Grid Margin="{DynamicResource Gap.PanelSection}">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition Width="Auto"/>
+            </Grid.ColumnDefinitions>
+
+            <!-- Left: stats & savings -->
+            <StackPanel Grid.Column="0" VerticalAlignment="Center">
                 <!-- Без экономии -->
                 <Grid x:Name="WithoutEconomyRow" Visibility="Collapsed" Margin="{DynamicResource Gap.BlockSm}">
                     <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
                         <ColumnDefinition Width="Auto"/>
                     </Grid.ColumnDefinitions>
                     <TextBlock x:Name="TxtWithoutEconomyLabel"
                                Grid.Column="0"
-                               Text="Без экономии:"
-                               FontSize="12"
+                               Text="Без экономии: "
+                               FontSize="{StaticResource Type.Caption}"
                                Foreground="{DynamicResource TextSecondary}"
                                VerticalAlignment="Center"/>
                     <TextBlock x:Name="TxtWithoutEconomy"
                                Grid.Column="1"
                                Text="0.00"
-                               FontSize="12"
+                               FontSize="{StaticResource Type.Caption}"
                                FontWeight="SemiBold"
                                Foreground="{DynamicResource TextSecondary}"
                                VerticalAlignment="Center"
-                               TextTrimming="CharacterEllipsis"
-                               TextAlignment="Right"
-                               MaxWidth="220"/>
+                               Margin="{DynamicResource Gap.LeftSm}"/>
                 </Grid>
                 <!-- Общая экономия -->
-                <Grid x:Name="TotalSavingsRow" Visibility="Collapsed" Margin="0,0,0,6">
+                <Grid x:Name="TotalSavingsRow" Visibility="Collapsed" Margin="{DynamicResource Gap.BlockSm}">
                     <Grid.Resources>
                         <Storyboard x:Key="SavingsRowAppearStoryboard">
                             <DoubleAnimationUsingKeyFrames Storyboard.TargetProperty="(UIElement.Opacity)">
@@ -592,126 +669,93 @@
                         <TranslateTransform Y="0"/>
                     </Grid.RenderTransform>
                     <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
                         <ColumnDefinition Width="Auto"/>
                     </Grid.ColumnDefinitions>
                     <TextBlock x:Name="TxtTotalSavingsLabel"
                                Grid.Column="0"
                                Text="Экономия:"
-                               FontSize="12"
+                               FontSize="{StaticResource Type.Caption}"
                                Foreground="{DynamicResource TextSecondary}"
                                VerticalAlignment="Center"/>
-                    <StackPanel Grid.Column="1" Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center">
+                    <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center" Margin="{DynamicResource Gap.LeftSm}">
                         <TextBlock x:Name="SavingsStarIcon"
                                    Text="&#xE1CF;"
                                    Style="{DynamicResource FluentIconButton}"
-                                   FontSize="11"
+                                   FontSize="{StaticResource Type.Caption}"
                                    Foreground="{DynamicResource EconomyGreen}"
                                    VerticalAlignment="Center"
-                                   Margin="0,0,6,0"/>
+                                   Margin="{DynamicResource Gap.InlineSm}"/>
                         <TextBlock x:Name="TxtTotalSavings"
                                    Text="0.00"
-                                   FontSize="12"
-                                   FontWeight="SemiBold"
-                                   Foreground="{DynamicResource EconomyGreen}"
-                                   VerticalAlignment="Center"
-                                   TextTrimming="CharacterEllipsis"
-                                   TextAlignment="Right"
-                                   MaxWidth="220"/>
-                    </StackPanel>
-                </Grid>
-                <!-- Итого с экономией -->
-                <Border x:Name="TotalAllRow" Visibility="Collapsed"
-                        Background="{DynamicResource EconomyGreenLight}"
-                        CornerRadius="{DynamicResource Radius.Md}"
-                        Padding="8,6"
-                        Margin="{DynamicResource Gap.Block}">
-                    <Grid>
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="*"/>
-                            <ColumnDefinition Width="Auto"/>
-                        </Grid.ColumnDefinitions>
-                        <TextBlock x:Name="TxtTotalAllLabel"
-                                   Grid.Column="0"
-                                   Text=""
-                                   FontSize="12"
+                                   FontSize="{StaticResource Type.Caption}"
                                    FontWeight="SemiBold"
                                    Foreground="{DynamicResource EconomyGreen}"
                                    VerticalAlignment="Center"/>
-                        <TextBlock x:Name="TxtTotalAll"
-                                   Grid.Column="1"
-                                   Text="0.00"
-                                   FontSize="14"
-                                   FontWeight="Bold"
-                                   Foreground="{DynamicResource EconomyGreen}"
-                                   VerticalAlignment="Center"
-                                   TextTrimming="CharacterEllipsis"
-                                   TextAlignment="Right"
-                                   MaxWidth="220"/>
-                    </Grid>
-                </Border>
+                    </StackPanel>
+                </Grid>
                 <!-- Средняя сумма за откос -->
                 <TextBlock x:Name="TxtAvgWithEconomy"
                            Visibility="Collapsed"
-                           FontSize="11"
+                           FontSize="{StaticResource Type.Caption}"
                            Foreground="{DynamicResource EconomyGreen}"
-                           Margin="{DynamicResource Gap.Block}"
-                           TextAlignment="Right"/>
-                <StackPanel Orientation="Horizontal" Margin="0,0,0,6">
-                    <CheckBox x:Name="ChkApplyEconomy"
-                              IsChecked="True"
-                              Content="Применить экономию"
-                              FontSize="11"
-                              Foreground="{DynamicResource TextSecondary}"
-                              VerticalAlignment="Center"
-                              Checked="ChkApplyEconomy_Changed"
-                              Unchecked="ChkApplyEconomy_Changed"/>
-                    <Button x:Name="BtnEconomyDetails"
-                            Style="{DynamicResource GhostButton}"
-                            Click="BtnEconomyDetails_Click"
-                            Margin="10,0,0,0"
-                            Padding="6,3"
-                            VerticalAlignment="Center"
-                            ToolTip="Подробный расчёт экономии по всем откосам в заказе">
-                        <TextBlock Text="Детали экономии"
-                                   FontSize="11"
-                                   Foreground="{DynamicResource Accent}"/>
-                    </Button>
-                </StackPanel>
-                <Button x:Name="BtnAddLaminatina"
-                        Style="{DynamicResource GhostButton}"
-                        Click="BtnAddLaminatina_Click"
-                        IsEnabled="False"
-                        Height="32"
-                        Margin="{DynamicResource Gap.Block}">
-                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
-                        <TextBlock Text="&#xE710;"
-                                   Style="{DynamicResource FluentIconButton}"
-                                   FontSize="14"
-                                   VerticalAlignment="Center"
-                                   Margin="0,0,6,0"/>
-                        <TextBlock Text="Порог (Ламинат)"
-                                   FontWeight="SemiBold"
-                                   VerticalAlignment="Center"/>
-                    </StackPanel>
-                </Button>
-                <Button x:Name="BtnAddToKp"
-                        Style="{DynamicResource PrimaryButton}"
-                        Click="BtnAddToKp_Click"
-                        IsEnabled="False"
-                        Height="38">
-                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
-                        <TextBlock x:Name="BtnIcon" Text="&#xE710;"
-                                   Style="{DynamicResource FluentIconButton}"
-                                   FontSize="14"
-                                   VerticalAlignment="Center"
-                                   Margin="0,0,6,0"/>
-                        <TextBlock x:Name="BtnText" Text="Добавить в КП"
-                                   FontWeight="SemiBold"
-                                   VerticalAlignment="Center"/>
-                    </StackPanel>
-                </Button>
+                           Margin="{DynamicResource Gap.BlockSm}"
+                           TextAlignment="Left"/>
             </StackPanel>
-        </Border>
+
+            <!-- Middle: Total with Economy Badge -->
+            <Border x:Name="TotalAllRow" Grid.Column="1" Visibility="Collapsed"
+                    Background="{DynamicResource EconomyGreenLight}"
+                    CornerRadius="{DynamicResource Radius.Md}"
+                    Padding="{DynamicResource Pad.Control}"
+                    Margin="{DynamicResource Gap.InlineLg}"
+                    VerticalAlignment="Center">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+                    <TextBlock x:Name="TxtTotalAllLabel"
+                               Grid.Column="0"
+                               Text=""
+                               FontSize="{StaticResource Type.Body}"
+                               FontWeight="SemiBold"
+                               Foreground="{DynamicResource EconomyGreen}"
+                               VerticalAlignment="Center"
+                               Margin="{DynamicResource Gap.Inline}"/>
+                    <TextBlock x:Name="TxtTotalAll"
+                               Grid.Column="1"
+                               Text="0.00"
+                               FontSize="{StaticResource Type.BodyLg}"
+                               FontWeight="Bold"
+                               Foreground="{DynamicResource EconomyGreen}"
+                               VerticalAlignment="Center"
+                               MaxWidth="160"
+                               TextTrimming="CharacterEllipsis"/>
+                </Grid>
+            </Border>
+
+            <!-- Right: Add to KP Button -->
+            <Button x:Name="BtnAddToKp"
+                    Grid.Column="2"
+                    Style="{DynamicResource PrimaryButton}"
+                    Click="BtnAddToKp_Click"
+                    IsEnabled="False"
+                    Height="40"
+                    MinWidth="180"
+                    VerticalAlignment="Center">
+                <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                    <TextBlock x:Name="BtnIcon" Text="&#xE710;"
+                               Style="{DynamicResource FluentIconButton}"
+                               FontSize="{StaticResource Type.BodyLg}"
+                               VerticalAlignment="Center"
+                               Margin="{DynamicResource Gap.Inline}"/>
+                    <TextBlock x:Name="BtnText" Text="Добавить в КП"
+                               FontWeight="SemiBold"
+                               VerticalAlignment="Center"/>
+                </StackPanel>
+            </Button>
+        </Grid>
+    </Border>
     </Grid>
 </UserControl>

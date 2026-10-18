@@ -268,7 +268,6 @@ namespace MosquitoNetCalculator.Services
                             cd.ConstantColumn(82);
                             cd.RelativeColumn();
                         });
-                        AddClientRowPdf(t, "Заказчик:", clientInfo.ClientName);
                         AddClientRowPdf(t, "Телефон:", clientInfo.ClientPhone);
                         AddClientRowPdf(t, "Адрес:", clientInfo.ClientAddress);
                     });
@@ -510,8 +509,7 @@ namespace MosquitoNetCalculator.Services
         }
 
         private static bool HasAnyClientField(ClientInfo c) =>
-            !string.IsNullOrWhiteSpace(c.ClientName)
-            || !string.IsNullOrWhiteSpace(c.ClientPhone)
+            !string.IsNullOrWhiteSpace(c.ClientPhone)
             || !string.IsNullOrWhiteSpace(c.ClientAddress);
 
         private static void AddClientRowPdf(QuestPDF.Fluent.TableDescriptor t, string label, string value)
