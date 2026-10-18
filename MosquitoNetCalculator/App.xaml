@@ -27,12 +27,12 @@
                 <ResourceDictionary Source="Themes/FontStyles.xaml"/>
                 <ResourceDictionary Source="Themes/TabStyles.xaml"/>
                 <ResourceDictionary Source="Themes/ButtonStyles.xaml"/>
+                <ResourceDictionary Source="Themes/ContextMenuStyles.xaml"/>
                 <ResourceDictionary Source="Themes/InputStyles.xaml"/>
                 <ResourceDictionary Source="Themes/DataGridStyles.xaml"/>
                 <!-- п.2: Fluent RadioButton style (implicit, без x:Key → подхватывается глобально). -->
                 <ResourceDictionary Source="Themes/InputStyles.RadioButton.xaml"/>
                 <ResourceDictionary Source="Themes/ScrollViewerStyles.xaml"/>
-                <ResourceDictionary Source="Themes/ContextMenuStyles.xaml"/>
                 <!-- После ButtonStyles: EmptyState.Action наследует GhostButton
                      через BasedOn StaticResource. -->
                 <ResourceDictionary Source="Themes/EmptyStateStyles.xaml"/>

@@ -14,6 +14,7 @@
         <Setter Property="Foreground" Value="{DynamicResource TextPrimary}"/>
         <Setter Property="CaretBrush" Value="{DynamicResource Accent}"/>
         <Setter Property="VerticalContentAlignment" Value="Center"/>
+        <Setter Property="ContextMenu" Value="{DynamicResource FluentTextBoxContextMenu}"/>
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="TextBox">
@@ -101,6 +102,7 @@
         <Setter Property="SelectionBrush" Value="{DynamicResource Accent}"/>
         <Setter Property="Padding" Value="{DynamicResource Pad.Input}"/>
         <Setter Property="AcceptsTab" Value="False"/>
+        <Setter Property="ContextMenu" Value="{DynamicResource FluentTextBoxContextMenu}"/>
         <Setter Property="VerticalScrollBarVisibility" Value="Auto"/>
         <Setter Property="HorizontalScrollBarVisibility" Value="Disabled"/>
         <Setter Property="Template">

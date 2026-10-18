@@ -5,6 +5,8 @@ using System.Diagnostics;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Data;
+using System.Windows.Input;
+using System.Windows.Media;
 using MosquitoNetCalculator.Models;
 
 namespace MosquitoNetCalculator.Controls
@@ -55,6 +57,8 @@ namespace MosquitoNetCalculator.Controls
             // v3.50.1 (prototype parity): uppercase column captions, same as the
             // order grid. Assigned in code — see helper docs.
             Converters.UppercaseHeaderTemplate.Apply(OrdersList);
+            OrdersList.PreviewMouseRightButtonDown += OrdersList_PreviewMouseRightButtonDown;
+            OrdersList.ContextMenuOpening += OrdersList_ContextMenuOpening;
             // v3.50: status filter source = the same OrderStatuses.All the orders
             // themselves use; first entry is the neutral "all" marker.
             var statusItems = new List<string> { "Все статусы" };
@@ -179,6 +183,45 @@ namespace MosquitoNetCalculator.Controls
 
         private void CtxDelete_Click(object sender, RoutedEventArgs e) =>
             TryForwardToMain(nameof(CtxDelete_Click), mw => mw.DeleteSelectedOrder());
+
+        private void OrdersList_PreviewMouseRightButtonDown(object sender, MouseButtonEventArgs e)
+        {
+            var dep = e.OriginalSource as DependencyObject;
+            while (dep != null && dep != OrdersList && dep is not DataGridRow)
+            {
+                dep = VisualTreeHelper.GetParent(dep);
+            }
+
+            if (dep is DataGridRow row && row.Item is OrderData order)
+            {
+                OrdersList.SelectedItem = order;
+                row.Focus();
+                UpdateContextMenuItemsState(hasSelection: true);
+            }
+            else
+            {
+                UpdateContextMenuItemsState(hasSelection: false);
+            }
+        }
+
+        private void OrdersList_ContextMenuOpening(object sender, ContextMenuEventArgs e)
+        {
+            var hasSelection = OrdersList.SelectedItem is OrderData;
+            UpdateContextMenuItemsState(hasSelection);
+            if (!hasSelection)
+            {
+                e.Handled = true;
+            }
+        }
+
+        internal void UpdateContextMenuItemsState(bool hasSelection)
+        {
+            if (CtxOpenMenu != null) CtxOpenMenu.IsEnabled = hasSelection;
+            if (CtxStatusMenu != null) CtxStatusMenu.IsEnabled = hasSelection;
+            if (CtxCopyMenu != null) CtxCopyMenu.IsEnabled = hasSelection;
+            if (CtxExportMenu != null) CtxExportMenu.IsEnabled = hasSelection;
+            if (CtxDeleteMenu != null) CtxDeleteMenu.IsEnabled = hasSelection;
+        }
 
         private void BtnGoToCalculation_Click(object sender, RoutedEventArgs e) =>
             TryForwardToMain(nameof(BtnGoToCalculation_Click), mw => mw.NavigateToCalculation());

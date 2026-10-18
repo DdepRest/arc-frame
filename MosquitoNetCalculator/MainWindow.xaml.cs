@@ -302,16 +302,7 @@ namespace MosquitoNetCalculator
             OrdersHistoryControl.OrdersGrid.SelectionChanged += (_, _) =>
             {
                 var hasSelection = OrdersHistoryControl.OrdersGrid.SelectedItem is OrderData;
-                if (OrdersHistoryControl.CtxOpenMenu != null)
-                    OrdersHistoryControl.CtxOpenMenu.IsEnabled = hasSelection;
-                if (OrdersHistoryControl.CtxStatusMenu != null)
-                    OrdersHistoryControl.CtxStatusMenu.IsEnabled = hasSelection;
-                if (OrdersHistoryControl.CtxCopyMenu != null)
-                    OrdersHistoryControl.CtxCopyMenu.IsEnabled = hasSelection;
-                if (OrdersHistoryControl.CtxExportMenu != null)
-                    OrdersHistoryControl.CtxExportMenu.IsEnabled = hasSelection;
-                if (OrdersHistoryControl.CtxDeleteMenu != null)
-                    OrdersHistoryControl.CtxDeleteMenu.IsEnabled = hasSelection;
+                OrdersHistoryControl.UpdateContextMenuItemsState(hasSelection);
             };
 
             UpdateEmptyState();
@@ -571,9 +562,19 @@ namespace MosquitoNetCalculator
             _onNavToCalc?.Invoke();
         }
 
+        private void CloseAiIfMaximized()
+        {
+            if (WindowState == WindowState.Maximized && AiOverlay.Visibility == Visibility.Visible)
+            {
+                CloseAiAssistant();
+            }
+        }
+
         private void NavButton_Click(object sender, RoutedEventArgs e)
         {
             if (sender is not Button btn || btn.Tag is not string tag) return;
+
+            CloseAiIfMaximized();
 
             switch (tag)
             {
@@ -653,16 +654,8 @@ namespace MosquitoNetCalculator
 
             _navService.Toggle();
             bool expanded = _navService.IsExpanded;
-            double targetLeft = expanded ? 160 : 52;
-            var duration = expanded ? Motion.Slow : Motion.Base;
 
-            var marginAnim = new ThicknessAnimation(
-                new Thickness(targetLeft, 0, 0, 0),
-                duration)
-            {
-                EasingFunction = new CubicEase { EasingMode = expanded ? EasingMode.EaseOut : EasingMode.EaseIn }
-            };
-            CalculationView.BeginAnimation(FrameworkElement.MarginProperty, marginAnim);
+            UpdateCalculationViewMargin(animated: true);
 
             NavToggleLabel.Visibility = expanded ? Visibility.Visible : Visibility.Collapsed;
             BtnToggleNav.ToolTip = expanded

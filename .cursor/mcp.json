@@ -1,0 +1,12 @@
+{
+  "mcpServers": {
+    "todo-mcp": {
+      "command": "node",
+      "args": [
+        "c:\\Users\\Asus\\.antigravity-ide\\extensions\\hurtis.todo-2.0.0-universal\\bin\\todo-mcp.js",
+        "--workspace",
+        "c:\\Users\\Asus\\Desktop\\A.R.C. Frame\\gwga"
+      ]
+    }
+  }
+}

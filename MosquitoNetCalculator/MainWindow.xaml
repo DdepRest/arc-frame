@@ -440,13 +440,14 @@
                 <!-- ═══════════════════════════════════════ -->
                 <!-- OVERLAY: AI ASSISTANT                  -->
                 <!-- ══════════════════════════════════════════════════ -->
-                <Grid x:Name="AiOverlay" Visibility="Collapsed" Panel.ZIndex="15">
-                    <Border x:Name="AiBackdrop" Background="{DynamicResource Scrim}" Opacity="0"
-                            MouseLeftButtonDown="Backdrop_MouseLeftButtonDown" Cursor="Hand"/>
+                <Grid x:Name="AiOverlay" Visibility="Collapsed" Panel.ZIndex="15"
+                      HorizontalAlignment="Right" Width="480">
                     <Border x:Name="AiPanel"
                             Background="{DynamicResource Surface}"
-                            HorizontalAlignment="Right" Width="480"
                             BorderBrush="{DynamicResource Border}" BorderThickness="1,0,0,0">
+                        <Border.RenderTransform>
+                            <TranslateTransform x:Name="AiSlideTransform" X="0"/>
+                        </Border.RenderTransform>
                         <Grid>
                             <Grid.RowDefinitions>
                                 <RowDefinition Height="Auto"/>

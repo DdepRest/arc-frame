@@ -77,6 +77,7 @@
             <Setter Property="TextWrapping" Value="Wrap"/>
             <Setter Property="AcceptsReturn" Value="True"/>
             <Setter Property="VerticalContentAlignment" Value="Top"/>
+            <Setter Property="ContextMenu" Value="{DynamicResource FluentTextBoxContextMenu}"/>
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="TextBox">

@@ -16,7 +16,7 @@
             <Setter Property="Background" Value="{DynamicResource Surface}"/>
             <Setter Property="BorderBrush" Value="{DynamicResource Border}"/>
             <Setter Property="BorderThickness" Value="1"/>
-            <Setter Property="Padding" Value="4"/>
+            <Setter Property="Padding" Value="{DynamicResource Pad.ControlSm}"/>
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="ContextMenu">
@@ -31,6 +31,7 @@
                                           CanContentScroll="True"
                                           Padding="{DynamicResource Pad.None}">
                                 <StackPanel IsItemsHost="True"
+                                            Grid.IsSharedSizeScope="True"
                                             ClipToBounds="True"/>
                             </ScrollViewer>
                         </Border>
@@ -47,7 +48,7 @@
             <Setter Property="FontFamily" Value="{DynamicResource Font.Text}"/>
             <Setter Property="FontSize" Value="{StaticResource Type.Body}"/>
             <Setter Property="FontWeight" Value="Regular"/>
-            <Setter Property="Padding" Value="14,10"/>
+            <Setter Property="Padding" Value="{DynamicResource Pad.Row}"/>
             <Setter Property="Cursor" Value="Hand"/>
             <Setter Property="Template">
                 <Setter.Value>
@@ -56,9 +57,22 @@
                                 CornerRadius="{DynamicResource Radius.Sm}" Margin="{DynamicResource Gap.SeparatorH}"
                                 Padding="{Binding Padding, RelativeSource={RelativeSource TemplatedParent}}"
                                 SnapsToDevicePixels="True">
-                            <ContentPresenter ContentSource="Header"
-                                              VerticalAlignment="Center"
-                                              RecognizesAccessKey="True"/>
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto" SharedSizeGroup="MenuItemGesture"/>
+                                </Grid.ColumnDefinitions>
+                                <ContentPresenter Grid.Column="0" ContentSource="Header"
+                                                  VerticalAlignment="Center"
+                                                  RecognizesAccessKey="True"/>
+                                <TextBlock x:Name="GestureText"
+                                           Grid.Column="1"
+                                           Text="{TemplateBinding InputGestureText}"
+                                           Margin="{DynamicResource Gap.LeftXl}"
+                                           VerticalAlignment="Center"
+                                           FontSize="{StaticResource Type.Caption}"
+                                           Foreground="{DynamicResource TextMuted}"/>
+                            </Grid>
                         </Border>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsMouseOver" Value="True">
@@ -68,9 +82,35 @@
                             <Trigger Property="IsPressed" Value="True">
                                 <Setter TargetName="Bd" Property="Background" Value="{DynamicResource MenuItemPressed}"/>
                             </Trigger>
+                            <Trigger Property="IsEnabled" Value="False">
+                                <Setter Property="Foreground" Value="{DynamicResource TextMuted}"/>
+                                <Setter Property="Opacity" Value="0.45"/>
+                                <Setter Property="Cursor" Value="Arrow"/>
+                            </Trigger>
+                            <Trigger Property="InputGestureText" Value="">
+                                <Setter TargetName="GestureText" Property="Visibility" Value="Collapsed"/>
+                            </Trigger>
+                            <Trigger Property="InputGestureText" Value="{x:Null}">
+                                <Setter TargetName="GestureText" Property="Visibility" Value="Collapsed"/>
+                            </Trigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
                 </Setter.Value>
             </Setter>
         </Style>
+
+        <!-- ═══════════════════════════════════════════════════════ -->
+        <!-- TEXTBOX CONTEXT MENU — Cut, Copy, Paste                 -->
+        <!-- ═══════════════════════════════════════════════════════ -->
+        <ContextMenu x:Key="FluentTextBoxContextMenu">
+            <MenuItem Command="ApplicationCommands.Cut"
+                      CommandTarget="{Binding PlacementTarget, RelativeSource={RelativeSource AncestorType=ContextMenu}}"
+                      Header="Вырезать" InputGestureText="Ctrl+X"/>
+            <MenuItem Command="ApplicationCommands.Copy"
+                      CommandTarget="{Binding PlacementTarget, RelativeSource={RelativeSource AncestorType=ContextMenu}}"
+                      Header="Копировать" InputGestureText="Ctrl+C"/>
+            <MenuItem Command="ApplicationCommands.Paste"
+                      CommandTarget="{Binding PlacementTarget, RelativeSource={RelativeSource AncestorType=ContextMenu}}"
+                      Header="Вставить" InputGestureText="Ctrl+V"/>
+        </ContextMenu>
 </ResourceDictionary>

@@ -1,6 +1,9 @@
 using System;
 using System.Threading.Tasks;
 using System.Windows;
+using System.Windows.Media;
+using System.Windows.Media.Animation;
+using MosquitoNetCalculator.Helpers;
 using MosquitoNetCalculator.Services;
 using MosquitoNetCalculator.ViewModels;
 using MosquitoNetCalculator.Models;
@@ -178,6 +181,47 @@ namespace MosquitoNetCalculator
         }
 
         /// <summary>
+        /// Pure logic: computes the target Margin for CalculationView given the state of
+        /// left navigation and whether AI is open in maximized mode.
+        /// </summary>
+        internal static Thickness ComputeCalculationViewTargetMargin(bool isNavExpanded, bool isAiOpenInMaximized)
+        {
+            double left = isNavExpanded ? 160 : 52;
+            double right = isAiOpenInMaximized ? 480 : 0;
+            return new Thickness(left, 0, right, 0);
+        }
+
+        /// <summary>
+        /// Updates the Margin of CalculationView so that:
+        /// - Left matches the navigation panel state (160 expanded, 52 collapsed)
+        /// - Right reserves 480px when AI is open in maximized mode, or 0 otherwise
+        /// Prevents the AI assistant panel from covering the calculation workspace.
+        /// </summary>
+        internal void UpdateCalculationViewMargin(bool? aiOpen = null, bool animated = true)
+        {
+            if (CalculationView == null) return;
+
+            bool isNavExpanded = _navService?.IsExpanded ?? true;
+            bool isAiMaximized = aiOpen ?? (WindowState == WindowState.Maximized && AiOverlay?.Visibility == Visibility.Visible);
+            var targetMargin = ComputeCalculationViewTargetMargin(isNavExpanded, isAiMaximized);
+
+            if (animated)
+            {
+                var duration = isAiMaximized ? Motion.Slow : Motion.Base;
+                var marginAnim = new ThicknessAnimation(targetMargin, duration)
+                {
+                    EasingFunction = new CubicEase { EasingMode = isAiMaximized ? EasingMode.EaseOut : EasingMode.EaseIn }
+                };
+                CalculationView.BeginAnimation(FrameworkElement.MarginProperty, marginAnim);
+            }
+            else
+            {
+                CalculationView.BeginAnimation(FrameworkElement.MarginProperty, null);
+                CalculationView.Margin = targetMargin;
+            }
+        }
+
+        /// <summary>
         /// Shows the AI assistant in the mode that matches the current main
         /// window state: in-panel when maximized, docked otherwise. Registers
         /// the AI toast scope lazily on first open (paired with
@@ -188,8 +232,20 @@ namespace MosquitoNetCalculator
         {
             if (WindowState == WindowState.Maximized)
             {
+                CloseAllOverlays();
                 ToastService.RegisterCanvas(ToastService.AiScope, AiAssistantControl.ToastCanvas);
                 AiOverlay.Visibility = Visibility.Visible;
+                UpdateCalculationViewMargin(aiOpen: true, animated: true);
+
+                if (AiSlideTransform != null)
+                {
+                    AiSlideTransform.BeginAnimation(TranslateTransform.XProperty, null);
+                    var slideAnim = new DoubleAnimation(480, 0, Motion.Slow)
+                    {
+                        EasingFunction = new CubicEase { EasingMode = EasingMode.EaseOut }
+                    };
+                    AiSlideTransform.BeginAnimation(TranslateTransform.XProperty, slideAnim);
+                }
             }
             else
             {
@@ -316,7 +372,27 @@ namespace MosquitoNetCalculator
         /// </summary>
         private void CloseAiAssistant()
         {
-            AiOverlay.Visibility = Visibility.Collapsed;
+            if (AiOverlay.Visibility == Visibility.Visible)
+            {
+                UpdateCalculationViewMargin(aiOpen: false, animated: true);
+
+                if (AiSlideTransform != null)
+                {
+                    var slideOut = new DoubleAnimation(480, Motion.Base)
+                    {
+                        EasingFunction = new CubicEase { EasingMode = EasingMode.EaseIn }
+                    };
+                    slideOut.Completed += (_, _) =>
+                    {
+                        AiOverlay.Visibility = Visibility.Collapsed;
+                    };
+                    AiSlideTransform.BeginAnimation(TranslateTransform.XProperty, slideOut);
+                }
+                else
+                {
+                    AiOverlay.Visibility = Visibility.Collapsed;
+                }
+            }
 
             if (_aiWindow != null)
             {
@@ -350,6 +426,11 @@ namespace MosquitoNetCalculator
 
             // Hide current mode.
             AiOverlay.Visibility = Visibility.Collapsed;
+            if (AiSlideTransform != null)
+            {
+                AiSlideTransform.BeginAnimation(TranslateTransform.XProperty, null);
+                AiSlideTransform.X = 0;
+            }
             if (_aiWindow != null)
             {
                 _aiWindow.Hide();
@@ -364,9 +445,11 @@ namespace MosquitoNetCalculator
             {
                 ToastService.RegisterCanvas(ToastService.AiScope, AiAssistantControl.ToastCanvas);
                 AiOverlay.Visibility = Visibility.Visible;
+                UpdateCalculationViewMargin(aiOpen: true, animated: false);
             }
             else
             {
+                UpdateCalculationViewMargin(aiOpen: false, animated: false);
                 ShowDockedAiWindow(); // no re-centering on maximize/restore
             }
         }
