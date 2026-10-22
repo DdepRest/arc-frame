@@ -60,6 +60,17 @@
     <CornerRadius x:Key="Radius.Capsule">10</CornerRadius>
     <!-- Крупный тумблер (трек 48x26) -->
     <CornerRadius x:Key="Radius.CapsuleLg">13</CornerRadius>
+    <!-- Fluent кнопки (шкала 8px) -->
+    <CornerRadius x:Key="Radius.Button">8</CornerRadius>
+    <!-- Внутренняя фаска (минус 1px от внешнего контура) -->
+    <CornerRadius x:Key="Radius.ButtonInner">7</CornerRadius>
+    <!-- Сплит-кнопка: левый сегмент (Fluent StripeLeft) -->
+    <CornerRadius x:Key="Radius.ButtonLeft">8,0,0,8</CornerRadius>
+    <!-- Сплит-кнопка: правый сегмент (Fluent StripeRight) -->
+    <CornerRadius x:Key="Radius.ButtonRight">0,8,8,0</CornerRadius>
+    <!-- Внутренние фаски сплит-кнопок -->
+    <CornerRadius x:Key="Radius.ButtonLeftInner">7,0,0,7</CornerRadius>
+    <CornerRadius x:Key="Radius.ButtonRightInner">0,7,7,0</CornerRadius>
 
     <!-- ── Частичное скругление: форма «приклеено к краю» ──────────── -->
     <!-- Полоса/таб у левой кромки (округлены только левые углы) -->

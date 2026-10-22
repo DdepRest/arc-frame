@@ -15,18 +15,18 @@
 10. EscapeHtml для всех строковых полей в КП                                → GOTCHAS#6
 11. releases.json пушить ПОСЛЕ GitHub Release + ZIP (полный pipeline: RELEASE_PROCESS • CDN-диагностика: AUTO_UPDATE) → RELEASE_PROCESS
 12. При добавлении товара → DefaultPrices + ApplyMigrations                 → GOTCHAS#4
-13. Обновить CHANGELOG.md + CURRENT_STATE.md после изменений                → CONTROL#8
+13. Обновить CHANGELOG.md (для Full-Track также CURRENT_STATE.md)          → CONTROL#8
 14. Статус «Подтверждено владельцем» — только после явного подтверждения    → CONTROL#4
 15. Single-file publish: Assembly.GetName().Version = null                   → GOTCHAS#8
-16. Перед изменениями сверься с DOCUMENTATION_MATRIX.md                     → DOCUMENTATION_MATRIX
-17. После изменений: what-to-update.ps1 → обнови docs → validate-docs.ps1   → скрипты
+16. Перед структурными изменениями сверься с DOCUMENTATION_MATRIX.md       → DOCUMENTATION_MATRIX
+17. Финализация в 1 клик: .\finish.bat (автоматизирует даты, индексы и проверки) → скрипты
 17a. AI Agent Mode: full status table (Этап 0–12) — CURRENT_STATE.md → секция «AI Agent Mode — Progress».
      План: [`../../docs/plans/ai-agent-mode-plan.md`](../../docs/plans/ai-agent-mode-plan.md).
 17b. Release-flow AI-регрессии: `dotnet test --filter "FullyQualifiedName~AiGoldenCase|FullyQualifiedName~AiPlan|FullyQualifiedName~AiTelemetry"`.
      `what-to-update.ps1 -RunAiTests` гоняет его автоматически; если в diff есть AI-файлы, скрипт предупреждает в любом случае.
 18. Структурные изменения (разбивка/переименование/новые классы) → gensymbols.ps1 + INTENTS/MODULES/matrix → CONTROL#13
 19. AGENTS.md/docs держать в актуальности — обязанность агента, не опция       → CONTROL#13
-20. В отчёте указывай метрики экономии (шагов/токенов), честно если ноль       → CONTROL#8
+20. В отчёте Full-Track указывай метрики экономии (шагов/токенов)          → CONTROL#8
 21. Файл растёт (>400–500 строк / разные ответственности) → разбей СЕЙЧАС,      → CONTROL#13
     не оставляй «рефакторинг на потом»: большой файл = дорогое чтение для
     следующего агента. После разбивки — ритуал ситуации А (gensymbols + INTENTS)
@@ -42,15 +42,15 @@
 
 ## Быстрый routing
 
-Только что вошёл? Используй **INTENTS.md** для полного mapping'а намерений.
-Нужен конкретный символ/класс? Используй **SYMBOL_INDEX.md** (60 классов, 16 модулей).
+Только что вошёл? Используй **`.\find.bat <запрос>`** или **INTENTS.md** для быстрого поиска целевых файлов.
+Нужен конкретный символ/класс? Используй **`.\find.bat <символ>`** или **SYMBOL_INDEX.md** (160 классов).
 Нужен статус AI Agent Mode? Используй **CURRENT_STATE.md → «AI Agent Mode — Progress»** (Этап 0–12, полная таблица).
 
 ```
 Задача про →            Читай (кроме CHEATSHEET)
 ──────────────────────────────────────────────────────────
-Расчёты, формулы, Anwis  CURRENT_STATE + CALCULATION_LOGIC + TEST_CASES + GOTCHAS
-Релиз, автообновление   CURRENT_STATE + RELEASE_PROCESS + AUTO_UPDATE
+Расчёты, формулы, Anwis  CURRENT_STATE + CALCULATION_LOGIC (Quick Index) + TEST_CASES + GOTCHAS
+Релиз, автообновление   CURRENT_STATE + RELEASE_PROCESS (Quick Index) + AUTO_UPDATE (Quick Index)
 UI, темы, стили          CURRENT_STATE + GOTCHAS#7 + DECISIONS#10
 Печать КП                CURRENT_STATE + GOTCHAS#6 + CALCULATION_LOGIC#КП
 Сохранение/загрузка      CURRENT_STATE + GOTCHAS#3,#9,#2 + DECISIONS#3
@@ -105,6 +105,14 @@ agents/scripts/arc-check.ps1                                 # Проверка 
 - `ai-agent-mode-plan.md` — полный план AI Agent Mode (13 этапов: Этап 0–12)
 
 ## Last verified
+2026-10-22 (v3.55.1) — обновлено содержимое (sync-last-verified.ps1, CONTROL#13).
+
+2026-10-21 (v3.55.1) — обновлено содержимое (sync-last-verified.ps1, CONTROL#13).
+
+2026-10-20 (v3.55.1) — обновлено содержимое (sync-last-verified.ps1, CONTROL#13).
+
+2026-10-19 (v3.55.1) — обновлено содержимое (sync-last-verified.ps1, CONTROL#13).
+
 2026-10-18 (v3.55.1) — обновлено содержимое (sync-last-verified.ps1, CONTROL#13).
 
 2026-10-12 (v3.55.1) — обновлено содержимое (sync-last-verified.ps1, CONTROL#13).

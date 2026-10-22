@@ -129,7 +129,7 @@
                                     </StackPanel>
 
                                     <StackPanel Grid.Column="4">
-                                        <TextBlock Text="Глубина" Style="{DynamicResource FieldLabel}"/>
+                                        <TextBlock Text="Глубина, мм" Style="{DynamicResource FieldLabel}"/>
                                         <TextBox x:Name="TxtDepth" Style="{DynamicResource QuickInput}"
                                                  TextChanged="Input_TextChanged"
                                                  HorizontalContentAlignment="Right"/>

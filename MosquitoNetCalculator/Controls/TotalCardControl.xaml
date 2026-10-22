@@ -58,11 +58,14 @@
                 <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="{DynamicResource Gap.BlockTop}">
                     <TextBlock x:Name="TxtPositionsMeta" FontSize="{StaticResource Type.Caption}"
                                Foreground="{DynamicResource TotalTextMuted}"/>
-                    <TextBlock FontSize="{StaticResource Type.Caption}" Foreground="{DynamicResource TotalTextMuted}"
-                               Margin="{DynamicResource Gap.LeftLg}"
+                    <!-- Подсказка живёт только пока есть что отменять: на пустом
+                         заказе Ctrl+Z не работает, и обещание вводило в заблуждение.
+                         Видимостью управляет MainWindow.UpdateUndoRedoHint. -->
+                    <TextBlock x:Name="UndoHint" FontSize="{StaticResource Type.Caption}" Foreground="{DynamicResource TotalTextMuted}"
+                               Margin="{DynamicResource Gap.LeftLg}" Visibility="Collapsed"
                                ToolTip="Ctrl+Z — отменить последнее действие">
                         <Run Text="Ctrl+Z" FontFamily="{DynamicResource Font.Mono}" FontSize="{StaticResource Type.Caption}"/>
-                        <Run Text="— отменить удаление"/>
+                        <Run Text="— отменить"/>
                     </TextBlock>
                 </StackPanel>
             </StackPanel>

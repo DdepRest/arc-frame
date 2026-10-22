@@ -66,6 +66,10 @@ namespace MosquitoNetCalculator.Controls
         private const double ZoomMax = 4.0;
         private double _currentZoom = ZoomDefault;
         private double _fitZoom = ZoomDefault;
+        // _fitZoom по умолчанию 1.0 — подсказка «(100%)» до первого расчёта
+        // вписывания была бы выдуманной. Флаг включает процент только после
+        // реального измерения вьюпорта.
+        private bool _fitZoomMeasured;
         private bool _isUserZoom = false;
         private readonly DispatcherTimer _resizeDebounce = new()
         {
@@ -1254,6 +1258,7 @@ namespace MosquitoNetCalculator.Controls
 
                 _isUserZoom = false;
                 _fitZoom = fitScale;
+                _fitZoomMeasured = true;
                 ApplyZoom(fitScale);
             }
             catch (Exception ex)
@@ -1433,10 +1438,15 @@ namespace MosquitoNetCalculator.Controls
                 ZoomInBtn.IsEnabled = _currentZoom < ZoomMax - 0.05;
             if (ZoomResetBtn != null)
                 ZoomResetBtn.IsEnabled = Math.Abs(_currentZoom - ZoomDefault) > 0.05;
-            // UX-08: Fit+20% button removed — no per-button fit label needed.
+            // Кнопка «Вписать» — не индикатор масштаба: рядом стоит «100%
+            // (сброс 1:1)», и две кнопки с процентами читались как дубль друг
+            // друга. Текст остаётся действием, а посчитанный процент уходит в
+            // подсказку — он полезен, но не должен подменять подпись.
             if (ZoomFitBtn != null)
             {
-                ZoomFitBtn.Content = $"{_fitZoom * 100:F0}%";
+                ZoomFitBtn.Content = "Вписать";
+                if (_fitZoomMeasured)
+                    ZoomFitBtn.ToolTip = $"Вписать в окно ({_fitZoom * 100:F0}%)";
                 ZoomFitBtn.IsEnabled = Math.Abs(_currentZoom - _fitZoom) > 0.05;
             }
         }

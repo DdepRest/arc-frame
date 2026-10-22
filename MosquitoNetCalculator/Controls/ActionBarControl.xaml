@@ -11,23 +11,31 @@
 
         <!-- Split-button: main print segment with rounded left corners, flat right -->
         <Style x:Key="PrintMainButton" TargetType="Button" BasedOn="{StaticResource PrimaryButton}">
+            <Setter Property="BorderThickness" Value="1,1,0,1"/>
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="Button">
-                        <Border x:Name="Bd" Background="{Binding Background, RelativeSource={RelativeSource TemplatedParent}}"
-                                CornerRadius="{DynamicResource Radius.StripeLeft}" Padding="{Binding Padding, RelativeSource={RelativeSource TemplatedParent}}"
+                        <Border x:Name="Bd"
+                                Background="{TemplateBinding Background}"
+                                BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="{TemplateBinding BorderThickness}"
+                                CornerRadius="{DynamicResource Radius.ButtonLeft}"
+                                Padding="{TemplateBinding Padding}"
                                 SnapsToDevicePixels="True">
-                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"
+                                              RecognizesAccessKey="True"/>
                         </Border>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsMouseOver" Value="True">
                                 <Setter TargetName="Bd" Property="Background" Value="{DynamicResource AccentHover}"/>
+                                <Setter TargetName="Bd" Property="BorderBrush" Value="{DynamicResource AccentPress}"/>
                             </Trigger>
                             <Trigger Property="IsPressed" Value="True">
                                 <Setter TargetName="Bd" Property="Background" Value="{DynamicResource AccentPress}"/>
+                                <Setter TargetName="Bd" Property="BorderBrush" Value="{DynamicResource AccentPress}"/>
                             </Trigger>
                             <Trigger Property="IsEnabled" Value="False">
-                                <Setter TargetName="Bd" Property="Opacity" Value="0.45"/>
+                                <Setter TargetName="Bd" Property="Opacity" Value="0.38"/>
                             </Trigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
@@ -35,33 +43,39 @@
             </Setter>
         </Style>
 
-        <!-- v3.50 split-button: caret segment glued to the main print button.
-             No hover animation so the pair reads as ONE control (the main
-             segment keeps PrimaryButton's own hover). -->
+        <!-- v3.50 split-button: caret segment glued to the main print button. -->
         <Style x:Key="PrintCaretButton" TargetType="Button">
             <Setter Property="Background" Value="{DynamicResource Accent}"/>
             <Setter Property="Foreground" Value="{DynamicResource OnAccentPrimary}"/>
-            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="BorderThickness" Value="1,1,1,1"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource AccentHover}"/>
             <Setter Property="Cursor" Value="Hand"/>
-            <Setter Property="Padding" Value="{DynamicResource Pad.None}"/>
+            <Setter Property="Padding" Value="{DynamicResource Pad.ControlSmH}"/>
             <Setter Property="FocusVisualStyle" Value="{StaticResource FluentFocusVisual}"/>
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="Button">
-                        <Border x:Name="Bd" Background="{TemplateBinding Background}"
-                                CornerRadius="{DynamicResource Radius.StripeRight}" Padding="{DynamicResource Pad.ControlSmH}">
+                        <Border x:Name="Bd"
+                                Background="{TemplateBinding Background}"
+                                BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="{TemplateBinding BorderThickness}"
+                                CornerRadius="{DynamicResource Radius.ButtonRight}"
+                                Padding="{TemplateBinding Padding}"
+                                SnapsToDevicePixels="True">
                             <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"
                                               RecognizesAccessKey="True"/>
                         </Border>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsMouseOver" Value="True">
                                 <Setter TargetName="Bd" Property="Background" Value="{DynamicResource AccentHover}"/>
+                                <Setter TargetName="Bd" Property="BorderBrush" Value="{DynamicResource AccentPress}"/>
                             </Trigger>
                             <Trigger Property="IsPressed" Value="True">
                                 <Setter TargetName="Bd" Property="Background" Value="{DynamicResource AccentPress}"/>
+                                <Setter TargetName="Bd" Property="BorderBrush" Value="{DynamicResource AccentPress}"/>
                             </Trigger>
                             <Trigger Property="IsEnabled" Value="False">
-                                <Setter TargetName="Bd" Property="Opacity" Value="0.45"/>
+                                <Setter TargetName="Bd" Property="Opacity" Value="0.38"/>
                             </Trigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
@@ -186,7 +200,7 @@
 
                 <!-- UX-13: «Шаблоны» — подсказка комплектности расчёта -->
                 <Button x:Name="BtnTemplates"
-                        Style="{DynamicResource ClientInfoButton}"
+                        Style="{DynamicResource GhostButton}"
                         Click="BtnTemplates_Click" Margin="{DynamicResource Gap.Inline}"
                         AutomationProperties.Name="Шаблоны"
                         ToolTip="Шаблон подсказывает, что обычно входит в расчёт изделия (сетка, лента, доставка, отлив) — и добавляет отмеченное в заказ одним набором">

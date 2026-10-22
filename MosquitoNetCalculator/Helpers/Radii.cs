@@ -47,9 +47,29 @@ namespace MosquitoNetCalculator.Helpers
         /// </summary>
         public static CornerRadius CapsuleSm => Token("Radius.CapsuleSm", 3);
 
+        /// <summary>Fluent кнопка — <c>Radius.Button</c> (8).</summary>
+        public static CornerRadius Button => Token("Radius.Button", RadiusFallbackButton);
+
+        /// <summary>Внутренняя фаска кнопки — <c>Radius.ButtonInner</c> (7).</summary>
+        public static CornerRadius ButtonInner => Token("Radius.ButtonInner", RadiusFallbackButtonInner);
+
+        /// <summary>Левый сегмент сплит-кнопки — <c>Radius.ButtonLeft</c> (8,0,0,8).</summary>
+        public static CornerRadius ButtonLeft => Token("Radius.ButtonLeft", RadiusFallbackButton, 0, 0, RadiusFallbackButton);
+
+        /// <summary>Правый сегмент сплит-кнопки — <c>Radius.ButtonRight</c> (0,8,8,0).</summary>
+        public static CornerRadius ButtonRight => Token("Radius.ButtonRight", 0, RadiusFallbackButton, RadiusFallbackButton, 0);
+
+        private const double RadiusFallbackButton = 8.0;
+        private const double RadiusFallbackButtonInner = 7.0;
+
         private static CornerRadius Token(string key, double fallback) =>
             Application.Current?.TryFindResource(key) is CornerRadius value
                 ? value
                 : new CornerRadius(fallback);
+
+        private static CornerRadius Token(string key, double tl, double tr, double br, double bl) =>
+            Application.Current?.TryFindResource(key) is CornerRadius value
+                ? value
+                : new CornerRadius(tl, tr, br, bl);
     }
 }

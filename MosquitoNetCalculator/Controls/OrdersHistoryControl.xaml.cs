@@ -115,6 +115,7 @@ namespace MosquitoNetCalculator.Controls
             {
                 view.Filter = null;
                 NoSearchResults = false;
+                UpdateCountChip();
                 return;
             }
 
@@ -133,13 +134,51 @@ namespace MosquitoNetCalculator.Controls
 
             view.Refresh();
             NoSearchResults = !IsEmpty && view.IsEmpty;
+            UpdateCountChip();
         }
 
         /// <summary>Called from <see cref="MainWindow.RefreshOrdersList"/> so the
         /// empty-state placeholder stays in sync with the loaded count.</summary>
         public void SetOrdersCount(int count)
         {
+            _totalOrders = count;
             IsEmpty = count == 0;
+            UpdateCountChip();
+        }
+
+        // Полное число заказов для чипа «Найдено: X из Y» (см. UpdateCountChip).
+        private int _totalOrders;
+
+        /// <summary>
+        /// Полное число загруженных заказов, не зависящее от поиска и фильтров.
+        /// Им пользуется плашка «Заказы • N заказов» в шапке оверлея: брать
+        /// <see cref="OrdersGrid"/>.Items нельзя — это ОТФИЛЬТРОВАННЫЙ вид, и на
+        /// запросе без совпадений он равен нулю, из-за чего плашка пропадала
+        /// (и кадр 06b зависел от того, успел ли пройти RefreshNavBadges до
+        /// применения фильтра).
+        /// </summary>
+        internal int TotalOrders => _totalOrders;
+
+        /// <summary>
+        /// Чип счётчика: молчит, когда показаны все заказы (итог уже есть в
+        /// шапке оверлея «Заказы • N заказов»), и показывает «Найдено: X из Y»
+        /// при активном поиске/фильтре. Второе число берётся из загруженного
+        /// списка, первое — из текущего представления грида.
+        /// </summary>
+        private void UpdateCountChip()
+        {
+            if (TxtOrdersCount == null || OrdersCountChip == null) return;
+
+            bool filtering = !string.IsNullOrEmpty(TxtSearchOrders.Text.Trim()) || HasAuxFilters;
+            if (!filtering)
+            {
+                OrdersCountChip.Visibility = Visibility.Collapsed;
+                TxtOrdersCount.Text = string.Empty;
+                return;
+            }
+
+            OrdersCountChip.Visibility = Visibility.Visible;
+            TxtOrdersCount.Text = $"Найдено: {OrdersList.Items.Count} из {_totalOrders}";
         }
 
         /// <summary>Forwards a UI event to the parent MainWindow via the inherited DataContext.

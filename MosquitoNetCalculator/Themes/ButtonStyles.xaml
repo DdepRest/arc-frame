@@ -4,298 +4,199 @@
         <!-- BUTTONS — all calm, proportional                        -->
         <!-- ═══════════════════════════════════════════════════════ -->
 
-        <!-- Primary — Windows 11 Fluent blue -->
-        <Style x:Key="PrimaryButton" TargetType="Button">
-            <Setter Property="Background" Value="{DynamicResource Accent}"/>
-            <Setter Property="Foreground" Value="{DynamicResource OnAccentPrimary}"/>
+        <!-- ═══════════════════════════════════════════════════════ -->
+        <!-- ACTION BUTTONS — единый стеклянный хром                 -->
+        <!-- ═══════════════════════════════════════════════════════ -->
+        <!-- Все action-кнопки делят ОДИН шаблон: различаются только
+             цветами, поэтому hover/press/disabled/focus не расходятся
+             между вариантами. «Стекло» здесь — 1px спекулярная кромка
+             (GlassSpecularBorder) + тематическая плашка, без белой
+             плёнки поверх текста: белый 15% на Accent #3574C3 давал
+             ≈3.6:1 с белым текстом (AA — 4.5:1). -->
+        <ControlTemplate x:Key="GlassButtonTemplate" TargetType="Button">
+            <Border x:Name="Bd"
+                    Background="{TemplateBinding Background}"
+                    BorderBrush="{TemplateBinding BorderBrush}"
+                    BorderThickness="{TemplateBinding BorderThickness}"
+                    CornerRadius="{DynamicResource Radius.Control}"
+                    Padding="{TemplateBinding Padding}"
+                    SnapsToDevicePixels="True">
+                <ContentPresenter HorizontalAlignment="Center"
+                                  VerticalAlignment="Center"
+                                  RecognizesAccessKey="True"/>
+            </Border>
+            <ControlTemplate.Triggers>
+                <Trigger Property="IsPressed" Value="True">
+                    <Setter TargetName="Bd" Property="Opacity" Value="0.85"/>
+                </Trigger>
+                <Trigger Property="IsEnabled" Value="False">
+                    <Setter TargetName="Bd" Property="Opacity" Value="0.38"/>
+                </Trigger>
+            </ControlTemplate.Triggers>
+        </ControlTemplate>
+
+        <!-- База: метрики, курсор, клавиатурный фокус и общий шаблон. -->
+        <Style x:Key="ActionButtonBase" TargetType="Button">
             <Setter Property="FontSize" Value="{StaticResource Type.Body}"/>
             <Setter Property="FontWeight" Value="SemiBold"/>
             <Setter Property="Padding" Value="14,6"/>
-            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="BorderThickness" Value="1"/>
             <Setter Property="Cursor" Value="Hand"/>
-            <Setter Property="Template">
-                <Setter.Value>
-                    <ControlTemplate TargetType="Button">
-                        <Border x:Name="Bd" Background="{Binding Background, RelativeSource={RelativeSource TemplatedParent}}"
-                                CornerRadius="{DynamicResource Radius.Md}" Padding="{Binding Padding, RelativeSource={RelativeSource TemplatedParent}}"
-                                SnapsToDevicePixels="True">
-                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                        </Border>
-                        <ControlTemplate.Triggers>
-                            <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="Bd" Property="Background" Value="{DynamicResource AccentHover}"/>
-                            </Trigger>
-                            <Trigger Property="IsPressed" Value="True">
-                                <Setter TargetName="Bd" Property="Background" Value="{DynamicResource AccentPress}"/>
-                            </Trigger>
-                        </ControlTemplate.Triggers>
-                    </ControlTemplate>
-                </Setter.Value>
-            </Setter>
+            <Setter Property="FocusVisualStyle" Value="{StaticResource FluentFocusVisual}"/>
+            <Setter Property="Template" Value="{StaticResource GlassButtonTemplate}"/>
+        </Style>
+
+        <!-- Primary — Windows 11 Fluent blue -->
+        <Style x:Key="PrimaryButton" TargetType="Button" BasedOn="{StaticResource ActionButtonBase}">
+            <Setter Property="Background" Value="{DynamicResource Accent}"/>
+            <Setter Property="Foreground" Value="{DynamicResource OnAccentPrimary}"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource AccentHover}"/>
+            <Style.Triggers>
+                <Trigger Property="IsMouseOver" Value="True">
+                    <Setter Property="Background" Value="{DynamicResource AccentHover}"/>
+                    <Setter Property="BorderBrush" Value="{DynamicResource AccentPress}"/>
+                </Trigger>
+                <Trigger Property="IsPressed" Value="True">
+                    <Setter Property="Background" Value="{DynamicResource AccentPress}"/>
+                    <Setter Property="BorderBrush" Value="{DynamicResource AccentPress}"/>
+                </Trigger>
+            </Style.Triggers>
         </Style>
 
         <!-- Success — Fluent green -->
-        <Style x:Key="SuccessButton" TargetType="Button">
+        <Style x:Key="SuccessButton" TargetType="Button" BasedOn="{StaticResource ActionButtonBase}">
             <Setter Property="Background" Value="{DynamicResource Success}"/>
             <Setter Property="Foreground" Value="{DynamicResource OnSuccess}"/>
-            <Setter Property="FontSize" Value="{StaticResource Type.Body}"/>
-            <Setter Property="FontWeight" Value="SemiBold"/>
-            <Setter Property="Padding" Value="14,6"/>
-            <Setter Property="BorderThickness" Value="0"/>
-            <Setter Property="Cursor" Value="Hand"/>
-            <Setter Property="Template">
-                <Setter.Value>
-                    <ControlTemplate TargetType="Button">
-                        <Border x:Name="Bd" Background="{Binding Background, RelativeSource={RelativeSource TemplatedParent}}"
-                                CornerRadius="{DynamicResource Radius.Md}" Padding="{Binding Padding, RelativeSource={RelativeSource TemplatedParent}}"
-                                SnapsToDevicePixels="True">
-                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                        </Border>
-                        <ControlTemplate.Triggers>
-                            <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="Bd" Property="Background" Value="{DynamicResource SuccessHover}"/>
-                            </Trigger>
-                            <Trigger Property="IsPressed" Value="True">
-                                <Setter TargetName="Bd" Property="Background" Value="{DynamicResource SuccessHover}"/>
-                            </Trigger>
-                        </ControlTemplate.Triggers>
-                    </ControlTemplate>
-                </Setter.Value>
-            </Setter>
+            <Setter Property="BorderBrush" Value="{DynamicResource SuccessHover}"/>
+            <Style.Triggers>
+                <Trigger Property="IsMouseOver" Value="True">
+                    <Setter Property="Background" Value="{DynamicResource SuccessHover}"/>
+                    <Setter Property="BorderBrush" Value="{DynamicResource SuccessHover}"/>
+                </Trigger>
+                <Trigger Property="IsPressed" Value="True">
+                    <Setter Property="Background" Value="{DynamicResource SuccessHover}"/>
+                </Trigger>
+            </Style.Triggers>
         </Style>
 
         <!-- Danger — Fluent red -->
-        <Style x:Key="DangerButton" TargetType="Button">
+        <Style x:Key="DangerButton" TargetType="Button" BasedOn="{StaticResource ActionButtonBase}">
             <Setter Property="Background" Value="{DynamicResource Danger}"/>
             <Setter Property="Foreground" Value="{DynamicResource OnDanger}"/>
-            <Setter Property="FontSize" Value="{StaticResource Type.Body}"/>
-            <Setter Property="FontWeight" Value="SemiBold"/>
-            <Setter Property="Padding" Value="14,6"/>
-            <Setter Property="BorderThickness" Value="0"/>
-            <Setter Property="Cursor" Value="Hand"/>
-            <Setter Property="Template">
-                <Setter.Value>
-                    <ControlTemplate TargetType="Button">
-                        <Border x:Name="Bd" Background="{Binding Background, RelativeSource={RelativeSource TemplatedParent}}"
-                                CornerRadius="{DynamicResource Radius.Md}" Padding="{Binding Padding, RelativeSource={RelativeSource TemplatedParent}}"
-                                SnapsToDevicePixels="True">
-                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                        </Border>
-                        <ControlTemplate.Triggers>
-                            <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="Bd" Property="Background" Value="{DynamicResource DangerHover}"/>
-                            </Trigger>
-                        </ControlTemplate.Triggers>
-                    </ControlTemplate>
-                </Setter.Value>
-            </Setter>
+            <Setter Property="BorderBrush" Value="{DynamicResource DangerHover}"/>
+            <Style.Triggers>
+                <Trigger Property="IsMouseOver" Value="True">
+                    <Setter Property="Background" Value="{DynamicResource DangerHover}"/>
+                    <Setter Property="BorderBrush" Value="{DynamicResource DangerHover}"/>
+                </Trigger>
+                <Trigger Property="IsPressed" Value="True">
+                    <Setter Property="Background" Value="{DynamicResource DangerHover}"/>
+                </Trigger>
+            </Style.Triggers>
+        </Style>
+
+        <!-- CompactAdd — «Добавить» в Quick-Add -->
+        <Style x:Key="CompactAddButton" TargetType="Button" BasedOn="{StaticResource ActionButtonBase}">
+            <Setter Property="Background" Value="{DynamicResource Accent}"/>
+            <Setter Property="Foreground" Value="{DynamicResource OnAccentPrimary}"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource AccentHover}"/>
+            <Setter Property="Padding" Value="16,6"/>
+            <Style.Triggers>
+                <Trigger Property="IsMouseOver" Value="True">
+                    <Setter Property="Background" Value="{DynamicResource AccentHover}"/>
+                    <Setter Property="BorderBrush" Value="{DynamicResource AccentPress}"/>
+                </Trigger>
+                <Trigger Property="IsPressed" Value="True">
+                    <Setter Property="Background" Value="{DynamicResource AccentPress}"/>
+                    <Setter Property="BorderBrush" Value="{DynamicResource AccentPress}"/>
+                </Trigger>
+            </Style.Triggers>
         </Style>
 
         <!-- Ghost — Fluent secondary, neutral -->
-        <Style x:Key="GhostButton" TargetType="Button">
+        <Style x:Key="GhostButton" TargetType="Button" BasedOn="{StaticResource ActionButtonBase}">
             <Setter Property="Background" Value="{DynamicResource GhostBg}"/>
             <Setter Property="Foreground" Value="{DynamicResource TextPrimary}"/>
-            <Setter Property="FontSize" Value="{StaticResource Type.Body}"/>
-            <Setter Property="FontWeight" Value="SemiBold"/>
-            <Setter Property="Padding" Value="14,6"/>
-            <Setter Property="BorderThickness" Value="1"/>
             <Setter Property="BorderBrush" Value="{DynamicResource GhostBorder}"/>
-            <Setter Property="Cursor" Value="Hand"/>
-            <Setter Property="Template">
-                <Setter.Value>
-                    <ControlTemplate TargetType="Button">
-                        <Border x:Name="Bd" Background="{Binding Background, RelativeSource={RelativeSource TemplatedParent}}"
-                                CornerRadius="{DynamicResource Radius.Md}" Padding="{Binding Padding, RelativeSource={RelativeSource TemplatedParent}}"
-                                BorderThickness="1" BorderBrush="{Binding BorderBrush, RelativeSource={RelativeSource TemplatedParent}}"
-                                SnapsToDevicePixels="True">
-                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                        </Border>
-                        <ControlTemplate.Triggers>
-                            <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="Bd" Property="Background" Value="{DynamicResource AccentLight}"/>
-                                <Setter TargetName="Bd" Property="BorderBrush" Value="{DynamicResource Accent}"/>
-                                <Setter Property="Foreground" Value="{DynamicResource Accent}"/>
-                            </Trigger>
-                            <Trigger Property="IsPressed" Value="True">
-                                <Setter TargetName="Bd" Property="Background" Value="{DynamicResource AccentLight}"/>
-                            </Trigger>
-                            <Trigger Property="IsEnabled" Value="False">
-                                <Setter Property="Opacity" Value="0.4"/>
-                                <Setter Property="Foreground" Value="{DynamicResource TextMuted}"/>
-                            </Trigger>
-                        </ControlTemplate.Triggers>
-                    </ControlTemplate>
-                </Setter.Value>
-            </Setter>
+            <Style.Triggers>
+                <Trigger Property="IsMouseOver" Value="True">
+                    <Setter Property="Background" Value="{DynamicResource RowHover}"/>
+                    <Setter Property="BorderBrush" Value="{DynamicResource BorderHover}"/>
+                </Trigger>
+                <Trigger Property="IsPressed" Value="True">
+                    <Setter Property="Background" Value="{DynamicResource RowAltHover}"/>
+                    <Setter Property="BorderBrush" Value="{DynamicResource Border}"/>
+                </Trigger>
+            </Style.Triggers>
         </Style>
 
-        <!-- DangerGhost — Fluent destructive secondary -->
-        <Style x:Key="DangerGhostButton" TargetType="Button">
+        <!-- SubtleActionButton — Fluent subtle button -->
+        <Style x:Key="SubtleActionButton" TargetType="Button" BasedOn="{StaticResource ActionButtonBase}">
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="Foreground" Value="{DynamicResource TextPrimary}"/>
+            <Setter Property="BorderBrush" Value="Transparent"/>
+            <Style.Triggers>
+                <Trigger Property="IsMouseOver" Value="True">
+                    <Setter Property="Background" Value="{DynamicResource RowHover}"/>
+                    <Setter Property="BorderBrush" Value="{DynamicResource Border}"/>
+                    <Setter Property="Foreground" Value="{DynamicResource TextPrimary}"/>
+                </Trigger>
+                <Trigger Property="IsPressed" Value="True">
+                    <Setter Property="Background" Value="{DynamicResource RowAltHover}"/>
+                </Trigger>
+            </Style.Triggers>
+        </Style>
+
+        <!-- DangerSubtleButton — спокойная кнопка, опасность включается на hover -->
+        <Style x:Key="DangerSubtleButton" TargetType="Button" BasedOn="{StaticResource ActionButtonBase}">
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="Foreground" Value="{DynamicResource TextSecondary}"/>
+            <Setter Property="BorderBrush" Value="Transparent"/>
+            <Style.Triggers>
+                <Trigger Property="IsMouseOver" Value="True">
+                    <Setter Property="Background" Value="{DynamicResource DangerLight}"/>
+                    <Setter Property="BorderBrush" Value="{DynamicResource DangerGhostBorder}"/>
+                    <Setter Property="Foreground" Value="{DynamicResource Danger}"/>
+                </Trigger>
+                <Trigger Property="IsPressed" Value="True">
+                    <Setter Property="Background" Value="{DynamicResource DangerLight}"/>
+                </Trigger>
+            </Style.Triggers>
+        </Style>
+
+        <!-- DangerGhostButton — деструктивное вторичное действие в диалогах -->
+        <Style x:Key="DangerGhostButton" TargetType="Button" BasedOn="{StaticResource ActionButtonBase}">
             <Setter Property="Background" Value="{DynamicResource Surface}"/>
             <Setter Property="Foreground" Value="{DynamicResource Danger}"/>
-            <Setter Property="FontSize" Value="{StaticResource Type.Body}"/>
-            <Setter Property="FontWeight" Value="Regular"/>
-            <Setter Property="Padding" Value="14,6"/>
-            <Setter Property="BorderThickness" Value="1"/>
             <Setter Property="BorderBrush" Value="{DynamicResource DangerGhostBorder}"/>
-            <Setter Property="Cursor" Value="Hand"/>
-            <Setter Property="Template">
-                <Setter.Value>
-                    <ControlTemplate TargetType="Button">
-                        <Border x:Name="Bd" Background="{Binding Background, RelativeSource={RelativeSource TemplatedParent}}"
-                                CornerRadius="{DynamicResource Radius.Md}" Padding="{Binding Padding, RelativeSource={RelativeSource TemplatedParent}}"
-                                BorderThickness="1" BorderBrush="{Binding BorderBrush, RelativeSource={RelativeSource TemplatedParent}}"
-                                SnapsToDevicePixels="True">
-                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                        </Border>
-                        <ControlTemplate.Triggers>
-                            <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="Bd" Property="Background" Value="{DynamicResource DangerLight}"/>
-                            </Trigger>
-                        </ControlTemplate.Triggers>
-                    </ControlTemplate>
-                </Setter.Value>
-            </Setter>
+            <Setter Property="FontWeight" Value="Regular"/>
+            <Style.Triggers>
+                <Trigger Property="IsMouseOver" Value="True">
+                    <Setter Property="Background" Value="{DynamicResource DangerLight}"/>
+                    <Setter Property="BorderBrush" Value="{DynamicResource Danger}"/>
+                </Trigger>
+                <Trigger Property="IsPressed" Value="True">
+                    <Setter Property="Background" Value="{DynamicResource DangerLight}"/>
+                </Trigger>
+            </Style.Triggers>
         </Style>
 
-        <!-- SubtleActionButton — modern outlined action with hover highlight (e.g. Заказчик, Шаблоны) -->
-        <Style x:Key="SubtleActionButton" TargetType="Button">
-            <Setter Property="Background" Value="{DynamicResource GhostBg}"/>
-            <Setter Property="Foreground" Value="{DynamicResource TextPrimary}"/>
-            <Setter Property="FontSize" Value="{StaticResource Type.Body}"/>
-            <Setter Property="FontWeight" Value="SemiBold"/>
-            <Setter Property="Padding" Value="14,6"/>
-            <Setter Property="BorderThickness" Value="1"/>
-            <Setter Property="BorderBrush" Value="{DynamicResource Border}"/>
-            <Setter Property="Cursor" Value="Hand"/>
-            <Setter Property="Template">
-                <Setter.Value>
-                    <ControlTemplate TargetType="Button">
-                        <Border x:Name="Bd" Background="{Binding Background, RelativeSource={RelativeSource TemplatedParent}}"
-                                CornerRadius="{DynamicResource Radius.Md}" Padding="{Binding Padding, RelativeSource={RelativeSource TemplatedParent}}"
-                                BorderThickness="1" BorderBrush="{Binding BorderBrush, RelativeSource={RelativeSource TemplatedParent}}"
-                                SnapsToDevicePixels="True">
-                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                        </Border>
-                        <ControlTemplate.Triggers>
-                            <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="Bd" Property="Background" Value="{DynamicResource AccentLight}"/>
-                                <Setter TargetName="Bd" Property="BorderBrush" Value="{DynamicResource Accent}"/>
-                                <Setter Property="Foreground" Value="{DynamicResource Accent}"/>
-                            </Trigger>
-                            <Trigger Property="IsPressed" Value="True">
-                                <Setter TargetName="Bd" Property="Background" Value="{DynamicResource AccentLight}"/>
-                            </Trigger>
-                            <Trigger Property="IsEnabled" Value="False">
-                                <Setter Property="Opacity" Value="0.4"/>
-                                <Setter Property="Foreground" Value="{DynamicResource TextMuted}"/>
-                            </Trigger>
-                        </ControlTemplate.Triggers>
-                    </ControlTemplate>
-                </Setter.Value>
-            </Setter>
-        </Style>
-
-        <!-- DangerSubtleButton — calm secondary button that highlights danger only on hover -->
-        <Style x:Key="DangerSubtleButton" TargetType="Button">
-            <Setter Property="Background" Value="{DynamicResource GhostBg}"/>
-            <Setter Property="Foreground" Value="{DynamicResource TextSecondary}"/>
-            <Setter Property="FontSize" Value="{StaticResource Type.Body}"/>
-            <Setter Property="FontWeight" Value="SemiBold"/>
-            <Setter Property="Padding" Value="14,6"/>
-            <Setter Property="BorderThickness" Value="1"/>
-            <Setter Property="BorderBrush" Value="{DynamicResource Border}"/>
-            <Setter Property="Cursor" Value="Hand"/>
-            <Setter Property="Template">
-                <Setter.Value>
-                    <ControlTemplate TargetType="Button">
-                        <Border x:Name="Bd" Background="{Binding Background, RelativeSource={RelativeSource TemplatedParent}}"
-                                CornerRadius="{DynamicResource Radius.Md}" Padding="{Binding Padding, RelativeSource={RelativeSource TemplatedParent}}"
-                                BorderThickness="1" BorderBrush="{Binding BorderBrush, RelativeSource={RelativeSource TemplatedParent}}"
-                                SnapsToDevicePixels="True">
-                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                        </Border>
-                        <ControlTemplate.Triggers>
-                            <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="Bd" Property="Background" Value="{DynamicResource DangerLight}"/>
-                                <Setter TargetName="Bd" Property="BorderBrush" Value="{DynamicResource Danger}"/>
-                                <Setter Property="Foreground" Value="{DynamicResource Danger}"/>
-                            </Trigger>
-                            <Trigger Property="IsPressed" Value="True">
-                                <Setter TargetName="Bd" Property="Background" Value="{DynamicResource DangerLight}"/>
-                            </Trigger>
-                            <Trigger Property="IsEnabled" Value="False">
-                                <Setter Property="Opacity" Value="0.4"/>
-                                <Setter Property="Foreground" Value="{DynamicResource TextMuted}"/>
-                            </Trigger>
-                        </ControlTemplate.Triggers>
-                    </ControlTemplate>
-                </Setter.Value>
-            </Setter>
-        </Style>
-
-        <!-- CompactAdd — Fluent "Add" button in Quick-Add -->
-        <Style x:Key="CompactAddButton" TargetType="Button">
-            <Setter Property="Background" Value="{DynamicResource Accent}"/>
-            <Setter Property="Foreground" Value="{DynamicResource OnAccentPrimary}"/>
-            <Setter Property="FontSize" Value="{StaticResource Type.Body}"/>
-            <Setter Property="FontWeight" Value="SemiBold"/>
-            <Setter Property="Padding" Value="16,6"/>
-            <Setter Property="BorderThickness" Value="0"/>
-            <Setter Property="Cursor" Value="Hand"/>
-            <Setter Property="Template">
-                <Setter.Value>
-                    <ControlTemplate TargetType="Button">
-                        <Border x:Name="Bd" Background="{Binding Background, RelativeSource={RelativeSource TemplatedParent}}"
-                                CornerRadius="{DynamicResource Radius.Md}" Padding="{Binding Padding, RelativeSource={RelativeSource TemplatedParent}}"
-                                SnapsToDevicePixels="True">
-                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                        </Border>
-                        <ControlTemplate.Triggers>
-                            <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="Bd" Property="Background" Value="{DynamicResource AccentHover}"/>
-                            </Trigger>
-                            <Trigger Property="IsPressed" Value="True">
-                                <Setter TargetName="Bd" Property="Background" Value="{DynamicResource AccentPress}"/>
-                            </Trigger>
-                        </ControlTemplate.Triggers>
-                    </ControlTemplate>
-                </Setter.Value>
-            </Setter>
-        </Style>
-
-        <!-- AccentBorder — outlined button with accent colors (e.g. «Заказчик») -->
-        <Style x:Key="AccentBorderButton" TargetType="Button">
+        <!-- AccentBorderButton — outlined accent (админ-панель) -->
+        <Style x:Key="AccentBorderButton" TargetType="Button" BasedOn="{StaticResource ActionButtonBase}">
             <Setter Property="Background" Value="{DynamicResource AccentLight}"/>
             <Setter Property="Foreground" Value="{DynamicResource Accent}"/>
-            <Setter Property="FontSize" Value="{StaticResource Type.Body}"/>
-            <Setter Property="FontWeight" Value="SemiBold"/>
-            <Setter Property="Padding" Value="14,6"/>
-            <Setter Property="BorderThickness" Value="1"/>
             <Setter Property="BorderBrush" Value="{DynamicResource Accent}"/>
-            <Setter Property="Cursor" Value="Hand"/>
-            <Setter Property="Template">
-                <Setter.Value>
-                    <ControlTemplate TargetType="Button">
-                        <Border x:Name="Bd" Background="{Binding Background, RelativeSource={RelativeSource TemplatedParent}}"
-                                CornerRadius="{DynamicResource Radius.Md}" Padding="{Binding Padding, RelativeSource={RelativeSource TemplatedParent}}"
-                                BorderThickness="1" BorderBrush="{Binding BorderBrush, RelativeSource={RelativeSource TemplatedParent}}"
-                                SnapsToDevicePixels="True">
-                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                        </Border>
-                        <ControlTemplate.Triggers>
-                            <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="Bd" Property="Background" Value="{DynamicResource Accent}"/>
-                                <Setter Property="Foreground" Value="{DynamicResource OnAccentPrimary}"/>
-                            </Trigger>
-                            <Trigger Property="IsPressed" Value="True">
-                                <Setter TargetName="Bd" Property="Background" Value="{DynamicResource AccentPress}"/>
-                                <Setter Property="Foreground" Value="{DynamicResource OnAccentPrimary}"/>
-                            </Trigger>
-                        </ControlTemplate.Triggers>
-                    </ControlTemplate>
-                </Setter.Value>
-            </Setter>
+            <Style.Triggers>
+                <Trigger Property="IsMouseOver" Value="True">
+                    <Setter Property="Background" Value="{DynamicResource Accent}"/>
+                    <Setter Property="Foreground" Value="{DynamicResource OnAccentPrimary}"/>
+                    <Setter Property="BorderBrush" Value="{DynamicResource AccentHover}"/>
+                </Trigger>
+                <Trigger Property="IsPressed" Value="True">
+                    <Setter Property="Background" Value="{DynamicResource AccentPress}"/>
+                    <Setter Property="BorderBrush" Value="{DynamicResource AccentPress}"/>
+                </Trigger>
+            </Style.Triggers>
         </Style>
 
         <!-- x row delete — Fluent -->
@@ -330,9 +231,9 @@
              AiAssistantControl, so it must live in the app theme dictionary,
              not in any single window's local resources. -->
         <Style x:Key="DialogOutlineButton" TargetType="Button">
-            <Setter Property="Background" Value="{DynamicResource SectionBg}"/>
-            <Setter Property="Foreground" Value="{DynamicResource TextSecondary}"/>
-            <Setter Property="BorderBrush" Value="{DynamicResource Border}"/>
+            <Setter Property="Background" Value="{DynamicResource GhostBg}"/>
+            <Setter Property="Foreground" Value="{DynamicResource TextPrimary}"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource GhostBorder}"/>
             <Setter Property="BorderThickness" Value="1"/>
             <Setter Property="FontSize" Value="{StaticResource Type.Caption}"/>
             <Setter Property="Cursor" Value="Hand"/>
@@ -344,9 +245,9 @@
                                 Background="{TemplateBinding Background}"
                                 BorderBrush="{TemplateBinding BorderBrush}"
                                 BorderThickness="{TemplateBinding BorderThickness}"
-                                CornerRadius="{DynamicResource Radius.Md}"
-                                Padding="{TemplateBinding Padding}">
-                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                CornerRadius="{DynamicResource Radius.Control}"
+                                SnapsToDevicePixels="True">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" Margin="{TemplateBinding Padding}"/>
                         </Border>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsMouseOver" Value="True">
@@ -355,6 +256,7 @@
                             </Trigger>
                             <Trigger Property="IsPressed" Value="True">
                                 <Setter TargetName="ButtonBorder" Property="Background" Value="{DynamicResource RowAltHover}"/>
+                                <Setter TargetName="ButtonBorder" Property="BorderBrush" Value="{DynamicResource Border}"/>
                             </Trigger>
                             <Trigger Property="IsEnabled" Value="False">
                                 <Setter TargetName="ButtonBorder" Property="Opacity" Value="0.45"/>
@@ -371,7 +273,8 @@
         <Style x:Key="DialogPrimaryButton" TargetType="Button" BasedOn="{StaticResource DialogOutlineButton}">
             <Setter Property="Background" Value="{DynamicResource Accent}"/>
             <Setter Property="Foreground" Value="{DynamicResource OnAccentPrimary}"/>
-            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource AccentHover}"/>
             <Setter Property="FontWeight" Value="SemiBold"/>
             <Setter Property="Padding" Value="18,0"/>
             <Setter Property="Template">
@@ -379,16 +282,20 @@
                     <ControlTemplate TargetType="Button">
                         <Border x:Name="PrimaryBorder"
                                 Background="{TemplateBinding Background}"
-                                CornerRadius="{DynamicResource Radius.Md}"
-                                Padding="{TemplateBinding Padding}">
-                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="{TemplateBinding BorderThickness}"
+                                CornerRadius="{DynamicResource Radius.Control}"
+                                SnapsToDevicePixels="True">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" Margin="{TemplateBinding Padding}"/>
                         </Border>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsMouseOver" Value="True">
                                 <Setter TargetName="PrimaryBorder" Property="Background" Value="{DynamicResource AccentHover}"/>
+                                <Setter TargetName="PrimaryBorder" Property="BorderBrush" Value="{DynamicResource AccentPress}"/>
                             </Trigger>
                             <Trigger Property="IsPressed" Value="True">
                                 <Setter TargetName="PrimaryBorder" Property="Background" Value="{DynamicResource AccentPress}"/>
+                                <Setter TargetName="PrimaryBorder" Property="BorderBrush" Value="{DynamicResource AccentPress}"/>
                             </Trigger>
                             <Trigger Property="IsEnabled" Value="False">
                                 <Setter TargetName="PrimaryBorder" Property="Opacity" Value="0.45"/>
@@ -459,6 +366,7 @@
         <Style x:Key="DialogCloseButton" TargetType="Button">
             <Setter Property="Background" Value="Transparent"/>
             <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="BorderBrush" Value="Transparent"/>
             <Setter Property="Cursor" Value="Hand"/>
             <Setter Property="Foreground" Value="{DynamicResource TextPrimary}"/>
             <Setter Property="ToolTip" Value="Закрыть (Escape)"/>
@@ -469,16 +377,25 @@
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="Button">
-                        <Border Background="{TemplateBinding Background}" BorderThickness="0" CornerRadius="{DynamicResource Radius.Md}" ClipToBounds="True">
-                            <Grid>
-                                <Border x:Name="HoverOverlay" Background="{DynamicResource Danger}" Opacity="0" CornerRadius="{DynamicResource Radius.Md}"/>
-                                <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                            </Grid>
+                        <Border x:Name="CloseBd"
+                                Background="{TemplateBinding Background}"
+                                BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="{TemplateBinding BorderThickness}"
+                                CornerRadius="{DynamicResource Radius.Sm}"
+                                SnapsToDevicePixels="True">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
                         </Border>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsMouseOver" Value="True">
                                 <Setter Property="Foreground" Value="{DynamicResource OnDanger}"/>
-                                <Setter TargetName="HoverOverlay" Property="Opacity" Value="1"/>
+                                <Setter TargetName="CloseBd" Property="Background" Value="{DynamicResource Danger}"/>
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter Property="Foreground" Value="{DynamicResource OnDanger}"/>
+                                <Setter TargetName="CloseBd" Property="Background" Value="{DynamicResource DangerHover}"/>
+                            </Trigger>
+                            <Trigger Property="IsEnabled" Value="False">
+                                <Setter TargetName="CloseBd" Property="Opacity" Value="0.4"/>
                             </Trigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>

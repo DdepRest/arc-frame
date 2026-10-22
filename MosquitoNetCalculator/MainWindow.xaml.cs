@@ -513,10 +513,12 @@ namespace MosquitoNetCalculator
         internal void UpdateEmptyState()
         {
             if (OrderItemsControl?.Empty == null || OrderItemsControl?.Grid == null) return;
-            OrderItemsControl.Empty.Visibility = OrderItems.Count == 0 ? Visibility.Visible : Visibility.Collapsed;
+            bool hasItems = OrderItems.Count > 0;
+            OrderItemsControl.Empty.Visibility = hasItems ? Visibility.Collapsed : Visibility.Visible;
+            OrderItemsControl.SetTableVisible(hasItems);
             // v3.50: header bar «Позиции заказа» only makes sense with rows —
             // an empty grid already shows the illustrated empty state instead.
-            OrderItemsControl.SetTableHeadVisible(OrderItems.Count > 0);
+            OrderItemsControl.SetTableHeadVisible(hasItems);
         }
 
         /// <summary>
@@ -670,6 +672,10 @@ namespace MosquitoNetCalculator
         internal void ToggleSidebarOverlay()
         {
             _overlayManager!.Toggle(_sidebarEntry!);
+            // Панель держит позицию прокрутки между открытиями: возвращаемся
+            // к шапке «Заказчик», чтобы поля не выглядели обрезанными сверху.
+            if (SidebarOverlay.Visibility == Visibility.Visible)
+                Sidebar.ResetScroll();
         }
 
         private void CloseOverlay_Click(object sender, RoutedEventArgs e)
@@ -964,7 +970,12 @@ namespace MosquitoNetCalculator
 
         internal void RefreshNavBadges()
         {
-            int orderCount = OrdersHistoryControl?.OrdersGrid?.Items?.Count ?? 0;
+            // Считаем ЗАГРУЖЕННЫЕ заказы, а не строки грида: у грида активен
+            // search-фильтр (CollectionView), и на запросе без совпадений Items
+            // равен нулю — плашка «Заказы • N заказов» исчезала при вводе
+            // поиска, а в каком именно моменте успел пройти этот метод, решал
+            // пиксели кадра 06b в харнессе.
+            int orderCount = OrdersHistoryControl?.TotalOrders ?? 0;
 
             // Orders count chip in overlay header (Russian pluralization + chip visibility).
             // Russian rule: last-two-digits drive the form. 11–14 are ALWAYS

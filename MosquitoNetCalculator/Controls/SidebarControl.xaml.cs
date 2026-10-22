@@ -20,6 +20,13 @@ namespace MosquitoNetCalculator.Controls
         public TextBox TxtNumber => TxtContractNumber;
         public ComboBox CmbOrderStatus => CmbStatus;
 
+        /// <summary>
+        /// Панель запоминает позицию прокрутки между открытиями, поэтому после
+        /// переоткрытия пользователь попадал в середину карточки «Заказчик».
+        /// Сбрасываем к началу при каждом показе оверлея.
+        /// </summary>
+        public void ResetScroll() => SidebarScroller.ScrollToTop();
+
         public SidebarControl()
         {
             InitializeComponent();

@@ -83,6 +83,8 @@ namespace MosquitoNetCalculator
             bool canUndo = ViewModel.UndoRedo.CanUndo;
             UndoRedoHint.Visibility = canUndo ? Visibility.Visible : Visibility.Collapsed;
             UndoRedoHint.Text = canUndo ? "Ctrl+Z — отменить | Ctrl+Y — повторить" : "";
+            // Подсказка в карточке «ИТОГО» — тот же стек, тот же момент.
+            TotalCardControl?.SetUndoVisible(canUndo);
             // UX-12: ActionBar Undo/Redo buttons track the stack state.
             OnPropertyChanged(nameof(CanUndo));
             OnPropertyChanged(nameof(CanRedo));

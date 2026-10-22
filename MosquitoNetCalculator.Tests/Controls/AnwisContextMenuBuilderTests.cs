@@ -37,8 +37,20 @@ namespace MosquitoNetCalculator.Tests.Controls
         /// <c>Style</c> property assignment in <c>Build()</c> without
         /// requiring <see cref="Application.Current"/> or a full theme
         /// ResourceDictionary load.
+        ///
+        /// <para><b>Почему ThreadStatic, а не static readonly.</b>
+        /// <see cref="Style"/> — <c>DispatcherObject</c>: его владелец — нить,
+        /// где он создан. Общий static создавался на первой нити, увидевшей
+        /// класс, а тела запускаются на общем STA-воркере (и воркер может быть
+        /// заменён после таймаута) — тогда все 24 теста падали в
+        /// <c>StyleHelper.SealIfSealable → VerifyAccess</c> «чужой поток».
+        /// Кеш на нить сохраняет и <c>Assert.Same</c> (одна и та же Style в
+        /// пределах теста), и кросс-поточную безопасность.</para>
         /// </summary>
-        private static readonly Style MenuStyle = new Style(typeof(ContextMenu));
+        [ThreadStatic]
+        private static Style? _menuStyle;
+
+        private static Style MenuStyle => _menuStyle ??= new Style(typeof(ContextMenu));
 
         /// <summary>
         /// Runs <paramref name="action"/> on a dedicated STA thread,

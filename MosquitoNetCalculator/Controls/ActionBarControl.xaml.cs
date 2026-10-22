@@ -142,6 +142,8 @@ namespace MosquitoNetCalculator.Controls
             mw.RefreshOrdersList();
             mw.MarkClean();
             mw.UndoRedo.Clear();
+            // Стек пуст — подсказка «Ctrl+Z — отменить» больше не правдива.
+            mw.UpdateUndoRedoHint();
 
             ToastService.ShowToast($"Заказ {orderData.ContractNumber} сохранён!", ToastType.Success);
             if (!mw.SuppressPrefixSave)

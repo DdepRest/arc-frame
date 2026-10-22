@@ -92,6 +92,15 @@ a concrete user decision documented in §"Open questions".
   [`CALCULATION_LOGIC.md`](CALCULATION_LOGIC.md) and
   [`GOTCHAS.md`](GOTCHAS.md).
 
+## Last verified
+2026-10-22 (v3.55.1) — обновлено содержимое (sync-last-verified.ps1, CONTROL#13).
+
+2026-10-21 (v3.55.1) — обновлено содержимое (sync-last-verified.ps1, CONTROL#13).
+
+2026-10-20 (v3.55.1) — обновлено содержимое (sync-last-verified.ps1, CONTROL#13).
+
+2026-10-19 (v3.55.1) — актуализировано для v3.55.1 (CONTROL#13).
+
 ## Revision log
 
 - 2026-08-20 — created for hardening stage 1

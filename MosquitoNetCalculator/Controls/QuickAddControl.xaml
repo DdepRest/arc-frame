@@ -231,15 +231,22 @@
                              HorizontalContentAlignment="Right"/>
                 </StackPanel>
 
-                <!-- Add button aligned with inputs -->
-                <Button x:Name="BtnAdd" Grid.Row="0" Grid.Column="12" Style="{DynamicResource CompactAddButton}"
-                        Click="BtnQuickAdd_Click" ToolTip="Добавить в заказ (Enter)"
-                        VerticalAlignment="Bottom" Height="32">
-                    <StackPanel Orientation="Horizontal">
-                        <TextBlock Style="{DynamicResource FluentIconButton}" Text="&#xE710;"/>
-                        <TextBlock Text="Добавить"/>
-                    </StackPanel>
-                </Button>
+                <!-- Add button aligned with inputs.
+                     Обёртка с невидимым спейсером-меткой повторяет колонку поля:
+                     подпись + контрол. Кнопка встаёт ровно на базовую линию всех
+                     TextBox/ComboBox строки независимо от высоты FieldLabel. -->
+                <StackPanel Grid.Row="0" Grid.Column="12">
+                    <TextBlock Text="&#160;" Style="{DynamicResource FieldLabel}"
+                               IsHitTestVisible="False"/>
+                    <Button x:Name="BtnAdd" Style="{DynamicResource CompactAddButton}"
+                            Click="BtnQuickAdd_Click" ToolTip="Добавить в заказ (Enter)"
+                            Height="32">
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Style="{DynamicResource FluentIconButton}" Text="&#xE710;"/>
+                            <TextBlock Text="Добавить"/>
+                        </StackPanel>
+                    </Button>
+                </StackPanel>
             </Grid>
 
             <!-- Anwis segmented control — dedicated row, visible only when applicable -->

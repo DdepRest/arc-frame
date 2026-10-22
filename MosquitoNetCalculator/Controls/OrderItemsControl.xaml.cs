@@ -27,6 +27,13 @@ namespace MosquitoNetCalculator.Controls
                 TableHeadBar.Visibility = visible ? Visibility.Visible : Visibility.Collapsed;
         }
 
+        /// <summary>Hides the table card while the grid is empty so its square 90° corners don't stick out behind EmptyState.</summary>
+        internal void SetTableVisible(bool visible)
+        {
+            if (CardTable != null)
+                CardTable.Visibility = visible ? Visibility.Visible : Visibility.Collapsed;
+        }
+
         public OrderItemsControl()
         {
             InitializeComponent();

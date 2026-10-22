@@ -44,7 +44,7 @@ namespace MosquitoNetCalculator.Tests.Services
                     ThemeService.ToggleTheme();
                     ThemeService.ApplyTheme(TimeSpan.Zero);
                     surface = Assert.IsType<SolidColorBrush>(Application.Current.Resources["Surface"]);
-                    Assert.Equal(Parse("#1E2025"), surface.Color); // DarkColors["Surface"]
+                    Assert.Equal(Parse("#242427"), surface.Color); // DarkColors["Surface"]
                 }
                 finally
                 {

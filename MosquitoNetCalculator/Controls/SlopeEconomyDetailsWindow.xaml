@@ -57,7 +57,7 @@
                                HorizontalAlignment="Left"/>
                     <!-- UX-14: shared DialogCloseButton (was a private 60-line copy) -->
                     <Button Grid.Column="1"
-                            Width="40" Height="40"
+                            Width="32" Height="32"
                             Style="{DynamicResource DialogCloseButton}"
                             Click="CloseButton_Click">
                         <TextBlock Text="&#xE8BB;" FontFamily="{DynamicResource Font.Icon}" FontSize="{StaticResource Type.Caption}"/>

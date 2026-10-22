@@ -373,12 +373,18 @@ namespace MosquitoNetCalculator.Tests.Helpers
 
                 if (surfaceOwner.HasValue && surfaceOwner.Value != currentTid)
                 {
-                    // Журналируем и продолжаем: материализация на воркере выше
-                    // делает чужие касания read-only (легальными), а FailFast
-                    // здесь убивал прогон изнутри активного теста-жертвы, не
-                    // называя настоящего виновника.
+                    // Журналируем владельца и СРАЗУ пересобираем приложение.
+                    // Приложение с чужими владельцами непригодно: первый же
+                    // StyleHelper.SealIfSealable на UI-потоке упадёт в
+                    // VerifyAccess, причём упадёт не виновник, а следующие
+                    // 10–30 тестов (именно так выглядела «флакающая» простыня
+                    // падений Theme/Toast/Anwis/drop). Возврат false уводит
+                    // EnsureCore в ResetStatics + новое приложение на воркере —
+                    // прогон продолжается с чистого состояния.
                     Diag($"THIEF-DETECTED surfaceOwner=t{surfaceOwner.Value} probe=t{currentTid} " +
                          "stack=" + Environment.StackTrace.Replace(Environment.NewLine, " | "));
+                    Diag($"THIEF-KEYS {DescribeForeignOwnedResources(current, currentTid)}");
+                    return false;
                 }
 
                 // Глушимое/умершее приложение непригодно: LoadComponent такого
@@ -398,6 +404,41 @@ namespace MosquitoNetCalculator.Tests.Helpers
                 // может бросить после начатого shutdown — такое приложение мёртвое.
                 return false;
             }
+        }
+
+        /// <summary>
+        /// Перечисляет ресурсные ключи, чьи НЕЗАМОРОЖЕННЫЕ <see cref="System.Windows.Freezable"/>
+        /// принадлежат чужому потоку, — по имени ключа видно, какой не-STA код
+        /// материализовал ресурс (в THIEF-стеке видна только проба, не виновник).
+        /// Замороженные Freezable безопасны для чтения с любой нити, поэтому в
+        /// список не попадают.
+        /// </summary>
+        private static string DescribeForeignOwnedResources(Application application, int currentTid)
+        {
+            var keys = new List<object>();
+            try { CollectKeys(application.Resources, keys); }
+            catch { return "<keys unreadable>"; }
+
+            var foreign = new List<string>();
+            foreach (var key in keys)
+            {
+                try
+                {
+                    if (application.TryFindResource(key) is System.Windows.Freezable freezable
+                        && !freezable.IsFrozen)
+                    {
+                        var owner = freezable.Dispatcher?.Thread?.ManagedThreadId;
+                        if (owner.HasValue && owner.Value != currentTid)
+                            foreign.Add($"{key}->t{owner.Value}");
+                    }
+                }
+                catch { /* битый ресурс — не наша забота */ }
+            }
+
+            if (foreign.Count == 0) return "<none: surface-probe only>";
+            const int shown = 12;
+            return string.Join(", ", foreign.Take(shown))
+                + (foreign.Count > shown ? $", … ({foreign.Count} keys total)" : string.Empty);
         }
 
         /// <summary>Конвертеры из App.xaml — продукты берут их через StaticResource.</summary>

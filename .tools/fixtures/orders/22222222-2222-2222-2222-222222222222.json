@@ -1,0 +1,18 @@
+{
+  "Id": "22222222-2222-2222-2222-222222222222",
+  "CreatedAt": "2025-05-05T09:00:00",
+  "UpdatedAt": "2025-05-05T09:00:00",
+  "Status": "Подтверждён",
+  "ContractNumber": "2-60",
+  "ContractDate": "2025-05-05T00:00:00",
+  "ClientName": "",
+  "ClientPhone": "+7 900 000-00-02",
+  "ClientAddress": "ул. Тестовая, 2",
+  "Notes": "",
+  "HasAdditionalKp": false,
+  "AdditionalKpNumber": "",
+  "AdditionalKpAmount": 0,
+  "AdditionalKps": [],
+  "TotalAmount": 1800,
+  "Items": []
+}

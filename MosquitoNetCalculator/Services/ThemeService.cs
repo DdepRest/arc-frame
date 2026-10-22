@@ -39,6 +39,26 @@ namespace MosquitoNetCalculator.Services
         {
             IsDarkTheme = !IsDarkTheme;
             AppSettingsService.SaveTheme(IsDarkTheme ? "dark" : "light");
+
+            // Кисти темы и подписчики ThemeChanged — принадлежность UI-потока.
+            // С фоновой нити (тест-раннер, будущий системный watcher) первый же
+            // прочитанный ресурс становился чужим DispatcherObject'ом, и дальше
+            // ЛЮБОЕ обращение UI-потока к нему падало в VerifyAccess (ловушка
+            // «кисть украдена»: цвет не применялся, тосты/таблицы падали в
+            // StyleHelper.SealIfSealable). Маршалируем вместе с событием, чтобы
+            // подписчики (Mica заголовка и т.п.) тоже работали на UI-потоке.
+            var dispatcher = Application.Current?.Dispatcher;
+            if (dispatcher != null && !dispatcher.CheckAccess()
+                && !dispatcher.HasShutdownStarted && !dispatcher.HasShutdownFinished)
+            {
+                dispatcher.Invoke(() =>
+                {
+                    ApplyTheme();
+                    ThemeChanged?.Invoke();
+                });
+                return;
+            }
+
             ApplyTheme();
             ThemeChanged?.Invoke();
         }
@@ -103,6 +123,20 @@ namespace MosquitoNetCalculator.Services
         {
             var app = Application.Current;
             if (app == null) return;
+
+            // Инвариант потока: ресурсы темы — DispatcherObject'ы, и владельцем
+            // становится тот, кто прочитал их ПЕРВЫМ. Прямой вызов с фоновой
+            // нити (в тестах — не-STA кейс, читающий ThemeService; в проде —
+            // любой будущий фоновый триггер) отдавал все кисти чужому потоку:
+            // последующие UI-операции валились в VerifyAccess, причём падал не
+            // виновник, а следующий тест (см. ManualChecklistTests). Мёртвый
+            // dispatcher — применять некуда: тихо выходим, НЕ трогая ресурсы.
+            if (!app.Dispatcher.CheckAccess())
+            {
+                if (app.Dispatcher.HasShutdownStarted || app.Dispatcher.HasShutdownFinished) return;
+                app.Dispatcher.Invoke(() => ApplyTheme(transitionDuration));
+                return;
+            }
 
             // ── Tell Windows the process-level dark-mode preference has changed.
             App.NotifyThemeChanged(IsDarkTheme);
@@ -355,120 +389,110 @@ namespace MosquitoNetCalculator.Services
         };
 
         // ─────────────────────────────────────────────────────────
-        // Dark theme — v3.50 prototype palette
-        // (docs/prototype.html: bg #131417, panel #1E2025, accent #4EA1F7)
-        //
-        // Elevation system (4 visible levels):
-        //   L0  AppBg      #131417  — deepest page background
-        //   L0.5 RowAlt    #17181C  — alternating row background
-        //   L1  Surface    #1E2025  — cards, panels, tables
-        //   L2  QuickBg    #23262C  — elevated interactive cards
-        //   L3  HeaderBg   #2A2D33  — column headers, prominent panels
+        // Dark theme — «Угольный / Антрацит / Электрик»
+        // Based on user reference palette:
+        //   Угольный   #19191B — AppBg (canvas root, neutral graphite charcoal)
+        //   Антрацит   #242427 — Surface (cards, panels, data grid)
+        //   Сланцевый  #38383D — Border, HeaderBorder, GhostBorder
+        //   Электрик   #3272D8 — Accent (vibrant electric blue)
+        //   Циан       #4EA8DE — Highlights, BadgeDefaultFg
+        //   Сигнальный #1C8648 — Success (save action, fresh emerald)
+        //   Янтарный   #D9A62E — Warning
+        //   Белый      #F5F6F8 / #FFFFFF — TextPrimary, TotalText
+        //   Серебристый#A8AAB2 / #8C8E98 — TextSecondary, TextMuted
         // ─────────────────────────────────────────────────────────
         private static readonly Dictionary<string, string> DarkColors = new()
         {
-            // Backgrounds — 4-level elevation (prototype: --bg/--panel/--panel2/--field)
-            ["AppBg"]        = "#131417",
-            ["SidebarBg"]    = "#17181C",
-            ["Surface"]       = "#1E2025",
-            ["QuickBg"]       = "#23262C",
-            // Скрим глубже, чем в светлой теме: тёмная подложка уже тёмная,
-            // панель должна читаться как отдельный слой.
-            ["Scrim"]        = "#8C000000",
-            ["RowAlt"]        = "#17181C",
-            ["RowHover"]      = "#22252B",
-            ["RowAltHover"]   = "#22252B",
-            ["RowAltSelected"] = "#26384C",
+            // Backgrounds — Нейтральный Угольный & Антрацит (без синего уклона)
+            ["AppBg"]             = "#19191B",
+            ["SidebarBg"]         = "#131315",
+            ["Surface"]           = "#242427",
+            ["QuickBg"]           = "#1E1E21",
+            // Скрим подложки оверлеев
+            ["Scrim"]             = "#99000000",
+            ["RowAlt"]            = "#202023",
+            ["RowHover"]          = "#2D2D31",
+            ["RowAltHover"]       = "#2D2D31",
+            ["RowAltSelected"]    = "#34343B",
             // Row-hover/select animation targets (Color)
-            ["RowHoverColor"]    = "#22252B",
-            ["AccentLightColor"] = "#26384C",
-            // Accent — prototype blue #4EA1F7 (--accent), darker steps for hover/press
-            ["Accent"]        = "#4EA1F7",
-            ["AccentHover"]   = "#6BB4F9",
-            ["AccentPress"]   = "#2B7FD4",
-            ["AccentLight"]   = "#26384C",
-            ["AccentShadowColor"] = "#4EA1F7",
-            // Text — prototype: --text #E8EAED, --muted #9AA0A8
-            ["TextPrimary"]   = "#E8EAED",
-            ["TextSecondary"] = "#C3C8CF",
-            // Prototype --dim #6D727B is ≈3.5:1 on Surface — below AA for 8-11px
-            // labels; #8B919A keeps the grayish hue at ≈5.4:1 (UX-07 rule).
-            ["TextMuted"]     = "#8B919A",
-            // Borders — prototype: --border #2C2F36, --border2 #383C44
-            ["Border"]        = "#2C2F36",
-            ["BorderHover"]   = "#454A53",
-            ["SubtleBorder"]  = "#26292F",
-            // GridLine чуть светлее Surface — иначе на многострочных адресных
-            // строках таблицы разделители не видны и строки сливаются в «кашу».
-            ["GridLine"]      = "#34383F",
-            ["TrackBg"]       = "#33363D",
-            ["ScrollBarThumb"] = "#606873",
-            ["HeaderBorder"]  = "#33363C",
-            // Semantic — prototype: --green #3ECF8E, --red #E5484D, --amber #F5A524
-            ["Success"]       = "#3ECF8E",
-            ["SuccessHover"]  = "#5EDDA4",
-            // v3.53 contrast audit: прототипный #E5484D давал 3.91:1 с белым
-            // текстом на опасной кнопке (ниже AA). #D63C42 = 4.58:1 и при этом
-            // остаётся графикой ≥3:1 на Surface (3.56) — красный не «сереет».
-            ["Danger"]        = "#D63C42",
-            ["DangerHover"]   = "#FF6B6F",
-            ["Warning"]       = "#F5A524",
-            ["DangerLight"]   = "#2E1B1E",
-            ["DangerGhostBorder"] = "#5A2629",
-            // On-accent text.
-            // v3.53 contrast audit: белый на прототипном акценте #4EA1F7 давал
-            // 2.70:1 — все 19 мест с OnAccent (галочки, активные чипы, тумблеры
-            // вкладок) сидели на акцентной заливке. В тёмной теме это тёмный
-            // текст на ярком акценте, ровно как OnAccentPrimary (#06121F = 6.97:1).
-            ["OnAccent"]      = "#06121F",
-            // v3.50.1: prototype .btn.blue color #06121F — dark text on accent fill
-            ["OnAccentPrimary"] = "#06121F",
-            ["OnSuccess"]     = "#04180D",
-            ["OnDanger"]      = "#FFFFFF",
-            // Ghost button — prototype .btn.dark #2A2D33 with border #3A3E46
-            ["GhostBg"]       = "#2A2D33",
-            ["GhostBorder"]   = "#3A3E46",
-            // Section card — sidebar sub-cards
-            ["SectionBg"]     = "#22252B",
-            ["SectionAccent"] = "#4EA1F7",
+            ["RowHoverColor"]     = "#2D2D31",
+            ["AccentLightColor"]  = "#2A3244",
+            // Accent — Электрик (#3272D8) / Циан (#4EA8DE)
+            ["Accent"]            = "#3272D8",
+            ["AccentHover"]       = "#2C6BD2",
+            ["AccentPress"]       = "#2662BA",
+            ["AccentLight"]       = "#2A3244",
+            ["AccentShadowColor"] = "#3272D8",
+            // Typography — Белый (#F5F6F8) & Серебристый (#A8AAB2 / #8C8E98)
+            ["TextPrimary"]       = "#F5F6F8",
+            ["TextSecondary"]     = "#A8AAB2",  // 6.7:1 на Surface
+            ["TextMuted"]         = "#8C8E98",  // 4.9:1 на Surface
+            // Сланцевый — Hairline Borders & Dividers (#38383D)
+            ["Border"]            = "#38383D",
+            ["BorderHover"]       = "#505057",
+            ["SubtleBorder"]      = "#2B2B2F",
+            ["GridLine"]          = "#2B2B2F",
+            ["TrackBg"]           = "#242428",
+            ["ScrollBarThumb"]    = "#4A4A52",
+            ["HeaderBorder"]      = "#38383D",
+            // Semantic — Сигнальный (#1C8648), Ruby (#D63C42), Янтарный (#D9A62E)
+            ["Success"]           = "#1C8648",
+            // v3.56: hover ШАГ ВНИЗ от базового, как у Accent: #229853 давал
+            // белый текст 3.69:1 (ниже AA). #17703D = 6.1:1.
+            ["SuccessHover"]      = "#17703D",
+            ["Danger"]            = "#D63C42",
+            // v3.56: #E05358 давал белый текст 3.78:1 (ниже AA).
+            // #C3353B = 5.4:1 — тот же красный, читаемый под курсором.
+            ["DangerHover"]       = "#C3353B",
+            ["Warning"]           = "#D9A62E",
+            ["DangerLight"]       = "#351B20",
+            ["DangerGhostBorder"] = "#6E2B33",
+            // Action fills & buttons (чистый белый текст на заливках)
+            ["OnAccent"]          = "#FFFFFF",
+            ["OnAccentPrimary"]   = "#FFFFFF",
+            ["OnSuccess"]         = "#FFFFFF",
+            ["OnDanger"]          = "#FFFFFF",
+            // Ghost button
+            ["GhostBg"]           = "#242427",
+            ["GhostBorder"]       = "#38383D",
+            // Section card
+            ["SectionBg"]         = "#202023",
+            ["SectionAccent"]     = "#3272D8",
             // Glow / shadow
-            ["GlowAccent"]    = "#4EA1F7",
-            ["SuccessShadow"] = "#3ECF8E",
-            ["DangerShadow"]  = "#E5484D",
-            // Total bar — deeper than AppBg like prototype statusbar (--bg2 #17181C)
-            ["TotalBg"]       = "#17181C",
-            ["TotalText"]     = "#E8EAED",
-            ["TotalTextMuted"] = "#8B919A",
-            // Quick-add / chips — visible accent (accent at ~12% on surface)
-            ["ChipBg"]        = "#26384C",
-            // DataGrid headers — elevated
-            ["HeaderBg"]      = "#2A2D33",
-            ["HeaderBorder"]  = "#33363C",
-            ["HeaderText"]    = "#CFD3D9",
-            ["HeaderHover"]   = "#2F333A",
-            ["HeaderPress"]   = "#22252B",
+            ["GlowAccent"]        = "#3272D8",
+            ["SuccessShadow"]     = "#1C8648",
+            ["DangerShadow"]      = "#D63C42",
+            // Total bar — Угольный статус-бар с белой суммой
+            ["TotalBg"]           = "#131315",
+            ["TotalText"]         = "#FFFFFF",
+            ["TotalTextMuted"]    = "#8C8E98",
+            // Quick-add / chips
+            ["ChipBg"]            = "#2E2E33",
+            // DataGrid headers — Сланцевые шапки
+            ["HeaderBg"]          = "#202023",
+            ["HeaderBorder"]      = "#38383D",
+            ["HeaderText"]        = "#B4B4BC",
+            ["HeaderHover"]       = "#2A2A2E",
+            ["HeaderPress"]       = "#1D1D20",
             // Menu
-            ["MenuItemPressed"] = "#26384C",
+            ["MenuItemPressed"]   = "#2D2D31",
             // Shadow
-            ["ShadowColor"]   = "#000000",
-            // Badges — Fg высветлен до 4.5:1+ на своём Bg (v3.51 contrast
-            // audit: #4EA1F7 на #26384C давал 4.43:1).
-            ["BadgeDefaultBg"]  = "#26384C",
-            ["BadgeDefaultFg"]  = "#65AEF9",
-            ["BadgeSuccessBg"]  = "#12291D",
-            ["BadgeSuccessFg"]  = "#3ECF8E",
-            ["BadgeWarningBg"]  = "#2E2415",
-            ["BadgeWarningFg"]  = "#F5A524",
-            ["BadgeDangerBg"]   = "#2E1B1E",
-            // v3.53 contrast audit: #E5484D на этом фоне давал 4.15:1 (ниже AA).
-            // #F06A6E = 5.41:1 — высветление того же тона.
-            ["BadgeDangerFg"]   = "#F06A6E",
-            ["BadgeVisionBg"]   = "#251E38",
-            ["BadgeVisionFg"]   = "#A78BFA",
-            // Install toggle
-            ["InstallGreen"]  = "#3ECF8E",
-            ["InstallRed"]    = "#E5484D",
-            ["InstallGray"]   = "#8A8A9A",
+            ["ShadowColor"]       = "#000000",
+            // Status Badges
+            ["BadgeDefaultBg"]    = "#1E2838",
+            ["BadgeDefaultFg"]    = "#4EA8DE",
+            ["BadgeSuccessBg"]    = "#172E20",
+            ["BadgeSuccessFg"]    = "#38D690",
+            ["BadgeWarningBg"]    = "#332814",
+            ["BadgeWarningFg"]    = "#FBBF24",
+            ["BadgeDangerBg"]     = "#351C20",
+            ["BadgeDangerFg"]     = "#F87171",
+            ["BadgeVisionBg"]     = "#281D3E",
+            ["BadgeVisionFg"]     = "#C084FC",
+            // Install toggle (vibrant accessible tints for table labels «Вкл» / «Без» / «—»)
+            ["InstallGreen"]      = "#38D690",
+            ["InstallRed"]        = "#F87171",
+            ["InstallGray"]       = "#8C8E98",
         };
     }
 }

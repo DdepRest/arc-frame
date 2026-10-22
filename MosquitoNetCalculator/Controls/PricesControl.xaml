@@ -20,10 +20,32 @@
                            FontFamily="{DynamicResource Font.Icon}"
                            FontSize="{StaticResource Type.BodyLg}" Foreground="{DynamicResource TextMuted}"
                            VerticalAlignment="Center" Margin="{DynamicResource Gap.Inline}"/>
-                <TextBox x:Name="TxtSearchPrices" Grid.Column="1"
-                         Style="{DynamicResource QuickInput}"
-                         TextChanged="TxtSearchPrices_TextChanged"
-                         ToolTip="Фильтр по наименованию или цвету"/>
+                <Grid Grid.Column="1">
+                    <TextBox x:Name="TxtSearchPrices"
+                             Style="{DynamicResource QuickInput}"
+                             TextChanged="TxtSearchPrices_TextChanged"
+                             ToolTip="Фильтр по наименованию или цвету"/>
+                    <!-- Ghost-подсказка: единственная строка поиска без плейсхолдера
+                         в приложении — пустое поле читалось как «поиск не работает». -->
+                    <TextBlock x:Name="PricesSearchPlaceholder"
+                               Text="Поиск по наименованию или цвету..."
+                               Margin="{DynamicResource Gap.Left}"
+                               VerticalAlignment="Center"
+                               FontSize="{StaticResource Type.Caption}"
+                               Foreground="{DynamicResource TextMuted}"
+                               IsHitTestVisible="False">
+                        <TextBlock.Style>
+                            <Style TargetType="TextBlock">
+                                <Setter Property="Visibility" Value="Collapsed"/>
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding Text, ElementName=TxtSearchPrices}" Value="">
+                                        <Setter Property="Visibility" Value="Visible"/>
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </TextBlock.Style>
+                    </TextBlock>
+                </Grid>
                 <Button x:Name="BtnClearPricesSearch" Grid.Column="2"
                         Style="{DynamicResource GhostButton}"
                         Content="&#xE711;" FontFamily="{DynamicResource Font.Icon}"
@@ -53,10 +75,13 @@
                     </DataGrid.RowStyle>
                     <DataGrid.Columns>
                         <DataGridTextColumn Header="Наименование" Width="*" MinWidth="100"
+                                            HeaderStyle="{StaticResource LeftColumnHeader}"
                                             Binding="{Binding Name}" IsReadOnly="True"/>
                         <DataGridTextColumn Header="Цвет" Width="Auto" MinWidth="65"
+                                            HeaderStyle="{StaticResource LeftColumnHeader}"
                                             Binding="{Binding Color}" IsReadOnly="True"/>
                         <DataGridTextColumn Header="Цена, руб." Width="Auto" MinWidth="75"
+                                            HeaderStyle="{StaticResource RightColumnHeader}"
                                             Binding="{Binding Price, Converter={StaticResource MoneyConv}, UpdateSourceTrigger=PropertyChanged}"/>
                     </DataGrid.Columns>
                 </DataGrid>
@@ -98,8 +123,26 @@
                     <TextBlock Text="Сбросить по умолчанию"/>
                 </StackPanel>
             </Button>
-            <TextBlock VerticalAlignment="Center" Margin="{DynamicResource Gap.LeftXl}" FontSize="{StaticResource Type.Caption}"
-                       Foreground="{DynamicResource TextMuted}" Text="prices.json"/>
+            <!-- Источник цен: не сырая строка «prices.json» посреди тулбара, а
+                 нейтральный чип — видно, что это файл, и не спорит с кнопками. -->
+            <Border Background="{DynamicResource SectionBg}"
+                    BorderBrush="{DynamicResource Border}" BorderThickness="1"
+                    CornerRadius="{DynamicResource Radius.Sm}"
+                    Padding="{DynamicResource Pad.Pill}"
+                    VerticalAlignment="Center" Margin="{DynamicResource Gap.LeftXl}">
+                <StackPanel Orientation="Horizontal">
+                    <TextBlock Text="&#xE8A5;" FontFamily="{DynamicResource Font.Icon}"
+                               FontSize="{StaticResource Type.Caption}"
+                               Foreground="{DynamicResource TextMuted}"
+                               VerticalAlignment="Center"
+                               Margin="{DynamicResource Gap.InlineSm}"/>
+                    <TextBlock Text="prices.json"
+                               FontFamily="{DynamicResource Font.Mono}"
+                               FontSize="{StaticResource Type.Caption}"
+                               Foreground="{DynamicResource TextMuted}"
+                               VerticalAlignment="Center"/>
+                </StackPanel>
+            </Border>
         </StackPanel>
     </Grid>
 </UserControl>

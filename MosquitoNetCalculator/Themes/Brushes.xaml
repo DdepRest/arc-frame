@@ -103,6 +103,100 @@
     <SolidColorBrush x:Key="OnWindowClose" Color="#FFFFFF"/>
     <!-- Блеск карточки ИТОГО под курсором (тёмная подложка в обеих темах) -->
     <SolidColorBrush x:Key="TotalSheen" Color="#33FFFFFF"/>
+
+    <!-- ═══════════════════════════════════════════════════════ -->
+    <!-- ЖИДКОЕ СТЕКЛО (LIQUID GLASS OPTICS)                      -->
+    <!-- ═══════════════════════════════════════════════════════ -->
+    <!-- КОНТРАКТ: полупрозрачная накладка не лежит под текстом.
+         «Стекло» создаётся оптическим хромом по периметру:
+           • GlassSpecularBorder — диагональная спекулярная кромка (135°)
+             с ярким бликом сверху-слева и мягким контуром снизу-справа;
+           • GlassInnerRim — внутренняя фаска рефракции (толщина стекла);
+           • GlassSpecularArc — верхний световой мениск;
+           • GlassAmbientShadow — мягкая контактная тень без CPU-blur;
+           • GlassHoverBloom — мягкое наполнение светом при наведении;
+           • GlassPressVeil — общая вуаль нажатия (12% чёрного). -->
+    <LinearGradientBrush x:Key="GlassSpecularBorder" StartPoint="0,0" EndPoint="1,1">
+        <GradientStop Color="#D9FFFFFF" Offset="0"/>
+        <GradientStop Color="#4DFFFFFF" Offset="0.35"/>
+        <GradientStop Color="#14FFFFFF" Offset="0.75"/>
+        <GradientStop Color="#2EFFFFFF" Offset="1"/>
+    </LinearGradientBrush>
+
+    <!-- Внешняя спекулярная кромка под курсором (усиленный блик) -->
+    <LinearGradientBrush x:Key="GlassSpecularBorderHover" StartPoint="0,0" EndPoint="1,1">
+        <GradientStop Color="#FFFFFFFF" Offset="0"/>
+        <GradientStop Color="#80FFFFFF" Offset="0.35"/>
+        <GradientStop Color="#26FFFFFF" Offset="0.75"/>
+        <GradientStop Color="#4DFFFFFF" Offset="1"/>
+    </LinearGradientBrush>
+
+    <!-- Внутренняя оптическая фаска рефракции (толщина стекла по референсу) -->
+    <LinearGradientBrush x:Key="GlassInnerRim" StartPoint="0,0" EndPoint="0.8,1">
+        <GradientStop Color="#73FFFFFF" Offset="0"/>
+        <GradientStop Color="#1AFFFFFF" Offset="0.4"/>
+        <GradientStop Color="#00FFFFFF" Offset="0.8"/>
+        <GradientStop Color="#14000000" Offset="1"/>
+    </LinearGradientBrush>
+
+    <!-- Верхний мениск (контурный блик верхней кромки) -->
+    <LinearGradientBrush x:Key="GlassSpecularArc" StartPoint="0,0" EndPoint="0,1">
+        <GradientStop Color="#80FFFFFF" Offset="0"/>
+        <GradientStop Color="#00FFFFFF" Offset="0.6"/>
+    </LinearGradientBrush>
+
+    <!-- Мягкая контактная тень стекла (без CPU Blur) -->
+    <LinearGradientBrush x:Key="GlassAmbientShadow" StartPoint="0,0" EndPoint="0,1">
+        <GradientStop Color="#00000000" Offset="0"/>
+        <GradientStop Color="#08000000" Offset="0.5"/>
+        <GradientStop Color="#2B000000" Offset="1"/>
+    </LinearGradientBrush>
+
+    <!-- Подсветка стекла при наведении (bloom) -->
+    <LinearGradientBrush x:Key="GlassHoverBloom" StartPoint="0,0" EndPoint="0,1">
+        <GradientStop Color="#24FFFFFF" Offset="0"/>
+        <GradientStop Color="#08FFFFFF" Offset="1"/>
+    </LinearGradientBrush>
+
+    <!-- Внешняя спекулярная кромка для вторичных (Ghost) кнопок -->
+    <LinearGradientBrush x:Key="GlassGhostSpecularBorder" StartPoint="0,0" EndPoint="1,1">
+        <GradientStop Color="#B3FFFFFF" Offset="0"/>
+        <GradientStop Color="#33FFFFFF" Offset="0.3"/>
+        <GradientStop Color="#26000000" Offset="0.8"/>
+        <GradientStop Color="#38000000" Offset="1"/>
+    </LinearGradientBrush>
+
+    <LinearGradientBrush x:Key="GlassGhostSpecularBorderHover" StartPoint="0,0" EndPoint="1,1">
+        <GradientStop Color="#FFFFFFFF" Offset="0"/>
+        <GradientStop Color="#66FFFFFF" Offset="0.3"/>
+        <GradientStop Color="#33000000" Offset="0.8"/>
+        <GradientStop Color="#4D000000" Offset="1"/>
+    </LinearGradientBrush>
+
+    <!-- Вуаль нажатия: затемняет заливку ЛЮБОГО варианта одинаково,
+         поэтому нажатие всегда сильнее ховера (раньше Success/Danger
+         на нажатии возвращались к базовому цвету). -->
+    <SolidColorBrush x:Key="GlassPressVeil" Color="#1F000000"/>
+
+    <!-- Мягкий глянец тумблера: живёт на треке и бегунке, текста под ним нет. -->
+    <LinearGradientBrush x:Key="GlassSheen" StartPoint="0,0" EndPoint="0,1">
+        <GradientStop Color="#1AFFFFFF" Offset="0"/>
+        <GradientStop Color="#00FFFFFF" Offset="0.5"/>
+    </LinearGradientBrush>
+
+    <!-- Стеклянный бегунок тумблера (SwitchThumb) -->
+    <LinearGradientBrush x:Key="GlassThumb" StartPoint="0,0" EndPoint="0,1">
+        <GradientStop Color="#F4F4F8" Offset="0"/>
+        <GradientStop Color="#C0C0C8" Offset="1"/>
+    </LinearGradientBrush>
+    <LinearGradientBrush x:Key="GlassThumbActive" StartPoint="0,0" EndPoint="0,1">
+        <GradientStop Color="#FFFFFF" Offset="0"/>
+        <GradientStop Color="#E0ECF8" Offset="1"/>
+    </LinearGradientBrush>
+    <LinearGradientBrush x:Key="GlassThumbBorder" StartPoint="0,0" EndPoint="0,1">
+        <GradientStop Color="#80FFFFFF" Offset="0"/>
+        <GradientStop Color="#33000000" Offset="1"/>
+    </LinearGradientBrush>
     <!-- Предпросмотр печати: лист ВСЕГДА белый (это бумага), поэтому его
          кромка и подложка приглушения не зависят от темы. -->
     <SolidColorBrush x:Key="PreviewPageBorder" Color="#777777"/>

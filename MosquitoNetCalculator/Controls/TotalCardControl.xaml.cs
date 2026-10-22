@@ -29,6 +29,18 @@ namespace MosquitoNetCalculator.Controls
             TxtPositionsMeta.Text = count > 0 ? $"Позиций: {count}" : string.Empty;
         }
 
+        /// <summary>
+        /// v3.56: показывает/прячет подсказку «Ctrl+Z — отменить». Состояние
+        /// берётся из стека отмены (MainWindow.UpdateUndoRedoHint), а не из
+        /// «есть ли позиции»: после отмены последней позиции заказ снова пуст,
+        /// но отменить уже нечего.
+        /// </summary>
+        internal void SetUndoVisible(bool visible)
+        {
+            if (UndoHint == null) return;
+            UndoHint.Visibility = visible ? Visibility.Visible : Visibility.Collapsed;
+        }
+
         private async void BtnCopyTotal_Click(object sender, RoutedEventArgs e)
         {
             try

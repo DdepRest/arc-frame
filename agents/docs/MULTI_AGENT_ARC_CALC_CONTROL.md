@@ -23,7 +23,7 @@ agents/docs/
   AUTO_UPDATE.md                   ← автообновление
 ```
 
-Скрипты системы — в `agents/scripts/` (validate-docs.ps1, arc-check.ps1, what-to-update.ps1, gensymbols.ps1, render-matrix.ps1, sync-version.ps1).
+Скрипты системы — в `agents/scripts/` (arc-finish.ps1, validate-docs.ps1, arc-check.ps1, rotate-current-state.ps1, what-to-update.ps1, gensymbols.ps1, render-matrix.ps1, sync-version.ps1).
 
 Главная задача: сделать так, чтобы любой агент, входящий в проект, не ломал расчёты, размеры, Anwis-логику, КП, заводские размеры, релизный процесс и автообновление — и тратил минимум токенов на понимание проекта.
 
@@ -87,7 +87,7 @@ CHEATSHEET.md
 | Новый агент (первый вход) | + `MODULES.md`, `DECISIONS.md`, `PROJECT_OVERVIEW.md` |
 | Структурные изменения (разбивка/переименование/новые файлы или классы) | `CONTROL#13`, `SYMBOL_INDEX.md`, `INTENTS.md`, `DOCUMENTATION_MATRIX.md` |
 | Всё остальное | Только `CURRENT_STATE.md` |
-| **Тривиальная задача (≤10 строк, не critical domain)** | Только `CHEATSHEET.md`, затем проверь `GOTCHAS.md` по ключевым словам |
+| **🚀 Fast-Track (≤15 строк, не critical domain)** | Только `CHEATSHEET.md` + таблица `GOTCHAS.md` (полные файлы не читать!) |
 
 Если агент физически не имеет доступа к `MULTI_AGENT_ARC_CALC_CONTROL.md` — остановиться и сообщить владельцу. Запрещено использовать `AGENT.md` как source of truth.
 
@@ -240,6 +240,8 @@ Intake → Context → Plan → Execute → Verify → Document → Report
 
 | Скрипт | Назначение |
 |--------|-----------|
+| gents/scripts/arc-finish.ps1 | **Комплексная автоматическая финализация задачи в 1 клик:** обновляет «Last verified» в изменённых docs, перегенерирует SYMBOL_INDEX.md, проверяет и ротирует CURRENT_STATE.md, запускает alidate-docs.ps1 и rc-check.ps1. **Рекомендуемый способ сдачи любой задачи.** |
+| gents/scripts/rotate-current-state.ps1 | Скользящее окно CURRENT_STATE.md (держит 5–10 версий, избыток переносит в history/CURRENT_STATE_ARCHIVE.md). |
 | `agents/scripts/gensymbols.ps1` | Сканирует .cs файлы → генерирует `SYMBOL_INDEX.md`. **Запускать после добавления/удаления классов.** |
 | `agents/scripts/what-to-update.ps1 $(git diff --name-only)` | Принимает список изменённых файлов → выводит, какие `agents/docs/*.md` обновить. Читает `documentation-matrix.json`. |
 | `agents/scripts/validate-docs.ps1` | 11 автоматических проверок: версия, MODULES, CHEATSHEET cross-refs, MATRIX cross-refs, CONTROL cross-refs, полнота, git-based, staleness, releases.json, **self-maintenance (устаревание версии, мягкая, #10)**, **CONTROL#N link resolution (жёсткая, #11)**. |
@@ -407,47 +409,12 @@ REFACTORING_PLAN.md
 - `validate-docs.ps1` — валидация документации
 
 ## Last verified
-2026-10-18 (v3.55.1) — обновлено содержимое (sync-last-verified.ps1, CONTROL#13).
+2026-10-22 (v3.55.1) — обновлено содержимое (sync-last-verified.ps1, CONTROL#13).
 
-2026-10-12 (v3.55.1) — обновлено содержимое (sync-last-verified.ps1, CONTROL#13).
+2026-10-21 (v3.55.1) — обновлено содержимое (sync-last-verified.ps1, CONTROL#13).
 
-2026-10-11 (v3.55.1) — auto-synced from csproj (sync-version.ps1, CONTROL#13).
+2026-10-20 (v3.55.1) — обновлено содержимое (sync-last-verified.ps1, CONTROL#13).
 
-2026-10-11 (v3.55.0) — обновлено содержимое (sync-last-verified.ps1, CONTROL#13).
+2026-10-19 (v3.55.1) — внедрение Fast-Track коридора (≤15 строк без полного ритуала), оптимизация проектной памяти CURRENT_STATE со сжатием и Rolling Window Policy (скрипт rotate-current-state.ps1), интерактивный реестр 52 ловушек в GOTCHAS.md, перенос архивных ТЗ в docs/specs/ (CONTROL#13).
 
-2026-10-08 (v3.55.0) — auto-synced from csproj (sync-version.ps1, CONTROL#13).
-
-2026-10-04 (v3.54.3) — auto-synced from csproj (sync-version.ps1, CONTROL#13).
-
-2026-10-04 (v3.54.2) — auto-synced from csproj (sync-version.ps1, CONTROL#13).
-
-2026-09-30 (v3.53.2) — auto-synced from csproj (sync-version.ps1, CONTROL#13).
-
-2026-09-24 (v3.53.1) — обновлено содержимое (sync-last-verified.ps1, CONTROL#13).
-
-2026-09-21 (v3.53.0) — синхронизация даты «Last verified» вынесена в sync-last-verified.ps1 + git pre-commit (GOTCHAS §40).
-
-2026-09-14 (v3.53.0) — auto-synced from csproj (sync-version.ps1, CONTROL#13).
-
-2026-09-14 (v3.52.0) — auto-synced from csproj (sync-version.ps1, CONTROL#13).
-
-2026-09-14 (v3.51.0) — auto-synced from csproj (sync-version.ps1, CONTROL#13).
-
-2026-09-11 (v3.50.0) — auto-synced from csproj (sync-version.ps1, CONTROL#13).
-
-2026-09-06 (v3.49.0) — auto-synced from csproj (sync-version.ps1, CONTROL#13).
-
-2026-08-30 (v3.48.7) — auto-synced from csproj (sync-version.ps1, CONTROL#13).
-
-2026-08-30 (v3.48.6) — auto-synced from csproj (sync-version.ps1, CONTROL#13).
-
-2026-08-30 (v3.48.4) — auto-synced from csproj (sync-version.ps1, CONTROL#13).
-
-2026-08-27 (v3.48.3) — auto-synced from csproj (sync-version.ps1, CONTROL#13).
-
-2026-08-17 (v3.47.4) — auto-synced from csproj (sync-version.ps1, CONTROL#13).
-
-
-2026-08-03 (v3.47.3) — добавлен §13 «Обязанность самоподдержания системы» (ситуации А–Ж, метрики в шаблоне отчёта, routing для структурных изменений); правило подтверждено владельцем по ТЗ `ТЗ_самоподдержание_AGENTS_2026-08-03.md`.
-
-2026-07-17 — документ просмотрен и синхронизирован с текущим состоянием проекта (v3.46.1): переключатель +/- для монтажа (SignToggleCheckBox), только значки V/X/В в таблице, динамическая ширина колонки в PdfExportService, жирные значения в клиентском блоке КП, форматирование примечаний (жирный/курсив/цвет/списки). **1227/1227 tests pass.**
+2026-10-18 (v3.55.1) — auto-synced from csproj (sync-version.ps1, CONTROL#13).

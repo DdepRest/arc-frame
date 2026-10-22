@@ -8,6 +8,7 @@
         <Setter Property="FontSize" Value="{StaticResource Type.Body}"/>
         <Setter Property="Cursor" Value="Hand"/>
         <Setter Property="VerticalContentAlignment" Value="Center"/>
+        <Setter Property="FocusVisualStyle" Value="{StaticResource FluentFocusVisual}"/>
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="CheckBox">
@@ -16,27 +17,52 @@
                             <ColumnDefinition Width="Auto"/>
                             <ColumnDefinition Width="*"/>
                         </Grid.ColumnDefinitions>
+                        <!-- Frosted glass capsule track -->
                         <Border x:Name="SwitchTrack" Width="40" Height="20"
-                                CornerRadius="{DynamicResource Radius.Capsule}" Margin="{DynamicResource Gap.Inline}"
-                                Background="{DynamicResource TrackBg}" BorderThickness="0"
+                                CornerRadius="{DynamicResource Radius.Capsule}" Margin="{DynamicResource Gap.None}"
+                                Background="{DynamicResource Border}"
+                                BorderBrush="{DynamicResource GhostBorder}" BorderThickness="1"
                                 SnapsToDevicePixels="True">
-                            <Border x:Name="SwitchThumb" Width="16" Height="16"
-                                    CornerRadius="{DynamicResource Radius.Pill}" Background="{DynamicResource Surface}"
-                                    HorizontalAlignment="Left" Margin="{DynamicResource Gap.LeftHair}"
-                                    VerticalAlignment="Center"/>
+                            <Grid>
+                                <!-- Specular top glass sheen -->
+                                <Border x:Name="TrackSheen"
+                                        CornerRadius="{DynamicResource Radius.Capsule}"
+                                        Background="{DynamicResource GlassSheen}"
+                                        IsHitTestVisible="False"/>
+                                <!-- Frosted glass thumb (pearl) -->
+                                <Border x:Name="SwitchThumb" Width="14" Height="14"
+                                        CornerRadius="{DynamicResource Radius.Pill}"
+                                        Background="{DynamicResource GlassThumb}"
+                                        BorderBrush="{DynamicResource GlassThumbBorder}" BorderThickness="1"
+                                        HorizontalAlignment="Left" Margin="{DynamicResource Gap.LeftHair}"
+                                        VerticalAlignment="Center">
+                                    <Border Width="14" Height="14"
+                                            CornerRadius="{DynamicResource Radius.Pill}"
+                                            Background="{DynamicResource GlassSheen}"
+                                            IsHitTestVisible="False"/>
+                                </Border>
+                            </Grid>
                         </Border>
-                        <ContentPresenter Grid.Column="1"
+                        <ContentPresenter x:Name="ContentPresenter" Grid.Column="1"
                                           VerticalAlignment="Center"
+                                          Margin="{DynamicResource Gap.None}"
                                           RecognizesAccessKey="True"/>
                     </Grid>
                     <ControlTemplate.Triggers>
+                        <Trigger Property="HasContent" Value="True">
+                            <Setter TargetName="ContentPresenter" Property="Margin" Value="{DynamicResource Gap.Left}"/>
+                        </Trigger>
                         <Trigger Property="IsChecked" Value="True">
                             <Setter TargetName="SwitchTrack" Property="Background" Value="{DynamicResource Accent}"/>
+                            <Setter TargetName="SwitchTrack" Property="BorderBrush" Value="{DynamicResource Accent}"/>
+                            <Setter TargetName="SwitchThumb" Property="Background" Value="{DynamicResource GlassThumbActive}"/>
+                            <Setter TargetName="SwitchThumb" Property="BorderBrush" Value="{DynamicResource Accent}"/>
                             <Setter TargetName="SwitchThumb" Property="HorizontalAlignment" Value="Right"/>
                             <Setter TargetName="SwitchThumb" Property="Margin" Value="{DynamicResource Gap.RightHair}"/>
                         </Trigger>
                         <Trigger Property="IsMouseOver" Value="True">
                             <Setter TargetName="SwitchTrack" Property="Background" Value="{DynamicResource BorderHover}"/>
+                            <Setter TargetName="SwitchTrack" Property="BorderBrush" Value="{DynamicResource BorderHover}"/>
                         </Trigger>
                         <MultiTrigger>
                             <MultiTrigger.Conditions>
@@ -44,7 +70,13 @@
                                 <Condition Property="IsChecked" Value="True"/>
                             </MultiTrigger.Conditions>
                             <Setter TargetName="SwitchTrack" Property="Background" Value="{DynamicResource AccentHover}"/>
+                            <Setter TargetName="SwitchTrack" Property="BorderBrush" Value="{DynamicResource AccentHover}"/>
+                            <Setter TargetName="SwitchThumb" Property="Background" Value="{DynamicResource GlassThumbActive}"/>
+                            <Setter TargetName="SwitchThumb" Property="BorderBrush" Value="{DynamicResource AccentHover}"/>
                         </MultiTrigger>
+                        <Trigger Property="IsEnabled" Value="False">
+                            <Setter Property="Opacity" Value="0.45"/>
+                        </Trigger>
                     </ControlTemplate.Triggers>
                 </ControlTemplate>
             </Setter.Value>
@@ -62,25 +94,38 @@
                 <ControlTemplate TargetType="CheckBox">
                     <Border x:Name="SwitchTrack" Width="48" Height="26"
                             CornerRadius="{DynamicResource Radius.CapsuleLg}"
-                            Background="Transparent"
-                            BorderBrush="{DynamicResource Border}"
+                            Background="{DynamicResource Border}"
+                            BorderBrush="{DynamicResource GhostBorder}"
                             BorderThickness="1"
                             SnapsToDevicePixels="True">
                         <Grid>
+                            <!-- Frosted track sheen -->
+                            <Border CornerRadius="{DynamicResource Radius.CapsuleLg}"
+                                    Background="{DynamicResource GlassSheen}"
+                                    IsHitTestVisible="False"/>
+
                             <!-- Background signs -->
                             <TextBlock Text="−" Foreground="{DynamicResource OnDanger}" HorizontalAlignment="Right" VerticalAlignment="Center" Margin="{DynamicResource Gap.ToggleSignRight}" FontSize="{StaticResource Type.BodyLg}" FontWeight="Bold"/>
                             <TextBlock Text="+" Foreground="{DynamicResource OnSuccess}" HorizontalAlignment="Left" VerticalAlignment="Center" Margin="{DynamicResource Gap.ToggleSignLeft}" FontSize="{StaticResource Type.BodyLg}" FontWeight="Bold"/>
 
-                            <!-- Thumb -->
+                            <!-- Thumb: frosted glass pearl -->
                             <Border x:Name="SwitchThumb" Width="22" Height="22"
-                                    CornerRadius="{DynamicResource Radius.Pill}" Background="{DynamicResource Surface}"
+                                    CornerRadius="{DynamicResource Radius.Pill}"
+                                    Background="{DynamicResource GlassThumbActive}"
+                                    BorderBrush="{DynamicResource GlassThumbBorder}" BorderThickness="1"
                                     HorizontalAlignment="Left" Margin="{DynamicResource Gap.LeftHair}"
                                     VerticalAlignment="Center"
                                     RenderTransformOrigin="0.5,0.5">
-                                <TextBlock x:Name="ThumbText" Text="−"
-                                           Foreground="{DynamicResource Danger}"
-                                           HorizontalAlignment="Center" VerticalAlignment="Center"
-                                           FontSize="{StaticResource Type.Subtitle}" FontWeight="Bold" Margin="{DynamicResource Gap.MicroV}"/>
+                                <Grid>
+                                    <Border Width="22" Height="22"
+                                            CornerRadius="{DynamicResource Radius.Pill}"
+                                            Background="{DynamicResource GlassSheen}"
+                                            IsHitTestVisible="False"/>
+                                    <TextBlock x:Name="ThumbText" Text="−"
+                                               Foreground="{DynamicResource Danger}"
+                                               HorizontalAlignment="Center" VerticalAlignment="Center"
+                                               FontSize="{StaticResource Type.Subtitle}" FontWeight="Bold" Margin="{DynamicResource Gap.MicroV}"/>
+                                </Grid>
                             </Border>
                         </Grid>
                     </Border>
@@ -88,7 +133,7 @@
                         <Trigger Property="IsChecked" Value="True">
                             <Setter TargetName="SwitchTrack" Property="BorderBrush" Value="{DynamicResource Success}"/>
                             <Setter TargetName="SwitchThumb" Property="HorizontalAlignment" Value="Right"/>
-                            <Setter TargetName="SwitchThumb" Property="Margin" Value="0,0,2,0"/>
+                            <Setter TargetName="SwitchThumb" Property="Margin" Value="{DynamicResource Gap.RightHair}"/>
                             <Setter TargetName="ThumbText" Property="Text" Value="+"/>
                             <Setter TargetName="ThumbText" Property="Foreground" Value="{DynamicResource Success}"/>
                         </Trigger>

@@ -38,6 +38,9 @@ namespace MosquitoNetCalculator.Tests.Design
             new("TextSecondary", "ChipBg", 4.5, "вторичный текст на чипе"),
             new("TextMuted", "Surface", 4.5, "приглушённый текст на панели"),
             new("TextMuted", "AppBg", 4.5, "приглушённый текст на фоне приложения"),
+            // Вторичные (Ghost/Subtle) кнопки v3.56: плашка — GhostBg, а не белая alpha-плёнка.
+            new("TextPrimary", "GhostBg", 4.5, "основной текст на вторичной кнопке"),
+            new("TextSecondary", "GhostBg", 4.5, "вторичный текст на вторичной кнопке"),
             new("HeaderText", "HeaderBg", 4.5, "текст шапки таблицы"),
 
             // Текст на заливках действий
@@ -47,7 +50,9 @@ namespace MosquitoNetCalculator.Tests.Design
             new("OnAccentPrimary", "AccentPress", 4.5, "текст на акцентной заливке под нажатием"),
             new("OnAccent", "AccentHover", 4.5, "название/галочка на акцентной заливке под курсором"),
             new("OnDanger", "Danger", 4.5, "текст на опасном действии"),
+            new("OnDanger", "DangerHover", 4.5, "текст на опасном действии под курсором"),
             new("OnSuccess", "Success", 4.5, "текст на успешном действии"),
+            new("OnSuccess", "SuccessHover", 4.5, "текст на успешном действии под курсором"),
 
             // Бейджи статусов
             new("BadgeDefaultFg", "BadgeDefaultBg", 4.5, "бейдж по умолчанию"),

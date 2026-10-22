@@ -105,6 +105,23 @@
             </Setter>
         </Style>
 
+        <!-- ── Точечное выравнивание заголовков (v3.56) ───────────────────
+             Базовый стиль центрирует ВСЁ — и служебные колонки (№, статус,
+             чекбокс), и текстовые/числовые. В результате «Наименование»
+             висело по центру над текстом, прижатым влево, а «Сумма» — по
+             центру над числом, прижатым вправо: шапка не читалась как
+             заголовок своей колонки. Эти два стиля задают только выравнивание
+             (паддинг наследуется от базового), поэтому литералов отступов не
+             добавляют; центрированные служебные колонки не тронуты. -->
+        <Style x:Key="LeftColumnHeader" TargetType="DataGridColumnHeader"
+               BasedOn="{StaticResource {x:Type DataGridColumnHeader}}">
+            <Setter Property="HorizontalContentAlignment" Value="Left"/>
+        </Style>
+        <Style x:Key="RightColumnHeader" TargetType="DataGridColumnHeader"
+               BasedOn="{StaticResource {x:Type DataGridColumnHeader}}">
+            <Setter Property="HorizontalContentAlignment" Value="Right"/>
+        </Style>
+
                 <!--
           OrderRow — animated hover/select style for the OrderGrid in the
           "Расчёт" tab. Subtle ColorAnimation on the row background, no glow,

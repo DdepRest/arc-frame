@@ -70,9 +70,20 @@ namespace MosquitoNetCalculator.Tests.Design
             return result;
         }
 
-        private static void Pump(int frames = 10)
+        /// <summary>
+        /// Качает диспетчер, пока <paramref name="done"/> не станет истиной,
+        /// но не дольше <paramref name="timeoutMs"/>. Раньше здесь был фиксированный
+        /// бюджет 10×8 мс (~80 мс): под нагрузкой полного прогона тик медиаслоя
+        /// опаздывал и флаки-тест падал, хотя нулевая анимация завершалась
+        /// (2026-10-22 — 3 падения подряд в полных прогонах при зелёных
+        /// изолированных). Таймаут — это НЕ мягкая проверка: истёк он или нет,
+        /// утверждают те же Assert'ы ниже, просто сценарий «Completed не пришёл»
+        /// теперь отличается от «машина не успела».
+        /// </summary>
+        private static void PumpUntil(Func<bool> done, int timeoutMs = 3000)
         {
-            for (int i = 0; i < frames; i++)
+            long deadline = Environment.TickCount64 + timeoutMs;
+            while (!done() && Environment.TickCount64 < deadline)
             {
                 Dispatcher.CurrentDispatcher.Invoke(() => { }, DispatcherPriority.Background);
                 Thread.Sleep(8);
@@ -191,7 +202,7 @@ namespace MosquitoNetCalculator.Tests.Design
                     var fade = new DoubleAnimation(1.0, 0.0, TimeSpan.Zero);
                     fade.Completed += (_, _) => propertyCompleted = true;
                     border.BeginAnimation(UIElement.OpacityProperty, fade);
-                    Pump();
+                    PumpUntil(() => propertyCompleted);
 
                     Assert.True(propertyCompleted,
                         "Completed у анимации нулевой длины не сработал — очистка (снять тост, свернуть оверлей) не выполнится.");
@@ -205,7 +216,7 @@ namespace MosquitoNetCalculator.Tests.Design
                     storyboard.Children.Add(appear);
                     storyboard.Completed += (_, _) => storyboardCompleted = true;
                     storyboard.Begin();
-                    Pump();
+                    PumpUntil(() => storyboardCompleted);
 
                     Assert.True(storyboardCompleted, "Storyboard нулевой длины не сообщил о завершении.");
                     Assert.Equal(1.0, border.Opacity, 3);

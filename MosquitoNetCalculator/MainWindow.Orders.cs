@@ -31,8 +31,9 @@ namespace MosquitoNetCalculator
             OrderGridPresenter.RefreshOrdersGrid(OrdersHistoryControl.OrdersGrid, orders);
             OrdersHistoryControl.ReapplyFilters();
 
-            if (OrdersHistoryControl?.OrdersCount != null)
-                OrdersHistoryControl.OrdersCount.Text = $"Заказов: {orders.Count}";
+            // Текст чипа счётчика принадлежит контролу (см. SetOrdersCount):
+            // иначе прямой overwrite из окна затирал бы «Найдено: X из Y»,
+            // который контрол считает по активным фильтрам.
             OrdersHistoryControl?.SetOrdersCount(orders.Count);
 
             RefreshNavBadges();

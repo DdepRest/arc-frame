@@ -15,12 +15,16 @@
                 Style="{DynamicResource Card}"
                 ClipToBounds="True">
             <Grid>
+                <!-- Свой заголовок «ЗАКАЗЫ» + счётчик дублировали шапку оверлея
+                     («Заказы • 69 заказов») — убраны. Чип остался единственным
+                     носителем числа и появляется только при активном фильтре,
+                     где он честно говорит «сколько нашлось», а не повторяет итог. -->
                 <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                    <TextBlock Text="ЗАКАЗЫ" FontSize="{StaticResource Type.Caption}" FontWeight="SemiBold"
-                               Foreground="{DynamicResource TextMuted}" VerticalAlignment="Center" Margin="{DynamicResource Gap.Inline14}"/>
-                    <Border Background="{DynamicResource ChipBg}" CornerRadius="{DynamicResource Radius.Capsule}"
-                            Padding="{DynamicResource Pad.ButtonSm}" Margin="{DynamicResource Gap.Inline14}">
-                        <TextBlock x:Name="TxtOrdersCount" Text="Заказов: 0"
+                    <Border x:Name="OrdersCountChip"
+                            Background="{DynamicResource ChipBg}" CornerRadius="{DynamicResource Radius.Capsule}"
+                            Padding="{DynamicResource Pad.ButtonSm}"
+                            Visibility="Collapsed">
+                        <TextBlock x:Name="TxtOrdersCount" Text=""
                                    FontSize="{StaticResource Type.Caption}" FontWeight="SemiBold" Foreground="{DynamicResource Accent}"/>
                     </Border>
                 </StackPanel>
@@ -143,6 +147,7 @@
                 </DataGrid.RowStyle>
                 <DataGrid.Columns>
                     <DataGridTextColumn Header="№ КП"
+                                        HeaderStyle="{StaticResource LeftColumnHeader}"
                                         Binding="{Binding ContractNumber}"
                                         SortMemberPath="ContractNumberSortKey"
                                         Width="Auto" MinWidth="60"/>
@@ -157,6 +162,7 @@
                          колонок должен влезать в панель 800 минус паддинги
                          (~776 DIP) наряду с шестью Auto-соседями. -->
                     <DataGridTextColumn Header="Адрес"
+                                        HeaderStyle="{StaticResource LeftColumnHeader}"
                                         Binding="{Binding ClientAddress}"
                                         Width="*" MinWidth="150">
                         <DataGridTextColumn.ElementStyle>
@@ -169,6 +175,7 @@
                     </DataGridTextColumn>
 
                     <DataGridTextColumn Header="Телефон"
+                                        HeaderStyle="{StaticResource LeftColumnHeader}"
                                         Binding="{Binding ClientPhone}"
                                         Width="Auto" MinWidth="100" MaxWidth="150">
                         <DataGridTextColumn.ElementStyle>
@@ -185,6 +192,7 @@
                     </DataGridTextColumn>
 
                     <DataGridTextColumn Header="Дата"
+                                        HeaderStyle="{StaticResource LeftColumnHeader}"
                                         Binding="{Binding ContractDate, StringFormat='dd.MM.yyyy'}"
                                         Width="Auto" MinWidth="80">
                         <DataGridTextColumn.ElementStyle>
@@ -196,6 +204,7 @@
                     </DataGridTextColumn>
 
                     <DataGridTextColumn Header="Сумма, руб."
+                                        HeaderStyle="{StaticResource RightColumnHeader}"
                                         Binding="{Binding TotalAmount, Converter={StaticResource MoneyConv}}"
                                         Width="Auto" MinWidth="110">
                         <DataGridTextColumn.ElementStyle>
@@ -236,6 +245,7 @@
                     </DataGridTemplateColumn>
 
                     <DataGridTextColumn Header="Обновлено"
+                                        HeaderStyle="{StaticResource LeftColumnHeader}"
                                         Binding="{Binding UpdatedAt, StringFormat='dd.MM.yy HH:mm'}"
                                         Width="Auto" MinWidth="108">
                         <DataGridTextColumn.ElementStyle>

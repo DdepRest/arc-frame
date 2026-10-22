@@ -6,7 +6,11 @@
             Margin="{DynamicResource Gap.Sidebar}" Padding="{DynamicResource Pad.None}"
             BorderBrush="{DynamicResource Border}" BorderThickness="1"
             Style="{DynamicResource Card}">
-        <ScrollViewer VerticalScrollBarVisibility="Hidden"
+        <!-- Auto, не Hidden: карточка «Заказчик» вместе с договором и примечаниями
+             выше панели, и без видимого индикатора поля нижних карточек выглядели
+             обрезанными — непонятно, что панель прокручивается. -->
+        <ScrollViewer x:Name="SidebarScroller"
+                      VerticalScrollBarVisibility="Auto"
                       HorizontalScrollBarVisibility="Disabled"
                       Padding="{DynamicResource Pad.None}">
             <StackPanel Margin="{DynamicResource Pad.Card}">

@@ -92,10 +92,15 @@ namespace MosquitoNetCalculator.Tests.App
         {
             // §1.1 + §1.4 — pressing the theme button must publish
             // ThemeChanged AND flip IsDarkTheme in the same call.
-            // We don't bring up Application.Current here on purpose:
-            // ThemeService short-circuits ApplyTheme() when there's no
-            // Application, so ToggleTheme stays safe on any thread —
-            // which keeps this test a pure unit (no STA overhead).
+            //
+            // ВАЖНО: этот тест намеренно НЕ поднимает STA. Приложение в
+            // процессе уже есть (его держит TestAppThemes для WPF_UI), поэтому
+            // ThemeService обязан сам увести применение темы на dispatcher
+            // приложения: иначе кисти получили бы владельца-эту (xUnit) нить,
+            // и весь остаток прогона падал бы в VerifyAccess. Здесь это
+            // фактически страж того инварианта — тест не падает сам, но
+            // ThemeApplyTests.ToggleTheme_FromNonStaThread_* ловит поломку
+            // явно.
             int fireCount = 0;
             void Handler() => fireCount++;
             ThemeService.ThemeChanged += Handler;

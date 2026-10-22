@@ -30,7 +30,13 @@ param(
     # Проверка без перезаписи базлайнов: кадры идут во временный каталог, а в
     # конце гейт verify-baselines.ps1 сравнивает их с .tools/shots и валит
     # прогон на расхождении. Именно так кадры и проверяются перед релизом.
-    [switch]$Verify
+    [switch]$Verify,
+    # Путь к собранному exe. По умолчанию — штатный Debug-выход. Параметр нужен,
+    # когда канонический exe держит запущенный экземпляр приложения (сборка в него
+    # падает на копировании файла): прогон по текущему дереву делается сборкой в
+    # отдельный каталог (`dotnet build -o <dir>`) плюс `-ExePath <dir>\...exe`,
+    # и открытое у пользователя окно при этом трогать не нужно.
+    [string]$ExePath = "MosquitoNetCalculator/bin/Debug/net8.0-windows10.0.17763.0/MosquitoNetCalculator.exe"
 )
 
 # Режим проверки не трогает базлайны: свой временный каталог создаём и убираем сами.
@@ -101,7 +107,7 @@ public static class Native {
 "@
 [Native]::SetProcessDPIAware() | Out-Null
 
-$exe = (Resolve-Path "MosquitoNetCalculator/bin/Debug/net8.0-windows10.0.17763.0/MosquitoNetCalculator.exe").Path
+$exe = (Resolve-Path $ExePath).Path
 New-Item -ItemType Directory -Force -Path $OutDir | Out-Null
 # Мусор прошлых оборванных прогонов: недописанные кадры не должны выглядеть как базлайны.
 get-childitem -Path $OutDir -Filter "*.tmp.png" -ErrorAction SilentlyContinue | Remove-Item -Force -ErrorAction SilentlyContinue
@@ -902,15 +908,44 @@ function Assert-NoOverlay([string]$scene, [int]$Attempts = 3, [bool]$CloseHasNoE
 }
 function Set-Value($el, [string]$text) { $el.GetCurrentPattern([System.Windows.Automation.ValuePattern]::Pattern).SetValue($text) }
 function Select-ComboItem($combo, [string]$name) {
-    $combo.GetCurrentPattern([System.Windows.Automation.ExpandCollapsePattern]::Pattern).Expand()
-    Start-Sleep -Milliseconds 500
-    $items = $combo.FindAll([System.Windows.Automation.TreeScope]::Descendants,
-        (New-Object System.Windows.Automation.PropertyCondition(
-            [System.Windows.Automation.AutomationElement]::ControlTypeProperty,
-            [System.Windows.Automation.ControlType]::ListItem)))
-    foreach ($it in $items) { if ($it.Current.Name -eq $name) {
-        $it.GetCurrentPattern([System.Windows.Automation.SelectionItemPattern]::Pattern).Select(); break } }
-    Start-Sleep -Milliseconds 400
+    # Промах выбора раньше был МОЛЧАЛИВЫМ: попап не успевал развернуться (или
+    # элемент пересоздавался), цикл не находил пункт и тихо выходил, а сцена
+    # снимала кадр с ПУСТЫМ полем. Дальше это состояние наследовали сцены
+    # 08a–08d (тип/цвет/цена оставались пустыми), и базлайн разъезжался на
+    # сотни тысяч пикселей без единой ошибки в логе (прогон 2026-10-22).
+    # Теперь выбор ДОКАЗЫВАЕТСЯ по SelectionPattern и повторяется, а не
+    # подтверждённый выбор валит сцену — кадр с пустым полем не пишется.
+    for ($attempt = 1; $attempt -le 3; $attempt++) {
+        try { $combo.GetCurrentPattern([System.Windows.Automation.ExpandCollapsePattern]::Pattern).Expand() } catch { }
+        Start-Sleep -Milliseconds 500
+        $items = $combo.FindAll([System.Windows.Automation.TreeScope]::Descendants,
+            (New-Object System.Windows.Automation.PropertyCondition(
+                [System.Windows.Automation.AutomationElement]::ControlTypeProperty,
+                [System.Windows.Automation.ControlType]::ListItem)))
+        $clicked = $false
+        foreach ($it in $items) { if ($it.Current.Name -eq $name) {
+            $it.GetCurrentPattern([System.Windows.Automation.SelectionItemPattern]::Pattern).Select()
+            $clicked = $true; break } }
+        Start-Sleep -Milliseconds 400
+
+        if ($clicked) {
+            # Доказательство результата: выбранный пункт читаем у самого комбобокса.
+            $proven = $false
+            $selected = $null
+            try {
+                $selPattern = $combo.GetCurrentPattern([System.Windows.Automation.SelectionPattern]::Pattern)
+                $sel = $selPattern.Current.GetSelection()
+                if ($sel -and $sel.Length -gt 0) { $selected = $sel[0].Current.Name; $proven = $true }
+            } catch { }
+            if ((-not $proven) -or $selected -eq $name) { return }
+            Write-Host ("[!] выбор '{0}' не подтверждён (в поле '{1}'), попытка {2}" -f $name, $selected, $attempt)
+        } else {
+            Write-Host ("[!] пункт '{0}' не найден в списке ({1} шт.), попытка {2}" -f $name, $items.Count, $attempt)
+        }
+        try { $combo.GetCurrentPattern([System.Windows.Automation.ExpandCollapsePattern]::Pattern).Collapse() } catch { }
+        Start-Sleep -Milliseconds 400
+    }
+    throw ("Select-ComboItem: пункт '{0}' не выбран — кадр был бы снят с пустым полем" -f $name)
 }
 function Test-MagentaAt($bmp, [int]$x, [int]$y) {
     # Магента (255,0,255) — служебный цвет формы-нарушителя: в интерфейсе такого нет.
@@ -1117,14 +1152,25 @@ function Invoke-SelfTest {
 #   * после прогона (в finally, то есть и при падении) оригиналы возвращаются
 #     БАЙТ-В-БАЙТ, а подставленные файлы, которых у пользователя не было,
 #     удаляются — хеши до/после сверяются;
-#   * хранилище заказов харнесс НЕ подменяет и НЕ восстанавливает (это рабочие
-#     данные): его хеш снимается до и после, и расхождение — ОШИБКА прогона.
+#   * хранилище заказов тоже фикстура (.tools/fixtures/orders): рабочие заказы
+#     пользователя меняются от обычной работы, и кадры 04a/06/06b «плыли» от
+#     одного сохранённого заказа (номер договора, число в плашке, строки списка).
+#     Перед стартом РЕАЛЬНЫЙ каталог orders копируется в %TEMP%, на его место
+#     кладётся фикстура, а в finally оригинал возвращается БАЙТ-В-БАЙТ (хеш
+#     сверяется; при расхождении копия остаётся на диске и кричит в лог).
+#     Хеш фикстуры снимается до/после прогона — сцена не имеет права писать
+#     заказы, иначе кадр зависел бы от того, что успело сохраниться.
 $script:appDataDir = Join-Path $env:APPDATA "MosquitoNetCalculator"
 $script:fixturesDir = Join-Path $PSScriptRoot "fixtures"
 $script:profileFiles = @("settings.json", "ai-settings.json", "prices.json")
 $script:backupDir = Join-Path $env:TEMP ("uiverify-profile-" + $PID)
 $script:profileHashes = @{}
-$script:ordersHashBefore = $null
+$script:ordersDir = Join-Path $script:appDataDir "orders"
+$script:ordersBackupDir = Join-Path $env:TEMP ("uiverify-orders-" + $PID)
+$script:ordersRealHash = $null      # хеш РЕАЛЬНЫХ заказов пользователя (до подмены)
+$script:ordersDirExisted = $false
+$script:ordersFixtureCount = 0
+$script:ordersHashBefore = $null    # хеш ФИКСТУРЫ (до прогона)
 
 function Get-TreeHash([string]$dir) {
     # Хеш дерева «содержимое, а не mtime»: по нему проверяется, что прогон не
@@ -1160,7 +1206,7 @@ function Prepare-PinnedProfile([string]$theme) {
         $script:profileHashes[$f] = Get-FileHash16 $src
         if (Test-Path $src) { Copy-Item -LiteralPath $src -Destination (Join-Path $script:backupDir $f) -Force }
     }
-    $script:ordersHashBefore = Get-TreeHash (Join-Path $script:appDataDir "orders")
+    Set-OrdersFixture
 
     # settings.json: тема прогона, «Что нового» прочитано текущей версией
     # (или НЕ прочитано при -SimulateFirstRun), обновление не «висит».
@@ -1199,14 +1245,115 @@ function Prepare-PinnedProfile([string]$theme) {
         Write-Host "[warn] не удалось подставить свежий кэш моделей в ai-settings.json: $($_.Exception.Message.Split("`n")[0])"
     }
 }
+# Подмена хранилища заказов фикстурой. Без неё кадры зависят от того, сколько
+# заказов у менеджера на диске и какие у них номера: один сохранённый заказ
+# сдвигал номер договора в 04a, счётчик в шапке и строки списка в 06/06b — а
+# гейт видел это как «изменился вид».
+function Set-OrdersFixture {
+    if ($KeepProfile) {
+        Write-Host "[i] хранилище заказов НЕ подменяется (-KeepProfile): кадры зависят от рабочих заказов"
+        return
+    }
+    $fixture = Join-Path $script:fixturesDir "orders"
+    if (-not (Test-Path $fixture)) {
+        throw "нет фикстуры заказов $fixture — без неё кадры 04a/06/06b зависели бы от рабочих заказов пользователя"
+    }
+    $orders = @(Get-ChildItem -Path $fixture -Filter "*.json" -File)
+    if ($orders.Count -eq 0) { throw "фикстура заказов пуста: $fixture" }
+
+    # Хеш РЕАЛЬНОГО хранилища: по нему после прогона проверяется, что пользователь
+    # получил свои файлы байт-в-байт.
+    $script:ordersRealHash = Get-TreeHash $script:ordersDir
+    $script:ordersDirExisted = Test-Path $script:ordersDir
+    if ($script:ordersDirExisted) {
+        Copy-Item -LiteralPath $script:ordersDir -Destination $script:ordersBackupDir -Recurse -Force
+    } else {
+        New-Item -ItemType Directory -Force -Path $script:ordersDir | Out-Null
+    }
+
+    # Каталог чистим ЦЕЛИКОМ: иначе рядом с фикстурой остались бы реальные
+    # заказы и номер договора снова поплыл бы.
+    Get-ChildItem -Path $script:ordersDir -Force | Remove-Item -Recurse -Force
+    Copy-Item -Path (Join-Path $fixture "*.json") -Destination $script:ordersDir -Force
+    $script:ordersFixtureCount = $orders.Count
+    $script:ordersHashBefore = Get-TreeHash $script:ordersDir
+    Write-Host "[i] хранилище заказов подменено фикстурой: $($orders.Count) заказ(а) из .tools/fixtures/orders"
+}
+
+# Возврат реальных заказов. Вызывается в finally — то есть и при падении сцены.
+# Копия НЕ удаляется, если хеш не сошёлся: лучше оставить лишний каталог в %TEMP%,
+# чем молча отдать пользователю чужие/битые заказы.
+function Restore-Orders {
+    if ($KeepProfile) { return }
+    try {
+        if (Test-Path $script:ordersDir) { Get-ChildItem -Path $script:ordersDir -Force | Remove-Item -Recurse -Force }
+        if ($script:ordersDirExisted) {
+            if (-not (Test-Path $script:ordersBackupDir)) { throw "нет резервной копии заказов: $script:ordersBackupDir" }
+            Get-ChildItem -LiteralPath $script:ordersBackupDir -Force | Copy-Item -Destination $script:ordersDir -Recurse -Force
+        } else {
+            Remove-Item -LiteralPath $script:ordersDir -Recurse -Force -ErrorAction SilentlyContinue
+        }
+    } catch {
+        Write-Host "[guard] ЗАКАЗЫ НЕ ВОССТАНОВЛЕНЫ: $($_.Exception.Message.Split("`n")[0])"
+        Write-Host "         оригиналы сохранены здесь: $script:ordersBackupDir — верните их вручную"
+        return
+    }
+    $now = Get-TreeHash $script:ordersDir
+    if ($now -ne $script:ordersRealHash) {
+        Write-Host "[guard] ЗАКАЗЫ ВОССТАНОВЛЕНЫ НЕ БАЙТ-В-БАЙТ ($script:ordersRealHash -> $now)"
+        Write-Host "         оригиналы сохранены здесь: $script:ordersBackupDir — сверьте вручную"
+        return
+    }
+    if (Test-Path $script:ordersBackupDir) { Remove-Item -Recurse -Force $script:ordersBackupDir -ErrorAction SilentlyContinue }
+    Write-Host "[i] хранилище заказов восстановлено байт-в-байт (реальный хеш $now)"
+}
+# Прерванный прогон (Ctrl+C, закрытое окно консоли, убитый процесс) НЕ проходит
+# через finally — и тогда в %TEMP% остаётся копия РЕАЛЬНЫХ данных, а на её месте
+# стоит фикстура. Именно так профиль пользователя один раз остался фикстурным
+# после остановленного прогона (2026-10-22). Поэтому каждый старт начинается с
+# возврата таких копий — ДО того, как готовить новую подмену.
+# Ничего не удаляем молча: то, что успело появиться ПОСЛЕ аварии (заказы,
+# правки настроек), откладываем рядом в *.pre-recovery-* и называем путь в логе.
+function Restore-Leftovers {
+    $stamp = Get-Date -Format "yyyyMMdd-HHmmss"
+    foreach ($d in @(Get-ChildItem -Path $env:TEMP -Directory -Filter "uiverify-orders-*" -ErrorAction SilentlyContinue)) {
+        $aside = Join-Path $env:TEMP ("uiverify-orders-aside-" + $stamp)
+        try {
+            if (Test-Path $script:ordersDir) { Move-Item -LiteralPath $script:ordersDir -Destination $aside -Force }
+            New-Item -ItemType Directory -Force -Path $script:ordersDir | Out-Null
+            Get-ChildItem -LiteralPath $d.FullName -Force | Copy-Item -Destination $script:ordersDir -Recurse -Force
+            Remove-Item -Recurse -Force $d.FullName
+            Write-Host "[i] прерванный прогон: реальные заказы возвращены, фикстура отложена в $aside"
+        } catch {
+            Write-Host "[guard] не удалось вернуть заказы из $($d.FullName): $($_.Exception.Message.Split("`n")[0])"
+            Write-Host "         копия НЕ удалена — верните её вручную"
+        }
+    }
+    foreach ($d in @(Get-ChildItem -Path $env:TEMP -Directory -Filter "uiverify-profile-*" -ErrorAction SilentlyContinue)) {
+        try {
+            foreach ($f in $script:profileFiles) {
+                $bak = Join-Path $d.FullName $f
+                $dst = Join-Path $script:appDataDir $f
+                if (-not (Test-Path $bak)) { continue }
+                if (Test-Path $dst) { Copy-Item -LiteralPath $dst -Destination ("$dst.pre-recovery-$stamp") -Force }
+                Copy-Item -LiteralPath $bak -Destination $dst -Force
+            }
+            Remove-Item -Recurse -Force $d.FullName
+            Write-Host "[i] прерванный прогон: профиль возвращён из $($d.Name) (текущие файлы — *.pre-recovery-$stamp)"
+        } catch {
+            Write-Host "[guard] не удалось вернуть профиль из $($d.FullName): $($_.Exception.Message.Split("`n")[0])"
+            Write-Host "         копия НЕ удалена — верните её вручную"
+        }
+    }
+}
 function Assert-UserDataUntouched {
     if ($KeepProfile) { return }
-    $after = Get-TreeHash (Join-Path $script:appDataDir "orders")
+    $after = Get-TreeHash $script:ordersDir
     if ($after -ne $script:ordersHashBefore) {
-        throw ("прогон изменил РЕАЛЬНОЕ хранилище заказов ($script:ordersHashBefore -> $after). " +
-               "Это брак харнесса, а не приложения: рабочие данные пользователя трогать нельзя")
+        throw ("прогон изменил хранилище заказов (фикстуру) ($script:ordersHashBefore -> $after). " +
+               "Сцена не должна сохранять заказы: иначе кадр зависел бы от того, что успело записаться")
     }
-    Write-Host "[i] хранилище заказов не тронуто (хеш $after)"
+    Write-Host "[i] хранилище заказов не тронуто прогоном (фикстура, хеш $after)"
 }
 function Restore-Profile {
     if ($KeepProfile) { return }
@@ -1232,6 +1379,9 @@ function Restore-Profile {
 
 $proc = $null
 try {
+    # Остатки прерванного прогона возвращаем ДО новой подмены: иначе фикстура
+    # станет «оригиналом» и следующие прогоны будут восстанавливать её.
+    Restore-Leftovers
     Prepare-PinnedProfile $Theme
     $proc = Start-Process -FilePath $exe -PassThru
     $win = $null
@@ -1542,8 +1692,9 @@ finally {
         try { $proc.Kill() } catch {}
         $proc.WaitForExit(5000) | Out-Null
     }
-    # Профиль возвращаем ПОСЛЕ остановки приложения: иначе оно успело бы записать
-    # в подставленные файлы ещё раз (приветствие AI-чата, тема, кэш моделей).
+    # Профиль и заказы возвращаем ПОСЛЕ остановки приложения: иначе оно успело бы
+    # записать в подставленные файлы ещё раз (приветствие AI-чата, тема, кэш моделей).
+    try { Restore-Orders } catch { Write-Host "[guard] восстановление заказов упало: $($_.Exception.Message.Split("`n")[0])" }
     try { Restore-Profile } catch { Write-Host "[guard] восстановление профиля упало: $($_.Exception.Message.Split("`n")[0])" }
     # Кадры режима проверки — расходный материал: эталоны живут в .tools/shots.
     if ($script:ownScratchOutDir -and (Test-Path $OutDir)) {

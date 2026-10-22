@@ -94,3 +94,15 @@ release-artifacts/
 # Orkestra AI — estado local (nunca versionar)
 .sta/
 .kanban/
+
+## WPF temporary project artifacts generated during build
+*_wpftmp.csproj
+*.wpftmp.csproj
+
+## Scratch diagnostics in .tools
+.tools/_glass/
+.tools/_recheck-*/
+
+## External agent scratch directories
+.devtool/
+.orkestra/

@@ -60,7 +60,7 @@
                     <!-- UX-14: shared DialogCloseButton (was a private 60-line copy).
                          DynamicResource — окно парсится и в тестах без App-тем. -->
                     <Button Grid.Column="1"
-                            Width="40" Height="40"
+                            Width="32" Height="32"
                             Style="{DynamicResource DialogCloseButton}"
                             Click="CloseButton_Click">
                         <TextBlock Text="&#xE8BB;" FontFamily="{DynamicResource Font.Icon}" FontSize="{StaticResource Type.Caption}"/>

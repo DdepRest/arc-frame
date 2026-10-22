@@ -6,10 +6,15 @@ The agent system lives in `agents/` (single folder):
 agents/README.md                         ← что это за система и как ей пользоваться
 agents/docs/MULTI_AGENT_ARC_CALC_CONTROL.md  ← canonical source of truth (routing, CONTROL)
 agents/docs/CHEATSHEET.md                ← быстрый вход (критические правила, читай первым)
-agents/scripts/                          ← validate-docs.ps1, arc-check.ps1, what-to-update.ps1, gensymbols.ps1, render-matrix.ps1, sync-version.ps1
+agents/scripts/                          ← arc-finish.ps1 (финализация в 1 клик), validate-docs.ps1, arc-check.ps1, rotate-current-state.ps1
 ```
 
-Read `agents/README.md` and then `agents/docs/MULTI_AGENT_ARC_CALC_CONTROL.md` before any non-trivial task.
+## Quick Start: Fast-Track vs Full-Track
+- 🚀 **Fast-Track (≤ 15 строк кода, точечный фикс, стиль, опечатка):** читай только `agents/docs/CHEATSHEET.md`, проверь таблицу в `agents/docs/GOTCHAS.md`, делай правку + целевой тест + запись в `CHANGELOG.md`. Финализация: `.\finish.bat`.
+- 🏛️ **Full-Track (Архитектурная задача, новые классы/сервисы, формулы расчёта, релиз):**
+  1. Локализация задачи: `.\find.bat <запрос>` (поиск файлов, классов, ловушек).
+  2. Читай `agents/README.md`, `agents/docs/MULTI_AGENT_ARC_CALC_CONTROL.md` и разделы в `CALCULATION_LOGIC.md` / `AUTO_UPDATE.md`.
+  3. Финализация в 1 клик: `.\finish.bat`. Проверка: `.\check.bat`.
 
 ---
 
@@ -48,6 +53,7 @@ and enforcement — see `agents/docs/MULTI_AGENT_ARC_CALC_CONTROL.md` §13
 
 ## Last verified
 
+2026-10-19 — добавлен Fast-Track коридор (≤15 строк без полного ритуала), оптимизирована проектная память и ротация версий; `agents/scripts/validate-docs.ps1` reports 0 issues.
 2026-08-10 — system moved into a single `agents/` folder (docs + scripts);
 wrapper now points to `agents/README.md`. `agents/scripts/validate-docs.ps1` reports 0 issues.
 

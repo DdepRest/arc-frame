@@ -75,9 +75,29 @@ namespace MosquitoNetCalculator.Controls
                 string impostPart = impost > 0 ? $" + Импост {impost:N2} руб" : "";
                 TxtQuickPreview.Text = $"{area:F2} {unit} × {price:N2} руб × {qty}{impostPart} = {total:N2} руб";
             }
+            else if (IsAreaPriced(type))
+            {
+                // Размеры ещё не введены: площадь = 0, и формула «ставка × 1 = 0,00»
+                // была бы бессмысленной. Показываем саму ставку — это ровно то,
+                // что пользователь сейчас выбирает, и избавляет от чтения нуля.
+                TxtQuickPreview.Text = $"{price:N2} руб/{unit}";
+            }
             else
                 TxtQuickPreview.Text = $"{price:N2} руб × {qty} = {total:N2} руб";
         }
+
+        /// <summary>
+        /// True when the position's total is computed from area (or from the same
+        /// fall-through path as <see cref="OrderItem.Recalculate"/> treats unknown
+        /// products) — i.e. with no dimensions the total is legitimately 0 and the
+        /// preview should show the unit rate instead of a zero-sum formula.
+        /// </summary>
+        private static bool IsAreaPriced(string type) =>
+            !IsCustomProductType(type)
+            && !OrderItem.AmountOnlyProducts.Contains(type)
+            && !OrderItem.ManualPieceProducts.Contains(type)
+            && type != "ПСУЛ"
+            && type != "Уплотнение";
 
         public void RefreshPreview() => UpdateQuickPreview();
     }

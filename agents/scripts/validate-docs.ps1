@@ -261,7 +261,12 @@ foreach ($docFile in $docsFiles) {
     $content = Get-Content $docFile.FullName -Raw -Encoding UTF8
     if ($content -match 'Last verified[:\s]*(\d{4}-\d{2}-\d{2})') {
         $docDate = $Matches[1]
-        $gitDate = git -C $projectRoot log -1 --format="%as" -- $docFile.FullName 2>$null
+        $dirty = @(git -C $projectRoot status --porcelain -- $docFile.FullName 2>$null)
+            if ($dirty.Count -gt 0) {
+                $gitDate = Get-Date -Format "yyyy-MM-dd"
+            } else {
+                $gitDate = git -C $projectRoot log -1 --format="%as" -- $docFile.FullName 2>$null
+            }
         if (-not $gitDate) { $gitDate = "unknown" }
         $dateChecked++
         if ($gitDate -ne "unknown" -and $docDate -lt $gitDate) {
@@ -299,7 +304,12 @@ if (-not $lastReleaseTag) {
         Write-Host "  Last release: $lastReleaseTag ($lastReleaseDate)" -ForegroundColor Gray
         $staleCount = 0
         foreach ($docFile in $docsFiles) {
-            $gitDate = git -C $projectRoot log -1 --format="%as" -- $docFile.FullName 2>$null
+            $dirty = @(git -C $projectRoot status --porcelain -- $docFile.FullName 2>$null)
+            if ($dirty.Count -gt 0) {
+                $gitDate = Get-Date -Format "yyyy-MM-dd"
+            } else {
+                $gitDate = git -C $projectRoot log -1 --format="%as" -- $docFile.FullName 2>$null
+            }
             if ($gitDate -and $gitDate -lt $lastReleaseDate) {
                 Write-Host "  STALE: $($docFile.Name) - last change $gitDate (before release $lastReleaseDate)" -ForegroundColor Yellow
                 $staleCount++

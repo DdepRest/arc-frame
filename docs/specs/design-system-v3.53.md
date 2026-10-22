@@ -298,6 +298,59 @@ v3.53.0 нашёл 5 реальных нарушений, все они **исп
 GOTCHAS §28). Симметричная форма у правого выравнивания — ошибка стража,
 `GridDensityTests.NumericCells_KeepAirFromTheirLeftNeighbour`.
 
+## 5д. Стекло без blur (v3.56)
+
+WPF не умеет дёшево блюрить фон под отдельным контролом: `BlurEffect` на живом
+дереве считается на CPU каждый кадр и запрещён правилом движения. Поэтому
+«стекло» у кнопок — не полупрозрачная плёнка, а два хромовых примитива:
+
+| Слой | Токен | Где | Почему |
+|---|---|---|---|
+| Плашка | `GhostBg` (тематический) | Ghost / Subtle / DangerSubtle | SolidColorBrush следует теме: читается и на белой карточке, и на `#19191B` |
+| Рамка | `GhostBorder` → `BorderHover` на hover | те же | hairline виден в обеих темах |
+| Спекулярная кромка | `GlassSpecularBorder` (фикс. белый 20%→8%) | Primary / Success / Danger / CompactAdd | 1px по контуру, НЕ под текстом — контраст не страдает |
+| Вуаль нажатия | `GlassPressVeil` (`#1F000000`) | все варианты | темнит любую заливку; press всегда сильнее hover |
+| Глянец | `GlassSheen`, `GlassThumb*` | только тумблер | текста под ними нет |
+
+Правила:
+
+1. Полупрозрачная накладка не кладётся под текст. Белый 15% поверх `Accent`
+   `#3574C3` даёт ≈3.6:1 с белым текстом — ниже AA (4.5:1); в тёмной теме та же
+   арифметика с `#3272D8`.
+2. Один `GlassButtonTemplate` на все action-кнопки: различия — только цвета;
+   hover — `Style.Triggers`, pressed/disabled — триггеры шаблона.
+3. Не возвращать `GlassSurface`/`GlassBorder`/`GlassSheen` в `ButtonStyles`: это
+   фиксированные alpha-градиенты, которые `ThemeService` не переключает.
+
+Стражи: `GlassChromeTests` (общий шаблон, `FocusVisualStyle`, отсутствие
+theme-blind токенов), `ContrastTests` (пары `TextPrimary/GhostBg`,
+`OnSuccess/SuccessHover`, `OnDanger/DangerHover`).
+
+## 5е. Шапка колонки выровнена по своим значениям (v3.56)
+
+Базовый `DataGridColumnHeader` центрирует содержимое, и это верно только для
+служебных колонок (№, статус-капсула, чекбокс). Над текстом и числами центр
+читался как «подпись не от этой колонки»: «Наименование» висело посреди
+широкой колонки, а «Сумма» — по центру над числом, прижатым вправо.
+
+| Стиль | Что задаёт | Куда |
+|---|---|---|
+| `LeftColumnHeader` | `HorizontalContentAlignment=Left` | Наименование, Цвет, № КП, Адрес, Телефон, Дата, Обновлено |
+| `RightColumnHeader` | `HorizontalContentAlignment=Right` | Цена, Цена руб., Сумма, Сумма руб. |
+
+Правила:
+
+1. Стили задают ТОЛЬКО выравнивание: `Padding` (10,4) наследуется от базового.
+   Свой литерал отступа поднял бы категорию `margins` в бюджете
+   `design-token-budget.json` — шапка не должна стоить долга.
+2. Служебные/центрированные колонки `HeaderStyle` не получают: капсула статуса
+   остаётся по центру, иначе бейдж съезжает к краю.
+3. `Converters.UppercaseHeaderTemplate.Apply` ставит только `HeaderTemplate` и
+   выравниванию не мешает — оба механизма живут вместе.
+
+Стражи: `CosmeticFixesUiTests.Prices_ColumnHeaders_AlignWithTheirValues` (сверяет
+отрендеренную шапку и сами стили) и `OrdersAndItems_Headers_UseTheAlignmentStyles`.
+
 ## 6. Проверка
 
 | Что проверяется | Тест |
@@ -331,6 +384,7 @@ GOTCHAS §28). Симметричная форма у правого вырав�
 | `Font.Icon` содержит Win10-фолбэк «Segoe MDL2 Assets» (иначе глифы — tofu) | `DesignTokenGuardTests.IconFontToken_KeepsWin10Fallback` |
 | Семья в C# — только через `AppFontService` (исключение: печатный слой) | `DesignTokenGuardTests.FontFamiliesInCode_*` |
 | UIA-имя у кнопки закрытия slide-over (Диктор + UIA-Invoke) | `AccessibilityTests.*` |
+| Стеклянные кнопки: общий шаблон, фокус, отсутствие блика под текстом | `GlassChromeTests.*` |
 
 ## 7. Порядок миграции (для продолжающих)
 

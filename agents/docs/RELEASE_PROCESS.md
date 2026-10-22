@@ -1,5 +1,21 @@
 # RELEASE_PROCESS.md
 
+## Навигатор по релизному процессу (Quick Index)
+
+> 💡 **Экономия токенов для агентов:** Не читайте весь 31 КБ документ целиком! Используйте прямые якорные ссылки на нужные секции:
+
+| Область | Раздел документа | Ключевые файлы | Что описывает |
+|---|---|---|---|
+| **Версия программы** | [Где хранится версия](#версия) | `MosquitoNetCalculator.csproj` | Единый источник правды, формат X.Y.Z |
+| **Файлы релиза** | [Какие файлы менять](#файлы-релиза) | `.csproj`, `CHANGELOG.md`, `releases.json` | Чеклист обязательных изменений |
+| **Сборка и упаковка** | [Как собрать проект](#сборка-и-упаковка) | `build.bat`, InnoSetup (`installer.iss`) | Сборка .exe, архивация ZIP, инсталлер |
+| **Пайплайн релиза** | [Канонический Pipeline](#пайплайн-релиза) | 4 этапа | Подготовка → Сборка → GitHub Release → releases.json |
+| **CI/CD Actions** | [CI/CD Pipeline](#cicd) | `.github/workflows/release.yml` | Автоматическая сборка и публикация |
+| **Troubleshooting & CDN** | [Задержка CDN и решение проблем](#cdn-troubleshooting) | `UpdateManifestClient.cs` | Почему пользователь не видит релиз 5–15 мин |
+
+---
+
+<a id="версия"></a>
 ## Где хранится версия программы
 
 **Единственный источник правды:** `MosquitoNetCalculator/MosquitoNetCalculator.csproj`
@@ -12,6 +28,7 @@
 
 ---
 
+<a id="файлы-релиза"></a>
 ## Какие файлы нужно менять при выпуске версии
 
 ### Обязательно:
@@ -48,6 +65,7 @@
 
 ---
 
+<a id="сборка-и-упаковка"></a>
 ## Как собрать проект
 
 ### Шаг 1: Сборка
@@ -122,6 +140,7 @@ tools/release/update-releases-json.ps1
 
 ---
 
+<a id="cicd"></a>
 ## Автоматизированный CI/CD pipeline (GitHub Actions)
 
 Проект использует два workflow в `.github/workflows/`:
@@ -161,6 +180,7 @@ tools/release/update-releases-json.ps1
 
 ---
 
+<a id="пайплайн-релиза"></a>
 ## Канонический Pipeline релиза (выучить один раз)
 
 > **⚠️ Правило безопасности:** `releases.json` в ветке `main` является **триггером автообновления**. Как только новая запись попадает в `main`, старые программы могут увидеть обновление. Поэтому `releases.json` нельзя публиковать в `main` раньше, чем GitHub Release создан и ZIP-asset загружен. Иначе пользователи увидят «Доступно обновление», но скачать не смогут.
@@ -321,6 +341,7 @@ git commit -m "release: update releases.json for vX.Y.Z"
 
 ---
 
+<a id="cdn-troubleshooting"></a>
 ## Что делать, если автообновление не видит новую версию
 
 1. Проверить, что `releases.json` закоммичен в `main`.
@@ -359,6 +380,14 @@ git commit -m "release: update releases.json for vX.Y.Z"
 - `extract-release-notes.ps1`
 
 ## Last verified
+2026-10-22 (v3.55.1) — обновлено содержимое (sync-last-verified.ps1, CONTROL#13).
+
+2026-10-21 (v3.55.1) — обновлено содержимое (sync-last-verified.ps1, CONTROL#13).
+
+2026-10-20 (v3.55.1) — обновлено содержимое (sync-last-verified.ps1, CONTROL#13).
+
+2026-10-19 (v3.55.1) — обновлено содержимое (sync-last-verified.ps1, CONTROL#13).
+
 2026-10-18 (v3.55.1) — обновлено содержимое (sync-last-verified.ps1, CONTROL#13).
 
 2026-10-12 (v3.55.1) — обновлено содержимое (sync-last-verified.ps1, CONTROL#13).
