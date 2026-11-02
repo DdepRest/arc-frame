@@ -157,7 +157,7 @@
                                     <StackPanel Orientation="Horizontal">
                                         <TextBlock Text="&#xE765;" FontFamily="{DynamicResource Font.Icon}"
                                                    FontSize="{StaticResource Type.BodyLg}" Margin="{DynamicResource Gap.InlineLg}" VerticalAlignment="Center"
-                                                   Foreground="{DynamicResource Accent}"/>
+                                                   Foreground="{DynamicResource AccentText}"/>
                                         <TextBlock Text="Печать без предпросмотра" VerticalAlignment="Center"/>
                                     </StackPanel>
                                 </Button>
@@ -165,7 +165,7 @@
                                     <StackPanel Orientation="Horizontal">
                                         <TextBlock Text="&#xE72E;" FontFamily="{DynamicResource Font.Icon}"
                                                    FontSize="{StaticResource Type.BodyLg}" Margin="{DynamicResource Gap.InlineLg}" VerticalAlignment="Center"
-                                                   Foreground="{DynamicResource Accent}"/>
+                                                   Foreground="{DynamicResource AccentText}"/>
                                         <TextBlock Text="Печать «Чистая» + «В производство»" VerticalAlignment="Center"/>
                                     </StackPanel>
                                 </Button>
@@ -173,7 +173,7 @@
                                     <StackPanel Orientation="Horizontal">
                                         <TextBlock Text="&#xE896;" FontFamily="{DynamicResource Font.Icon}"
                                                    FontSize="{StaticResource Type.BodyLg}" Margin="{DynamicResource Gap.InlineLg}" VerticalAlignment="Center"
-                                                   Foreground="{DynamicResource Accent}"/>
+                                                   Foreground="{DynamicResource AccentText}"/>
                                         <TextBlock Text="Сохранить в PDF" VerticalAlignment="Center"/>
                                     </StackPanel>
                                 </Button>

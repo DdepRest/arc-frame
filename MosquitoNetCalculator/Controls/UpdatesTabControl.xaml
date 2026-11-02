@@ -155,12 +155,12 @@
                     <TextBlock FontFamily="{DynamicResource Font.Icon}"
                                Text="&#xE81C;"
                                FontSize="{StaticResource Type.Caption}"
-                               Foreground="{DynamicResource Accent}"
+                               Foreground="{DynamicResource AccentText}"
                                VerticalAlignment="Center"
                                Margin="{DynamicResource Gap.Inline}"/>
                     <TextBlock x:Name="TxtUpdatesCount" Text="0 версий"
                                FontSize="{StaticResource Type.Body}" FontWeight="SemiBold"
-                               Foreground="{DynamicResource Accent}"
+                               Foreground="{DynamicResource AccentText}"
                                VerticalAlignment="Center"/>
                 </StackPanel>
             </Border>
@@ -376,12 +376,12 @@
                                                         <TextBlock Text="&#xE735;"
                                                                    FontFamily="{DynamicResource Font.Icon}"
                                                                    FontSize="{StaticResource Type.Caption}"
-                                                                   Foreground="{DynamicResource Accent}"
+                                                                   Foreground="{DynamicResource AccentText}"
                                                                    VerticalAlignment="Center"
                                                                    Margin="{DynamicResource Gap.InlineSm}"/>
                                                         <TextBlock Text="Новейшая"
                                                                    FontSize="{StaticResource Type.Caption}" FontWeight="SemiBold"
-                                                                   Foreground="{DynamicResource Accent}"
+                                                                   Foreground="{DynamicResource AccentText}"
                                                                    VerticalAlignment="Center"/>
                                                     </StackPanel>
                                                 </Border>

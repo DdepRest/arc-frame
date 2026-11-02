@@ -66,7 +66,7 @@ namespace MosquitoNetCalculator.Controls
                     Width = 24,
                     Height = 24,
                     CornerRadius = (CornerRadius)FindResource("Radius.Pill"),
-                    Background = (Brush)FindResource("Accent"),
+                    Background = (Brush)FindResource("AccentText"),
                     VerticalAlignment = VerticalAlignment.Center,
                     Margin = new Thickness(10, 0, 0, 0),
                     Child = new TextBlock
@@ -112,7 +112,7 @@ namespace MosquitoNetCalculator.Controls
                 {
                     FontSize = Typography.Body,
                     FontWeight = FontWeights.SemiBold,
-                    Foreground = (Brush)FindResource("Accent"),
+                    Foreground = (Brush)FindResource("AccentText"),
                     VerticalAlignment = VerticalAlignment.Center,
                     Margin = new Thickness(10, 0, 10, 0)
                 };

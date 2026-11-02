@@ -22,7 +22,7 @@
                         CornerRadius="{DynamicResource Radius.Capsule}" Padding="{DynamicResource Pad.Pill}" Margin="{DynamicResource Gap.Left}"
                         VerticalAlignment="Center" Visibility="Collapsed">
                     <TextBlock x:Name="PosCountText" FontSize="{StaticResource Type.Caption}" FontWeight="SemiBold"
-                               Foreground="{DynamicResource Accent}"/>
+                               Foreground="{DynamicResource AccentText}"/>
                 </Border>
                 <TextBlock FontSize="{StaticResource Type.Caption}" Foreground="{DynamicResource TextMuted}"
                            VerticalAlignment="Center" Margin="{DynamicResource Gap.LeftLg}"
@@ -535,7 +535,7 @@
                                Style="{DynamicResource EmptyState.Title}"/>
                     <TextBlock Style="{DynamicResource EmptyState.Hint}">
                         <Run Text="Нажмите на товар — он появится в поле"/>
-                        <Run Text=" «Тип»" Foreground="{DynamicResource Accent}" FontWeight="SemiBold"/>
+                        <Run Text=" «Тип»" Foreground="{DynamicResource AccentText}" FontWeight="SemiBold"/>
                         <Run Text=" выше"/>
                     </TextBlock>
                 </StackPanel>
@@ -567,7 +567,7 @@
                                                             Margin="{DynamicResource Gap.InlineSm}"
                                                             VerticalAlignment="Center">
                                                         <TextBlock Text="{Binding IconGlyph}" FontFamily="{DynamicResource Font.Icon}"
-                                                                   FontSize="{StaticResource Type.Caption}" Foreground="{DynamicResource Accent}"
+                                                                   FontSize="{StaticResource Type.Caption}" Foreground="{DynamicResource AccentText}"
                                                                    VerticalAlignment="Center"/>
                                                     </Border>
                                                     <TextBlock Text="{Binding Name}" FontSize="{StaticResource Type.Body}" FontWeight="SemiBold"
@@ -578,7 +578,7 @@
                                                         Padding="{DynamicResource Pad.Pill}"
                                                         HorizontalAlignment="Right" VerticalAlignment="Center">
                                                     <TextBlock Text="{Binding Products.Count}" FontSize="{StaticResource Type.Caption}"
-                                                               FontWeight="SemiBold" Foreground="{DynamicResource Accent}"/>
+                                                               FontWeight="SemiBold" Foreground="{DynamicResource AccentText}"/>
                                                 </Border>
                                             </Grid>
                                             <ItemsControl ItemsSource="{Binding Products}">
@@ -631,7 +631,7 @@
                         <TextBlock FontSize="{StaticResource Type.Caption}" Foreground="{DynamicResource TextPrimary}" Opacity="0.7"
                                    HorizontalAlignment="Center" Margin="{DynamicResource Gap.BlockTopLg}">
                             <Run Text="или используйте"/>
-                            <Run Text=" поиск" Foreground="{DynamicResource Accent}"/>
+                            <Run Text=" поиск" Foreground="{DynamicResource AccentText}"/>
                             <Run Text=" выше"/>
                         </TextBlock>
                     </StackPanel>

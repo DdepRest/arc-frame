@@ -25,7 +25,7 @@
                             Padding="{DynamicResource Pad.ButtonSm}"
                             Visibility="Collapsed">
                         <TextBlock x:Name="TxtOrdersCount" Text=""
-                                   FontSize="{StaticResource Type.Caption}" FontWeight="SemiBold" Foreground="{DynamicResource Accent}"/>
+                                   FontSize="{StaticResource Type.Caption}" FontWeight="SemiBold" Foreground="{DynamicResource AccentText}"/>
                     </Border>
                 </StackPanel>
                 <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center">

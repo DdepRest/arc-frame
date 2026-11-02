@@ -30,7 +30,7 @@
 
                 <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Grid.Column="0">
                     <TextBlock Text="&#xE99A;" FontFamily="{DynamicResource Font.Icon}" FontSize="{StaticResource Type.Subtitle}"
-                               Foreground="{DynamicResource Accent}" VerticalAlignment="Center" Margin="{DynamicResource Gap.Inline}"/>
+                               Foreground="{DynamicResource AccentText}" VerticalAlignment="Center" Margin="{DynamicResource Gap.Inline}"/>
                     <TextBlock Text="AI Ассистент" FontSize="{StaticResource Type.BodyLg}" FontWeight="SemiBold"
                                Foreground="{DynamicResource TextPrimary}" VerticalAlignment="Center"
                                TextTrimming="CharacterEllipsis"/>

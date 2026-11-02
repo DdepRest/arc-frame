@@ -78,7 +78,7 @@
                                 <TextBlock x:Name="SortGlyph" Grid.Column="1"
                                            FontFamily="{DynamicResource Font.Icon}"
                                            FontSize="{StaticResource Type.Caption}"
-                                           Foreground="{DynamicResource Accent}"
+                                           Foreground="{DynamicResource AccentText}"
                                            VerticalAlignment="Center"
                                            Margin="{DynamicResource Gap.LeftSm}"
                                            Visibility="Collapsed"/>

@@ -191,14 +191,14 @@
                                                                    Text="&#xE930;"
                                                                    FontFamily="{DynamicResource Font.Icon}"
                                                                    FontSize="{StaticResource Type.Body}"
-                                                                   Foreground="{DynamicResource Accent}"
+                                                                   Foreground="{DynamicResource AccentText}"
                                                                    VerticalAlignment="Top"
                                                                    Margin="{DynamicResource Gap.Inline}"/>
                                                         <TextBlock Grid.Column="1"
                                                                    Text="{Binding ActionSummary}"
                                                                    FontSize="{StaticResource Type.Body}"
                                                                    FontWeight="SemiBold"
-                                                                   Foreground="{DynamicResource Accent}"
+                                                                   Foreground="{DynamicResource AccentText}"
                                                                    TextWrapping="Wrap"
                                                                    AutomationProperties.Name="{Binding ActionSummary, StringFormat='Действие: {0}'}"/>
                                                     </Grid>
@@ -349,7 +349,7 @@
                                                             <Border CornerRadius="{DynamicResource Radius.Sm}" Padding="{DynamicResource Pad.ControlSm}" Margin="{DynamicResource Gap.Left}"
                                                                     Background="{DynamicResource ChipBg}">
                                                                 <TextBlock Text="ПОДТВЕРДИТЕ" FontSize="{StaticResource Type.Monogram}" FontWeight="Bold"
-                                                                           Foreground="{DynamicResource Accent}"/>
+                                                                           Foreground="{DynamicResource AccentText}"/>
                                                             </Border>
                                                         </StackPanel>
                                                         <TextBlock Text="Действие ещё не выполнено — заказ не изменится, пока вы не нажмёте «Выполнить»."
@@ -470,7 +470,7 @@
                                                                                 <ColumnDefinition Width="Auto"/>
                                                                             </Grid.ColumnDefinitions>
                                                                             <TextBlock Grid.Column="0" Text="• " FontSize="{StaticResource Type.Body}"
-                                                                                       Foreground="{DynamicResource Accent}"
+                                                                                       Foreground="{DynamicResource AccentText}"
                                                                                        VerticalAlignment="Top" Margin="0,0,6,0"/>
                                                                             <TextBlock Grid.Column="1" Text="{Binding PreviewText}"
                                                                                        FontSize="{StaticResource Type.Body}"
@@ -733,7 +733,7 @@
                     ToolTip="Вернуться к последним сообщениям"
                     AutomationProperties.Name="Вернуться к последним сообщениям"
                     Background="{DynamicResource Surface}"
-                    Foreground="{DynamicResource Accent}"
+                    Foreground="{DynamicResource AccentText}"
                     BorderBrush="{DynamicResource Border}"
                     BorderThickness="1"
                     FocusVisualStyle="{StaticResource AiAssistantFocusVisual}">
@@ -862,7 +862,7 @@
                                             <TextBlock Text="{Binding OcrStatusGlyph}"
                                                        ToolTip="{Binding OcrStatusToolTip}"
                                                        FontSize="{StaticResource Type.Caption}"
-                                                       Foreground="{DynamicResource Accent}"
+                                                       Foreground="{DynamicResource AccentText}"
                                                        Margin="{DynamicResource Gap.InlineSm}"
                                                        VerticalAlignment="Center"/>
                                             <Button Width="18" Height="18"
@@ -1223,7 +1223,7 @@
                                                            FontFamily="{DynamicResource Font.Mono}"
                                                            FontSize="{StaticResource Type.Body}"
                                                            FontWeight="SemiBold"
-                                                           Foreground="{DynamicResource Accent}"
+                                                           Foreground="{DynamicResource AccentText}"
                                                            VerticalAlignment="Center"/>
                                                 <TextBlock Grid.Column="1"
                                                            Text="{Binding Description}"

@@ -274,7 +274,7 @@
                         <TextBlock x:Name="PreviewContractNumber"
                                    Text="1-1"
                                    FontSize="{StaticResource Type.Body}" FontWeight="Bold"
-                                   Foreground="{DynamicResource Accent}"
+                                   Foreground="{DynamicResource AccentText}"
                                    VerticalAlignment="Center"/>
                     </StackPanel>
                 </Border>

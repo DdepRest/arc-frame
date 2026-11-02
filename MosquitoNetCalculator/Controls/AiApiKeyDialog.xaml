@@ -106,7 +106,7 @@
                                     TickFrequency="0.1" IsSnapToTickEnabled="True" VerticalAlignment="Center"
                                     ValueChanged="SldrTemperature_ValueChanged"/>
                             <TextBlock Grid.Column="2" x:Name="TxtTemperatureValue" Text="0.2" FontSize="{StaticResource Type.Caption}"
-                                       FontWeight="Bold" Foreground="{DynamicResource Accent}" Margin="12,0,0,0" VerticalAlignment="Center"/>
+                                       FontWeight="Bold" Foreground="{DynamicResource AccentText}" Margin="12,0,0,0" VerticalAlignment="Center"/>
                         </Grid>
                     </Border>
 
@@ -140,7 +140,7 @@
                                 <Border Grid.Column="0" Width="20" Height="20" CornerRadius="{DynamicResource Radius.Sm}"
                                         Background="{DynamicResource ChipBg}" Margin="0,0,8,0">
                                     <TextBlock Text="OR" FontSize="{StaticResource Type.Monogram}" FontWeight="Bold"
-                                               Foreground="{DynamicResource Accent}"
+                                               Foreground="{DynamicResource AccentText}"
                                                HorizontalAlignment="Center" VerticalAlignment="Center"/>
                                 </Border>
                                 <TextBlock Grid.Column="1" Text="OpenRouter" FontSize="{StaticResource Type.Body}" FontWeight="SemiBold"
@@ -243,7 +243,7 @@
                                                FontSize="{StaticResource Type.Caption}" Foreground="{DynamicResource TextMuted}"
                                                Margin="10,0,0,0" VerticalAlignment="Center" TextTrimming="CharacterEllipsis"/>
                                     <TextBlock Grid.Column="2" Text="Бесплатные ключи → openrouter.ai/keys" FontSize="{StaticResource Type.Caption}"
-                                               Foreground="{DynamicResource Accent}" VerticalAlignment="Center" Cursor="Hand"
+                                               Foreground="{DynamicResource AccentText}" VerticalAlignment="Center" Cursor="Hand"
                                                MouseLeftButtonDown="Link_MouseLeftButtonDown" TextDecorations="Underline"/>
                                 </Grid>
                             </StackPanel>
@@ -375,7 +375,7 @@
                                 <Border CornerRadius="{DynamicResource Radius.Sm}" Padding="{DynamicResource Pad.Pill}" Margin="{DynamicResource Gap.Left}"
                                         Background="{DynamicResource ChipBg}">
                                     <TextBlock Text="НЕСКОЛЬКО" FontSize="{StaticResource Type.Monogram}" FontWeight="Bold"
-                                               Foreground="{DynamicResource Accent}"/>
+                                               Foreground="{DynamicResource AccentText}"/>
                                 </Border>
                             </StackPanel>
                             <TextBlock x:Name="TxtModelDescription"
@@ -575,7 +575,7 @@
                                                             </Style>
                                                         </Border.Style>
                                                         <TextBlock Text="{Binding RouterBadgeText}" FontSize="{StaticResource Type.Monogram}"
-                                                                   FontWeight="Bold" Foreground="{DynamicResource Accent}"/>
+                                                                   FontWeight="Bold" Foreground="{DynamicResource AccentText}"/>
                                                     </Border>
                                                 </StackPanel>
                                             </StackPanel>

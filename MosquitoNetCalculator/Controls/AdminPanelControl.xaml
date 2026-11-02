@@ -152,7 +152,7 @@
             <TabItem>
                 <TabItem.Header>
                     <StackPanel Orientation="Horizontal">
-                        <TextBlock Text="&#xE81C;" Style="{StaticResource FluentIconTab}" Foreground="{DynamicResource Accent}"/>
+                        <TextBlock Text="&#xE81C;" Style="{StaticResource FluentIconTab}" Foreground="{DynamicResource AccentText}"/>
                         <TextBlock Text="Обновления"/>
                     </StackPanel>
                 </TabItem.Header>
@@ -190,7 +190,7 @@
                                            Text="&#xE73E;"
                                            FontFamily="{DynamicResource Font.Icon}"
                                            FontSize="{StaticResource Type.TitleLg}"
-                                           Foreground="{DynamicResource Accent}"
+                                           Foreground="{DynamicResource AccentText}"
                                            VerticalAlignment="Center"
                                            Margin="{DynamicResource Gap.InlineLg}"/>
                                 <StackPanel Grid.Column="1" VerticalAlignment="Center">
@@ -204,7 +204,7 @@
                                            x:Name="TxtSummaryBadge"
                                            Text=""
                                            FontSize="{StaticResource Type.Display}" FontWeight="Bold"
-                                           Foreground="{DynamicResource Accent}"
+                                           Foreground="{DynamicResource AccentText}"
                                            VerticalAlignment="Center"/>
                             </Grid>
 
@@ -501,7 +501,7 @@
                                                             </Border.Style>
                                                             <TextBlock Text="этот офис"
                                                                        FontSize="{StaticResource Type.Caption}" FontWeight="SemiBold"
-                                                                       Foreground="{DynamicResource Accent}"
+                                                                       Foreground="{DynamicResource AccentText}"
                                                                        VerticalAlignment="Center"/>
                                                         </Border>
                                                         <!-- Кол-во устройств офиса -->
@@ -660,7 +660,7 @@
             <TabItem>
                 <TabItem.Header>
                     <StackPanel Orientation="Horizontal">
-                        <TextBlock Text="&#xE8F1;" Style="{StaticResource FluentIconTab}" Foreground="{DynamicResource Accent}"/>
+                        <TextBlock Text="&#xE8F1;" Style="{StaticResource FluentIconTab}" Foreground="{DynamicResource AccentText}"/>
                         <TextBlock Text="Статистика"/>
                     </StackPanel>
                 </TabItem.Header>
@@ -690,7 +690,7 @@
                                        Text="&#xE8F1;"
                                        FontFamily="{DynamicResource Font.Icon}"
                                        FontSize="{StaticResource Type.TitleLg}"
-                                       Foreground="{DynamicResource Accent}"
+                                       Foreground="{DynamicResource AccentText}"
                                        VerticalAlignment="Center"
                                        Margin="{DynamicResource Gap.InlineLg}"/>
                             <StackPanel Grid.Column="1" VerticalAlignment="Center">
@@ -706,7 +706,7 @@
                                        x:Name="TxtStatsTotalBadge"
                                        Text=""
                                        FontSize="{StaticResource Type.Display}" FontWeight="Bold"
-                                       Foreground="{DynamicResource Accent}"
+                                       Foreground="{DynamicResource AccentText}"
                                        VerticalAlignment="Center"/>
                         </Grid>
                     </Border>
@@ -761,7 +761,7 @@
                                                             </Border.Style>
                                                             <TextBlock Text="этот офис"
                                                                        FontSize="{StaticResource Type.Caption}" FontWeight="SemiBold"
-                                                                       Foreground="{DynamicResource Accent}"
+                                                                       Foreground="{DynamicResource AccentText}"
                                                                        VerticalAlignment="Center"/>
                                                         </Border>
                                                         <!-- Кол-во устройств офиса -->
@@ -852,7 +852,7 @@
             <TabItem>
                 <TabItem.Header>
                     <StackPanel Orientation="Horizontal">
-                        <TextBlock Text="&#xE713;" Style="{StaticResource FluentIconTab}" Foreground="{DynamicResource Accent}"/>
+                        <TextBlock Text="&#xE713;" Style="{StaticResource FluentIconTab}" Foreground="{DynamicResource AccentText}"/>
                         <TextBlock Text="Хранилище"/>
                     </StackPanel>
                 </TabItem.Header>

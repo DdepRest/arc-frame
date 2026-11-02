@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Text.Json;
@@ -303,6 +303,8 @@ namespace MosquitoNetCalculator.Services
             // Accent — professional blue. v3.51 contrast audit: #3878C8 давал
             // 4.48:1 с белым текстом (чуть ниже AA 4.5); #3574C3 = 4.73:1.
             ["Accent"]        = "#3574C3",
+            // акцент текста/глифов: в светлой теме == Accent (вид не меняется)
+            ["AccentText"]        = "#3574C3",
             // v3.53 contrast audit: #4A90E0 давал 3.30:1 с белым текстом —
             // активная кнопка на hover становилась нечитаемой. hover/press
             // теперь ШАГ ВНИЗ от базового (как в тёмной теме — шаг вверх):
@@ -354,6 +356,7 @@ namespace MosquitoNetCalculator.Services
             ["TotalBg"]       = "#FFFFFF",
             ["TotalText"]     = "#1A1A24",
             ["TotalTextMuted"] = "#6E6E7A",
+            ["TotalSheen"]     = "#14000000",
             // Quick-add / chips
             ["ChipBg"]        = "#EBF3FC",
             // DataGrid headers — Fluent light
@@ -385,6 +388,7 @@ namespace MosquitoNetCalculator.Services
             // Install toggle
             ["InstallGreen"]  = "#0F7B3F",
             ["InstallRed"]    = "#C42B1C",
+            ["InstallBlue"]   = "#0E86C4",
             ["InstallGray"]   = "#8A8A9A",
         };
 
@@ -393,13 +397,21 @@ namespace MosquitoNetCalculator.Services
         // Based on user reference palette:
         //   Угольный   #19191B — AppBg (canvas root, neutral graphite charcoal)
         //   Антрацит   #242427 — Surface (cards, panels, data grid)
-        //   Сланцевый  #38383D — Border, HeaderBorder, GhostBorder
-        //   Электрик   #3272D8 — Accent (vibrant electric blue)
-        //   Циан       #4EA8DE — Highlights, BadgeDefaultFg
+        //   Сланец     #202023 — QuickBg / SectionBg (УГЛУБЛЕНИЯ внутри карточки)
+        //   Шапка      #1E1E21 — HeaderBg (шапка таблицы, тоже углубление)
+        //   Электрик   #3272D8 — Accent (заливка под белым текстом)
+        //   Циан       #6FA8FF — AccentText (акцентный ТЕКСТ/глифы, 6.4:1 на Surface)
         //   Сигнальный #1C8648 — Success (save action, fresh emerald)
         //   Янтарный   #D9A62E — Warning
-        //   Белый      #F5F6F8 / #FFFFFF — TextPrimary, TotalText
-        //   Серебристый#A8AAB2 / #8C8E98 — TextSecondary, TextMuted
+        //   Белый      #F0F1F4 — TextPrimary, TotalText
+        //   Серебристый#ADAFB7 / #8F9199 — TextSecondary, TextMuted
+        //
+        // КОНТРАКТ ВЫСОТ: вложенные панели — УГЛУБЛЕНИЯ, они ТЕМНЕЕ карточки
+        // (QuickBg/SectionBg/HeaderBg). Делать их светлее нельзя: большие панели
+        // превращаются в серые плиты, и «угольная» тема становится серой.
+        // Читаемость дают кромка (Border) и разделители (GridLine): теней в тёмной
+        // теме нет — ShadowColor #000000 на #19191B.
+        // Стережёт Design/ThemeSurfacesTests.
         // ─────────────────────────────────────────────────────────
         private static readonly Dictionary<string, string> DarkColors = new()
         {
@@ -407,34 +419,36 @@ namespace MosquitoNetCalculator.Services
             ["AppBg"]             = "#19191B",
             ["SidebarBg"]         = "#131315",
             ["Surface"]           = "#242427",
-            ["QuickBg"]           = "#1E1E21",
+            ["QuickBg"]           = "#1F1F22",
             // Скрим подложки оверлеев
             ["Scrim"]             = "#99000000",
             ["RowAlt"]            = "#202023",
             ["RowHover"]          = "#2D2D31",
             ["RowAltHover"]       = "#2D2D31",
-            ["RowAltSelected"]    = "#34343B",
+            ["RowAltSelected"]    = "#2E3A4F",
             // Row-hover/select animation targets (Color)
             ["RowHoverColor"]     = "#2D2D31",
-            ["AccentLightColor"]  = "#2A3244",
-            // Accent — Электрик (#3272D8) / Циан (#4EA8DE)
+            ["AccentLightColor"]  = "#2E3A4F",
+            // Accent — Электрик (#3272D8) остаётся заливкой: белый текст 4.63:1
             ["Accent"]            = "#3272D8",
+            // акцент текста/глифов: #3272D8 на тёмной панели = 3.34:1, ниже AA
+            ["AccentText"]        = "#6FA8FF",
             ["AccentHover"]       = "#2C6BD2",
             ["AccentPress"]       = "#2662BA",
-            ["AccentLight"]       = "#2A3244",
+            ["AccentLight"]       = "#2E3A4F",
             ["AccentShadowColor"] = "#3272D8",
-            // Typography — Белый (#F5F6F8) & Серебристый (#A8AAB2 / #8C8E98)
-            ["TextPrimary"]       = "#F5F6F8",
-            ["TextSecondary"]     = "#A8AAB2",  // 6.7:1 на Surface
-            ["TextMuted"]         = "#8C8E98",  // 4.9:1 на Surface
-            // Сланцевый — Hairline Borders & Dividers (#38383D)
-            ["Border"]            = "#38383D",
-            ["BorderHover"]       = "#505057",
-            ["SubtleBorder"]      = "#2B2B2F",
-            ["GridLine"]          = "#2B2B2F",
-            ["TrackBg"]           = "#242428",
-            ["ScrollBarThumb"]    = "#4A4A52",
-            ["HeaderBorder"]      = "#38383D",
+            // Typography — Белый (#F0F1F4) & Серебристый (#ADAFB7 / #8F9199)
+            ["TextPrimary"]       = "#F0F1F4",
+            ["TextSecondary"]     = "#ADAFB7",  // 7.1:1 на Surface
+            ["TextMuted"]         = "#8F9199",  // 4.9:1 на Surface
+            // Сланцевые границы — читаемая кромка полей/карточек/таблицы (было 1.3:1)
+            ["Border"]            = "#46464F",
+            ["BorderHover"]       = "#5A5A64",
+            ["SubtleBorder"]      = "#303035",
+            ["GridLine"]          = "#3A3A42",
+            ["TrackBg"]           = "#2B2B30",
+            ["ScrollBarThumb"]    = "#53535C",
+            ["HeaderBorder"]      = "#3A3A42",
             // Semantic — Сигнальный (#1C8648), Ruby (#D63C42), Янтарный (#D9A62E)
             ["Success"]           = "#1C8648",
             // v3.56: hover ШАГ ВНИЗ от базового, как у Accent: #229853 давал
@@ -454,7 +468,7 @@ namespace MosquitoNetCalculator.Services
             ["OnDanger"]          = "#FFFFFF",
             // Ghost button
             ["GhostBg"]           = "#242427",
-            ["GhostBorder"]       = "#38383D",
+            ["GhostBorder"]       = "#46464F",
             // Section card
             ["SectionBg"]         = "#202023",
             ["SectionAccent"]     = "#3272D8",
@@ -465,17 +479,18 @@ namespace MosquitoNetCalculator.Services
             // Total bar — Угольный статус-бар с белой суммой
             ["TotalBg"]           = "#131315",
             ["TotalText"]         = "#FFFFFF",
-            ["TotalTextMuted"]    = "#8C8E98",
+            ["TotalTextMuted"]    = "#8F9199",
+            ["TotalSheen"]        = "#33FFFFFF",
             // Quick-add / chips
-            ["ChipBg"]            = "#2E2E33",
+            ["ChipBg"]            = "#303036",
             // DataGrid headers — Сланцевые шапки
-            ["HeaderBg"]          = "#202023",
-            ["HeaderBorder"]      = "#38383D",
-            ["HeaderText"]        = "#B4B4BC",
-            ["HeaderHover"]       = "#2A2A2E",
-            ["HeaderPress"]       = "#1D1D20",
+            ["HeaderBg"]          = "#1E1E21",
+            ["HeaderBorder"]      = "#3A3A42",
+            ["HeaderText"]        = "#BEBEC6",
+            ["HeaderHover"]       = "#36363F",
+            ["HeaderPress"]       = "#26262C",
             // Menu
-            ["MenuItemPressed"]   = "#2D2D31",
+            ["MenuItemPressed"]   = "#2E2E36",
             // Shadow
             ["ShadowColor"]       = "#000000",
             // Status Badges
@@ -492,7 +507,8 @@ namespace MosquitoNetCalculator.Services
             // Install toggle (vibrant accessible tints for table labels «Вкл» / «Без» / «—»)
             ["InstallGreen"]      = "#38D690",
             ["InstallRed"]        = "#F87171",
-            ["InstallGray"]       = "#8C8E98",
+            ["InstallBlue"]       = "#4FC1F0",
+            ["InstallGray"]       = "#8F9199",
         };
     }
 }

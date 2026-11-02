@@ -213,7 +213,7 @@
                                         ToolTip="Подробный расчёт экономии по всем откосам в заказе">
                                     <TextBlock Text="Детали экономии"
                                                FontSize="{StaticResource Type.Caption}"
-                                               Foreground="{DynamicResource Accent}"/>
+                                               Foreground="{DynamicResource AccentText}"/>
                                 </Button>
                             </StackPanel>
                         </Grid>
@@ -336,7 +336,7 @@
                                                     <TextBlock Text="ручн."
                                                            FontSize="{StaticResource Type.Caption}"
                                                            FontWeight="SemiBold"
-                                                           Foreground="{DynamicResource Accent}"/>
+                                                           Foreground="{DynamicResource AccentText}"/>
                                                 </Border>
                                             </StackPanel>
 
@@ -402,7 +402,7 @@
                                         <TextBlock Text="ручн."
                                                    FontSize="{StaticResource Type.Caption}"
                                                    FontWeight="SemiBold"
-                                                   Foreground="{DynamicResource Accent}"/>
+                                                   Foreground="{DynamicResource AccentText}"/>
                                     </Border>
                                 </StackPanel>
                                 <TextBox Grid.Column="1"
@@ -467,7 +467,7 @@
                                         <TextBlock Text="ручн."
                                                    FontSize="{StaticResource Type.Caption}"
                                                    FontWeight="SemiBold"
-                                                   Foreground="{DynamicResource Accent}"/>
+                                                   Foreground="{DynamicResource AccentText}"/>
                                     </Border>
                                 </StackPanel>
                                 <TextBox Grid.Column="1"

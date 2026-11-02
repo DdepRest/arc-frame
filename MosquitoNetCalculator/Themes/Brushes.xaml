@@ -10,6 +10,7 @@
     <SolidColorBrush x:Key="AccentHover"   Color="#004E99"/>
     <SolidColorBrush x:Key="AccentPress"   Color="#003E7A"/>
     <SolidColorBrush x:Key="AccentLight"   Color="#EBF3FD"/>
+    <SolidColorBrush x:Key="AccentText"   Color="#3574C3"/>
     <SolidColorBrush x:Key="OnAccent"      Color="#FFFFFF"/>
     <SolidColorBrush x:Key="OnSuccess"     Color="#FFFFFF"/>
     <SolidColorBrush x:Key="OnDanger"      Color="#FFFFFF"/>
