@@ -93,7 +93,7 @@ a concrete user decision documented in §"Open questions".
   [`GOTCHAS.md`](GOTCHAS.md).
 
 ## Last verified
-2026-11-05 (v3.57.0) — обновлено содержимое (sync-last-verified.ps1, CONTROL#13).
+2026-11-05 (v3.58.0) — обновлено содержимое (sync-last-verified.ps1, CONTROL#13).
 
 2026-11-04 (v3.57.0) — обновлено содержимое (sync-last-verified.ps1, CONTROL#13).
 

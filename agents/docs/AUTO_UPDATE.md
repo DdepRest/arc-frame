@@ -352,7 +352,8 @@ Watchdog .bat запускает обновлённый `MosquitoNetCalculator.e
 3. **Подготовка и запуск watchdog:**
    - WatchdogService.PreFlightCheck() проверяет доступ на запись в %AppData%.
    - WatchdogService.StageUpdate() распаковывает архив с авто-выравниванием (strip root prefix, если архив создан с родительской папкой вроде ARC-Frame-3.56.0/).
-   - Запуск rc-update-watchdog.bat с повышением прав UAC (unas), выполнение --self-test и перезапуск приложения.
+   - Запуск rc-update-watchdog.bat с повышением прав UAC (
+unas), выполнение --self-test и перезапуск приложения.
    - Пользовательские базы данных заказов, цен и настроек в %AppData%\MosquitoNetCalculator\ сохраняются в неприкосновенности.
 
 <a id="проверка"></a>
@@ -476,7 +477,7 @@ Watchdog .bat запускает обновлённый `MosquitoNetCalculator.e
 - `MosquitoNetCalculator.Tests/Services/UpdateCheckSchedulerTests.cs` (NEW, 20+ tests)
 
 ## Last verified
-2026-11-05 (v3.57.0) — обновлено содержимое (sync-last-verified.ps1, CONTROL#13).
+2026-11-05 (v3.58.0) — обновлено содержимое (sync-last-verified.ps1, CONTROL#13).
 
 2026-11-04 (v3.57.0) — обновлено содержимое (sync-last-verified.ps1, CONTROL#13).
 
