@@ -36,14 +36,15 @@ namespace MosquitoNetCalculator.Controls
             else if (OrderItem.ManualPieceProducts.Contains(type)) { total = price * qty; }
             else if (OrderItem.AreaBasedProducts.Contains(type))
             {
-                // For Anwis, show calc-adjusted dimensions in the preview — same
+                // For products supporting size modes (Anwis, На навесах, Оконная на метал.),
+                // show calc-adjusted dimensions in the preview — same
                 // rounding as OrderItem.Recalculate (3 decimals) so preview and
                 // the added row produce the SAME total.
-                var anwisSize = AnwisSize.ОтВвода(width, height, SelectedAnwisMode);
-                previewW = Services.AnwisSizeService.IsApplicable(type)
+                var anwisSize = AnwisSize.ОтВвода(width, height, SelectedAnwisMode, type);
+                previewW = Services.AnwisSizeService.SupportsSizeMode(type)
                     ? anwisSize.ШиринаРасчёт
                     : width;
-                previewH = Services.AnwisSizeService.IsApplicable(type)
+                previewH = Services.AnwisSizeService.SupportsSizeMode(type)
                     ? anwisSize.ВысотаРасчёт
                     : height;
                 area = Math.Round((previewW * previewH) / 1_000_000.0, 3);

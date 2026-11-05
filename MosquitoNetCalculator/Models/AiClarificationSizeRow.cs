@@ -52,6 +52,14 @@ namespace MosquitoNetCalculator.Models
         /// nothing to the order (an empty row the user added but never filled
         /// must not block the whole card).
         /// </summary>
+        /// <summary>
+        /// Swaps width and height text values.
+        /// </summary>
+        public void SwapDimensions()
+        {
+            (WidthText, HeightText) = (HeightText, WidthText);
+        }
+
         public bool IsEmpty => string.IsNullOrWhiteSpace(WidthText) && string.IsNullOrWhiteSpace(HeightText);
 
         public event PropertyChangedEventHandler? PropertyChanged;

@@ -100,6 +100,30 @@
         </Style>
 
         <!-- ═══════════════════════════════════════════════════════ -->
+        <!-- SEPARATOR — subtle, modern in ContextMenu               -->
+        <!-- ═══════════════════════════════════════════════════════ -->
+        <!-- Без x:Key="{x:Static MenuItem.SeparatorStyleKey}" WPF     -->
+        <!-- использует системный Aero2-стиль с белой 3D-фаской      -->
+        <!-- (#FFFFFF) под линией на тёмной теме.                    -->
+        <Style x:Key="{x:Static MenuItem.SeparatorStyleKey}" TargetType="Separator">
+            <Setter Property="Height" Value="1"/>
+            <Setter Property="Margin" Value="{DynamicResource Gap.SeparatorBlock}"/>
+            <Setter Property="Background" Value="{DynamicResource Border}"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Separator">
+                        <Border Background="{TemplateBinding Background}"
+                                Height="{TemplateBinding Height}"
+                                HorizontalAlignment="Stretch"
+                                SnapsToDevicePixels="True"/>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <Style TargetType="Separator" BasedOn="{StaticResource {x:Static MenuItem.SeparatorStyleKey}}"/>
+
+        <!-- ═══════════════════════════════════════════════════════ -->
         <!-- TEXTBOX CONTEXT MENU — Cut, Copy, Paste                 -->
         <!-- ═══════════════════════════════════════════════════════ -->
         <ContextMenu x:Key="FluentTextBoxContextMenu">

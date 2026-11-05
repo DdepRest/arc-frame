@@ -230,6 +230,7 @@ namespace MosquitoNetCalculator.Tests.Services
         }
 
         [Theory]
+        [InlineData("Белый (в массе) Белый (в массе) 81569 дл 569 625 489 1271 127'", true)]
         [InlineData("ПМС Anwis, бел. 1 3711217", true)]
         [InlineData("ПМС Anwis 3711217", true)]
         [InlineData("79991234567", true)]

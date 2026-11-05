@@ -34,8 +34,18 @@ namespace MosquitoNetCalculator.Services
                 form.SelectedColor = color;
 
             var mode = AiKeywordLexicon.DetectAnwisMode(t);
-            if (mode != null && form.IsAnwis)
-                form.SelectedAnwisMode = mode;
+            if (mode != null && form.SupportsSizeMode)
+            {
+                if (form.IsTwoModeScreen)
+                {
+                    if (mode == "Габарит" || mode == "Проём")
+                        form.SelectedAnwisMode = mode;
+                }
+                else if (form.IsAnwis)
+                {
+                    form.SelectedAnwisMode = mode;
+                }
+            }
 
             // Pre-fill the installation choice the user already named
             // («с монтажом»/«без монтажа»/«в конструкцию») so the card only
@@ -104,6 +114,8 @@ namespace MosquitoNetCalculator.Services
                     form.SelectedType = first.Type;
                 if (!string.IsNullOrWhiteSpace(first.Color) && form.Colors.Contains(first.Color))
                     form.SelectedColor = first.Color;
+                if (form.IsTwoModeScreen)
+                    form.SelectedAnwisMode = first.AnwisMode == AnwisSizeMode.РазмерПроёма ? "Проём" : "Габарит";
             }
 
             form.EnsureSizeRows(commands.Count);
@@ -190,6 +202,9 @@ namespace MosquitoNetCalculator.Services
 
             if (!string.IsNullOrWhiteSpace(p.Color) && form.Colors.Contains(p.Color))
                 form.SelectedColor = p.Color;
+
+            if (form.IsTwoModeScreen)
+                form.SelectedAnwisMode = p.AnwisMode == AnwisSizeMode.РазмерПроёма ? "Проём" : "Габарит";
 
             if (p.Width > 0)
                 form.WidthText = p.Width.ToString(CultureInfo.InvariantCulture);

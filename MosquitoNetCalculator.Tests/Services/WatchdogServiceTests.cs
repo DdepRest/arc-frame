@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.IO;
 using System.IO.Compression;
 using System.Threading;
@@ -160,6 +160,39 @@ namespace MosquitoNetCalculator.Tests.Services
         }
 
         // ─── StageUpdate: happy path ─────────────────────────────────
+
+        [Fact]
+        public void StageUpdate_WithNestedDirectory_FlattensRootFolder()
+        {
+            var zipPath = Path.Combine(Path.GetTempPath(), "arc-stage-nested-" + Guid.NewGuid().ToString("N") + ".zip");
+
+            // Build a ZIP where files are inside a subfolder, e.g. "ARC-Frame-3.56.0/"
+            using (var fs = File.Create(zipPath))
+            using (var archive = new ZipArchive(fs, ZipArchiveMode.Create))
+            {
+                var e1 = archive.CreateEntry("ARC-Frame-3.56.0/MosquitoNetCalculator.exe");
+                using (var es = e1.Open()) es.Write(new byte[] { 1, 2, 3 });
+
+                var e2 = archive.CreateEntry("ARC-Frame-3.56.0/subfolder/config.json");
+                using (var es = e2.Open()) es.Write(System.Text.Encoding.UTF8.GetBytes("{}"));
+            }
+
+            try
+            {
+                WatchdogService.StageUpdate(zipPath);
+
+                var stageDir = Path.Combine(_tempDir, "arc-update-stage");
+                Assert.True(Directory.Exists(stageDir));
+                // Crucially: MosquitoNetCalculator.exe is extracted to ROOT of stageDir, not nested
+                Assert.True(File.Exists(Path.Combine(stageDir, "MosquitoNetCalculator.exe")), "Exe must be flattened to root of stage dir");
+                Assert.True(File.Exists(Path.Combine(stageDir, "subfolder", "config.json")), "Subfolder structure under root prefix must be preserved");
+            }
+            finally
+            {
+                File.Delete(zipPath);
+                WatchdogService.CleanupStagedUpdate();
+            }
+        }
 
         [Fact]
         public void StageUpdate_HappyPath_ExtractsAndStages()

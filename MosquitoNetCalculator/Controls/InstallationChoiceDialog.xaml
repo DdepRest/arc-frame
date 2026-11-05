@@ -1,0 +1,403 @@
+﻿<Window x:Class="MosquitoNetCalculator.Controls.InstallationChoiceDialog"
+        Style="{DynamicResource Window.Shared}"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Выбор монтажа"
+        Width="520"
+        WindowStartupLocation="CenterOwner"
+        WindowStyle="None"
+        AllowsTransparency="True"
+        Background="Transparent"
+        ResizeMode="NoResize"
+        ShowInTaskbar="False"
+        SizeToContent="Height"
+        PreviewKeyDown="Window_PreviewKeyDown">
+
+    <Window.Resources>
+        <!-- Карточка режима: чистый прямоугольник с закруглёнными углами,
+             без цветных светофоров на невыбранных пунктах. -->
+        <Style x:Key="ChoiceCardButton" TargetType="Button">
+            <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
+            <Setter Property="Background" Value="{DynamicResource Surface}"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource Border}"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="Padding" Value="{DynamicResource Pad.Control}"/>
+            <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="CardBorder"
+                                Background="{TemplateBinding Background}"
+                                BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="{TemplateBinding BorderThickness}"
+                                CornerRadius="{DynamicResource Radius.Control}"
+                                Padding="{TemplateBinding Padding}">
+                            <ContentPresenter VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="Tag" Value="On">
+                                <Setter TargetName="CardBorder" Property="Background" Value="{DynamicResource AccentLight}"/>
+                                <Setter TargetName="CardBorder" Property="BorderBrush" Value="{DynamicResource Accent}"/>
+                            </Trigger>
+                            <MultiTrigger>
+                                <MultiTrigger.Conditions>
+                                    <Condition Property="Tag" Value="Off"/>
+                                    <Condition Property="IsMouseOver" Value="True"/>
+                                </MultiTrigger.Conditions>
+                                <Setter TargetName="CardBorder" Property="Background" Value="{DynamicResource RowHover}"/>
+                                <Setter TargetName="CardBorder" Property="BorderBrush" Value="{DynamicResource BorderHover}"/>
+                            </MultiTrigger>
+                            <MultiTrigger>
+                                <MultiTrigger.Conditions>
+                                    <Condition Property="Tag" Value="On"/>
+                                    <Condition Property="IsMouseOver" Value="True"/>
+                                </MultiTrigger.Conditions>
+                                <Setter TargetName="CardBorder" Property="Opacity" Value="0.92"/>
+                            </MultiTrigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter TargetName="CardBorder" Property="Opacity" Value="0.8"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <Style x:Key="ChoiceTitle" TargetType="TextBlock">
+            <Setter Property="FontSize" Value="{StaticResource Type.Body}"/>
+            <Setter Property="FontWeight" Value="{StaticResource Weight.Medium}"/>
+            <Setter Property="Foreground" Value="{DynamicResource TextPrimary}"/>
+            <Setter Property="TextTrimming" Value="CharacterEllipsis"/>
+        </Style>
+
+        <Style x:Key="ChoiceDesc" TargetType="TextBlock">
+            <Setter Property="FontSize" Value="{StaticResource Type.Caption}"/>
+            <Setter Property="Foreground" Value="{DynamicResource TextMuted}"/>
+            <Setter Property="TextWrapping" Value="Wrap"/>
+            <Setter Property="LineHeight" Value="{StaticResource Type.LineHeightCaption}"/>
+            <Setter Property="LineStackingStrategy" Value="BlockLineHeight"/>
+            <Setter Property="Margin" Value="{DynamicResource Gap.BlockTopSm}"/>
+        </Style>
+    </Window.Resources>
+
+    <Grid>
+        <!-- Тень на пустой подложке, контент без Effect (ClearType-фикс) -->
+        <Border Background="{DynamicResource Surface}"
+                BorderBrush="{DynamicResource BorderHover}" BorderThickness="1"
+                CornerRadius="{DynamicResource Radius.Lg}" Margin="{DynamicResource Gap.Window}">
+            <Border.Effect>
+                <DropShadowEffect BlurRadius="36" ShadowDepth="8" Opacity="0.60"
+                                  Color="{DynamicResource ShadowColor}"/>
+            </Border.Effect>
+        </Border>
+
+        <Border Background="{DynamicResource Surface}"
+                BorderBrush="{DynamicResource BorderHover}"
+                BorderThickness="1"
+                CornerRadius="{DynamicResource Radius.Lg}"
+                Margin="{DynamicResource Gap.Window}"
+                SnapsToDevicePixels="True">
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="*"/>
+                    <RowDefinition Height="Auto"/>
+                </Grid.RowDefinitions>
+
+                <!-- Title Bar с семантической иконкой инструмента/монтажа Repair (&#xE90F;)
+                     Выровнен по единой 20px сетке слева -->
+                <Border Grid.Row="0"
+                        Background="{DynamicResource HeaderBg}"
+                        CornerRadius="{DynamicResource Radius.CardHeader}"
+                        Height="38"
+                        Padding="{DynamicResource Pad.DialogHeader}"
+                        MouseLeftButtonDown="TitleBar_MouseLeftButtonDown">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+                        <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center">
+                            <TextBlock Text="&#xE90F;" FontFamily="{DynamicResource Font.Icon}"
+                                       FontSize="{StaticResource Type.Body}"
+                                       Foreground="{DynamicResource AccentText}"
+                                       VerticalAlignment="Center" Margin="{DynamicResource Gap.Inline}"/>
+                            <TextBlock Text="Выбор монтажа для позиции"
+                                       FontSize="{StaticResource Type.Body}"
+                                       FontWeight="SemiBold"
+                                       Foreground="{DynamicResource TextPrimary}"
+                                       VerticalAlignment="Center"/>
+                        </StackPanel>
+                        <Button Grid.Column="1"
+                                Style="{DynamicResource DialogCloseButton}"
+                                Width="28" Height="28"
+                                VerticalAlignment="Center"
+                                Click="BtnClose_Click"
+                                ToolTip="Закрыть (Esc)">
+                            <TextBlock Text="&#xE8BB;" FontFamily="{DynamicResource Font.Icon}"
+                                       FontSize="{StaticResource Type.Caption}"/>
+                        </Button>
+                    </Grid>
+                </Border>
+
+                <!-- Основная часть: строка изделия + 3 карточки выбора
+                     Единая сетка 20px слева и справа, без промежуточных рамок -->
+                <StackPanel Grid.Row="1" Margin="{DynamicResource Gap.DialogBodySection}">
+                    <!-- Строка изделия: чистый текст с отступом снизу 12px без разделителя -->
+                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Margin="{DynamicResource Gap.BlockLg}">
+                        <TextBlock x:Name="TxtItemTitle"
+                                   Text="Изделие"
+                                   FontSize="{StaticResource Type.Body}"
+                                   FontWeight="SemiBold"
+                                   Foreground="{DynamicResource TextPrimary}"
+                                   VerticalAlignment="Center"/>
+                        <TextBlock Text=" · " FontSize="{StaticResource Type.Body}" Foreground="{DynamicResource TextMuted}" VerticalAlignment="Center"/>
+                        <TextBlock x:Name="TxtItemDetails"
+                                   Text="Размеры: —"
+                                   FontSize="{StaticResource Type.Caption}"
+                                   Foreground="{DynamicResource TextMuted}"
+                                   VerticalAlignment="Center"/>
+                    </StackPanel>
+
+                    <!-- Option 0: Монтаж включён -->
+                    <Button x:Name="BtnMode0"
+                            Style="{StaticResource ChoiceCardButton}"
+                            FocusVisualStyle="{x:Null}"
+                            HorizontalAlignment="Stretch"
+                            Margin="{DynamicResource Gap.Block}"
+                            Click="BtnMode0_Click"
+                            PreviewMouseLeftButtonDown="BtnMode0_PreviewMouseLeftButtonDown">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+
+                            <!-- Аккуратный радио-индикатор 16x16 -->
+                            <Border x:Name="RadioOuterMode0" Grid.Column="0"
+                                    Width="16" Height="16"
+                                    CornerRadius="{DynamicResource Radius.Pill}"
+                                    BorderThickness="1.5"
+                                    BorderBrush="{DynamicResource Border}"
+                                    Background="Transparent"
+                                    VerticalAlignment="Center"
+                                    Margin="{DynamicResource Gap.Inline10}">
+                                <Ellipse x:Name="RadioDotMode0"
+                                         Width="6" Height="6"
+                                         Fill="{DynamicResource OnAccent}"
+                                         HorizontalAlignment="Center"
+                                         VerticalAlignment="Center"
+                                         Visibility="Collapsed"/>
+                            </Border>
+
+                            <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                                <TextBlock x:Name="TxtMode0Title"
+                                           Style="{StaticResource ChoiceTitle}"
+                                           Text="Монтаж включён"/>
+                                <TextBlock x:Name="TxtMode0Desc"
+                                           Style="{StaticResource ChoiceDesc}"
+                                           Text="Монтаж заложен в стоимость (+400 руб. к ЗП)"/>
+                            </StackPanel>
+
+                            <!-- Хоткей 1 простым приглушённым текстом -->
+                            <TextBlock Grid.Column="2"
+                                       Text="1"
+                                       FontSize="{StaticResource Type.Caption}"
+                                       Opacity="0.4"
+                                       Foreground="{DynamicResource TextMuted}"
+                                       VerticalAlignment="Center"
+                                       HorizontalAlignment="Right"
+                                       Margin="{DynamicResource Gap.Left}"/>
+                        </Grid>
+                    </Button>
+
+                    <!-- Option 2: В конструкцию -->
+                    <Button x:Name="BtnMode2"
+                            Style="{StaticResource ChoiceCardButton}"
+                            FocusVisualStyle="{x:Null}"
+                            HorizontalAlignment="Stretch"
+                            Margin="{DynamicResource Gap.Block}"
+                            Click="BtnMode2_Click"
+                            PreviewMouseLeftButtonDown="BtnMode2_PreviewMouseLeftButtonDown">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+
+                            <!-- Аккуратный радио-индикатор 16x16 -->
+                            <Border x:Name="RadioOuterMode2" Grid.Column="0"
+                                    Width="16" Height="16"
+                                    CornerRadius="{DynamicResource Radius.Pill}"
+                                    BorderThickness="1.5"
+                                    BorderBrush="{DynamicResource Border}"
+                                    Background="Transparent"
+                                    VerticalAlignment="Center"
+                                    Margin="{DynamicResource Gap.Inline10}">
+                                <Ellipse x:Name="RadioDotMode2"
+                                         Width="6" Height="6"
+                                         Fill="{DynamicResource OnAccent}"
+                                         HorizontalAlignment="Center"
+                                         VerticalAlignment="Center"
+                                         Visibility="Collapsed"/>
+                            </Border>
+
+                            <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                                <TextBlock x:Name="TxtMode2Title"
+                                           Style="{StaticResource ChoiceTitle}"
+                                           Text="В конструкцию"/>
+                                <TextBlock x:Name="TxtMode2Desc"
+                                           Style="{StaticResource ChoiceDesc}"
+                                           Text="Сетка ставится в раму при сборке конструкции (+200 руб. к ЗП)"/>
+                            </StackPanel>
+
+                            <!-- Хоткей 2 простым приглушённым текстом -->
+                            <TextBlock Grid.Column="2"
+                                       Text="2"
+                                       FontSize="{StaticResource Type.Caption}"
+                                       Opacity="0.4"
+                                       Foreground="{DynamicResource TextMuted}"
+                                       VerticalAlignment="Center"
+                                       HorizontalAlignment="Right"
+                                       Margin="{DynamicResource Gap.Left}"/>
+                        </Grid>
+                    </Button>
+
+                    <!-- Option 1: Без монтажа -->
+                    <Button x:Name="BtnMode1"
+                            Style="{StaticResource ChoiceCardButton}"
+                            FocusVisualStyle="{x:Null}"
+                            HorizontalAlignment="Stretch"
+                            Margin="{DynamicResource Gap.None}"
+                            Click="BtnMode1_Click"
+                            PreviewMouseLeftButtonDown="BtnMode1_PreviewMouseLeftButtonDown">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+
+                            <!-- Аккуратный радио-индикатор 16x16 -->
+                            <Border x:Name="RadioOuterMode1" Grid.Column="0"
+                                    Width="16" Height="16"
+                                    CornerRadius="{DynamicResource Radius.Pill}"
+                                    BorderThickness="1.5"
+                                    BorderBrush="{DynamicResource Border}"
+                                    Background="Transparent"
+                                    VerticalAlignment="Center"
+                                    Margin="{DynamicResource Gap.Inline10}">
+                                <Ellipse x:Name="RadioDotMode1"
+                                         Width="6" Height="6"
+                                         Fill="{DynamicResource OnAccent}"
+                                         HorizontalAlignment="Center"
+                                         VerticalAlignment="Center"
+                                         Visibility="Collapsed"/>
+                            </Border>
+
+                            <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                                <TextBlock x:Name="TxtMode1Title"
+                                           Style="{StaticResource ChoiceTitle}"
+                                           Text="Без монтажа"/>
+                                <TextBlock x:Name="TxtMode1Desc"
+                                           Style="{StaticResource ChoiceDesc}"
+                                           Text="Клиент монтирует самостоятельно (−500 руб.)"/>
+                            </StackPanel>
+
+                            <!-- Хоткей 3 простым приглушённым текстом -->
+                            <TextBlock Grid.Column="2"
+                                       Text="3"
+                                       FontSize="{StaticResource Type.Caption}"
+                                       Opacity="0.4"
+                                       Foreground="{DynamicResource TextMuted}"
+                                       VerticalAlignment="Center"
+                                       HorizontalAlignment="Right"
+                                       Margin="{DynamicResource Gap.Left}"/>
+                        </Grid>
+                    </Button>
+
+                    <!-- Поле корректировки суммы (единый стиль с контекстным меню) -->
+                    <Grid Margin="{DynamicResource Gap.BlockTopLg}">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+                        <TextBlock Grid.Column="0"
+                                   x:Name="LblAdjustment"
+                                   Text="Корректировка, ₽:"
+                                   FontSize="{StaticResource Type.Body}"
+                                   Foreground="{DynamicResource TextSecondary}"
+                                   VerticalAlignment="Center"/>
+                        <CheckBox Grid.Column="1"
+                                  x:Name="ChkSign"
+                                  Style="{DynamicResource SignToggleCheckBox}"
+                                  Margin="{DynamicResource Gap.Inline}"
+                                  IsChecked="True"
+                                  ToolTip="Переключить знак (+/−)"/>
+                        <TextBox Grid.Column="2"
+                                 x:Name="TxtAdjustment"
+                                 Width="76" Height="28"
+                                 FontSize="{StaticResource Type.Body}"
+                                 TextAlignment="Right"
+                                 VerticalContentAlignment="Center"
+                                 Padding="{DynamicResource Pad.ControlSmH}"
+                                 ToolTip="Введите доплату (+) или скидку (−), например: +200 или -150"/>
+                    </Grid>
+
+                    <!-- Предпросмотр итоговой стоимости позиции -->
+                    <Grid Margin="{DynamicResource Gap.BlockTopLg}">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+                        <TextBlock Grid.Column="0"
+                                   Text="Итоговая сумма позиции:"
+                                   FontSize="{StaticResource Type.Body}"
+                                   FontWeight="{StaticResource Weight.Medium}"
+                                   Foreground="{DynamicResource TextSecondary}"
+                                   VerticalAlignment="Center"/>
+                        <TextBlock Grid.Column="1"
+                                   x:Name="TxtTotalPreview"
+                                   FontSize="{StaticResource Type.BodyLg}"
+                                   FontWeight="{StaticResource Weight.SemiBold}"
+                                   Foreground="{DynamicResource AccentText}"
+                                   VerticalAlignment="Center"/>
+                    </Grid>
+                </StackPanel>
+
+                <!-- Подвал: Запомнить выбор + кнопка Применить (выровнен по 20px) -->
+                <Border Grid.Row="2" Background="{DynamicResource HeaderBg}"
+                        CornerRadius="{DynamicResource Radius.CardFooter}"
+                        Padding="{DynamicResource Pad.DialogFooterH}"
+                        BorderBrush="{DynamicResource Border}" BorderThickness="0,1,0,0">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+
+                        <CheckBox Grid.Column="0" x:Name="ChkRememberDefault"
+                                  Content="Запомнить выбор по умолчанию"
+                                  ToolTip="Выбранный режим сохранится по умолчанию, и окно выбора больше не будет открываться. Изменить стандарт можно в Настройках."
+                                  FontSize="{StaticResource Type.Caption}"
+                                  Foreground="{DynamicResource TextSecondary}"
+                                  VerticalAlignment="Center"
+                                  HorizontalAlignment="Left"/>
+
+                        <Button Grid.Column="1" x:Name="BtnApply"
+                                Content="Применить"
+                                Style="{DynamicResource DialogPrimaryButton}"
+                                Height="32"
+                                VerticalAlignment="Center"
+                                IsDefault="True"
+                                Click="BtnApply_Click"/>
+                    </Grid>
+                </Border>
+            </Grid>
+        </Border>
+    </Grid>
+</Window>

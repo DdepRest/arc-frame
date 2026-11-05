@@ -12,13 +12,15 @@ namespace MosquitoNetCalculator.Tests.ViewModels
     [Collection("FileSystem")]
     public class OrdersHistoryViewModelTests : IDisposable
     {
-        private readonly OrdersHistoryViewModel _vm = new();
+        private readonly OrdersHistoryViewModel _vm;
         private readonly string _ordersDir;
+        private readonly string _trashDir;
         private readonly string _originalOrdersDir;
+        private readonly string _originalTrashDir;
 
-        // File-IO isolation: OrderStorageService.OrdersDir is a static
-        // property in the production type. We redirect it to a per-test
-        // temp dir on construction and restore the original on Dispose so
+        // File-IO isolation: OrderStorageService.OrdersDir and TrashDir are static
+        // properties in the production type. We redirect them to per-test
+        // temp dirs on construction and restore the originals on Dispose so
         // the test doesn't leak its override into other test classes in
         // the same process, and so a polluted AppData doesn't make the
         // assertions like "expect first contract number == 1-1" trip
@@ -28,20 +30,34 @@ namespace MosquitoNetCalculator.Tests.ViewModels
         public OrdersHistoryViewModelTests()
         {
             _originalOrdersDir = OrderStorageService.OrdersDir;
+            _originalTrashDir = OrderStorageService.TrashDir;
 
             _ordersDir = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "orders");
+            _trashDir = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "orders_trash");
+
             if (Directory.Exists(_ordersDir))
                 Directory.Delete(_ordersDir, true);
+            if (Directory.Exists(_trashDir))
+                Directory.Delete(_trashDir, true);
+
             Directory.CreateDirectory(_ordersDir);
+            Directory.CreateDirectory(_trashDir);
 
             OrderStorageService.OrdersDir = _ordersDir;
+            OrderStorageService.TrashDir = _trashDir;
+
+            _vm = new OrdersHistoryViewModel();
         }
 
         public void Dispose()
         {
             OrderStorageService.OrdersDir = _originalOrdersDir;
+            OrderStorageService.TrashDir = _originalTrashDir;
+
             if (Directory.Exists(_ordersDir))
                 Directory.Delete(_ordersDir, true);
+            if (Directory.Exists(_trashDir))
+                Directory.Delete(_trashDir, true);
         }
 
         // ─── SanitizeFileName tests ──────────────────────────
@@ -451,7 +467,16 @@ namespace MosquitoNetCalculator.Tests.ViewModels
         [Fact]
         public void SaveAndDelete_Roundtrip()
         {
-            var order = new OrderData { Id = Guid.NewGuid().ToString(), ClientName = "Test" };
+            var order = new OrderData
+            {
+                Id = Guid.NewGuid().ToString(),
+                ClientName = "Test",
+                TotalAmount = 1000,
+                Items = new List<OrderItemData>
+                {
+                    new() { Name = "Standard", Price = 1000, Quantity = 1 }
+                }
+            };
             _vm.SaveOrder(order);
             _vm.DeleteOrder(order.Id);
             // After delete, loading all should not contain it
@@ -459,6 +484,7 @@ namespace MosquitoNetCalculator.Tests.ViewModels
             var freshVm = new OrdersHistoryViewModel();
             var all = freshVm.LoadAllOrders();
             Assert.DoesNotContain(all, o => o.Id == order.Id);
+            Assert.True(File.Exists(Path.Combine(_trashDir, $"{order.Id}.json")));
         }
     }
 }

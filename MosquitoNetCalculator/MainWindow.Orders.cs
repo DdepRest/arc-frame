@@ -23,7 +23,8 @@ namespace MosquitoNetCalculator
 
         internal void RefreshOrdersList()
         {
-            var orders = ViewModel.OrdersVM.LoadAllOrders();
+            var orders = OrdersHistoryControl.IsTrashViewActive ? ViewModel.OrdersVM.LoadTrashOrders() : ViewModel.OrdersVM.LoadAllOrders();
+            OrdersHistoryControl.UpdateTrashBadgeCount(ViewModel.OrdersVM.LoadTrashOrders().Count);
 
             // Grid-level work (autosize, sort restore, sort indicators)
             // delegated to the presenter. MainWindow only owns the
@@ -95,11 +96,51 @@ namespace MosquitoNetCalculator
         {
             if (OrdersHistoryControl.OrdersGrid.SelectedItem is not OrderData order) return;
 
+            if (OrdersHistoryControl.IsTrashViewActive)
+            {
+                if (!DialogService.ShowRestoreConfirm(order.ContractNumber, this))
+                    return;
+
+                if (IsDirty)
+                {
+                    var choice = DialogService.ShowSaveDiscardCancel("В текущем расчёте есть несохранённые изменения.\nСохранить перед открытием другого заказа?", owner: this);
+                    if (choice == Services.SaveDiscardCancelResult.Cancel)
+                        return;
+                    if (choice == Services.SaveDiscardCancelResult.Save)
+                    {
+                        ApplicationCommands.Save.Execute(null, this);
+                        if (IsDirty) return;
+                    }
+                }
+
+                ViewModel.OrdersVM.RestoreOrder(order.Id);
+                RefreshOrdersList();
+                LoadOrderIntoCalculation(order);
+                return;
+            }
+
+            if (IsDirty)
+            {
+                var choice = DialogService.ShowSaveDiscardCancel("В текущем расчёте есть несохранённые изменения.\nСохранить перед открытием другого заказа?", owner: this);
+                if (choice == Services.SaveDiscardCancelResult.Cancel)
+                    return;
+                if (choice == Services.SaveDiscardCancelResult.Save)
+                {
+                    ApplicationCommands.Save.Execute(null, this);
+                    if (IsDirty) return;
+                }
+            }
+
             var orderDescription = !string.IsNullOrWhiteSpace(order.ClientPhone)
                 ? $" \u2014 {order.ClientPhone}"
                 : (!string.IsNullOrWhiteSpace(order.ClientAddress) ? $" \u2014 {order.ClientAddress}" : "");
             if (!DialogService.ShowConfirm($"Открыть заказ \u00AB{order.ContractNumber}\u00BB{orderDescription}?\n\nТекущие данные будут заменены.", "Открыть заказ", this)) return;
 
+            LoadOrderIntoCalculation(order);
+        }
+
+        private void LoadOrderIntoCalculation(OrderData order)
+        {
             CurrentOrderId = order.Id;
             IsNewOrder = false;
             _suppressContractNumberUpdate = true;
@@ -211,9 +252,18 @@ namespace MosquitoNetCalculator
                 : (!string.IsNullOrWhiteSpace(order.ClientAddress) ? $" \u2014 {order.ClientAddress}" : "");
             if (DialogService.ShowConfirmDestructive($"Удалить заказ \u00AB{order.ContractNumber}\u00BB{orderDescription}?\n\nЭто действие нельзя отменить.", "Удалить", "Удалить заказ", this))
             {
+                if (OrdersHistoryControl.IsTrashViewActive)
+            {
+                ViewModel.OrdersVM.PurgeTrashOrder(order.Id);
+                RefreshOrdersList();
+                ToastService.ShowToast("Заказ удалён навсегда.", ToastType.Info);
+            }
+            else
+            {
                 ViewModel.OrdersVM.DeleteOrder(order.Id);
                 RefreshOrdersList();
-                ToastService.ShowToast("Заказ удалён.", ToastType.Info);
+                ToastService.ShowToast("Заказ перемещён в корзину.", ToastType.Info, "Восстановить", () => { ViewModel.OrdersVM.RestoreOrder(order.Id); RefreshOrdersList(); ToastService.ShowToast("Заказ восстановлен из корзины.", ToastType.Success); });
+            }
             }
         }
 
@@ -237,6 +287,24 @@ namespace MosquitoNetCalculator
         internal void UpdateSortIndicatorsFromSortDescriptions()
         {
             OrderGridPresenter.ApplySortIndicators(OrdersHistoryControl.OrdersGrid);
+        }
+
+        internal void RestoreSelectedOrder()
+        {
+            if (OrdersHistoryControl.OrdersGrid.SelectedItem is not OrderData order) return;
+            ViewModel.OrdersVM.RestoreOrder(order.Id);
+            RefreshOrdersList();
+            ToastService.ShowToast($"Заказ «{order.ContractNumber}» восстановлен.", ToastType.Success);
+        }
+
+        internal void EmptyTrash()
+        {
+            if (DialogService.ShowConfirmDestructive("Очистить корзину?\n\nВсе удалённые заказы будут стёрты навсегда.", "Очистить всё", "Очистить корзину", this))
+            {
+                ViewModel.OrdersVM.EmptyTrash();
+                RefreshOrdersList();
+                ToastService.ShowToast("Корзина очищена.", ToastType.Info);
+            }
         }
     }
 }

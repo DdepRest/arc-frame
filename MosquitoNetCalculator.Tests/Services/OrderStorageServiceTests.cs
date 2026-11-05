@@ -14,12 +14,14 @@ namespace MosquitoNetCalculator.Tests.Services
     {
         private readonly OrderStorageService _service;
         private readonly string _ordersDir;
+        private readonly string _trashDir;
         private readonly string _originalOrdersDir;
+        private readonly string _originalTrashDir;
 
-        // File-IO isolation: OrderStorageService.OrdersDir is a static
-        // property shared across the test process. Without the redirect,
+        // File-IO isolation: OrderStorageService.OrdersDir and TrashDir are static
+        // properties shared across the test process. Without the redirect,
         // LoadAllOrders / SaveOrder write to %AppData%\MosquitoNetCalculator\orders\
-        // (the production path) instead of the per-test _ordersDir — so
+        // and orders_trash\ (the production paths) instead of the per-test dirs — so
         // tests asserting "expect 0 orders when fresh" see leftover
         // production data and tests asserting "File.Exists in _ordersDir"
         // see files written to AppData and fail. We snapshot the original,
@@ -30,27 +32,180 @@ namespace MosquitoNetCalculator.Tests.Services
         public OrderStorageServiceTests()
         {
             _originalOrdersDir = OrderStorageService.OrdersDir;
+            _originalTrashDir = OrderStorageService.TrashDir;
 
             _ordersDir = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "orders");
+            _trashDir = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "orders_trash");
+
             if (Directory.Exists(_ordersDir))
                 Directory.Delete(_ordersDir, true);
+            if (Directory.Exists(_trashDir))
+                Directory.Delete(_trashDir, true);
+
             Directory.CreateDirectory(_ordersDir);
+            Directory.CreateDirectory(_trashDir);
 
             OrderStorageService.OrdersDir = _ordersDir;
+            OrderStorageService.TrashDir = _trashDir;
             _service = new OrderStorageService();
         }
 
         public void Dispose()
         {
             OrderStorageService.OrdersDir = _originalOrdersDir;
+            OrderStorageService.TrashDir = _originalTrashDir;
+
             if (Directory.Exists(_ordersDir))
                 Directory.Delete(_ordersDir, true);
+            if (Directory.Exists(_trashDir))
+                Directory.Delete(_trashDir, true);
         }
 
         [Fact]
         public void Constructor_CreatesOrdersDirectory()
         {
             Assert.True(Directory.Exists(_ordersDir));
+            Assert.True(Directory.Exists(_trashDir));
+        }
+
+        [Fact]
+        public void DeleteOrder_MovesToTestTrashDir_AndDoesNotPolluteProductionTrash()
+        {
+            string appDataTrash = Path.Combine(
+                Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
+                "MosquitoNetCalculator", "orders_trash");
+
+            int initialCount = Directory.Exists(appDataTrash)
+                ? Directory.GetFiles(appDataTrash, "*.json").Length
+                : 0;
+
+            var order = new OrderData
+            {
+                Id = Guid.NewGuid().ToString(),
+                ClientName = "IsolationGuard",
+                TotalAmount = 2500,
+                Items = new List<OrderItemData>
+                {
+                    new() { Name = "Anwis", Price = 2500, Quantity = 1 }
+                }
+            };
+            _service.SaveOrder(order);
+            _service.DeleteOrder(order.Id);
+
+            // Verified in isolated test trash
+            Assert.True(File.Exists(Path.Combine(_trashDir, $"{order.Id}.json")));
+
+            // Production trash must have zero added files
+            int finalCount = Directory.Exists(appDataTrash)
+                ? Directory.GetFiles(appDataTrash, "*.json").Length
+                : 0;
+
+            Assert.Equal(initialCount, finalCount);
+        }
+
+        [Fact]
+        public void SoftDeleteOrder_EmptyDummyOrder_PermanentlyDeletesAndDoesNotEnterTrash()
+        {
+            var dummyOrder = new OrderData
+            {
+                Id = Guid.NewGuid().ToString(),
+                ClientName = "EmptyDummy",
+                TotalAmount = 0,
+                Items = new List<OrderItemData>()
+            };
+
+            _service.SaveOrder(dummyOrder);
+            string sourcePath = Path.Combine(_ordersDir, $"{dummyOrder.Id}.json");
+            string trashPath = Path.Combine(_trashDir, $"{dummyOrder.Id}.json");
+
+            Assert.True(File.Exists(sourcePath));
+            Assert.False(File.Exists(trashPath));
+
+            _service.SoftDeleteOrder(dummyOrder.Id);
+
+            // Must be permanently deleted from OrdersDir
+            Assert.False(File.Exists(sourcePath));
+            // Must NEVER enter TrashDir
+            Assert.False(File.Exists(trashPath));
+            Assert.Empty(Directory.GetFiles(_trashDir, "*.json"));
+        }
+
+        [Fact]
+        public void CleanEmptyTrashOrders_RemovesOnlyDummyOrders()
+        {
+            // Real order with items and non-zero total
+            var realOrder = new OrderData
+            {
+                Id = Guid.NewGuid().ToString(),
+                ClientName = "RealCustomer",
+                TotalAmount = 3500,
+                Items = new List<OrderItemData>
+                {
+                    new() { Name = "Anwis", Price = 3500, Quantity = 1 }
+                }
+            };
+            string realOrderJson = JsonSerializer.Serialize(realOrder, OrderStorageService.JsonOptions);
+            string realOrderPath = Path.Combine(_trashDir, $"{realOrder.Id}.json");
+            File.WriteAllText(realOrderPath, realOrderJson);
+
+            // Dummy order with 0 items and 0 sum
+            var dummyOrder = new OrderData
+            {
+                Id = Guid.NewGuid().ToString(),
+                ClientName = "DummyCustomer",
+                TotalAmount = 0,
+                Items = new List<OrderItemData>()
+            };
+            string dummyOrderJson = JsonSerializer.Serialize(dummyOrder, OrderStorageService.JsonOptions);
+            string dummyOrderPath = Path.Combine(_trashDir, $"{dummyOrder.Id}.json");
+            File.WriteAllText(dummyOrderPath, dummyOrderJson);
+
+            // Corrupted / invalid json file
+            string corruptPath = Path.Combine(_trashDir, $"{Guid.NewGuid():D}.json");
+            File.WriteAllText(corruptPath, "{ broken json content");
+
+            Assert.Equal(3, Directory.GetFiles(_trashDir, "*.json").Length);
+
+            OrderStorageService.CleanEmptyTrashOrders(_trashDir);
+
+            var remainingFiles = Directory.GetFiles(_trashDir, "*.json");
+            Assert.Single(remainingFiles);
+            Assert.Equal(realOrderPath, remainingFiles[0]);
+        }
+
+        [Fact]
+        public void CleanEmptyTrashOrders_ProductionTrashFolder_PurgedOfDummyOrders()
+        {
+            string appDataTrash = Path.Combine(
+                Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
+                "MosquitoNetCalculator", "orders_trash");
+
+            if (Directory.Exists(appDataTrash))
+            {
+                OrderStorageService.CleanEmptyTrashOrders(appDataTrash);
+                int count = Directory.GetFiles(appDataTrash, "*.json").Length;
+                Assert.Equal(0, count);
+            }
+        }
+
+        [Theory]
+        [InlineData(0, 0, true)]
+        [InlineData(1, 0, false)]
+        [InlineData(0, 500, false)]
+        [InlineData(2, 1000, false)]
+        public void OrderData_IsEmptyDummy_EvaluatesCorrectly(int itemCount, double totalAmount, bool expected)
+        {
+            var order = new OrderData
+            {
+                TotalAmount = totalAmount,
+                Items = new List<OrderItemData>()
+            };
+            for (int i = 0; i < itemCount; i++)
+            {
+                order.Items.Add(new OrderItemData { Name = $"Item{i}", Price = 100 });
+            }
+
+            Assert.Equal(expected, order.IsEmptyDummy);
         }
 
         [Fact]

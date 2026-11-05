@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Diagnostics;
@@ -15,6 +15,15 @@ namespace MosquitoNetCalculator.Controls
     {
         public DataGrid OrdersGrid => OrdersList;
         public TextBlock OrdersCount => TxtOrdersCount;
+        public bool IsTrashViewActive => RbTrashOrders?.IsChecked == true;
+
+        public void UpdateTrashBadgeCount(int count)
+        {
+            if (RbTrashOrders != null)
+            {
+                RbTrashOrders.Content = count > 0 ? $"🗑 Корзина ({count})" : "🗑 Корзина";
+            }
+        }
 
         /// <summary>True when the loaded orders list is empty. Drives the
         /// empty-state placeholder Visibility via the BoolToVis converter.</summary>
@@ -219,6 +228,26 @@ namespace MosquitoNetCalculator.Controls
 
         private void CtxCopy_Click(object sender, RoutedEventArgs e) =>
             TryForwardToMain(nameof(CtxCopy_Click), mw => mw.CopySelectedOrder());
+
+        private void RbViewMode_Checked(object sender, RoutedEventArgs e)
+        {
+            if (!IsLoaded) return;
+            bool isTrash = IsTrashViewActive;
+            if (BtnEmptyTrash != null)
+                BtnEmptyTrash.Visibility = isTrash ? Visibility.Visible : Visibility.Collapsed;
+            if (CtxRestoreMenu != null)
+                CtxRestoreMenu.Visibility = isTrash ? Visibility.Visible : Visibility.Collapsed;
+            if (CtxDeleteMenu != null)
+                CtxDeleteMenu.Header = isTrash ? "Удалить навсегда" : "Удалить заказ";
+
+            TryForwardToMain("RbViewMode_Checked", mw => mw.RefreshOrdersList());
+        }
+
+        private void BtnEmptyTrash_Click(object sender, RoutedEventArgs e) =>
+            TryForwardToMain(nameof(BtnEmptyTrash_Click), mw => mw.EmptyTrash());
+
+        private void CtxRestore_Click(object sender, RoutedEventArgs e) =>
+            TryForwardToMain(nameof(CtxRestore_Click), mw => mw.RestoreSelectedOrder());
 
         private void CtxDelete_Click(object sender, RoutedEventArgs e) =>
             TryForwardToMain(nameof(CtxDelete_Click), mw => mw.DeleteSelectedOrder());

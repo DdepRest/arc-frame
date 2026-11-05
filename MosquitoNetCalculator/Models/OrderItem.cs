@@ -70,7 +70,7 @@ namespace MosquitoNetCalculator.Models
         public static readonly HashSet<string> NoColorProducts = new(ProductCatalog.NoColorProducts);
 
         /// <summary>True when Color/Width/Height columns should be hidden.</summary>
-        public bool IsManualPiece => ProductCatalog.IsManualPiece(Name);
+        public bool IsManualPiece => IsLabor || ProductCatalog.IsManualPiece(Name);
 
         /// <summary>True when only the sum should be displayed — Qty, Width, Height, Area are hidden.</summary>
         public bool IsAmountOnly => ProductCatalog.IsAmountOnly(Name);
@@ -83,7 +83,7 @@ namespace MosquitoNetCalculator.Models
         /// <see cref="IsQuantityOptional"/>).
         /// </summary>
         public bool IsQuantityOptional =>
-            IsCustomProduct || ProductCatalog.IsQuantityOptional(Name);
+            IsCustomProduct || IsLabor || ProductCatalog.IsLabor(Name) || ProductCatalog.IsQuantityOptional(Name);
 
         /// <summary>
         /// True for ManualPiece products that additionally record Width as
@@ -91,6 +91,32 @@ namespace MosquitoNetCalculator.Models
         /// still blocking Color/Height (and Total remains 1 шт. × Price × Qty).
         /// </summary>
         public bool IsWidthOnly => ProductCatalog.IsWidthOnly(Name);
+
+        private bool _isLabor;
+
+        /// <summary>
+        /// True when this row represents labor/service (Работа). Total is always Price × Quantity,
+        /// dimensions are not needed, and the row total is fully counted in InstallationLaborTotal.
+        /// Can have any custom user name (e.g. «Демонтаж», «Замер»).
+        /// </summary>
+        public bool IsLabor
+        {
+            get => _isLabor || ProductCatalog.IsLabor(Name);
+            set
+            {
+                if (_isLabor != value)
+                {
+                    _isLabor = value;
+                    OnPropertyChanged(nameof(IsLabor));
+                    OnPropertyChanged(nameof(IsManualPiece));
+                    OnPropertyChanged(nameof(Unit));
+                    OnPropertyChanged(nameof(InstallationDisplay));
+                    OnPropertyChanged(nameof(KpInstallationDisplay));
+                    OnPropertyChanged(nameof(InstallationLaborTotal));
+                    Recalculate();
+                }
+            }
+        }
 
         /// <summary>
         /// True when this row is a user-added «Свой товар» (custom product):
@@ -219,8 +245,8 @@ namespace MosquitoNetCalculator.Models
             set
             {
                 var raw = Math.Max(0, value);
-                _width = IsAnwis
-                    ? AnwisSize.ОтВвода(raw, Размеры.ВысотаОтображение, _anwisSizeMode).ШиринаРасчёт
+                _width = HasSizeMode
+                    ? AnwisSize.ОтВвода(raw, Размеры.ВысотаОтображение, _anwisSizeMode, Name).ШиринаРасчёт
                     : raw;
                 OnPropertyChanged(nameof(Размеры));
                 OnPropertyChanged(nameof(ШиринаВвод));
@@ -241,8 +267,8 @@ namespace MosquitoNetCalculator.Models
             set
             {
                 var raw = Math.Max(0, value);
-                _height = IsAnwis
-                    ? AnwisSize.ОтВвода(Размеры.ШиринаОтображение, raw, _anwisSizeMode).ВысотаРасчёт
+                _height = HasSizeMode
+                    ? AnwisSize.ОтВвода(Размеры.ШиринаОтображение, raw, _anwisSizeMode, Name).ВысотаРасчёт
                     : raw;
                 OnPropertyChanged(nameof(Размеры));
                 OnPropertyChanged(nameof(ВысотаВвод));
@@ -255,9 +281,9 @@ namespace MosquitoNetCalculator.Models
         /// Отображение (сырые размеры пользователя), Расчёт (для площади/цены/КП),
         /// Завод (для текста «На завод»). Для не-Anwis товаров все слои равны.
         /// </summary>
-        public AnwisSize Размеры => IsAnwis
-            ? AnwisSize.ОтХранимого(_width, _height, _anwisSizeMode)
-            : AnwisSize.Identity(_width, _height);
+        public AnwisSize Размеры => HasSizeMode
+            ? AnwisSize.ОтХранимого(_width, _height, _anwisSizeMode, Name)
+            : AnwisSize.Identity(_width, _height, Name);
 
         public double Quantity
         {
@@ -267,7 +293,7 @@ namespace MosquitoNetCalculator.Models
                 // «Свой товар» rows may carry quantity 0/empty, meaning «не указано»
                 // → the row shows the manually entered sum (Price × 1). All other
                 // products keep the strict 0.001 floor.
-                var clamped = Math.Max(IsCustomProduct ? 0 : 0.001, value);
+                var clamped = Math.Max((IsCustomProduct || IsLabor || ProductCatalog.IsLabor(Name)) ? 0 : 0.001, value);
                 if (Math.Abs(_quantity - clamped) > 0.0001)
                 {
                     _quantity = clamped;
@@ -446,15 +472,15 @@ namespace MosquitoNetCalculator.Models
                 if (_anwisSizeMode == value)
                     return;
 
-                // Only recalculate dimensions for Anwis products.
-                if (IsAnwis)
+                // Only recalculate dimensions for products supporting size modes.
+                if (HasSizeMode)
                 {
                     // Capture old mode before overwriting, then reverse to raw
                     // and apply new mode.
                     var oldMode = _anwisSizeMode;
                     _anwisSizeMode = value;
 
-                    var oldSize = AnwisSize.ОтХранимого(_width, _height, oldMode);
+                    var oldSize = AnwisSize.ОтХранимого(_width, _height, oldMode, Name);
                     var newSize = oldSize.СРежимом(value);
                     _width = newSize.ШиринаРасчёт;
                     _height = newSize.ВысотаРасчёт;
@@ -526,6 +552,7 @@ namespace MosquitoNetCalculator.Models
             if (_anwisSizeMode == mode) return;
             _anwisSizeMode = mode;
             OnPropertyChanged(nameof(AnwisSizeMode));
+            OnPropertyChanged(nameof(HasSizeMode));
             OnPropertyChanged(nameof(AnwisSizeShortLabel));
             OnPropertyChanged(nameof(AnwisSizeToolTip));
             OnPropertyChanged(nameof(ШиринаВвод));
@@ -533,17 +560,20 @@ namespace MosquitoNetCalculator.Models
             OnPropertyChanged(nameof(Размеры));
         }
 
-        /// <summary>True, если товар — Anwis (показывать выбор режима размера).</summary>
+        /// <summary>True, если товар — Anwis (показывать выбор режима размера Anwis).</summary>
         public bool IsAnwis => Services.AnwisSizeService.IsApplicable(Name);
 
+        /// <summary>True, если товар поддерживает выбор режима размера (Anwis, На навесах, Оконная на метал. крепл.).</summary>
+        public bool HasSizeMode => Services.AnwisSizeService.SupportsSizeMode(Name);
+
         /// <summary>Короткая метка режима для отображения в строке DataGrid.</summary>
-        public string AnwisSizeShortLabel => IsAnwis
-            ? Services.AnwisSizeService.ShortLabels[AnwisSizeMode]
+        public string AnwisSizeShortLabel => HasSizeMode
+            ? Services.AnwisSizeService.GetShortLabel(Name, AnwisSizeMode)
             : "";
 
         /// <summary>Tooltip с описанием режима.</summary>
-        public string AnwisSizeToolTip => IsAnwis
-            ? $"{Services.AnwisSizeService.FullLabels[AnwisSizeMode]}: {Services.AnwisSizeService.Descriptions[AnwisSizeMode]}"
+        public string AnwisSizeToolTip => HasSizeMode
+            ? Services.AnwisSizeService.GetToolTip(Name, AnwisSizeMode)
             : "";
 
         /// <summary>Creates a deep copy of this row for undo/redo snapshots.</summary>
@@ -566,6 +596,7 @@ namespace MosquitoNetCalculator.Models
                 IsAnticat = IsAnticat,
                 _defaultPrice = _defaultPrice,
                 _isCustomProduct = _isCustomProduct,
+                _isLabor = _isLabor,
             };
             // v3.43.3 (review fix #1): SlopeData идёт через property setter, чтобы
             // подписаться на PropertyChanged каскад (иначе клон не будет реагировать
@@ -655,7 +686,8 @@ namespace MosquitoNetCalculator.Models
                 IsActive = IsActive,
                 AnwisSizeMode = (int)AnwisSizeMode,
                 IsAnticat = IsAnticat,
-                IsCustomProduct = IsCustomProduct
+                IsCustomProduct = IsCustomProduct,
+                IsLabor = IsLabor
             };
             if (SlopeData != null)
                 data.SlopeData = SlopeCalculationData.FromSlopeCalculation(SlopeData);

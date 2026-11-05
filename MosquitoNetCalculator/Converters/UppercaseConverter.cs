@@ -13,7 +13,7 @@ namespace MosquitoNetCalculator.Converters
     public sealed class UppercaseConverter : IValueConverter
     {
         public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
-            => value?.ToString()?.ToUpper(culture ?? CultureInfo.CurrentUICulture) ?? string.Empty;
+            => value is string str ? str.ToUpper(culture ?? CultureInfo.CurrentUICulture) : (value ?? string.Empty);
 
         public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
             => throw new NotSupportedException();

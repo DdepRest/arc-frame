@@ -48,12 +48,18 @@ namespace MosquitoNetCalculator.Tests.Controls
             panel.UpdateLayout();
 
             var now = DateTimeOffset.Now;
-            OfficeDeviceRow Dev(string name, string ver, OfficeStatus st, DateTimeOffset at) => new()
+            OfficeDeviceRow Dev(
+                string name,
+                string ver,
+                OfficeStatus st,
+                DateTimeOffset at,
+                DateTimeOffset? confirmedAt = null) => new()
             {
                 DeviceId = "id-" + name,
                 DeviceName = name,
                 Version = ver,
                 LastReportAt = at,
+                LocationConfirmedAt = confirmedAt,
                 Status = st,
             };
 
@@ -70,7 +76,7 @@ namespace MosquitoNetCalculator.Tests.Controls
                     DeviceCount = 1, Devices = new[] { Dev("DESKTOP-OOJHNVB", "3.48.7", OfficeStatus.Outdated, now.AddMinutes(-90)) } },
                 new() { Prefix = "5", LocationName = LocationOptions.All.First(o => o.Prefix == "5").LocationName,
                     Status = OfficeStatus.UpToDate, IsCurrentOffice = false, LastReportAt = now.AddMinutes(-10),
-                    DeviceCount = 1, Devices = new[] { Dev("DESKTOP-K4RDFUN", "3.49.0", OfficeStatus.UpToDate, now.AddMinutes(-10)) } },
+                    DeviceCount = 1, Devices = new[] { Dev("DESKTOP-K4RDFUN", "3.49.0", OfficeStatus.UpToDate, now.AddMinutes(-10), now.AddDays(-2)) } },
                 new() { Prefix = "3", LocationName = LocationOptions.All.First(o => o.Prefix == "3").LocationName,
                     Status = OfficeStatus.NoData, IsCurrentOffice = false, DeviceCount = 1,
                     Devices = new[] { Dev("DESKTOP-GHOST", "3.44.0", OfficeStatus.NoData, now.AddDays(-8)) } },
@@ -334,6 +340,41 @@ namespace MosquitoNetCalculator.Tests.Controls
             while (parent != null && parent is not StackPanel)
                 parent = VisualTreeHelper.GetParent(parent);
             return parent;
+        }
+
+        [Fact]
+        public void Playtest_LocationCheckHint_RendersOnlyWhenConfirmationIsStale()
+        {
+            RunOnSta(() =>
+            {
+                var panel = OpenPanelWithData(out _);
+                FlushUi(panel);
+
+                // Текст читаем ИЗ ОТРИСОВАННЫХ TextBlock'ов, а не из модели:
+                // тест ловит и логику, и биндинг в XAML (DataTrigger на пустой
+                // текст должен скрывать подсказку, а не оставлять пустую строку).
+                var hints = AllChecks(panel)
+                    .Select(b => (Device: (OfficeDeviceRow)b.DataContext, Chip: (StackPanel)FindChipHint(b)!))
+                    .ToDictionary(
+                        x => x.Device,
+                        x => x.Chip.Children.OfType<TextBlock>()
+                            .FirstOrDefault(tb => tb.Text.StartsWith("локация", StringComparison.Ordinal))?.Text ?? "");
+
+                Assert.NotEmpty(hints);
+
+                foreach (var (device, hint) in hints)
+                {
+                    bool stale = device.LocationConfirmedAt == null ||
+                                 DateTimeOffset.Now - device.LocationConfirmedAt.Value > TimeSpan.FromDays(30);
+                    Assert.Equal(stale, hint.Length > 0);
+                }
+
+                // В фикстуре есть оба случая: старые отчёты без отметки (текст
+                // «локация не подтверждена») и свежее подтверждение офиса 5 —
+                // пустой текст ничего не рисует, поэтому чип свежего ПК не шумит.
+                Assert.Contains(hints.Values, h => h == "локация не подтверждена");
+                Assert.Contains(hints.Values, h => h.Length == 0);
+            });
         }
 
         [Fact]

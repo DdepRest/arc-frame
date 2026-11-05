@@ -1,4 +1,4 @@
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Windows;
 using MosquitoNetCalculator.Controls;
 
@@ -58,11 +58,24 @@ namespace MosquitoNetCalculator.Services
                     button.StyleResource));
             }
 
+            var effectiveOwner = owner ?? Application.Current?.MainWindow;
             var window = new MessageDialogWindow(_title, _message, objectButtons)
             {
-                Owner = owner
+                Owner = effectiveOwner
             };
-            window.ShowDialog();
+
+            if (effectiveOwner is MainWindow mw)
+            {
+                using (mw.DimmerScope())
+                {
+                    window.ShowDialog();
+                }
+            }
+            else
+            {
+                window.ShowDialog();
+            }
+
             return window.SelectedResult is T typedResult ? typedResult : default!;
         }
     }

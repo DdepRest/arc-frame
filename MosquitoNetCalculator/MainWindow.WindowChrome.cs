@@ -1,3 +1,4 @@
+using System.Linq;
 using System;
 using System.ComponentModel;
 using System.Runtime.InteropServices;
@@ -139,6 +140,12 @@ namespace MosquitoNetCalculator
         {
             if (!SuppressPrefixSave && Sidebar?.TxtPrefix != null)
                 AppSettingsService.SaveContractPrefix(Sidebar.TxtPrefix.Text);
+
+            if (ViewModel.UndoRedo.IsDirty && OrderItems.Any(i => !string.IsNullOrEmpty(i.Name) && i.Total > 0))
+            {
+                try { DraftService.SaveDraftNow(BuildCurrentOrderDraft()); } catch { }
+            }
+
             if (!ViewModel.UndoRedo.IsDirty) return;
             if (Application.Current == null || Application.Current.Dispatcher.HasShutdownStarted)
                 return;

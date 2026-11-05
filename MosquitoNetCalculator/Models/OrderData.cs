@@ -29,6 +29,13 @@ namespace MosquitoNetCalculator.Models
         public List<OrderItemData> Items { get; set; } = new();
 
         /// <summary>
+        /// Indicates whether this order is an empty dummy (has no items and zero total amount).
+        /// Empty dummy orders are prevented from entering the trash folder on deletion.
+        /// </summary>
+        [System.Text.Json.Serialization.JsonIgnore]
+        public bool IsEmptyDummy => (Items == null || Items.Count == 0) && Math.Abs(TotalAmount) < 0.001;
+
+        /// <summary>
         /// Workflow rank of the current Status — exposed via the property
         /// so the Orders grid's «Статус» column can SortMemberPath it
         /// and sort by lifecycle progress instead of Cyrillic order.

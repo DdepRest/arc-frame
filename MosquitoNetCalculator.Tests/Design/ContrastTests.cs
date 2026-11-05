@@ -69,9 +69,9 @@ namespace MosquitoNetCalculator.Tests.Design
             new("Danger", "Surface", 3.0, "красный индикатор на панели"),
             new("Success", "Surface", 3.0, "зелёный индикатор на панели"),
             new("Warning", "Surface", 3.0, "предупреждающий индикатор на панели"),
-// AccentText — акцент для ТЕКСТА и глифов (Accent остаётся заливкой).
+            // AccentText — акцент для ТЕКСТА и глифов (Accent остаётся заливкой).
             new("AccentText", "Surface", 4.5, "акцентный текст/глифы на панели"),
-                        new("Accent", "Surface", 3.0, "акцентная графика на панели"),
+            new("Accent", "Surface", 3.0, "акцентная графика на панели"),
         };
 
         private static string RepoRoot()

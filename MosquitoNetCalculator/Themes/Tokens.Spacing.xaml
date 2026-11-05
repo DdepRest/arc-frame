@@ -115,7 +115,11 @@
     <Thickness x:Key="Gap.NavSection">12,6,0,4</Thickness>
     <Thickness x:Key="Gap.NavSectionLg">12,14,0,4</Thickness>
     <Thickness x:Key="Gap.BadgeOffset">0,2,-4,0</Thickness>
+    <Thickness x:Key="Gap.HeaderGripper">0,0,-4,0</Thickness>
     <Thickness x:Key="Gap.DialogHost">16,0,16,16</Thickness>
+    <!-- Карточки выбора в модальном диалоге: по горизонтали та же врезка 20,
+         что у шапки позиции (Pad.DialogBody), иначе левые кромки не совпадают -->
+    <Thickness x:Key="Gap.DialogChoices">20,0,20,16</Thickness>
     <Thickness x:Key="Gap.PanelSection">16,12</Thickness>
     <!-- Вертикальный ритм между секциями-карточками панели (полная ширина, без гориз.) -->
     <Thickness x:Key="Gap.Section">0,12,0,12</Thickness>
@@ -199,6 +203,9 @@
     <Thickness x:Key="Pad.TemplatesApply">18,7</Thickness>
     <Thickness x:Key="Pad.CardSm">14</Thickness>
     <Thickness x:Key="Pad.InputLargeH">18,0</Thickness>
+    <Thickness x:Key="Pad.DialogHeader">20,0,12,0</Thickness>
+    <Thickness x:Key="Pad.DialogFooterH">20,12,20,12</Thickness>
+    <Thickness x:Key="Gap.DialogBodySection">20,14,20,14</Thickness>
 
 
 </ResourceDictionary>

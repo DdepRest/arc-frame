@@ -98,7 +98,7 @@ namespace MosquitoNetCalculator.Models
             foreach (var it in Items)
             {
                 var active = it.IsActive ? "" : " (неактивна)";
-                var sizes = it.IsAreaBased || it.IsPerLinearMeter
+                var sizes = (it.IsAreaBased || it.IsPerLinearMeter) && (it.WidthInput > 0 || it.HeightInput > 0)
                     ? $"{FormatDim(it.WidthInput)}×{FormatDim(it.HeightInput)} мм"
                     : "";
                 var anwis = string.IsNullOrEmpty(it.AnwisModeLabel) ? "" : $", Anwis: {it.AnwisModeLabel}";

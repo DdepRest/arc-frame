@@ -43,12 +43,14 @@ namespace MosquitoNetCalculator.Tests.App
         private readonly string _originalSettingsPath;
         private readonly string _originalPricesPath;
         private readonly string _originalOrdersDir;
+        private readonly string _originalTrashDir;
 
         public ManualChecklistTests()
         {
             _tempDir = Path.Combine(Path.GetTempPath(), "mosquito_test_" + Guid.NewGuid().ToString("N"));
             Directory.CreateDirectory(_tempDir);
             Directory.CreateDirectory(Path.Combine(_tempDir, "orders"));
+            Directory.CreateDirectory(Path.Combine(_tempDir, "orders_trash"));
 
             // Snapshot the production paths so Dispose can restore them
             // verbatim. Note: any test that mutates a path AFTER this
@@ -57,10 +59,12 @@ namespace MosquitoNetCalculator.Tests.App
             _originalSettingsPath = AppSettingsService.SettingsPath;
             _originalPricesPath = PriceService.PricesPath;
             _originalOrdersDir = OrderStorageService.OrdersDir;
+            _originalTrashDir = OrderStorageService.TrashDir;
 
             AppSettingsService.SettingsPath = Path.Combine(_tempDir, "settings.json");
             PriceService.PricesPath = Path.Combine(_tempDir, "prices.json");
             OrderStorageService.OrdersDir = Path.Combine(_tempDir, "orders");
+            OrderStorageService.TrashDir = Path.Combine(_tempDir, "orders_trash");
         }
 
         public void Dispose()
@@ -68,6 +72,7 @@ namespace MosquitoNetCalculator.Tests.App
             AppSettingsService.SettingsPath = _originalSettingsPath;
             PriceService.PricesPath = _originalPricesPath;
             OrderStorageService.OrdersDir = _originalOrdersDir;
+            OrderStorageService.TrashDir = _originalTrashDir;
 
             try { if (Directory.Exists(_tempDir)) Directory.Delete(_tempDir, recursive: true); }
             catch { /* best-effort cleanup; user tempdir garbage is acceptable */ }
@@ -204,16 +209,16 @@ namespace MosquitoNetCalculator.Tests.App
         [Fact]
         public void Check3_Mode2_V_Konstruktsiyu_Deducts_Default500()
         {
-            // §3.1 + §3.2 — case «В конструкцию» ДОЛЖЕН вычитать 500 ₽
-            // (v3.21.0 fixed this — used to add 0). Header label must be
-            // «В конструкцию» (without the duplicate «В В» typo).
+            // §3.1 + §3.2 — case «В конструкцию»: product price does not change (0 surcharge/deduction),
+            // and 200 ₽ per net is recorded to labor.
             var item = new OrderItem
             {
                 Name = "Anwis", Width = 1000, Height = 1000, Quantity = 1, Price = 1800
             };
             item.InstallationMode = 2;
-            // v3.48.0: 1800 + импост 200 − 500 = 1500.
-            Assert.Equal(1500.00, item.TotalWithDeduction, 2);
+            // 1800 + импост 200 = 2000.
+            Assert.Equal(2000.00, item.TotalWithDeduction, 2);
+            Assert.Equal(200.00, item.InstallationLaborTotal);
             Assert.Equal("В конструкцию", item.InstallationLabel);
             Assert.Equal("ВК", item.KpInstallationDisplay); // печатная метка «ВК»
         }
@@ -234,6 +239,7 @@ namespace MosquitoNetCalculator.Tests.App
             // v3.47.0: Отлив и Козырёк теперь поддерживают монтаж (по умолчанию выключен).
             Assert.True(new OrderItem { Name = "Отлив" }.IsInstallationApplicable);
             Assert.True(new OrderItem { Name = "Козырёк" }.IsInstallationApplicable);
+            Assert.True(new OrderItem { Name = "Уплотнение" }.IsInstallationApplicable);
             // ПСУЛ — переключатель неактивен.
             Assert.False(new OrderItem { Name = "ПСУЛ" }.IsInstallationApplicable);
         }
@@ -331,11 +337,21 @@ namespace MosquitoNetCalculator.Tests.App
         public void Check5_Delete_Removes_From_List()
         {
             var vm = new OrdersHistoryViewModel();
-            var order = new OrderData { Id = Guid.NewGuid().ToString(), ContractNumber = "1-1" };
+            var order = new OrderData
+            {
+                Id = Guid.NewGuid().ToString(),
+                ContractNumber = "1-1",
+                TotalAmount = 1000,
+                Items = new List<OrderItemData>
+                {
+                    new() { Name = "Standard", Price = 1000, Quantity = 1 }
+                }
+            };
             vm.SaveOrder(order);
             Assert.Single(vm.LoadAllOrders());
             vm.DeleteOrder(order.Id);
             Assert.Empty(vm.LoadAllOrders());
+            Assert.True(File.Exists(Path.Combine(OrderStorageService.TrashDir, $"{order.Id}.json")));
         }
 
         [Fact]
@@ -498,11 +514,9 @@ namespace MosquitoNetCalculator.Tests.App
             {
                 new() { Name = "Anwis", Color = "Белый", Width = 1000, Height = 1000, Quantity = 1, Price = 1800, InstallationMode = 2 }
             };
-            var text = BuildAndExtract(items, SampleClient(), 1300, "Одна тысяча триста рублей");
+            var text = BuildAndExtract(items, SampleClient(), 2000, "Две тысячи рублей");
             // Print column uses KpInstallationCellText: unified label "ВК" (mode 2).
-            // v3.48.3: к метке добавлена сумма монтажа строки — для дефолтной
-            // ставки режима «В конструкцию» это "ВК −500"; голый глиф был до v3.48.3.
-            Assert.Contains("ВК −500", text);
+            Assert.Contains("ВК", text);
         }
 
         // ═══════════════════════════════════════════════════════════════════

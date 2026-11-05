@@ -79,6 +79,12 @@ namespace MosquitoNetCalculator.Services
             // Версия комплекта Inter, установленного per-user
             // (FontSelfInstallService). Null = установка ещё не выполнялась.
             public string? InstalledFontVersion { get; set; }
+            public string? LocationConfirmedAtUtc { get; set; }
+            public string? LocationSnoozeUntilUtc { get; set; }
+            public bool ShowInstallationInTotal { get; set; } = true;
+            public bool AskInstallationModeOnAdd { get; set; } = true;
+            public int DefaultInstallationMode { get; set; } = -1;
+            public bool TemplateAutoSplitMode { get; set; } = true;
         }
 
         private static Settings LoadSettings()
@@ -622,5 +628,128 @@ namespace MosquitoNetCalculator.Services
             }
         }
 
+        public static bool LoadShowInstallationInTotal()
+        {
+            lock (_lock)
+            {
+                return LoadSettings().ShowInstallationInTotal;
+            }
+        }
+
+        public static void SaveShowInstallationInTotal(bool value)
+        {
+            lock (_lock)
+            {
+                var s = LoadSettings();
+                s.ShowInstallationInTotal = value;
+                SaveSettings(s);
+            }
+        }
+
+        public static bool LoadAskInstallationModeOnAdd()
+        {
+            lock (_lock)
+            {
+                return LoadSettings().AskInstallationModeOnAdd;
+            }
+        }
+
+        public static void SaveAskInstallationModeOnAdd(bool value)
+        {
+            lock (_lock)
+            {
+                var s = LoadSettings();
+                s.AskInstallationModeOnAdd = value;
+                SaveSettings(s);
+            }
+        }
+
+        public static int LoadDefaultInstallationMode()
+        {
+            lock (_lock)
+            {
+                return LoadSettings().DefaultInstallationMode;
+            }
+        }
+
+        public static void SaveDefaultInstallationMode(int value)
+        {
+            lock (_lock)
+            {
+                var s = LoadSettings();
+                s.DefaultInstallationMode = value;
+                SaveSettings(s);
+            }
+        }
+
+        public static DateTime? LoadLocationConfirmedAtUtc()
+        {
+            lock (_lock)
+            {
+                return ParseUtcOrNull(LoadSettings().LocationConfirmedAtUtc);
+            }
+        }
+
+        public static void SaveLocationConfirmedAtUtc(DateTime utc)
+        {
+            lock (_lock)
+            {
+                var settings = LoadSettings();
+                settings.LocationConfirmedAtUtc = FormatUtc(utc);
+                SaveSettings(settings);
+            }
+        }
+
+        public static DateTime? LoadLocationSnoozeUntilUtc()
+        {
+            lock (_lock)
+            {
+                return ParseUtcOrNull(LoadSettings().LocationSnoozeUntilUtc);
+            }
+        }
+
+        public static void SaveLocationSnoozeUntilUtc(DateTime utc)
+        {
+            lock (_lock)
+            {
+                var settings = LoadSettings();
+                settings.LocationSnoozeUntilUtc = FormatUtc(utc);
+                SaveSettings(settings);
+            }
+        }
+
+        public static void MarkLocationConfirmed()
+        {
+            SaveLocationConfirmedAtUtc(DateTime.UtcNow);
+        }
+
+        public static bool LoadTemplateAutoSplitMode()
+        {
+            lock (_lock)
+            {
+                return LoadSettings().TemplateAutoSplitMode;
+            }
+        }
+
+        public static void SaveTemplateAutoSplitMode(bool enabled)
+        {
+            lock (_lock)
+            {
+                var settings = LoadSettings();
+                settings.TemplateAutoSplitMode = enabled;
+                SaveSettings(settings);
+            }
+        }
+
+        private static DateTime? ParseUtcOrNull(string? iso)
+        {
+            if (string.IsNullOrWhiteSpace(iso)) return null;
+            if (DateTime.TryParse(iso, null, System.Globalization.DateTimeStyles.RoundtripKind, out var dt))
+                return dt.ToUniversalTime();
+            return null;
+        }
+
+        private static string FormatUtc(DateTime utc) =>
+            utc.ToUniversalTime().ToString("o");
     }
 }

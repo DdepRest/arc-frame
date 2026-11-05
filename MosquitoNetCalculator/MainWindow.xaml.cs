@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
@@ -79,10 +79,10 @@ namespace MosquitoNetCalculator
         private SlopeOverlayCoordinator? _slopeCoordinator;
 
         // Cached overlay entries for direct access in NavButton_Click / ShowPrintOverlay
+        private OverlayManager.OverlayEntry? _sidebarEntry;
         private OverlayManager.OverlayEntry? _ordersEntry;
         private OverlayManager.OverlayEntry? _pricesEntry;
         private OverlayManager.OverlayEntry? _updatesEntry;
-        private OverlayManager.OverlayEntry? _sidebarEntry;
         private OverlayManager.OverlayEntry? _printEntry;
         private OverlayManager.OverlayEntry? _adminEntry;
 
@@ -188,7 +188,7 @@ namespace MosquitoNetCalculator
 
 
             LoadPrices();
-            StartNewOrder();
+            StartNewOrder(discardDraft: false);
             RefreshComboBoxColumns();
 
 
@@ -373,23 +373,16 @@ namespace MosquitoNetCalculator
             _navService = new NavigationService(navButtons, navIcons, navLabels, NavPanel, this,
                 new[] { NavGroupMain, NavGroupService });
 
-            // Рекомендованный режим Studio: компактный иконочный рельс (52px) по умолчанию
-            _navService.Collapse();
-            CalculationView.Margin = new Thickness(52, 0, 0, 0);
-            NavPanel.Width = 52;
-            NavToggleLabel.Visibility = Visibility.Collapsed;
-            BtnToggleNav.ToolTip = "Развернуть панель навигации";
-
             // ── Overlay entries (shared between OverlayManager and coordinators) ──
+            _sidebarEntry  = new OverlayManager.OverlayEntry(SidebarOverlay,  SidebarPanel,  SidebarBackdrop,  SidebarSlideTransform);
             _ordersEntry   = new OverlayManager.OverlayEntry(OrdersOverlay,   OrdersPanel,   OrdersBackdrop,   OrdersSlideTransform);
             _pricesEntry   = new OverlayManager.OverlayEntry(PricesOverlay,   PricesPanel,   PricesBackdrop,   PricesSlideTransform);
             _updatesEntry  = new OverlayManager.OverlayEntry(UpdatesOverlay,  UpdatesPanel,  UpdatesBackdrop,  UpdatesSlideTransform);
-            _sidebarEntry  = new OverlayManager.OverlayEntry(SidebarOverlay,  SidebarPanel,  SidebarBackdrop,  SidebarSlideTransform);
             _printEntry    = new OverlayManager.OverlayEntry(PrintOverlay,    PrintPanel,    PrintBackdrop,    PrintSlideTransform);
             _adminEntry    = new OverlayManager.OverlayEntry(AdminOverlay,    AdminPanel,    AdminBackdrop,    AdminSlideTransform);
             var slopeEntry = new OverlayManager.OverlayEntry(SlopeOverlay,    SlopePanel,    SlopeBackdrop,    SlopeSlideTransform);
 
-            var allOverlays = new[] { _ordersEntry, _pricesEntry, _updatesEntry, _sidebarEntry, slopeEntry, _printEntry, _adminEntry };
+            var allOverlays = new[] { _sidebarEntry, _ordersEntry, _pricesEntry, _updatesEntry, slopeEntry, _printEntry, _adminEntry };
 
             _overlayManager = new OverlayManager(
                 allOverlays,
@@ -433,6 +426,9 @@ namespace MosquitoNetCalculator
             RecalculatePriceGridColumnWidths();
             RecalculateOrderGridColumnWidths();
             _initialLoadDone = true;
+
+            MaybeShowLocationCheck();
+            InitializeRecoveryAndBackup();
 
             // ── Тихий отчёт офиса в gist (админ-панель) ────────────
             // Fire-and-forget: при любой ошибке просто молчим, старт не блокируем.
@@ -671,11 +667,26 @@ namespace MosquitoNetCalculator
 
         internal void ToggleSidebarOverlay()
         {
-            _overlayManager!.Toggle(_sidebarEntry!);
-            // Панель держит позицию прокрутки между открытиями: возвращаемся
-            // к шапке «Заказчик», чтобы поля не выглядели обрезанными сверху.
+            if (_sidebarEntry == null) return;
             if (SidebarOverlay.Visibility == Visibility.Visible)
+            {
+                _overlayManager?.CloseAll();
+            }
+            else
+            {
+                _overlayManager?.Show(_sidebarEntry);
                 Sidebar.ResetScroll();
+            }
+        }
+
+        private void CloseSidebar_Click(object sender, RoutedEventArgs e)
+        {
+            _overlayManager?.CloseAll();
+        }
+
+        private void AutosaveStatus_Click(object sender, MouseButtonEventArgs e)
+        {
+            CheckAndShowDraftRecovery();
         }
 
         private void CloseOverlay_Click(object sender, RoutedEventArgs e)
@@ -750,8 +761,9 @@ namespace MosquitoNetCalculator
             // Глобальная настройка «копия в производство»: подставляем последний выбор
             // пользователя (хранится в settings.json), чтобы каждый заказ открывался с ним.
             LastPrintSettings.IncludeProductionCopy = AppSettingsService.LoadIncludeProductionCopy();
+            LastPrintSettings.ShowInstallationInTotal = AppSettingsService.LoadShowInstallationInTotal();
 
-            var document = PrintService.BuildFlowDocument(validItems, ClientInfo, total, amountInWords);
+            var document = PrintService.BuildFlowDocument(validItems, ClientInfo, total, amountInWords, LastPrintSettings);
             if (document == null)
             {
                 ToastService.ShowToast("Нет данных для печати.", ToastType.Warning);
@@ -824,6 +836,7 @@ namespace MosquitoNetCalculator
             // 2. «Чистая» + «В производство» -> обе копии (IncludeProductionCopy = true)
             settings.IncludeProductionCopy = withProductionCopy;
             settings.Copies = Math.Max(1, settings.Copies);
+            settings.ShowInstallationInTotal = AppSettingsService.LoadShowInstallationInTotal();
 
             if (settings.Copies > 10)
             {
@@ -927,6 +940,7 @@ namespace MosquitoNetCalculator
 
             var settings = LastPrintSettings.Clone();
             settings.IncludeProductionCopy = AppSettingsService.LoadIncludeProductionCopy();
+            settings.ShowInstallationInTotal = AppSettingsService.LoadShowInstallationInTotal();
             if (settings.Copies <= 0 && !settings.IncludeProductionCopy)
                 settings.Copies = 1;
 
@@ -1011,6 +1025,91 @@ namespace MosquitoNetCalculator
             if (NavUpdatesDot != null)
                 NavUpdatesDot.Visibility = UpdateService.HasPendingUpdate() ? Visibility.Visible : Visibility.Collapsed;
         }
+
+        #region Modal Dimmer Scrim
+
+        private int _modalDimmerCount = 0;
+
+        /// <summary>
+        /// Activates the background dimmer overlay (ModalDimmerLayer) with a smooth fade-in.
+        /// </summary>
+        public void ShowModalDimmer()
+        {
+            if (ModalDimmerLayer == null) return;
+            _modalDimmerCount++;
+            if (_modalDimmerCount > 1) return; // already active
+
+            ModalDimmerLayer.Visibility = Visibility.Visible;
+            if (Helpers.Motion.ReducedMotion)
+            {
+                ModalDimmerLayer.Opacity = 0.50;
+            }
+            else
+            {
+                var anim = new DoubleAnimation(0.50, Helpers.Motion.Fast)
+                {
+                    EasingFunction = new CubicEase { EasingMode = EasingMode.EaseOut }
+                };
+                ModalDimmerLayer.BeginAnimation(OpacityProperty, anim);
+            }
+        }
+
+        /// <summary>
+        /// Deactivates the background dimmer overlay (ModalDimmerLayer) with a smooth fade-out.
+        /// </summary>
+        public void HideModalDimmer()
+        {
+            if (ModalDimmerLayer == null) return;
+            _modalDimmerCount = Math.Max(0, _modalDimmerCount - 1);
+            if (_modalDimmerCount > 0) return; // inner modal still open
+
+            if (Helpers.Motion.ReducedMotion)
+            {
+                ModalDimmerLayer.Opacity = 0;
+                ModalDimmerLayer.Visibility = Visibility.Collapsed;
+            }
+            else
+            {
+                var anim = new DoubleAnimation(0.0, Helpers.Motion.Fast)
+                {
+                    EasingFunction = new CubicEase { EasingMode = EasingMode.EaseOut }
+                };
+                anim.Completed += (s, e) =>
+                {
+                    if (_modalDimmerCount == 0)
+                        ModalDimmerLayer.Visibility = Visibility.Collapsed;
+                };
+                ModalDimmerLayer.BeginAnimation(OpacityProperty, anim);
+            }
+        }
+
+        /// <summary>
+        /// Convenient disposable scope for modal dialogs.
+        /// </summary>
+        public IDisposable DimmerScope() => new ModalDimmerScope(this);
+
+        public sealed class ModalDimmerScope : IDisposable
+        {
+            private readonly MainWindow _window;
+            private bool _disposed;
+
+            public ModalDimmerScope(MainWindow window)
+            {
+                _window = window;
+                _window.ShowModalDimmer();
+            }
+
+            public void Dispose()
+            {
+                if (!_disposed)
+                {
+                    _disposed = true;
+                    _window.HideModalDimmer();
+                }
+            }
+        }
+
+        #endregion
 
         private void StartNavBadgeTimer()
         {

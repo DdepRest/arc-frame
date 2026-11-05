@@ -17,24 +17,25 @@
                 <TextBlock x:Name="TxtTotalSub" FontSize="{StaticResource Type.Caption}" Foreground="{DynamicResource TotalTextMuted}" Margin="{DynamicResource Gap.BlockTopSm}"/>
             </StackPanel>
 
-            <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
-                <TextBlock FontSize="{StaticResource Type.Display}" FontWeight="SemiBold" Foreground="{DynamicResource TotalText}" Margin="{DynamicResource Gap.Inline}"
-                           Typography.NumeralAlignment="Tabular">
-                    <Run x:Name="RunTotalAmount" Text="0.00"/>
-                </TextBlock>
-                <TextBlock FontSize="{StaticResource Type.Body}" Foreground="{DynamicResource TotalTextMuted}" VerticalAlignment="Center" Margin="{DynamicResource Gap.CurrencyUnit}">
-                    <Run Text="руб."/>
-                </TextBlock>
-                <!-- Copy total to clipboard button -->
-                <Button x:Name="BtnCopyTotal" Width="28" Height="28"
-                        Background="Transparent" BorderThickness="0" Cursor="Hand"
-                        Foreground="{DynamicResource TotalTextMuted}"
-                        Click="BtnCopyTotal_Click"
-                        ToolTip="Копировать сумму в буфер обмена">
-                    <Button.Template>
-                        <ControlTemplate TargetType="Button">
-                            <Border x:Name="Bd" Background="{TemplateBinding Background}"
-                                    CornerRadius="{DynamicResource Radius.Md}" BorderThickness="0">
+            <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                    <TextBlock FontSize="{StaticResource Type.Display}" FontWeight="SemiBold" Foreground="{DynamicResource TotalText}" Margin="{DynamicResource Gap.Inline}"
+                               Typography.NumeralAlignment="Tabular">
+                        <Run x:Name="RunTotalAmount" Text="0.00"/>
+                    </TextBlock>
+                    <TextBlock FontSize="{StaticResource Type.Body}" Foreground="{DynamicResource TotalTextMuted}" VerticalAlignment="Center" Margin="{DynamicResource Gap.CurrencyUnit}">
+                        <Run Text="руб."/>
+                    </TextBlock>
+                    <!-- Copy total to clipboard button -->
+                    <Button x:Name="BtnCopyTotal" Width="28" Height="28"
+                            Background="Transparent" BorderThickness="0" Cursor="Hand"
+                            Foreground="{DynamicResource TotalTextMuted}"
+                            Click="BtnCopyTotal_Click"
+                            ToolTip="Копировать сумму в буфер обмена">
+                        <Button.Template>
+                            <ControlTemplate TargetType="Button">
+                                <Border x:Name="Bd" Background="{TemplateBinding Background}"
+                                        CornerRadius="{DynamicResource Radius.Md}" BorderThickness="0">
                                 <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
                             </Border>
                             <ControlTemplate.Triggers>
@@ -48,6 +49,38 @@
                     <TextBlock x:Name="TxtCopyIcon" Text="&#xE8C8;" FontFamily="{DynamicResource Font.Icon}" FontSize="{StaticResource Type.Body}"/>
                 </Button>
             </StackPanel>
+
+            <!-- Installation Total summary badge: prominent, high-contrast, aligned under total -->
+            <Border x:Name="BdInstallationSummary"
+                    Visibility="Collapsed"
+                    Background="{DynamicResource BadgeDefaultBg}"
+                    BorderBrush="{DynamicResource BadgeDefaultFg}"
+                    BorderThickness="1"
+                    CornerRadius="{DynamicResource Radius.Sm}"
+                    Padding="{DynamicResource Pad.Badge}"
+                    HorizontalAlignment="Left"
+                    Margin="{DynamicResource Gap.BlockTop}"
+                    ToolTipService.InitialShowDelay="100">
+                <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                    <TextBlock Text="&#xE8B7;" FontFamily="{DynamicResource Font.Icon}"
+                               FontSize="{StaticResource Type.Caption}"
+                               Foreground="{DynamicResource BadgeDefaultFg}"
+                               VerticalAlignment="Center" Margin="{DynamicResource Gap.InlineSm}"/>
+                    <TextBlock Text="Монтаж (ЗП): "
+                               FontSize="{StaticResource Type.Caption}"
+                               Foreground="{DynamicResource BadgeDefaultFg}"
+                               VerticalAlignment="Center"/>
+                    <TextBlock x:Name="TxtInstallationAmount"
+                               FontSize="{StaticResource Type.Caption}"
+                               FontWeight="Bold"
+                               Foreground="{DynamicResource BadgeDefaultFg}"
+                               VerticalAlignment="Center">
+                        <Run x:Name="RunInstallationTotal" Text="0"/>
+                        <Run Text=" руб."/>
+                    </TextBlock>
+                </StackPanel>
+            </Border>
+        </StackPanel>
 
             <StackPanel Grid.Column="3" VerticalAlignment="Center" HorizontalAlignment="Right">
                 <TextBlock x:Name="TxtAmountInWords" FontSize="{StaticResource Type.Caption}"

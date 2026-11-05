@@ -44,19 +44,26 @@ namespace MosquitoNetCalculator.Models
         /// <summary>Режим размера Anwis.</summary>
         public AnwisSizeMode Режим { get; }
 
+        /// <summary>Название товара (для выбора формулы: Anwis vs На навесах / Оконная на метал.).</summary>
+        public string? ProductName { get; }
+
         // ─── Приватный конструктор ────────────────────────────────────
 
         private AnwisSize(double rawW, double rawH,
                           double calcW, double calcH,
-                          AnwisSizeMode mode)
+                          AnwisSizeMode mode,
+                          string? productName = null)
         {
             ШиринаОтображение = Math.Max(0, rawW);
             ВысотаОтображение = Math.Max(0, rawH);
             ШиринаРасчёт = Math.Max(0, calcW);
             ВысотаРасчёт = Math.Max(0, calcH);
-            // Завод = расчёт − 20 мм (для Anwis); для не-Anwis = расчёт (identity)
-            ШиринаЗавод = Math.Max(0, calcW - 20);
-            ВысотаЗавод = Math.Max(0, calcH - 20);
+            ProductName = productName;
+            // Завод: для 2-режимных сеток («На навесах», «Оконная на метал.») заводской размер равен расчётному (готовая сетка).
+            // Для Anwis (включая sample/тесты с productName == null) от расчётного размера отнимается 20 мм.
+            bool isTwoModeScreen = AnwisSizeService.IsTwoModeScreen(productName);
+            ШиринаЗавод = isTwoModeScreen ? ШиринаРасчёт : Math.Max(0, calcW - 20);
+            ВысотаЗавод = isTwoModeScreen ? ВысотаРасчёт : Math.Max(0, calcH - 20);
             Режим = mode;
         }
 
@@ -64,14 +71,14 @@ namespace MosquitoNetCalculator.Models
 
         /// <summary>
         /// Создаёт AnwisSize из сырых размеров, введённых пользователем.
-        /// Применяет расчётные корректировки согласно режиму.
+        /// Применяет расчётные корректировки согласно режиму и товару.
         /// Для не-Anwis товаров все три слоя равны.
         /// </summary>
-        public static AnwisSize ОтВвода(double rawW, double rawH, AnwisSizeMode mode)
+        public static AnwisSize ОтВвода(double rawW, double rawH, AnwisSizeMode mode, string? productName = null)
         {
-            double calcW = AnwisSizeCalculator.ApplyCalcWidth(rawW, mode);
-            double calcH = AnwisSizeCalculator.ApplyCalcHeight(rawH, mode);
-            return new AnwisSize(rawW, rawH, calcW, calcH, mode);
+            double calcW = AnwisSizeCalculator.ApplyCalcWidth(rawW, mode, productName);
+            double calcH = AnwisSizeCalculator.ApplyCalcHeight(rawH, mode, productName);
+            return new AnwisSize(rawW, rawH, calcW, calcH, mode, productName);
         }
 
         /// <summary>
@@ -79,11 +86,11 @@ namespace MosquitoNetCalculator.Models
         /// Обратным пересчётом восстанавливает сырые размеры.
         /// Используется при загрузке заказов (JSON) и для computed свойства OrderItem.Размеры.
         /// </summary>
-        public static AnwisSize ОтХранимого(double calcW, double calcH, AnwisSizeMode mode)
+        public static AnwisSize ОтХранимого(double calcW, double calcH, AnwisSizeMode mode, string? productName = null)
         {
-            double rawW = AnwisSizeCalculator.ReverseCalcWidth(calcW, mode);
-            double rawH = AnwisSizeCalculator.ReverseCalcHeight(calcH, mode);
-            return new AnwisSize(rawW, rawH, calcW, calcH, mode);
+            double rawW = AnwisSizeCalculator.ReverseCalcWidth(calcW, mode, productName);
+            double rawH = AnwisSizeCalculator.ReverseCalcHeight(calcH, mode, productName);
+            return new AnwisSize(rawW, rawH, calcW, calcH, mode, productName);
         }
 
         /// <summary>
@@ -91,13 +98,13 @@ namespace MosquitoNetCalculator.Models
         /// Расчётные размеры пересчитываются под новый режим.
         /// </summary>
         public AnwisSize СРежимом(AnwisSizeMode newMode)
-            => ОтВвода(ШиринаОтображение, ВысотаОтображение, newMode);
+            => ОтВвода(ШиринаОтображение, ВысотаОтображение, newMode, ProductName);
 
         /// <summary>
         /// Identity AnwisSize where all three layers (Отображение, Расчёт, Завод) are equal.
         /// Used for non-Anwis products where no size conversion is needed.
         /// </summary>
-        public static AnwisSize Identity(double w, double h)
-            => new AnwisSize(w, h, w, h, AnwisSizeMode.Габаритный);
+        public static AnwisSize Identity(double w, double h, string? productName = null)
+            => new AnwisSize(w, h, w, h, AnwisSizeMode.Габаритный, productName);
     }
 }

@@ -146,6 +146,110 @@ namespace MosquitoNetCalculator.Tests.Design
             });
         }
 
+        /// <summary>
+        /// Кнопки со скруглением не должны выставлять SnapsToDevicePixels="True":
+        /// привязка к пиксельной сетке применяется только к прямым сегментам рамки,
+        /// а дуги Безье не привязываются, вызывая затемненные пиксельные заломы на стыках.
+        /// </summary>
+        [Fact]
+        public void Buttons_GlassTemplate_HasNoSnapsToDevicePixelsOnRoundedBorder()
+        {
+            TestAppThemes.RunOnSta(() =>
+            {
+                var app = Application.Current!;
+                var template = (ControlTemplate)app.FindResource("GlassButtonTemplate");
+                var btn = new Button { Template = template };
+                btn.ApplyTemplate();
+                var border = (Border)btn.Template.FindName("Bd", btn);
+                Assert.NotNull(border);
+                Assert.False(border.SnapsToDevicePixels, "GlassButtonTemplate Bd не должен иметь SnapsToDevicePixels=True");
+            });
+        }
+
+        [Fact]
+        public void ActionBarControl_SplitButtons_HaveNoSnapsToDevicePixels()
+        {
+            TestAppThemes.RunOnSta(() =>
+            {
+                var bar = new MosquitoNetCalculator.Controls.ActionBarControl();
+                var mainStyle = (Style)bar.Resources["PrintMainButton"];
+                var caretStyle = (Style)bar.Resources["PrintCaretButton"];
+
+                var btnMain = new Button { Style = mainStyle };
+                btnMain.ApplyTemplate();
+                var bdMain = (Border)btnMain.Template.FindName("Bd", btnMain);
+                Assert.NotNull(bdMain);
+                Assert.False(bdMain.SnapsToDevicePixels, "PrintMainButton Bd не должен иметь SnapsToDevicePixels=True");
+
+                var btnCaret = new Button { Style = caretStyle };
+                btnCaret.ApplyTemplate();
+                var bdCaret = (Border)btnCaret.Template.FindName("Bd", btnCaret);
+                Assert.NotNull(bdCaret);
+                Assert.False(bdCaret.SnapsToDevicePixels, "PrintCaretButton Bd не должен иметь SnapsToDevicePixels=True");
+            });
+        }
+
+        [Fact]
+        public void CheckBox_DefaultStyle_IsFluentToggleSwitch()
+        {
+            TestAppThemes.RunOnSta(() =>
+            {
+                var app = Application.Current!;
+                var style = (Style)app.FindResource(typeof(CheckBox));
+                var cb = new CheckBox { Style = style };
+                cb.ApplyTemplate();
+                var track = (Border)cb.Template.FindName("SwitchTrack", cb);
+                Assert.NotNull(track);
+                Assert.Equal(40, track.Width);
+                Assert.Equal(20, track.Height);
+                Assert.False(track.SnapsToDevicePixels);
+
+                var thumb = (Border)cb.Template.FindName("SwitchThumb", cb);
+                Assert.NotNull(thumb);
+                Assert.Equal(14, thumb.Width);
+                Assert.Equal(14, thumb.Height);
+                Assert.False(thumb.SnapsToDevicePixels);
+            });
+        }
+
+        [Fact]
+        public void ToggleSwitch_FluentStyle_IsCapsuleWithoutGlassSheen()
+        {
+            TestAppThemes.RunOnSta(() =>
+            {
+                var app = Application.Current!;
+                var style = (Style)app.FindResource("FluentToggleSwitch");
+                var cb = new CheckBox { Style = style };
+                cb.ApplyTemplate();
+                var track = (Border)cb.Template.FindName("SwitchTrack", cb);
+                Assert.NotNull(track);
+                Assert.Equal(40, track.Width);
+                Assert.Equal(20, track.Height);
+                Assert.False(track.SnapsToDevicePixels);
+
+                var thumb = (Border)cb.Template.FindName("SwitchThumb", cb);
+                Assert.NotNull(thumb);
+                Assert.Equal(14, thumb.Width);
+                Assert.Equal(14, thumb.Height);
+                Assert.False(thumb.SnapsToDevicePixels);
+
+                var sheen = cb.Template.FindName("TrackSheen", cb);
+                Assert.Null(sheen);
+            });
+        }
+
+        [Fact]
+        public void OrderItems_RowCheckBoxes_And_AdditionalKps_UseToggleSwitch()
+        {
+            string orderItemsXaml = ReadWithoutComments("Controls/OrderItemsControl.xaml");
+            // По запросу пользователя: везде тумблеры (Fluent toggle switch), SquareCheckBox снят
+            Assert.DoesNotContain("SquareCheckBox", orderItemsXaml);
+            Assert.Contains("IsActive", orderItemsXaml);
+
+            string additionalKpsXaml = ReadWithoutComments("Controls/AdditionalKpsControl.xaml");
+            Assert.Contains("Style=\"{StaticResource FluentToggleSwitch}\"", additionalKpsXaml);
+        }
+
         [Fact]
         public void RenderGlassButtonsPreviews_SavesVisualArtifacts()
         {
@@ -194,13 +298,20 @@ namespace MosquitoNetCalculator.Tests.Design
                     row2.Children.Add(new Button { Style = (Style)app.FindResource("DialogOutlineButton"), Content = "Cancel", Margin = new Thickness(0, 0, 16, 0) });
                     row2.Children.Add(new Button { Style = (Style)app.FindResource("DialogCloseButton"), Content = "X", Width = 32, Height = 32 });
                     stack.Children.Add(row2);
+                    var row3 = new StackPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(0, 16, 0, 0) };
+                    row3.Children.Add(new CheckBox { Content = "Тумблер выкл", IsChecked = false, Margin = new Thickness(0, 0, 16, 0) });
+                    row3.Children.Add(new CheckBox { Content = "Тумблер вкл", IsChecked = true, Margin = new Thickness(0, 0, 24, 0) });
+                    row3.Children.Add(new CheckBox { Style = (Style)app.FindResource("SignToggleCheckBox"), IsChecked = false, Margin = new Thickness(0, 0, 16, 0) });
+                    row3.Children.Add(new CheckBox { Style = (Style)app.FindResource("SignToggleCheckBox"), IsChecked = true });
+                    stack.Children.Add(row3);
+
 
                     container.Child = stack;
-                    container.Measure(new Size(760, 220));
-                    container.Arrange(new Rect(0, 0, 760, 200));
+                    container.Measure(new Size(760, 260));
+                    container.Arrange(new Rect(0, 0, 760, 240));
                     container.UpdateLayout();
 
-                    var rtb = new System.Windows.Media.Imaging.RenderTargetBitmap(760, 200, 96, 96, System.Windows.Media.PixelFormats.Pbgra32);
+                    var rtb = new System.Windows.Media.Imaging.RenderTargetBitmap(760, 240, 96, 96, System.Windows.Media.PixelFormats.Pbgra32);
                     rtb.Render(container);
 
                     var encoder = new System.Windows.Media.Imaging.PngBitmapEncoder();
@@ -248,6 +359,33 @@ namespace MosquitoNetCalculator.Tests.Design
                         string totalPath = Path.Combine(artifactDir, isDark ? "rendered_total_card_dark.png" : "rendered_total_card_light.png");
                         using var totalStream = File.Create(totalPath);
                         encTotal.Save(totalStream);
+                    }
+                    catch { }
+
+                    try
+                    {
+                        var tmplWin = new MosquitoNetCalculator.Controls.TemplatesWindow(null!);
+                        var openMethod = typeof(MosquitoNetCalculator.Controls.TemplatesWindow)
+                            .GetMethod("OpenChecklist", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)!;
+                        var windowTemplate = MosquitoNetCalculator.Services.OrderTemplateService.All.First(t => t.Id == "window");
+                        openMethod.Invoke(tmplWin, new object[] { windowTemplate });
+                        tmplWin.Measure(new Size(640, 720));
+                        tmplWin.Arrange(new Rect(0, 0, 640, 720));
+                        tmplWin.UpdateLayout();
+
+                        tmplWin.RootBorder.Opacity = 1;
+                        tmplWin.RootBorder.Measure(new Size(640, 800));
+                        tmplWin.RootBorder.Arrange(new Rect(0, 0, 640, 800));
+                        tmplWin.RootBorder.UpdateLayout();
+                        var rtbTmpl = new System.Windows.Media.Imaging.RenderTargetBitmap(640, 800, 96, 96, System.Windows.Media.PixelFormats.Pbgra32);
+                        rtbTmpl.Render(tmplWin.RootBorder);
+
+                        var encTmpl = new System.Windows.Media.Imaging.PngBitmapEncoder();
+                        encTmpl.Frames.Add(System.Windows.Media.Imaging.BitmapFrame.Create(rtbTmpl));
+                        string tmplPath = Path.Combine(artifactDir, isDark ? "rendered_templates_checklist_dark.png" : "rendered_templates_checklist_light.png");
+                        using var tmplStream = File.Create(tmplPath);
+                        encTmpl.Save(tmplStream);
+                        tmplWin.Close();
                     }
                     catch { }
                 }

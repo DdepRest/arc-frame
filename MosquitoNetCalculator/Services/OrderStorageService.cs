@@ -20,6 +20,7 @@ namespace MosquitoNetCalculator.Services
         // per-test. See AppSettingsService.SettingsPath comment for the rationale —
         // .NET 8 throws FieldAccessException on FieldInfo.SetValue against initonly.
         public static string OrdersDir { get; set; } = Path.Combine(AppDataDir, "orders");
+        public static string TrashDir { get; set; } = Path.Combine(AppDataDir, "orders_trash");
         private static readonly string CounterPath = Path.Combine(AppDataDir, "order_counter.json");
 
         // Shared JSON options for ALL order read AND write paths.
@@ -41,6 +42,10 @@ namespace MosquitoNetCalculator.Services
         {
             if (!Directory.Exists(OrdersDir))
                 Directory.CreateDirectory(OrdersDir);
+            if (!Directory.Exists(TrashDir))
+                Directory.CreateDirectory(TrashDir);
+
+            CleanEmptyTrashOrders();
         }
 
         // ──── Path safety (CWE-22) ────
@@ -100,6 +105,24 @@ namespace MosquitoNetCalculator.Services
             if (!filePath.StartsWith(directoryWithSeparator, StringComparison.OrdinalIgnoreCase))
                 throw new InvalidDataException(
                     $"Путь к файлу заказа выходит за пределы каталога заказов: «{orderId}».");
+
+            return filePath;
+        }
+
+        private static string ResolveTrashFilePath(string? orderId)
+        {
+            if (!TryCanonicalizeOrderId(orderId, out string canonicalId))
+                throw new InvalidDataException($"Некорректный идентификатор заказа: «{orderId}».");
+
+            string fileName = canonicalId + ".json";
+            string directoryResolved = Path.GetFullPath(TrashDir)
+                .TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
+            string filePath = Path.GetFullPath(Path.Combine(directoryResolved, fileName));
+
+            string directoryWithSeparator = directoryResolved + Path.DirectorySeparatorChar;
+            if (!filePath.StartsWith(directoryWithSeparator, StringComparison.OrdinalIgnoreCase))
+                throw new InvalidDataException(
+                    $"Путь к файлу корзины выходит за пределы каталога корзины: «{orderId}».");
 
             return filePath;
         }
@@ -193,15 +216,182 @@ namespace MosquitoNetCalculator.Services
 
         public void DeleteOrder(string orderId)
         {
-            string filePath = ResolveOrderFilePath(orderId);
-            // Same lock-during-IO rationale as SaveOrder: invalidate the cache atomically
-            // with the file deletion so a concurrent LoadAllOrders can't return a list
-            // that still contains the just-deleted order.
+            SoftDeleteOrder(orderId);
+        }
+
+        /// <summary>
+        /// Moves an order to the trash folder (Soft Delete).
+        /// If the order is an empty dummy (no items and zero total amount), it is deleted permanently
+        /// from the orders directory and never enters the trash.
+        /// </summary>
+        public void SoftDeleteOrder(string orderId)
+        {
+            string sourcePath = ResolveOrderFilePath(orderId);
+            string destPath = ResolveTrashFilePath(orderId);
+
+            lock (_cacheLock)
+            {
+                if (File.Exists(sourcePath))
+                {
+                    OrderData? order = null;
+                    try
+                    {
+                        string json = File.ReadAllText(sourcePath, System.Text.Encoding.UTF8);
+                        order = JsonSerializer.Deserialize<OrderData>(json, JsonOptions);
+                    }
+                    catch (Exception ex)
+                    {
+                        System.Diagnostics.Debug.WriteLine($"[OrderStorage] SoftDeleteOrder read error: {sourcePath} — {ex.Message}");
+                    }
+
+                    if (order != null && order.IsEmptyDummy)
+                    {
+                        File.Delete(sourcePath);
+                        _cachedOrders = null;
+                        return;
+                    }
+
+                    if (!Directory.Exists(TrashDir))
+                        Directory.CreateDirectory(TrashDir);
+
+                    if (File.Exists(destPath))
+                        File.Delete(destPath);
+
+                    File.Move(sourcePath, destPath);
+                }
+                _cachedOrders = null;
+            }
+        }
+
+        /// <summary>
+        /// Scans the trash directory and permanently deletes empty dummy orders (0 items and 0 sum)
+        /// or corrupted/empty order files.
+        /// </summary>
+        public static void CleanEmptyTrashOrders(string? trashDir = null)
+        {
+            string targetDir = trashDir ?? TrashDir;
+            if (!Directory.Exists(targetDir))
+                return;
+
+            foreach (var file in Directory.GetFiles(targetDir, "*.json"))
+            {
+                try
+                {
+                    string json = File.ReadAllText(file, System.Text.Encoding.UTF8);
+                    OrderData? order = null;
+                    try
+                    {
+                        order = JsonSerializer.Deserialize<OrderData>(json, JsonOptions);
+                    }
+                    catch
+                    {
+                        // Deserialization failure leaves order as null
+                    }
+
+                    if (order == null || order.IsEmptyDummy)
+                    {
+                        File.Delete(file);
+                    }
+                }
+                catch (Exception ex)
+                {
+                    System.Diagnostics.Debug.WriteLine($"[OrderStorage] CleanEmptyTrashOrders error: {file} — {ex.Message}");
+                }
+            }
+        }
+
+        /// <summary>
+        /// Restores an order from the trash folder back into the active orders folder.
+        /// </summary>
+        public void RestoreOrder(string orderId)
+        {
+            string sourcePath = ResolveTrashFilePath(orderId);
+            string destPath = ResolveOrderFilePath(orderId);
+
+            lock (_cacheLock)
+            {
+                if (File.Exists(sourcePath))
+                {
+                    if (!Directory.Exists(OrdersDir))
+                        Directory.CreateDirectory(OrdersDir);
+
+                    if (File.Exists(destPath))
+                        File.Delete(destPath);
+
+                    File.Move(sourcePath, destPath);
+                }
+                _cachedOrders = null;
+            }
+        }
+
+        /// <summary>
+        /// Loads all orders currently in the trash folder, auto-pruning entries older than 30 days
+        /// and purging any empty dummy orders.
+        /// </summary>
+        public List<OrderData> LoadTrashOrders()
+        {
+            var list = new List<OrderData>();
+            if (!Directory.Exists(TrashDir))
+                return list;
+
+            CleanEmptyTrashOrders();
+
+            DateTime threshold = DateTime.Now.AddDays(-30);
+
+            foreach (var file in Directory.GetFiles(TrashDir, "*.json"))
+            {
+                try
+                {
+                    var fileInfo = new FileInfo(file);
+                    if (fileInfo.CreationTime < threshold && fileInfo.LastWriteTime < threshold)
+                    {
+                        File.Delete(file);
+                        continue;
+                    }
+
+                    string json = File.ReadAllText(file, System.Text.Encoding.UTF8);
+                    var order = JsonSerializer.Deserialize<OrderData>(json, JsonOptions);
+                    if (order != null)
+                    {
+                        list.Add(order);
+                    }
+                }
+                catch (Exception ex)
+                {
+                    System.Diagnostics.Debug.WriteLine($"[OrderStorage] skip corrupted trash: {file} — {ex.Message}");
+                }
+            }
+
+            return list.OrderByDescending(o => o.UpdatedAt).ToList();
+        }
+
+        /// <summary>
+        /// Permanently removes an order from the trash folder.
+        /// </summary>
+        public void PurgeTrashOrder(string orderId)
+        {
+            string filePath = ResolveTrashFilePath(orderId);
             lock (_cacheLock)
             {
                 if (File.Exists(filePath))
                     File.Delete(filePath);
-                _cachedOrders = null;
+            }
+        }
+
+        /// <summary>
+        /// Permanently removes all orders in the trash folder.
+        /// </summary>
+        public void EmptyTrash()
+        {
+            lock (_cacheLock)
+            {
+                if (Directory.Exists(TrashDir))
+                {
+                    foreach (var file in Directory.GetFiles(TrashDir, "*.json"))
+                    {
+                        try { File.Delete(file); } catch { }
+                    }
+                }
             }
         }
 

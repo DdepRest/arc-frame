@@ -97,7 +97,122 @@ namespace MosquitoNetCalculator.Services
         /// Возвращает true, если для данного товара применим выбор режима Anwis.
         /// </summary>
         public static bool IsApplicable(string? productName)
-            => string.Equals(productName, "Anwis", StringComparison.OrdinalIgnoreCase);
+        {
+            if (string.IsNullOrWhiteSpace(productName)) return false;
+            var norm = Models.ProductCatalog.NormalizeProductName(productName);
+            return string.Equals(norm, "Anwis", StringComparison.OrdinalIgnoreCase);
+        }
+
+        /// <summary>
+        /// Возвращает true, если товар является 2-режимной сеткой («На навесах» или «Оконная на метал. крепл.»).
+        /// Для этих сеток доступны только режимы «Габарит» (+0 мм) и «Проём» (+40 мм).
+        /// </summary>
+        public static bool IsTwoModeScreen(string? productName)
+        {
+            if (string.IsNullOrWhiteSpace(productName)) return false;
+            var norm = Models.ProductCatalog.NormalizeProductName(productName);
+            return string.Equals(norm, "На навесах", StringComparison.OrdinalIgnoreCase)
+                || string.Equals(norm, "Оконная на метал. крепл.", StringComparison.OrdinalIgnoreCase);
+        }
+
+        /// <summary>
+        /// Возвращает true, если для данного товара применим выбор режима размеров (Anwis или 2-режимные сетки).
+        /// </summary>
+        public static bool SupportsSizeMode(string? productName)
+            => IsApplicable(productName) || IsTwoModeScreen(productName);
+
+        /// <summary>
+        /// Возвращает список доступных режимов для указанного товара.
+        /// Для 2-режимных сеток порядок: Габарит, Проём.
+        /// Для Anwis: ББ 60, ББ 70, ПП, Проём, Габарит.
+        /// </summary>
+        public static IReadOnlyList<AnwisSizeMode> GetAvailableModes(string? productName)
+        {
+            if (IsTwoModeScreen(productName))
+            {
+                return new[] { AnwisSizeMode.Габаритный, AnwisSizeMode.РазмерПроёма };
+            }
+            if (IsApplicable(productName))
+            {
+                return new[]
+                {
+                    AnwisSizeMode.Брусбокс60,
+                    AnwisSizeMode.Брусбокс70,
+                    AnwisSizeMode.Профипласт,
+                    AnwisSizeMode.РазмерПроёма,
+                    AnwisSizeMode.Габаритный
+                };
+            }
+            return Array.Empty<AnwisSizeMode>();
+        }
+
+        /// <summary>
+        /// Возвращает режим по умолчанию для указанного товара:
+        /// для Anwis — Профипласт (ПП), для 2-режимных сеток — Габаритный (Габарит).
+        /// </summary>
+        public static AnwisSizeMode GetDefaultMode(string? productName)
+        {
+            if (IsTwoModeScreen(productName))
+                return AnwisSizeMode.Габаритный;
+            return DefaultMode;
+        }
+
+        /// <summary>
+        /// Возвращает короткую метку режима для строки заказа.
+        /// </summary>
+        public static string GetShortLabel(string? productName, AnwisSizeMode mode)
+        {
+            return ShortLabels.TryGetValue(mode, out var l) ? l : "";
+        }
+
+        /// <summary>
+        /// Возвращает всплывающую подсказку для режима с учётом типа сетки.
+        /// </summary>
+        public static string GetToolTip(string? productName, AnwisSizeMode mode)
+        {
+            if (IsTwoModeScreen(productName))
+            {
+                return mode switch
+                {
+                    AnwisSizeMode.РазмерПроёма => "Размер проёма: от уплотнения до уплотнения (W+40 / H+40)",
+                    AnwisSizeMode.Габаритный   => "Габаритный: готовая сетка (без изменений)",
+                    _ => ""
+                };
+            }
+            if (IsApplicable(productName))
+            {
+                return FullLabels.TryGetValue(mode, out var f) && Descriptions.TryGetValue(mode, out var d)
+                    ? $"{f}: {d}"
+                    : "";
+            }
+            return "";
+        }
+
+        /// <summary>
+        /// Генерирует объяснение для выбранного режима в формате (ввод, расчёт, завод) на живом примере 1000×1000.
+        /// </summary>
+        public static (string Input, string Calc, string Factory) GetExplanation(AnwisSizeMode mode, string? productName = null)
+        {
+            if (IsTwoModeScreen(productName))
+            {
+                var sample = AnwisSize.ОтВвода(1000, 1000, mode, productName);
+                if (mode == AnwisSizeMode.РазмерПроёма)
+                {
+                    return (
+                        "Ввод: чистые размеры от уплотнения до уплотнения",
+                        $"Расчёт (площадь, цена, импост): 1000×1000 → {(int)sample.ШиринаРасчёт}×{(int)sample.ВысотаРасчёт} (W+40, H+40)",
+                        $"Готовая сетка: {(int)sample.ШиринаРасчёт}×{(int)sample.ВысотаРасчёт}"
+                    );
+                }
+                return (
+                    "Ввод: готовая сетка (без изменений)",
+                    "Расчёт (площадь, цена): 1000×1000 → 1000×1000 (без изменений)",
+                    "Готовая сетка: 1000×1000"
+                );
+            }
+
+            return GetExplanation(mode);
+        }
 
         /// <summary>
         /// Режим Anwis по умолчанию для новых позиций: ПП (Профипласт).

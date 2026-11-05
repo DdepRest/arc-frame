@@ -45,6 +45,14 @@
                           IsChecked="True" Margin="{DynamicResource Gap.BlockTop}"
                           ToolTip="Включено: 1,2,3,1,2,3. Выключено: 1,1,2,2,3,3"/>
 
+                <!-- В том числе монтаж -->
+                <CheckBox x:Name="ShowInstallationCheck"
+                          Content="Показать «Монтаж»"
+                          Margin="{DynamicResource Gap.BlockTop}"
+                          Checked="ShowInstallationCheck_Changed"
+                          Unchecked="ShowInstallationCheck_Changed"
+                          ToolTip="Отображать строку «В том числе монтаж: X руб.» в коммерческом предложении"/>
+
                 <!-- Цветность -->
                 <TextBlock Text="ЦВЕТ" Style="{DynamicResource SectionLabel}" Margin="{DynamicResource Gap.NavSection}"/>
                 <StackPanel Orientation="Horizontal">

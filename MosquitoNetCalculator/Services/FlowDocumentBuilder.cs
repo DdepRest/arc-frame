@@ -28,7 +28,8 @@ namespace MosquitoNetCalculator.Services
             List<OrderItem> items,
             ClientInfo clientInfo,
             double totalAmount,
-            string amountInWords)
+            string amountInWords,
+            PrintSettings? settings = null)
         {
             var valid = (items ?? new List<OrderItem>())
                 .Where(i => !string.IsNullOrEmpty(i.Name) && i.Total > 0)
@@ -36,6 +37,11 @@ namespace MosquitoNetCalculator.Services
             if (valid.Count == 0) return null;
 
             clientInfo ??= new ClientInfo();
+
+            double installationTotal = valid.Sum(i => i.InstallationLaborTotal);
+            bool showInstallation = settings != null
+                ? settings.ShowInstallationInTotal
+                : AppSettingsService.LoadShowInstallationInTotal();
 
             var doc = new FlowDocument
             {
@@ -61,7 +67,7 @@ namespace MosquitoNetCalculator.Services
             doc.Blocks.Add(BuildContractLine(clientInfo));
             doc.Blocks.Add(BuildClientBlock(clientInfo));
             doc.Blocks.Add(BuildItemsTable(valid));
-            doc.Blocks.Add(BuildTotalSection(totalAmount, amountInWords, clientInfo));
+            doc.Blocks.Add(BuildTotalSection(totalAmount, amountInWords, clientInfo, showInstallation, installationTotal));
             BuildAdditionalKpSection(doc, clientInfo, totalAmount);
             BuildNotesSection(doc, clientInfo);
             doc.Blocks.Add(BuildTermsAndSignatureFigure());
@@ -483,7 +489,12 @@ namespace MosquitoNetCalculator.Services
                 HorizontalAlignment.Right,
                 availableWidthDip);
 
-        private static Section BuildTotalSection(double totalAmount, string amountInWords, ClientInfo clientInfo)
+        private static Section BuildTotalSection(
+            double totalAmount,
+            string amountInWords,
+            ClientInfo clientInfo,
+            bool showInstallation = true,
+            double installationTotal = 0)
         {
             bool isSubtotal = clientInfo != null &&
                               clientInfo.HasAdditionalKp &&
@@ -522,6 +533,23 @@ namespace MosquitoNetCalculator.Services
             };
             pw.Inlines.Add(new Run(amountInWords ?? ""));
             sec.Blocks.Add(pw);
+
+            if (showInstallation && installationTotal > 0)
+            {
+                var pi = new Paragraph
+                {
+                    TextAlignment = TextAlignment.Right,
+                    Margin = new Thickness(0, 3, DrawingColumnWidthDip, 0),
+                    FontSize = 9.0 * 96.0 / 72.0,
+                    Foreground = new SolidColorBrush(Color.FromRgb(0x33, 0x33, 0x33))
+                };
+                pi.Inlines.Add(new Run($"В том числе монтаж: {MoneyFormatService.Format(installationTotal)} руб.")
+                {
+                    FontWeight = FontWeights.SemiBold
+                });
+                sec.Blocks.Add(pi);
+            }
+
             return sec;
         }
 

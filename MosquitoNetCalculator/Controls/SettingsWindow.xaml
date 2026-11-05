@@ -1,0 +1,510 @@
+﻿<Window x:Class="MosquitoNetCalculator.Controls.SettingsWindow"
+        Style="{DynamicResource Window.Shared}"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Настройки программы"
+        Width="640" Height="700"
+        WindowStartupLocation="CenterOwner"
+        WindowStyle="None"
+        AllowsTransparency="True"
+        Background="Transparent"
+        ResizeMode="NoResize"
+        ShowInTaskbar="False"
+        KeyDown="Window_KeyDown"
+        AllowDrop="True"
+        DragOver="Window_DragOver"
+        Drop="Window_Drop">
+
+    <Grid>
+        <!-- Shadow border -->
+        <Border Background="{DynamicResource Surface}"
+                BorderBrush="{DynamicResource Border}" BorderThickness="1"
+                CornerRadius="{DynamicResource Radius.Lg}" Margin="{DynamicResource Gap.Window}">
+            <Border.Effect>
+                <DropShadowEffect BlurRadius="22" ShadowDepth="3" Opacity="0.28"
+                                  Color="{DynamicResource ShadowColor}"/>
+            </Border.Effect>
+        </Border>
+
+        <!-- Main container -->
+        <Border Background="{DynamicResource Surface}"
+                BorderBrush="{DynamicResource Border}"
+                BorderThickness="1"
+                CornerRadius="{DynamicResource Radius.Lg}"
+                Margin="{DynamicResource Gap.Window}"
+                SnapsToDevicePixels="True">
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="50"/>  <!-- Header -->
+                    <RowDefinition Height="*"/>   <!-- Scrollable Settings -->
+                    <RowDefinition Height="Auto"/>  <!-- Footer -->
+                </Grid.RowDefinitions>
+
+                <!-- Header Bar -->
+                <Border Grid.Row="0"
+                        Background="{DynamicResource HeaderBg}"
+                        CornerRadius="{DynamicResource Radius.CardHeader}"
+                        Padding="{DynamicResource Pad.TitleBarH}"
+                        MouseLeftButtonDown="Header_MouseLeftButtonDown">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+                        <Border Grid.Column="0" Width="28" Height="28" CornerRadius="{DynamicResource Radius.Md}"
+                                Background="{DynamicResource Accent}" VerticalAlignment="Center">
+                            <TextBlock Text="&#xE713;" FontFamily="{DynamicResource Font.Icon}" FontSize="{StaticResource Type.BodyLg}"
+                                       Foreground="{DynamicResource OnAccent}"
+                                       HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <StackPanel Grid.Column="1" VerticalAlignment="Center" Margin="{DynamicResource Gap.LeftLg}">
+                            <TextBlock Text="Настройки программы" FontSize="{StaticResource Type.Subtitle}" FontWeight="SemiBold"
+                                       Foreground="{DynamicResource TextPrimary}"/>
+                            <TextBlock Text="Параметры монтажа, интерфейс, реквизиты и сервисы" FontSize="{StaticResource Type.Caption}"
+                                       Foreground="{DynamicResource TextMuted}" Margin="{DynamicResource Gap.MicroV}"/>
+                        </StackPanel>
+                        <!-- Close button with explicit 28x28 size and proper alignment -->
+                        <Button Grid.Column="2" x:Name="BtnClose"
+                                Width="28" Height="28"
+                                Style="{DynamicResource DialogCloseButton}"
+                                VerticalAlignment="Center" HorizontalAlignment="Right"
+                                Click="BtnClose_Click"
+                                ToolTip="Закрыть настройки (Esc)">
+                            <TextBlock Text="&#xE8BB;" FontFamily="{DynamicResource Font.Icon}" FontSize="{StaticResource Type.Caption}"/>
+                        </Button>
+                    </Grid>
+                </Border>
+
+                <!-- Scrollable Form Content -->
+                <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled"
+                              Padding="{DynamicResource Pad.DialogBody}">
+                    <StackPanel>
+                        <!-- ================= SECTION 1: МОНТАЖ ================= -->
+                        <Border Background="{DynamicResource SurfaceVariant}"
+                                BorderBrush="{DynamicResource Border}" BorderThickness="1"
+                                CornerRadius="{DynamicResource Radius.Card}" Padding="{DynamicResource Pad.Section}" Margin="{DynamicResource Gap.Block10}">
+                            <StackPanel>
+                                <StackPanel Orientation="Horizontal" Margin="{DynamicResource Gap.Block10}">
+                                    <TextBlock Text="&#xE815;" FontFamily="{DynamicResource Font.Icon}"
+                                               FontSize="{StaticResource Type.Title}" Foreground="{DynamicResource AccentText}"
+                                               VerticalAlignment="Center" Margin="{DynamicResource Gap.Inline}"/>
+                                    <TextBlock Text="Монтаж и позиции" FontSize="{StaticResource Type.BodyLg}" FontWeight="SemiBold"
+                                               Foreground="{DynamicResource TextPrimary}" VerticalAlignment="Center"/>
+                                </StackPanel>
+
+                                <!-- Setting 1.1: Ask on add -->
+                                <Grid Margin="{DynamicResource Gap.Block10}">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                    </Grid.ColumnDefinitions>
+                                    <StackPanel Grid.Column="0" VerticalAlignment="Center">
+                                        <TextBlock Text="Запрашивать тип монтажа при добавлении изделия"
+                                                   FontSize="{StaticResource Type.Body}" FontWeight="Medium"
+                                                   Foreground="{DynamicResource TextPrimary}"/>
+                                        <TextBlock Text="Показывать окно выбора (Учтён / В конструкцию / Без монтажа)"
+                                                   FontSize="{StaticResource Type.Caption}" Foreground="{DynamicResource TextMuted}"/>
+                                    </StackPanel>
+                                    <Border Grid.Column="1" Width="20" Height="20" CornerRadius="{DynamicResource Radius.Capsule}"
+                                            Background="{DynamicResource AppBg}" BorderBrush="{DynamicResource Border}"
+                                            BorderThickness="1" Margin="{DynamicResource Gap.InlineLg}" VerticalAlignment="Center"
+                                            ToolTipService.InitialShowDelay="50"
+                                            ToolTip="Если переключатель включён, при каждом добавлении изделия с опцией монтажа (Anwis, двери, сетки, отливы) откроется диалог с выбором режима монтажа.">
+                                        <TextBlock Text="?" FontWeight="Bold" FontSize="{StaticResource Type.Caption}" Foreground="{DynamicResource TextMuted}"
+                                                   HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                    </Border>
+                                    <CheckBox Grid.Column="2" x:Name="ChkAskInstallationOnAdd" VerticalAlignment="Center"
+                                              Click="ChkAskInstallationOnAdd_Click"/>
+                                </Grid>
+
+                                <Separator Background="{DynamicResource Border}" Height="1" Margin="{DynamicResource Gap.Block10}"/>
+
+                                <!-- Setting 1.2: Default installation mode -->
+                                <Grid Margin="{DynamicResource Gap.TableRowSm}">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                    </Grid.ColumnDefinitions>
+                                    <StackPanel Grid.Column="0" VerticalAlignment="Center">
+                                        <TextBlock Text="Стандартный монтаж по умолчанию"
+                                                   FontSize="{StaticResource Type.Body}" FontWeight="Medium"
+                                                   Foreground="{DynamicResource TextPrimary}"/>
+                                        <TextBlock Text="Применяется по умолчанию для новых позиций с монтажом"
+                                                   FontSize="{StaticResource Type.Caption}" Foreground="{DynamicResource TextMuted}"/>
+                                    </StackPanel>
+                                    <Border Grid.Column="1" Width="20" Height="20" CornerRadius="{DynamicResource Radius.Capsule}"
+                                            Background="{DynamicResource AppBg}" BorderBrush="{DynamicResource Border}"
+                                            BorderThickness="1" Margin="{DynamicResource Gap.InlineLg}" VerticalAlignment="Center"
+                                            ToolTipService.InitialShowDelay="50"
+                                            ToolTip="Режим монтажа для новых позиций. Если окно выбора включено — этот режим будет предвыбран в нём. Если окно выключено — этот режим применится сразу автоматически.">
+                                        <TextBlock Text="?" FontWeight="Bold" FontSize="{StaticResource Type.Caption}" Foreground="{DynamicResource TextMuted}"
+                                                   HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                    </Border>
+                                    <ComboBox Grid.Column="2" x:Name="CmbDefaultInstallationMode" Width="180" Height="28"
+                                              SelectionChanged="CmbDefaultInstallationMode_SelectionChanged">
+                                        <ComboBoxItem Content="По товару (каталог)"/>
+                                        <ComboBoxItem Content="Учтён (Монтаж включён)"/>
+                                        <ComboBoxItem Content="В конструкцию"/>
+                                        <ComboBoxItem Content="Без монтажа"/>
+                                    </ComboBox>
+                                </Grid>
+
+                                <Separator Background="{DynamicResource Border}" Height="1" Margin="{DynamicResource Gap.Block10}"/>
+
+                                <!-- Setting 1.3: Show installation in printed КП -->
+                                <Grid Margin="{DynamicResource Gap.TableRowSm}">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                    </Grid.ColumnDefinitions>
+                                    <StackPanel Grid.Column="0" VerticalAlignment="Center">
+                                        <TextBlock Text="Строка «В том числе монтаж» в КП"
+                                                   FontSize="{StaticResource Type.Body}" FontWeight="Medium"
+                                                   Foreground="{DynamicResource TextPrimary}"/>
+                                        <TextBlock Text="Отображать сумму монтажа отдельной строкой под ИТОГО на печатном КП"
+                                                   FontSize="{StaticResource Type.Caption}" Foreground="{DynamicResource TextMuted}"/>
+                                    </StackPanel>
+                                    <Border Grid.Column="1" Width="20" Height="20" CornerRadius="{DynamicResource Radius.Capsule}"
+                                            Background="{DynamicResource AppBg}" BorderBrush="{DynamicResource Border}"
+                                            BorderThickness="1" Margin="{DynamicResource Gap.InlineLg}" VerticalAlignment="Center"
+                                            ToolTipService.InitialShowDelay="50"
+                                            ToolTip="Если выключено, на печатном КП и при экспорте в PDF строка «в том числе монтаж: X руб.» не будет выводиться.">
+                                        <TextBlock Text="?" FontWeight="Bold" FontSize="{StaticResource Type.Caption}" Foreground="{DynamicResource TextMuted}"
+                                                   HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                    </Border>
+                                    <CheckBox Grid.Column="2" x:Name="ChkShowInstallationInTotal" VerticalAlignment="Center"
+                                              Click="ChkShowInstallationInTotal_Click"/>
+                                </Grid>
+                            </StackPanel>
+                        </Border>
+
+                        <!-- ================= SECTION 2: ОФОРМЛЕНИЕ ================= -->
+                        <Border Background="{DynamicResource SurfaceVariant}"
+                                BorderBrush="{DynamicResource Border}" BorderThickness="1"
+                                CornerRadius="{DynamicResource Radius.Card}" Padding="{DynamicResource Pad.Section}" Margin="{DynamicResource Gap.Block10}">
+                            <StackPanel>
+                                <StackPanel Orientation="Horizontal" Margin="{DynamicResource Gap.Block10}">
+                                    <TextBlock Text="&#xE790;" FontFamily="{DynamicResource Font.Icon}"
+                                               FontSize="{StaticResource Type.Title}" Foreground="{DynamicResource AccentText}"
+                                               VerticalAlignment="Center" Margin="{DynamicResource Gap.Inline}"/>
+                                    <TextBlock Text="Оформление и тема" FontSize="{StaticResource Type.BodyLg}" FontWeight="SemiBold"
+                                               Foreground="{DynamicResource TextPrimary}" VerticalAlignment="Center"/>
+                                </StackPanel>
+
+                                <Grid Margin="{DynamicResource Gap.TableRowSm}">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                    </Grid.ColumnDefinitions>
+                                    <StackPanel Grid.Column="0" VerticalAlignment="Center">
+                                        <TextBlock Text="Тёмная тема оформления"
+                                                   FontSize="{StaticResource Type.Body}" FontWeight="Medium"
+                                                   Foreground="{DynamicResource TextPrimary}"/>
+                                        <TextBlock Text="Переключение цветовой палитры приложения"
+                                                   FontSize="{StaticResource Type.Caption}" Foreground="{DynamicResource TextMuted}"/>
+                                    </StackPanel>
+                                    <Border Grid.Column="1" Width="20" Height="20" CornerRadius="{DynamicResource Radius.Capsule}"
+                                            Background="{DynamicResource AppBg}" BorderBrush="{DynamicResource Border}"
+                                            BorderThickness="1" Margin="{DynamicResource Gap.InlineLg}" VerticalAlignment="Center"
+                                            ToolTipService.InitialShowDelay="50"
+                                            ToolTip="Переключает приложение между светлой и комфортной тёмной темой.">
+                                        <TextBlock Text="?" FontWeight="Bold" FontSize="{StaticResource Type.Caption}" Foreground="{DynamicResource TextMuted}"
+                                                   HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                    </Border>
+                                    <CheckBox Grid.Column="2" x:Name="ChkDarkTheme" VerticalAlignment="Center"
+                                              Click="ChkDarkTheme_Click"/>
+                                </Grid>
+                            </StackPanel>
+                        </Border>
+
+                        <!-- ================= SECTION 3: РЕКВИЗИТЫ ================= -->
+                        <Border Background="{DynamicResource SurfaceVariant}"
+                                BorderBrush="{DynamicResource Border}" BorderThickness="1"
+                                CornerRadius="{DynamicResource Radius.Card}" Padding="{DynamicResource Pad.Section}" Margin="{DynamicResource Gap.Block10}">
+                            <StackPanel>
+                                <StackPanel Orientation="Horizontal" Margin="{DynamicResource Gap.Block10}">
+                                    <TextBlock Text="&#xE8A5;" FontFamily="{DynamicResource Font.Icon}"
+                                               FontSize="{StaticResource Type.Title}" Foreground="{DynamicResource AccentText}"
+                                               VerticalAlignment="Center" Margin="{DynamicResource Gap.Inline}"/>
+                                    <TextBlock Text="Организация и документы" FontSize="{StaticResource Type.BodyLg}" FontWeight="SemiBold"
+                                               Foreground="{DynamicResource TextPrimary}" VerticalAlignment="Center"/>
+                                </StackPanel>
+
+                                <!-- Setting 3.1: Contract prefix -->
+                                <Grid Margin="{DynamicResource Gap.Block}">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                    </Grid.ColumnDefinitions>
+                                    <StackPanel Grid.Column="0" VerticalAlignment="Center">
+                                        <TextBlock Text="Префикс договоров"
+                                                   FontSize="{StaticResource Type.Body}" FontWeight="Medium"
+                                                   Foreground="{DynamicResource TextPrimary}"/>
+                                        <TextBlock Text="Автоматически добавляется перед номером нового заказа"
+                                                   FontSize="{StaticResource Type.Caption}" Foreground="{DynamicResource TextMuted}"/>
+                                    </StackPanel>
+                                    <Border Grid.Column="1" Width="20" Height="20" CornerRadius="{DynamicResource Radius.Capsule}"
+                                            Background="{DynamicResource AppBg}" BorderBrush="{DynamicResource Border}"
+                                            BorderThickness="1" Margin="{DynamicResource Gap.InlineLg}" VerticalAlignment="Center"
+                                            ToolTipService.InitialShowDelay="50"
+                                            ToolTip="Символ или код филиала, подставляемый перед номером договора (например: 1-, 2-, СПБ-).">
+                                        <TextBlock Text="?" FontWeight="Bold" FontSize="{StaticResource Type.Caption}" Foreground="{DynamicResource TextMuted}"
+                                                   HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                    </Border>
+                                    <TextBox Grid.Column="2" x:Name="TxtContractPrefix" Width="90" Height="28"
+                                             TextAlignment="Center" VerticalContentAlignment="Center"
+                                             LostFocus="TxtContractPrefix_LostFocus"/>
+                                </Grid>
+
+                                <Separator Background="{DynamicResource Border}" Height="1" Margin="{DynamicResource Gap.Block}"/>
+
+                                <!-- Setting 3.2: Location name -->
+                                <Grid Margin="{DynamicResource Gap.TableRowSm}">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                    </Grid.ColumnDefinitions>
+                                    <StackPanel Grid.Column="0" VerticalAlignment="Center">
+                                        <TextBlock Text="Точка установки (филиал)"
+                                                   FontSize="{StaticResource Type.Body}" FontWeight="Medium"
+                                                   Foreground="{DynamicResource TextPrimary}"/>
+                                        <TextBlock x:Name="TxtLocationNameDisplay" Text="Не указана"
+                                                   FontSize="{StaticResource Type.Caption}" Foreground="{DynamicResource AccentText}"/>
+                                    </StackPanel>
+                                    <Border Grid.Column="1" Width="20" Height="20" CornerRadius="{DynamicResource Radius.Capsule}"
+                                            Background="{DynamicResource AppBg}" BorderBrush="{DynamicResource Border}"
+                                            BorderThickness="1" Margin="{DynamicResource Gap.InlineLg}" VerticalAlignment="Center"
+                                            ToolTipService.InitialShowDelay="50"
+                                            ToolTip="Название филиала или адрес точки продаж, отображаемый в шапке печатных форм.">
+                                        <TextBlock Text="?" FontWeight="Bold" FontSize="{StaticResource Type.Caption}" Foreground="{DynamicResource TextMuted}"
+                                                   HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                    </Border>
+                                    <Button Grid.Column="2" x:Name="BtnChangeLocation"
+                                            Style="{DynamicResource DialogOutlineButton}"
+                                            Content="Изменить…" Height="28"
+                                            Click="BtnChangeLocation_Click"/>
+                                </Grid>
+                            </StackPanel>
+                        </Border>
+
+                        <!-- ================= SECTION 4: ПЕЧАТЬ ================= -->
+                        <Border Background="{DynamicResource SurfaceVariant}"
+                                BorderBrush="{DynamicResource Border}" BorderThickness="1"
+                                CornerRadius="{DynamicResource Radius.Card}" Padding="{DynamicResource Pad.Section}" Margin="{DynamicResource Gap.Block10}">
+                            <StackPanel>
+                                <StackPanel Orientation="Horizontal" Margin="{DynamicResource Gap.Block10}">
+                                    <TextBlock Text="&#xE749;" FontFamily="{DynamicResource Font.Icon}"
+                                               FontSize="{StaticResource Type.Title}" Foreground="{DynamicResource AccentText}"
+                                               VerticalAlignment="Center" Margin="{DynamicResource Gap.Inline}"/>
+                                    <TextBlock Text="Печать и экспорт КП" FontSize="{StaticResource Type.BodyLg}" FontWeight="SemiBold"
+                                               Foreground="{DynamicResource TextPrimary}" VerticalAlignment="Center"/>
+                                </StackPanel>
+
+                                <Grid Margin="{DynamicResource Gap.TableRowSm}">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                    </Grid.ColumnDefinitions>
+                                    <StackPanel Grid.Column="0" VerticalAlignment="Center">
+                                        <TextBlock Text="Добавлять копию в производство"
+                                                   FontSize="{StaticResource Type.Body}" FontWeight="Medium"
+                                                   Foreground="{DynamicResource TextPrimary}"/>
+                                        <TextBlock Text="Автоматически печатать второй экземпляр для цеха"
+                                                   FontSize="{StaticResource Type.Caption}" Foreground="{DynamicResource TextMuted}"/>
+                                    </StackPanel>
+                                    <Border Grid.Column="1" Width="20" Height="20" CornerRadius="{DynamicResource Radius.Capsule}"
+                                            Background="{DynamicResource AppBg}" BorderBrush="{DynamicResource Border}"
+                                            BorderThickness="1" Margin="{DynamicResource Gap.InlineLg}" VerticalAlignment="Center"
+                                            ToolTipService.InitialShowDelay="50"
+                                            ToolTip="При отправке КП на печать или в PDF формирует дополнительную копию документа для производственного цеха.">
+                                        <TextBlock Text="?" FontWeight="Bold" FontSize="{StaticResource Type.Caption}" Foreground="{DynamicResource TextMuted}"
+                                                   HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                    </Border>
+                                    <CheckBox Grid.Column="2" x:Name="ChkIncludeProductionCopy" VerticalAlignment="Center"
+                                              Click="ChkIncludeProductionCopy_Click"/>
+                                </Grid>
+                            </StackPanel>
+                        </Border>
+
+                        <!-- ================= SECTION 5: СИСТЕМА ================= -->
+                        <Border Background="{DynamicResource SurfaceVariant}"
+                                BorderBrush="{DynamicResource Border}" BorderThickness="1"
+                                CornerRadius="{DynamicResource Radius.Card}" Padding="{DynamicResource Pad.Section}" Margin="{DynamicResource Gap.BlockSm}">
+                            <StackPanel>
+                                <StackPanel Orientation="Horizontal" Margin="{DynamicResource Gap.Block10}">
+                                    <TextBlock Text="&#xE90F;" FontFamily="{DynamicResource Font.Icon}"
+                                               FontSize="{StaticResource Type.Title}" Foreground="{DynamicResource AccentText}"
+                                               VerticalAlignment="Center" Margin="{DynamicResource Gap.Inline}"/>
+                                    <TextBlock Text="Инструменты и сервисы" FontSize="{StaticResource Type.BodyLg}" FontWeight="SemiBold"
+                                               Foreground="{DynamicResource TextPrimary}" VerticalAlignment="Center"/>
+                                </StackPanel>
+
+                                                                <!-- Order Backups Section -->
+                                <Grid Margin="{DynamicResource Gap.Block}">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                    </Grid.ColumnDefinitions>
+                                    <StackPanel Grid.Column="0" VerticalAlignment="Center">
+                                        <TextBlock Text="Резервное копирование базы заказов"
+                                                   FontSize="{StaticResource Type.Body}" FontWeight="Medium"
+                                                   Foreground="{DynamicResource TextPrimary}"/>
+                                        <TextBlock x:Name="TxtBackupInfo" Text="Авто-резервирование: активно (14 дней). Ежедневный ZIP-архив."
+                                                   FontSize="{StaticResource Type.Caption}" Foreground="{DynamicResource TextMuted}"/>
+                                    </StackPanel>
+                                    <Button Grid.Column="1" Style="{DynamicResource GhostButton}"
+                                            Margin="{DynamicResource Gap.Inline}" Click="BtnCreateBackup_Click"
+                                            ToolTip="Создать резервную копию базы заказов прямо сейчас">
+                                        <StackPanel Orientation="Horizontal">
+                                            <TextBlock Style="{DynamicResource FluentIconButton}" Text="&#xE72C;" Margin="{DynamicResource Gap.InlineSm}"/>
+                                            <TextBlock Text="Создать копию"/>
+                                        </StackPanel>
+                                    </Button>
+                                    <Button Grid.Column="2" Style="{DynamicResource GhostButton}"
+                                            Click="BtnOpenBackups_Click"
+                                            ToolTip="Открыть папку с резервными архивами в проводнике">
+                                        <StackPanel Orientation="Horizontal">
+                                            <TextBlock Style="{DynamicResource FluentIconButton}" Text="&#xE8DA;" Margin="{DynamicResource Gap.InlineSm}"/>
+                                            <TextBlock Text="Открыть папку"/>
+                                        </StackPanel>
+                                    </Button>
+                                </Grid>
+<!-- AI Assistant Key Dialog -->
+                                <Grid Margin="{DynamicResource Gap.Block}">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                    </Grid.ColumnDefinitions>
+                                    <StackPanel Grid.Column="0" VerticalAlignment="Center">
+                                        <TextBlock Text="AI Ассистент — Настройка API"
+                                                   FontSize="{StaticResource Type.Body}" FontWeight="Medium"
+                                                   Foreground="{DynamicResource TextPrimary}"/>
+                                        <TextBlock Text="Провайдеры, ключи OpenAI, Gemini, Nvidia, DeepSeek"
+                                                   FontSize="{StaticResource Type.Caption}" Foreground="{DynamicResource TextMuted}"/>
+                                    </StackPanel>
+                                    <Border Grid.Column="1" Width="20" Height="20" CornerRadius="{DynamicResource Radius.Capsule}"
+                                            Background="{DynamicResource AppBg}" BorderBrush="{DynamicResource Border}"
+                                            BorderThickness="1" Margin="{DynamicResource Gap.InlineLg}" VerticalAlignment="Center"
+                                            ToolTipService.InitialShowDelay="50"
+                                            ToolTip="Окно управления ключами доступа к языковым моделям и выбора активного провайдера.">
+                                        <TextBlock Text="?" FontWeight="Bold" FontSize="{StaticResource Type.Caption}" Foreground="{DynamicResource TextMuted}"
+                                                   HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                    </Border>
+                                    <Button Grid.Column="2" x:Name="BtnAiSettings"
+                                            Style="{DynamicResource DialogOutlineButton}"
+                                            Content="Настроить AI…" Height="28"
+                                            Click="BtnAiSettings_Click"/>
+                                </Grid>
+
+                                <Separator Background="{DynamicResource Border}" Height="1" Margin="{DynamicResource Gap.Block}"/>
+
+                                <!-- Admin Panel (No '?' icon, updated text) -->
+                                <Grid Margin="{DynamicResource Gap.Block}">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                    </Grid.ColumnDefinitions>
+                                    <StackPanel Grid.Column="0" VerticalAlignment="Center">
+                                        <TextBlock Text="Панель администратора (Защищено паролем)"
+                                                   FontSize="{StaticResource Type.Body}" FontWeight="Medium"
+                                                   Foreground="{DynamicResource TextPrimary}"/>
+                                    </StackPanel>
+                                    <Button Grid.Column="1" x:Name="BtnAdminPanel"
+                                            Style="{DynamicResource DialogOutlineButton}"
+                                            Content="Открыть…" Height="28" Margin="{DynamicResource Gap.LeftLg}"
+                                            Click="BtnAdminPanel_Click"/>
+                                </Grid>
+
+                                <Separator Background="{DynamicResource Border}" Height="1" Margin="{DynamicResource Gap.Block}"/>
+
+                                <!-- Updates check -->
+                                <Grid Margin="{DynamicResource Gap.TableRowSm}">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                    </Grid.ColumnDefinitions>
+                                    <StackPanel Grid.Column="0" VerticalAlignment="Center">
+                                        <TextBlock Text="Обновления программы"
+                                                   FontSize="{StaticResource Type.Body}" FontWeight="Medium"
+                                                   Foreground="{DynamicResource TextPrimary}"/>
+                                        <TextBlock x:Name="TxtVersionStatus" Text="Проверка актуальности версии"
+                                                   FontSize="{StaticResource Type.Caption}" Foreground="{DynamicResource TextMuted}"/>
+                                    </StackPanel>
+                                    <Border Grid.Column="1" Width="20" Height="20" CornerRadius="{DynamicResource Radius.Capsule}"
+                                            Background="{DynamicResource AppBg}" BorderBrush="{DynamicResource Border}"
+                                            BorderThickness="1" Margin="{DynamicResource Gap.InlineLg}" VerticalAlignment="Center"
+                                            ToolTipService.InitialShowDelay="50"
+                                            ToolTip="Проверяет наличие свежих релизов и обновлений на сервере.">
+                                        <TextBlock Text="?" FontWeight="Bold" FontSize="{StaticResource Type.Caption}" Foreground="{DynamicResource TextMuted}"
+                                                   HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                    </Border>
+                                    <Button Grid.Column="2" x:Name="BtnCheckUpdates"
+                                            Style="{DynamicResource DialogOutlineButton}"
+                                            Content="Проверить…" Height="28"
+                                            Click="BtnCheckUpdates_Click"/>
+                                </Grid>
+
+                                <Separator Background="{DynamicResource Border}" Height="1" Margin="{DynamicResource Gap.Block}"/>
+
+                                <!-- Manual archive update -->
+                                <Grid Margin="{DynamicResource Gap.TableRowSm}">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                    </Grid.ColumnDefinitions>
+                                    <StackPanel Grid.Column="0" VerticalAlignment="Center">
+                                        <TextBlock Text="Установка из архива"
+                                                   FontSize="{StaticResource Type.Body}" FontWeight="Medium"
+                                                   Foreground="{DynamicResource TextPrimary}"/>
+                                        <TextBlock Text="Ручное обновление из локального ZIP-архива"
+                                                   FontSize="{StaticResource Type.Caption}" Foreground="{DynamicResource TextMuted}"/>
+                                    </StackPanel>
+                                    <Border Grid.Column="1" Width="20" Height="20" CornerRadius="{DynamicResource Radius.Capsule}"
+                                            Background="{DynamicResource AppBg}" BorderBrush="{DynamicResource Border}"
+                                            BorderThickness="1" Margin="{DynamicResource Gap.InlineLg}" VerticalAlignment="Center"
+                                            ToolTipService.InitialShowDelay="50"
+                                            ToolTip="Позволяет обновить программу из ZIP-архива, скачанного с GitHub Releases или переданного вручную. Программа проверит файлы, установит новую версию и автоматически перезапустится.">
+                                        <TextBlock Text="?" FontWeight="Bold" FontSize="{StaticResource Type.Caption}" Foreground="{DynamicResource TextMuted}"
+                                                   HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                    </Border>
+                                    <Button Grid.Column="2" x:Name="BtnManualUpdate"
+                                            Style="{DynamicResource DialogOutlineButton}"
+                                            Content="Выбрать архив…"
+                                            Height="28"
+                                            Click="BtnManualUpdate_Click"/>
+                                </Grid>
+                            </StackPanel>
+                        </Border>
+                    </StackPanel>
+                </ScrollViewer>
+
+                <!-- Footer with styled DialogPrimaryButton -->
+                <Border Grid.Row="2" Background="{DynamicResource AppBg}"
+                        CornerRadius="{DynamicResource Radius.CardFooter}" Padding="{DynamicResource Pad.DialogBody}"
+                        BorderBrush="{DynamicResource Border}" BorderThickness="0,1,0,0">
+                    <Grid>
+                        <TextBlock Text="Все настройки сохраняются автоматически"
+                                   FontSize="{StaticResource Type.Caption}"
+                                   Foreground="{DynamicResource TextMuted}"
+                                   VerticalAlignment="Center"/>
+                        <Button Content="Готово" Width="96" Height="30"
+                                HorizontalAlignment="Right" Click="BtnClose_Click"
+                                Style="{DynamicResource DialogPrimaryButton}"/>
+                    </Grid>
+                </Border>
+            </Grid>
+        </Border>
+    </Grid>
+</Window>

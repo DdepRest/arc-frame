@@ -308,7 +308,7 @@ namespace MosquitoNetCalculator.Controls
                     includeProductionCopy,
                     out _cleanPageCount,
                     out _productionStartPage,
-                    documentFactory: () => _printService.BuildFlowDocument(_items, _clientInfo, _totalAmount, _amountInWords));
+                    documentFactory: () => _printService.BuildFlowDocument(_items, _clientInfo, _totalAmount, _amountInWords, _settings));
                 DocumentReader.Document = _previewDocument;
                 _previewBuiltFrom = _document;
                 _previewBuiltWithProduction = includeProductionCopy;
@@ -557,6 +557,7 @@ namespace MosquitoNetCalculator.Controls
             CopiesControl.Value = Math.Max(0, _settings.Copies);
             ProductionCopyCheck.IsChecked = _settings.IncludeProductionCopy;
             CollatedCheck.IsChecked = _settings.Collated;
+            ShowInstallationCheck.IsChecked = _settings.ShowInstallationInTotal;
             ColorBtn.IsChecked = _settings.Color;
             BwBtn.IsChecked = !_settings.Color;
 
@@ -597,6 +598,7 @@ namespace MosquitoNetCalculator.Controls
             if (!target.IncludeProductionCopy)
                 target.Copies = Math.Max(1, target.Copies);
             target.Collated = CollatedCheck.IsChecked == true;
+            target.ShowInstallationInTotal = ShowInstallationCheck.IsChecked == true;
             target.Color = ColorBtn.IsChecked == true;
 
             if (PageModeRange.IsChecked == true)
@@ -630,6 +632,24 @@ namespace MosquitoNetCalculator.Controls
             // Пересборка предпросмотра: чистое КП идёт первым, копия
             // «В производство» — вторым блоком (как реально печатается).
             RebuildPreviewDocument(ProductionCopyCheck.IsChecked == true);
+        }
+
+        private void ShowInstallationCheck_Changed(object sender, RoutedEventArgs e)
+        {
+            if (_settings == null) return;
+            _settings.ShowInstallationInTotal = ShowInstallationCheck.IsChecked == true;
+            AppSettingsService.SaveShowInstallationInTotal(_settings.ShowInstallationInTotal);
+
+            if (_items != null && _items.Count > 0 && _clientInfo != null && _printService != null)
+            {
+                var newDoc = _printService.BuildFlowDocument(_items, _clientInfo, _totalAmount, _amountInWords, _settings);
+                if (newDoc != null)
+                {
+                    _document = newDoc;
+                    _previewBuiltFrom = null;
+                    RebuildPreviewDocument(_settings.IncludeProductionCopy);
+                }
+            }
         }
 
         /// <summary>

@@ -1,0 +1,101 @@
+<UserControl x:Class="MosquitoNetCalculator.Controls.DraftRecoveryBanner"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             mc:Ignorable="d"
+             Visibility="Collapsed"
+             d:DesignWidth="1100" d:DesignHeight="42">
+    <!-- Excel-style document recovery banner:
+         Soft warm warning background, clear action buttons, and ability to
+         restore all, select individual items, postpone, or discard. -->
+    <Border x:Name="BannerBorder"
+            Background="{DynamicResource SectionBg}"
+            BorderBrush="{DynamicResource Border}"
+            BorderThickness="0,0,0,1"
+            Padding="{DynamicResource Pad.Control}">
+        <Grid>
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="Auto"/>
+            </Grid.ColumnDefinitions>
+
+            <!-- Excel-like Recovery Icon + Title -->
+            <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center">
+                <Border Width="24" Height="24" CornerRadius="{DynamicResource Radius.Sm}"
+                        Background="{DynamicResource AccentLight}"
+                        VerticalAlignment="Center" Margin="{DynamicResource Gap.Inline}">
+                    <TextBlock Text="&#xE81C;" FontFamily="{DynamicResource Font.Icon}"
+                               FontSize="{StaticResource Type.Caption}" Foreground="{DynamicResource AccentText}"
+                               HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                </Border>
+                <TextBlock Text="Восстановление черновика"
+                           FontWeight="SemiBold" FontSize="{StaticResource Type.Body}"
+                           Foreground="{DynamicResource TextPrimary}"
+                           VerticalAlignment="Center" Margin="{DynamicResource Gap.Inline}"/>
+            </StackPanel>
+
+            <!-- Description (Items count, Client, Date) -->
+            <TextBlock x:Name="TxtDraftInfo" Grid.Column="1"
+                       Text="от --:-- (позиций: 0, клиент: Новый заказ)"
+                       FontSize="{StaticResource Type.Body}"
+                       Foreground="{DynamicResource TextSecondary}"
+                       TextTrimming="CharacterEllipsis"
+                       VerticalAlignment="Center" Margin="{DynamicResource Gap.InlineLg}"/>
+
+            <!-- Action buttons -->
+            <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center">
+                <!-- Primary Action: Восстановить всё -->
+                <Button x:Name="BtnRestore"
+                        Style="{DynamicResource PrimaryButton}"
+                        Height="28" Padding="{DynamicResource Pad.InputH}"
+                        Margin="{DynamicResource Gap.InlineSm}"
+                        Click="BtnRestore_Click"
+                        ToolTip="Восстановить весь найденный черновик в текущий расчёт">
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock Style="{DynamicResource FluentIconButton}" Text="&#xE777;" Margin="{DynamicResource Gap.InlineSm}"/>
+                        <TextBlock Text="Восстановить всё" FontWeight="Medium"/>
+                    </StackPanel>
+                </Button>
+
+                <!-- Selective Action: Выбрать позиции… -->
+                <Button x:Name="BtnSelective"
+                        Style="{DynamicResource GhostButton}"
+                        Height="28" Padding="{DynamicResource Pad.InputH}"
+                        Margin="{DynamicResource Gap.InlineSm}"
+                        Click="BtnSelective_Click"
+                        ToolTip="Выбрать отдельные позиции из черновика для вставки">
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock Style="{DynamicResource FluentIconButton}" Text="&#xE8FD;" Margin="{DynamicResource Gap.InlineSm}"/>
+                        <TextBlock Text="Выбрать позиции…" FontWeight="Normal"/>
+                    </StackPanel>
+                </Button>
+
+                <!-- Dismiss Action: Удалить черновик -->
+                <Button x:Name="BtnDiscard"
+                        Style="{DynamicResource GhostButton}"
+                        Height="28" Padding="{DynamicResource Pad.InputH}"
+                        Margin="{DynamicResource Gap.InlineSm}"
+                        Click="BtnDiscard_Click"
+                        ToolTip="Удалить несохранённый черновик с диска">
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock Style="{DynamicResource FluentIconButton}"
+                                   FontFamily="{DynamicResource Font.Icon}"
+                                   Text="&#xE74D;" Margin="{DynamicResource Gap.InlineSm}"/>
+                        <TextBlock Text="Удалить черновик" Foreground="{DynamicResource TextMuted}"/>
+                    </StackPanel>
+                </Button>
+
+                <!-- Close [X] -->
+                <Button x:Name="BtnClose"
+                        Style="{DynamicResource DialogCloseButton}"
+                        Width="28" Height="28" Margin="{DynamicResource Gap.LeftSm}"
+                        Click="BtnClose_Click"
+                        ToolTip="Скрыть (отложить)">
+                    <TextBlock Text="&#xE8BB;" FontFamily="{DynamicResource Font.Icon}" FontSize="{StaticResource Type.Caption}"/>
+                </Button>
+            </StackPanel>
+        </Grid>
+    </Border>
+</UserControl>

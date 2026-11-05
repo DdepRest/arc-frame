@@ -30,7 +30,13 @@ namespace MosquitoNetCalculator.Converters
         {
             foreach (var column in grid.Columns)
             {
-                column.HeaderTemplate = Template;
+                // Применяем капс-шаблон только к строковым заголовкам.
+                // Колонки со сложным визуальным содержимым (например, иконка чекбокса в колонке 0)
+                // сохраняют свой собственный шаблон/содержимое без искажения в SYS...
+                if (column.Header is string)
+                {
+                    column.HeaderTemplate = Template;
+                }
             }
         }
 

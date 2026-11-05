@@ -81,9 +81,25 @@ namespace MosquitoNetCalculator.Models
         {
             get
             {
-                var colors = Services.AiFactsProvider.GetColorsFor(ItemType);
-                if (colors.Count == 0) return new[] { "Белый", "Коричневый", "Антрацит" };
-                return colors;
+                var known = Services.AiFactsProvider.GetColorsFor(ItemType);
+                var list = new List<string>(known.Count > 0 ? known : new[] { "Белый", "Коричневый", "Антрацит" });
+                if (!string.IsNullOrWhiteSpace(Params.Color))
+                {
+                    bool exists = false;
+                    for (int i = 0; i < list.Count; i++)
+                    {
+                        if (string.Equals(list[i], Params.Color, StringComparison.OrdinalIgnoreCase))
+                        {
+                            exists = true;
+                            break;
+                        }
+                    }
+                    if (!exists)
+                    {
+                        list.Add(Params.Color!);
+                    }
+                }
+                return list;
             }
         }
 
@@ -169,8 +185,7 @@ namespace MosquitoNetCalculator.Models
             }
         }
 
-        public bool IsAnwis => (Params.Type?.Contains("anwis", StringComparison.OrdinalIgnoreCase) ?? false) ||
-                               (Params.Type?.Contains("анвис", StringComparison.OrdinalIgnoreCase) ?? false);
+        public bool IsAnwis => Services.AnwisSizeService.SupportsSizeMode(Params.Type);
 
         public bool HasDiscrepancy
         {
@@ -254,6 +269,13 @@ namespace MosquitoNetCalculator.Models
         private void OnPropertyChanged([CallerMemberName] string? name = null)
             => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
 
+        /// <summary>Swaps width and height for this step.</summary>
+        public void SwapDimensions()
+        {
+            if (Width <= 0 && Height <= 0) return;
+            (Width, Height) = (Height, Width);
+        }
+
         /// <summary>Converts the step back to an executable command.</summary>
         public AiCommand ToCommand() => new() { Type = CommandType, Params = Params };
     }
@@ -267,7 +289,7 @@ namespace MosquitoNetCalculator.Models
     ///
     /// Runtime-only UI state: never persisted into chat history.
     /// </summary>
-    public sealed class AiActionPlan
+    public sealed class AiActionPlan : INotifyPropertyChanged
     {
         public string PlanId { get; } = Guid.NewGuid().ToString("N");
 
@@ -288,6 +310,44 @@ namespace MosquitoNetCalculator.Models
         public AiPlanMode Mode { get; init; } = AiPlanMode.Plan;
 
         public ObservableCollection<AiActionStep> Steps { get; } = new();
+
+        public AiActionPlan()
+        {
+            Steps.CollectionChanged += (_, _) => OnPropertyChanged(nameof(HasItemStepsWithDimensions));
+        }
+
+        /// <summary>True when any step is an item step with dimensions.</summary>
+        public bool HasItemStepsWithDimensions
+        {
+            get
+            {
+                for (int i = 0; i < Steps.Count; i++)
+                {
+                    var s = Steps[i];
+                    if (s.IsItemStep && (s.Width > 0 || s.Height > 0))
+                        return true;
+                }
+                return false;
+            }
+        }
+
+        /// <summary>Swaps width and height on all item steps in this plan.</summary>
+        public void SwapAllDimensions()
+        {
+            for (int i = 0; i < Steps.Count; i++)
+            {
+                var s = Steps[i];
+                if (s.IsItemStep)
+                {
+                    s.SwapDimensions();
+                }
+            }
+            OnPropertyChanged(nameof(HasItemStepsWithDimensions));
+        }
+
+        public event PropertyChangedEventHandler? PropertyChanged;
+        private void OnPropertyChanged([CallerMemberName] string? name = null)
+            => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
 
         public void RemoveStep(AiActionStep step)
         {

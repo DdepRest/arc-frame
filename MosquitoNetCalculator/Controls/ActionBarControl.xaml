@@ -11,7 +11,8 @@
 
         <!-- Split-button: main print segment with rounded left corners, flat right -->
         <Style x:Key="PrintMainButton" TargetType="Button" BasedOn="{StaticResource PrimaryButton}">
-            <Setter Property="BorderThickness" Value="1,1,0,1"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="BorderBrush" Value="Transparent"/>
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="Button">
@@ -21,18 +22,16 @@
                                 BorderThickness="{TemplateBinding BorderThickness}"
                                 CornerRadius="{DynamicResource Radius.ButtonLeft}"
                                 Padding="{TemplateBinding Padding}"
-                                SnapsToDevicePixels="True">
+                                SnapsToDevicePixels="False">
                             <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"
                                               RecognizesAccessKey="True"/>
                         </Border>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsMouseOver" Value="True">
                                 <Setter TargetName="Bd" Property="Background" Value="{DynamicResource AccentHover}"/>
-                                <Setter TargetName="Bd" Property="BorderBrush" Value="{DynamicResource AccentPress}"/>
                             </Trigger>
                             <Trigger Property="IsPressed" Value="True">
                                 <Setter TargetName="Bd" Property="Background" Value="{DynamicResource AccentPress}"/>
-                                <Setter TargetName="Bd" Property="BorderBrush" Value="{DynamicResource AccentPress}"/>
                             </Trigger>
                             <Trigger Property="IsEnabled" Value="False">
                                 <Setter TargetName="Bd" Property="Opacity" Value="0.38"/>
@@ -47,7 +46,7 @@
         <Style x:Key="PrintCaretButton" TargetType="Button">
             <Setter Property="Background" Value="{DynamicResource Accent}"/>
             <Setter Property="Foreground" Value="{DynamicResource OnAccentPrimary}"/>
-            <Setter Property="BorderThickness" Value="1,1,1,1"/>
+            <Setter Property="BorderThickness" Value="1,0,0,0"/>
             <Setter Property="BorderBrush" Value="{DynamicResource AccentHover}"/>
             <Setter Property="Cursor" Value="Hand"/>
             <Setter Property="Padding" Value="{DynamicResource Pad.ControlSmH}"/>
@@ -61,7 +60,7 @@
                                 BorderThickness="{TemplateBinding BorderThickness}"
                                 CornerRadius="{DynamicResource Radius.ButtonRight}"
                                 Padding="{TemplateBinding Padding}"
-                                SnapsToDevicePixels="True">
+                                SnapsToDevicePixels="False">
                             <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"
                                               RecognizesAccessKey="True"/>
                         </Border>
@@ -148,7 +147,7 @@
                            PopupAnimation="Fade" StaysOpen="False">
                         <Border Background="{DynamicResource Surface}" BorderBrush="{DynamicResource Border}"
                                 BorderThickness="1" CornerRadius="{DynamicResource Radius.Md}" Padding="{DynamicResource Pad.MenuPopup}" Margin="{DynamicResource Gap.MenuPopup}"
-                                SnapsToDevicePixels="True" MinWidth="270">
+                                MinWidth="270">
                             <StackPanel>
                                 <!-- v3.50.3: меню каретки — БЕЗ предпросмотра; предпросмотр
                                      теперь главный сегмент кнопки. Каждый пункт — прямой

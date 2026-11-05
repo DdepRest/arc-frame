@@ -34,6 +34,14 @@ namespace MosquitoNetCalculator.Controls
             AnwisSizeMode currentMode,
             Action<AnwisSizeMode> onModeSelected,
             FrameworkElement placementTarget,
+            Style? menuStyle)
+            => Build(currentMode, onModeSelected, placementTarget, null, menuStyle);
+
+        public static ContextMenu Build(
+            AnwisSizeMode currentMode,
+            Action<AnwisSizeMode> onModeSelected,
+            FrameworkElement placementTarget,
+            string? productName = null,
             Style? menuStyle = null)
         {
             var menu = new ContextMenu
@@ -41,12 +49,31 @@ namespace MosquitoNetCalculator.Controls
                 Style = menuStyle ?? (Style)Application.Current.FindResource(typeof(ContextMenu))
             };
 
-            foreach (AnwisSizeMode mode in Enum.GetValues<AnwisSizeMode>())
+            var modes = AnwisSizeService.GetAvailableModes(productName);
+            if (modes.Count == 0)
+                modes = Enum.GetValues<AnwisSizeMode>();
+
+            foreach (AnwisSizeMode mode in modes)
             {
+                string header;
+                string hint;
+                if (AnwisSizeService.IsTwoModeScreen(productName))
+                {
+                    header = mode == AnwisSizeMode.РазмерПроёма
+                        ? "Размер проёма — W+40 / H+40"
+                        : "Габаритный — без изменений";
+                    hint = AnwisSizeService.GetToolTip(productName, mode);
+                }
+                else
+                {
+                    header = $"{AnwisSizeService.FullLabels[mode]} — {AnwisSizeService.Descriptions[mode]}";
+                    hint = AnwisSizeService.HintTexts.TryGetValue(mode, out var h) ? h : "";
+                }
+
                 var mi = new MenuItem
                 {
-                    Header = $"{AnwisSizeService.FullLabels[mode]} — {AnwisSizeService.Descriptions[mode]}",
-                    ToolTip = AnwisSizeService.HintTexts.TryGetValue(mode, out var hint) ? hint : "",
+                    Header = header,
+                    ToolTip = hint,
                     IsCheckable = true,
                     IsChecked = currentMode == mode
                 };

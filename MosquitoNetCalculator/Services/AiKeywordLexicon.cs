@@ -181,9 +181,18 @@ namespace MosquitoNetCalculator.Services
         /// is filled with the readable form.
         /// </summary>
         public static bool ShouldHideOcrFromBubble(string? text)
-            => !string.IsNullOrWhiteSpace(text)
-               && Regex.IsMatch(text, @"\d{6,}", RegexOptions.CultureInvariant)
-               && !DimensionRegex.IsMatch(text);
+        {
+            if (string.IsNullOrWhiteSpace(text)) return false;
+            if (DimensionRegex.IsMatch(text)) return false;
+
+            if (Regex.IsMatch(text, @"\d{6,}", RegexOptions.CultureInvariant)) return true;
+
+            // Digit soup: multiple disconnected 3+ digit numbers without any dimension separator
+            var digitRuns = Regex.Matches(text, @"\b\d{3,}\b", RegexOptions.CultureInvariant);
+            if (digitRuns.Count >= 3) return true;
+
+            return false;
+        }
 
         /// <summary>A standalone number right before the size («4 739х1116» → 4).</summary>
         public static readonly Regex LeadingNumberRegex = new(

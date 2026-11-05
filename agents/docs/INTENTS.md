@@ -22,6 +22,8 @@
 | Устройство числится в двух офисах (дубль привязки) | `Services/OfficeReportService.cs` (`ComputeOldOfficeFilesToDelete` — атомарный переезд в `SendReportAsync`; `ComputeStaleBindingsToDelete` — самоисцеление при рефреше панели), `Services/AppSettingsService.cs` (`LastReportedPrefix`), `Controls/AdminPanelControl.Actions.cs` (ручная отвязка) |
 | Поиск/фильтр/группировка в админ-панели | `Controls/AdminPanelControl.Filter.cs` (чистая логика `OfficeRowFilter` + ICollectionView) |
 | Изменить хранилище отчётов офисов (gist, токен) | `Services/OfficeReportService.cs` (GistId/CompiledToken), `Services/AppSettingsService.cs` (OfficeReportToken/GistId в settings.json), `agents/docs/CURRENT_STATE.md` |
+| Периодически сверять местоположение (неверный офис у сотрудников), не надоедая | `Services/LocationCheckService.cs` (пороги 30/3 дня, `ShouldPrompt`/`BuildAdminHint`), `Controls/LocationCheckBanner.xaml(.cs)` (полоса-напоминание), `MainWindow.LocationCheck.cs` (проводка, отметки), `Services/AppSettingsService.cs` (`LocationConfirmedAtUtc`/`LocationSnoozeUntilUtc`), `WelcomeWindow.xaml.cs` (выбор локации = подтверждение) |
+| Увидеть в админ-панели, у кого локация давно не подтверждена | `Models/OfficeReport.cs` (`locationConfirmedAt` в отчёте), `Services/OfficeReportService.cs` (`SendReportAsync`), `Services/OfficeStatusCalculator.cs` (поле в `OfficeDeviceRow`), `Models/OfficeDeviceRow.cs` (`LocationCheckHint`), `Controls/AdminPanelControl.xaml` (чип устройства) |
 | Изменить стили кнопок/карточек/таблиц | `Themes/*Styles.xaml`, `GOTCHAS.md#7`, `GOTCHAS.md#19` (DynamicResource в Binding.Converter запрещён) |
 
 ## Товары / добавление
@@ -144,6 +146,26 @@ Intake phase: user describes intent
 - `INTENTS.md` — this file
 
 ## Last verified
+2026-11-05 (v3.57.0) — обновлено содержимое (sync-last-verified.ps1, CONTROL#13).
+
+2026-11-04 (v3.57.0) — обновлено содержимое (sync-last-verified.ps1, CONTROL#13).
+
+2026-11-03 (v3.57.0) — обновлено содержимое (sync-last-verified.ps1, CONTROL#13).
+
+2026-11-02 (v3.57.0) — обновлено содержимое (sync-last-verified.ps1, CONTROL#13).
+
+2026-11-01 (v3.57.0) — обновлено содержимое (sync-last-verified.ps1, CONTROL#13).
+
+2026-10-30 (v3.57.0) — обновлено содержимое (sync-last-verified.ps1, CONTROL#13).
+
+2026-10-29 (v3.56.0) — обновлено содержимое (sync-last-verified.ps1, CONTROL#13).
+
+2026-10-26 (v3.56.0) — обновлено содержимое (sync-last-verified.ps1, CONTROL#13).
+
+2026-10-25 — добавлен mapping «периодически сверять местоположение» → `LocationCheckService` / `LocationCheckBanner` / `MainWindow.LocationCheck.cs`.
+
+2026-10-23 (v3.56.0) — auto-synced from csproj (sync-version.ps1, CONTROL#13).
+
 2026-10-18 (v3.55.1) — обновлено содержимое (sync-last-verified.ps1, CONTROL#13).
 
 2026-10-12 (v3.55.1) — обновлено содержимое (sync-last-verified.ps1, CONTROL#13).

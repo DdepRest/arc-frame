@@ -30,7 +30,7 @@ namespace MosquitoNetCalculator.Services
         /// - Короб: все 4 цвета, 2150/2650
         /// - ПСУЛ: без цвета, 100 руб/м.п.
         /// - Работа/Брус/Пояс/Доставка: без цвета, цена вручную (0)
-        /// - Уплотнение: Серый/Чёрный 250 руб
+        /// - Уплотнение: Серый/Чёрный 100 руб
         /// - Откос (calc): без цвета, цена вручную (0)
         /// - Работа за откос (calc): без цвета, цена вручную (0)
         /// - Сэндвич: без цвета, 1200 руб/м² (для откосов)
@@ -95,9 +95,9 @@ namespace MosquitoNetCalculator.Services
             // Материал — без цвета, цена и количество вручную (количество опционально)
             new PriceItem { Name = "Материал", Color = "", Price = 0 },
 
-            // Уплотнение — 2 цвета, 250 руб/м.п.
-            new PriceItem { Name = "Уплотнение", Color = "Серый", Price = 250 },
-            new PriceItem { Name = "Уплотнение", Color = "Чёрный", Price = 250 },
+            // Уплотнение — 2 цвета, 100 руб/м.п.
+            new PriceItem { Name = "Уплотнение", Color = "Серый", Price = 100 },
+            new PriceItem { Name = "Уплотнение", Color = "Чёрный", Price = 100 },
 
             // Откос (расчётный) — без цвета, цена вручную
             new PriceItem { Name = "Откос", Color = "", Price = 0 },
@@ -309,6 +309,16 @@ namespace MosquitoNetCalculator.Services
                 if (p.Name == "Пеноплекс (откос)" && string.IsNullOrEmpty(p.Color) && p.Price == 450)
                 {
                     p.Price = 500;
+                    changed = true;
+                }
+            }
+
+                        // ── Migration 8: update "Уплотнение" old default price 250 → 100 ──
+            foreach (var p in prices)
+            {
+                if (p.Name == "Уплотнение" && p.Price == 250)
+                {
+                    p.Price = 100;
                     changed = true;
                 }
             }

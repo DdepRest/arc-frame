@@ -183,7 +183,9 @@
                 <StackPanel Grid.Row="0" Grid.Column="2" x:Name="PanelCustomName" Visibility="Collapsed">
                     <TextBlock Text="Название" Style="{DynamicResource FieldLabel}"/>
                     <TextBox x:Name="TxtCustomName" Style="{DynamicResource QuickInput}"
-                             HorizontalContentAlignment="Left"/>
+                             HorizontalContentAlignment="Left"
+                             GotFocus="QuickField_GotFocus"
+                             KeyDown="QuickField_KeyDown"/>
                 </StackPanel>
                 <StackPanel Grid.Row="0" Grid.Column="2" x:Name="PanelColor">
                     <TextBlock Text="Цвет" Style="{DynamicResource FieldLabel}"/>
@@ -214,7 +216,7 @@
                 <!-- Group 3: Qty & Price -->
                 <StackPanel Grid.Row="0" Grid.Column="8">
                     <TextBlock Text="Кол-во" Style="{DynamicResource FieldLabel}"/>
-                    <TextBox x:Name="TxtQuickQty" Text="1" Style="{DynamicResource QuickInput}"
+                    <TextBox x:Name="TxtQuickQty" Text="" Style="{DynamicResource QuickInput}"
                              TextChanged="QuickField_TextChanged"
                              KeyDown="QuickField_KeyDown"
                              GotFocus="SelectAll_OnFocus"

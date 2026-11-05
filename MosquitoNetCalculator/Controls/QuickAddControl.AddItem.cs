@@ -75,7 +75,7 @@ namespace MosquitoNetCalculator.Controls
 
             TxtQuickWidth.Text = s.Width;
             TxtQuickHeight.Text = s.Height;
-            TxtQuickQty.Text = string.IsNullOrWhiteSpace(s.Qty) ? "1" : s.Qty;
+            TxtQuickQty.Text = s.Qty ?? string.Empty;
             if (!string.IsNullOrWhiteSpace(s.Price))
                 TxtQuickPrice.Text = s.Price;
             if (s.Anticat && TbtnAnticat.Visibility == Visibility.Visible)
@@ -115,8 +115,9 @@ namespace MosquitoNetCalculator.Controls
                 ClearRequiredHighlight(TxtCustomName);
 
                 bool isCustom = IsCustomProductType(type);
-                PanelColor.Visibility = isCustom ? Visibility.Collapsed : Visibility.Visible;
-                PanelCustomName.Visibility = isCustom ? Visibility.Visible : Visibility.Collapsed;
+                bool isLabor = type == "Работа";
+                PanelColor.Visibility = (isCustom || isLabor) ? Visibility.Collapsed : Visibility.Visible;
+                PanelCustomName.Visibility = (isCustom || isLabor) ? Visibility.Visible : Visibility.Collapsed;
 
                 if (isCustom)
                 {
@@ -136,6 +137,23 @@ namespace MosquitoNetCalculator.Controls
                     UpdateAnticatToggleState(type, TbtnAnticat);
                     if (string.IsNullOrWhiteSpace(TxtCustomName.Text))
                         TxtCustomName.Focus();
+                }
+                else if (isLabor)
+                {
+                    CmbQuickColor.IsEnabled = false;
+                    CmbQuickColor.Items.Clear();
+                    TxtCustomName.Text = "Работа";
+                    TxtQuickPrice.Text = string.Empty;
+                    TxtQuickWidth.Text = string.Empty;
+                    TxtQuickHeight.Text = string.Empty;
+                    TxtQuickWidth.IsEnabled = false;
+                    TxtQuickHeight.IsEnabled = false;
+                    TxtQuickQty.IsEnabled = true;
+                    TxtQuickQty.Text = string.Empty;
+                    TxtQuickPrice.IsEnabled = true;
+                    ToggleAnwisModePanel(false);
+                    UpdateAnticatToggleState(type, TbtnAnticat);
+                    TxtQuickPrice.Focus();
                 }
                 else
                 {
@@ -177,11 +195,11 @@ namespace MosquitoNetCalculator.Controls
                         ClearRequiredHighlight(TxtQuickHeight);
                     }
                     if (isAmountOnly)
-                        TxtQuickQty.Text = "1";
-                    else if (isQuantityOptional && TxtQuickQty.Text == "1")
-                    {
-                        TxtQuickQty.Text = "1";
-                    }
+                        TxtQuickQty.Text = string.Empty;
+                    else if (isQuantityOptional)
+                        TxtQuickQty.Text = string.Empty;
+                    else
+                        TxtQuickQty.Text = string.Empty;
 
                     // v3.35.0: show/hide Anwis mode pill panel with animation.
                     ToggleAnwisModePanel(AnwisSizeService.IsApplicable(type));
@@ -320,9 +338,7 @@ namespace MosquitoNetCalculator.Controls
             string? color = CmbQuickColor.SelectedItem as string;
             TryParseQuickNumber(TxtQuickWidth.Text, out double width);
             TryParseQuickNumber(TxtQuickHeight.Text, out double height);
-            double qty;
-            TryParseQuickNumber(TxtQuickQty.Text, out qty);
-            if (qty <= 0) qty = 1;
+            TryParseQuickNumber(TxtQuickQty.Text, out double qty);
             // v3.48.1 bugfix: use ResolveQuickAddPrice instead of bare TryParseQuickNumber
             // so catalog-priced products get a fallback to the catalog price when the
             // field is blank/unparseable («2 150,00» under non-ru culture → 0).
@@ -334,7 +350,7 @@ namespace MosquitoNetCalculator.Controls
             // here we only apply the outcome — toast + red border (Tag="Invalid"
             // → QuickInput template trigger) + focus, so the cause is visible
             // at the field, not only in the toast.
-            switch (GetRequiredFieldError(type, width, height, price))
+            switch (GetRequiredFieldError(type, width, height, price, qty))
             {
                 case QuickAddFieldError.Width:
                     ToastService.ShowToast("Укажите ширину.", ToastType.Info);
@@ -342,6 +358,9 @@ namespace MosquitoNetCalculator.Controls
                 case QuickAddFieldError.Height:
                     ToastService.ShowToast("Укажите высоту.", ToastType.Info);
                     SetRequiredHighlight(TxtQuickHeight); TxtQuickHeight.Focus(); return;
+                case QuickAddFieldError.Quantity:
+                    ToastService.ShowToast("Укажите количество (больше 0).", ToastType.Info);
+                    SetRequiredHighlight(TxtQuickQty); TxtQuickQty.Focus(); return;
                 case QuickAddFieldError.Price:
                     ToastService.ShowToast("Укажите сумму.", ToastType.Info);
                     TxtQuickPrice.Focus();
@@ -349,28 +368,79 @@ namespace MosquitoNetCalculator.Controls
                     return;
             }
 
-            var item2 = mw.CalcVM.AddItem(type, color ?? string.Empty, (int)width, (int)height, qty, price, SelectedAnwisMode);
-            if (item2 != null)
+            string effectiveType = (type == "Работа" && !string.IsNullOrWhiteSpace(TxtCustomName.Text))
+                ? TxtCustomName.Text.Trim()
+                : type;
+            // When qty <= 0 (empty):
+            // For custom product, labor (Работа), or optional quantity products (Материал),
+            // a blank quantity means the row represents a single piece/lump-sum without explicit quantity column.
+            double actualQty = (qty <= 0 && (type == "Работа" || OrderItem.OptionalQuantityProducts.Contains(type) || OrderItem.AmountOnlyProducts.Contains(type)))
+                ? 0
+                : qty;
+
+            var item2 = mw.CalcVM.CreateItem(effectiveType, color ?? string.Empty, (int)width, (int)height, actualQty, price, SelectedAnwisMode, isLabor: (type == "Работа"));
+            if (item2 == null) return;
+            if (type == "Работа") item2.IsLabor = true;
+
+            bool isAnticatApplicable = OrderItem.AnticatApplicableProducts.Contains(type);
+            item2.IsAnticat = isAnticatApplicable && TbtnAnticat.IsChecked == true;
+
+            double defaultPrice = mw.PricesVM.GetPrice(type, color ?? string.Empty);
+            if (item2.IsAnticat)
+                defaultPrice += OrderItem.AnticatSurcharge;
+            item2.SetDefaultPrice(defaultPrice);
+
+            if (ProductCatalog.IsInstallationApplicable(type))
             {
-                bool isAnticatApplicable = OrderItem.AnticatApplicableProducts.Contains(type);
-                item2.IsAnticat = isAnticatApplicable && TbtnAnticat.IsChecked == true;
+                if (AppSettingsService.LoadAskInstallationModeOnAdd())
+                {
+                    var dlg = new InstallationChoiceDialog(item2, item2.InstallationMode) { Owner = mw };
+                    bool? dialogResult;
+                    using (mw.DimmerScope())
+                    {
+                        dialogResult = dlg.ShowDialog();
+                    }
+                    if (dialogResult != true)
+                    {
+                        return;
+                    }
 
-                // Record the catalog price (with surcharge if applicable) so
-                // IsPriceOverridden can detect manual edits correctly.
-                double defaultPrice = mw.PricesVM.GetPrice(type, color ?? string.Empty);
-                if (item2.IsAnticat)
-                    defaultPrice += OrderItem.AnticatSurcharge;
-                item2.SetDefaultPrice(defaultPrice);
-
-                item2.RecalculateRequested += mw.RecalculateAndUpdateTotal;
-                mw.RecalculateAndUpdateTotal();
-                mw.MarkDirty();
-                StoreLastAdded();   // v3.50: «Повторить» snapshot (fields still filled)
+                    item2.InstallationMode = dlg.SelectedMode;
+                    if (dlg.CustomAmount.HasValue)
+                    {
+                        item2.SetCurrentInstallationAmount(dlg.CustomAmount.Value);
+                    }
+                    if (dlg.RememberAsDefault)
+                    {
+                        AppSettingsService.SaveDefaultInstallationMode(dlg.SelectedMode);
+                        AppSettingsService.SaveAskInstallationModeOnAdd(false);
+                        ToastService.ShowToast("Режим сохранён по умолчанию. Окно выбора отключено (можно включить в Настройках).", ToastType.Info);
+                    }
+                }
+                else
+                {
+                    int defMode = AppSettingsService.LoadDefaultInstallationMode();
+                    if (defMode is 0 or 1 or 2)
+                    {
+                        item2.InstallationMode = defMode;
+                    }
+                }
             }
 
+            mw.CalcVM.AddItem(item2);
+            item2.RecalculateRequested += mw.RecalculateAndUpdateTotal;
+            mw.RecalculateAndUpdateTotal();
+            mw.MarkDirty();
+            StoreLastAdded();
+
+            if (type == "Работа")
+            {
+                TxtCustomName.Text = "Работа";
+                TxtQuickPrice.Text = string.Empty;
+            }
             TxtQuickWidth.Text = string.Empty;
             TxtQuickHeight.Text = string.Empty;
-            TxtQuickQty.Text = "1";
+            TxtQuickQty.Text = string.Empty;
             TbtnAnticat.IsChecked = false;
             // For manual-piece products the user just entered a custom price — keep it.
             // For catalog-priced products, refresh the field with the latest catalog price.
@@ -420,7 +490,7 @@ namespace MosquitoNetCalculator.Controls
         }
 
         /// <summary>Which required QuickAdd field blocked the add attempt.</summary>
-        internal enum QuickAddFieldError { None, Width, Height, Price }
+        internal enum QuickAddFieldError { None, Width, Height, Price, Quantity }
 
         /// <summary>
         /// UX#2 (restored): required-field decision matrix for QuickAdd, extracted
@@ -434,7 +504,7 @@ namespace MosquitoNetCalculator.Controls
         ///   4. everything else needs width and height &gt; 0.
         /// </summary>
         internal static QuickAddFieldError GetRequiredFieldError(
-            string type, double width, double height, double price)
+            string type, double width, double height, double price, double qty = 1)
         {
             // «Свой товар» never reaches this matrix in QuickAddItem (early
             // return — its dims/qty/price are optional by design); encoding the
@@ -449,6 +519,16 @@ namespace MosquitoNetCalculator.Controls
                 if (height <= 0 && type != "ПСУЛ" && type != "Уплотнение")
                     return QuickAddFieldError.Height;
             }
+
+            // Quantity is required for all products EXCEPT manual labor/services
+            // («Работа») and optional-quantity products («Материал», «Брус», «Пояс», «Доставка»),
+            // where quantity column can be left empty/unspecified.
+            bool isQuantityOptional = type == "Работа"
+                || OrderItem.OptionalQuantityProducts.Contains(type)
+                || OrderItem.AmountOnlyProducts.Contains(type);
+
+            if (!isQuantityOptional && qty <= 0)
+                return QuickAddFieldError.Quantity;
 
             // Price (sum) is mandatory for optional-quantity products where the
             // user explicitly enters the total. Without it the row has no meaning.

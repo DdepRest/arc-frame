@@ -459,8 +459,9 @@ namespace MosquitoNetCalculator.Tests.Models
             };
             // CV = 0.3 м², Total = 0.3 × 3000 × 3 = 2700 ₽
             Assert.Equal(2700, item.Total, 2);
-            // Post-fix: 2700 − 500×3 = 1200 ₽  (was 1300 ₽ pre-fix)
-            Assert.Equal(1200, item.TotalWithDeduction, 2);
+            // Mode 2 for nets has default 0 surcharge: TotalWithDeduction == Total
+            Assert.Equal(2700, item.TotalWithDeduction, 2);
+            Assert.Equal(600, item.InstallationLaborTotal);
         }
 
         [Fact]
@@ -530,9 +531,10 @@ namespace MosquitoNetCalculator.Tests.Models
                 Price = 1800,
                 InstallationMode = 2
             };
-            // CV = 0.4, Total = 2160, TotalWithDeduction = 2160 − 1500 = 660
+            // CV = 0.4, Total = 2160, Mode 2 default 0 deduction: TotalWithDeduction = 2160
             Assert.Equal(2160, item.Total, 2);
-            Assert.Equal(660, item.TotalWithDeduction, 2);
+            Assert.Equal(2160, item.TotalWithDeduction, 2);
+            Assert.Equal(600, item.InstallationLaborTotal);
         }
 
         [Theory]
@@ -548,7 +550,8 @@ namespace MosquitoNetCalculator.Tests.Models
                 Width = 300, Height = 1000,
                 Quantity = qty,
                 Price = 3000,
-                InstallationMode = 2
+                InstallationMode = 2,
+                InstallationSurcharge = -500
             };
             // CV = 0.3 м², Total = 0.3 × 3000 × qty = 900 × qty
             // deduction = 500 × qty
@@ -702,7 +705,8 @@ namespace MosquitoNetCalculator.Tests.Models
                 Width = 100, Height = 100,
                 Quantity = 50,
                 Price = 100,
-                InstallationMode = 2
+                InstallationMode = 2,
+                InstallationSurcharge = -500
             };
             // CV = 0.01, Total = 0.01*100*50 = 50 ₽, deduction = 500*50 = 25000 ₽ → clamp to 0
             Assert.Equal(0, item.TotalWithDeduction, 2);
@@ -742,9 +746,7 @@ namespace MosquitoNetCalculator.Tests.Models
         [Theory]
         [InlineData("Короб")]
         [InlineData("ПСУЛ")]
-        [InlineData("Работа")]
-        [InlineData("Доставка")]
-        [InlineData("Уплотнение")]
+                [InlineData("Доставка")]
         public void IsInstallationApplicable_OtherProducts_False(string name)
         {
             Assert.False(new OrderItem { Name = name }.IsInstallationApplicable);
@@ -1027,10 +1029,10 @@ namespace MosquitoNetCalculator.Tests.Models
         }
 
         [Theory]
-        [InlineData("Anwis", -500)]
-        [InlineData("На навесах", -500)]
-        [InlineData("Оконная на метал. крепл.", -500)]
-        [InlineData("Дверная сетка", -600)]
+        [InlineData("Anwis", 0)]
+        [InlineData("На навесах", 0)]
+        [InlineData("Оконная на метал. крепл.", 0)]
+        [InlineData("Дверная сетка", 0)]
         [InlineData("Отлив", 0)]
         [InlineData("Козырёк", 0)]
         public void GetDefaultInstallationSurcharge_ReturnsExpected(string name, double expected)
@@ -1437,8 +1439,7 @@ namespace MosquitoNetCalculator.Tests.Models
         }
 
         [Theory]
-        [InlineData("Работа")]
-        [InlineData("Брус")]
+                [InlineData("Брус")]
         [InlineData("Anwis")]
         [InlineData("Отлив")]
         public void IsQuantityOptional_False_ForOtherProducts(string name)
@@ -1564,8 +1565,7 @@ namespace MosquitoNetCalculator.Tests.Models
         }
 
         [Theory]
-        [InlineData("Работа")]
-        [InlineData("Откос")]
+                [InlineData("Откос")]
         [InlineData("Работа за откос")]
         [InlineData("Anwis")]
         [InlineData("Отлив")]
@@ -1604,8 +1604,7 @@ namespace MosquitoNetCalculator.Tests.Models
         }
 
         [Theory]
-        [InlineData("Работа")]
-        [InlineData("Брус")]
+                [InlineData("Брус")]
         [InlineData("Пояс")]
         [InlineData("Доставка")]
         public void IsWidthOnly_False_ForOtherManualPieceProducts(string name)
@@ -1784,8 +1783,7 @@ namespace MosquitoNetCalculator.Tests.Models
         [Theory]
         [InlineData("Откос")]
         [InlineData("Работа за откос")]
-        [InlineData("Работа")]
-        [InlineData("Пояс")]
+                [InlineData("Пояс")]
         public void Размеры_NonAnwis_DisplayEqualsCalc(string name)
         {
             // For non-Anwis products, Отображение and Расчёт layers are identity.
@@ -1982,7 +1980,7 @@ namespace MosquitoNetCalculator.Tests.Models
         [Fact]
         public void InstallationToolTip_Mode2_ShowsPerPieceSuffix()
         {
-            var item = new OrderItem { Name = "Anwis", InstallationMode = 2 };
+            var item = new OrderItem { Name = "Anwis", InstallationMode = 2, InstallationSurcharge = -500 };
             Assert.Contains("руб./шт.", item.InstallationToolTip);
             Assert.Contains("× Кол-во", item.InstallationToolTip);
         }
@@ -2528,7 +2526,7 @@ namespace MosquitoNetCalculator.Tests.Models
         {
             // v3.46.1: signed convention — Дверная сетка default is −600.
             Assert.Equal(-600, OrderItem.GetDefaultInstallationDeduction("Дверная сетка"));
-            Assert.Equal(-600, OrderItem.GetDefaultInstallationSurcharge("Дверная сетка"));
+            Assert.Equal(0, OrderItem.GetDefaultInstallationSurcharge("Дверная сетка"));
         }
 
         [Fact]
@@ -2536,7 +2534,7 @@ namespace MosquitoNetCalculator.Tests.Models
         {
             // v3.46.1: signed convention — defaults are negative (subtract).
             Assert.Equal(-500, OrderItem.GetDefaultInstallationDeduction("Anwis"));
-            Assert.Equal(-500, OrderItem.GetDefaultInstallationSurcharge("На навесах"));
+            Assert.Equal(0, OrderItem.GetDefaultInstallationSurcharge("На навесах"));
         }
 
         // ─── Clone with AnwisSizeMode test ───────────────────
@@ -2646,6 +2644,112 @@ namespace MosquitoNetCalculator.Tests.Models
             Assert.Equal(1000, item.Размеры.ШиринаОтображение);
             Assert.Equal(1002, item.Размеры.ШиринаРасчёт);
             Assert.Equal(982, item.Размеры.ШиринаЗавод);
+        }
+
+        // ────────────────────────────────────────────────────────────────
+        // Two-mode screens: «На навесах» and «Оконная на метал. крепл.»
+        // ────────────────────────────────────────────────────────────────
+
+        [Fact]
+        public void OrderItem_НаНавесах_Проём_CalculatesWithPlus40_AndTriggersImpost()
+        {
+            var item = new OrderItem
+            {
+                Name = "На навесах",
+                Price = 2900,
+                Quantity = 1
+            };
+            item.SetAnwisModeQuiet(AnwisSizeMode.РазмерПроёма);
+            item.ШиринаВвод = 400;
+            item.ВысотаВвод = 1500;
+
+            // Сырой ввод виден в свойствах ввода
+            Assert.Equal(400, item.ШиринаВвод);
+            Assert.Equal(1500, item.ВысотаВвод);
+
+            // Хранимые размеры получают +40 мм
+            Assert.Equal(440, item.Width);
+            Assert.Equal(1540, item.Height);
+
+            // Площадь по расчётным размерам: 440 * 1540 / 1_000_000 = 0.6776 -> 0.678 м²
+            Assert.Equal(0.678, item.CalculatedValue);
+
+            // Импост срабатывает по расчётной высоте (1540 >= 1500)
+            Assert.True(item.HasImpost);
+            // Сумма импоста: 440 / 1000 * 200 = 88 ₽
+            Assert.Equal(88.0, item.ImpostSurchargeTotal);
+
+            // Итоговая сумма: 0.678 * 2900 + 88 = 1966.20 + 88 = 2054.20 ₽
+            Assert.Equal(2054.20, item.Total);
+        }
+
+        [Fact]
+        public void OrderItem_НаНавесах_Габарит_CalculatesIdentity()
+        {
+            var item = new OrderItem
+            {
+                Name = "На навесах",
+                Price = 2900,
+                Quantity = 1
+            };
+            item.SetAnwisModeQuiet(AnwisSizeMode.Габаритный);
+            item.ШиринаВвод = 400;
+            item.ВысотаВвод = 1500;
+
+            Assert.Equal(400, item.Width);
+            Assert.Equal(1500, item.Height);
+            Assert.Equal(0.600, item.CalculatedValue);
+            Assert.True(item.HasImpost);
+            Assert.Equal(80.0, item.ImpostSurchargeTotal); // 400 / 1000 * 200
+            Assert.Equal(0.600 * 2900 + 80.0, item.Total);
+        }
+
+        [Fact]
+        public void OrderItem_НаНавесах_ModeSwitch_PreservesInputSize()
+        {
+            var item = new OrderItem
+            {
+                Name = "На навесах",
+                Price = 2900,
+                Quantity = 1
+            };
+            item.SetAnwisModeQuiet(AnwisSizeMode.РазмерПроёма);
+            item.ШиринаВвод = 400;
+            item.ВысотаВвод = 1500;
+
+            Assert.Equal(440, item.Width);
+            Assert.Equal(1540, item.Height);
+
+            // Переключаем режим на «Габарит» через публичный setter
+            item.AnwisSizeMode = AnwisSizeMode.Габаритный;
+
+            // Введённый размер остаётся 400×1500
+            Assert.Equal(400, item.ШиринаВвод);
+            Assert.Equal(1500, item.ВысотаВвод);
+
+            // Хранимый размер пересчитался под «Габарит» (400×1500)
+            Assert.Equal(400, item.Width);
+            Assert.Equal(1500, item.Height);
+
+            // Переключаем обратно на «Проём»
+            item.AnwisSizeMode = AnwisSizeMode.РазмерПроёма;
+            Assert.Equal(400, item.ШиринаВвод);
+            Assert.Equal(1500, item.ВысотаВвод);
+            Assert.Equal(440, item.Width);
+            Assert.Equal(1540, item.Height);
+        }
+
+        [Fact]
+        public void OrderItem_HasSizeMode_TrueOnlyForSupportedProducts()
+        {
+            Assert.True(new OrderItem { Name = "Anwis" }.HasSizeMode);
+            Assert.True(new OrderItem { Name = "На навесах" }.HasSizeMode);
+            Assert.True(new OrderItem { Name = "Оконная на метал. крепл." }.HasSizeMode);
+
+            Assert.False(new OrderItem { Name = "Отлив" }.HasSizeMode);
+            Assert.False(new OrderItem { Name = "Козырёк" }.HasSizeMode);
+            Assert.False(new OrderItem { Name = "ПСУЛ" }.HasSizeMode);
+            Assert.False(new OrderItem { Name = "Дверная сетка" }.HasSizeMode);
         }
     }
 }

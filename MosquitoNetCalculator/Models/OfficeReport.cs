@@ -55,12 +55,30 @@ namespace MosquitoNetCalculator.Models
         public int OrderCount { get; set; }
 
         /// <summary>
+        /// Когда пользователь последний раз подтверждал местоположение
+        /// (UTC ISO-8601, см. AppSettingsService.LoadLocationConfirmedAtUtc).
+        /// Пусто — подтверждения не было или отчёт прислан версией без этой
+        /// функции: панель трактует это как «локация не подтверждена».
+        /// </summary>
+        [JsonPropertyName("locationConfirmedAt")]
+        public string LocationConfirmedAt { get; set; } = "";
+
+        /// <summary>
         /// Распарсенное время отчёта (UTC). Null, если поле отсутствует или битое —
         /// такой отчёт считается «нет данных».
         /// </summary>
         [JsonIgnore]
-        public DateTimeOffset? ReportedAtUtc =>
-            DateTimeOffset.TryParse(ReportedAt, CultureInfo.InvariantCulture,
+        public DateTimeOffset? ReportedAtUtc => ParseUtc(ReportedAt);
+
+        /// <summary>
+        /// Распарсенное подтверждение местоположения (UTC). Null — данных нет
+        /// (старый отчёт без поля, пустое или битое значение).
+        /// </summary>
+        [JsonIgnore]
+        public DateTimeOffset? LocationConfirmedAtUtc => ParseUtc(LocationConfirmedAt);
+
+        private static DateTimeOffset? ParseUtc(string? raw) =>
+            DateTimeOffset.TryParse(raw, CultureInfo.InvariantCulture,
                 DateTimeStyles.AssumeUniversal | DateTimeStyles.AdjustToUniversal,
                 out var dt)
                 ? dt

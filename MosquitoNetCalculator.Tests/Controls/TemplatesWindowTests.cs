@@ -117,9 +117,9 @@ namespace MosquitoNetCalculator.Tests.Controls
                         .GetField("_gridTopPanel", BindingFlags.Instance | BindingFlags.NonPublic)!
                         .SetValue(window, top);
 
-                    // Пользователь выбрал «На навесах» (не Anwis) — панель
+                    // Пользователь выбрал «Дверная сетка» (не поддерживает режим размеров) — панель
                     // пересобирается без строки «Режим», индекс не сбрасывается.
-                    int index = Array.IndexOf(OrderTemplateService.GridProductChoices, "На навесах");
+                    int index = Array.IndexOf(OrderTemplateService.GridProductChoices, "Дверная сетка");
                     state.GridProductIndex = index;
                     window.RebuildGridTopFields(_ => null);
 
@@ -137,7 +137,7 @@ namespace MosquitoNetCalculator.Tests.Controls
                         OrderTemplateService.All.Single(t => t.Id == "window"),
                         (_, _) => 0);
                     var grid = specs.Single(s => s.RowKey == "grid");
-                    Assert.Equal("На навесах", grid.Type);
+                    Assert.Equal("Дверная сетка", grid.Type);
                     Assert.Null(grid.AnwisMode);
                 }
                 finally
@@ -252,12 +252,52 @@ namespace MosquitoNetCalculator.Tests.Controls
 
                         Assert.Equal(Visibility.Visible, window.ChecklistView.Visibility);
                         Assert.Equal(Visibility.Collapsed, window.GalleryView.Visibility);
-                        Assert.Equal(template.Rows.Count, window.ChecklistPanel.Children.Count);
+                        int expectedCards = OrderTemplateService.SupportsAutoSplit(template.Id)
+                            ? (template.Id == "frame" ? 6 : 4)
+                            : template.Rows.Count;
+                        Assert.Equal(expectedCards, window.ChecklistPanel.Children.Count);
 
                         // Проверяем возврат на витрину
                         backMethod.Invoke(window, null);
                         Assert.Equal(Visibility.Collapsed, window.ChecklistView.Visibility);
                         Assert.Equal(Visibility.Visible, window.GalleryView.Visibility);
+                    }
+                }
+                finally
+                {
+                    window.Close();
+                }
+            });
+        }
+
+        [Fact]
+        public void Checklist_RowToggles_And_Anticat_UseToggleSwitch()
+        {
+            TestAppThemes.RunOnSta(() =>
+            {
+                var window = new TemplatesWindow(null!);
+                try
+                {
+                    var openMethod = typeof(TemplatesWindow)
+                        .GetMethod("OpenChecklist", BindingFlags.Instance | BindingFlags.NonPublic)!;
+
+                    var windowTemplate = OrderTemplateService.All.First(t => t.Id == "window");
+                    openMethod.Invoke(window, new object[] { windowTemplate });
+
+                    var toggles = typeof(TemplatesWindow)
+                        .GetField("_rowToggles", BindingFlags.Instance | BindingFlags.NonPublic)!
+                        .GetValue(window) as Dictionary<string, CheckBox>;
+
+                    Assert.NotNull(toggles);
+                    Assert.NotEmpty(toggles);
+                    foreach (var kvp in toggles)
+                    {
+                        var toggle = kvp.Value;
+                        toggle.ApplyTemplate();
+                        var track = toggle.Template.FindName("SwitchTrack", toggle) as Border;
+                        Assert.NotNull(track);
+                        Assert.Equal(40, track.Width);
+                        Assert.Equal(20, track.Height);
                     }
                 }
                 finally
@@ -332,6 +372,222 @@ namespace MosquitoNetCalculator.Tests.Controls
                     backMethod.Invoke(window, null);
                     Assert.Equal(SizeToContent.Height, window.SizeToContent);
                     Assert.True(double.IsNaN(window.Height));
+                }
+                finally
+                {
+                    window.Close();
+                }
+            });
+        }
+
+        [Fact]
+        public void SplitModeSwitch_FrameTemplate_SwitchesBetweenAutoAndManual()
+        {
+            TestAppThemes.RunOnSta(() =>
+            {
+                var window = new TemplatesWindow(null!);
+                try
+                {
+                    var openMethod = typeof(TemplatesWindow)
+                        .GetMethod("OpenChecklist", BindingFlags.Instance | BindingFlags.NonPublic)!;
+
+                    var frameTemplate = OrderTemplateService.All.First(t => t.Id == "frame");
+                    openMethod.Invoke(window, new object[] { frameTemplate });
+
+                    Assert.Equal(Visibility.Visible, window.PanelSplitModeSwitch.Visibility);
+                    Assert.True(window.RadModeAuto.IsChecked);
+                    Assert.False(window.RadModeManual.IsChecked);
+                    Assert.Equal(6, window.ChecklistPanel.Children.Count);
+
+                    window.RadModeManual.IsChecked = true;
+                    var radClick = typeof(TemplatesWindow)
+                        .GetMethod("RadMode_Click", BindingFlags.Instance | BindingFlags.NonPublic)!;
+                    radClick.Invoke(window, new object[] { window.RadModeManual, new RoutedEventArgs() });
+
+                    Assert.Equal(8, window.ChecklistPanel.Children.Count);
+
+                    window.RadModeAuto.IsChecked = true;
+                    radClick.Invoke(window, new object[] { window.RadModeAuto, new RoutedEventArgs() });
+                    Assert.Equal(6, window.ChecklistPanel.Children.Count);
+                }
+                finally
+                {
+                    window.Close();
+                }
+            });
+        }
+
+        [Fact]
+        public void Checklist_InitialState_AllTogglesOff_AndSelectAllWorks()
+        {
+            TestAppThemes.RunOnSta(() =>
+            {
+                var window = new TemplatesWindow(null!);
+                try
+                {
+                    var openMethod = typeof(TemplatesWindow)
+                        .GetMethod("OpenChecklist", BindingFlags.Instance | BindingFlags.NonPublic)!;
+
+                    var frameTemplate = OrderTemplateService.All.First(t => t.Id == "frame");
+                    openMethod.Invoke(window, new object[] { frameTemplate });
+
+                    var toggles = typeof(TemplatesWindow)
+                        .GetField("_rowToggles", BindingFlags.Instance | BindingFlags.NonPublic)!
+                        .GetValue(window) as Dictionary<string, CheckBox>;
+                    Assert.NotNull(toggles);
+
+                    // Исходно все галочки ВЫКЛЮЧЕНЫ
+                    Assert.All(toggles.Values, t => Assert.False(t.IsChecked));
+
+                    // Карточка габаритов рамы свернута, т.к. козырёк и отлив выключены
+                    Assert.NotNull(window._frameGeometryCard);
+                    Assert.Equal(Visibility.Collapsed, window._frameGeometryCard.Visibility);
+
+                    // Кнопка «Выбрать всё» включает все позиции
+                    var selectAllMethod = typeof(TemplatesWindow)
+                        .GetMethod("BtnSelectAll_Click", BindingFlags.Instance | BindingFlags.NonPublic)!;
+                    selectAllMethod.Invoke(window, new object[] { window.BtnSelectAll, new RoutedEventArgs() });
+
+                    Assert.All(toggles.Values, t => Assert.True(t.IsChecked));
+                    Assert.Equal(Visibility.Visible, window._frameGeometryCard.Visibility);
+
+                    // Кнопка «Снять всё» выключает все позиции
+                    var clearAllMethod = typeof(TemplatesWindow)
+                        .GetMethod("BtnClearAll_Click", BindingFlags.Instance | BindingFlags.NonPublic)!;
+                    clearAllMethod.Invoke(window, new object[] { window.BtnClearAll, new RoutedEventArgs() });
+
+                    Assert.All(toggles.Values, t => Assert.False(t.IsChecked));
+                    Assert.Equal(Visibility.Collapsed, window._frameGeometryCard.Visibility);
+                }
+                finally
+                {
+                    window.Close();
+                }
+            });
+        }
+
+        [Fact]
+        public void AutoSplit_FrameGeometry_EmbedsInKozyrek_AndTransfersToOtlivWhenKozyrekDisabled()
+        {
+            TestAppThemes.RunOnSta(() =>
+            {
+                var window = new TemplatesWindow(null!);
+                try
+                {
+                    var openMethod = typeof(TemplatesWindow)
+                        .GetMethod("OpenChecklist", BindingFlags.Instance | BindingFlags.NonPublic)!;
+                    var frameTemplate = OrderTemplateService.All.First(t => t.Id == "frame");
+                    openMethod.Invoke(window, new object[] { frameTemplate });
+
+                    var toggles = typeof(TemplatesWindow)
+                        .GetField("_rowToggles", BindingFlags.Instance | BindingFlags.NonPublic)!
+                        .GetValue(window) as Dictionary<string, CheckBox>;
+                    Assert.NotNull(toggles);
+
+                    var selectAllMethod = typeof(TemplatesWindow)
+                        .GetMethod("BtnSelectAll_Click", BindingFlags.Instance | BindingFlags.NonPublic)!;
+                    selectAllMethod.Invoke(window, new object[] { window.BtnSelectAll, new RoutedEventArgs() });
+
+                    // Обе позиции включены
+                    Assert.True(toggles["auto_kozyrek"].IsChecked);
+                    Assert.True(toggles["auto_otliv"].IsChecked);
+
+                    // Габариты рамы видны и встроены в карточку «Козырёк»
+                    Assert.NotNull(window._frameGeometryCard);
+                    Assert.Equal(Visibility.Visible, window._frameGeometryCard.Visibility);
+                    Assert.NotNull(window._sharedGeometryNotice);
+                    Assert.Equal(Visibility.Visible, window._sharedGeometryNotice.Visibility);
+
+                    // Отключаем Козырёк: габариты переезжают в Отлив, а notice скрывается
+                    toggles["auto_kozyrek"].IsChecked = false;
+                    Assert.Equal(Visibility.Visible, window._frameGeometryCard.Visibility);
+                    Assert.Equal(Visibility.Collapsed, window._sharedGeometryNotice.Visibility);
+
+                    // Включаем Козырёк обратно: габариты возвращаются в Козырёк, а notice снова виден
+                    toggles["auto_kozyrek"].IsChecked = true;
+                    Assert.Equal(Visibility.Visible, window._frameGeometryCard.Visibility);
+                    Assert.Equal(Visibility.Visible, window._sharedGeometryNotice.Visibility);
+
+                    // Отключаем оба: габариты и notice свернуты
+                    toggles["auto_kozyrek"].IsChecked = false;
+                    toggles["auto_otliv"].IsChecked = false;
+                    Assert.Equal(Visibility.Collapsed, window._frameGeometryCard.Visibility);
+                    Assert.Equal(Visibility.Collapsed, window._sharedGeometryNotice.Visibility);
+                }
+                finally
+                {
+                    window.Close();
+                }
+            });
+        }
+
+        [Fact]
+        public void AutoSplit_VisualPolish_StepBadgesAndPreviewSpecCard_RespondToStateAndError()
+        {
+            TestAppThemes.RunOnSta(() =>
+            {
+                var window = new TemplatesWindow(null!);
+                try
+                {
+                    var openMethod = typeof(TemplatesWindow)
+                        .GetMethod("OpenChecklist", BindingFlags.Instance | BindingFlags.NonPublic)!;
+                    var frameTemplate = OrderTemplateService.All.First(t => t.Id == "frame");
+                    openMethod.Invoke(window, new object[] { frameTemplate });
+
+                    var toggles = typeof(TemplatesWindow)
+                        .GetField("_rowToggles", BindingFlags.Instance | BindingFlags.NonPublic)!
+                        .GetValue(window) as Dictionary<string, CheckBox>;
+                    var stepBadges = typeof(TemplatesWindow)
+                        .GetField("_stepBadges", BindingFlags.Instance | BindingFlags.NonPublic)!
+                        .GetValue(window) as Dictionary<string, Border>;
+                    var splitPanels = typeof(TemplatesWindow)
+                        .GetField("_splitPreviewPanels", BindingFlags.Instance | BindingFlags.NonPublic)!
+                        .GetValue(window) as Dictionary<string, StackPanel>;
+
+                    Assert.NotNull(toggles);
+                    Assert.NotNull(stepBadges);
+                    Assert.NotNull(splitPanels);
+
+                    // 1. При выключенном тумблере — бейдж шага приглушён (ChipBg, TextMuted)
+                    var badgeK = stepBadges["auto_kozyrek"];
+                    var textK = (TextBlock)badgeK.Child;
+                    Assert.Equal(window.FindResource("ChipBg"), badgeK.Background);
+                    Assert.Equal(window.FindResource("TextMuted"), textK.Foreground);
+
+                    // 2. Включаем тумблер — бейдж шага подсвечивается акцентом
+                    toggles["auto_kozyrek"].IsChecked = true;
+                    Assert.Equal(window.FindResource("Accent"), badgeK.Background);
+                    Assert.Equal(window.FindResource("OnAccentPrimary"), textK.Foreground);
+
+                    // 3. Тест обработчика ошибок раскроя (проверка отсутствия краша на ресурсе Danger)
+                    var updateSplitMethod = typeof(TemplatesWindow)
+                        .GetMethod("UpdateSplitPreview", BindingFlags.Instance | BindingFlags.NonPublic)!;
+                    var previewPanel = splitPanels["auto_kozyrek"];
+
+                    var errSummary = new OrderTemplateService.SplitProductSummary
+                    {
+                        Enabled = true,
+                        ProductName = "Козырёк",
+                        FrontResult = new SplitResult { Success = false, Error = "Длина превышает максимум" }
+                    };
+                    updateSplitMethod.Invoke(window, new object[] { "Козырёк", previewPanel, errSummary });
+
+                    Assert.Single(previewPanel.Children);
+                    var errCard = Assert.IsType<Border>(previewPanel.Children[0]);
+                    Assert.Equal(window.FindResource("DangerLight"), errCard.Background);
+
+                    // 4. Валидный раскрой — создаётся карточка спецификации со сводкой и чипами
+                    var validSummary = OrderTemplateService.CalculateSplitSummary(
+                        "Козырёк",
+                        new OrderTemplateService.CanopySplitConfig { FrameLength = 3000, SideCount = 2, SideLength = 800, KozyrekWidth = 350 },
+                        (_, _) => 100);
+                    updateSplitMethod.Invoke(window, new object[] { "Козырёк", previewPanel, validSummary });
+
+                    Assert.Single(previewPanel.Children);
+                    var specCard = Assert.IsType<Border>(previewPanel.Children[0]);
+                    Assert.Equal(window.FindResource("SectionBg"), specCard.Background);
+                    var contentStack = Assert.IsType<StackPanel>(specCard.Child);
+                    Assert.Equal(2, contentStack.Children.Count); // headerGrid + badgesPanel
                 }
                 finally
                 {

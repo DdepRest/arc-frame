@@ -43,6 +43,12 @@ namespace MosquitoNetCalculator.Models
         /// <summary>Placeholder option selected until the user picks a real Anwis profile.</summary>
         public const string UnspecifiedAnwisMode = "Выберите профиль";
 
+        private static readonly IReadOnlyList<string> AnwisOptionsWithPlaceholder =
+            new[] { UnspecifiedAnwisMode }.Concat(AllAnwisModes).ToList();
+
+        private static readonly IReadOnlyList<string> TwoModeOptions =
+            new[] { "Габарит", "Проём" };
+
         /// <summary>Installation options. «Не указывать» keeps the program default.</summary>
         public static IReadOnlyList<string> AllInstallationOptions { get; } =
             new[] { "Не указывать", "С монтажом", "Без монтажа", "В конструкцию" };
@@ -84,6 +90,8 @@ namespace MosquitoNetCalculator.Models
             // Keep the default selection inside the filtered list.
             if (_productTypes.Count > 0 && !_productTypes.Contains(_selectedType))
                 SelectedType = _productTypes[0];
+            else if (IsTwoModeScreen)
+                _selectedAnwisMode = "Габарит";
             AddSizeRow();
             // The model's already-parsed parameters are the most complete source:
             // apply them first so the card is never blank when the raw user text
@@ -127,6 +135,17 @@ namespace MosquitoNetCalculator.Models
         /// Removes a size row. The card always keeps at least one row, so the
         /// last size can never be deleted by accident.
         /// </summary>
+        /// <summary>
+        /// Swaps width and height text on all size rows in this form.
+        /// </summary>
+        public void SwapAllDimensions()
+        {
+            foreach (var row in _sizeRows)
+            {
+                row.SwapDimensions();
+            }
+        }
+
         public void RemoveSizeRow(AiClarificationSizeRow row)
         {
             if (row == null || _sizeRows.Count <= 1) return;
@@ -163,7 +182,15 @@ namespace MosquitoNetCalculator.Models
         }
 
         public IReadOnlyList<string> ProductTypes => _productTypes;
-        public IReadOnlyList<string> AnwisModeOptions { get; } = AllAnwisModes;
+        public IReadOnlyList<string> AnwisModeOptions
+        {
+            get
+            {
+                if (IsTwoModeScreen) return TwoModeOptions;
+                if (IsAnwis) return AnwisOptionsWithPlaceholder;
+                return Array.Empty<string>();
+            }
+        }
         public IReadOnlyList<string> InstallationOptions => AllInstallationOptions;
 
         /// <summary>Colors available for the currently selected product.</summary>
@@ -178,6 +205,10 @@ namespace MosquitoNetCalculator.Models
                 _selectedType = value;
                 OnPropertyChanged();
                 OnPropertyChanged(nameof(IsAnwis));
+                OnPropertyChanged(nameof(SupportsSizeMode));
+                OnPropertyChanged(nameof(IsTwoModeScreen));
+                OnPropertyChanged(nameof(SizeModeLabel));
+                OnPropertyChanged(nameof(AnwisModeOptions));
                 OnPropertyChanged(nameof(ShowColor));
                 OnPropertyChanged(nameof(ShowInstallation));
                 OnPropertyChanged(nameof(IsCustom));
@@ -186,6 +217,17 @@ namespace MosquitoNetCalculator.Models
                 // Reset color to the first one available for the new product.
                 if (!IsCustom && Colors.Count > 0 && !Colors.Contains(SelectedColor))
                     SelectedColor = Colors[0];
+
+                if (IsTwoModeScreen)
+                {
+                    if (SelectedAnwisMode != "Проём" && SelectedAnwisMode != "Габарит")
+                        SelectedAnwisMode = "Габарит";
+                }
+                else if (IsAnwis)
+                {
+                    if (!AllAnwisModes.Contains(SelectedAnwisMode) && SelectedAnwisMode != UnspecifiedAnwisMode)
+                        SelectedAnwisMode = UnspecifiedAnwisMode;
+                }
             }
         }
 
@@ -244,6 +286,15 @@ namespace MosquitoNetCalculator.Models
 
         /// <summary>True when the selected product uses Anwis size modes (only «Anwis»).</summary>
         public bool IsAnwis => AnwisSizeService.IsApplicable(SelectedType);
+
+        /// <summary>True when the selected product supports size mode choices (Anwis or 2-mode mesh).</summary>
+        public bool SupportsSizeMode => AnwisSizeService.SupportsSizeMode(SelectedType);
+
+        /// <summary>True when the selected product is a 2-mode screen («На навесах» or «Оконная на метал. крепл.»).</summary>
+        public bool IsTwoModeScreen => AnwisSizeService.IsTwoModeScreen(SelectedType);
+
+        /// <summary>UI label for the mode ComboBox («Режим (размер)» for 2-mode, «Режим Anwis» for Anwis).</summary>
+        public string SizeModeLabel => IsTwoModeScreen ? "Режим (размер)" : "Режим Anwis";
 
         /// <summary>True when the product has a color choice. Custom products never show colors.</summary>
         public bool ShowColor => !IsCustom && !ProductCatalog.IsNoColor(SelectedType) && Colors.Count > 0;
@@ -575,14 +626,19 @@ namespace MosquitoNetCalculator.Models
             // The Anwis size mode is a critical parameter: never silently guess
             // the profile. The user must pick a real profile before the command is
             // built (matches the local no-guess rule for the model's replies).
-            if (IsAnwis && SelectedAnwisMode == UnspecifiedAnwisMode)
+            if (IsAnwis && (SelectedAnwisMode == UnspecifiedAnwisMode || string.IsNullOrWhiteSpace(SelectedAnwisMode)))
             {
                 error = "⚠ Выберите режим Anwis (профиль): ББ 60, ББ 70, ПП, Проём или Габарит.";
                 return false;
             }
+            if (IsTwoModeScreen && (SelectedAnwisMode != "Габарит" && SelectedAnwisMode != "Проём"))
+            {
+                error = "⚠ Выберите режим сетки: Габарит или Проём.";
+                return false;
+            }
 
             var color = ShowColor ? SelectedColor : "";
-            var mode = IsAnwis ? ParseAnwisMode(SelectedAnwisMode) : AnwisSizeMode.Брусбокс60;
+            var mode = SupportsSizeMode ? ParseAnwisMode(SelectedAnwisMode) : AnwisSizeMode.Брусбокс60;
             var installation = ShowInstallation ? ParseInstallation(SelectedInstallation) : -1;
             var price = AiCommandParser.GetDefaultPrice(SelectedType, color);
 
@@ -671,7 +727,7 @@ namespace MosquitoNetCalculator.Models
 
             if (TryParseQuantity(QuantityText, out var qty) && qty != 1)
                 parts.Add(FormatQuantity(qty) + " шт.");
-            if (IsAnwis && SelectedAnwisMode != UnspecifiedAnwisMode)
+            if (SupportsSizeMode && SelectedAnwisMode != UnspecifiedAnwisMode)
                 parts.Add(SelectedAnwisMode);
             parts.Add(SelectedInstallation switch
             {

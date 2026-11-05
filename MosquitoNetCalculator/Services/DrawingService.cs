@@ -21,7 +21,7 @@ namespace MosquitoNetCalculator.Services
         /// for cross-sections, 40×20 for text-only). Used by QuestPDF.
         /// </summary>
         public static string GetDrawingSvg(string name, double width, double height)
-            => name switch
+            => Models.ProductCatalog.IsLabor(name) ? SvgTextOnly("раб.") : name switch
             {
                 "Anwis" => SvgAnwis(width, height),
                 "Дверная сетка" => SvgDvernayaSetka(width, height),

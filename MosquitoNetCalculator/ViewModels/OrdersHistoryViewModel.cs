@@ -14,7 +14,15 @@ namespace MosquitoNetCalculator.ViewModels
 
         public List<OrderData> LoadAllOrders() => _orderStorage.LoadAllOrders();
 
+        public List<OrderData> LoadTrashOrders() => _orderStorage.LoadTrashOrders();
+
         public void DeleteOrder(string orderId) => _orderStorage.DeleteOrder(orderId);
+
+        public void RestoreOrder(string orderId) => _orderStorage.RestoreOrder(orderId);
+
+        public void PurgeTrashOrder(string orderId) => _orderStorage.PurgeTrashOrder(orderId);
+
+        public void EmptyTrash() => _orderStorage.EmptyTrash();
 
         public void SaveOrder(OrderData order) => _orderStorage.SaveOrder(order);
 

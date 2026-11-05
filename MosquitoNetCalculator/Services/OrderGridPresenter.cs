@@ -114,7 +114,8 @@ namespace MosquitoNetCalculator.Services
             if (grid == null) return;
             foreach (var col in grid.Columns)
             {
-                string clean = DataGridColumnAutoSizer.StripSortIndicator(col.Header?.ToString());
+                if (col.Header is not string headerStr) continue;
+                string clean = DataGridColumnAutoSizer.StripSortIndicator(headerStr);
                 string? sortKey = GetColumnSortKey(col);
                 var match = !string.IsNullOrEmpty(sortKey)
                     ? grid.Items.SortDescriptions.FirstOrDefault(x => x.PropertyName == sortKey)

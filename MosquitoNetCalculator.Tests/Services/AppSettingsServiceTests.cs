@@ -193,5 +193,96 @@ namespace MosquitoNetCalculator.Tests.Services
             AppSettingsService.ResetAdminSession();
             Assert.False(AppSettingsService.IsAdminUnlocked);
         }
+
+        // ─────────────────────────────────────────────────────────
+        //  Периодическая проверка местоположения (LocationCheckService).
+        //  Отметки живут в settings.json рядом с префиксом и должны переживать
+        //  перезапись других настроек — иначе 30-дневный счётчик сбрасывался бы
+        //  при каждом сохранении темы.
+        // ─────────────────────────────────────────────────────────
+
+        [Fact]
+        public void LocationConfirmation_MissingInSettings_IsNull()
+        {
+            Assert.Null(AppSettingsService.LoadLocationConfirmedAtUtc());
+            Assert.Null(AppSettingsService.LoadLocationSnoozeUntilUtc());
+        }
+
+        [Fact]
+        public void LocationConfirmation_OldSettingsFileWithoutFields_IsNull()
+        {
+            // settings.json от версии без этой функции: полей нет — значит
+            // подтверждения не было, а не «давно подтверждено».
+            File.WriteAllText(
+                AppSettingsService.SettingsPath,
+                "{\"ContractPrefix\":\"2\",\"LocationName\":\"Старый офис\"}");
+            AppSettingsService.InvalidateCache();
+
+            Assert.Null(AppSettingsService.LoadLocationConfirmedAtUtc());
+            Assert.Null(AppSettingsService.LoadLocationSnoozeUntilUtc());
+            Assert.Equal("2", AppSettingsService.LoadContractPrefix());
+        }
+
+        [Fact]
+        public void LocationConfirmedAt_RoundtripsInUtc_AndSurvivesOtherSaves()
+        {
+            var stamp = new DateTime(2026, 10, 25, 9, 30, 0, DateTimeKind.Utc);
+            AppSettingsService.SaveLocationConfirmedAtUtc(stamp);
+
+            var loaded = AppSettingsService.LoadLocationConfirmedAtUtc();
+            Assert.NotNull(loaded);
+            Assert.Equal(stamp, loaded!.Value);
+            Assert.Equal(DateTimeKind.Utc, loaded.Value.Kind);
+
+            // Соседние настройки пишутся тем же объектом — отметка не теряется.
+            AppSettingsService.SaveContractPrefix("4");
+            Assert.Equal(stamp, AppSettingsService.LoadLocationConfirmedAtUtc());
+            Assert.Equal("4", AppSettingsService.LoadContractPrefix());
+        }
+
+        [Fact]
+        public void MarkLocationConfirmed_StoresNow_AndCountsAsFreshForCheck()
+        {
+            AppSettingsService.MarkLocationConfirmed();
+
+            var loaded = AppSettingsService.LoadLocationConfirmedAtUtc();
+            Assert.NotNull(loaded);
+            Assert.True(Math.Abs((DateTime.UtcNow - loaded!.Value).TotalMinutes) < 1);
+
+            // Сразу после подтверждения баннер не показывается — иначе
+            // «Всё верно» ничего бы не меняло.
+            Assert.False(LocationCheckService.ShouldPrompt(
+                loaded, AppSettingsService.LoadLocationSnoozeUntilUtc(), DateTime.UtcNow));
+        }
+
+        [Fact]
+        public void LocationSnooze_RoundtripsInUtc_AndSuppressesPrompt()
+        {
+            var until = new DateTime(2026, 10, 28, 12, 0, 0, DateTimeKind.Utc);
+            AppSettingsService.SaveLocationSnoozeUntilUtc(until);
+
+            var loaded = AppSettingsService.LoadLocationSnoozeUntilUtc();
+            Assert.NotNull(loaded);
+            Assert.Equal(until, loaded!.Value);
+
+            // Срок годности истёк, но отсрочка ещё активна.
+            Assert.False(LocationCheckService.ShouldPrompt(
+                until.AddDays(-60), loaded, until.AddDays(-1)));
+        }
+
+        [Fact]
+        public void LocationConfirmation_CorruptedDate_TreatedAsNeverConfirmed()
+        {
+            // Битая дата не должна ни валить старт, ни молча продлевать тишину.
+            File.WriteAllText(
+                AppSettingsService.SettingsPath,
+                "{\"ContractPrefix\":\"2\",\"LocationConfirmedAtUtc\":\"не дата\"," +
+                "\"LocationSnoozeUntilUtc\":\"2026-13-45\"}");
+            AppSettingsService.InvalidateCache();
+
+            Assert.Null(AppSettingsService.LoadLocationConfirmedAtUtc());
+            Assert.Null(AppSettingsService.LoadLocationSnoozeUntilUtc());
+            Assert.Equal("2", AppSettingsService.LoadContractPrefix());
+        }
     }
 }

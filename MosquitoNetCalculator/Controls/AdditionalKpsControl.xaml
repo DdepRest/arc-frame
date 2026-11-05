@@ -9,6 +9,7 @@
                 <TextBlock Text="ДОПОЛНИТЕЛЬНОЕ КП" Style="{DynamicResource SectionLabel}" Margin="{DynamicResource Gap.None}"/>
             </StackPanel>
             <CheckBox x:Name="ChkAdditionalKp"
+                      Style="{StaticResource FluentToggleSwitch}"
                       Content="Есть доп. КП"
                       IsChecked="{Binding ClientInfo.HasAdditionalKp}"
                       Margin="{DynamicResource Gap.BlockSm}"
@@ -56,6 +57,7 @@
                                             <ColumnDefinition Width="Auto"/>
                                         </Grid.ColumnDefinitions>
                                         <CheckBox Grid.Column="0" IsChecked="{Binding IsActive, UpdateSourceTrigger=PropertyChanged}"
+                                                  Style="{StaticResource FluentToggleSwitch}"
                                                   VerticalAlignment="Center" HorizontalAlignment="Center"
                                                   ToolTip="Вкл / Выкл" Margin="{DynamicResource Gap.CompactRight}"/>
                                         <TextBox Grid.Column="2" Text="{Binding Number, UpdateSourceTrigger=PropertyChanged}"
@@ -68,7 +70,7 @@
                                                     <Border Background="{Binding Background, RelativeSource={RelativeSource TemplatedParent}}"
                                                             BorderBrush="{Binding BorderBrush, RelativeSource={RelativeSource TemplatedParent}}"
                                                             BorderThickness="{Binding BorderThickness, RelativeSource={RelativeSource TemplatedParent}}"
-                                                            CornerRadius="{DynamicResource Radius.Control}" SnapsToDevicePixels="True">
+                                                            CornerRadius="{DynamicResource Radius.Control}">
                                                         <ScrollViewer x:Name="PART_ContentHost" Margin="{DynamicResource Gap.HairH}"
                                                                       VerticalAlignment="Center" Focusable="False"
                                                                       HorizontalScrollBarVisibility="Hidden"
@@ -100,7 +102,7 @@
                                                     <Border Background="{Binding Background, RelativeSource={RelativeSource TemplatedParent}}"
                                                             BorderBrush="{Binding BorderBrush, RelativeSource={RelativeSource TemplatedParent}}"
                                                             BorderThickness="{Binding BorderThickness, RelativeSource={RelativeSource TemplatedParent}}"
-                                                            CornerRadius="{DynamicResource Radius.Control}" SnapsToDevicePixels="True">
+                                                            CornerRadius="{DynamicResource Radius.Control}">
                                                         <ScrollViewer x:Name="PART_ContentHost" Margin="{DynamicResource Gap.HairH}"
                                                                       VerticalAlignment="Center" Focusable="False"
                                                                       HorizontalScrollBarVisibility="Hidden"

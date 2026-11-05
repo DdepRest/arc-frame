@@ -6,6 +6,7 @@
     <!-- ═══════════════════════════════════════════════════════ -->
     <SolidColorBrush x:Key="AppBg"        Color="#F3F3F3"/>
     <SolidColorBrush x:Key="Surface"       Color="#FFFFFF"/>
+    <SolidColorBrush x:Key="SurfaceVariant" Color="#F0F0F4"/>
     <SolidColorBrush x:Key="Accent"        Color="#005FB8"/>
     <SolidColorBrush x:Key="AccentHover"   Color="#004E99"/>
     <SolidColorBrush x:Key="AccentPress"   Color="#003E7A"/>
@@ -73,6 +74,8 @@
     -->
     <Color x:Key="AccentShadowColor">#005FB8</Color>
     <SolidColorBrush x:Key="InstallGreen" Color="#0F7B3F"/>
+    <!-- Режим «В конструкцию»: голубой, отдельно от синего Accent. -->
+    <SolidColorBrush x:Key="InstallBlue"  Color="#0E86C4"/>
     <SolidColorBrush x:Key="InstallRed" Color="#C42B1C"/>
     <SolidColorBrush x:Key="InstallGray" Color="#8A8A8A"/>
     <SolidColorBrush x:Key="BadgeDefaultBg" Color="#EFF4FB"/>
@@ -104,6 +107,10 @@
     <SolidColorBrush x:Key="OnWindowClose" Color="#FFFFFF"/>
     <!-- Блеск карточки ИТОГО под курсором (тёмная подложка в обеих темах) -->
     <SolidColorBrush x:Key="TotalSheen" Color="#33FFFFFF"/>
+    <!-- Подложки и карточки вложений внутри сообщений AI/чата -->
+    <SolidColorBrush x:Key="BubbleOverlayCard" Color="#26FFFFFF"/>
+    <SolidColorBrush x:Key="BubbleOverlayBorder" Color="#40FFFFFF"/>
+    <SolidColorBrush x:Key="BubbleOverlayDim" Color="#1A000000"/>
 
     <!-- ═══════════════════════════════════════════════════════ -->
     <!-- ЖИДКОЕ СТЕКЛО (LIQUID GLASS OPTICS)                      -->

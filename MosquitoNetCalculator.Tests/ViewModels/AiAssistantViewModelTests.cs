@@ -450,6 +450,19 @@ namespace MosquitoNetCalculator.Tests.ViewModels
             Assert.Contains("Текст с картинки: ПМС Anwis, бел. 1 619x1295", merged);
         }
 
+        [Fact]
+        public void BuildModelUserText_WithEmptyUserTextAndImage_IncludesIntentPrompt()
+        {
+            var merged = AiAssistantViewModel.BuildModelUserText(
+                "81569 дл 569 625 489 1271 127'",
+                new[] { "Снимок экрана.jpg" },
+                new[] { "81569 дл 569 625 489 1271 127'" },
+                hadImageWithEmptyUserText: true);
+
+            Assert.Contains("Добавь сетки / изделия с прикреплённого изображения в расчёт заказа.", merged);
+            Assert.Contains("Файл: Снимок экрана.jpg", merged);
+        }
+
         [Theory]
         [InlineData(new[] { "" }, true)]
         [InlineData(new[] { "   " }, true)]

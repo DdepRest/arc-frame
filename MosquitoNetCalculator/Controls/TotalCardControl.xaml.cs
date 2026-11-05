@@ -8,6 +8,8 @@ namespace MosquitoNetCalculator.Controls
     public partial class TotalCardControl : UserControl
     {
         public Run TotalRun => RunTotalAmount;
+        public Run InstallationRun => RunInstallationTotal;
+        public Border InstallationBorder => BdInstallationSummary;
         public TextBlock TotalSub => TxtTotalSub;
         public TextBlock AmountWords => TxtAmountInWords;
         public Border CardTotalBorder => CardTotal;

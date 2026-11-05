@@ -23,6 +23,7 @@ namespace MosquitoNetCalculator.ViewModels
         public double TotalArea { get; init; }
         public double TotalLinear { get; init; }
         public double TotalPieces { get; init; }
+        public double TotalInstallation { get; init; }
 
         /// <summary>
         /// Display names of ACTIVE rows with Total ≤ 0 (нет цены/суммы) — они
@@ -52,24 +53,43 @@ namespace MosquitoNetCalculator.ViewModels
             ProductCatalog.IsPerLinearMeter(type);
 
         /// <summary>
-        /// Adds a new order item from quick-add parameters.
+        /// Creates a new order item from quick-add parameters in memory without adding it to <see cref="OrderItems"/>.
         /// For Anwis products, applies calc adjustment to Width/Height before storing.
-        /// Returns the created item, or null if validation failed.
         /// </summary>
-        public OrderItem? AddItem(string type, string color, int width, int height, double qty, double price,
-            Models.AnwisSizeMode anwisMode = Models.AnwisSizeMode.Брусбокс60)
+        public OrderItem? CreateItem(string type, string color, int width, int height, double qty, double price,
+            Models.AnwisSizeMode anwisMode = Models.AnwisSizeMode.Брусбокс60,
+            bool isLabor = false)
         {
-            if (qty <= 0) qty = 1;
+            if (qty <= 0 && !isLabor && !ProductCatalog.IsLabor(type) && !ProductCatalog.IsQuantityOptional(type) && !ProductCatalog.IsAmountOnly(type))
+                qty = 1;
 
-            // For Anwis, apply calc adjustment to the raw input dimensions.
+            // For products with size modes (Anwis, На навесах, Оконная на метал.),
+            // apply calc adjustment to the raw input dimensions.
             // The stored Width/Height in OrderItem are the calc-adjusted values.
             double storedW = width;
             double storedH = height;
-            if (Services.AnwisSizeService.IsApplicable(type))
+            var effectiveSizeMode = anwisMode;
+            if (Services.AnwisSizeService.SupportsSizeMode(type))
             {
-                var size = AnwisSize.ОтВвода(width, height, anwisMode);
+                var available = Services.AnwisSizeService.GetAvailableModes(type);
+                if (!available.Contains(effectiveSizeMode))
+                {
+                    effectiveSizeMode = Services.AnwisSizeService.GetDefaultMode(type);
+                }
+                var size = AnwisSize.ОтВвода(width, height, effectiveSizeMode, type);
                 storedW = size.ШиринаРасчёт;
                 storedH = size.ВысотаРасчёт;
+            }
+
+            int defaultMode = Services.AppSettingsService.LoadDefaultInstallationMode();
+            int initialInstallMode;
+            if (defaultMode is 0 or 1 or 2)
+            {
+                initialInstallMode = defaultMode;
+            }
+            else
+            {
+                initialInstallMode = IsInstallationDefaultNoInstallation(type) ? 1 : 0;
             }
 
             var item = new OrderItem
@@ -80,21 +100,49 @@ namespace MosquitoNetCalculator.ViewModels
                 Height = storedH,
                 Quantity = qty,
                 Price = price,
-                InstallationMode = IsInstallationDefaultNoInstallation(type) ? 1 : 0,
+                InstallationMode = initialInstallMode,
                 InstallationDeduction = OrderItem.GetDefaultInstallationDeduction(type),
                 InstallationSurcharge = OrderItem.GetDefaultInstallationSurcharge(type),
                 // v3.43.2.10: signed adjustment for mode 0 («Монтаж включён»).
                 // Default 0 (no modification) at item-add time.
                 // v3.47.0: per-linear-meter products (Отлив, Козырёк) get their rate.
                 InstallationAdjustment = OrderItem.GetDefaultInstallationAdjustment(type),
-                RowNumber = OrderItems.Count + 1
+                RowNumber = OrderItems.Count + 1,
+                IsLabor = isLabor || ProductCatalog.IsLabor(type)
             };
             // Use SetAnwisModeQuiet — Width/Height above are already-final stored
-            // values for `anwisMode`. Running the public setter would falsely
+            // values for `effectiveSizeMode`. Running the public setter would falsely
             // reverse-apply through the default ББ 60 and corrupt dimensions.
-            item.SetAnwisModeQuiet(anwisMode);
+            item.SetAnwisModeQuiet(effectiveSizeMode);
 
+            return item;
+        }
+
+        /// <summary>
+        /// Appends an existing in-memory <see cref="OrderItem"/> to <see cref="OrderItems"/>,
+        /// assigning the next available row number.
+        /// </summary>
+        public void AddItem(OrderItem item)
+        {
+            if (item == null) return;
+            item.RowNumber = OrderItems.Count + 1;
             OrderItems.Add(item);
+        }
+
+        /// <summary>
+        /// Adds a new order item from quick-add parameters.
+        /// For Anwis products, applies calc adjustment to Width/Height before storing.
+        /// Returns the created item, or null if validation failed.
+        /// </summary>
+        public OrderItem? AddItem(string type, string color, int width, int height, double qty, double price,
+            Models.AnwisSizeMode anwisMode = Models.AnwisSizeMode.Брусбокс60,
+            bool isLabor = false)
+        {
+            var item = CreateItem(type, color, width, height, qty, price, anwisMode, isLabor);
+            if (item != null)
+            {
+                AddItem(item);
+            }
             return item;
         }
 
@@ -119,7 +167,8 @@ namespace MosquitoNetCalculator.ViewModels
                 Quantity = slopeCalc.WindowCount,
                 Price = totalMaterials,
                 SlopeData = slopeCalc,
-                RowNumber = OrderItems.Count + 1
+                RowNumber = OrderItems.Count + 1,
+                IsLabor = false
             };
             materialItem.SetDefaultPrice(0);
             OrderItems.Add(materialItem);
@@ -144,7 +193,8 @@ namespace MosquitoNetCalculator.ViewModels
                 Height = 0,
                 Quantity = slopeCalc.WindowCount,
                 Price = totalLabor,
-                RowNumber = OrderItems.Count + 1
+                RowNumber = OrderItems.Count + 1,
+                IsLabor = true
             };
             laborItem.SetDefaultPrice(0);
             OrderItems.Add(laborItem);
@@ -210,6 +260,7 @@ namespace MosquitoNetCalculator.ViewModels
             double totalArea = validItems.Where(i => i.Unit == "м²").Sum(i => i.CalculatedValue * i.Quantity);
             double totalLinear = validItems.Where(i => i.Unit == "м.п.").Sum(i => i.CalculatedValue * i.Quantity);
             double totalPieces = validItems.Where(i => i.Unit == "шт.").Sum(i => i.Quantity);
+            double totalInstallation = validItems.Sum(i => i.InstallationLaborTotal);
 
             return new TotalInfo
             {
@@ -218,6 +269,7 @@ namespace MosquitoNetCalculator.ViewModels
                 TotalArea = totalArea,
                 TotalLinear = totalLinear,
                 TotalPieces = totalPieces,
+                TotalInstallation = totalInstallation,
                 ZeroItemNames = zeroItems
             };
         }
@@ -304,12 +356,22 @@ namespace MosquitoNetCalculator.ViewModels
                     IsActive = od.IsActive,
                     IsAnticat = od.IsAnticat,
                     IsCustomProduct = od.IsCustomProduct,
+                    IsLabor = od.IsLabor || ProductCatalog.IsLabor(od.Name),
                     SlopeData = od.SlopeData?.ToSlopeCalculation()
                 };
                 // Use SetAnwisModeQuiet — Width/Height above are already-final stored
                 // values for the loaded od.AnwisSizeMode. The public setter would
                 // reverse-apply through default ББ 60 and corrupt dimensions.
-                item.SetAnwisModeQuiet((Models.AnwisSizeMode)od.AnwisSizeMode);
+                var loadedMode = (Models.AnwisSizeMode)od.AnwisSizeMode;
+                if (Services.AnwisSizeService.IsTwoModeScreen(od.Name))
+                {
+                    var available = Services.AnwisSizeService.GetAvailableModes(od.Name);
+                    if (!available.Contains(loadedMode))
+                    {
+                        loadedMode = Services.AnwisSizeService.GetDefaultMode(od.Name);
+                    }
+                }
+                item.SetAnwisModeQuiet(loadedMode);
 
                 // v3.47.0+ migration for legacy per-linear-meter product orders.
                 // These products were NOT installation-applicable before v3.47.0,

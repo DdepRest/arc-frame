@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using MosquitoNetCalculator.Models;
 using MosquitoNetCalculator.Services;
 using System.Collections.Generic;
@@ -138,9 +138,14 @@ namespace MosquitoNetCalculator.Controls
 
             mw.OrdersVM.SaveOrder(orderData);
             mw.IsNewOrder = false;
+            mw.DraftService.DiscardDraft();
+            if (mw.TxtAutosaveStatus != null)
+                mw.TxtAutosaveStatus.Text = "✓ Сохранено в базу";
             mw.UpdateCurrentOrderInfo();
             mw.RefreshOrdersList();
             mw.MarkClean();
+            mw.DraftService.DiscardDraft();
+            mw.DraftBanner?.HideBanner();
             mw.UndoRedo.Clear();
             // Стек пуст — подсказка «Ctrl+Z — отменить» больше не правдива.
             mw.UpdateUndoRedoHint();
@@ -154,7 +159,7 @@ namespace MosquitoNetCalculator.Controls
         {
             if (!TryGetMainWindow(nameof(BtnNewOrder_Click), out var mw)) return;
             var validItems = mw.OrderItems.Where(i => !string.IsNullOrEmpty(i.Name) && i.Total > 0).ToList();
-            if (validItems.Count > 0)
+            if (mw.IsDirty && validItems.Count > 0)
             {
                 if (!DialogService.ShowConfirm("У вас есть несохранённые данные. Создать новый заказ?", "Новый заказ", mw)) return;
             }
@@ -175,7 +180,10 @@ namespace MosquitoNetCalculator.Controls
             {
                 Owner = mw
             };
-            window.ShowDialog();
+            using (mw.DimmerScope())
+            {
+                window.ShowDialog();
+            }
         }
 
         private void BtnOrderInfo_Click(object sender, RoutedEventArgs e)
@@ -206,6 +214,8 @@ namespace MosquitoNetCalculator.Controls
                 mw.PushUndo();
                 mw.CalcVM.UnsubscribeAll(mw.UpdateTotal);
                 mw.CalcVM.ClearAll();
+                mw.DraftService.DiscardDraft();
+                mw.DraftBanner?.HideBanner();
                 mw.UpdateTotal();
                 mw.UpdateEmptyState();
 

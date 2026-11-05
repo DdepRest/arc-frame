@@ -1,7 +1,8 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
+using System.IO.Compression;
 using System.Net.Http;
 using System.Reflection;
 using System.Threading.Tasks;
@@ -783,5 +784,232 @@ namespace MosquitoNetCalculator.Services
         /// Delegates to <see cref="UpdateDownloader.TryDelete"/>.
         /// </summary>
         private static void TryDelete(string path) => UpdateDownloader.TryDelete(path);
+
+        // ─── Manual Update from local ZIP archive ─────────────────────────
+
+        /// <summary>
+        /// Result of inspecting a candidate manual update ZIP archive.
+        /// </summary>
+        public sealed class ManualArchiveInspection
+        {
+            public bool IsValid { get; set; }
+            public string? ErrorMessage { get; set; }
+            public Version? Version { get; set; }
+            public string? RawVersion { get; set; }
+            public string? ExeEntryPath { get; set; }
+        }
+
+        /// <summary>
+        /// Inspects a local ZIP archive to verify it contains MosquitoNetCalculator.exe,
+        /// tests for Zip-Slip vulnerabilities, and reads the version info via FileVersionInfo probe.
+        /// </summary>
+        public static ManualArchiveInspection InspectManualArchive(string zipPath)
+        {
+            if (string.IsNullOrWhiteSpace(zipPath) || !File.Exists(zipPath))
+            {
+                return new ManualArchiveInspection
+                {
+                    IsValid = false,
+                    ErrorMessage = "Файл архива не найден или путь недоступен."
+                };
+            }
+
+            string probeDir = Path.Combine(Path.GetTempPath(), $"arc-probe-{Guid.NewGuid():N}");
+            try
+            {
+                using var archive = System.IO.Compression.ZipFile.OpenRead(zipPath);
+
+                System.IO.Compression.ZipArchiveEntry? exeEntry = null;
+                foreach (var entry in archive.Entries)
+                {
+                    // Check Zip-Slip (relative paths containing directory traversal)
+                    if (entry.FullName.Contains("..") &&
+                        (entry.FullName.StartsWith("../", StringComparison.Ordinal) ||
+                         entry.FullName.StartsWith(@"..\", StringComparison.Ordinal) ||
+                         entry.FullName.Contains("/../") ||
+                         entry.FullName.Contains(@"\..\")))
+                    {
+                        return new ManualArchiveInspection
+                        {
+                            IsValid = false,
+                            ErrorMessage = "Архив содержит потенциально опасные относительные пути (Zip-Slip)."
+                        };
+                    }
+
+                    if (string.Equals(Path.GetFileName(entry.FullName), WatchdogService.ExeFileName, StringComparison.OrdinalIgnoreCase))
+                    {
+                        exeEntry = entry;
+                    }
+                }
+
+                if (exeEntry == null)
+                {
+                    return new ManualArchiveInspection
+                    {
+                        IsValid = false,
+                        ErrorMessage = $"В выбранном архиве не найден файл программы {WatchdogService.ExeFileName}."
+                    };
+                }
+
+                // Extract only the exe to a temp directory to probe its version
+                Directory.CreateDirectory(probeDir);
+                string probeExePath = Path.Combine(probeDir, WatchdogService.ExeFileName);
+                exeEntry.ExtractToFile(probeExePath, overwrite: true);
+
+                var vi = FileVersionInfo.GetVersionInfo(probeExePath);
+                string? rawVersion = vi.ProductVersion ?? vi.FileVersion;
+                Version? parsedVersion = ParseSafe(StripVersionSuffix(rawVersion));
+                if (parsedVersion == null && !string.IsNullOrWhiteSpace(vi.FileVersion))
+                {
+                    parsedVersion = ParseSafe(vi.FileVersion);
+                }
+
+                return new ManualArchiveInspection
+                {
+                    IsValid = true,
+                    Version = parsedVersion,
+                    RawVersion = rawVersion,
+                    ExeEntryPath = exeEntry.FullName
+                };
+            }
+            catch (System.IO.InvalidDataException)
+            {
+                return new ManualArchiveInspection
+                {
+                    IsValid = false,
+                    ErrorMessage = "Файл повреждён или не является корректным ZIP-архивом."
+                };
+            }
+            catch (Exception ex)
+            {
+                return new ManualArchiveInspection
+                {
+                    IsValid = false,
+                    ErrorMessage = $"Ошибка при проверке архива: {ex.Message}"
+                };
+            }
+            finally
+            {
+                try
+                {
+                    if (Directory.Exists(probeDir))
+                        Directory.Delete(probeDir, recursive: true);
+                }
+                catch { /* best-effort cleanup */ }
+            }
+        }
+
+        /// <summary>
+        /// Test seam: allows unit tests to bypass the interactive confirmation dialog.
+        /// </summary>
+        internal static Func<string, Version?, bool>? ShowManualUpdateConfirmOverride;
+
+        /// <summary>
+        /// Applies manual update from a local ZIP archive:
+        /// inspects archive, confirms with user, runs preflight check, stages watchdog, and restarts.
+        /// </summary>
+        public static async Task ApplyManualUpdateAsync(string zipPath, Window? owner = null)
+        {
+            await Task.Yield();
+            if (IsChecking || IsDownloading)
+            {
+                ToastService.ShowToast("Процесс обновления уже выполняется...", ToastType.Info);
+                return;
+            }
+
+            var inspection = InspectManualArchive(zipPath);
+            if (!inspection.IsValid)
+            {
+                DialogService.ShowMessage(inspection.ErrorMessage ?? "Некорректный архив обновления.", "Ошибка проверки архива", owner);
+                return;
+            }
+
+            string fileName = Path.GetFileName(zipPath);
+            string newVerStr = inspection.Version?.ToString() ?? inspection.RawVersion ?? "Не определена";
+            string currentVerStr = CurrentVersion.ToString();
+
+            bool isOlderOrSame = inspection.Version != null && inspection.Version <= CurrentVersion;
+
+            string confirmMessage = isOlderOrSame
+                ? $"Внимание: версия в архиве ({newVerStr}) не новее текущей версии программы ({currentVerStr}).\n\n" +
+                  $"Файл архива: {fileName}\n" +
+                  $"Приложение будет закрыто, текущие файлы программы заменены файлами из архива, после чего приложение перезапустится.\n\n" +
+                  $"Все ваши заказы, настройки и цены в %AppData% сохранятся.\n\n" +
+                  $"Вы уверены, что хотите продолжить установку?"
+                : $"Готово к установке обновления программы:\n\n" +
+                  $"• Текущая версия: v{currentVerStr}\n" +
+                  $"• Новая версия в архиве: v{newVerStr}\n" +
+                  $"• Файл: {fileName}\n\n" +
+                  $"Приложение будет закрыто, файлы обновлены и программа автоматически запустится.\n\n" +
+                  $"Все ваши заказы, настройки и цены в %AppData% сохранятся.\n\n" +
+                  $"Продолжить установку?";
+
+            bool confirmed = ShowManualUpdateConfirmOverride?.Invoke(zipPath, inspection.Version) ??
+                new DialogBuilder<bool>()
+                    .Title("Ручное обновление программы")
+                    .Message(confirmMessage)
+                    .WithButton("Отмена", false, isCancel: true, styleResource: "GhostButton")
+                    .WithButton("Обновить и перезапустить", true, isDefault: true, styleResource: "PrimaryButton")
+                    .ShowDialog(owner);
+
+            if (!confirmed) return;
+
+            var preflight = WatchdogService.PreFlightCheck();
+            if (!preflight.CanWriteInstallDir)
+            {
+                var reason = preflight.FailureReason ?? "Нет прав для установки обновления.";
+                DialogService.ShowMessage($"Не удалось установить обновление:\n{reason}", "Ошибка установки", owner);
+                return;
+            }
+
+            ToastService.ShowToast("Подготовка к установке обновления...", ToastType.Info);
+
+            try
+            {
+                WatchdogService.StageUpdate(zipPath);
+
+                bool watchdogLaunched = false;
+                try
+                {
+                    var psi = new ProcessStartInfo(WatchdogService.WatchdogPath)
+                    {
+                        UseShellExecute = true,
+                        Verb = "runas",
+                        WindowStyle = ProcessWindowStyle.Hidden
+                    };
+                    if (LaunchWatchdogForTest != null)
+                    {
+                        LaunchWatchdogForTest(psi);
+                    }
+                    else
+                    {
+                        Process.Start(psi);
+                    }
+                    watchdogLaunched = true;
+                }
+                catch (System.ComponentModel.Win32Exception ex)
+                {
+                    Debug.WriteLine($"[UpdateService] Manual update UAC declined: native={ex.NativeErrorCode}");
+                }
+
+                if (!watchdogLaunched)
+                {
+                    WatchdogService.CleanupStagedUpdate();
+                    DialogService.ShowMessage(
+                        "Установка обновления отменена. Для установки требуются права администратора.",
+                        "Отменено", owner);
+                    return;
+                }
+
+                AppSettingsService.SavePendingUpdateVersion(null);
+                _lastNotifiedVersion = null;
+                Application.Current?.Shutdown();
+            }
+            catch (Exception ex)
+            {
+                WatchdogService.CleanupStagedUpdate();
+                if (owner != null) DialogService.ShowMessage($"Не удалось выполнить обновление: {ex.Message}", "Ошибка", owner); else ToastService.ShowToast($"Не удалось выполнить обновление: {ex.Message}", ToastType.Error);
+            }
+        }
     }
 }

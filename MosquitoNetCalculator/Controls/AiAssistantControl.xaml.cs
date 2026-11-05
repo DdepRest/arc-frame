@@ -369,6 +369,46 @@ namespace MosquitoNetCalculator.Controls
                 _vm?.RequestUndo(msg);
         }
 
+        /// <summary>
+        /// «⇄» on a clarification size row — swaps WidthText and HeightText.
+        /// </summary>
+        private void BtnSwapClarificationDimensions_Click(object sender, RoutedEventArgs e)
+        {
+            if (sender is FrameworkElement fe && fe.Tag is AiClarificationSizeRow row)
+            {
+                row.SwapDimensions();
+            }
+        }
+
+        /// <summary>
+        /// «⇄» on an individual item step in the plan card — swaps Width and Height.
+        /// </summary>
+        private void BtnSwapStepDimensions_Click(object sender, RoutedEventArgs e)
+        {
+            if (sender is FrameworkElement fe && fe.Tag is AiActionStep step)
+            {
+                step.SwapDimensions();
+            }
+        }
+
+        /// <summary>
+        /// «⇄ Перевернуть все (Ш ↔ В)» in the plan card header — swaps Width and Height on all item steps.
+        /// </summary>
+        private void BtnSwapAllDimensions_Click(object sender, RoutedEventArgs e)
+        {
+            if (sender is FrameworkElement fe)
+            {
+                for (DependencyObject? node = fe; node != null; node = VisualTreeHelper.GetParent(node))
+                {
+                    if (node is FrameworkElement { DataContext: AiChatMessage { ActionPlan: { } plan } })
+                    {
+                        plan.SwapAllDimensions();
+                        return;
+                    }
+                }
+            }
+        }
+
         /// <summary>✕ on an individual step in the plan card → remove it from the plan.</summary>
         private void BtnRemovePlanStep_Click(object sender, RoutedEventArgs e)
         {

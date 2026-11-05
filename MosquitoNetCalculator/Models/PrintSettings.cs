@@ -15,6 +15,9 @@ namespace MosquitoNetCalculator.Models
         /// <summary>Добавлять второй комплект с электронной печатью «В ПРОИЗВОДСТВО».</summary>
         public bool IncludeProductionCopy { get; set; } = false;
 
+        /// <summary>Отображать строку «в том числе монтаж: X руб.» в блоке ИТОГО.</summary>
+        public bool ShowInstallationInTotal { get; set; } = true;
+
         /// <summary>Разбивка по копиям (collation).</summary>
         public bool Collated { get; set; } = true;
 

@@ -246,5 +246,69 @@ namespace MosquitoNetCalculator.Tests.Models
             Assert.Equal(0, size.ШиринаЗавод);
             Assert.Equal(0, size.ВысотаЗавод);
         }
+
+        // ────────────────────────────────────────────────────────────────
+        // 2-mode screens: «На навесах» и «Оконная на метал. крепл.»
+        // ────────────────────────────────────────────────────────────────
+
+        [Theory]
+        [InlineData("На навесах")]
+        [InlineData("Оконная на метал. крепл.")]
+        public void TwoModeScreen_ОтВвода_Проём_Adds40(string product)
+        {
+            var size = AnwisSize.ОтВвода(400, 1500, AnwisSizeMode.РазмерПроёма, product);
+
+            Assert.Equal(400, size.ШиринаОтображение);
+            Assert.Equal(1500, size.ВысотаОтображение);
+            Assert.Equal(440, size.ШиринаРасчёт);
+            Assert.Equal(1540, size.ВысотаРасчёт);
+            // Завод для обычных сеток совпадает с готовой расчётной сеткой
+            Assert.Equal(440, size.ШиринаЗавод);
+            Assert.Equal(1540, size.ВысотаЗавод);
+        }
+
+        [Theory]
+        [InlineData("На навесах")]
+        [InlineData("Оконная на метал. крепл.")]
+        public void TwoModeScreen_ОтВвода_Габарит_Identity(string product)
+        {
+            var size = AnwisSize.ОтВвода(400, 1500, AnwisSizeMode.Габаритный, product);
+
+            Assert.Equal(400, size.ШиринаОтображение);
+            Assert.Equal(1500, size.ВысотаОтображение);
+            Assert.Equal(400, size.ШиринаРасчёт);
+            Assert.Equal(1500, size.ВысотаРасчёт);
+            Assert.Equal(400, size.ШиринаЗавод);
+            Assert.Equal(1500, size.ВысотаЗавод);
+        }
+
+        [Theory]
+        [InlineData("На навесах")]
+        [InlineData("Оконная на метал. крепл.")]
+        public void TwoModeScreen_ОтХранимого_Проём_RestoresInput(string product)
+        {
+            var size = AnwisSize.ОтХранимого(440, 1540, AnwisSizeMode.РазмерПроёма, product);
+
+            Assert.Equal(400, size.ШиринаОтображение);
+            Assert.Equal(1500, size.ВысотаОтображение);
+            Assert.Equal(440, size.ШиринаРасчёт);
+            Assert.Equal(1540, size.ВысотаРасчёт);
+        }
+
+        [Fact]
+        public void TwoModeScreen_СРежимом_PreservesRawSize_AndUpdatesCalc()
+        {
+            // Создаём в режиме «Проём»
+            var proem = AnwisSize.ОтВвода(400, 1500, AnwisSizeMode.РазмерПроёма, "На навесах");
+            Assert.Equal(440, proem.ШиринаРасчёт);
+            Assert.Equal(1540, proem.ВысотаРасчёт);
+
+            // Переключаем на «Габарит»
+            var gab = proem.СРежимом(AnwisSizeMode.Габаритный);
+            Assert.Equal(400, gab.ШиринаОтображение);
+            Assert.Equal(1500, gab.ВысотаОтображение);
+            Assert.Equal(400, gab.ШиринаРасчёт);
+            Assert.Equal(1500, gab.ВысотаРасчёт);
+        }
     }
 }

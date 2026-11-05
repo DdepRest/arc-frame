@@ -31,11 +31,11 @@ namespace MosquitoNetCalculator.Models
             "Пояс" => "шт.",
             "Доставка" => "шт.",
             "Материал" => "шт.",
-            _ => "м²"
+            _ => ProductCatalog.IsLabor(name) ? "шт." : "м²"
         };
 
         /// <summary>Unit of measurement for this item (custom products are per piece).</summary>
-        public string Unit => IsCustomProduct ? "шт." : GetUnit(Name);
+        public string Unit => (IsCustomProduct || IsLabor) ? "шт." : GetUnit(Name);
 
         /// <summary>Display string for the full calculated quantity with unit.</summary>
         public string CalculatedValueDisplay
@@ -153,13 +153,13 @@ namespace MosquitoNetCalculator.Models
                 }
             }
             else if (Name is "Откос" or "Работа за откос" or "Работа" or "Брус" or "Пояс" or "Доставка" or "Материал"
-                     || IsCustomProduct)
+                     || IsCustomProduct || IsLabor || ProductCatalog.IsLabor(Name))
             {
                 // Manual sum rows: Total = Price × Qty, CalculatedValue = 1 шт.
                 // Includes «Свой товар» custom products (order-item flag, not
                 // mere catalog absence — user-added price products stay area-based).
                 CalculatedValue = 1;
-                if (IsCustomProduct && Quantity <= 0)
+                if ((IsCustomProduct || IsLabor || ProductCatalog.IsLabor(Name)) && Quantity <= 0)
                 {
                     // Qty not specified (0/empty): the row shows the manually
                     // entered sum — Price × 1, not Price × 0.
@@ -209,6 +209,7 @@ namespace MosquitoNetCalculator.Models
             OnPropertyChanged(nameof(IsAmountOnly));
             OnPropertyChanged(nameof(IsWidthOnly));
             OnPropertyChanged(nameof(IsAnwis));
+            OnPropertyChanged(nameof(HasSizeMode));
             OnPropertyChanged(nameof(AnwisSizeShortLabel));
             OnPropertyChanged(nameof(AnwisSizeToolTip));
             OnPropertyChanged(nameof(TotalWithDeduction));

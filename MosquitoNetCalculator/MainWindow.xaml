@@ -1,4 +1,4 @@
-<Window x:Class="MosquitoNetCalculator.MainWindow"
+﻿<Window x:Class="MosquitoNetCalculator.MainWindow"
         Style="{DynamicResource Window.Shared}"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
@@ -149,8 +149,10 @@
 
     <Grid Background="{DynamicResource AppBg}">
         <Grid.RowDefinitions>
-            <RowDefinition Height="Auto"/>
-            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>  <!-- Title bar -->
+            <RowDefinition Height="Auto"/>  <!-- Периодическая проверка местоположения -->
+            <RowDefinition Height="Auto"/>  <!-- Recovery banner -->
+            <RowDefinition Height="Auto"/>  <!-- Progress bar обновления -->
             <RowDefinition Height="*"/>
         </Grid.RowDefinitions>
 
@@ -160,10 +162,26 @@
         <controls:TitleBarControl x:Name="TitleBarControl" Grid.Row="0"/>
 
         <!-- ═══════════════════════════════════════════════════════ -->
+        <!-- ПЕРИОДИЧЕСКАЯ ПРОВЕРКА МЕСТОПОЛОЖЕНИЯ                     -->
+        <!-- Показывается не чаще раза в 30 дней и не блокирует        -->
+        <!-- работу (см. MainWindow.LocationCheck.cs).                 -->
+        <!-- ═══════════════════════════════════════════════════════ -->
+        <controls:LocationCheckBanner x:Name="LocationBanner"
+                                      Grid.Row="1"
+                                      Confirmed="LocationBanner_Confirmed"
+                                      ChangeRequested="LocationBanner_ChangeRequested"
+                                      Snoozed="LocationBanner_Snoozed"/>
+        <!-- ======================================================= -->
+        <!-- ВОССТАНОВЛЕНИЕ ДОКУМЕНТА (EXCEL-STYLE CRASH RECOVERY)     -->
+        <!-- ======================================================= -->
+        <controls:DraftRecoveryBanner x:Name="DraftBanner"
+                                      Grid.Row="2"/>
+
+        <!-- ═══════════════════════════════════════════════════════ -->
         <!-- UPDATE DOWNLOAD PROGRESS BAR                             -->
         <!-- ═══════════════════════════════════════════════════════ -->
         <ProgressBar x:Name="UpdateDownloadBar"
-                     Grid.Row="1"
+                     Grid.Row="2"
                      Height="3"
                      Minimum="0" Maximum="100"
                      Value="0"
@@ -177,7 +195,7 @@
         <!-- ═══════════════════════════════════════════════════════ -->
         <!-- MAIN LAYOUT: NAVIGATION VIEW + CONTENT                 -->
         <!-- ═══════════════════════════════════════════════════════ -->
-        <Grid Grid.Row="2">
+        <Grid Grid.Row="4">
             <!-- ── Content area (Расчёт + overlays) ── -->
             <Grid>
                 <!-- ═══════════════════════════════════════ -->
@@ -205,32 +223,85 @@
                         <!-- ИТОГО -->
                         <controls:TotalCardControl x:Name="TotalCardControl" Grid.Row="3"/>
 
-                        <!-- Status bar: compact order info + dirty indicator -->
+                        <!-- Status bar: compact order info + dirty indicator + autosave status -->
                         <Border Grid.Row="4" Margin="{DynamicResource Gap.BlockTop}" Padding="{DynamicResource Pad.ControlSm}"
                                 HorizontalAlignment="Stretch" Background="Transparent">
-                            <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                                <TextBlock x:Name="StatusOrderInfo" Text="Новый заказ"
-                                           FontSize="{StaticResource Type.Caption}" Foreground="{DynamicResource TextMuted}"
-                                           VerticalAlignment="Center"/>
-                                <Border x:Name="StatusDirtyIndicator" Visibility="Collapsed"
-                                        Background="{DynamicResource BadgeWarningBg}"
-                                        CornerRadius="{DynamicResource Radius.Capsule}" Padding="{DynamicResource Pad.Pill}" Margin="{DynamicResource Gap.Left}"
-                                        ToolTip="Несохранённые изменения (Ctrl+S)">
-                                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                                        <Ellipse Width="6" Height="6" Fill="{DynamicResource BadgeWarningFg}"
-                                                 VerticalAlignment="Center" Margin="{DynamicResource Gap.InlineSm}"/>
-                                        <TextBlock Text="Есть изменения" FontSize="{StaticResource Type.Caption}" FontWeight="SemiBold"
-                                                   Foreground="{DynamicResource BadgeWarningFg}"/>
-                                    </StackPanel>
-                                </Border>
-                                <!-- Undo/Redo hint -->
-                                <TextBlock x:Name="UndoRedoHint" Visibility="Collapsed"
-                                           FontSize="{StaticResource Type.Caption}" Foreground="{DynamicResource TextMuted}"
-                                           VerticalAlignment="Center" Margin="{DynamicResource Gap.LeftLg}"
-                                           ToolTip="Ctrl+Z — отменить последнее действие, Ctrl+Y — повторить"/>
-                            </StackPanel>
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+                                <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center">
+                                    <TextBlock x:Name="StatusOrderInfo" Text="Новый заказ"
+                                               FontSize="{StaticResource Type.Caption}" Foreground="{DynamicResource TextMuted}"
+                                               VerticalAlignment="Center"/>
+                                    <Border x:Name="StatusDirtyIndicator" Visibility="Collapsed"
+                                            Background="{DynamicResource BadgeWarningBg}"
+                                            CornerRadius="{DynamicResource Radius.Capsule}" Padding="{DynamicResource Pad.Pill}" Margin="{DynamicResource Gap.Left}"
+                                            ToolTip="Несохранённые изменения (Ctrl+S)">
+                                        <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                            <Ellipse Width="6" Height="6" Fill="{DynamicResource BadgeWarningFg}"
+                                                     VerticalAlignment="Center" Margin="{DynamicResource Gap.InlineSm}"/>
+                                            <TextBlock Text="Есть изменения" FontSize="{StaticResource Type.Caption}" FontWeight="SemiBold"
+                                                       Foreground="{DynamicResource BadgeWarningFg}"/>
+                                        </StackPanel>
+                                    </Border>
+                                    <!-- Undo/Redo hint -->
+                                    <TextBlock x:Name="UndoRedoHint" Visibility="Collapsed"
+                                               FontSize="{StaticResource Type.Caption}" Foreground="{DynamicResource TextMuted}"
+                                               VerticalAlignment="Center" Margin="{DynamicResource Gap.LeftLg}"
+                                               ToolTip="Ctrl+Z — отменить последнее действие, Ctrl+Y — повторить"/>
+                                </StackPanel>
+
+                                <!-- Live Autosave Status -->
+                                <TextBlock Grid.Column="1" x:Name="TxtAutosaveStatus"
+                                           Text="🕒 Автосохранение включено"
+                                           FontSize="{StaticResource Type.Caption}"
+                                           Foreground="{DynamicResource TextMuted}"
+                                           VerticalAlignment="Center"
+                                           Cursor="Hand"
+                                           PreviewMouseLeftButtonDown="AutosaveStatus_Click"
+                                           ToolTip="Черновик заказа сохраняется в фоне при каждом изменении. Нажмите для открытия панели черновика."/>
+                            </Grid>
                         </Border>
                     </Grid>
+                </Grid>
+
+                <!-- ═══════════════════════════════════════ -->
+                <!-- OVERLAY: ДАННЫЕ ЗАКАЗА (sidebar)        -->
+                <!-- ═══════════════════════════════════════ -->
+                <Grid x:Name="SidebarOverlay" Visibility="Collapsed" Panel.ZIndex="15">
+                    <!-- Backdrop -->
+                    <Border x:Name="SidebarBackdrop" Background="{DynamicResource Scrim}" Opacity="0"
+                            MouseLeftButtonDown="Backdrop_MouseLeftButtonDown" Cursor="Hand"/>
+                    <!-- Content panel (slides from right) -->
+                    <Border x:Name="SidebarPanel"
+                            Background="{DynamicResource Surface}"
+                            HorizontalAlignment="Right" Width="340"
+                            BorderBrush="{DynamicResource Border}" BorderThickness="1,0,0,0">
+                        <Border.RenderTransform>
+                            <TranslateTransform x:Name="SidebarSlideTransform" X="0"/>
+                        </Border.RenderTransform>
+                        <Grid>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="*"/>
+                            </Grid.RowDefinitions>
+                            <Border Grid.Row="0" Style="{StaticResource OverlayHeader}">
+                                <Grid>
+                                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                        <TextBlock Text="&#xE77B;" FontFamily="{DynamicResource Font.Icon}" FontSize="{StaticResource Type.Subtitle}"
+                                                   Foreground="{DynamicResource AccentText}" VerticalAlignment="Center" Margin="{DynamicResource Gap.Inline}"/>
+                                        <TextBlock Text="Данные заказа" FontSize="{StaticResource Type.BodyLg}" FontWeight="SemiBold"
+                                                   Foreground="{DynamicResource TextPrimary}" VerticalAlignment="Center"/>
+                                    </StackPanel>
+                                    <Button Style="{StaticResource OverlayCloseButton}"
+                                            HorizontalAlignment="Right" Click="CloseSidebar_Click"/>
+                                </Grid>
+                            </Border>
+                            <controls:SidebarControl x:Name="SidebarControl" Grid.Row="1"/>
+                        </Grid>
+                    </Border>
                 </Grid>
 
                 <!-- ═══════════════════════════════════════ -->
@@ -483,40 +554,7 @@
                     </Border>
                 </Grid>
 
-                <!-- OVERLAY: ДАННЫЕ ЗАКАЗА (sidebar)        -->
-                <!-- ═══════════════════════════════════════ -->
-                <Grid x:Name="SidebarOverlay" Visibility="Collapsed" Panel.ZIndex="15">
-                    <Border x:Name="SidebarBackdrop" Background="{DynamicResource Scrim}" Opacity="0"
-                            MouseLeftButtonDown="Backdrop_MouseLeftButtonDown" Cursor="Hand"/>
-                    <Border x:Name="SidebarPanel"
-                            Background="{DynamicResource Surface}"
-                            HorizontalAlignment="Right" Width="340"
-                            BorderBrush="{DynamicResource Border}" BorderThickness="1,0,0,0">
-                        <Border.RenderTransform>
-                            <TranslateTransform x:Name="SidebarSlideTransform" X="0"/>
-                        </Border.RenderTransform>
-                        <Grid>
-                            <Grid.RowDefinitions>
-                                <RowDefinition Height="Auto"/>
-                                <RowDefinition Height="*"/>
-                            </Grid.RowDefinitions>
-                            <!-- UX-15: shared OverlayHeader style (was 5 inline attributes × 8 copies) -->
-                            <Border Grid.Row="0" Style="{StaticResource OverlayHeader}">
-                                <Grid>
-                                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                                        <TextBlock Text="&#xE77B;" FontFamily="{DynamicResource Font.Icon}" FontSize="{StaticResource Type.Subtitle}"
-                                                   Foreground="{DynamicResource AccentText}" VerticalAlignment="Center" Margin="{DynamicResource Gap.Inline}"/>
-                                        <TextBlock Text="Заказчик" FontSize="{StaticResource Type.BodyLg}" FontWeight="SemiBold"
-                                                   Foreground="{DynamicResource TextPrimary}" VerticalAlignment="Center"/>
-                                    </StackPanel>
-                                    <Button Style="{StaticResource OverlayCloseButton}"
-                                            HorizontalAlignment="Right" Click="CloseOverlay_Click"/>
-                                </Grid>
-                            </Border>
-                            <controls:SidebarControl x:Name="SidebarControl" Grid.Row="1"/>
-                        </Grid>
-                    </Border>
-                </Grid>
+
 
                 <!-- ═══════════════════════════════════════ -->
                 <!-- OVERLAY: ПЕЧАТЬ                        -->
@@ -733,12 +771,21 @@
             </Grid>
         </Grid>
 
-        <!-- Toast notification container — overlays on top of everything.
+        <!-- Modal backdrop dimmer layer: smoothly dims MainWindow when a modal dialog is active -->
+        <Border x:Name="ModalDimmerLayer"
+                Grid.Row="0" Grid.RowSpan="5"
+                Panel.ZIndex="90"
+                Background="{DynamicResource Scrim}"
+                Opacity="0"
+                Visibility="Collapsed"
+                IsHitTestVisible="False"/>
+
+        <!-- Toast notification container — floating overlay across the entire window.
              No IsHitTestVisible=False: WPF hit-testing prunes the whole subtree at
              this level, breaking every toast button (persistent update toast with
              «Обновить»/«Позже» is the most visible victim). Background is null, so
              empty-canvas click-through still works. -->
-        <Grid x:Name="ToastCanvas" Grid.Row="2" Panel.ZIndex="20"
+        <Grid x:Name="ToastCanvas" Grid.Row="0" Grid.RowSpan="5" Panel.ZIndex="100"
               HorizontalAlignment="Stretch" VerticalAlignment="Stretch"
               ClipToBounds="True"/>
     </Grid>

@@ -7,36 +7,8 @@
     <UserControl.Resources>
         <!-- Чекбокс отвязки на чипе устройства (компактный, в стиле DialogCheckBox
              из AiApiKeyDialog — общий стиль не выносим, тут он один). -->
-        <Style x:Key="AdminDeviceCheckBox" TargetType="CheckBox">
-            <!-- UX-10: focusable so the unbind checkbox is reachable by keyboard
-                 (Tab + Space); the focus ring is drawn by FluentFocusVisual. -->
-            <Setter Property="FocusVisualStyle" Value="{StaticResource FluentFocusVisual}"/>
+        <Style x:Key="AdminDeviceCheckBox" TargetType="CheckBox" BasedOn="{StaticResource {x:Type CheckBox}}">
             <Setter Property="VerticalAlignment" Value="Center"/>
-            <Setter Property="Cursor" Value="Hand"/>
-            <Setter Property="Template">
-                <Setter.Value>
-                    <ControlTemplate TargetType="CheckBox">
-                        <Border x:Name="CheckBorder" Width="16" Height="16" CornerRadius="{DynamicResource Radius.Sm}"
-                                Background="Transparent"
-                                BorderBrush="{DynamicResource TextMuted}" BorderThickness="1.5">
-                            <TextBlock x:Name="CheckMark" Text="✓" FontSize="{StaticResource Type.Caption}" FontWeight="Bold"
-                                       Foreground="{DynamicResource OnAccent}"
-                                       HorizontalAlignment="Center" VerticalAlignment="Center"
-                                       Visibility="Collapsed"/>
-                        </Border>
-                        <ControlTemplate.Triggers>
-                            <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="CheckBorder" Property="BorderBrush" Value="{DynamicResource Accent}"/>
-                            </Trigger>
-                            <Trigger Property="IsChecked" Value="True">
-                                <Setter TargetName="CheckBorder" Property="Background" Value="{DynamicResource Accent}"/>
-                                <Setter TargetName="CheckBorder" Property="BorderBrush" Value="{DynamicResource Accent}"/>
-                                <Setter TargetName="CheckMark" Property="Visibility" Value="Visible"/>
-                            </Trigger>
-                        </ControlTemplate.Triggers>
-                    </ControlTemplate>
-                </Setter.Value>
-            </Setter>
         </Style>
     </UserControl.Resources>
 
@@ -622,6 +594,30 @@
                                                                                        Foreground="{Binding Status, Converter={StaticResource OfficeStatusBadgeFg}}"
                                                                                        Margin="{DynamicResource Gap.LeftSm}"
                                                                                        VerticalAlignment="Center"/>
+                                                                            <!-- Давно не подтверждали локацию: «локация не подтверждена
+                                                                                 62 дн.». Пусто (и скрыто), пока подтверждение свежее —
+                                                                                 чип не забивается постоянной подсказкой. Стоит ПЕРЕД
+                                                                                 давностью отчёта: последний ребёнок чипа — контракт
+                                                                                 Playtest_LastSeenHint_ShowsOnStaleDeviceChip.
+                                                                                 Цвет — предупреждение, а не цвет статуса версии: зелёная
+                                                                                 «60 дн.» на актуальном ПК читалась как «всё хорошо». -->
+                                                                            <TextBlock Text="{Binding LocationCheckHint}"
+                                                                                       FontSize="{StaticResource Type.Caption}"
+                                                                                       FontWeight="SemiBold"
+                                                                                       Foreground="{DynamicResource Warning}"
+                                                                                       Margin="{DynamicResource Gap.Left}"
+                                                                                       VerticalAlignment="Center">
+                                                                                <TextBlock.Style>
+                                                                                    <Style TargetType="TextBlock">
+                                                                                        <Style.Triggers>
+                                                                                            <DataTrigger Binding="{Binding LocationCheckHint}" Value="">
+                                                                                                <Setter Property="Visibility" Value="Collapsed"/>
+                                                                                                <Setter Property="Margin" Value="{DynamicResource Gap.None}"/>
+                                                                                            </DataTrigger>
+                                                                                        </Style.Triggers>
+                                                                                    </Style>
+                                                                                </TextBlock.Style>
+                                                                            </TextBlock>
                                                                             <TextBlock Text="{Binding LastSeenHint}"
                                                                                        FontSize="{StaticResource Type.Caption}"
                                                                                        Foreground="{Binding Status, Converter={StaticResource OfficeStatusBadgeFg}}"

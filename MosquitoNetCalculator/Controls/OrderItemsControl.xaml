@@ -38,6 +38,9 @@
                 Opacity="0" Visibility="Collapsed"
                 ClipToBounds="True">
             <DataGrid x:Name="OrderGrid"
+                      SelectionMode="Extended"
+                      SelectionUnit="FullRow"
+                      PreviewKeyDown="OrderGrid_PreviewKeyDown"
                       ItemsSource="{Binding OrderItems}"
                       MouseDoubleClick="OrderGrid_MouseDoubleClick"
                       Margin="{DynamicResource Gap.None}"
@@ -54,6 +57,25 @@
                       VirtualizingPanel.VirtualizationMode="Recycling"
                       VirtualizingPanel.ScrollUnit="Pixel"
                       ScrollViewer.CanContentScroll="True">
+                <DataGrid.ContextMenu>
+                    <ContextMenu Style="{StaticResource {x:Type ContextMenu}}" Opened="OrderGrid_ContextMenu_Opened">
+                        <MenuItem x:Name="MenuBatchColor" Header="Изменить цвет для выбранных" Style="{StaticResource {x:Type MenuItem}}">
+                            <MenuItem Header="Белый" Tag="Белый" Click="MenuBatchColor_Click" Style="{StaticResource {x:Type MenuItem}}"/>
+                            <MenuItem Header="Коричневый" Tag="Коричневый" Click="MenuBatchColor_Click" Style="{StaticResource {x:Type MenuItem}}"/>
+                            <MenuItem Header="Антрацит" Tag="Антрацит" Click="MenuBatchColor_Click" Style="{StaticResource {x:Type MenuItem}}"/>
+                            <MenuItem Header="Золотой дуб" Tag="Золотой дуб" Click="MenuBatchColor_Click" Style="{StaticResource {x:Type MenuItem}}"/>
+                        </MenuItem>
+                        <MenuItem x:Name="MenuBatchInstallation" Header="Монтаж для выбранных" Style="{StaticResource {x:Type MenuItem}}">
+                            <MenuItem Header="1. Учтён (400 ₽)" Tag="0" Click="MenuBatchInstallation_Click" Style="{StaticResource {x:Type MenuItem}}"/>
+                            <MenuItem Header="2. В конструкцию (200 ₽)" Tag="2" Click="MenuBatchInstallation_Click" Style="{StaticResource {x:Type MenuItem}}"/>
+                            <MenuItem Header="3. Без монтажа (-500 ₽)" Tag="1" Click="MenuBatchInstallation_Click" Style="{StaticResource {x:Type MenuItem}}"/>
+                        </MenuItem>
+                        <Separator Style="{StaticResource {x:Type Separator}}"/>
+                        <MenuItem x:Name="MenuBatchToggleActive" Header="Включить / Выключить выбранные" Click="MenuBatchToggleActive_Click" Style="{StaticResource {x:Type MenuItem}}"/>
+                        <Separator Style="{StaticResource {x:Type Separator}}"/>
+                        <MenuItem x:Name="MenuBatchDelete" Header="Удалить выбранные (Delete)" Click="MenuBatchDelete_Click" Foreground="{DynamicResource Danger}" Style="{StaticResource {x:Type MenuItem}}"/>
+                    </ContextMenu>
+                </DataGrid.ContextMenu>
                 <DataGrid.RowStyle>
                     <StaticResource ResourceKey="OrderRow"/>
                 </DataGrid.RowStyle>
@@ -119,7 +141,7 @@
                                                             ElementStyle="{DynamicResource CenterCell}"/>
 
                     <!-- Наименование (Anwis mode pill inline) -->
-                    <DataGridTemplateColumn Header="Наименование" Width="*" MinWidth="80" IsReadOnly="True"
+                    <DataGridTemplateColumn Header="Наименование" Width="*" MinWidth="80"
                                             HeaderStyle="{StaticResource LeftColumnHeader}">
                         <DataGridTemplateColumn.CellTemplate>
                             <DataTemplate>
@@ -243,6 +265,18 @@
 </StackPanel>
                             </DataTemplate>
                         </DataGridTemplateColumn.CellTemplate>
+                        <DataGridTemplateColumn.CellEditingTemplate>
+                            <DataTemplate>
+                                <TextBox Text="{Binding Name, UpdateSourceTrigger=LostFocus}"
+                                         VerticalContentAlignment="Center"
+                                         BorderBrush="{DynamicResource Accent}"
+                                         BorderThickness="1"
+                                         Background="{DynamicResource Surface}"
+                                         Foreground="{DynamicResource TextPrimary}"
+                                         Padding="{DynamicResource Pad.Tiny}"
+                                         GotFocus="SelectAll_OnFocus"/>
+                            </DataTemplate>
+                        </DataGridTemplateColumn.CellEditingTemplate>
                     </DataGridTemplateColumn>
 
                     <!-- Цвет -->

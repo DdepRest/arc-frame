@@ -104,5 +104,41 @@ namespace MosquitoNetCalculator.Tests.Services
             Assert.False(confirm.IsCancel);
             Assert.Equal("DangerButton", confirm.StyleResource);
         }
+
+        [Fact]
+        public void BuildRestoreConfirm_HasCorrectButtonsAndLabels()
+        {
+            const string contractNumber = "123-45";
+            var builder = DialogService.BuildRestoreConfirm(contractNumber);
+
+            Assert.NotNull(builder);
+
+            var titleField = typeof(DialogBuilder<bool>).GetField("_title", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+            var messageField = typeof(DialogBuilder<bool>).GetField("_message", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+
+            var title = (string?)titleField?.GetValue(builder);
+            var message = (string?)messageField?.GetValue(builder);
+
+            Assert.Equal("Восстановление заказа", title);
+            Assert.Equal($"Восстановить заказ «{contractNumber}» из корзины?", message);
+
+            Assert.Equal(2, builder.Buttons.Count);
+
+            var cancel = builder.Buttons.FirstOrDefault(b => !b.Result);
+            Assert.NotNull(cancel);
+            Assert.Equal("Отмена", cancel.Content);
+            Assert.False(cancel.Result);
+            Assert.True(cancel.IsCancel);
+            Assert.False(cancel.IsDefault);
+            Assert.Equal("GhostButton", cancel.StyleResource);
+
+            var restore = builder.Buttons.FirstOrDefault(b => b.Result);
+            Assert.NotNull(restore);
+            Assert.Equal("Восстановить", restore.Content);
+            Assert.True(restore.Result);
+            Assert.True(restore.IsDefault);
+            Assert.False(restore.IsCancel);
+            Assert.Equal("PrimaryButton", restore.StyleResource);
+        }
     }
 }

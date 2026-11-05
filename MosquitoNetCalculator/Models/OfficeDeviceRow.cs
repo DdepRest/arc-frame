@@ -22,6 +22,13 @@ namespace MosquitoNetCalculator.Models
         /// <summary>Время последнего отчёта устройства (UTC), null если отчёта нет.</summary>
         public DateTimeOffset? LastReportAt { get; init; }
 
+        /// <summary>
+        /// Когда местоположение на этом ПК последний раз подтверждали (UTC).
+        /// Null — в отчёте поля нет (старая версия программы) или устройство
+        /// ни разу не подтверждало.
+        /// </summary>
+        public DateTimeOffset? LocationConfirmedAt { get; init; }
+
         public OfficeStatus Status { get; init; }
 
         /// <summary>
@@ -85,8 +92,26 @@ namespace MosquitoNetCalculator.Models
             }
         }
 
+        /// <summary>
+        /// Предупреждение о неподтверждённой локации для чипа устройства:
+        /// «локация не подтверждена 62 дн.», а для установок, которые ещё ни
+        /// разу не подтверждали (в т.ч. старые версии без функции), —
+        /// «локация не подтверждена». Пусто, пока подтверждение свежее:
+        /// подсказка — сигнал, а не постоянная строка.
+        /// </summary>
+        public string LocationCheckHint =>
+            Services.LocationCheckService.BuildAdminHint(LocationConfirmedAt, DateTimeOffset.Now);
+
         /// <summary>Полная подпись для тултипа чипа устройства.</summary>
-        public string ToolTipText => $"{DeviceLabel} · {StatusText} · последний отчёт: {LastReportDisplay}";
+        public string ToolTipText
+        {
+            get
+            {
+                string hint = LocationCheckHint;
+                string baseText = $"{DeviceLabel} · {StatusText} · последний отчёт: {LastReportDisplay}";
+                return string.IsNullOrEmpty(hint) ? baseText : $"{baseText} · {hint}";
+            }
+        }
 
         /// <summary>
         /// Короткое «последняя связь» на чипе: «· сегодня 14:32» / «· вчера 09:10» /

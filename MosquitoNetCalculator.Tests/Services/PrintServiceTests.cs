@@ -36,11 +36,11 @@ namespace MosquitoNetCalculator.Tests.Services
         };
 
         // Helper: build document on STA thread and extract text
-        private string BuildAndExtract(List<OrderItem> items, ClientInfo client, double total, string words)
+        private string BuildAndExtract(List<OrderItem> items, ClientInfo client, double total, string words, PrintSettings? settings = null)
         {
             return WpfTestHelper.RunOnSta(() =>
             {
-                var doc = _service.BuildFlowDocument(items, client, total, words);
+                var doc = _service.BuildFlowDocument(items, client, total, words, settings);
                 return doc != null ? FlowDocumentTextExtractor.ExtractAllText(doc) : "";
             });
         }
@@ -679,6 +679,42 @@ namespace MosquitoNetCalculator.Tests.Services
             Assert.Equal(PrintResultType.PrinterError, result.Type);
             Assert.Empty(printerName);
             Assert.Contains("Не удалось определить принтер", result.UserMessage);
+        }
+
+        [Fact]
+        public void BuildFlowDocument_ShowsInstallationInTotal_WhenEnabledAndLaborTotalGreaterThanZero()
+        {
+            var items = new List<OrderItem>
+            {
+                new() { Name = "Anwis", Total = 1000, InstallationMode = 0, Quantity = 1 }
+            };
+            var settings = new PrintSettings { ShowInstallationInTotal = true };
+            var text = BuildAndExtract(items, SampleClient(), 1000, "Одна тысяча рублей", settings);
+            Assert.Contains("В том числе монтаж: 400,00 руб.", text);
+        }
+
+        [Fact]
+        public void BuildFlowDocument_HidesInstallationInTotal_WhenDisabled()
+        {
+            var items = new List<OrderItem>
+            {
+                new() { Name = "Anwis", Total = 1000, InstallationMode = 0, Quantity = 1 }
+            };
+            var settings = new PrintSettings { ShowInstallationInTotal = false };
+            var text = BuildAndExtract(items, SampleClient(), 1000, "Одна тысяча рублей", settings);
+            Assert.DoesNotContain("В том числе монтаж", text);
+        }
+
+        [Fact]
+        public void BuildFlowDocument_HidesInstallationInTotal_WhenLaborTotalIsZero()
+        {
+            var items = new List<OrderItem>
+            {
+                new() { Name = "Anwis", Total = 1000, InstallationMode = 1, Quantity = 1 }
+            };
+            var settings = new PrintSettings { ShowInstallationInTotal = true };
+            var text = BuildAndExtract(items, SampleClient(), 1000, "Одна тысяча рублей", settings);
+            Assert.DoesNotContain("В том числе монтаж", text);
         }
 
     }

@@ -17,15 +17,15 @@
          Подложка инлайн: ресурсный Border нельзя класть в два окна сразу. -->
     <Grid>
         <Border Background="{DynamicResource Surface}"
-                BorderBrush="{DynamicResource Border}" BorderThickness="1"
+                BorderBrush="{DynamicResource BorderHover}" BorderThickness="1"
                 CornerRadius="{DynamicResource Radius.Lg}" Margin="{DynamicResource Gap.Window}">
             <Border.Effect>
-                <DropShadowEffect BlurRadius="20" ShadowDepth="2" Opacity="0.25"
+                <DropShadowEffect BlurRadius="36" ShadowDepth="8" Opacity="0.60"
                                   Color="{DynamicResource ShadowColor}"/>
             </Border.Effect>
         </Border>
         <Border Background="{DynamicResource Surface}"
-                BorderBrush="{DynamicResource Border}"
+                BorderBrush="{DynamicResource BorderHover}"
                 BorderThickness="1"
                 CornerRadius="{DynamicResource Radius.Lg}"
                 Margin="{DynamicResource Gap.Window}"

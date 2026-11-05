@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
@@ -234,6 +234,92 @@ namespace MosquitoNetCalculator.Controls
         {
             if (sender is TextBox tb)
                 tb.SelectAll();
+        }
+            public List<OrderItem> GetSelectedOrderItems()
+        {
+            var list = new List<OrderItem>();
+            foreach (var item in OrderGrid.SelectedItems)
+            {
+                if (item is OrderItem orderItem)
+                    list.Add(orderItem);
+            }
+            return list;
+        }
+
+        private void OrderGrid_ContextMenu_Opened(object sender, RoutedEventArgs e)
+        {
+            var selected = GetSelectedOrderItems();
+            int count = selected.Count;
+
+            if (MenuBatchColor != null)
+                MenuBatchColor.Header = count > 1 ? $"Изменить цвет для выбранных ({count})" : "Изменить цвет";
+
+            if (MenuBatchInstallation != null)
+                MenuBatchInstallation.Header = count > 1 ? $"Монтаж для выбранных ({count})" : "Монтаж изделия";
+
+            if (MenuBatchDelete != null)
+            {
+                MenuBatchDelete.Header = count > 1 ? $"Удалить выбранные ({count}) (Delete)" : "Удалить позицию (Delete)";
+                MenuBatchDelete.IsEnabled = count > 0;
+            }
+        }
+
+        private void OrderGrid_PreviewKeyDown(object sender, KeyEventArgs e)
+        {
+            if (e.Key == Key.Delete)
+            {
+                // If the user is currently editing text in a TextBox inside a cell, let standard Delete work
+                if (Keyboard.FocusedElement is TextBox) return;
+
+                var selected = GetSelectedOrderItems();
+                if (selected.Count > 0)
+                {
+                    e.Handled = true;
+                    TryForwardToMain(nameof(OrderGrid_PreviewKeyDown), mw => mw.DeleteOrderItems(selected));
+                }
+            }
+        }
+
+        private void MenuBatchColor_Click(object sender, RoutedEventArgs e)
+        {
+            if (sender is MenuItem mi && mi.Tag is string color)
+            {
+                var selected = GetSelectedOrderItems();
+                if (selected.Count > 0)
+                {
+                    TryForwardToMain(nameof(MenuBatchColor_Click), mw => mw.BatchChangeColor(selected, color));
+                }
+            }
+        }
+
+        private void MenuBatchInstallation_Click(object sender, RoutedEventArgs e)
+        {
+            if (sender is MenuItem mi && mi.Tag is string tagStr && int.TryParse(tagStr, out int mode))
+            {
+                var selected = GetSelectedOrderItems();
+                if (selected.Count > 0)
+                {
+                    TryForwardToMain(nameof(MenuBatchInstallation_Click), mw => mw.BatchChangeInstallation(selected, mode));
+                }
+            }
+        }
+
+        private void MenuBatchToggleActive_Click(object sender, RoutedEventArgs e)
+        {
+            var selected = GetSelectedOrderItems();
+            if (selected.Count > 0)
+            {
+                TryForwardToMain(nameof(MenuBatchToggleActive_Click), mw => mw.BatchToggleActive(selected));
+            }
+        }
+
+        private void MenuBatchDelete_Click(object sender, RoutedEventArgs e)
+        {
+            var selected = GetSelectedOrderItems();
+            if (selected.Count > 0)
+            {
+                TryForwardToMain(nameof(MenuBatchDelete_Click), mw => mw.DeleteOrderItems(selected));
+            }
         }
     }
 }

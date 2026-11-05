@@ -378,7 +378,9 @@ namespace MosquitoNetCalculator.Services
                 if (ProductCatalog.IsInstallationApplicable(product))
                 {
                     double factor = ProductCatalog.IsPerLinearMeter(product)
-                        ? Math.Round(Math.Max(Width, Height) / 1000.0, 3) * Quantity
+                        ? (product == "Уплотнение"
+                            ? ((Width == 0 && Height == 0) ? 1.0 : Math.Round((Width + Height) * 2 / 1000.0, 3))
+                            : Math.Round(Math.Max(Width, Height) / 1000.0, 3)) * Quantity
                         : Quantity;
 
                     if (InstallationMode == 0) // Монтаж включён
@@ -391,14 +393,206 @@ namespace MosquitoNetCalculator.Services
                         double ded = OrderItem.GetDefaultInstallationDeduction(product);
                         total = Math.Round(Math.Max(0, total + ded * factor), 2);
                     }
-                    else if (InstallationMode == 2) // В конструкцию (наценка 0 руб.)
+                    else if (InstallationMode == 2) // В конструкцию (наценка 0 руб. в шаблонах, кроме Уплотнения)
                     {
-                        // наценка 0 руб.
+                        if (product == "Уплотнение")
+                        {
+                            double sur = OrderItem.GetDefaultInstallationSurcharge(product);
+                            total = Math.Round(Math.Max(0, total + sur * factor), 2);
+                        }
                     }
                 }
 
                 return Math.Round(total, 2);
             }
+        }
+
+        // ─────────────────────────────────────────────────────────
+        // Раскрой козырьков и отливов (авторасчёт по ТЗ)
+        // ─────────────────────────────────────────────────────────
+
+        public sealed class CanopySplitConfig
+        {
+            public bool IsAutoSplitMode { get; set; } = true;
+
+            // Габариты балкона / рамы
+            public int FrameLength { get; set; } = 3000;
+            public int SideLength { get; set; } = 800;
+            public int SideCount { get; set; } = 2; // 0, 1, 2
+
+            // Козырёк
+            public bool KozyrekEnabled { get; set; } = true;
+            public int KozyrekWidth { get; set; } = 350;
+            public string KozyrekColor { get; set; } = DefaultColor;
+            public int KozyrekInstallMode { get; set; } = 2; // В конструкцию
+
+            // Отлив
+            public bool OtlivEnabled { get; set; } = true;
+            public int OtlivWidth { get; set; } = 150;
+            public string OtlivColor { get; set; } = DefaultColor;
+            public int OtlivInstallMode { get; set; } = 2; // В конструкцию
+        }
+
+        public sealed class SplitProductSummary
+        {
+            public bool Enabled { get; init; }
+            public string ProductName { get; init; } = "";
+            public string Product { get => ProductName; init => ProductName = value; }
+            public string Color { get; init; } = "";
+            public int Width { get; init; }
+            public int InstallationMode { get; init; }
+            public SplitResult FrontResult { get; init; } = new();
+            public SplitResult SideResult { get; init; } = new();
+            public int SideCount { get; init; }
+            public List<(int CutLength, int Width, int Quantity)> GroupedPieces { get; init; } = new();
+            public int TotalPieceCount => GroupedPieces.Sum(p => p.Quantity);
+            public double TotalLinearMeters { get; init; }
+            public double TotalSquareMeters { get; init; }
+            public double TotalCost { get; init; }
+            public bool HasError => (!FrontResult.Success) || (SideCount > 0 && !SideResult.Success);
+            public string? ErrorMessage => FrontResult.Error ?? (SideCount > 0 ? SideResult.Error : null);
+        }
+
+        public static bool SupportsAutoSplit(string? templateId) =>
+            templateId is "frame" or "french";
+
+        public static bool IsSplitRow(string? rowKey) =>
+            rowKey is "otliv_1" or "otliv_2" or "kozyrek_1" or "kozyrek_2";
+
+        public CanopySplitConfig SplitConfig { get; } = new();
+
+        public static SplitProductSummary CalculateSplitSummary(
+            string productName,
+            CanopySplitConfig config,
+            Func<string, string, double> catalogPrice)
+        {
+            bool enabled = productName == "Козырёк" ? config.KozyrekEnabled : config.OtlivEnabled;
+            int width = productName == "Козырёк" ? config.KozyrekWidth : config.OtlivWidth;
+            string color = productName == "Козырёк" ? config.KozyrekColor : config.OtlivColor;
+            int installMode = productName == "Козырёк" ? config.KozyrekInstallMode : config.OtlivInstallMode;
+            return CalculateSplitSummary(
+                productName,
+                enabled,
+                config.FrameLength,
+                config.SideLength,
+                config.SideCount,
+                width,
+                color,
+                installMode,
+                catalogPrice);
+        }
+
+        public static SplitProductSummary CalculateSplitSummary(
+            string productName,
+            bool enabled,
+            int frameLength,
+            int sideLength,
+            int sideCount,
+            int materialWidth,
+            string color,
+            int installMode,
+            Func<string, string, double> catalogPrice)
+        {
+            if (!enabled)
+            {
+                return new SplitProductSummary
+                {
+                    Enabled = false,
+                    ProductName = productName,
+                    Color = color,
+                    Width = materialWidth,
+                    InstallationMode = installMode
+                };
+            }
+
+            bool frontCornerStart = sideCount >= 1;
+            bool frontCornerEnd = sideCount >= 2;
+
+            var frontResult = CanopySplitter.CalcSplit(frameLength, materialWidth, frontCornerStart, frontCornerEnd);
+            SplitResult sideResult = sideCount > 0
+                ? CanopySplitter.CalcSplit(sideLength, materialWidth, cornerStart: true, cornerEnd: false)
+                : new SplitResult { Success = true };
+
+            if (!frontResult.Success || !sideResult.Success)
+            {
+                return new SplitProductSummary
+                {
+                    Enabled = true,
+                    ProductName = productName,
+                    Color = color,
+                    Width = materialWidth,
+                    InstallationMode = installMode,
+                    FrontResult = frontResult,
+                    SideResult = sideResult,
+                    SideCount = sideCount
+                };
+            }
+
+            var allPieces = new List<double>();
+            foreach (var p in frontResult.Pieces)
+                allPieces.Add(p.Length);
+
+            if (sideCount > 0)
+            {
+                for (int s = 0; s < sideCount; s++)
+                {
+                    foreach (var p in sideResult.Pieces)
+                        allPieces.Add(p.Length);
+                }
+            }
+
+            var grouped = allPieces
+                .GroupBy(len => (int)Math.Round(len))
+                .OrderByDescending(g => g.Key)
+                .Select(g => (CutLength: g.Key, Width: materialWidth, Quantity: g.Count()))
+                .ToList();
+
+            double basePrice = catalogPrice(productName, color);
+            double grandTotal = 0;
+            double totalArea = 0;
+            double totalLinear = 0;
+
+            foreach (var piece in grouped)
+            {
+                double area = Math.Round(piece.CutLength * piece.Width / 1_000_000.0, 3);
+                totalArea += area * piece.Quantity;
+                totalLinear += (piece.CutLength / 1000.0) * piece.Quantity;
+
+                double lineTotal = Math.Round(area * basePrice * piece.Quantity, 2);
+                if (ProductCatalog.IsInstallationApplicable(productName))
+                {
+                    double linearMeters = Math.Round(Math.Max(piece.CutLength, piece.Width) / 1000.0, 3);
+                    double factor = linearMeters * piece.Quantity;
+
+                    if (installMode == 0) // Монтаж включён
+                    {
+                        double adj = OrderItem.GetDefaultInstallationAdjustment(productName);
+                        lineTotal = Math.Round(Math.Max(0, lineTotal + adj * factor), 2);
+                    }
+                    else if (installMode == 1) // Без монтажа
+                    {
+                        double ded = OrderItem.GetDefaultInstallationDeduction(productName);
+                        lineTotal = Math.Round(Math.Max(0, lineTotal + ded * factor), 2);
+                    }
+                }
+                grandTotal += lineTotal;
+            }
+
+            return new SplitProductSummary
+            {
+                Enabled = true,
+                ProductName = productName,
+                Color = color,
+                Width = materialWidth,
+                InstallationMode = installMode,
+                FrontResult = frontResult,
+                SideResult = sideResult,
+                SideCount = sideCount,
+                GroupedPieces = grouped,
+                TotalLinearMeters = Math.Round(totalLinear, 3),
+                TotalSquareMeters = Math.Round(totalArea, 3),
+                TotalCost = Math.Round(grandTotal, 2)
+            };
         }
 
         public Dictionary<string, TemplateRowState> RowStates { get; } = new();
@@ -431,12 +625,29 @@ namespace MosquitoNetCalculator.Services
             return state;
         }
 
-        public void InitForTemplate(OrderTemplate template)
+        public void InitForTemplate(OrderTemplate template, bool enableDefaultChecked = false)
         {
             RowStates.Clear();
             foreach (var r in template.Rows)
             {
-                GetOrCreateRowState(r);
+                var s = GetOrCreateRowState(r);
+                s.IsEnabled = enableDefaultChecked && r.DefaultChecked;
+            }
+            if (SupportsAutoSplit(template.Id))
+            {
+                SplitConfig.IsAutoSplitMode = AppSettingsService.LoadTemplateAutoSplitMode();
+                SplitConfig.FrameLength = 3000;
+                SplitConfig.SideLength = 800;
+                SplitConfig.SideCount = 2;
+                SplitConfig.KozyrekEnabled = enableDefaultChecked;
+                SplitConfig.KozyrekWidth = 350;
+                SplitConfig.KozyrekColor = DefaultColor;
+                SplitConfig.KozyrekInstallMode = 2;
+
+                SplitConfig.OtlivEnabled = enableDefaultChecked && template.Id == "frame";
+                SplitConfig.OtlivWidth = 150;
+                SplitConfig.OtlivColor = DefaultColor;
+                SplitConfig.OtlivInstallMode = 2;
             }
             // Синхронизация обратной совместимости
             SyncLegacyProperties();
@@ -630,12 +841,45 @@ namespace MosquitoNetCalculator.Services
         public string? GetValidationError(OrderTemplate? template)
         {
             LastErrorRow = null;
+            bool isAutoSplit = template != null && SupportsAutoSplit(template.Id) && SplitConfig.IsAutoSplitMode;
+
+            if (isAutoSplit)
+            {
+                if (SplitConfig.FrameLength <= 0)
+                    return Fail("frame_l", "Укажите длину стороны (рамы).");
+
+                if (SplitConfig.SideCount > 0 && SplitConfig.SideLength <= 0)
+                    return Fail("side_l", "Укажите длину боковины.");
+
+                if (SplitConfig.KozyrekEnabled)
+                {
+                    if (SplitConfig.KozyrekWidth <= 0)
+                        return Fail("koz_w", "Укажите ширину материала козырька.");
+
+                    var kSum = CalculateSplitSummary("Козырёк", true, SplitConfig.FrameLength, SplitConfig.SideLength,
+                        SplitConfig.SideCount, SplitConfig.KozyrekWidth, SplitConfig.KozyrekColor, SplitConfig.KozyrekInstallMode, (_, _) => 1);
+                    if (kSum.HasError)
+                        return Fail("kozyrek", kSum.ErrorMessage ?? "Ошибка раскроя козырька.");
+                }
+
+                if (template!.Id == "frame" && SplitConfig.OtlivEnabled)
+                {
+                    if (SplitConfig.OtlivWidth <= 0)
+                        return Fail("otl_w", "Укажите ширину материала отлива.");
+
+                    var oSum = CalculateSplitSummary("Отлив", true, SplitConfig.FrameLength, SplitConfig.SideLength,
+                        SplitConfig.SideCount, SplitConfig.OtlivWidth, SplitConfig.OtlivColor, SplitConfig.OtlivInstallMode, (_, _) => 1);
+                    if (oSum.HasError)
+                        return Fail("otliv", oSum.ErrorMessage ?? "Ошибка раскроя отлива.");
+                }
+            }
 
             // Если шаблон передан — проверяем строго по его строкам
             IEnumerable<TemplateRowState> statesToValidate;
             if (template != null)
             {
                 statesToValidate = template.Rows
+                    .Where(r => !isAutoSplit || !IsSplitRow(r.RowKey))
                     .Select(r => RowStates.TryGetValue(r.RowKey, out var s) ? s : null)
                     .Where(s => s != null && s.IsEnabled)!;
             }
@@ -725,8 +969,13 @@ namespace MosquitoNetCalculator.Services
         public List<TemplateItemSpec> BuildItemSpecs(OrderTemplate template, Func<string, string, double> catalogPrice)
         {
             var specs = new List<TemplateItemSpec>();
+            bool isAutoSplit = SupportsAutoSplit(template.Id) && SplitConfig.IsAutoSplitMode;
+
             foreach (var row in template.Rows)
             {
+                if (isAutoSplit && IsSplitRow(row.RowKey))
+                    continue;
+
                 if (!RowStates.TryGetValue(row.RowKey, out var state) || !state.IsEnabled)
                     continue;
 
@@ -779,6 +1028,7 @@ namespace MosquitoNetCalculator.Services
                 }
 
                 bool isAnwis = AnwisSizeService.IsApplicable(product);
+                bool hasSizeMode = AnwisSizeService.SupportsSizeMode(product);
                 string color = isAnwis || !OrderItem.NoColorProducts.Contains(product) ? state.Color : string.Empty;
 
                 specs.Add(new TemplateItemSpec
@@ -790,11 +1040,78 @@ namespace MosquitoNetCalculator.Services
                     Height = state.Height,
                     Quantity = state.Quantity > 0 ? state.Quantity : 1,
                     Price = ResolveRowPrice(product, color, catalogPrice),
-                    AnwisMode = isAnwis ? state.AnwisMode : null,
+                    AnwisMode = hasSizeMode ? state.AnwisMode : null,
                     Anticat = ProductCatalog.IsAnticatApplicable(product) && state.Anticat,
                     InstallationMode = ProductCatalog.IsInstallationApplicable(product) ? state.InstallationMode : null
                 });
             }
+            if (isAutoSplit)
+            {
+                if (SplitConfig.KozyrekEnabled)
+                {
+                    var summary = CalculateSplitSummary(
+                        "Козырёк",
+                        true,
+                        SplitConfig.FrameLength,
+                        SplitConfig.SideLength,
+                        SplitConfig.SideCount,
+                        SplitConfig.KozyrekWidth,
+                        SplitConfig.KozyrekColor,
+                        SplitConfig.KozyrekInstallMode,
+                        catalogPrice);
+
+                    if (!summary.HasError)
+                    {
+                        foreach (var piece in summary.GroupedPieces)
+                        {
+                            specs.Add(new TemplateItemSpec
+                            {
+                                RowKey = "kozyrek",
+                                Type = "Козырёк",
+                                Color = SplitConfig.KozyrekColor,
+                                Width = piece.CutLength,
+                                Height = piece.Width,
+                                Quantity = piece.Quantity,
+                                Price = ResolveRowPrice("Козырёк", SplitConfig.KozyrekColor, catalogPrice),
+                                InstallationMode = SplitConfig.KozyrekInstallMode
+                            });
+                        }
+                    }
+                }
+
+                if (template.Id == "frame" && SplitConfig.OtlivEnabled)
+                {
+                    var summary = CalculateSplitSummary(
+                        "Отлив",
+                        true,
+                        SplitConfig.FrameLength,
+                        SplitConfig.SideLength,
+                        SplitConfig.SideCount,
+                        SplitConfig.OtlivWidth,
+                        SplitConfig.OtlivColor,
+                        SplitConfig.OtlivInstallMode,
+                        catalogPrice);
+
+                    if (!summary.HasError)
+                    {
+                        foreach (var piece in summary.GroupedPieces)
+                        {
+                            specs.Add(new TemplateItemSpec
+                            {
+                                RowKey = "otliv",
+                                Type = "Отлив",
+                                Color = SplitConfig.OtlivColor,
+                                Width = piece.CutLength,
+                                Height = piece.Width,
+                                Quantity = piece.Quantity,
+                                Price = ResolveRowPrice("Отлив", SplitConfig.OtlivColor, catalogPrice),
+                                InstallationMode = SplitConfig.OtlivInstallMode
+                            });
+                        }
+                    }
+                }
+            }
+
             return specs;
         }
 

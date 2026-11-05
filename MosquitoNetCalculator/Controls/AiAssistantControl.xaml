@@ -259,9 +259,13 @@
                                                                         <TextBox Text="{Binding WidthText, UpdateSourceTrigger=PropertyChanged}"
                                                                                  Height="28" FontSize="{StaticResource Type.Body}"
                                                                                  AutomationProperties.Name="Ширина"/>
-                                                                        <TextBlock Grid.Column="1" Text="×" FontSize="{StaticResource Type.Body}"
-                                                                                   Foreground="{DynamicResource TextMuted}"
-                                                                                   VerticalAlignment="Center" Margin="{DynamicResource Gap.InlineSm}"/>
+                                                                        <Button Grid.Column="1" Content="⇄"
+                                                                                Click="BtnSwapClarificationDimensions_Click" Tag="{Binding}"
+                                                                                Height="28" MinWidth="26" FontSize="{StaticResource Type.Body}"
+                                                                                Padding="{DynamicResource Gap.HairH}" Margin="{DynamicResource Gap.InlineSm}"
+                                                                                ToolTip="Поменять ширину и высоту местами (Ш ↔ В)"
+                                                                                Style="{StaticResource GhostButton}"
+                                                                                AutomationProperties.Name="Поменять ширину и высоту местами"/>
                                                                         <TextBox Grid.Column="2"
                                                                                  Text="{Binding HeightText, UpdateSourceTrigger=PropertyChanged}"
                                                                                  Height="28" FontSize="{StaticResource Type.Body}"
@@ -302,9 +306,9 @@
                                                                   Visibility="{Binding ClarificationForm.ShowColor, Converter={StaticResource BoolToVisibility}}"
                                                                   AutomationProperties.Name="Цвет"/>
 
-                                                        <!-- Anwis mode (only for Anwis products) -->
-                                                        <StackPanel Visibility="{Binding ClarificationForm.IsAnwis, Converter={StaticResource BoolToVisibility}}">
-                                                            <TextBlock Text="Режим Anwis" FontSize="{StaticResource Type.Caption}"
+                                                        <!-- Size mode (Anwis profiles or 2-mode screen modes) -->
+                                                        <StackPanel Visibility="{Binding ClarificationForm.SupportsSizeMode, Converter={StaticResource BoolToVisibility}}">
+                                                            <TextBlock Text="{Binding ClarificationForm.SizeModeLabel}" FontSize="{StaticResource Type.Caption}"
                                                                        Foreground="{DynamicResource TextMuted}" Margin="{DynamicResource Gap.BlockTopSm}"/>
                                                             <ComboBox ItemsSource="{Binding ClarificationForm.AnwisModeOptions}"
                                                                       SelectedItem="{Binding ClarificationForm.SelectedAnwisMode, UpdateSourceTrigger=PropertyChanged}"
@@ -351,6 +355,14 @@
                                                                 <TextBlock Text="ПОДТВЕРДИТЕ" FontSize="{StaticResource Type.Monogram}" FontWeight="Bold"
                                                                            Foreground="{DynamicResource AccentText}"/>
                                                             </Border>
+                                                            <Button Content="⇄ Перевернуть все (Ш ↔ В)"
+                                                                    Click="BtnSwapAllDimensions_Click"
+                                                                    Height="22" FontSize="{StaticResource Type.Caption}" Padding="{DynamicResource Pad.ButtonSm}"
+                                                                    Margin="{DynamicResource Gap.Left}"
+                                                                    ToolTip="Поменять ширину и высоту местами во всех позициях плана"
+                                                                    Style="{StaticResource GhostButton}"
+                                                                    Visibility="{Binding ActionPlan.HasItemStepsWithDimensions, Converter={StaticResource BoolToVisibility}}"
+                                                                    AutomationProperties.Name="Поменять местами ширину и высоту во всех позициях"/>
                                                         </StackPanel>
                                                         <TextBlock Text="Действие ещё не выполнено — заказ не изменится, пока вы не нажмёте «Выполнить»."
                                                                    FontSize="{StaticResource Type.Caption}"
@@ -360,14 +372,14 @@
                                                         <ItemsControl ItemsSource="{Binding ActionPlan.Steps}">
                                                             <ItemsControl.ItemTemplate>
                                                                 <DataTemplate>
-                                                                    <Grid Margin="0,2,0,4">
+                                                                    <Grid Margin="{DynamicResource Gap.BlockSm}">
                                                                         <!-- Editable card for product items (AddItem / UpdateItem) -->
                                                                         <Border Visibility="{Binding IsItemStep, Converter={StaticResource BoolToVisibility}}"
                                                                                 Background="{DynamicResource Surface}"
                                                                                 BorderBrush="{DynamicResource SubtleBorder}"
                                                                                 BorderThickness="1"
                                                                                 CornerRadius="{DynamicResource Radius.Sm}"
-                                                                                Padding="8,6">
+                                                                                Padding="{DynamicResource Pad.Control}">
                                                                             <Grid>
                                                                                 <Grid.RowDefinitions>
                                                                                     <RowDefinition Height="Auto"/>
@@ -385,78 +397,99 @@
                                                                                     <TextBlock Grid.Column="0" Text="📦 " VerticalAlignment="Center" FontSize="{StaticResource Type.Caption}"/>
                                                                                     <TextBlock Grid.Column="1" Text="{Binding ItemHeader}" FontWeight="SemiBold"
                                                                                                FontSize="{StaticResource Type.Caption}" Foreground="{DynamicResource TextPrimary}"
-                                                                                               VerticalAlignment="Center" Margin="0,0,6,0" TextTrimming="CharacterEllipsis"/>
+                                                                                               VerticalAlignment="Center" Margin="{DynamicResource Gap.InlineSm}" TextTrimming="CharacterEllipsis"/>
                                                                                     <!-- Badges (Anticat, AnwisMode, Installation) -->
                                                                                     <WrapPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center">
                                                                                         <!-- Anticat badge -->
                                                                                         <Border Visibility="{Binding IsAnticat, Converter={StaticResource BoolToVisibility}}"
-                                                                                                Background="#EBF8FF" BorderBrush="#BEE3F8" BorderThickness="1"
-                                                                                                CornerRadius="3" Padding="4,1" Margin="2,0">
-                                                                                            <TextBlock Text="🐱 Антикошка" FontSize="10" Foreground="#2B6CB0"/>
+                                                                                                Background="{DynamicResource BadgeDefaultBg}" BorderBrush="{DynamicResource SubtleBorder}" BorderThickness="1"
+                                                                                                CornerRadius="{DynamicResource Radius.Sm}" Padding="{DynamicResource Pad.Tiny}" Margin="{DynamicResource Gap.HairH}">
+                                                                                            <TextBlock Text="🐱 Антикошка" FontSize="{StaticResource Type.Caption}" Foreground="{DynamicResource BadgeDefaultFg}"/>
                                                                                         </Border>
                                                                                         <!-- Anwis size mode badge -->
                                                                                         <Border Visibility="{Binding IsAnwis, Converter={StaticResource BoolToVisibility}}"
                                                                                                 Background="{DynamicResource SurfaceSubtle}" BorderBrush="{DynamicResource SubtleBorder}" BorderThickness="1"
-                                                                                                CornerRadius="3" Padding="4,1" Margin="2,0" ToolTip="Режим замера Anwis">
-                                                                                            <TextBlock Text="{Binding AnwisModeLabel}" FontSize="10" Foreground="{DynamicResource TextMuted}"/>
+                                                                                                CornerRadius="{DynamicResource Radius.Sm}" Padding="{DynamicResource Pad.Tiny}" Margin="{DynamicResource Gap.HairH}" ToolTip="Режим замера Anwis">
+                                                                                            <TextBlock Text="{Binding AnwisModeLabel}" FontSize="{StaticResource Type.Caption}" Foreground="{DynamicResource TextMuted}"/>
                                                                                         </Border>
                                                                                         <!-- Installation badge -->
                                                                                         <Border Visibility="{Binding HasInstallationLabel, Converter={StaticResource BoolToVisibility}}"
                                                                                                 Background="{DynamicResource SurfaceSubtle}" BorderBrush="{DynamicResource SubtleBorder}" BorderThickness="1"
-                                                                                                CornerRadius="3" Padding="4,1" Margin="2,0">
-                                                                                            <TextBlock Text="{Binding InstallationLabel}" FontSize="10" Foreground="{DynamicResource TextMuted}"/>
+                                                                                                CornerRadius="{DynamicResource Radius.Sm}" Padding="{DynamicResource Pad.Tiny}" Margin="{DynamicResource Gap.HairH}">
+                                                                                            <TextBlock Text="{Binding InstallationLabel}" FontSize="{StaticResource Type.Caption}" Foreground="{DynamicResource TextMuted}"/>
                                                                                         </Border>
                                                                                     </WrapPanel>
                                                                                     <!-- Discrepancy warning if models disagreed -->
                                                                                     <Border Grid.Column="3" Visibility="{Binding HasDiscrepancy, Converter={StaticResource BoolToVisibility}}"
-                                                                                            Background="#FFF3CD" BorderBrush="#FFEEBA" BorderThickness="1"
-                                                                                            CornerRadius="3" Padding="4,1" Margin="4,0" ToolTip="{Binding DiscrepancyWarning}">
-                                                                                        <TextBlock Text="⚠️ Проверьте размер" FontSize="10" Foreground="#856404"/>
+                                                                                            Background="{DynamicResource BadgeWarningBg}" BorderBrush="{DynamicResource SubtleBorder}" BorderThickness="1"
+                                                                                            CornerRadius="{DynamicResource Radius.Sm}" Padding="{DynamicResource Pad.Tiny}" Margin="{DynamicResource Gap.InlineSm}" ToolTip="{Binding DiscrepancyWarning}">
+                                                                                        <TextBlock Text="⚠️ Проверьте размер" FontSize="{StaticResource Type.Caption}" Foreground="{DynamicResource BadgeWarningFg}"/>
                                                                                     </Border>
                                                                                     <!-- Delete step button -->
                                                                                     <Button Grid.Column="4" Width="22" Height="22" Click="BtnRemovePlanStep_Click"
                                                                                             Tag="{Binding}" ToolTip="Удалить эту позицию из плана"
                                                                                             Style="{StaticResource FlatIconButton}" Foreground="{DynamicResource TextMuted}">
-                                                                                        <TextBlock Text="✕" FontSize="11"/>
+                                                                                        <TextBlock Text="✕" FontSize="{StaticResource Type.Caption}"/>
                                                                                     </Button>
                                                                                 </Grid>
                                                                                 <!-- Row 2: Editable inputs: Width, Height, Quantity, Color -->
-                                                                                <Grid Grid.Row="1" Margin="0,6,0,2">
-                                                                                    <Grid.ColumnDefinitions>
-                                                                                        <ColumnDefinition Width="Auto"/>
-                                                                                        <ColumnDefinition Width="48"/>
-                                                                                        <ColumnDefinition Width="Auto"/>
-                                                                                        <ColumnDefinition Width="48"/>
-                                                                                        <ColumnDefinition Width="Auto"/>
-                                                                                        <ColumnDefinition Width="38"/>
-                                                                                        <ColumnDefinition Width="Auto"/>
-                                                                                        <ColumnDefinition Width="*"/>
-                                                                                    </Grid.ColumnDefinitions>
-                                                                                    <TextBlock Grid.Column="0" Text="Ш:" FontSize="{StaticResource Type.Caption}"
-                                                                                               Foreground="{DynamicResource TextMuted}" VerticalAlignment="Center" Margin="0,0,3,0"/>
-                                                                                    <TextBox Grid.Column="1" Text="{Binding Width, UpdateSourceTrigger=PropertyChanged}"
-                                                                                             Height="24" FontSize="{StaticResource Type.Caption}" VerticalContentAlignment="Center"
-                                                                                             HorizontalContentAlignment="Center"/>
-                                                                                    <TextBlock Grid.Column="2" Text="В:" FontSize="{StaticResource Type.Caption}"
-                                                                                               Foreground="{DynamicResource TextMuted}" VerticalAlignment="Center" Margin="6,0,3,0"/>
-                                                                                    <TextBox Grid.Column="3" Text="{Binding Height, UpdateSourceTrigger=PropertyChanged}"
-                                                                                             Height="24" FontSize="{StaticResource Type.Caption}" VerticalContentAlignment="Center"
-                                                                                             HorizontalContentAlignment="Center"/>
-                                                                                    <TextBlock Grid.Column="4" Text="Шт:" FontSize="{StaticResource Type.Caption}"
-                                                                                               Foreground="{DynamicResource TextMuted}" VerticalAlignment="Center" Margin="6,0,3,0"/>
-                                                                                    <TextBox Grid.Column="5" Text="{Binding Quantity, UpdateSourceTrigger=PropertyChanged}"
-                                                                                             Height="24" FontSize="{StaticResource Type.Caption}" VerticalContentAlignment="Center"
-                                                                                             HorizontalContentAlignment="Center"/>
-                                                                                    <TextBlock Grid.Column="6" Text="Цвет:" FontSize="{StaticResource Type.Caption}"
-                                                                                               Foreground="{DynamicResource TextMuted}" VerticalAlignment="Center" Margin="6,0,3,0"/>
-                                                                                    <ComboBox Grid.Column="7"
-                                                                                              Height="24"
-                                                                                              FontSize="{StaticResource Type.Caption}"
-                                                                                              Style="{DynamicResource QuickCombo}"
-                                                                                              ItemsSource="{Binding AvailableColors}"
-                                                                                              Text="{Binding Color, UpdateSourceTrigger=PropertyChanged}"
-                                                                                              SelectedItem="{Binding Color, UpdateSourceTrigger=PropertyChanged}"
-                                                                                              IsEditable="True"/>
+                                                                                <Grid Grid.Row="1" Margin="{DynamicResource Gap.BlockTop}">
+                                                                                    <Grid.RowDefinitions>
+                                                                                        <RowDefinition Height="Auto"/>
+                                                                                        <RowDefinition Height="Auto"/>
+                                                                                    </Grid.RowDefinitions>
+
+                                                                                    <!-- Sub-row 0: Width, Height, Quantity -->
+                                                                                    <Grid Grid.Row="0">
+                                                                                        <Grid.ColumnDefinitions>
+                                                                                            <ColumnDefinition Width="Auto"/>
+                                                                                            <ColumnDefinition Width="54"/>
+                                                                                            <ColumnDefinition Width="Auto"/>
+                                                                                            <ColumnDefinition Width="Auto"/>
+                                                                                            <ColumnDefinition Width="54"/>
+                                                                                            <ColumnDefinition Width="Auto"/>
+                                                                                            <ColumnDefinition Width="44"/>
+                                                                                            <ColumnDefinition Width="*"/>
+                                                                                        </Grid.ColumnDefinitions>
+                                                                                        <TextBlock Grid.Column="0" Text="Ш:" FontSize="{StaticResource Type.Caption}"
+                                                                                                   Foreground="{DynamicResource TextMuted}" VerticalAlignment="Center" Margin="{DynamicResource Gap.InlineSm}"/>
+                                                                                        <TextBox Grid.Column="1" Text="{Binding Width, UpdateSourceTrigger=PropertyChanged}"
+                                                                                                 Height="24" FontSize="{StaticResource Type.Caption}" VerticalContentAlignment="Center"
+                                                                                                 HorizontalContentAlignment="Center" Margin="{DynamicResource Gap.Inline}"/>
+                                                                                        <Button Grid.Column="2" Content="⇄"
+                                                                                                Click="BtnSwapStepDimensions_Click" Tag="{Binding}"
+                                                                                                Height="24" MinWidth="22" FontSize="{StaticResource Type.Caption}"
+                                                                                                Padding="{DynamicResource Gap.SeparatorH}" Margin="{DynamicResource Gap.InlineSm}"
+                                                                                                ToolTip="Поменять ширину и высоту местами (Ш ↔ В)"
+                                                                                                Style="{StaticResource GhostButton}"
+                                                                                                AutomationProperties.Name="Поменять ширину и высоту местами"/>
+                                                                                        <TextBlock Grid.Column="3" Text="В:" FontSize="{StaticResource Type.Caption}"
+                                                                                                   Foreground="{DynamicResource TextMuted}" VerticalAlignment="Center" Margin="{DynamicResource Gap.InlineSm}"/>
+                                                                                        <TextBox Grid.Column="4" Text="{Binding Height, UpdateSourceTrigger=PropertyChanged}"
+                                                                                                 Height="24" FontSize="{StaticResource Type.Caption}" VerticalContentAlignment="Center"
+                                                                                                 HorizontalContentAlignment="Center" Margin="{DynamicResource Gap.Inline}"/>
+                                                                                        <TextBlock Grid.Column="5" Text="Шт:" FontSize="{StaticResource Type.Caption}"
+                                                                                                   Foreground="{DynamicResource TextMuted}" VerticalAlignment="Center" Margin="{DynamicResource Gap.InlineSm}"/>
+                                                                                        <TextBox Grid.Column="6" Text="{Binding Quantity, UpdateSourceTrigger=PropertyChanged}"
+                                                                                                 Height="24" FontSize="{StaticResource Type.Caption}" VerticalContentAlignment="Center"
+                                                                                                 HorizontalContentAlignment="Center"/>
+                                                                                    </Grid>
+
+                                                                                    <!-- Sub-row 1: Color selection with comfortable width -->
+                                                                                    <Grid Grid.Row="1" Margin="{DynamicResource Gap.BlockTop}">
+                                                                                        <Grid.ColumnDefinitions>
+                                                                                            <ColumnDefinition Width="Auto"/>
+                                                                                            <ColumnDefinition Width="*"/>
+                                                                                        </Grid.ColumnDefinitions>
+                                                                                        <TextBlock Grid.Column="0" Text="Цвет:" FontSize="{StaticResource Type.Caption}"
+                                                                                                   Foreground="{DynamicResource TextMuted}" VerticalAlignment="Center" Margin="{DynamicResource Gap.InlineSm}"/>
+                                                                                        <ComboBox Grid.Column="1"
+                                                                                                  Height="24"
+                                                                                                  FontSize="{StaticResource Type.Caption}"
+                                                                                                  Style="{DynamicResource QuickCombo}"
+                                                                                                  ItemsSource="{Binding AvailableColors}"
+                                                                                                  SelectedItem="{Binding Color, UpdateSourceTrigger=PropertyChanged}"/>
+                                                                                    </Grid>
                                                                                 </Grid>
                                                                             </Grid>
                                                                         </Border>
@@ -471,7 +504,7 @@
                                                                             </Grid.ColumnDefinitions>
                                                                             <TextBlock Grid.Column="0" Text="• " FontSize="{StaticResource Type.Body}"
                                                                                        Foreground="{DynamicResource AccentText}"
-                                                                                       VerticalAlignment="Top" Margin="0,0,6,0"/>
+                                                                                       VerticalAlignment="Top" Margin="{DynamicResource Gap.InlineSm}"/>
                                                                             <TextBlock Grid.Column="1" Text="{Binding PreviewText}"
                                                                                        FontSize="{StaticResource Type.Body}"
                                                                                        Foreground="{DynamicResource TextPrimary}"
@@ -479,7 +512,7 @@
                                                                             <Button Grid.Column="2" Width="22" Height="22" Click="BtnRemovePlanStep_Click"
                                                                                     Tag="{Binding}" ToolTip="Удалить это действие из плана"
                                                                                     Style="{StaticResource FlatIconButton}" Foreground="{DynamicResource TextMuted}">
-                                                                                <TextBlock Text="✕" FontSize="11"/>
+                                                                                <TextBlock Text="✕" FontSize="{StaticResource Type.Caption}"/>
                                                                             </Button>
                                                                         </Grid>
                                                                     </Grid>
@@ -634,7 +667,7 @@
                                                 <!-- Visual previews of attached images -->
                                                 <ItemsControl ItemsSource="{Binding Attachments}"
                                                               Visibility="{Binding HasAttachments, Converter={StaticResource BoolToVisibility}}"
-                                                              Margin="0,0,0,6">
+                                                              Margin="{DynamicResource Gap.BlockSm}">
                                                     <ItemsControl.ItemsPanel>
                                                         <ItemsPanelTemplate>
                                                             <WrapPanel Orientation="Horizontal"/>
@@ -642,12 +675,12 @@
                                                     </ItemsControl.ItemsPanel>
                                                     <ItemsControl.ItemTemplate>
                                                         <DataTemplate>
-                                                            <Border Margin="0,0,6,6"
+                                                            <Border Margin="{DynamicResource Gap.BlockSm}"
                                                                     CornerRadius="{DynamicResource Radius.Md}"
-                                                                    Background="#26FFFFFF"
-                                                                    BorderBrush="#40FFFFFF"
+                                                                    Background="{DynamicResource BubbleOverlayCard}"
+                                                                    BorderBrush="{DynamicResource BubbleOverlayBorder}"
                                                                     BorderThickness="1"
-                                                                    Padding="4"
+                                                                    Padding="{DynamicResource Pad.ControlSm}"
                                                                     MaxWidth="260"
                                                                     Cursor="Hand"
                                                                     Tag="{Binding}"
@@ -657,16 +690,16 @@
                                                                     <Border CornerRadius="{DynamicResource Radius.Sm}"
                                                                             ClipToBounds="True"
                                                                             MaxHeight="160"
-                                                                            Background="#1A000000">
+                                                                            Background="{DynamicResource BubbleOverlayDim}">
                                                                         <Image Source="{Binding Thumbnail}"
                                                                                Stretch="Uniform"
                                                                                MaxHeight="160"
                                                                                HorizontalAlignment="Center"/>
                                                                     </Border>
-                                                                    <StackPanel Orientation="Horizontal" Margin="2,4,2,2">
+                                                                    <StackPanel Orientation="Horizontal" Margin="{DynamicResource Pad.Tiny}">
                                                                         <TextBlock Text="📷" FontSize="{StaticResource Type.Caption}"
                                                                                    Foreground="{DynamicResource OnAccent}"
-                                                                                   Margin="0,0,4,0"/>
+                                                                                   Margin="{DynamicResource Gap.InlineSm}"/>
                                                                         <TextBlock Text="{Binding FileName}"
                                                                                    FontSize="{StaticResource Type.Caption}"
                                                                                    Foreground="{DynamicResource OnAccent}"

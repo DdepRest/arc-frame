@@ -27,7 +27,7 @@ namespace MosquitoNetCalculator.Models
         /// </summary>
         public static readonly HashSet<string> InstallationApplicableProducts = new()
         {
-            "Anwis", "На навесах", "Дверная сетка", "Оконная на метал. крепл.", "Отлив", "Козырёк"
+            "Anwis", "На навесах", "Дверная сетка", "Оконная на метал. крепл.", "Отлив", "Козырёк", "Уплотнение"
         };
 
         /// <summary>
@@ -45,7 +45,7 @@ namespace MosquitoNetCalculator.Models
         /// </summary>
         public static readonly HashSet<string> PerLinearMeterProducts = new()
         {
-            "Отлив", "Козырёк"
+            "Отлив", "Козырёк", "Уплотнение"
         };
 
         /// <summary>
@@ -139,6 +139,12 @@ namespace MosquitoNetCalculator.Models
         };
 
         /// <summary>True when the product is eligible for the installation toggle.</summary>
+        /// <summary>
+        /// True when the product represents custom labor / work (Работа, Работа за откос, Работа за монтаж и т.д.).
+        /// </summary>
+        public static bool IsLabor(string? name) =>
+            !string.IsNullOrWhiteSpace(name) && name.StartsWith("Работа", StringComparison.OrdinalIgnoreCase);
+
         public static bool IsInstallationApplicable(string? name) =>
             !string.IsNullOrEmpty(name) && InstallationApplicableProducts.Contains(name);
 
@@ -158,7 +164,7 @@ namespace MosquitoNetCalculator.Models
 
         /// <summary>True when the product uses manual piece semantics.</summary>
         public static bool IsManualPiece(string? name) =>
-            !string.IsNullOrEmpty(name) && ManualPieceProducts.Contains(name);
+            !string.IsNullOrEmpty(name) && (ManualPieceProducts.Contains(name) || IsLabor(name));
 
         /// <summary>True when the product displays only the sum.</summary>
         public static bool IsAmountOnly(string? name) =>
@@ -178,7 +184,7 @@ namespace MosquitoNetCalculator.Models
 
         /// <summary>True when the product has no color variants.</summary>
         public static bool IsNoColor(string? name) =>
-            !string.IsNullOrEmpty(name) && NoColorProducts.Contains(name);
+            !string.IsNullOrEmpty(name) && (NoColorProducts.Contains(name) || IsLabor(name));
 
         /// <summary>
         /// Window screen products that automatically get an impost bar (импост)
@@ -217,10 +223,13 @@ namespace MosquitoNetCalculator.Models
                 or "рамочная сетка" or "москитная сетка" or "москитка")
                 return "Anwis";
 
-            if (lower is "на металле" or "металл" or "метал. крепл" or "оконная на металле" or "оконная на металл")
+            if (lower is "на металле" or "металл" or "метал. крепл" or "оконная на металле" or "оконная на металл"
+                or "оконная сетка на метал. крепл." or "оконная сетка на металле" or "сетка на металле" or "сетка на метал. крепл."
+                or "оконная на металлическом креплении" or "на металлическом креплении")
                 return "Оконная на метал. крепл.";
 
-            if (lower is "на петлях" or "петли" or "навесы" or "навесная")
+            if (lower is "на петлях" or "петли" or "навесы" or "навесная"
+                or "на навесах" or "оконная на навесах" or "оконная сетка на навесах" or "сетка на навесах" or "сетка на петлях")
                 return "На навесах";
 
             if (lower is "дверная" or "дверная москитка" or "дверная москитная сетка")
@@ -257,6 +266,7 @@ namespace MosquitoNetCalculator.Models
         public static bool IsKnownProduct(string? name)
         {
             if (string.IsNullOrEmpty(name)) return false;
+            if (IsLabor(name)) return true;
             var normalized = NormalizeProductName(name);
             return UserGroups.Any(g => g.Products.Any(p =>
                 string.Equals(p, normalized, StringComparison.OrdinalIgnoreCase)));

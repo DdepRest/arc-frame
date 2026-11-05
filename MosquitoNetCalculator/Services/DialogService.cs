@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Windows;
@@ -155,6 +155,24 @@ namespace MosquitoNetCalculator.Services
                 .Message(message)
                 .WithButton("Отмена", false, isCancel: true, isDefault: true, styleResource: "GhostButton")
                 .WithButton(confirmVerb, true, styleResource: "DangerButton");
+        }
+
+        /// <summary>
+        /// Shows a confirmation dialog for restoring an order from trash (R5).
+        /// </summary>
+        public static bool ShowRestoreConfirm(string contractNumber, Window? owner = null)
+            => BuildRestoreConfirm(contractNumber).ShowDialog(owner);
+
+        /// <summary>
+        /// Test seam: the exact button and message contract for restoring an order from trash (R5).
+        /// </summary>
+        internal static DialogBuilder<bool> BuildRestoreConfirm(string contractNumber)
+        {
+            return new DialogBuilder<bool>()
+                .Title("Восстановление заказа")
+                .Message($"Восстановить заказ «{contractNumber}» из корзины?")
+                .WithButton("Отмена", false, isCancel: true, styleResource: "GhostButton")
+                .WithButton("Восстановить", true, isDefault: true, styleResource: "PrimaryButton");
         }
 
         /// <summary>

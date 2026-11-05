@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Windows;
 using System.Windows.Controls;
@@ -72,6 +72,29 @@ namespace MosquitoNetCalculator
             if (TotalCardControl?.TotalRun != null)
                 TotalCardControl.TotalRun.Text = MoneyFormatService.Format(info.Total);
 
+            if (TotalCardControl?.InstallationRun != null)
+                TotalCardControl.InstallationRun.Text = MoneyFormatService.FormatWhole(info.TotalInstallation);
+
+            if (TotalCardControl?.InstallationBorder != null)
+            {
+                TotalCardControl.InstallationBorder.Visibility = info.TotalInstallation > 0
+                    ? Visibility.Visible
+                    : Visibility.Collapsed;
+
+                if (info.TotalInstallation > 0)
+                {
+                    var lines = new List<string>();
+                    foreach (var itm in ViewModel.CalcVM.OrderItems)
+                    {
+                        if (itm.IsActive && itm.InstallationLaborTotal > 0)
+                            lines.Add($"• {itm.DisplayName}: {MoneyFormatService.FormatWhole(itm.InstallationLaborTotal)} руб.");
+                    }
+                    TotalCardControl.InstallationBorder.ToolTip = lines.Count > 0
+                        ? "Монтаж по позициям (ЗП):\n" + string.Join("\n", lines)
+                        : "Монтаж по позициям (ЗП)";
+                }
+            }
+
             if (TotalCardControl?.TotalSub != null)
             {
                 if (info.Count == 0 && ClientInfo.AdditionalKpsTotal <= 0)
@@ -86,6 +109,7 @@ namespace MosquitoNetCalculator
                     if (info.TotalPieces > 0) parts.Add($"{info.TotalPieces} шт.");
                     if (ClientInfo.AdditionalKpsTotal > 0) parts.Add($"доп. КП {MoneyFormatService.Format(ClientInfo.AdditionalKpsTotal)} руб.");
                     TotalCardControl.TotalSub.Text = $"{info.Count} поз." + (parts.Count > 0 ? ", " + string.Join(", ", parts) : "");
+                    TotalCardControl.TotalSub.ToolTip = null;
                 }
             }
 
@@ -116,6 +140,7 @@ namespace MosquitoNetCalculator
             }
 
             RecalculateOrderGridColumnWidths();
+            NotifyDraftChanged();
         }
     }
 }

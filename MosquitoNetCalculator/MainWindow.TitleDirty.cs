@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
 using System.Windows;
@@ -14,13 +14,19 @@ namespace MosquitoNetCalculator
         /// installation point. After it closes, refresh sidebar / title / and
         /// the in-progress contract number so prefix change takes effect.
         /// </summary>
-        internal void OpenWelcomeWindow()
+        /// <returns>
+        /// True когда пользователь подтвердил выбор («Продолжить»); false если
+        /// окно закрыли крестиком. Возврат использует баннер периодической
+        /// проверки — отмена не должна скрывать вопрос (MainWindow.LocationCheck).
+        /// </returns>
+        internal bool OpenWelcomeWindow()
         {
             var welcome = new WelcomeWindow { Owner = this };
-            if (welcome.ShowDialog() != true) return;
+            if (welcome.ShowDialog() != true) return false;
 
             SyncContractPrefix(AppSettingsService.LoadContractPrefix());
             UpdateBaseTitle();
+            return true;
         }
 
         /// <summary>
@@ -47,14 +53,16 @@ namespace MosquitoNetCalculator
                 : $"A.R.C. Frame v{version} – {_cachedTitleLocation}";
         }
 
+        private bool _isClientInfoDirty;
+
         /// <summary>
         /// Single apply path: writes Title + ActionBarControl.DirtyChip
         /// in lock-step from the cached base title and the current dirty flag.
         /// </summary>
         private void ApplyTitle()
         {
-            bool dirty = ViewModel?.UndoRedo?.IsDirty ?? false;
-            Title = dirty ? BuildBaseTitle() + "  •" : BuildBaseTitle();
+            bool dirty = IsDirty;
+            Title = dirty ? BuildBaseTitle() + "  \u2022" : BuildBaseTitle();
 
             if (StatusDirtyIndicator != null)
                 StatusDirtyIndicator.Visibility = dirty ? Visibility.Visible : Visibility.Collapsed;
@@ -62,10 +70,26 @@ namespace MosquitoNetCalculator
             OnPropertyChanged(nameof(IsDirty));
         }
 
-        private void UpdateDirtyIndicator() => ApplyTitle();
+        private void UpdateDirtyIndicator()
+        {
+            if (!Dispatcher.CheckAccess())
+            {
+                Dispatcher.BeginInvoke(ApplyTitle);
+                return;
+            }
+            ApplyTitle();
+        }
 
         /// <summary>UX-12: drives the dirty chip in the ActionBar (INPC-raised by ApplyTitle).</summary>
-        public bool IsDirty => ViewModel?.UndoRedo?.IsDirty ?? false;
+        public bool IsDirty => (ViewModel?.UndoRedo?.IsDirty ?? false) || _isClientInfoDirty;
+
+        /// <summary>Marks that client information (name, phone, address, notes, status) was modified.</summary>
+        internal void MarkClientInfoDirty()
+        {
+            _isClientInfoDirty = true;
+            UpdateDirtyIndicator();
+            NotifyDraftChanged();
+        }
 
         /// <summary>UX-12: enables/disables the Undo button (INPC-raised by UpdateUndoRedoHint).</summary>
         public bool CanUndo => ViewModel?.UndoRedo?.CanUndo ?? false;
@@ -93,11 +117,14 @@ namespace MosquitoNetCalculator
         internal void MarkDirty()
         {
             ViewModel.UndoRedo.MarkDirty();
+            NotifyDraftChanged();
         }
 
         internal void MarkClean()
         {
+            _isClientInfoDirty = false;
             ViewModel.UndoRedo.MarkClean();
+            UpdateDirtyIndicator();
         }
 
         internal void PushUndo()

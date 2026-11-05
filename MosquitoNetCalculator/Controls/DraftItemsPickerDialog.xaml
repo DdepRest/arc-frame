@@ -1,0 +1,139 @@
+﻿<Window x:Class="MosquitoNetCalculator.Controls.DraftItemsPickerDialog"
+        Style="{DynamicResource Window.Shared}"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Выбор позиций для восстановления"
+        Width="580"
+        SizeToContent="Height"
+        MaxHeight="520"
+        WindowStartupLocation="CenterOwner"
+        WindowStyle="None"
+        AllowsTransparency="True"
+        Background="Transparent"
+        ResizeMode="NoResize"
+        ShowInTaskbar="False">
+    <Grid>
+        <!-- Shadow backdrop -->
+        <Border Background="{DynamicResource Surface}"
+                BorderBrush="{DynamicResource BorderHover}" BorderThickness="1"
+                CornerRadius="{DynamicResource Radius.Lg}" Margin="{DynamicResource Gap.Window}">
+            <Border.Effect>
+                <DropShadowEffect BlurRadius="36" ShadowDepth="8" Opacity="0.60"
+                                  Color="{DynamicResource ShadowColor}"/>
+            </Border.Effect>
+        </Border>
+
+        <!-- Main dialog card -->
+        <Border Background="{DynamicResource Surface}"
+                BorderBrush="{DynamicResource BorderHover}"
+                BorderThickness="1"
+                CornerRadius="{DynamicResource Radius.Lg}"
+                Margin="{DynamicResource Gap.Window}"
+                SnapsToDevicePixels="True">
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>  <!-- Header -->
+                    <RowDefinition Height="Auto"/>  <!-- Quick filter / Select all -->
+                    <RowDefinition Height="*"/>     <!-- List -->
+                    <RowDefinition Height="Auto"/>  <!-- Footer -->
+                </Grid.RowDefinitions>
+
+                <!-- Header -->
+                <Border Grid.Row="0" Background="{DynamicResource HeaderBg}"
+                        CornerRadius="{DynamicResource Radius.CardHeader}"
+                        Padding="{DynamicResource Pad.DialogHeader}"
+                        BorderBrush="{DynamicResource Border}" BorderThickness="0,0,0,1"
+                        MouseLeftButtonDown="TitleBar_MouseLeftButtonDown">
+                    <Grid>
+                        <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                            <TextBlock Text="&#xE81C;" FontFamily="{DynamicResource Font.Icon}" FontSize="{StaticResource Type.Subtitle}"
+                                       Foreground="{DynamicResource AccentText}" VerticalAlignment="Center" Margin="{DynamicResource Gap.Inline}"/>
+                            <TextBlock Text="Выбор позиций для восстановления" FontSize="{StaticResource Type.Subtitle}"
+                                       FontWeight="SemiBold" Foreground="{DynamicResource TextPrimary}" VerticalAlignment="Center"/>
+                        </StackPanel>
+                        <Button Style="{DynamicResource DialogCloseButton}"
+                                HorizontalAlignment="Right" VerticalAlignment="Center"
+                                Click="BtnCancel_Click"/>
+                    </Grid>
+                </Border>
+
+                <!-- Select All Bar -->
+                <Border Grid.Row="1" Background="{DynamicResource SectionBg}" Padding="{DynamicResource Pad.Control}"
+                        BorderBrush="{DynamicResource Border}" BorderThickness="0,0,0,1">
+                    <Grid>
+                        <CheckBox x:Name="ChkSelectAll" Content="Выбрать все позиции"
+                                  IsChecked="True"
+                                  Checked="ChkSelectAll_Checked"
+                                  Unchecked="ChkSelectAll_Unchecked"
+                                  VerticalAlignment="Center"
+                                  FontSize="{StaticResource Type.Caption}"/>
+                        <TextBlock x:Name="TxtDraftDateInfo" HorizontalAlignment="Right" VerticalAlignment="Center"
+                                   FontSize="{StaticResource Type.Caption}" Foreground="{DynamicResource TextMuted}"
+                                   Text="Черновик"/>
+                    </Grid>
+                </Border>
+
+                <!-- Items List -->
+                <ScrollViewer Grid.Row="2" VerticalScrollBarVisibility="Auto" Padding="{DynamicResource Pad.Control}">
+                    <ItemsControl x:Name="ItemsList">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <Border Background="{DynamicResource SurfaceVariant}"
+                                        BorderBrush="{DynamicResource Border}" BorderThickness="1"
+                                        CornerRadius="{DynamicResource Radius.Control}"
+                                        Margin="{DynamicResource Gap.Block}"
+                                        Padding="{DynamicResource Pad.Control}">
+                                    <Grid>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="Auto"/>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="Auto"/>
+                                        </Grid.ColumnDefinitions>
+
+                                        <CheckBox IsChecked="{Binding IsSelected, Mode=TwoWay}"
+                                                  VerticalAlignment="Center" Margin="{DynamicResource Gap.Inline}"/>
+
+                                        <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                                            <StackPanel Orientation="Horizontal">
+                                                <TextBlock Text="{Binding Name}" FontWeight="SemiBold"
+                                                           FontSize="{StaticResource Type.Body}" Foreground="{DynamicResource TextPrimary}"/>
+                                                <TextBlock Text="{Binding ColorSuffix}"
+                                                           FontSize="{StaticResource Type.Body}" Foreground="{DynamicResource TextSecondary}"
+                                                           Margin="{DynamicResource Gap.InlineSm}"/>
+                                            </StackPanel>
+                                            <TextBlock Text="{Binding Details}"
+                                                       FontSize="{StaticResource Type.Caption}" Foreground="{DynamicResource TextMuted}"/>
+                                        </StackPanel>
+
+                                        <TextBlock Grid.Column="2" Text="{Binding TotalDisplay}"
+                                                   FontWeight="SemiBold" FontSize="{StaticResource Type.Body}"
+                                                   Foreground="{DynamicResource TextPrimary}"
+                                                   VerticalAlignment="Center"/>
+                                    </Grid>
+                                </Border>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </ScrollViewer>
+
+                <!-- Footer -->
+                <Border Grid.Row="3" Background="{DynamicResource HeaderBg}"
+                        CornerRadius="{DynamicResource Radius.CardFooter}"
+                        Padding="{DynamicResource Pad.Control}"
+                        BorderBrush="{DynamicResource Border}" BorderThickness="0,1,0,0">
+                    <Grid>
+                        <Button x:Name="BtnCancel" Content="Отмена"
+                                Style="{DynamicResource GhostButton}"
+                                HorizontalAlignment="Left"
+                                Click="BtnCancel_Click"/>
+                        <Button x:Name="BtnAddSelected" Content="Восстановить выбранные"
+                                Style="{DynamicResource PrimaryButton}"
+                                HorizontalAlignment="Right"
+                                IsDefault="True"
+                                Click="BtnAddSelected_Click"/>
+                    </Grid>
+                </Border>
+            </Grid>
+        </Border>
+    </Grid>
+</Window>

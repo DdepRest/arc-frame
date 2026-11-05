@@ -472,9 +472,21 @@ namespace MosquitoNetCalculator.Services
 
         /// <summary>True when at least one provider has a non-empty user key.</summary>
         public static bool HasAnyConfiguredApiKey
-            => !string.IsNullOrWhiteSpace(GetApiKey(AiProvider.OpenRouter))
-               || !string.IsNullOrWhiteSpace(GetApiKey(AiProvider.Nvidia))
-               || !string.IsNullOrWhiteSpace(GetApiKey(AiProvider.FreeLlmApi));
+        {
+            get
+            {
+                if (!string.IsNullOrWhiteSpace(GetApiKey(AiProvider.OpenRouter))) return true;
+                if (!string.IsNullOrWhiteSpace(GetApiKey(AiProvider.Nvidia))) return true;
+                if (!string.IsNullOrWhiteSpace(GetApiKey(AiProvider.FreeLlmApi))) return true;
+                var ep = AppSettingsServiceAi.LoadAiFreeLlmApiEndpoint();
+                if (!string.IsNullOrWhiteSpace(ep) && !string.Equals(ep, "http://localhost:3001/v1", StringComparison.OrdinalIgnoreCase))
+                    return true;
+                var (cached, _) = AppSettingsServiceAi.LoadCachedModels();
+                if (cached.Any(m => m.Provider == AiProvider.FreeLlmApi))
+                    return true;
+                return false;
+            }
+        }
 
         /// <summary>Returns the chat-completions endpoint for a provider.</summary>
         public static string GetApiUrl(AiProvider provider)

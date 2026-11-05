@@ -422,5 +422,17 @@ namespace MosquitoNetCalculator.Tests.Services
             Assert.Equal("test.png", loaded[0].Attachments[0].FileName);
             Assert.Equal("Ответ", loaded[1].Text);
         }
+
+        [Fact]
+        public void AiKeyValidator_HasAnyConfiguredApiKey_TrueWhenCustomFreeLlmEndpointConfigured()
+        {
+            AppSettingsServiceAi.SaveAiApiKey("");
+            AppSettingsServiceAi.SaveAiNvidiaApiKey("");
+            AppSettingsServiceAi.SaveAiFreeLlmApiKey("");
+            AppSettingsServiceAi.SaveAiFreeLlmApiEndpoint("http://192.168.1.100:8000/v1");
+
+            Assert.True(AiKeyValidator.HasAnyConfiguredApiKey);
+        }
     }
+
 }

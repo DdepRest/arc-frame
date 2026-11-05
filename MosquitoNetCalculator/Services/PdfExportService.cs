@@ -60,6 +60,8 @@ namespace MosquitoNetCalculator.Services
 
             bool includeProductionStamp = attemptSettings?.IncludeProductionCopy == true;
             int copies = Math.Max(0, attemptSettings?.Copies ?? 1);
+            double installationTotal = valid.Sum(i => i.InstallationLaborTotal);
+            bool showInstallation = attemptSettings?.ShowInstallationInTotal ?? AppSettingsService.LoadShowInstallationInTotal();
 
             if (copies == 0 && !includeProductionStamp)
                 throw new ArgumentException("Nothing to print: set at least one copy or enable the production copy.", nameof(attemptSettings));
@@ -80,7 +82,7 @@ namespace MosquitoNetCalculator.Services
             if (includeProductionStamp)
             {
                 int customerPages = copies > 0
-                    ? CountCustomerPages(copies, valid, clientInfo, totalAmount, amountInWords)
+                    ? CountCustomerPages(copies, valid, clientInfo, totalAmount, amountInWords, showInstallation, installationTotal)
                     : 0;
                 stampOnPageNumber = customerPages + 1;
             }
@@ -102,7 +104,7 @@ namespace MosquitoNetCalculator.Services
                 {
                     // Футер считает страницы одного экземпляра: исходник содержит
                     // 1 чистый комплект + (опц.) производственный блок.
-                    int instancePages = CountCustomerPages(1, valid, clientInfo, totalAmount, amountInWords);
+                    int instancePages = CountCustomerPages(1, valid, clientInfo, totalAmount, amountInWords, showInstallation, installationTotal);
                     InstanceFooterComponent.InstancePages = instancePages;
                     InstanceFooterComponent.Copies = 1;
                     InstanceFooterComponent.IncludeProduction = includeProductionStamp;
@@ -112,16 +114,18 @@ namespace MosquitoNetCalculator.Services
                     {
                         // Штамп внутри исходника — на первом листе производственного блока:
                         // чистый комплект КП занимает CountCustomerPages(1) страниц.
-                        int kpPages = CountCustomerPages(1, valid, clientInfo, totalAmount, amountInWords);
+                        int kpPages = CountCustomerPages(1, valid, clientInfo, totalAmount, amountInWords, showInstallation, installationTotal);
                         stampTargetPage = kpPages + 1;
                     }
 
                     var source = Document.Create(container =>
                     {
-                        container.Page(page => BuildKpPage(page, valid, clientInfo, totalAmount, amountInWords, includeProductionStamp: false));
+                        container.Page(page => BuildKpPage(page, valid, clientInfo, totalAmount, amountInWords,
+                            includeProductionStamp: false, showInstallation: showInstallation, installationTotal: installationTotal));
                         if (includeProductionStamp)
                             container.Page(page => BuildKpPage(page, valid, clientInfo, totalAmount, amountInWords,
-                                includeProductionStamp: true, stampBytes: stampBytes, stampOnPageNumber: stampTargetPage));
+                                includeProductionStamp: true, stampBytes: stampBytes, stampOnPageNumber: stampTargetPage,
+                                showInstallation: showInstallation, installationTotal: installationTotal));
                     });
                     source.GeneratePdf(sourcePath);
 
@@ -129,7 +133,7 @@ namespace MosquitoNetCalculator.Services
                     // он тоже многостраничный. Число страниц ЧИСТОГО комплекта считаем
                     // отдельным проходом (CountCustomerPages(1)), а не «всего страниц минус 1»:
                     // исходник = чистый комплект + производственный (оба по kpPages страниц).
-                    int kpPageCount = CountCustomerPages(1, valid, clientInfo, totalAmount, amountInWords);
+                    int kpPageCount = CountCustomerPages(1, valid, clientInfo, totalAmount, amountInWords, showInstallation, installationTotal);
                     var selected = PageSelection.GetSelectedSourcePages(attemptSettings, kpPageCount); // 0-based
 
                     var operation = DocumentOperation.LoadFile(sourcePath);
@@ -158,18 +162,20 @@ namespace MosquitoNetCalculator.Services
 
             // Футер считает страницы одного экземпляра (Copies чистых комплектов +
             // опциональный производственный блок) — см. InstanceFooterComponent.
-            InstanceFooterComponent.InstancePages = CountCustomerPages(1, valid, clientInfo, totalAmount, amountInWords);
+            InstanceFooterComponent.InstancePages = CountCustomerPages(1, valid, clientInfo, totalAmount, amountInWords, showInstallation, installationTotal);
             InstanceFooterComponent.Copies = copies;
             InstanceFooterComponent.IncludeProduction = includeProductionStamp;
 
             var document = Document.Create(container =>
             {
                 for (int i = 0; i < copies; i++)
-                    container.Page(page => BuildKpPage(page, valid, clientInfo, totalAmount, amountInWords, includeProductionStamp: false));
+                    container.Page(page => BuildKpPage(page, valid, clientInfo, totalAmount, amountInWords,
+                        includeProductionStamp: false, showInstallation: showInstallation, installationTotal: installationTotal));
 
                 if (includeProductionStamp)
                     container.Page(page => BuildKpPage(page, valid, clientInfo, totalAmount, amountInWords,
-                        includeProductionStamp: true, stampBytes: stampBytes, stampOnPageNumber: stampOnPageNumber));
+                        includeProductionStamp: true, stampBytes: stampBytes, stampOnPageNumber: stampOnPageNumber,
+                        showInstallation: showInstallation, installationTotal: installationTotal));
             });
 
             document.GeneratePdf(filePath);
@@ -185,12 +191,15 @@ namespace MosquitoNetCalculator.Services
             List<OrderItem> valid,
             ClientInfo clientInfo,
             double totalAmount,
-            string amountInWords)
+            string amountInWords,
+            bool showInstallation = true,
+            double installationTotal = 0)
         {
             var countingDocument = Document.Create(container =>
             {
                 for (int i = 0; i < copies; i++)
-                    container.Page(page => BuildKpPage(page, valid, clientInfo, totalAmount, amountInWords, includeProductionStamp: false));
+                    container.Page(page => BuildKpPage(page, valid, clientInfo, totalAmount, amountInWords,
+                        includeProductionStamp: false, showInstallation: showInstallation, installationTotal: installationTotal));
             });
 
             using var ms = new MemoryStream();
@@ -214,7 +223,9 @@ namespace MosquitoNetCalculator.Services
             string amountInWords,
             bool includeProductionStamp,
             byte[]? stampBytes = null,
-            int stampOnPageNumber = -1)
+            int stampOnPageNumber = -1,
+            bool showInstallation = true,
+            double installationTotal = 0)
         {
             bool hasItems = valid.Count > 0;
 
@@ -350,6 +361,12 @@ namespace MosquitoNetCalculator.Services
                 });
                 col.Item().AlignRight().PaddingTop(4).Text(amountInWords ?? "")
                     .Italic().FontSize(8.5f).FontColor(Colors.Grey.Darken2);
+
+                if (showInstallation && installationTotal > 0)
+                {
+                    col.Item().AlignRight().PaddingTop(3).Text($"В том числе монтаж: {MoneyFormatService.Format(installationTotal)} руб.")
+                        .SemiBold().FontSize(9f).FontColor(Colors.Grey.Darken3);
+                }
 
                 if (clientInfo.HasAdditionalKp && clientInfo.AdditionalKps.Any(k => k.IsActive))
                     col.Item().Element(c => BuildAdditionalKpPdf(c, clientInfo, totalAmount));

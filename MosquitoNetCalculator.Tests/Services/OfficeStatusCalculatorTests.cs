@@ -20,12 +20,18 @@ namespace MosquitoNetCalculator.Tests.Services
 
         private static readonly DateTimeOffset Now = new(2026, 8, 13, 12, 0, 0, TimeSpan.Zero);
 
-        private static OfficeReport Report(string prefix, string version, DateTimeOffset reportedAt, string locationName = "") => new()
+        private static OfficeReport Report(
+            string prefix,
+            string version,
+            DateTimeOffset reportedAt,
+            string locationName = "",
+            DateTimeOffset? locationConfirmedAt = null) => new()
         {
             Prefix = prefix,
             LocationName = locationName,
             Version = version,
             ReportedAt = reportedAt.ToString("o"),
+            LocationConfirmedAt = locationConfirmedAt?.ToString("o") ?? "",
         };
 
         [Fact]
@@ -36,6 +42,64 @@ namespace MosquitoNetCalculator.Tests.Services
             Assert.Equal(2, rows.Count);
             Assert.All(rows, r => Assert.Equal(OfficeStatus.NoData, r.Status));
             Assert.Equal("—", rows[0].Version);
+        }
+
+        // ── Проверка местоположения в чипе устройства ───────────────────
+
+        [Fact]
+        public void BuildRows_DeviceWithFreshLocationConfirmation_HasNoHint()
+        {
+            var reports = new[]
+            {
+                Report("1", "3.47.4", Now.AddHours(-1), locationConfirmedAt: DateTimeOffset.UtcNow.AddDays(-3)),
+            };
+
+            var rows = OfficeStatusCalculator.BuildRows(Offices, reports, new Version("3.47.4"), Now, "2");
+
+            Assert.Equal(string.Empty, rows[0].Devices[0].LocationCheckHint);
+        }
+
+        [Fact]
+        public void BuildRows_DeviceWithStaleLocationConfirmation_ShowsDays()
+        {
+            var reports = new[]
+            {
+                Report("1", "3.47.4", Now.AddHours(-1), locationConfirmedAt: DateTimeOffset.UtcNow.AddDays(-45)),
+            };
+
+            var rows = OfficeStatusCalculator.BuildRows(Offices, reports, new Version("3.47.4"), Now, "2");
+
+            var device = rows[0].Devices[0];
+            Assert.StartsWith("локация не подтверждена 4", device.LocationCheckHint);
+            Assert.Contains("локация", device.ToolTipText);
+        }
+
+        [Fact]
+        public void BuildRows_LegacyReportWithoutConfirmation_TellsItWasNeverConfirmed()
+        {
+            // Отчёт версии без поля: давность неизвестна, но и «всё хорошо»
+            // сказать нельзя — панель показывает мягкое «не подтверждена».
+            var reports = new[] { Report("1", "3.47.4", Now.AddHours(-1)) };
+
+            var rows = OfficeStatusCalculator.BuildRows(Offices, reports, new Version("3.47.4"), Now, "2");
+
+            Assert.Equal("локация не подтверждена", rows[0].Devices[0].LocationCheckHint);
+        }
+
+        [Fact]
+        public void BuildRows_StaleReport_StillCarriesLocationHint()
+        {
+            // Статус NoData не должен терять подсказку: устройство молчит,
+            // но локацию там тем более никто не сверял.
+            var reports = new[]
+            {
+                Report("1", "3.47.4", Now.AddHours(-80), locationConfirmedAt: DateTimeOffset.UtcNow.AddDays(-40)),
+            };
+
+            var rows = OfficeStatusCalculator.BuildRows(Offices, reports, new Version("3.47.4"), Now, "2");
+
+            Assert.Equal(OfficeStatus.NoData, rows[0].Devices[0].Status);
+            Assert.Contains("локация не подтверждена", rows[0].Devices[0].LocationCheckHint);
         }
 
         [Fact]

@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Text.Json;
@@ -289,6 +289,7 @@ namespace MosquitoNetCalculator.Services
             ["AppBg"]        = "#F5F5F7",
             ["SidebarBg"]     = "#FFFFFF",
             ["Surface"]       = "#FFFFFF",
+            ["SurfaceVariant"] = "#F0F0F4",
             // Скрим подложки оверлеев (см. Brushes.xaml): в светлой теме мягче,
             // чтобы панель отделялась без «чёрного провала».
             ["Scrim"]        = "#80000000",
@@ -419,6 +420,7 @@ namespace MosquitoNetCalculator.Services
             ["AppBg"]             = "#19191B",
             ["SidebarBg"]         = "#131315",
             ["Surface"]           = "#242427",
+            ["SurfaceVariant"]   = "#2A2A2E",
             ["QuickBg"]           = "#1F1F22",
             // Скрим подложки оверлеев
             ["Scrim"]             = "#99000000",

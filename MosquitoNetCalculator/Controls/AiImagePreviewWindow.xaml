@@ -59,14 +59,14 @@
                                    VerticalAlignment="Center" TextTrimming="CharacterEllipsis"/>
 
                         <!-- Zoom controls -->
-                        <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center" Margin="0,0,12,0">
+                        <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center" Margin="{DynamicResource Gap.InlineLg}">
                             <Button Content="-" Width="26" Height="26" Click="BtnZoomOut_Click"
                                     Style="{StaticResource FlatIconButton}" ToolTip="Уменьшить (Колёсико мыши вниз)"/>
                             <TextBlock x:Name="TxtZoomPercent" Text="100%" FontSize="{StaticResource Type.Caption}"
-                                       Foreground="{DynamicResource TextMuted}" VerticalAlignment="Center" Margin="6,0"/>
+                                       Foreground="{DynamicResource TextMuted}" VerticalAlignment="Center" Margin="{DynamicResource Gap.InlineSm}"/>
                             <Button Content="+" Width="26" Height="26" Click="BtnZoomIn_Click"
                                     Style="{StaticResource FlatIconButton}" ToolTip="Увеличить (Колёсико мыши вверх)"/>
-                            <Button Content="1:1" Width="30" Height="26" Click="BtnResetZoom_Click" Margin="6,0,0,0"
+                            <Button Content="1:1" Width="30" Height="26" Click="BtnResetZoom_Click" Margin="{DynamicResource Gap.LeftSm}"
                                     Style="{StaticResource DialogOutlineButton}" FontSize="{StaticResource Type.Caption}" ToolTip="Сбросить масштаб"/>
                         </StackPanel>
 
@@ -82,7 +82,7 @@
                 <ScrollViewer Grid.Row="1" x:Name="ImgScrollViewer"
                               HorizontalScrollBarVisibility="Auto"
                               VerticalScrollBarVisibility="Auto"
-                              Background="#10000000"
+                              Background="{DynamicResource AppBg}"
                               PreviewMouseWheel="ScrollViewer_PreviewMouseWheel"
                               PreviewMouseLeftButtonDown="ScrollViewer_PreviewMouseLeftButtonDown"
                               PreviewMouseMove="ScrollViewer_PreviewMouseMove"
@@ -99,14 +99,14 @@
                 </ScrollViewer>
 
                 <!-- Bottom info footer -->
-                <Border Grid.Row="2" Padding="12,8" Background="{DynamicResource SectionBg}"
+                <Border Grid.Row="2" Padding="{DynamicResource Pad.Card}" Background="{DynamicResource SectionBg}"
                         BorderBrush="{DynamicResource SubtleBorder}" BorderThickness="0,1,0,0">
                     <Grid>
                         <TextBlock x:Name="TxtImageInfo" Text="Масштаб колесиком мыши · Перетаскивание зажатой левой кнопкой мыши"
                                    FontSize="{StaticResource Type.Caption}" Foreground="{DynamicResource TextMuted}"
                                    VerticalAlignment="Center"/>
                         <Button Content="Закрыть (Esc)" HorizontalAlignment="Right" Click="BtnClose_Click"
-                                Style="{StaticResource DialogOutlineButton}" Height="28" Padding="12,2" FontSize="{StaticResource Type.Caption}"/>
+                                Style="{StaticResource DialogOutlineButton}" Height="28" Padding="{DynamicResource Pad.ButtonSm}" FontSize="{StaticResource Type.Caption}"/>
                     </Grid>
                 </Border>
             </Grid>

@@ -92,6 +92,7 @@ namespace MosquitoNetCalculator.Services
                     DeviceName = report.DeviceName,
                     Version = report.Version,
                     LastReportAt = reportedAt,
+                    LocationConfirmedAt = report.LocationConfirmedAtUtc,
                     Status = OfficeStatus.NoData,
                 };
             }
@@ -110,6 +111,7 @@ namespace MosquitoNetCalculator.Services
                 DeviceName = report.DeviceName,
                 Version = report.Version,
                 LastReportAt = reportedAt,
+                LocationConfirmedAt = report.LocationConfirmedAtUtc,
                 Status = status,
             };
         }

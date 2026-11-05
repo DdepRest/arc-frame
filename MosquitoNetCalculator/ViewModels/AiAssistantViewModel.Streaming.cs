@@ -245,7 +245,8 @@ namespace MosquitoNetCalculator.ViewModels
             // independent source, splitting it would be a guess, so the bubble
             // shows nothing (the attachment glyph remains) until the readable
             // form is known.
-            if (string.IsNullOrEmpty(userText) && _currentTurnHadOcr)
+            bool userTextWasEmpty = string.IsNullOrWhiteSpace(userText);
+            if (userTextWasEmpty && _currentTurnHadOcr)
             {
                 var joinedOcr = string.Join(", ", ocrLines.Where(l => !string.IsNullOrWhiteSpace(l)));
                 userText = joinedOcr;
@@ -262,7 +263,9 @@ namespace MosquitoNetCalculator.ViewModels
             // intent entirely. Feed the filename and locally OCR'd text into
             // the prompt too, so ANY model understands an order encoded in a
             // picture — for every product, not just Anwis meshes.
-            var modelUserText = BuildModelUserText(userText, attachmentLabels, ocrLines);
+            var modelUserText = BuildModelUserText(
+                userText, attachmentLabels, ocrLines,
+                hadImageWithEmptyUserText: userTextWasEmpty && _currentTurnHadImage);
 
             // The service appends the current message (modelUserText) itself to
             // the request. Snapshot only the conversation that existed before
@@ -885,9 +888,12 @@ namespace MosquitoNetCalculator.ViewModels
         internal static string BuildModelUserText(
             string userText,
             IReadOnlyList<string> attachmentLabels,
-            IReadOnlyList<string> ocrLines)
+            IReadOnlyList<string> ocrLines,
+            bool hadImageWithEmptyUserText = false)
         {
             var parts = new List<string>();
+            if (hadImageWithEmptyUserText)
+                parts.Add("Добавь сетки / изделия с прикреплённого изображения в расчёт заказа.");
             if (!string.IsNullOrWhiteSpace(userText))
                 parts.Add(userText);
             if (attachmentLabels != null)

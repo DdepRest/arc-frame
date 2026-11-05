@@ -113,6 +113,11 @@ namespace MosquitoNetCalculator
             // own IO errors (logged to Debug) — no extra try/catch needed here.
             AppSettingsService.SaveContractPrefix(SelectedPrefix);
             AppSettingsService.SaveLocationName(SelectedLocationName);
+            // Явный выбор локации = подтверждение для периодической проверки
+            // (LocationCheckService): иначе после первого запуска баннер
+            // «всё верно?» появился бы сразу, а после смены локации —
+            // по старой отметке через пару дней.
+            AppSettingsService.MarkLocationConfirmed();
             AppSettingsService.MarkFirstRunComplete();
 
             DialogResult = true;

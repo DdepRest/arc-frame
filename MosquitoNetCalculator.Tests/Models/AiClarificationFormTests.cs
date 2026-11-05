@@ -886,5 +886,82 @@ namespace MosquitoNetCalculator.Tests.Models
             Assert.Contains("304×1593", summary);
             Assert.Contains("724×1593", summary);
         }
+
+        [Fact]
+        public void AnwisModeOptions_ForAnwis_ContainsUnspecifiedPlaceholder()
+        {
+            var form = new AiClarificationForm();
+            Assert.Equal("Anwis", form.SelectedType);
+            Assert.True(form.IsAnwis);
+            Assert.True(form.SupportsSizeMode);
+            Assert.False(form.IsTwoModeScreen);
+            Assert.Equal("Режим Anwis", form.SizeModeLabel);
+
+            // ComboBox must find SelectedAnwisMode in AnwisModeOptions so it does not render blank
+            Assert.Contains(AiClarificationForm.UnspecifiedAnwisMode, form.AnwisModeOptions);
+            Assert.Contains(form.SelectedAnwisMode, form.AnwisModeOptions);
+        }
+
+        [Theory]
+        [InlineData("На навесах")]
+        [InlineData("Оконная на метал. крепл.")]
+        public void AnwisModeOptions_ForTwoModeScreens_OffersGabarityAndProem(string screenType)
+        {
+            var form = new AiClarificationForm { SelectedType = screenType };
+
+            Assert.False(form.IsAnwis);
+            Assert.True(form.SupportsSizeMode);
+            Assert.True(form.IsTwoModeScreen);
+            Assert.Equal("Режим (размер)", form.SizeModeLabel);
+            Assert.Equal(new[] { "Габарит", "Проём" }, form.AnwisModeOptions);
+            Assert.Equal("Габарит", form.SelectedAnwisMode);
+
+            form.WidthText = "400";
+            form.HeightText = "1500";
+            form.QuantityText = "1";
+
+            // Default mode produces Габаритный
+            Assert.True(form.TryBuildCommand(out var cmdGab, out var err1));
+            Assert.Null(err1);
+            Assert.Equal(AnwisSizeMode.Габаритный, cmdGab!.Params.AnwisMode);
+
+            // Switching to Проём produces РазмерПроёма
+            form.SelectedAnwisMode = "Проём";
+            Assert.True(form.TryBuildCommand(out var cmdProem, out var err2));
+            Assert.Null(err2);
+            Assert.Equal(AnwisSizeMode.РазмерПроёма, cmdProem!.Params.AnwisMode);
+        }
+
+        [Fact]
+        public void ClarificationSizeRow_SwapDimensions_SwapsWidthAndHeightText()
+        {
+            var row = new AiClarificationSizeRow("600", "1300", "2");
+            row.SwapDimensions();
+
+            Assert.Equal("1300", row.WidthText);
+            Assert.Equal("600", row.HeightText);
+            Assert.Equal("2", row.QuantityText);
+        }
+
+        [Fact]
+        public void ClarificationForm_SwapAllDimensions_SwapsAllRows()
+        {
+            var form = new AiClarificationForm();
+            form.EnsureSizeRows(2);
+            form.SizeRows[0].WidthText = "500";
+            form.SizeRows[0].HeightText = "1200";
+            form.SizeRows[1].WidthText = "700";
+            form.SizeRows[1].HeightText = "1500";
+
+            form.SwapAllDimensions();
+
+            Assert.Equal("1200", form.SizeRows[0].WidthText);
+            Assert.Equal("500", form.SizeRows[0].HeightText);
+            Assert.Equal("1500", form.SizeRows[1].WidthText);
+            Assert.Equal("700", form.SizeRows[1].HeightText);
+        }
+
+        
     }
+
 }

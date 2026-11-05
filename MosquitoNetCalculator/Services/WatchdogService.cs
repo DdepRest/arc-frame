@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.IO;
 using System.IO.Compression;
 using System.Reflection;
@@ -190,11 +190,44 @@ namespace MosquitoNetCalculator.Services
             {
                 Directory.CreateDirectory(tmpDir);
                 using var archive = ZipFile.OpenRead(downloadedZipPath);
+
+                // Auto-detect root directory prefix if archive wraps files into a single subfolder
+                // (e.g. "ARC-Frame-3.56.0/MosquitoNetCalculator.exe").
+                ZipArchiveEntry? exeEntry = null;
                 foreach (var entry in archive.Entries)
                 {
+                    if (string.Equals(Path.GetFileName(entry.FullName), ExeFileName, StringComparison.OrdinalIgnoreCase))
+                    {
+                        exeEntry = entry;
+                        break;
+                    }
+                }
+
+                string rootPrefix = "";
+                if (exeEntry != null)
+                {
+                    string? dir = Path.GetDirectoryName(exeEntry.FullName)?.Replace('\\', '/');
+                    if (!string.IsNullOrEmpty(dir))
+                    {
+                        rootPrefix = dir.TrimEnd('/') + "/";
+                    }
+                }
+                foreach (var entry in archive.Entries)
+                {
+                    string entryRelPath = entry.FullName;
+                    if (!string.IsNullOrEmpty(rootPrefix))
+                    {
+                        if (!entryRelPath.StartsWith(rootPrefix, StringComparison.OrdinalIgnoreCase))
+                            continue;
+                        entryRelPath = entryRelPath.Substring(rootPrefix.Length);
+                    }
+
+                    if (string.IsNullOrEmpty(entryRelPath) || entryRelPath.EndsWith('/') || entryRelPath.EndsWith('\\'))
+                        continue;
+
                     // Zip-slip defense (CWE-22): reject any entry whose
                     // resolved path escapes the staging root directory.
-                    var destPath = Path.GetFullPath(Path.Combine(tmpDir, entry.FullName));
+                    var destPath = Path.GetFullPath(Path.Combine(tmpDir, entryRelPath));
                     var rootWithSep = tmpDirResolved + Path.DirectorySeparatorChar;
                     if (!destPath.StartsWith(rootWithSep, StringComparison.OrdinalIgnoreCase)
                         && !string.Equals(destPath, tmpDirResolved, StringComparison.OrdinalIgnoreCase))

@@ -43,8 +43,14 @@ namespace MosquitoNetCalculator.Controls
             int enabledCount = 0;
             double grandTotal = 0;
 
+            bool isAutoSplit = OrderTemplateService.SupportsAutoSplit(_template.Id) && _state.SplitConfig.IsAutoSplitMode;
+
             foreach (var row in _template.Rows)
             {
+                // В авто-режиме козырьки и отливы считаются через блоки раскроя
+                if (isAutoSplit && OrderTemplateService.IsSplitRow(row.RowKey))
+                    continue;
+
                 var rowState = _state.GetOrCreateRowState(row);
                 double rowTotal = rowState.CalculateTotal(catalogPrice);
                 bool isComplete = IsRowComplete(rowState);
@@ -93,6 +99,124 @@ namespace MosquitoNetCalculator.Controls
                     {
                         readyCount++;
                         grandTotal += rowTotal;
+                    }
+                }
+            }
+
+            if (isAutoSplit)
+            {
+                UpdateSharedGeometryNoticeText();
+
+                // 1. Козырёк
+                if (_state.SplitConfig.KozyrekEnabled)
+                {
+                    enabledCount++;
+                    var sumK = OrderTemplateService.CalculateSplitSummary("Козырёк", _state.SplitConfig, catalogPrice);
+                    if (_splitPreviewPanels.TryGetValue("auto_kozyrek", out var panelK))
+                        UpdateSplitPreview("Козырёк", panelK, sumK);
+
+                    if (_rowPriceLabels.TryGetValue("auto_kozyrek", out var lblK))
+                    {
+                        lblK.Opacity = 1.0;
+                        lblK.Text = sumK.TotalCost > 0 ? $"{MoneyFormatService.Format(sumK.TotalCost)} ₽" : "0 ₽";
+                    }
+
+                    if (_statusPills.TryGetValue("auto_kozyrek", out var pillK))
+                    {
+                        var textBlock = (TextBlock)pillK.Child;
+                        if (sumK.HasError)
+                        {
+                            textBlock.Text = "Ошибка";
+                            textBlock.Foreground = (Brush)FindResource("BadgeDangerFg");
+                            pillK.Background = (Brush)FindResource("BadgeDangerBg");
+                        }
+                        else
+                        {
+                            textBlock.Text = $"Добавится ({sumK.TotalPieceCount} шт.)";
+                            textBlock.Foreground = (Brush)FindResource("BadgeSuccessFg");
+                            pillK.Background = (Brush)FindResource("BadgeSuccessBg");
+                        }
+                    }
+
+                    if (!sumK.HasError && sumK.TotalPieceCount > 0)
+                    {
+                        readyCount++;
+                        grandTotal += sumK.TotalCost;
+                    }
+                }
+                else
+                {
+                    if (_splitPreviewPanels.TryGetValue("auto_kozyrek", out var panelK))
+                        UpdateSplitPreview("Козырёк", panelK, new OrderTemplateService.SplitProductSummary { ProductName = "Козырёк", Enabled = false });
+                    if (_rowPriceLabels.TryGetValue("auto_kozyrek", out var lblK))
+                    {
+                        lblK.Text = "—";
+                        lblK.Opacity = 0.45;
+                    }
+                    if (_statusPills.TryGetValue("auto_kozyrek", out var pillK))
+                    {
+                        var textBlock = (TextBlock)pillK.Child;
+                        textBlock.Text = "Не требуется";
+                        textBlock.Foreground = (Brush)FindResource("TextMuted");
+                        pillK.Background = (Brush)FindResource("ChipBg");
+                    }
+                }
+
+                // 2. Отлив (только для шаблона "Рама")
+                if (_template.Id == "frame")
+                {
+                    if (_state.SplitConfig.OtlivEnabled)
+                    {
+                        enabledCount++;
+                        var sumO = OrderTemplateService.CalculateSplitSummary("Отлив", _state.SplitConfig, catalogPrice);
+                        if (_splitPreviewPanels.TryGetValue("auto_otliv", out var panelO))
+                            UpdateSplitPreview("Отлив", panelO, sumO);
+
+                        if (_rowPriceLabels.TryGetValue("auto_otliv", out var lblO))
+                        {
+                            lblO.Opacity = 1.0;
+                            lblO.Text = sumO.TotalCost > 0 ? $"{MoneyFormatService.Format(sumO.TotalCost)} ₽" : "0 ₽";
+                        }
+
+                        if (_statusPills.TryGetValue("auto_otliv", out var pillO))
+                        {
+                            var textBlock = (TextBlock)pillO.Child;
+                            if (sumO.HasError)
+                            {
+                                textBlock.Text = "Ошибка";
+                                textBlock.Foreground = (Brush)FindResource("BadgeDangerFg");
+                                pillO.Background = (Brush)FindResource("BadgeDangerBg");
+                            }
+                            else
+                            {
+                                textBlock.Text = $"Добавится ({sumO.TotalPieceCount} шт.)";
+                                textBlock.Foreground = (Brush)FindResource("BadgeSuccessFg");
+                                pillO.Background = (Brush)FindResource("BadgeSuccessBg");
+                            }
+                        }
+
+                        if (!sumO.HasError && sumO.TotalPieceCount > 0)
+                        {
+                            readyCount++;
+                            grandTotal += sumO.TotalCost;
+                        }
+                    }
+                    else
+                    {
+                        if (_splitPreviewPanels.TryGetValue("auto_otliv", out var panelO))
+                            UpdateSplitPreview("Отлив", panelO, new OrderTemplateService.SplitProductSummary { ProductName = "Отлив", Enabled = false });
+                        if (_rowPriceLabels.TryGetValue("auto_otliv", out var lblO))
+                        {
+                            lblO.Text = "—";
+                            lblO.Opacity = 0.45;
+                        }
+                        if (_statusPills.TryGetValue("auto_otliv", out var pillO))
+                        {
+                            var textBlock = (TextBlock)pillO.Child;
+                            textBlock.Text = "Не требуется";
+                            textBlock.Foreground = (Brush)FindResource("TextMuted");
+                            pillO.Background = (Brush)FindResource("ChipBg");
+                        }
                     }
                 }
             }
@@ -164,7 +288,7 @@ namespace MosquitoNetCalculator.Controls
                 var item = _mw.CalcVM.AddItem(
                     spec.Type, spec.Color, spec.Width, spec.Height,
                     spec.Quantity, spec.Price,
-                    spec.AnwisMode ?? AnwisSizeMode.Брусбокс60);
+                    spec.AnwisMode ?? Services.AnwisSizeService.GetDefaultMode(spec.Type));
                 if (item == null) continue;
                 added.Add(item);
 
@@ -207,7 +331,9 @@ namespace MosquitoNetCalculator.Controls
             else if (key.StartsWith("otliv-size") || key.StartsWith("otliv")) key = "otliv";
 
             if (_widthBoxes.TryGetValue(key, out var w) && w != null) w.Tag = "Invalid";
+            if (_widthBoxes.TryGetValue(row, out var w2) && w2 != null) w2.Tag = "Invalid";
             if (_heightBoxes.TryGetValue(key, out var h) && h != null) h.Tag = "Invalid";
+            if (_heightBoxes.TryGetValue(row, out var h2) && h2 != null) h2.Tag = "Invalid";
             if (_qtyBoxes.TryGetValue(key, out var q) && q != null) q.Tag = "Invalid";
             if (_qtyBoxes.TryGetValue(row, out var q2) && q2 != null) q2.Tag = "Invalid";
             if (_amountBoxes.TryGetValue(key, out var a) && a != null) a.Tag = "Invalid";

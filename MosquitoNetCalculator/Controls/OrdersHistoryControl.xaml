@@ -20,6 +20,20 @@
                      носителем числа и появляется только при активном фильтре,
                      где он честно говорит «сколько нашлось», а не повторяет итог. -->
                 <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                    <!-- Segmented View Toggle: [ Все заказы ] [ 🗑 Корзина (N) ] -->
+                    <Border Background="{DynamicResource SurfaceVariant}" CornerRadius="{DynamicResource Radius.Control}"
+                            Padding="{DynamicResource Pad.ControlSm}" Margin="{DynamicResource Gap.InlineLg}" BorderBrush="{DynamicResource Border}" BorderThickness="1">
+                        <StackPanel Orientation="Horizontal">
+                            <RadioButton x:Name="RbActiveOrders" Content="Все заказы"
+                                         GroupName="OrderHistoryViewMode"
+                                         IsChecked="True" Checked="RbViewMode_Checked"
+                                         Style="{DynamicResource SegmentedRadioButton}"/>
+                            <RadioButton x:Name="RbTrashOrders" Content="🗑 Корзина"
+                                         GroupName="OrderHistoryViewMode"
+                                         Checked="RbViewMode_Checked"
+                                         Style="{DynamicResource SegmentedRadioButton}"/>
+                        </StackPanel>
+                    </Border>
                     <Border x:Name="OrdersCountChip"
                             Background="{DynamicResource ChipBg}" CornerRadius="{DynamicResource Radius.Capsule}"
                             Padding="{DynamicResource Pad.ButtonSm}"
@@ -43,6 +57,15 @@
                         <StackPanel Orientation="Horizontal">
                             <TextBlock Style="{DynamicResource FluentIconButton}" Text="&#xE898;"/>
                             <TextBlock Text="Экспорт"/>
+                        </StackPanel>
+                    </Button>
+                    <Button x:Name="BtnEmptyTrash" Style="{DynamicResource GhostButton}"
+                            Click="BtnEmptyTrash_Click" Margin="{DynamicResource Gap.Inline}"
+                            Visibility="Collapsed"
+                            ToolTip="Очистить все заказы в корзине">
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Style="{DynamicResource FluentIconButton}" Text="&#xE74D;" Foreground="{DynamicResource Danger}"/>
+                            <TextBlock Text="Очистить корзину" Foreground="{DynamicResource Danger}"/>
                         </StackPanel>
                     </Button>
                     <Button Style="{DynamicResource GhostButton}"
@@ -139,6 +162,7 @@
                         <Separator Style="{StaticResource {x:Type Separator}}"/>
                         <MenuItem x:Name="CtxCopyMenu" Header="Копировать" IsEnabled="False" Click="CtxCopy_Click" Style="{StaticResource {x:Type MenuItem}}"/>
                         <Separator Style="{StaticResource {x:Type Separator}}"/>
+                        <MenuItem x:Name="CtxRestoreMenu" Header="Восстановить заказ" Visibility="Collapsed" Click="CtxRestore_Click" Style="{StaticResource {x:Type MenuItem}}"/>
                         <MenuItem x:Name="CtxDeleteMenu" Header="Удалить заказ" IsEnabled="False" Click="CtxDelete_Click" Foreground="{DynamicResource Danger}" Style="{StaticResource {x:Type MenuItem}}"/>
                     </ContextMenu>
                 </DataGrid.ContextMenu>

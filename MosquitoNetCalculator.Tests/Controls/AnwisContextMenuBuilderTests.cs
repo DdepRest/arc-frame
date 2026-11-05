@@ -336,6 +336,32 @@ namespace MosquitoNetCalculator.Tests.Controls
             });
         }
 
+        [Theory]
+        [InlineData("На навесах")]
+        [InlineData("Оконная на метал. крепл.")]
+        public void Build_TwoModeScreen_Contains_Exactly_Two_Items(string productName)
+        {
+            RunOnStaThread(() =>
+            {
+                var menu = AnwisContextMenuBuilder.Build(
+                    AnwisSizeMode.Габаритный,
+                    _ => { },
+                    DummyTarget(),
+                    productName,
+                    MenuStyle);
+
+                Assert.Equal(2, menu.Items.Count);
+                var item0 = Assert.IsType<MenuItem>(menu.Items[0]);
+                var item1 = Assert.IsType<MenuItem>(menu.Items[1]);
+
+                Assert.Contains("Габарит", item0.Header?.ToString(), StringComparison.OrdinalIgnoreCase);
+                Assert.Contains("проём", item1.Header?.ToString(), StringComparison.OrdinalIgnoreCase);
+
+                Assert.True(item0.IsChecked);
+                Assert.False(item1.IsChecked);
+            });
+        }
+
         [Fact]
         public void Build_ContextMenu_Has_Style()
         {

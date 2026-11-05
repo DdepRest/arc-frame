@@ -30,6 +30,37 @@ namespace MosquitoNetCalculator.Models
         public bool IsAnticat { get; set; }
         // «Свой товар» marker — keeps manual-sum semantics after save/load.
         public bool IsCustomProduct { get; set; }
+        // «Работа» marker — keeps labor semantics (1 шт, no dims, included in InstallationLaborTotal) even if renamed.
+        public bool IsLabor { get; set; }
         public SlopeCalculationData? SlopeData { get; set; }
+    }
+
+    public static class OrderItemDataExtensions
+    {
+        public static OrderItem ToOrderItem(this OrderItemData od)
+        {
+            var item = new OrderItem
+            {
+                Name = od.Name == "Откос материал" ? "Откос" : od.Name,
+                Color = od.Color,
+                Width = od.Width,
+                Height = od.Height,
+                Quantity = od.Quantity,
+                Price = od.Price,
+                InstallationMode = od.InstallationMode != 0 ? od.InstallationMode : (od.HasInstallation ? 0 : 1),
+                InstallationDeduction = (od.InstallationDeduction > 0 && od.InstallationMode != 0) && !ProductCatalog.IsPerLinearMeter(od.Name)
+                    ? -od.InstallationDeduction : od.InstallationDeduction,
+                InstallationSurcharge = (od.InstallationSurcharge > 0 && od.InstallationMode != 0) && !ProductCatalog.IsPerLinearMeter(od.Name)
+                    ? -od.InstallationSurcharge : od.InstallationSurcharge,
+                InstallationAdjustment = od.InstallationAdjustment,
+                IsActive = od.IsActive,
+                IsAnticat = od.IsAnticat,
+                IsCustomProduct = od.IsCustomProduct,
+                IsLabor = od.IsLabor,
+                SlopeData = od.SlopeData?.ToSlopeCalculation()
+            };
+            item.Recalculate();
+            return item;
+        }
     }
 }

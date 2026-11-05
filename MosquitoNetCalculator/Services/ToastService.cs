@@ -260,16 +260,12 @@ namespace MosquitoNetCalculator.Services
                 var actionBtn = new Button
                 {
                     Content = actionLabel,
-                    FontSize = Typography.Body,
-                    FontWeight = FontWeights.SemiBold,
-                    Cursor = Cursors.Hand,
-                    Margin = new Thickness(10, 0, 0, 0),
-                    Padding = new Thickness(8, 3, 8, 3),
-                    Background = Brushes.Transparent,
-                    BorderThickness = new Thickness(0),
-                    Foreground = accentBrush,
+                    Margin = new Thickness(12, 0, 0, 0),
                     VerticalAlignment = VerticalAlignment.Center
                 };
+                if (Application.Current?.FindResource("ToastActionButton") is Style actStyle)
+                    actionBtn.Style = actStyle;
+
                 actionBtn.Click += (_, _) =>
                 {
                     RemoveToast(toastRef!);
@@ -284,15 +280,13 @@ namespace MosquitoNetCalculator.Services
                 Content = "\uE711",
                 FontFamily = AppFontService.CreateIconFamily(),
                 FontSize = Typography.Caption,
-                Cursor = Cursors.Hand,
-                Margin = new Thickness(8, 0, 0, 0),
-                Padding = new Thickness(4, 2, 4, 2),
-                Background = Brushes.Transparent,
-                BorderThickness = new Thickness(0),
-                Foreground = (Brush?)Application.Current?.FindResource("TextMuted") ?? Brushes.Gray,
+                Margin = new Thickness(6, 0, 0, 0),
                 VerticalAlignment = VerticalAlignment.Center,
                 ToolTip = "Закрыть"
             };
+            if (Application.Current?.FindResource("ToastCloseButton") is Style closeStyle)
+                closeBtn.Style = closeStyle;
+
             closeBtn.Click += (_, _) => RemoveToast(toastRef!);
             contentPanel.Children.Add(closeBtn);
 

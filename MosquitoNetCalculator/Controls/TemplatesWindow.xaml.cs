@@ -37,6 +37,10 @@ namespace MosquitoNetCalculator.Controls
         private readonly Dictionary<string, Border> _statusPills = new();
         private readonly Dictionary<string, TextBlock> _rowPriceLabels = new();
         private readonly Dictionary<string, StackPanel> _fieldPanelsByProduct = new();
+        private readonly Dictionary<string, StackPanel> _splitPreviewPanels = new();
+        private readonly Dictionary<string, Border> _rowCards = new();
+        private readonly Dictionary<string, Border> _stepBadges = new();
+        private readonly Dictionary<string, TextBlock> _titleBlocks = new();
 
         // Верхняя часть полей «Сетки» (тип/цвет/режим/монтаж/антикошка)
         private StackPanel? _gridTopPanel;
@@ -262,8 +266,77 @@ namespace MosquitoNetCalculator.Controls
             _state.InitForTemplate(template);
             TxtChecklistTitle.Text = $"Шаблон «{template.Name}»";
             TxtChecklistSubtitle.Text = template.Subtitle;
+
+            bool isSplitApplicable = OrderTemplateService.SupportsAutoSplit(template.Id);
+            PanelSplitModeSwitch.Visibility = isSplitApplicable ? Visibility.Visible : Visibility.Collapsed;
+            if (isSplitApplicable)
+            {
+                RadModeAuto.IsChecked = _state.SplitConfig.IsAutoSplitMode;
+                RadModeManual.IsChecked = !_state.SplitConfig.IsAutoSplitMode;
+            }
+
             BuildChecklist();
             ShowChecklistView();
+            RefreshSummary();
+        }
+
+        private void RadMode_Click(object sender, RoutedEventArgs e)
+        {
+            if (_template == null || !OrderTemplateService.SupportsAutoSplit(_template.Id))
+                return;
+
+            bool autoMode = RadModeAuto.IsChecked == true;
+            if (_state.SplitConfig.IsAutoSplitMode != autoMode)
+            {
+                _state.SplitConfig.IsAutoSplitMode = autoMode;
+                AppSettingsService.SaveTemplateAutoSplitMode(autoMode);
+                BuildChecklist();
+                RefreshSummary();
+            }
+        }
+
+        private void BtnSelectAll_Click(object sender, RoutedEventArgs e) => SetAllPositionsEnabled(true);
+
+        private void BtnClearAll_Click(object sender, RoutedEventArgs e) => SetAllPositionsEnabled(false);
+
+        private void SetAllPositionsEnabled(bool isEnabled)
+        {
+            if (_template == null) return;
+            bool isAutoSplit = OrderTemplateService.SupportsAutoSplit(_template.Id) && _state.SplitConfig.IsAutoSplitMode;
+
+            foreach (var row in _template.Rows)
+            {
+                if (isAutoSplit && OrderTemplateService.IsSplitRow(row.RowKey))
+                    continue;
+
+                if (!row.IsCheckedLocked)
+                {
+                    var rowState = _state.GetOrCreateRowState(row);
+                    rowState.IsEnabled = isEnabled;
+                    if (_rowToggles.TryGetValue(row.RowKey, out var toggle))
+                        toggle.IsChecked = isEnabled;
+                    ApplyRowEnabledState(row.RowKey, isEnabled);
+                }
+            }
+
+            if (isAutoSplit)
+            {
+                _state.SplitConfig.KozyrekEnabled = isEnabled;
+                if (_rowToggles.TryGetValue("auto_kozyrek", out var toggleK))
+                    toggleK.IsChecked = isEnabled;
+                ApplyRowEnabledState("auto_kozyrek", isEnabled);
+
+                if (_template.Id == "frame")
+                {
+                    _state.SplitConfig.OtlivEnabled = isEnabled;
+                    if (_rowToggles.TryGetValue("auto_otliv", out var toggleO))
+                        toggleO.IsChecked = isEnabled;
+                    ApplyRowEnabledState("auto_otliv", isEnabled);
+                }
+
+                UpdateFrameGeometryCardVisibility();
+            }
+
             RefreshSummary();
         }
 

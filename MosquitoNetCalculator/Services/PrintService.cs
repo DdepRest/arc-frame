@@ -29,8 +29,9 @@ namespace MosquitoNetCalculator.Services
             List<OrderItem> items,
             ClientInfo clientInfo,
             double totalAmount,
-            string amountInWords)
-            => _flowDocumentBuilder.Build(items, clientInfo, totalAmount, amountInWords);
+            string amountInWords,
+            PrintSettings? settings = null)
+            => _flowDocumentBuilder.Build(items, clientInfo, totalAmount, amountInWords, settings);
 
         /// <summary>Exports a КП as a PDF file via QuestPDF.</summary>
         public void ExportPdf(
@@ -122,7 +123,7 @@ namespace MosquitoNetCalculator.Services
             string amountInWords = AmountInWordsService.Convert(total);
             string contractNumber = clientInfo.ContractNumber ?? "";
 
-            var flowDoc = new FlowDocumentBuilder().Build(activeItems, clientInfo, total, amountInWords);
+            var flowDoc = new FlowDocumentBuilder().Build(activeItems, clientInfo, total, amountInWords, settings);
             if (flowDoc == null)
             {
                 return new PrintResult

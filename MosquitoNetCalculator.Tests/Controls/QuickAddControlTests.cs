@@ -353,6 +353,22 @@ namespace MosquitoNetCalculator.Tests.Controls
                 QuickAddControl.GetRequiredFieldError("Работа", width: 0, height: 0, price: 0));
         }
 
+        [Theory]
+        [InlineData(0)]
+        [InlineData(-1)]
+        public void GetRequiredFieldError_ZeroOrNegativeQuantity_Blocks(double qty)
+        {
+            Assert.Equal(QuickAddControl.QuickAddFieldError.Quantity,
+                QuickAddControl.GetRequiredFieldError("Anwis", width: 1000, height: 1500, price: 1800, qty: qty));
+        }
+
+        [Fact]
+        public void GetRequiredFieldError_PositiveQuantity_Passes()
+        {
+            Assert.Equal(QuickAddControl.QuickAddFieldError.None,
+                QuickAddControl.GetRequiredFieldError("Anwis", width: 1000, height: 1500, price: 1800, qty: 1));
+        }
+
         [Fact]
         public void SetRequiredHighlight_SetsInvalidTag()
         {

@@ -17,6 +17,27 @@ namespace MosquitoNetCalculator.Tests.Controls
     public class InstallationAmountInputTests
     {
         [Fact]
+        public void BtnToggleInstallation_Click_OpensMenuWithoutInvalidOperationException()
+        {
+            MosquitoNetCalculator.Tests.Helpers.WpfTestHelper.RunOnSta(() =>
+            {
+                var mw = new MainWindow();
+                var item = new OrderItem
+                {
+                    Name = "Anwis",
+                    Width = 1000,
+                    Height = 1000,
+                    Quantity = 1,
+                    Price = 1800,
+                    InstallationMode = 0
+                };
+                var btn = new System.Windows.Controls.Button { DataContext = item };
+                var ex = Record.Exception(() => mw.BtnToggleInstallation_Click(btn, new System.Windows.RoutedEventArgs()));
+                Assert.Null(ex);
+            });
+        }
+
+        [Fact]
         public void SelectingMinusAtZero_ThenEnteringAmount_PersistsNegativeValue()
         {
             var item = new OrderItem
@@ -67,19 +88,17 @@ namespace MosquitoNetCalculator.Tests.Controls
         {
             string source = ReadMainWindowItemsSource();
 
-            // Refreshing a zero-valued field must not overwrite the selected
-            // sign. A later non-zero value is allowed to synchronize the toggle.
-            Assert.Contains("if (ShouldRefreshInstallationSign(currentVal))", source);
-            Assert.Contains("chkSign.IsChecked = currentVal > 0;", source);
+            // Unified signed input: non-zero value displays with explicit sign (+ or -), zero displays as "0"
+            Assert.Contains("txtDeduction.Text = currentVal > 0 ? $\"+{currentVal:F0}\" : $\"{currentVal:F0}\";", source);
+            Assert.Contains("txtDeduction.Text = \"0\";", source);
 
-            // The same commit function is used by the sign toggle, LostFocus,
-            // and Enter paths, so all normal ways of finishing an edit remain
-            // covered by the regression fix.
-            AssertHandlerCommits(source, "chkSign.Click +=", "RefreshDeductionField();");
+            // The commit function is used by LostFocus, Enter, btnApply.Click, and mode cards
             AssertHandlerCommits(source, "txtDeduction.LostFocus +=", "txtDeduction.KeyDown +=");
-            AssertHandlerCommits(source, "txtDeduction.KeyDown +=", "deductionPanel.Children.Add(chkSign);");
+            AssertHandlerCommits(source, "txtDeduction.KeyDown +=", "Grid.SetColumn(txtDeduction, 1);");
+            AssertHandlerCommits(source, "btnApply.Click +=", "Grid.SetColumn(btnApply, 2);");
+            AssertHandlerCommits(source, "void SetModeAndClose(int mode)", "item.InstallationMode = mode;");
+
             Assert.Contains("if (args.Key == Key.Enter)", source);
-            Assert.Contains("double val = NormalizeInstallationAmount(rawVal, chkSign.IsChecked == true);", source);
 
             int lostFocus = source.IndexOf("txtDeduction.LostFocus +=", StringComparison.Ordinal);
             int enter = source.IndexOf("txtDeduction.KeyDown +=", StringComparison.Ordinal);

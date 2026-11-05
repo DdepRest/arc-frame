@@ -172,7 +172,17 @@
                     </Grid.RowDefinitions>
 
                     <Grid Grid.Row="0" Margin="{DynamicResource Gap.TemplatesControls}">
-                        <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                        </Grid.RowDefinitions>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+
+                        <!-- Верхняя строка: Кнопка «К шаблонам» + Название шаблона -->
+                        <StackPanel Grid.Row="0" Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center">
                             <Button x:Name="BtnBack" Style="{DynamicResource GhostButton}"
                                     Padding="{DynamicResource Pad.Badge}" FontSize="{StaticResource Type.Caption}"
                                     Click="BtnBack_Click"
@@ -183,13 +193,56 @@
                                     <TextBlock Text="К шаблонам" VerticalAlignment="Center"/>
                                 </StackPanel>
                             </Button>
-                            <StackPanel Margin="{DynamicResource Gap.LeftLg}" VerticalAlignment="Center">
-                                <TextBlock x:Name="TxtChecklistTitle" FontSize="{StaticResource Type.BodyLg}" FontWeight="SemiBold"
-                                           Foreground="{DynamicResource TextPrimary}"/>
-                                <TextBlock x:Name="TxtChecklistSubtitle" FontSize="{StaticResource Type.Caption}"
-                                           Foreground="{DynamicResource TextMuted}" Margin="{DynamicResource Gap.Micro}"/>
-                            </StackPanel>
+                            <TextBlock x:Name="TxtChecklistTitle" FontSize="{StaticResource Type.BodyLg}" FontWeight="SemiBold"
+                                       Foreground="{DynamicResource TextPrimary}" Margin="{DynamicResource Gap.LeftLg}" VerticalAlignment="Center"/>
                         </StackPanel>
+
+                        <!-- Переключатель режима раскроя (только для шаблонов Рама и Француз) -->
+                        <Border x:Name="PanelSplitModeSwitch" Grid.Row="0" Grid.Column="1" VerticalAlignment="Center"
+                                Background="{DynamicResource GhostBg}" BorderBrush="{DynamicResource SubtleBorder}"
+                                BorderThickness="1" CornerRadius="{DynamicResource Radius.Control}" Padding="{DynamicResource Pad.Hair}"
+                                Visibility="Collapsed">
+                            <StackPanel Orientation="Horizontal">
+                                <RadioButton x:Name="RadModeAuto" Content="⚡ Авторасчёт"
+                                             GroupName="SplitModeGroup"
+                                             Style="{DynamicResource SegmentedRadioButton}"
+                                             Click="RadMode_Click"
+                                             IsChecked="True"
+                                             Margin="{DynamicResource Gap.RightHair}"
+                                             ToolTip="Автоматический раскрой козырька и отлива на куски с нахлёстами и углами"/>
+                                <RadioButton x:Name="RadModeManual" Content="✎ Вручную"
+                                             GroupName="SplitModeGroup"
+                                             Style="{DynamicResource SegmentedRadioButton}"
+                                             Click="RadMode_Click"
+                                             ToolTip="Классический ручной ввод размеров каждого куска"/>
+                            </StackPanel>
+                        </Border>
+
+                        <!-- Вторая строка: подзаголовок шаблона + быстрые действия Выбрать всё / Снять всё -->
+                        <Grid Grid.Row="1" Grid.ColumnSpan="2" Margin="{DynamicResource Gap.BlockTop}">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+                            <TextBlock x:Name="TxtChecklistSubtitle" Grid.Column="0" FontSize="{StaticResource Type.Caption}"
+                                       Foreground="{DynamicResource TextMuted}" VerticalAlignment="Center"
+                                       TextWrapping="Wrap"/>
+                            <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
+                                <Button x:Name="BtnSelectAll" Style="{DynamicResource GhostButton}"
+                                        Padding="{DynamicResource Pad.Tiny}" FontSize="{StaticResource Type.Caption}"
+                                        Click="BtnSelectAll_Click" Margin="{DynamicResource Gap.RightHair}"
+                                        ToolTip="Включить все позиции шаблона">
+                                    <TextBlock Text="Выбрать всё" Foreground="{DynamicResource AccentText}"/>
+                                </Button>
+                                <TextBlock Text="·" Foreground="{DynamicResource TextMuted}" VerticalAlignment="Center" Margin="{DynamicResource Gap.InlineSm}"/>
+                                <Button x:Name="BtnClearAll" Style="{DynamicResource GhostButton}"
+                                        Padding="{DynamicResource Pad.Tiny}" FontSize="{StaticResource Type.Caption}"
+                                        Click="BtnClearAll_Click"
+                                        ToolTip="Снять все отметки">
+                                    <TextBlock Text="Снять всё" Foreground="{DynamicResource TextMuted}"/>
+                                </Button>
+                            </StackPanel>
+                        </Grid>
                     </Grid>
 
                     <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto"

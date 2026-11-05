@@ -62,6 +62,32 @@ namespace MosquitoNetCalculator.Tests.Services
         }
 
         [Fact]
+        public void ParseReports_LocationConfirmation_BackwardCompatible()
+        {
+            // Формат отчёта расширяется обратно совместимо: новый отчёт несёт
+            // дату подтверждения локации, старый (без поля) и пустое значение —
+            // оба «не подтверждено», а не «всё в порядке».
+            var json = """
+            {
+              "files": {
+                "office-1-a.json": { "content": "{\"prefix\":\"1\",\"version\":\"3.57.0\",\"reportedAt\":\"2026-10-25T10:00:00Z\",\"locationConfirmedAt\":\"2026-09-20T08:30:00Z\"}" },
+                "office-2-b.json": { "content": "{\"prefix\":\"2\",\"version\":\"3.40.0\",\"reportedAt\":\"2026-10-25T10:00:00Z\"}" },
+                "office-3-c.json": { "content": "{\"prefix\":\"3\",\"version\":\"3.57.0\",\"reportedAt\":\"2026-10-25T10:00:00Z\",\"locationConfirmedAt\":\"\"}" }
+              }
+            }
+            """;
+
+            var reports = OfficeReportService.ParseReports(json);
+
+            Assert.Equal(3, reports.Count);
+            Assert.Equal(
+                new DateTimeOffset(2026, 9, 20, 8, 30, 0, TimeSpan.Zero),
+                reports[0].LocationConfirmedAtUtc);
+            Assert.Null(reports[1].LocationConfirmedAtUtc);
+            Assert.Null(reports[2].LocationConfirmedAtUtc);
+        }
+
+        [Fact]
         public void ParseReports_NonOfficeFiles_Skipped()
         {
             var json = """
@@ -483,6 +509,46 @@ namespace MosquitoNetCalculator.Tests.Services
             Assert.Contains("deviceId", inner);
             Assert.Contains(deviceId, inner);
             Assert.Contains("deviceName", inner);
+        }
+
+        [Fact]
+        public async Task SendReportAsync_CarriesLocationConfirmationDate()
+        {
+            var stamp = new DateTime(2026, 9, 20, 8, 30, 0, DateTimeKind.Utc);
+            AppSettingsService.SaveLocationConfirmedAtUtc(stamp);
+
+            string? body = null;
+            var handler = new TestHttpMessageHandler(req =>
+            {
+                body = req.Content?.ReadAsStringAsync().GetAwaiter().GetResult();
+                return new HttpResponseMessage(HttpStatusCode.OK);
+            });
+            using var http = new HttpClient(handler);
+
+            Assert.True(await OfficeReportService.SendReportAsync(http));
+
+            var inner = body!.Replace("\\u0022", "\"");
+            Assert.Contains("locationConfirmedAt", inner);
+            Assert.Contains("2026-09-20T08:30:00.0000000Z", inner);
+        }
+
+        [Fact]
+        public async Task SendReportAsync_WithoutConfirmation_SendsEmptyDate()
+        {
+            // Свежая установка/не подтверждали: поле есть, но пустое —
+            // панель честно покажет «локация не подтверждена».
+            string? body = null;
+            var handler = new TestHttpMessageHandler(req =>
+            {
+                body = req.Content?.ReadAsStringAsync().GetAwaiter().GetResult();
+                return new HttpResponseMessage(HttpStatusCode.OK);
+            });
+            using var http = new HttpClient(handler);
+
+            Assert.True(await OfficeReportService.SendReportAsync(http));
+
+            var inner = body!.Replace("\\u0022", "\"");
+            Assert.Contains("\"locationConfirmedAt\":\"\"", inner);
         }
 
         [Fact]

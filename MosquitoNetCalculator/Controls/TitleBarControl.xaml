@@ -87,6 +87,8 @@
                     <TextBlock Text="&#xE713;" FontFamily="{DynamicResource Font.Icon}" FontSize="{StaticResource Type.BodyLg}"/>
                     <Button.ContextMenu>
                         <ContextMenu x:Name="SettingsMenu">
+                            <MenuItem Header="⚙️  Все настройки…" FontWeight="SemiBold" Click="MenuAllSettings_Click"/>
+                            <Separator/>
                             <MenuItem x:Name="MenuThemeLight" Header="☀  Светлая тема" IsCheckable="True" Click="MenuThemeLight_Click"/>
                             <MenuItem x:Name="MenuThemeDark" Header="🌙  Тёмная тема" IsCheckable="True" Click="MenuThemeDark_Click"/>
                             <Separator/>

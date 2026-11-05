@@ -330,6 +330,31 @@ Watchdog .bat запускает обновлённый `MosquitoNetCalculator.e
 
 ---
 
+---
+
+<a id="ручное-обновление"></a>
+## Ручное обновление из локального архива (Manual Update)
+
+Пользователь или администратор может обновить приложение без интернета / GitHub API из локального ZIP-архива.
+
+### Точки входа
+1. **Окно «Настройки программы»:** блок «Инструменты и сервисы» содержит строку «Установка из архива» с кнопкой [Выбрать архив…].
+2. **Drag & Drop:** перетаскивание любого .zip файла из Проводника Windows прямо на окно Настроек.
+
+### Конвейер обработки (UpdateService.ApplyManualUpdateAsync)
+1. **Инспекция архива (InspectManualArchive):**
+   - Проверка целостности ZIP и защита от Zip-Slip (пути, содержащие ..).
+   - Поиск MosquitoNetCalculator.exe (в корне или во вложенных папках).
+   - Извлечение только MosquitoNetCalculator.exe во временный probe-каталог для безопасного считывания версии через FileVersionInfo.
+2. **Подтверждение пользователя:**
+   - Модальный диалог со сравнением версий: Current vs Archive.
+   - Если версия в архиве $\le$ текущей, выводится предостережение о понижении/замене.
+3. **Подготовка и запуск watchdog:**
+   - WatchdogService.PreFlightCheck() проверяет доступ на запись в %AppData%.
+   - WatchdogService.StageUpdate() распаковывает архив с авто-выравниванием (strip root prefix, если архив создан с родительской папкой вроде ARC-Frame-3.56.0/).
+   - Запуск rc-update-watchdog.bat с повышением прав UAC (unas), выполнение --self-test и перезапуск приложения.
+   - Пользовательские базы данных заказов, цен и настроек в %AppData%\MosquitoNetCalculator\ сохраняются в неприкосновенности.
+
 <a id="проверка"></a>
 ## Риски
 
@@ -451,6 +476,24 @@ Watchdog .bat запускает обновлённый `MosquitoNetCalculator.e
 - `MosquitoNetCalculator.Tests/Services/UpdateCheckSchedulerTests.cs` (NEW, 20+ tests)
 
 ## Last verified
+2026-11-05 (v3.57.0) — обновлено содержимое (sync-last-verified.ps1, CONTROL#13).
+
+2026-11-04 (v3.57.0) — обновлено содержимое (sync-last-verified.ps1, CONTROL#13).
+
+2026-11-03 (v3.57.0) — обновлено содержимое (sync-last-verified.ps1, CONTROL#13).
+
+2026-11-02 (v3.57.0) — обновлено содержимое (sync-last-verified.ps1, CONTROL#13).
+
+2026-11-01 (v3.57.0) — обновлено содержимое (sync-last-verified.ps1, CONTROL#13).
+
+2026-10-30 (v3.57.0) — обновлено содержимое (sync-last-verified.ps1, CONTROL#13).
+
+2026-10-29 (v3.56.0) — обновлено содержимое (sync-last-verified.ps1, CONTROL#13).
+
+2026-10-26 (v3.56.0) — обновлено содержимое (sync-last-verified.ps1, CONTROL#13).
+
+2026-10-25 (v3.56.0) — auto-synced from csproj (sync-version.ps1, CONTROL#13).
+
 2026-10-22 (v3.55.1) — обновлено содержимое (sync-last-verified.ps1, CONTROL#13).
 
 2026-10-21 (v3.55.1) — обновлено содержимое (sync-last-verified.ps1, CONTROL#13).

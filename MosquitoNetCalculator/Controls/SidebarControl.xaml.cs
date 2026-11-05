@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.ComponentModel;
 using System.Diagnostics.CodeAnalysis;
 using System.Windows;
@@ -33,7 +33,26 @@ namespace MosquitoNetCalculator.Controls
             // v3.50: initial dot color + live sync on user changes. Programmatic
             // SelectedItem assignment (MainWindow ctor) also fires SelectionChanged,
             // so the dot follows both paths.
-            CmbStatus.SelectionChanged += (_, _) => UpdateStatusDot();
+            CmbStatus.SelectionChanged += (_, _) =>
+            {
+                UpdateStatusDot();
+                if (IsLoaded && TryGetMainWindow("CmbStatus", out var mw))
+                {
+                    mw.MarkClientInfoDirty();
+                }
+            };
+
+            TxtClientPhone.TextChanged += (_, _) =>
+            {
+                if (IsLoaded && TryGetMainWindow("TxtPhone", out var mw))
+                    mw.MarkClientInfoDirty();
+            };
+
+            TxtClientAddress.TextChanged += (_, _) =>
+            {
+                if (IsLoaded && TryGetMainWindow("TxtAddress", out var mw))
+                    mw.MarkClientInfoDirty();
+            };
 
             // v3.53: точка статуса следует теме. Кисть берётся из тех же токенов,
             // что и бейдж в «Заказах», а ThemeService анимирует существующую кисть
@@ -383,6 +402,7 @@ namespace MosquitoNetCalculator.Controls
             try
             {
                 _notesSource.Notes = NotesMarkupWriter.ToMarkup(RtfNotes.Document, RtfNotes.Foreground);
+                if (IsLoaded && TryGetMainWindow("NotesSync", out var mw)) mw.MarkClientInfoDirty();
             }
             finally
             {

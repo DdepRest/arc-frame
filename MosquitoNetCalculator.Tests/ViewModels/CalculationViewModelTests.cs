@@ -480,6 +480,83 @@ namespace MosquitoNetCalculator.Tests.ViewModels
             Assert.Equal(expectedHeight, item.Height);
         }
 
+        [Fact]
+        public void AddItem_НаНавесах_Проём_StoresWidthAndHeightPlus40()
+        {
+            var item = _vm.AddItem("На навесах", "Белый", 400, 1500, 1, 2900, AnwisSizeMode.РазмерПроёма)!;
+            Assert.NotNull(item);
+            Assert.Equal(AnwisSizeMode.РазмерПроёма, item.AnwisSizeMode);
+            Assert.Equal(440, item.Width);
+            Assert.Equal(1540, item.Height);
+            Assert.Equal(400, item.ШиринаВвод);
+            Assert.Equal(1500, item.ВысотаВвод);
+        }
+
+        [Fact]
+        public void AddItem_НаНавесах_InvalidMode_FallsBackToГабаритный()
+        {
+            // Брусбокс60 is not valid for «На навесах» -> falls back to default (Габаритный)
+            var item = _vm.AddItem("На навесах", "Белый", 400, 1500, 1, 2900, AnwisSizeMode.Брусбокс60)!;
+            Assert.NotNull(item);
+            Assert.Equal(AnwisSizeMode.Габаритный, item.AnwisSizeMode);
+            Assert.Equal(400, item.Width);
+            Assert.Equal(1500, item.Height);
+        }
+
+        [Fact]
+        public void LoadFromOrderData_TwoModeScreen_LegacyMode0_NormalizesToГабаритный()
+        {
+            var order = new OrderData
+            {
+                Items = new System.Collections.Generic.List<OrderItemData>
+                {
+                    new()
+                    {
+                        Name = "На навесах", Color = "Белый",
+                        Width = 400, Height = 1500,
+                        Quantity = 1, Price = 2900,
+                        AnwisSizeMode = 0 // old legacy default from previous versions
+                    }
+                }
+            };
+
+            _vm.LoadFromOrderData(order, () => { });
+
+            var item = _vm.OrderItems[0];
+            Assert.Equal(AnwisSizeMode.Габаритный, item.AnwisSizeMode);
+            Assert.Equal(400, item.Width);
+            Assert.Equal(1500, item.Height);
+            Assert.Equal(400, item.ШиринаВвод);
+            Assert.Equal(1500, item.ВысотаВвод);
+        }
+
+        [Fact]
+        public void LoadFromOrderData_TwoModeScreen_SavedПроём_PreservesDimensions()
+        {
+            var order = new OrderData
+            {
+                Items = new System.Collections.Generic.List<OrderItemData>
+                {
+                    new()
+                    {
+                        Name = "Оконная на метал. крепл.", Color = "Коричневый",
+                        Width = 440, Height = 1540,
+                        Quantity = 1, Price = 3000,
+                        AnwisSizeMode = (int)AnwisSizeMode.РазмерПроёма
+                    }
+                }
+            };
+
+            _vm.LoadFromOrderData(order, () => { });
+
+            var item = _vm.OrderItems[0];
+            Assert.Equal(AnwisSizeMode.РазмерПроёма, item.AnwisSizeMode);
+            Assert.Equal(440, item.Width);
+            Assert.Equal(1540, item.Height);
+            Assert.Equal(400, item.ШиринаВвод);
+            Assert.Equal(1500, item.ВысотаВвод);
+        }
+
         [Theory]
         [InlineData(AnwisSizeMode.Брусбокс60)]   // Defaults also need to round-trip
         [InlineData(AnwisSizeMode.Брусбокс70)]
@@ -793,12 +870,14 @@ namespace MosquitoNetCalculator.Tests.ViewModels
             // OrderItem.IsInstallationPerLinearMeter reads the same catalog.
             Assert.True(ProductCatalog.IsPerLinearMeter("Отлив"));
             Assert.True(ProductCatalog.IsPerLinearMeter("Козырёк"));
+            Assert.True(ProductCatalog.IsPerLinearMeter("Уплотнение"));
             Assert.False(ProductCatalog.IsPerLinearMeter("Anwis"));
             Assert.False(ProductCatalog.IsPerLinearMeter(null));
             Assert.False(ProductCatalog.IsPerLinearMeter(""));
 
             Assert.True(new OrderItem { Name = "Отлив" }.IsInstallationPerLinearMeter);
             Assert.True(new OrderItem { Name = "Козырёк" }.IsInstallationPerLinearMeter);
+            Assert.True(new OrderItem { Name = "Уплотнение" }.IsInstallationPerLinearMeter);
             Assert.False(new OrderItem { Name = "Anwis" }.IsInstallationPerLinearMeter);
         }
 

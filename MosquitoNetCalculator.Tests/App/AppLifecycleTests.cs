@@ -137,6 +137,35 @@ namespace MosquitoNetCalculator.Tests.App
             Assert.Contains("MarkFirstRunComplete", src);
         }
 
+        [Fact]
+        public void WelcomeWindow_Continue_Counts_As_Location_Confirmation()
+        {
+            // Явный выбор локации — тоже подтверждение для периодической
+            // проверки; без этого баннер «всё верно?» вернулся бы по старой
+            // отметке сразу после смены офиса.
+            var src = ReadSource("WelcomeWindow.xaml.cs");
+            Assert.Contains("MarkLocationConfirmed", src);
+        }
+
+        [Fact]
+        public void MainWindow_Shows_Location_Check_On_Load_Via_Scheduler_Free_Path()
+        {
+            // Проверка местоположения — только на старте (никаких таймеров
+            // посреди работы) и только через чистую ShouldPrompt.
+            var main = ReadSource("MainWindow.xaml.cs");
+            Assert.Contains("MaybeShowLocationCheck", main);
+
+            var wiring = ReadSource("MainWindow.LocationCheck.cs");
+            Assert.Contains("LocationCheckService.ShouldPrompt", wiring);
+            Assert.Contains("MarkLocationConfirmed", wiring);
+            Assert.Contains("SnoozeInterval", wiring);
+
+            // Баннер встроен в разметку главного окна, а не создаётся в коде.
+            var xaml = ReadSource("MainWindow.xaml");
+            Assert.Contains("LocationCheckBanner", xaml);
+            Assert.Contains("x:Name=\"LocationBanner\"", xaml);
+        }
+
         // ─────────────────────────────────────────────────────────
         //  Behaviour test — emulate the lifecycle on an STA thread
         //  to catch the original bug if it ever returns

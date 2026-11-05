@@ -229,6 +229,8 @@ namespace MosquitoNetCalculator.Tests.Services
             var frame = OrderTemplateService.All.Single(t => t.Id == "frame");
             var state = new OrderTemplateService();
             state.InitForTemplate(frame);
+            state.SplitConfig.IsAutoSplitMode = false;
+            foreach (var r in state.RowStates.Values) r.IsEnabled = true;
 
             // Заполняем сетку, отливы, козырьки, брус
             state.RowStates["grid"].Width = 1000;
@@ -418,6 +420,8 @@ namespace MosquitoNetCalculator.Tests.Services
             var frame = OrderTemplateService.All.Single(t => t.Id == "frame");
             var state = new OrderTemplateService();
             state.InitForTemplate(frame);
+            state.SplitConfig.IsAutoSplitMode = false;
+            foreach (var r in state.RowStates.Values) r.IsEnabled = true;
 
             state.RowStates["grid"].Width = 600;
             state.RowStates["grid"].Height = 1400;
@@ -448,6 +452,8 @@ namespace MosquitoNetCalculator.Tests.Services
             var french = OrderTemplateService.All.Single(t => t.Id == "french");
             var state = new OrderTemplateService();
             state.InitForTemplate(french);
+            state.SplitConfig.IsAutoSplitMode = false;
+            foreach (var r in state.RowStates.Values) r.IsEnabled = true;
 
             state.RowStates["grid"].Width = 700;
             state.RowStates["grid"].Height = 2000;
@@ -537,6 +543,150 @@ namespace MosquitoNetCalculator.Tests.Services
             Assert.Equal(0, psul.Width);
             Assert.Equal(0, psul.Height);
             Assert.Equal(1, psul.Quantity);
+        }
+        // ── Авторасчёт раскроя (v3.55) ─────────────────────────────
+
+        [Theory]
+        [InlineData("frame", true)]
+        [InlineData("french", true)]
+        [InlineData("window", false)]
+        [InlineData("balcony", false)]
+        [InlineData("", false)]
+        public void SupportsAutoSplit_OnlyFrameAndFrench(string templateId, bool expected)
+        {
+            Assert.Equal(expected, OrderTemplateService.SupportsAutoSplit(templateId));
+        }
+
+        [Theory]
+        [InlineData("otliv_1", true)]
+        [InlineData("otliv_2", true)]
+        [InlineData("kozyrek_1", true)]
+        [InlineData("kozyrek_2", true)]
+        [InlineData("grid", false)]
+        [InlineData("delivery", false)]
+        [InlineData("brus", false)]
+        public void IsSplitRow_IdentifiesLinearRows(string rowKey, bool expected)
+        {
+            Assert.Equal(expected, OrderTemplateService.IsSplitRow(rowKey));
+        }
+
+        [Fact]
+        public void CalculateSplitSummary_Frame_FrontAndTwoSides_CalculatesPiecesAndArea()
+        {
+            // L = 4100, W = 350, sides = 2, LS = 800
+            // Перед (2 угла): n=3 -> [1770, 1470, 1770]
+            // Боковины (1 угол, 2 шт): n=1 -> [1150] x 2 шт.
+            // Итого сгруппированные детали: 1770 x 2 шт, 1470 x 1 шт, 1150 x 2 шт.
+            var summary = OrderTemplateService.CalculateSplitSummary(
+                "Козырёк",
+                enabled: true,
+                frameLength: 4100,
+                sideLength: 800,
+                sideCount: 2,
+                materialWidth: 350,
+                color: "Белый",
+                installMode: 2,
+                catalogPrice: (t, c) => 2000.0);
+
+            Assert.True(summary.Enabled);
+            Assert.False(summary.HasError);
+            Assert.Equal(3, summary.GroupedPieces.Count);
+
+            var p1770 = summary.GroupedPieces.Single(p => p.CutLength == 1770);
+            Assert.Equal(2, p1770.Quantity);
+
+            var p1470 = summary.GroupedPieces.Single(p => p.CutLength == 1470);
+            Assert.Equal(1, p1470.Quantity);
+
+            var p1150 = summary.GroupedPieces.Single(p => p.CutLength == 1150);
+            Assert.Equal(2, p1150.Quantity);
+
+            // Всего деталей: 2 + 1 + 2 = 5 шт.
+            Assert.Equal(5, summary.GroupedPieces.Sum(p => p.Quantity));
+            Assert.True(summary.TotalCost > 0);
+        }
+
+        [Fact]
+        public void BuildSpecs_Frame_AutoSplitMode_AddsGroupedPieces()
+        {
+            var frame = OrderTemplateService.All.Single(t => t.Id == "frame");
+            var state = new OrderTemplateService();
+            state.InitForTemplate(frame);
+
+            state.SplitConfig.IsAutoSplitMode = true;
+            state.SplitConfig.FrameLength = 3000;
+            state.SplitConfig.SideLength = 800;
+            state.SplitConfig.SideCount = 2;
+            state.SplitConfig.KozyrekWidth = 350;
+            state.SplitConfig.OtlivWidth = 150;
+            state.SplitConfig.KozyrekEnabled = true;
+            state.SplitConfig.OtlivEnabled = true;
+
+            // Отключаем остальные строки для чистоты теста
+            foreach (var kvp in state.RowStates) kvp.Value.IsEnabled = false;
+
+            var specs = state.BuildItemSpecs(frame, (t, c) => 1000.0);
+
+            // Для 3000 (2 угла, 350 мм) перед: 2 куска по 1900. Боковины: 2 куска по 1150.
+            var kozyrekSpecs = specs.Where(s => s.Type == "Козырёк").ToList();
+            Assert.NotEmpty(kozyrekSpecs);
+            Assert.Contains(kozyrekSpecs, s => s.Width == 1900 && s.Quantity == 2);
+            Assert.Contains(kozyrekSpecs, s => s.Width == 1150 && s.Quantity == 2);
+
+            // Отлив (150 мм) также присутствует
+            var otlivSpecs = specs.Where(s => s.Type == "Отлив").ToList();
+            Assert.NotEmpty(otlivSpecs);
+        }
+
+        [Fact]
+        public void BuildSpecs_Frame_ManualMode_KeepsClassicRows()
+        {
+            var frame = OrderTemplateService.All.Single(t => t.Id == "frame");
+            var state = new OrderTemplateService();
+            state.InitForTemplate(frame);
+
+            state.SplitConfig.IsAutoSplitMode = false; // Ручной ввод
+
+            // Настраиваем классические строки
+            var otl1 = state.RowStates["otliv_1"];
+            otl1.IsEnabled = true; otl1.Width = 1500; otl1.Height = 150; otl1.Quantity = 1;
+
+            var koz1 = state.RowStates["kozyrek_1"];
+            koz1.IsEnabled = true; koz1.Width = 1500; koz1.Height = 350; koz1.Quantity = 1;
+
+            // Отключаем остальные
+            foreach (var kvp in state.RowStates)
+            {
+                if (kvp.Key is not ("otliv_1" or "kozyrek_1"))
+                    kvp.Value.IsEnabled = false;
+            }
+
+            var specs = state.BuildItemSpecs(frame, (t, c) => 1000.0);
+
+            Assert.Equal(2, specs.Count);
+            Assert.Contains(specs, s => s.RowKey == "otliv_1" && s.Width == 1500 && s.Height == 150);
+            Assert.Contains(specs, s => s.RowKey == "kozyrek_1" && s.Width == 1500 && s.Height == 350);
+        }
+
+        [Fact]
+        public void BuildSpecs_French_AutoSplitMode_HasKozyrekAndNoOtliv()
+        {
+            var french = OrderTemplateService.All.Single(t => t.Id == "french");
+            var state = new OrderTemplateService();
+            state.InitForTemplate(french);
+
+            state.SplitConfig.IsAutoSplitMode = true;
+            state.SplitConfig.FrameLength = 2500;
+            state.SplitConfig.SideCount = 0; // Прямой француз
+            state.SplitConfig.KozyrekWidth = 350;
+            state.SplitConfig.KozyrekEnabled = true;
+
+            foreach (var kvp in state.RowStates) kvp.Value.IsEnabled = false;
+
+            var specs = state.BuildItemSpecs(french, (t, c) => 1000.0);
+
+            Assert.All(specs, s => Assert.Equal("Козырёк", s.Type));
+            Assert.DoesNotContain(specs, s => s.Type == "Отлив");
         }
     }
 }

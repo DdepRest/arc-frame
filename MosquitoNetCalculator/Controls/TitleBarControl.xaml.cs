@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
@@ -85,10 +85,23 @@ namespace MosquitoNetCalculator.Controls
 
         private void BtnSettingsGear_Click(object sender, RoutedEventArgs e)
         {
-            UpdateSettingsMenu();
-            SettingsMenu.PlacementTarget = BtnSettingsGear;
-            SettingsMenu.Placement = PlacementMode.Bottom;
-            SettingsMenu.IsOpen = true;
+            OpenSettingsWindow();
+        }
+
+        private void MenuAllSettings_Click(object sender, RoutedEventArgs e)
+        {
+            OpenSettingsWindow();
+        }
+
+        public void OpenSettingsWindow()
+        {
+            var mw = TryGetMainWindow();
+            if (mw == null) return;
+            var dlg = new SettingsWindow(mw);
+            using (mw.DimmerScope())
+            {
+                dlg.ShowDialog();
+            }
         }
 
         private void MenuThemeLight_Click(object sender, RoutedEventArgs e)

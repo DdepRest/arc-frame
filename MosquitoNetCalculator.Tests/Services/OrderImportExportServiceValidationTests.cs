@@ -20,26 +20,36 @@ namespace MosquitoNetCalculator.Tests.Services
     public class OrderImportExportServiceValidationTests : IDisposable
     {
         private readonly string _originalOrdersDir;
+        private readonly string _originalTrashDir;
         private readonly string _testOrdersDir;
+        private readonly string _testTrashDir;
         private readonly OrderImportExportService _service;
 
         public OrderImportExportServiceValidationTests()
         {
             _originalOrdersDir = OrderStorageService.OrdersDir;
+            _originalTrashDir = OrderStorageService.TrashDir;
             _testOrdersDir = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "orders-validation");
+            _testTrashDir = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "orders-trash-validation");
             if (Directory.Exists(_testOrdersDir))
                 Directory.Delete(_testOrdersDir, true);
+            if (Directory.Exists(_testTrashDir))
+                Directory.Delete(_testTrashDir, true);
             // Don't pre-create the dir — let OrderStorageService's ctor
             // do it. Verifies it works on a fresh path too.
             OrderStorageService.OrdersDir = _testOrdersDir;
+            OrderStorageService.TrashDir = _testTrashDir;
             _service = new OrderImportExportService(new OrdersHistoryViewModel());
         }
 
         public void Dispose()
         {
             OrderStorageService.OrdersDir = _originalOrdersDir;
+            OrderStorageService.TrashDir = _originalTrashDir;
             if (Directory.Exists(_testOrdersDir))
                 Directory.Delete(_testOrdersDir, true);
+            if (Directory.Exists(_testTrashDir))
+                Directory.Delete(_testTrashDir, true);
         }
 
         // ─── ExportAllOrders ─────────────────────────────────

@@ -4,7 +4,7 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:models="clr-namespace:MosquitoNetCalculator.Models"
         Title="Добро пожаловать"
-        Width="480" Height="660"
+        Width="480" Height="600"
         MinHeight="540"
         WindowStartupLocation="CenterScreen"
         ResizeMode="NoResize"
@@ -56,9 +56,9 @@
                             Click="BtnTheme_Click">
                         <Button.Template>
                             <ControlTemplate TargetType="Button">
-                                <Border Background="{TemplateBinding Background}" BorderThickness="0">
+                                <Border Background="{TemplateBinding Background}" BorderThickness="0" CornerRadius="{DynamicResource Radius.Control}" SnapsToDevicePixels="False">
                                     <Grid>
-                                        <Border x:Name="HoverOverlay" Background="{DynamicResource Accent}" Opacity="0"/>
+                                        <Border x:Name="HoverOverlay" Background="{DynamicResource Accent}" CornerRadius="{DynamicResource Radius.Control}" Opacity="0"/>
                                         <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
                                     </Grid>
                                 </Border>
@@ -187,18 +187,27 @@
                                         <RowDefinition Height="Auto"/>
                                         <RowDefinition Height="Auto"/>
                                     </Grid.RowDefinitions>
-                                    <Ellipse x:Name="RadioIndicator"
-                                             Grid.Column="0" Grid.RowSpan="2"
-                                             Width="20" Height="20"
-                                             Stroke="{DynamicResource Border}"
-                                             StrokeThickness="2"
-                                             Margin="{DynamicResource Gap.InlineLg}"
-                                             VerticalAlignment="Center"
-                                             RenderTransformOrigin="0.5,0.5">
-                                        <Ellipse.RenderTransform>
+                                    <!-- Двухслойный радиоиндикатор: кольцо + точка.
+                                         Залитое кольцо без точки читалось как
+                                         цветной кружок, а не как выбор. -->
+                                    <Grid x:Name="RadioIndicator"
+                                          Grid.Column="0" Grid.RowSpan="2"
+                                          RenderTransformOrigin="0.5,0.5"
+                                          VerticalAlignment="Center"
+                                          Margin="{DynamicResource Gap.InlineLg}">
+                                        <Grid.RenderTransform>
                                             <ScaleTransform ScaleX="1" ScaleY="1"/>
-                                        </Ellipse.RenderTransform>
-                                    </Ellipse>
+                                        </Grid.RenderTransform>
+                                        <Ellipse x:Name="RadioRing"
+                                                 Width="18" Height="18"
+                                                 Stroke="{DynamicResource Border}"
+                                                 StrokeThickness="2"/>
+                                        <Ellipse x:Name="RadioDot"
+                                                 Width="8" Height="8"
+                                                 Fill="Transparent"
+                                                 HorizontalAlignment="Center"
+                                                 VerticalAlignment="Center"/>
+                                    </Grid>
                                     <TextBlock Grid.Column="1" Grid.Row="0"
                                                Text="{Binding LocationName}"
                                                FontSize="{StaticResource Type.Body}" FontWeight="Medium"
@@ -225,14 +234,14 @@
                                              Value="True">
                                     <Setter TargetName="CardBorder" Property="BorderBrush" Value="{DynamicResource Accent}"/>
                                     <Setter TargetName="CardBorder" Property="Background" Value="{DynamicResource AccentLight}"/>
-                                    <Setter TargetName="RadioIndicator" Property="Fill" Value="{DynamicResource Accent}"/>
-                                    <Setter TargetName="RadioIndicator" Property="Stroke" Value="{DynamicResource Accent}"/>
+                                    <Setter TargetName="RadioRing" Property="Stroke" Value="{DynamicResource Accent}"/>
+                                    <Setter TargetName="RadioDot" Property="Fill" Value="{DynamicResource Accent}"/>
                                     <!-- Scale-pulse the radio dot for satisfying click feedback -->
                                     <DataTrigger.EnterActions>
                                         <BeginStoryboard>
                                             <Storyboard>
                                                 <DoubleAnimation Storyboard.TargetName="RadioIndicator"
-                                                                 Storyboard.TargetProperty="RenderTransform.ScaleX"
+                                                                 Storyboard.TargetProperty="(UIElement.RenderTransform).(ScaleTransform.ScaleX)"
                                                                  From="1.0" To="1.2"
                                                                  Duration="{StaticResource Motion.Base}"
                                                                  AutoReverse="True">
@@ -241,7 +250,7 @@
                                                     </DoubleAnimation.EasingFunction>
                                                 </DoubleAnimation>
                                                 <DoubleAnimation Storyboard.TargetName="RadioIndicator"
-                                                                 Storyboard.TargetProperty="RenderTransform.ScaleY"
+                                                                 Storyboard.TargetProperty="(UIElement.RenderTransform).(ScaleTransform.ScaleY)"
                                                                  From="1.0" To="1.2"
                                                                  Duration="{StaticResource Motion.Base}"
                                                                  AutoReverse="True">
@@ -253,40 +262,50 @@
                                         </BeginStoryboard>
                                     </DataTrigger.EnterActions>
                                 </DataTrigger>
+                                <!-- Наведение без выделения: курсор уже Hand,
+                                     подсветка намекает, что карточка кликабельна. -->
+                                <MultiDataTrigger>
+                                    <MultiDataTrigger.Conditions>
+                                        <Condition Binding="{Binding IsMouseOver, RelativeSource={RelativeSource AncestorType=ListBoxItem}}" Value="True"/>
+                                        <Condition Binding="{Binding IsSelected, RelativeSource={RelativeSource AncestorType=ListBoxItem}}" Value="False"/>
+                                    </MultiDataTrigger.Conditions>
+                                    <Setter TargetName="CardBorder" Property="BorderBrush" Value="{DynamicResource BorderHover}"/>
+                                    <Setter TargetName="RadioRing" Property="Stroke" Value="{DynamicResource BorderHover}"/>
+                                </MultiDataTrigger>
                             </DataTemplate.Triggers>
                         </DataTemplate>
                     </ListBox.ItemTemplate>
                 </ListBox>
 
-                <!-- Contract number preview -->
-                <Border Grid.Row="2"
-                        Background="{DynamicResource QuickBg}"
-                        BorderBrush="{DynamicResource SubtleBorder}"
-                        BorderThickness="1"
-                        CornerRadius="{DynamicResource Radius.Md}"
-                        Padding="{DynamicResource Pad.WelcomeAction}"
-                        Margin="{DynamicResource Gap.BlockTop10}">
-                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
-                        <TextBlock Text="Номер договора: "
+                <!-- Футер диалога: волосяной разделитель, строка-сводка и
+                     кнопка во всю ширину карточек. Раньше «номер договора»
+                     лежал в широкой серой капсуле и читался как неактивное
+                     поле ввода, а кнопка висела отдельной пилюлей. -->
+                <StackPanel Grid.Row="2" Margin="{DynamicResource Gap.BlockTop10}">
+                    <Border Height="1" Background="{DynamicResource SubtleBorder}"/>
+                    <Grid Margin="{DynamicResource Pad.WelcomeAction}">
+                        <TextBlock Text="Номер договора"
+                                   HorizontalAlignment="Left"
                                    FontSize="{StaticResource Type.Body}"
                                    Foreground="{DynamicResource TextSecondary}"
                                    VerticalAlignment="Center"/>
                         <TextBlock x:Name="PreviewContractNumber"
                                    Text="1-1"
+                                   HorizontalAlignment="Right"
                                    FontSize="{StaticResource Type.Body}" FontWeight="Bold"
                                    Foreground="{DynamicResource AccentText}"
                                    VerticalAlignment="Center"/>
-                    </StackPanel>
-                </Border>
+                    </Grid>
+                </StackPanel>
 
                 <!-- Continue button (always visible at the bottom) -->
                 <Button x:Name="BtnContinue"
                         Grid.Row="3"
                         Content="Продолжить"
                         Style="{DynamicResource PrimaryButton}"
-                        HorizontalAlignment="Center"
+                        HorizontalAlignment="Stretch"
                         MinWidth="180"
-                        Margin="{DynamicResource Gap.BlockTop10}"
+                        Margin="{DynamicResource Gap.Top}"
                         Padding="{DynamicResource Pad.WelcomeApply}"
                         FontSize="{StaticResource Type.BodyLg}"
                         IsDefault="True"

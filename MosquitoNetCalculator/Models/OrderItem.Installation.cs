@@ -8,7 +8,7 @@ namespace MosquitoNetCalculator.Models
     {
         private int _installationMode; // 0 = включён, 1 = без монтажа, 2 = в конструкцию
         private double _installationDeduction = -500;   // v3.46.1: signed convention (like Adjustment): positive adds, negative subtracts. Default −500 = subtract 500.
-        private double _installationSurcharge = -500;   // v3.46.1: same signed convention.
+        private double _installationSurcharge = 0;      // Mode 2 («В конструкцию»): default 0 ₽ (цена сетки не меняется, надбавка 0)
         private double _installationAdjustment = 0;    // v3.43.2.11: для mode 0 (signed: +добавить, -вычесть) — интуитивная конвенция
 
         /// <summary>
@@ -23,6 +23,7 @@ namespace MosquitoNetCalculator.Models
             ["Дверная сетка"] = -600,
             ["Отлив"] = 0,
             ["Козырёк"] = 0,
+            ["Уплотнение"] = 0,
         };
 
         /// <summary>Fallback deduction when the product is not in the dictionary.</summary>
@@ -37,6 +38,7 @@ namespace MosquitoNetCalculator.Models
         {
             ["Отлив"] = 500,
             ["Козырёк"] = 750,
+            ["Уплотнение"] = 160,
         };
 
         // Ставки Отлив/Козырёк — ₽/м.п. ДЛИНЫ изделия (большая сторона; до v3.48.2
@@ -55,14 +57,63 @@ namespace MosquitoNetCalculator.Models
         public static double GetDefaultInstallationAdjustment(string productName) =>
             DefaultInstallationAdjustments.GetValueOrDefault(productName, 0);
 
+        private static readonly Dictionary<string, double> DefaultInstallationLaborRatesMode0 = new()
+        {
+            ["Дверная сетка"] = 600,
+            ["Отлив"] = 500,
+            ["Козырёк"] = 750,
+            ["Уплотнение"] = 160,
+        };
+        public const double DefaultInstallationLaborRateMode0Fallback = 400; // 400 ₽ за сетку в режиме «Вкл» (было 500)
+
+        private static readonly Dictionary<string, double> DefaultInstallationLaborRatesMode2 = new()
+        {
+            ["Уплотнение"] = 0,
+        };
+        public const double DefaultInstallationLaborRateMode2Fallback = 200; // 200 ₽ за сетку в режиме «В конструкцию»
+
+        /// <summary>
+        /// Базовая ставка монтажа для ЗП монтажника по товару и режиму:
+        /// Режим 0 («Вкл»): 400 ₽/шт для сеток (Дверная: 600), 500/750/160 для погонажных
+        /// Режим 1 («Без монтажа»): 0 ₽
+        /// Режим 2 («В конструкцию»): 200 ₽/шт для сеток, 0 ₽ для погонажных
+        /// </summary>
+        public static double GetDefaultInstallationLaborRate(string productName, int mode)
+        {
+            if (mode == 1) return 0;
+            if (mode == 2)
+            {
+                if (ProductCatalog.IsPerLinearMeter(productName)) return 0;
+                return DefaultInstallationLaborRatesMode2.GetValueOrDefault(productName, DefaultInstallationLaborRateMode2Fallback);
+            }
+            return DefaultInstallationLaborRatesMode0.GetValueOrDefault(productName, DefaultInstallationLaborRateMode0Fallback);
+        }
+
+        /// <summary>
+        /// Базовая ставка монтажа для товара (₽/шт или ₽/м.п.) в режиме 0.
+        /// </summary>
+        public static double GetBaseInstallationRate(string productName)
+        {
+            if (ProductCatalog.IsPerLinearMeter(productName))
+                return DefaultInstallationAdjustments.GetValueOrDefault(productName, 0);
+            return GetDefaultInstallationLaborRate(productName, 0);
+        }
+
+        private static readonly Dictionary<string, double> DefaultInstallationSurcharges = new()
+        {
+            ["Уплотнение"] = 160,
+        };
+
         /// <summary>
         /// Returns the default installation surcharge for a given product name.
-        /// Currently mirrors the deduction default (signed convention), which is
-        /// 0 for per-linear-meter products (Отлив, Козырёк) and −500/−600 ₽/шт.
-        /// for per-piece products.
+        /// Signed convention: positive adds, negative subtracts.
+        /// For "Уплотнение": +160 ₽/м.п. (режим 2: в конструкцию).
+        /// For other products (сетки, Отлив, Козырёк): 0 ₽ (цена изделия в режиме «В конструкцию» не меняется).
         /// </summary>
         public static double GetDefaultInstallationSurcharge(string productName) =>
-            GetDefaultInstallationDeduction(productName);
+            DefaultInstallationSurcharges.TryGetValue(productName, out double surcharge)
+                ? surcharge
+                : 0;
 
         /// <summary>
         /// True when installation for this product is priced per linear meter
@@ -78,9 +129,20 @@ namespace MosquitoNetCalculator.Models
         /// v3.48.2: для Отлив/Козырёк это ДЛИНА изделия — большая из сторон в метрах
         /// (НЕ периметр, как было в v3.47.0–v3.48.1); для остальных товаров 1.
         /// </summary>
-        public double InstallationLinearMeters => IsInstallationPerLinearMeter
-            ? Math.Round(Math.Max(Width, Height) / 1000.0, 3)
-            : 1.0;
+        public double InstallationLinearMeters
+        {
+            get
+            {
+                if (!IsInstallationPerLinearMeter) return 1.0;
+                if (Name == "Уплотнение")
+                {
+                    return (Width == 0 && Height == 0)
+                        ? 1.0
+                        : Math.Round((Width + Height) * 2 / 1000.0, 3);
+                }
+                return Math.Round(Math.Max(Width, Height) / 1000.0, 3);
+            }
+        }
 
         /// <summary>
         /// Installation mode:
@@ -100,6 +162,8 @@ namespace MosquitoNetCalculator.Models
                     _installationMode = clamped;
                     OnPropertyChanged();
                     OnPropertyChanged(nameof(InstallationDisplay));
+                    OnPropertyChanged(nameof(InstallationLaborTotal));
+                    OnPropertyChanged(nameof(InstallationLaborDisplay));
                     OnPropertyChanged(nameof(KpInstallationDisplay));
                     OnPropertyChanged(nameof(InstallationLabel));
                     OnPropertyChanged(nameof(InstallationButtonLabel));
@@ -120,12 +184,14 @@ namespace MosquitoNetCalculator.Models
                 {
                     _installationDeduction = value;
                     OnPropertyChanged();
+                    OnPropertyChanged(nameof(CurrentInstallationAmount));
+                    OnPropertyChanged(nameof(InstallationToolTip));
                     Recalculate();
                 }
             }
         }
 
-        /// <summary>v3.46.1: signed convention — positive adds to Total, negative subtracts. Default −500 ₽.</summary>
+        /// <summary>v3.46.1: signed convention — positive adds to Total, negative subtracts. Default 0 ₽ for nets (no surcharge).</summary>
         public double InstallationSurcharge
         {
             get => _installationSurcharge;
@@ -135,6 +201,8 @@ namespace MosquitoNetCalculator.Models
                 {
                     _installationSurcharge = value;
                     OnPropertyChanged();
+                    OnPropertyChanged(nameof(CurrentInstallationAmount));
+                    OnPropertyChanged(nameof(InstallationToolTip));
                     Recalculate();
                 }
             }
@@ -199,14 +267,16 @@ namespace MosquitoNetCalculator.Models
                 _ => "В"
             };
 
-        public string KpInstallationDisplay => !IsInstallationApplicable
-            ? "—"
-            : _installationMode switch
-            {
-                0 => "Вкл",
-                1 => "Без",
-                _ => "ВК"
-            };
+        public string KpInstallationDisplay => (IsLabor || ProductCatalog.IsLabor(Name))
+            ? "Вкл"
+            : (!IsInstallationApplicable
+                ? "—"
+                : _installationMode switch
+                {
+                    0 => "Вкл",
+                    1 => "Без",
+                    _ => "ВК"
+                });
 
         /// <summary>
         /// v3.48.3: money value of installation for the whole ROW:
@@ -223,11 +293,63 @@ namespace MosquitoNetCalculator.Models
         /// "+750" / "−500" / "+2 025". Empty when not applicable or zero,
         /// so cells without installation look exactly as before v3.48.3.
         /// </summary>
-        public string InstallationAmountDisplay => InstallationRowTotal == 0
-            ? ""
-            : InstallationRowTotal > 0
-                ? "+" + Services.MoneyFormatService.FormatWhole(InstallationRowTotal)
-                : "−" + Services.MoneyFormatService.FormatWhole(-InstallationRowTotal);
+        public string InstallationAmountDisplay
+        {
+            get
+            {
+                if (IsLabor || ProductCatalog.IsLabor(Name))
+                {
+                    return Total > 0 ? "+" + Services.MoneyFormatService.FormatWhole(Total) : "";
+                }
+                if (InstallationRowTotal == 0) return "";
+                return InstallationRowTotal > 0
+                    ? "+" + Services.MoneyFormatService.FormatWhole(InstallationRowTotal)
+                    : "−" + Services.MoneyFormatService.FormatWhole(-InstallationRowTotal);
+            }
+        }
+
+        /// <summary>
+        /// Стоимость монтажа (ЗП) для строки заказа:
+        /// Режим 0 («Вкл»): (Базовая ставка 400 ₽/шт для сеток + InstallationAdjustment) × Quantity.
+        /// Режим 1 («Без монтажа»): 0 ₽.
+        /// Режим 2 («В конструкцию»): 200 ₽/шт за каждую сетку × Quantity.
+        /// Для погонажных (Отлив, Козырёк, Уплотнение): монтаж начисляется только в режиме 0.
+        /// </summary>
+        public double InstallationLaborTotal
+        {
+            get
+            {
+                if (IsLabor || ProductCatalog.IsLabor(Name))
+                {
+                    return Math.Round(Math.Max(0, Total), 2);
+                }
+
+                if (!IsInstallationApplicable) return 0;
+
+                if (IsInstallationPerLinearMeter)
+                {
+                    if (_installationMode != 0) return 0;
+                    double rate = _installationAdjustment != 0 ? _installationAdjustment : GetBaseInstallationRate(Name);
+                    return Math.Round(Math.Max(0, rate * InstallationLinearMeters * Quantity), 2);
+                }
+                else
+                {
+                    if (_installationMode == 1) return 0;
+
+                    double baseRate = GetDefaultInstallationLaborRate(Name, _installationMode);
+                    double adjustment = _installationMode == 0 ? _installationAdjustment : 0;
+                    double unitRate = Math.Max(0, baseRate + adjustment);
+                    return Math.Round(Math.Max(0, unitRate * Quantity), 2);
+                }
+            }
+        }
+
+        /// <summary>
+        /// Отображение суммы монтажа по строке («частное» для КП и подсказок).
+        /// </summary>
+        public string InstallationLaborDisplay => InstallationLaborTotal > 0
+            ? Services.MoneyFormatService.FormatWhole(InstallationLaborTotal) + " руб."
+            : "—";
 
         /// <summary>Single-line text of the КП print column: label + row amount ("Вкл +750", "Без −500", "ВК −500");
         /// bare label when amount is 0; "—" when not applicable.</summary>
@@ -269,6 +391,7 @@ namespace MosquitoNetCalculator.Models
         {
             get
             {
+                if (IsLabor || ProductCatalog.IsLabor(Name)) return GetThemedBrush("InstallGreen");
                 if (!IsInstallationApplicable) return GetThemedBrush("InstallGray");
                 return _installationMode == 1
                     ? GetThemedBrush("InstallRed")
@@ -290,23 +413,37 @@ namespace MosquitoNetCalculator.Models
         /// UX-06: cryptic V/X/В glyphs forced users into tooltips; short words are
         /// self-explanatory. Print column in КП is unified with these labels (KpInstallationDisplay).
         /// «ВК» = «в конструкцию», disambiguated by tooltip + accent color.</summary>
-        public string InstallationButtonLabel => !IsInstallationApplicable
-            ? "—"
-            : _installationMode switch
+        public string InstallationButtonLabel
+        {
+            get
             {
-                0 => "Вкл",
-                1 => "Без",
-                _ => "ВК"
-            };
+                if (IsLabor || ProductCatalog.IsLabor(Name)) return "Вкл";
+                if (!IsInstallationApplicable) return "—";
+                return _installationMode switch
+                {
+                    0 => "Вкл",
+                    1 => "Без",
+                    _ => "ВК"
+                };
+            }
+        }
 
         /// <summary>Tooltip for the installation toggle button.
         /// All modes use signed convention: positive adds, negative subtracts.
         /// v3.46.1: per-unit fee shown with «× Кол-во» so the user understands
         /// the deduction scales with Quantity.
         /// v3.47.0: per-linear-meter products show «× м.п. × Кол-во».</summary>
-        public string InstallationToolTip => !IsInstallationApplicable
-            ? "Монтаж не предусмотрен для данного товара"
-            : GetSignedTooltip(InstallationLabel, CurrentInstallationAmount, IsInstallationPerLinearMeter, InstallationLinearMeters);
+        public string InstallationToolTip
+        {
+            get
+            {
+                if (IsLabor || ProductCatalog.IsLabor(Name))
+                    return $"Монтажные работы: +{Services.MoneyFormatService.FormatWhole(Total)} руб. (включено в общую сумму монтажа)";
+                if (!IsInstallationApplicable)
+                    return "Монтаж не предусмотрен для данного товара";
+                return GetSignedTooltip(InstallationLabel, CurrentInstallationAmount, IsInstallationPerLinearMeter, InstallationLinearMeters);
+            }
+        }
 
         private static string GetSignedTooltip(string label, double amount, bool perMeter, double linearMeters)
         {

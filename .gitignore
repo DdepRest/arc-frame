@@ -49,6 +49,8 @@ InnoSetup.log
 ## Local-machine settings (should NEVER enter the repo)
 appsettings.Development.json
 settings.local.json
+ai-settings.local.json
+ai-settings.json
 prices.local.json
 prices-bak.json
 

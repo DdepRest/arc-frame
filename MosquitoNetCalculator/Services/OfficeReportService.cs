@@ -213,6 +213,11 @@ namespace MosquitoNetCalculator.Services
                 Version = UpdateService.CurrentVersion.ToString(),
                 ReportedAt = DateTimeOffset.UtcNow.ToString("o", System.Globalization.CultureInfo.InvariantCulture),
                 OrderCount = CountOrders(),
+                // Когда на этом ПК последний раз подтверждали локацию —
+                // панель отмечает устройства, где выбор годами не сверяли.
+                // Пустая строка = не подтверждалось (старая версия/новый ПК).
+                LocationConfirmedAt = AppSettingsService.LoadLocationConfirmedAtUtc()
+                    ?.ToString("o", System.Globalization.CultureInfo.InvariantCulture) ?? "",
             };
 
             // Файл нового офиса + (при переезде) удаление старого — одним PATCH.

@@ -13,45 +13,77 @@ namespace MosquitoNetCalculator.Services
         /// <summary>
         /// Applies the mode-specific calculation adjustment to the raw width.
         /// </summary>
-        public static double ApplyCalcWidth(double rawW, AnwisSizeMode mode) => mode switch
+        public static double ApplyCalcWidth(double rawW, AnwisSizeMode mode, string? productName = null)
         {
-            AnwisSizeMode.Брусбокс60 => rawW + 2,
-            AnwisSizeMode.Брусбокс70 => Math.Max(0, rawW - 2),
-            AnwisSizeMode.РазмерПроёма => rawW + 20,
-            _ => rawW // Профипласт, Габаритный, не-Anwis — identity
-        };
+            if (AnwisSizeService.IsTwoModeScreen(productName))
+            {
+                return mode == AnwisSizeMode.РазмерПроёма ? rawW + 40 : rawW;
+            }
+
+            return mode switch
+            {
+                AnwisSizeMode.Брусбокс60 => rawW + 2,
+                AnwisSizeMode.Брусбокс70 => Math.Max(0, rawW - 2),
+                AnwisSizeMode.РазмерПроёма => rawW + 20,
+                _ => rawW // Профипласт, Габаритный, не-Anwis — identity
+            };
+        }
 
         /// <summary>
         /// Applies the mode-specific calculation adjustment to the raw height.
         /// </summary>
-        public static double ApplyCalcHeight(double rawH, AnwisSizeMode mode) => mode switch
+        public static double ApplyCalcHeight(double rawH, AnwisSizeMode mode, string? productName = null)
         {
-            AnwisSizeMode.Брусбокс60 => Math.Max(0, rawH - 30),
-            AnwisSizeMode.Брусбокс70 => Math.Max(0, rawH - 30),
-            AnwisSizeMode.РазмерПроёма => rawH + 20,
-            _ => rawH // Профипласт, Габаритный, не-Anwis — identity
-        };
+            if (AnwisSizeService.IsTwoModeScreen(productName))
+            {
+                return mode == AnwisSizeMode.РазмерПроёма ? rawH + 40 : rawH;
+            }
+
+            return mode switch
+            {
+                AnwisSizeMode.Брусбокс60 => Math.Max(0, rawH - 30),
+                AnwisSizeMode.Брусбокс70 => Math.Max(0, rawH - 30),
+                AnwisSizeMode.РазмерПроёма => rawH + 20,
+                _ => rawH // Профипласт, Габаритный, не-Anwis — identity
+            };
+        }
 
         /// <summary>
         /// Reverses the mode-specific calculation adjustment from the stored calc width.
         /// </summary>
-        public static double ReverseCalcWidth(double calcW, AnwisSizeMode mode) => mode switch
+        public static double ReverseCalcWidth(double calcW, AnwisSizeMode mode, string? productName = null)
         {
-            AnwisSizeMode.Брусбокс60 => calcW - 2,
-            AnwisSizeMode.Брусбокс70 => calcW + 2,
-            AnwisSizeMode.РазмерПроёма => calcW - 20,
-            _ => calcW // Профипласт, Габаритный, не-Anwis — identity
-        };
+            if (AnwisSizeService.IsTwoModeScreen(productName))
+            {
+                return mode == AnwisSizeMode.РазмерПроёма ? Math.Max(0, calcW - 40) : calcW;
+            }
+
+            return mode switch
+            {
+                AnwisSizeMode.Брусбокс60 => calcW - 2,
+                AnwisSizeMode.Брусбокс70 => calcW + 2,
+                AnwisSizeMode.РазмерПроёма => Math.Max(0, calcW - 20),
+                _ => calcW // Профипласт, Габаритный, не-Anwis — identity
+            };
+        }
 
         /// <summary>
         /// Reverses the mode-specific calculation adjustment from the stored calc height.
         /// </summary>
-        public static double ReverseCalcHeight(double calcH, AnwisSizeMode mode) => mode switch
+        public static double ReverseCalcHeight(double calcH, AnwisSizeMode mode, string? productName = null)
         {
-            AnwisSizeMode.Брусбокс60 => calcH + 30,
-            AnwisSizeMode.Брусбокс70 => calcH + 30,
-            AnwisSizeMode.РазмерПроёма => calcH - 20,
-            _ => calcH // Профипласт, Габаритный, не-Anwis — identity
-        };
+            if (AnwisSizeService.IsTwoModeScreen(productName))
+            {
+                return mode == AnwisSizeMode.РазмерПроёма ? Math.Max(0, calcH - 40) : calcH;
+            }
+
+            return mode switch
+            {
+                AnwisSizeMode.Брусбокс60 => calcH + 30,
+                AnwisSizeMode.Брусбокс70 => calcH + 30,
+                AnwisSizeMode.РазмерПроёма => Math.Max(0, calcH - 20),
+                _ => calcH // Профипласт, Габаритный, не-Anwis — identity
+            };
+        }
     }
 }

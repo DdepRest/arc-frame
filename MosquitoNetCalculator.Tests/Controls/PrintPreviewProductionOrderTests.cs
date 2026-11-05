@@ -783,6 +783,34 @@ namespace MosquitoNetCalculator.Tests.Controls
             return null;
         }
 
+        [Fact]
+        public void Control_ShowInstallationCheck_SynchronizesWithSettings()
+        {
+            TestAppThemes.RunOnSta(() =>
+            {
+                var control = new PrintPreviewControl();
+                var source = MakeSource(1);
+
+                control.Initialize(source, new PrintService(), "1-1",
+                    new PrintSettings { ShowInstallationInTotal = false });
+                Assert.False(control.ShowInstallationCheck.IsChecked);
+
+                control.Initialize(source, new PrintService(), "1-1",
+                    new PrintSettings { ShowInstallationInTotal = true });
+                Assert.True(control.ShowInstallationCheck.IsChecked);
+
+                control.ShowInstallationCheck.IsChecked = false;
+                Assert.False(AppSettingsService.LoadShowInstallationInTotal());
+                var settings = control.GetSettings();
+                Assert.False(settings.ShowInstallationInTotal);
+
+                control.ShowInstallationCheck.IsChecked = true;
+                Assert.True(AppSettingsService.LoadShowInstallationInTotal());
+                settings = control.GetSettings();
+                Assert.True(settings.ShowInstallationInTotal);
+            });
+        }
+
         private static string ReadPreviewSource()
         {
             var dir = new DirectoryInfo(AppContext.BaseDirectory);
