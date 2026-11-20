@@ -22,21 +22,29 @@
         <!-- ═══════════════════════════════════════════════════════ -->
         <!-- ШАПКА РАЗДЕЛА                                           -->
         <!-- ═══════════════════════════════════════════════════════ -->
-        <Grid Grid.Row="0" Margin="{DynamicResource Pad.DialogBody}">
+        <Grid Grid.Row="0" Margin="{DynamicResource Pad.Header}">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="*"/>
                 <ColumnDefinition Width="Auto"/>
             </Grid.ColumnDefinitions>
 
             <StackPanel Grid.Column="0">
-                <TextBlock Text="Состояние офисов"
-                           FontSize="{StaticResource Type.Title}" FontWeight="SemiBold"
-                           Foreground="{DynamicResource TextPrimary}"/>
-                <TextBlock x:Name="TxtLatestVersion"
-                           Text="Последняя версия: …"
-                           FontSize="{StaticResource Type.Body}"
-                           Foreground="{DynamicResource TextMuted}"
-                           Margin="{DynamicResource Gap.BlockTop}"/>
+                <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                    <TextBlock Text="Состояние офисов"
+                               FontSize="{StaticResource Type.Subtitle}" FontWeight="SemiBold"
+                               Foreground="{DynamicResource TextPrimary}"
+                               VerticalAlignment="Center"/>
+                    <TextBlock Text="·"
+                               FontSize="{StaticResource Type.Subtitle}"
+                               Foreground="{DynamicResource TextMuted}"
+                               Margin="{DynamicResource Gap.Inline}"
+                               VerticalAlignment="Center"/>
+                    <TextBlock x:Name="TxtLatestVersion"
+                               Text="Последняя версия: …"
+                               FontSize="{StaticResource Type.Body}"
+                               Foreground="{DynamicResource TextMuted}"
+                               VerticalAlignment="Center"/>
+                </StackPanel>
                 <!-- Тонкая строка «обновлено X · авто через Y» -->
                 <TextBlock x:Name="TxtRefreshStatus"
                            Text=""
@@ -135,7 +143,7 @@
                         <RowDefinition Height="*"/>      <!-- список -->
                     </Grid.RowDefinitions>
 
-                    <!-- Большая сводная карточка + быстрые действия -->
+                    <!-- Компактная сводная карточка + быстрые действия -->
                     <Border Grid.Row="0"
                             HorizontalAlignment="Stretch"
                             Background="{DynamicResource Surface}"
@@ -146,7 +154,6 @@
                             Margin="{DynamicResource Gap.Block}">
                         <Grid>
                             <Grid.RowDefinitions>
-                                <RowDefinition Height="Auto"/>
                                 <RowDefinition Height="Auto"/>
                                 <RowDefinition Height="Auto"/>
                             </Grid.RowDefinitions>
@@ -161,91 +168,93 @@
                                 <TextBlock Grid.Column="0"
                                            Text="&#xE73E;"
                                            FontFamily="{DynamicResource Font.Icon}"
-                                           FontSize="{StaticResource Type.TitleLg}"
+                                           FontSize="{StaticResource Type.Subtitle}"
                                            Foreground="{DynamicResource AccentText}"
                                            VerticalAlignment="Center"
-                                           Margin="{DynamicResource Gap.InlineLg}"/>
-                                <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                                           Margin="{DynamicResource Gap.Inline}"/>
+                                <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
                                     <TextBlock x:Name="TxtSummary" Text="— из — актуальны"
-                                               FontSize="{StaticResource Type.Subtitle}" FontWeight="SemiBold"
-                                               Foreground="{DynamicResource TextPrimary}"/>
-                                    <!-- Текст подсказки — единственный владелец: RefreshAsync -->
-
+                                               FontSize="{StaticResource Type.BodyLg}" FontWeight="SemiBold"
+                                               Foreground="{DynamicResource TextPrimary}"
+                                               VerticalAlignment="Center"/>
+                                    <TextBlock x:Name="TxtSummaryBadge"
+                                               Text=""
+                                               FontSize="{StaticResource Type.Subtitle}" FontWeight="Bold"
+                                               Foreground="{DynamicResource AccentText}"
+                                               Margin="{DynamicResource Gap.Left}"
+                                               VerticalAlignment="Center"/>
                                 </StackPanel>
-                                <TextBlock Grid.Column="2"
-                                           x:Name="TxtSummaryBadge"
-                                           Text=""
-                                           FontSize="{StaticResource Type.Display}" FontWeight="Bold"
-                                           Foreground="{DynamicResource AccentText}"
-                                           VerticalAlignment="Center"/>
+
+                                <!-- Быстрые действия справа на той же строке -->
+                                <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center">
+                                    <Button x:Name="BtnUnbindMode"
+                                            Style="{StaticResource AccentBorderButton}"
+                                            Padding="{DynamicResource Pad.ButtonSm}"
+                                            FontSize="{StaticResource Type.Body}"
+                                            ToolTip="Отметить устройства и удалить их привязки из хранилища. Устройство само вернётся со своим следующим отчётом — уже под актуальным офисом."
+                                            Click="BtnUnbindMode_Click">
+                                        <StackPanel Orientation="Horizontal">
+                                            <TextBlock Text="&#xE8EE;" FontFamily="{DynamicResource Font.Icon}"
+                                                       FontSize="{StaticResource Type.Body}" VerticalAlignment="Center" Margin="{DynamicResource Gap.InlineSm}"/>
+                                            <TextBlock x:Name="TxtUnbindModeLabel" Text="Отвязать выбранные" VerticalAlignment="Center"/>
+                                        </StackPanel>
+                                    </Button>
+                                    <!-- Плашка режима отвязки -->
+                                    <Border x:Name="UnbindModeBanner" Visibility="Collapsed"
+                                            Background="{DynamicResource BadgeWarningBg}"
+                                            CornerRadius="{DynamicResource Radius.Md}" Padding="{DynamicResource Pad.Pill}" Margin="{DynamicResource Gap.Left}"
+                                            VerticalAlignment="Center">
+                                        <TextBlock x:Name="TxtUnbindBanner" Text="Отметьте устройства для отвязки"
+                                                   FontSize="{StaticResource Type.Caption}" FontWeight="SemiBold"
+                                                   Foreground="{DynamicResource BadgeWarningFg}"
+                                                   VerticalAlignment="Center"/>
+                                    </Border>
+                                    <!-- Недавно отвязанные (сессия) -->
+                                    <TextBlock x:Name="TxtJustUnbound" Visibility="Collapsed"
+                                               FontSize="{StaticResource Type.Caption}" Margin="{DynamicResource Gap.Left}"
+                                               Foreground="{DynamicResource TextMuted}"
+                                               TextTrimming="CharacterEllipsis" MaxWidth="220"
+                                               VerticalAlignment="Center"/>
+                                </StackPanel>
                             </Grid>
 
-                            <!-- Прогресс обновлений: тонкая полоса под сводкой
-                                 (ширина заливки задаётся кодом — UpdateSummaryProgress). -->
-                            <Grid Grid.Row="1" x:Name="ProgressSummaryHost" Margin="{DynamicResource Gap.BlockTopLg}" Visibility="Collapsed"
+                            <!-- Прогресс обновлений: тонкая полоса под строкой -->
+                            <Grid Grid.Row="1" x:Name="ProgressSummaryHost" Margin="{DynamicResource Gap.BlockTopSm}" Visibility="Collapsed"
                                   SizeChanged="ProgressSummaryHost_SizeChanged">
-                                <Border Background="{DynamicResource ChipBg}" CornerRadius="{DynamicResource Radius.Sm}" Height="6">
+                                <Border Background="{DynamicResource ChipBg}" CornerRadius="{DynamicResource Radius.Sm}" Height="4">
                                     <Border x:Name="ProgressSummaryFill" CornerRadius="{DynamicResource Radius.Sm}" HorizontalAlignment="Left" Width="0"
                                             Background="{DynamicResource Success}"/>
                                 </Border>
                             </Grid>
-
-                            <!-- Быстрые действия -->
-                            <StackPanel Grid.Row="2" Orientation="Horizontal" Margin="{DynamicResource Gap.BlockTopLg}">
-                                <Button x:Name="BtnUnbindMode"
-                                        Style="{StaticResource AccentBorderButton}"
-                                        Padding="{DynamicResource Pad.Row}"
-                                        FontSize="{StaticResource Type.Body}"
-                                        ToolTip="Отметить устройства и удалить их привязки из хранилища. Устройство само вернётся со своим следующим отчётом — уже под актуальным офисом."
-                                        Click="BtnUnbindMode_Click">
-                                    <StackPanel Orientation="Horizontal">
-                                        <TextBlock Text="&#xE8EE;" FontFamily="{DynamicResource Font.Icon}"
-                                                   FontSize="{StaticResource Type.Body}" VerticalAlignment="Center" Margin="{DynamicResource Gap.Inline}"/>
-                                        <TextBlock x:Name="TxtUnbindModeLabel" Text="Отвязать выбранные" VerticalAlignment="Center"/>
-                                    </StackPanel>
-                                </Button>
-                                <!-- Плашка режима отвязки -->
-                                <Border x:Name="UnbindModeBanner" Visibility="Collapsed"
-                                        Background="{DynamicResource BadgeWarningBg}"
-                                        CornerRadius="{DynamicResource Radius.Md}" Padding="{DynamicResource Pad.Pill}" Margin="{DynamicResource Gap.Left}"
-                                        VerticalAlignment="Center">
-                                    <TextBlock x:Name="TxtUnbindBanner" Text="Отметьте устройства для отвязки"
-                                               FontSize="{StaticResource Type.Caption}" FontWeight="SemiBold"
-                                               Foreground="{DynamicResource BadgeWarningFg}"
-                                               VerticalAlignment="Center"/>
-                                </Border>
-                                <!-- Недавно отвязанные (сессия): gist после удаления
-                                     ничего о них не несёт — честный in-session маркер,
-                                     живёт до первого отчёта устройства (PruneJustUnbound). -->
-                                <TextBlock x:Name="TxtJustUnbound" Visibility="Collapsed"
-                                           FontSize="{StaticResource Type.Caption}" Margin="{DynamicResource Gap.Left}"
-                                           Foreground="{DynamicResource TextMuted}"
-                                           TextTrimming="CharacterEllipsis" MaxWidth="260"
-                                           VerticalAlignment="Center"/>
-                            </StackPanel>
                         </Grid>
                     </Border>
 
-                    <!-- Поиск + фильтры по статусу -->
-                    <StackPanel Grid.Row="1" Margin="{DynamicResource Gap.BlockSm}">
-                        <Grid>
-                            <TextBox x:Name="TxtSearch" Height="32" Padding="{DynamicResource Pad.SearchBox}" FontSize="{StaticResource Type.Body}"
+                    <!-- Поиск + фильтры по статусу на единой строке -->
+                    <Grid Grid.Row="1" Margin="{DynamicResource Gap.BlockSm}">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="220"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+
+                        <Grid Grid.Column="0">
+                            <TextBox x:Name="TxtSearch" Height="28" Padding="{DynamicResource Pad.SearchBox}" FontSize="{StaticResource Type.Body}"
                                      BorderBrush="{DynamicResource Border}" BorderThickness="1"
                                      Background="{DynamicResource Surface}" Foreground="{DynamicResource TextPrimary}"
                                      VerticalContentAlignment="Center"
                                      TextChanged="TxtSearch_TextChanged"/>
                             <TextBlock Text="&#xE721;" FontFamily="{DynamicResource Font.Icon}"
-                                       FontSize="{StaticResource Type.Body}" Foreground="{DynamicResource TextMuted}"
+                                       FontSize="{StaticResource Type.Caption}" Foreground="{DynamicResource TextMuted}"
                                        VerticalAlignment="Center" Margin="{DynamicResource Gap.Left}" IsHitTestVisible="False"/>
-                            <Button x:Name="BtnClearSearch" Visibility="Collapsed" Content="✕" Width="22" Height="22"
+                            <Button x:Name="BtnClearSearch" Visibility="Collapsed" Content="✕" Width="20" Height="20"
                                     Click="BtnClearSearch_Click" Background="Transparent" BorderThickness="0"
                                     Foreground="{DynamicResource TextMuted}" Cursor="Hand" HorizontalAlignment="Right"
-                                    VerticalAlignment="Center" Margin="{DynamicResource Gap.Inline}" ToolTip="Очистить поиск"/>
+                                    VerticalAlignment="Center" Margin="{DynamicResource Gap.InlineSm}" ToolTip="Очистить поиск"/>
                         </Grid>
-                        <StackPanel Orientation="Horizontal" Margin="{DynamicResource Gap.Top}">
+
+                        <StackPanel Grid.Column="1" Orientation="Horizontal" Margin="{DynamicResource Gap.Left}" VerticalAlignment="Center">
                             <!-- Чипы-фильтры: ToggleButton-подобные кнопки с Checked-состоянием.
                                  Один фильтр активен (радио-поведение в code-behind). -->
-                            <Border x:Name="ChipFilterAll" CornerRadius="{DynamicResource Radius.Md}" Padding="{DynamicResource Pad.Pill}" Margin="{DynamicResource Gap.Inline}"
+                            <Border x:Name="ChipFilterAll" CornerRadius="{DynamicResource Radius.Md}" Padding="{DynamicResource Pad.Pill}" Margin="{DynamicResource Gap.InlineSm}"
                                     Cursor="Hand" MouseLeftButtonUp="ChipFilter_Click" KeyDown="ChipFilter_KeyDown"
                                     Focusable="True" FocusVisualStyle="{StaticResource FluentFocusVisual}"
                                     Tag="All"
@@ -276,7 +285,7 @@
                                     </TextBlock>
                                 </StackPanel>
                             </Border>
-                            <Border x:Name="ChipFilterOutdated" CornerRadius="{DynamicResource Radius.Md}" Padding="{DynamicResource Pad.Pill}" Margin="{DynamicResource Gap.Inline}"
+                            <Border x:Name="ChipFilterOutdated" CornerRadius="{DynamicResource Radius.Md}" Padding="{DynamicResource Pad.Pill}" Margin="{DynamicResource Gap.InlineSm}"
                                     Cursor="Hand" MouseLeftButtonUp="ChipFilter_Click" KeyDown="ChipFilter_KeyDown"
                                     Focusable="True" FocusVisualStyle="{StaticResource FluentFocusVisual}"
                                     Tag="Outdated"
@@ -318,7 +327,7 @@
                                     </TextBlock>
                                 </StackPanel>
                             </Border>
-                            <Border x:Name="ChipFilterUpToDate" CornerRadius="{DynamicResource Radius.Md}" Padding="{DynamicResource Pad.Pill}" Margin="{DynamicResource Gap.Inline}"
+                            <Border x:Name="ChipFilterUpToDate" CornerRadius="{DynamicResource Radius.Md}" Padding="{DynamicResource Pad.Pill}" Margin="{DynamicResource Gap.InlineSm}"
                                     Cursor="Hand" MouseLeftButtonUp="ChipFilter_Click" KeyDown="ChipFilter_KeyDown"
                                     Focusable="True" FocusVisualStyle="{StaticResource FluentFocusVisual}"
                                     Tag="UpToDate">
@@ -396,10 +405,10 @@
                                 </StackPanel>
                             </Border>
                         </StackPanel>
-                    </StackPanel>
+                    </Grid>
 
                     <ScrollViewer Grid.Row="2"
-                                  VerticalScrollBarVisibility="Hidden"
+                                  VerticalScrollBarVisibility="Auto"
                                   HorizontalScrollBarVisibility="Disabled"
                                   Padding="{DynamicResource Pad.Section}">
                         <Grid>
@@ -421,7 +430,7 @@
                                 </ItemsControl.GroupStyle>
                                 <ItemsControl.ItemTemplate>
                                     <DataTemplate>
-                                        <Border CornerRadius="{DynamicResource Radius.Lg}" Margin="{DynamicResource Gap.BlockLg}" Padding="{DynamicResource Pad.None}"
+                                        <Border CornerRadius="{DynamicResource Radius.Lg}" Margin="{DynamicResource Gap.Block}" Padding="{DynamicResource Pad.None}"
                                                 Background="{DynamicResource Surface}"
                                                 BorderBrush="{DynamicResource Border}" BorderThickness="1"
                                                 ClipToBounds="True">
@@ -434,126 +443,132 @@
                                                     </Style.Triggers>
                                                 </Style>
                                             </Border.Style>
-                                            <!-- Цветная полоса статуса слева (v3.52.0): ЛЕВАЯ ГРАНИЦА
-                                                 внутреннего Border — рамка Border обводит скруглённый контур,
-                                                 поэтому полоса повторяет радиус карточки (11 = 12 радиус
-                                                 карточки минус 1px её рамки). Квадратный прямоугольник Width=4
-                                                 торчал в скруглённом углу карточки — та же правка, что и в
-                                                 карточках «Истории обновлений» (CardStripeCornerTests). -->
+                                            <!-- Цветная полоса статуса слева (v3.52.0): ЛЕВАЯ ГРАНИЦА внутреннего Border -->
                                             <Border BorderThickness="4,0,0,0"
                                                     CornerRadius="{DynamicResource Radius.StripeInner}"
                                                     BorderBrush="{Binding Status, Converter={StaticResource OfficeStatusStripeBrush}}">
                                                 <StackPanel Margin="{DynamicResource Pad.Card}">
-                                                    <StackPanel Orientation="Horizontal">
-                                                        <TextBlock Text="{Binding LocationName}"
-                                                                   FontSize="{StaticResource Type.BodyLg}" FontWeight="SemiBold"
-                                                                   Foreground="{DynamicResource TextPrimary}"
-                                                                   TextWrapping="Wrap"
-                                                                   VerticalAlignment="Center"/>
-                                                        <Border Background="{DynamicResource ChipBg}"
-                                                                CornerRadius="{DynamicResource Radius.Md}" Padding="{DynamicResource Pad.Pill}"
-                                                                Margin="{DynamicResource Gap.Left}" VerticalAlignment="Center">
-                                                            <TextBlock Text="{Binding Prefix, StringFormat=Офис {0}}"
-                                                                       FontSize="{StaticResource Type.Caption}" FontWeight="SemiBold"
-                                                                       Foreground="{DynamicResource TextSecondary}"
-                                                                       VerticalAlignment="Center"/>
-                                                        </Border>
-                                                        <Border Background="{DynamicResource AccentLight}"
-                                                                CornerRadius="{DynamicResource Radius.Md}" Padding="{DynamicResource Pad.Pill}"
-                                                                Margin="{DynamicResource Gap.Left}" VerticalAlignment="Center"
-                                                                Visibility="Collapsed">
-                                                            <Border.Style>
-                                                                <Style TargetType="Border">
-                                                                    <Style.Triggers>
-                                                                        <DataTrigger Binding="{Binding IsCurrentOffice}" Value="True">
-                                                                            <Setter Property="Visibility" Value="Visible"/>
-                                                                        </DataTrigger>
-                                                                    </Style.Triggers>
-                                                                </Style>
-                                                            </Border.Style>
-                                                            <TextBlock Text="этот офис"
-                                                                       FontSize="{StaticResource Type.Caption}" FontWeight="SemiBold"
-                                                                       Foreground="{DynamicResource AccentText}"
-                                                                       VerticalAlignment="Center"/>
-                                                        </Border>
-                                                        <!-- Кол-во устройств офиса -->
-                                                        <Border Background="{DynamicResource ChipBg}"
-                                                                CornerRadius="{DynamicResource Radius.Md}" Padding="{DynamicResource Pad.Pill}"
-                                                                Margin="{DynamicResource Gap.Left}" VerticalAlignment="Center"
-                                                                Visibility="Visible">
-                                                            <Border.Style>
-                                                                <Style TargetType="Border">
-                                                                    <Style.Triggers>
-                                                                        <DataTrigger Binding="{Binding DeviceCount}" Value="0">
-                                                                            <Setter Property="Visibility" Value="Collapsed"/>
-                                                                        </DataTrigger>
-                                                                    </Style.Triggers>
-                                                                </Style>
-                                                            </Border.Style>
-                                                            <TextBlock Text="{Binding DeviceCountDisplay}"
-                                                                       FontSize="{StaticResource Type.Caption}" FontWeight="SemiBold"
-                                                                       Foreground="{DynamicResource TextSecondary}"
-                                                                       VerticalAlignment="Center"/>
-                                                        </Border>
-                                                        <!-- Бейдж статуса справа от заголовка -->
-                                                        <Border VerticalAlignment="Center" Margin="{DynamicResource Gap.Left}"
-                                                                CornerRadius="{DynamicResource Radius.Md}" Padding="{DynamicResource Pad.Pill}"
-                                                                Background="{Binding Status, Converter={StaticResource OfficeStatusBadgeBg}}">
-                                                            <StackPanel Orientation="Horizontal">
-                                                                <TextBlock Text="{Binding StatusGlyph}"
-                                                                           FontFamily="{DynamicResource Font.Icon}"
-                                                                           FontSize="{StaticResource Type.Body}" FontWeight="Bold"
-                                                                           Foreground="{Binding Status, Converter={StaticResource OfficeStatusBadgeFg}}"
-                                                                           VerticalAlignment="Center"
-                                                                           Margin="{DynamicResource Gap.Inline}"/>
-                                                                <TextBlock Text="{Binding StatusText}"
-                                                                           FontSize="{StaticResource Type.Caption}" FontWeight="SemiBold"
-                                                                           Foreground="{Binding Status, Converter={StaticResource OfficeStatusBadgeFg}}"
-                                                                           VerticalAlignment="Center"/>
-                                                            </StackPanel>
-                                                        </Border>
-                                                    </StackPanel>
-                                                    <StackPanel Orientation="Horizontal" Margin="{DynamicResource Gap.Top}">
-                                                        <TextBlock Text="Отчёт:"
-                                                                   FontSize="{StaticResource Type.Body}"
-                                                                   Foreground="{DynamicResource TextMuted}"
-                                                                   VerticalAlignment="Center"/>
-                                                        <TextBlock Text="{Binding LastReportDisplay}"
-                                                                   FontSize="{StaticResource Type.Body}"
-                                                                   Foreground="{DynamicResource TextSecondary}"
-                                                                   Margin="{DynamicResource Gap.LeftSm}"
-                                                                   VerticalAlignment="Center"/>
-                                                        <!-- Мини-прогресс «2/3» с тонкой полосой -->
-                                                        <Border Background="{DynamicResource ChipBg}" CornerRadius="{DynamicResource Radius.Md}" Padding="{DynamicResource Pad.Pill}"
-                                                                Margin="{DynamicResource Gap.LeftLg}" VerticalAlignment="Center"
-                                                                ToolTip="Сколько устройств офиса в актуальной версии">
-                                                            <StackPanel Orientation="Horizontal">
-                                                                <Border Width="34" Height="5" CornerRadius="{DynamicResource Radius.CapsuleSm}"
-                                                                        Background="{DynamicResource Border}" VerticalAlignment="Center">
-                                                                    <Border Width="{Binding ProgressWidth}"
-                                                                            HorizontalAlignment="Left" CornerRadius="{DynamicResource Radius.CapsuleSm}"
-                                                                            Background="{DynamicResource Success}"/>
-                                                                </Border>
-                                                                <TextBlock Text="{Binding ProgressText}"
+                                                    <!-- Строка 1: Информация об офисе слева + отчёт и прогресс справа -->
+                                                    <Grid>
+                                                        <Grid.ColumnDefinitions>
+                                                            <ColumnDefinition Width="*"/>
+                                                            <ColumnDefinition Width="Auto"/>
+                                                        </Grid.ColumnDefinitions>
+
+                                                        <!-- Слева: название + префикс + этот офис + бейдж статуса + кол-во устройств -->
+                                                        <WrapPanel Grid.Column="0" VerticalAlignment="Center" Margin="{DynamicResource Gap.RightSm}">
+                                                            <TextBlock Text="{Binding LocationName}"
+                                                                       FontSize="{StaticResource Type.BodyLg}" FontWeight="SemiBold"
+                                                                       Foreground="{DynamicResource TextPrimary}"
+                                                                       VerticalAlignment="Center" Margin="{DynamicResource Gap.RightSm}"/>
+                                                            <Border Background="{DynamicResource ChipBg}"
+                                                                    CornerRadius="{DynamicResource Radius.Md}" Padding="{DynamicResource Pad.Pill}"
+                                                                    Margin="{DynamicResource Gap.InlineSm}" VerticalAlignment="Center">
+                                                                <TextBlock Text="{Binding Prefix, StringFormat=Офис {0}}"
                                                                            FontSize="{StaticResource Type.Caption}" FontWeight="SemiBold"
                                                                            Foreground="{DynamicResource TextSecondary}"
-                                                                           Margin="{DynamicResource Gap.LeftSm}" VerticalAlignment="Center"/>
-                                                            </StackPanel>
-                                                        </Border>
-                                                    </StackPanel>
-                                                    <!-- Устройства офиса: версия и статус каждого ПК -->
-                                                    <WrapPanel Margin="{DynamicResource Gap.BlockTop}" Visibility="Visible">
-                                                        <WrapPanel.Style>
-                                                            <Style TargetType="WrapPanel">
+                                                                           VerticalAlignment="Center"/>
+                                                            </Border>
+                                                            <Border Background="{DynamicResource AccentLight}"
+                                                                    CornerRadius="{DynamicResource Radius.Md}" Padding="{DynamicResource Pad.Pill}"
+                                                                    Margin="{DynamicResource Gap.InlineSm}" VerticalAlignment="Center"
+                                                                    Visibility="Collapsed">
+                                                                <Border.Style>
+                                                                    <Style TargetType="Border">
+                                                                        <Style.Triggers>
+                                                                            <DataTrigger Binding="{Binding IsCurrentOffice}" Value="True">
+                                                                                <Setter Property="Visibility" Value="Visible"/>
+                                                                            </DataTrigger>
+                                                                        </Style.Triggers>
+                                                                    </Style>
+                                                                </Border.Style>
+                                                                <TextBlock Text="этот офис"
+                                                                           FontSize="{StaticResource Type.Caption}" FontWeight="SemiBold"
+                                                                           Foreground="{DynamicResource AccentText}"
+                                                                           VerticalAlignment="Center"/>
+                                                            </Border>
+                                                            <!-- Бейдж статуса справа от заголовка -->
+                                                            <Border VerticalAlignment="Center" Margin="{DynamicResource Gap.InlineSm}"
+                                                                    CornerRadius="{DynamicResource Radius.Md}" Padding="{DynamicResource Pad.Pill}"
+                                                                    Background="{Binding Status, Converter={StaticResource OfficeStatusBadgeBg}}">
+                                                                <StackPanel Orientation="Horizontal">
+                                                                    <TextBlock Text="{Binding StatusGlyph}"
+                                                                               FontFamily="{DynamicResource Font.Icon}"
+                                                                               FontSize="{StaticResource Type.Body}" FontWeight="Bold"
+                                                                               Foreground="{Binding Status, Converter={StaticResource OfficeStatusBadgeFg}}"
+                                                                               VerticalAlignment="Center"
+                                                                               Margin="{DynamicResource Gap.InlineSm}"/>
+                                                                    <TextBlock Text="{Binding StatusText}"
+                                                                               FontSize="{StaticResource Type.Caption}" FontWeight="SemiBold"
+                                                                               Foreground="{Binding Status, Converter={StaticResource OfficeStatusBadgeFg}}"
+                                                                               VerticalAlignment="Center"/>
+                                                                </StackPanel>
+                                                            </Border>
+                                                            <!-- Кол-во устройств офиса -->
+                                                            <Border Background="{DynamicResource ChipBg}"
+                                                                    CornerRadius="{DynamicResource Radius.Md}" Padding="{DynamicResource Pad.Pill}"
+                                                                    Margin="{DynamicResource Gap.InlineSm}" VerticalAlignment="Center"
+                                                                    Visibility="Visible">
+                                                                <Border.Style>
+                                                                    <Style TargetType="Border">
+                                                                        <Style.Triggers>
+                                                                            <DataTrigger Binding="{Binding DeviceCount}" Value="0">
+                                                                                <Setter Property="Visibility" Value="Collapsed"/>
+                                                                            </DataTrigger>
+                                                                        </Style.Triggers>
+                                                                    </Style>
+                                                                </Border.Style>
+                                                                <TextBlock Text="{Binding DeviceCountDisplay}"
+                                                                           FontSize="{StaticResource Type.Caption}" FontWeight="SemiBold"
+                                                                           Foreground="{DynamicResource TextSecondary}"
+                                                                           VerticalAlignment="Center"/>
+                                                            </Border>
+                                                        </WrapPanel>
+
+                                                        <!-- Справа: Отчёт + мини-прогресс «1/4» -->
+                                                        <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
+                                                            <TextBlock Text="Отчёт:"
+                                                                       FontSize="{StaticResource Type.Caption}"
+                                                                       Foreground="{DynamicResource TextMuted}"
+                                                                       VerticalAlignment="Center"/>
+                                                            <TextBlock Text="{Binding LastReportDisplay}"
+                                                                       FontSize="{StaticResource Type.Caption}" FontWeight="SemiBold"
+                                                                       Foreground="{DynamicResource TextSecondary}"
+                                                                       Margin="{DynamicResource Gap.LeftSm}"
+                                                                       VerticalAlignment="Center"/>
+                                                            <!-- Мини-прогресс «2/3» с тонкой полосой -->
+                                                            <Border Background="{DynamicResource ChipBg}" CornerRadius="{DynamicResource Radius.Md}" Padding="{DynamicResource Pad.Pill}"
+                                                                    Margin="{DynamicResource Gap.Left}" VerticalAlignment="Center"
+                                                                    ToolTip="Сколько устройств офиса в актуальной версии">
+                                                                <StackPanel Orientation="Horizontal">
+                                                                    <Border Width="34" Height="5" CornerRadius="{DynamicResource Radius.CapsuleSm}"
+                                                                            Background="{DynamicResource Border}" VerticalAlignment="Center">
+                                                                        <Border Width="{Binding ProgressWidth}"
+                                                                                HorizontalAlignment="Left" CornerRadius="{DynamicResource Radius.CapsuleSm}"
+                                                                                Background="{DynamicResource Success}"/>
+                                                                    </Border>
+                                                                    <TextBlock Text="{Binding ProgressText}"
+                                                                               FontSize="{StaticResource Type.Caption}" FontWeight="SemiBold"
+                                                                               Foreground="{DynamicResource TextSecondary}"
+                                                                               Margin="{DynamicResource Gap.LeftSm}" VerticalAlignment="Center"/>
+                                                                </StackPanel>
+                                                            </Border>
+                                                        </StackPanel>
+                                                    </Grid>
+
+                                                    <!-- Строка 2: Устройства офиса (если есть) -->
+                                                    <DockPanel Margin="{DynamicResource Gap.BlockTopSm}" Visibility="Visible" LastChildFill="True">
+                                                        <DockPanel.Style>
+                                                            <Style TargetType="DockPanel">
                                                                 <Style.Triggers>
                                                                     <DataTrigger Binding="{Binding Devices.Count}" Value="0">
                                                                         <Setter Property="Visibility" Value="Collapsed"/>
                                                                     </DataTrigger>
                                                                 </Style.Triggers>
                                                             </Style>
-                                                        </WrapPanel.Style>
-                                                        <TextBlock Text="Устройства:"
-                                                                   FontSize="{StaticResource Type.Body}"
+                                                        </DockPanel.Style>
+                                                        <TextBlock DockPanel.Dock="Left" Text="Устройства:"
+                                                                   FontSize="{StaticResource Type.Caption}"
                                                                    Foreground="{DynamicResource TextMuted}"
                                                                    VerticalAlignment="Center"
                                                                    Margin="{DynamicResource Gap.InlineSm}"/>
@@ -565,15 +580,14 @@
                                                             </ItemsControl.ItemsPanel>
                                                             <ItemsControl.ItemTemplate>
                                                                 <DataTemplate>
-                                                                    <!-- Чип устройства: имя · версия · статус,
-                                                                         в режиме отвязки — с чекбоксом. -->
+                                                                    <!-- Чип устройства: имя · версия · статус, в режиме отвязки — с чекбоксом -->
                                                                     <Border Background="{Binding Status, Converter={StaticResource OfficeStatusBadgeBg}}"
                                                                             CornerRadius="{DynamicResource Radius.Md}"
-                                                                            Padding="{DynamicResource Pad.Pill}"
+                                                                            Padding="{DynamicResource Pad.Chip}"
                                                                             Margin="{DynamicResource Gap.InlineSm}"
                                                                             ToolTip="{Binding ToolTipText}">
                                                                         <StackPanel Orientation="Horizontal">
-                                                                            <CheckBox x:Name="DeviceUnbindCheck" Margin="{DynamicResource Gap.Inline}"
+                                                                            <CheckBox x:Name="DeviceUnbindCheck" Margin="{DynamicResource Gap.InlineSm}"
                                                                                       Style="{StaticResource AdminDeviceCheckBox}"
                                                                                       Visibility="{Binding Tag, ElementName=OfficesList, Converter={StaticResource UnbindModeToVisibility}}"
                                                                                       IsChecked="{Binding IsChecked, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
@@ -594,18 +608,12 @@
                                                                                        Foreground="{Binding Status, Converter={StaticResource OfficeStatusBadgeFg}}"
                                                                                        Margin="{DynamicResource Gap.LeftSm}"
                                                                                        VerticalAlignment="Center"/>
-                                                                            <!-- Давно не подтверждали локацию: «локация не подтверждена
-                                                                                 62 дн.». Пусто (и скрыто), пока подтверждение свежее —
-                                                                                 чип не забивается постоянной подсказкой. Стоит ПЕРЕД
-                                                                                 давностью отчёта: последний ребёнок чипа — контракт
-                                                                                 Playtest_LastSeenHint_ShowsOnStaleDeviceChip.
-                                                                                 Цвет — предупреждение, а не цвет статуса версии: зелёная
-                                                                                 «60 дн.» на актуальном ПК читалась как «всё хорошо». -->
+                                                                            <!-- Давно не подтверждали локацию: «локация не подтверждена 62 дн.» -->
                                                                             <TextBlock Text="{Binding LocationCheckHint}"
                                                                                        FontSize="{StaticResource Type.Caption}"
                                                                                        FontWeight="SemiBold"
                                                                                        Foreground="{DynamicResource Warning}"
-                                                                                       Margin="{DynamicResource Gap.Left}"
+                                                                                       Margin="{DynamicResource Gap.LeftSm}"
                                                                                        VerticalAlignment="Center">
                                                                                 <TextBlock.Style>
                                                                                     <Style TargetType="TextBlock">
@@ -628,7 +636,7 @@
                                                                 </DataTemplate>
                                                             </ItemsControl.ItemTemplate>
                                                         </ItemsControl>
-                                                    </WrapPanel>
+                                                    </DockPanel>
                                                 </StackPanel>
                                             </Border>
                                         </Border>
@@ -708,7 +716,7 @@
                     </Border>
 
                     <ScrollViewer Grid.Row="1"
-                                  VerticalScrollBarVisibility="Hidden"
+                                  VerticalScrollBarVisibility="Auto"
                                   HorizontalScrollBarVisibility="Disabled"
                                   Padding="{DynamicResource Pad.Section}">
                         <Grid>
@@ -719,7 +727,7 @@
                                                 BorderBrush="{DynamicResource Border}"
                                                 BorderThickness="1"
                                                 CornerRadius="{DynamicResource Radius.Lg}"
-                                                Margin="{DynamicResource Gap.BlockLg}"
+                                                Margin="{DynamicResource Gap.Block}"
                                                 Padding="{DynamicResource Pad.Card}">
                                             <Grid>
                                                 <Grid.ColumnDefinitions>
@@ -728,15 +736,14 @@
                                                 </Grid.ColumnDefinitions>
 
                                                 <StackPanel Grid.Column="0" VerticalAlignment="Center">
-                                                    <StackPanel Orientation="Horizontal">
+                                                    <WrapPanel VerticalAlignment="Center">
                                                         <TextBlock Text="{Binding LocationName}"
                                                                    FontSize="{StaticResource Type.BodyLg}" FontWeight="SemiBold"
                                                                    Foreground="{DynamicResource TextPrimary}"
-                                                                   TextWrapping="Wrap"
-                                                                   VerticalAlignment="Center"/>
+                                                                   VerticalAlignment="Center" Margin="{DynamicResource Gap.RightSm}"/>
                                                         <Border Background="{DynamicResource ChipBg}"
                                                                 CornerRadius="{DynamicResource Radius.Md}" Padding="{DynamicResource Pad.Pill}"
-                                                                Margin="{DynamicResource Gap.Left}" VerticalAlignment="Center">
+                                                                Margin="{DynamicResource Gap.InlineSm}" VerticalAlignment="Center">
                                                             <TextBlock Text="{Binding Prefix, StringFormat=Офис {0}}"
                                                                        FontSize="{StaticResource Type.Caption}" FontWeight="SemiBold"
                                                                        Foreground="{DynamicResource TextSecondary}"
@@ -744,7 +751,7 @@
                                                         </Border>
                                                         <Border Background="{DynamicResource AccentLight}"
                                                                 CornerRadius="{DynamicResource Radius.Md}" Padding="{DynamicResource Pad.Pill}"
-                                                                Margin="{DynamicResource Gap.Left}" VerticalAlignment="Center"
+                                                                Margin="{DynamicResource Gap.InlineSm}" VerticalAlignment="Center"
                                                                 Visibility="Collapsed">
                                                             <Border.Style>
                                                                 <Style TargetType="Border">
@@ -763,7 +770,7 @@
                                                         <!-- Кол-во устройств офиса -->
                                                         <Border Background="{DynamicResource ChipBg}"
                                                                 CornerRadius="{DynamicResource Radius.Md}" Padding="{DynamicResource Pad.Pill}"
-                                                                Margin="{DynamicResource Gap.Left}" VerticalAlignment="Center"
+                                                                Margin="{DynamicResource Gap.InlineSm}" VerticalAlignment="Center"
                                                                 Visibility="Visible">
                                                             <Border.Style>
                                                                 <Style TargetType="Border">
@@ -779,28 +786,28 @@
                                                                        Foreground="{DynamicResource TextSecondary}"
                                                                        VerticalAlignment="Center"/>
                                                         </Border>
-                                                    </StackPanel>
-                                                    <StackPanel Orientation="Horizontal" Margin="{DynamicResource Gap.Top}">
+                                                    </WrapPanel>
+                                                    <StackPanel Orientation="Horizontal" Margin="{DynamicResource Gap.BlockTopSm}">
                                                         <TextBlock Text="Отчёт:"
-                                                                   FontSize="{StaticResource Type.Body}"
+                                                                   FontSize="{StaticResource Type.Caption}"
                                                                    Foreground="{DynamicResource TextMuted}"
                                                                    VerticalAlignment="Center"/>
                                                         <TextBlock Text="{Binding LastReportDisplay}"
-                                                                   FontSize="{StaticResource Type.Body}"
+                                                                   FontSize="{StaticResource Type.Caption}" FontWeight="SemiBold"
                                                                    Foreground="{DynamicResource TextSecondary}"
                                                                    Margin="{DynamicResource Gap.LeftSm}"
                                                                    VerticalAlignment="Center"/>
                                                     </StackPanel>
                                                 </StackPanel>
 
-                                                <!-- Большое число заказов справа -->
-                                                <StackPanel Grid.Column="1" VerticalAlignment="Center" HorizontalAlignment="Right">
+                                                <!-- Число заказов справа -->
+                                                <StackPanel Grid.Column="1" VerticalAlignment="Center" HorizontalAlignment="Right" Margin="{DynamicResource Gap.Left}">
                                                     <TextBlock Text="Заказы"
                                                                FontSize="{StaticResource Type.Caption}"
                                                                Foreground="{DynamicResource TextMuted}"
                                                                HorizontalAlignment="Right"/>
                                                     <TextBlock Text="{Binding OrderCountDisplay}"
-                                                               FontSize="{StaticResource Type.Display}" FontWeight="Bold"
+                                                               FontSize="{StaticResource Type.Subtitle}" FontWeight="Bold"
                                                                Foreground="{DynamicResource TextPrimary}"
                                                                HorizontalAlignment="Right"
                                                                VerticalAlignment="Center"
