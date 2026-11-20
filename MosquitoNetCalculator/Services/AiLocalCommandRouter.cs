@@ -59,7 +59,10 @@ namespace MosquitoNetCalculator.Services
             new("/замер", "Правила замера сеток Anwis и светового проёма", "/anwis, /measure"),
             new("/крепления", "Справка по Z-креплениям и зацепам", "/brackets"),
             new("/faq", "База знаний и частые вопросы (офлайн)", "/kb"),
-            new("/помощь", "Список всех команд", "/help, /helpme")
+            new("/помощь", "Список всех команд", "/help, /helpme"),
+
+            new("/пвх", "Автопросчёт ПВХ-окна через CCalc (on/off)", "/pvc, /ccalc, /окно")
+
         };
 
         public static string HelpText => BuildHelpText();
@@ -138,7 +141,14 @@ namespace MosquitoNetCalculator.Services
                     return Info(FaqText());
 
                 case "/помощь" or "/help" or "/helpme":
+
                     return Info(HelpText);
+
+
+
+                case "/пвх" or "/pvc" or "/ccalc" or "/окно":
+
+                    return PvcRoute(args);
 
                 default:
                     return new RouteResult
@@ -331,5 +341,35 @@ namespace MosquitoNetCalculator.Services
         }
 
         private static string Fmt(double v) => v == Math.Floor(v) ? ((int)v).ToString() : v.ToString("0.##");
+            private static RouteResult PvcRoute(string args)
+        {
+            var isEnabled = AppSettingsServiceAi.LoadEnableCcalcAutomation();
+            var progPath = AppSettingsServiceAi.LoadCcalcProgramPath();
+
+            if (args.Equals("on", StringComparison.OrdinalIgnoreCase) || args.Equals("вкл", StringComparison.OrdinalIgnoreCase))
+            {
+                AppSettingsServiceAi.SaveEnableCcalcAutomation(true);
+                return Info("✅ Автопросчёт через CCalc **включён**.");
+            }
+
+            if (args.Equals("off", StringComparison.OrdinalIgnoreCase) || args.Equals("выкл", StringComparison.OrdinalIgnoreCase))
+            {
+                AppSettingsServiceAi.SaveEnableCcalcAutomation(false);
+                return Info("❌ Автопросчёт через CCalc **выключен** (режим симуляции).");
+            }
+
+            var sb = new StringBuilder();
+            sb.AppendLine("## 🪟 Автопросчёт ПВХ-конструкций (CCalc 9.12)");
+            sb.AppendLine();
+            sb.AppendLine($"• **Статус:** {(isEnabled ? "Включён ✅" : "Выключен (симуляция) ❌")}");
+            sb.AppendLine($"• **Путь к программе:** `{progPath}`");
+            sb.AppendLine();
+            sb.AppendLine("### ⚙ Визуальная настройка:");
+            sb.AppendLine("Управлять доступом и выбрать путь к программе можно в окне **⚙ Настройки AI** (иконка шестерёнки в правом верхнем углу). Там доступен переключатель и выбор файла через проводник («Обзор...») без текстовых команд.");
+            sb.AppendLine();
+            sb.AppendLine("### 🚀 Как запустить просчёт:");
+            sb.AppendLine("Прикрепите фото эскиза окна (блокнота замерщика) через скрепку 📎 и напишите: `просчитай окно`.");
+            return Info(sb.ToString());
+        }
     }
 }

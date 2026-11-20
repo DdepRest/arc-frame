@@ -208,6 +208,9 @@ namespace MosquitoNetCalculator.Controls
         private void BtnImportOrders_Click(object sender, RoutedEventArgs e) =>
             TryForwardToMain(nameof(BtnImportOrders_Click), mw => mw.BtnImportOrders_Click(sender, e));
 
+        private void BtnImportFromCcalc_Click(object sender, RoutedEventArgs e) =>
+            TryForwardToMain(nameof(BtnImportFromCcalc_Click), mw => mw.BtnImportFromCcalc_Click(sender, e));
+
         private void BtnExportOrders_Click(object sender, RoutedEventArgs e) =>
             TryForwardToMain(nameof(BtnExportOrders_Click), mw => mw.BtnExportOrders_Click(sender, e));
 

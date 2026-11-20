@@ -1,647 +1,729 @@
-<Window x:Class="MosquitoNetCalculator.Controls.AiApiKeyDialog"
-        Style="{DynamicResource Window.Shared}"
-        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
-        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="Настройки AI"
-        Width="660" Height="760"
-        WindowStartupLocation="CenterOwner"
-        WindowStyle="None" ResizeMode="NoResize"
-        Background="{DynamicResource AppBg}"
-        Foreground="{DynamicResource TextPrimary}"
-        ShowInTaskbar="False"
-        Topmost="True">
-
-    <Window.Resources>
-        <!-- DialogCheckBox inherits unified Fluent CheckBox -->
-        <Style x:Key="DialogCheckBox" TargetType="CheckBox" BasedOn="{StaticResource {x:Type CheckBox}}">
-            <Setter Property="Focusable" Value="False"/>
-            <Setter Property="VerticalAlignment" Value="Center"/>
-        </Style>
-    </Window.Resources>
-
-    <Border BorderBrush="{DynamicResource Border}" BorderThickness="1" CornerRadius="{DynamicResource Radius.Lg}"
-            Background="{DynamicResource Surface}">
-        <Grid Margin="{DynamicResource Pad.InputH}">
-            <!-- Three-zone layout that can never clip the footer -->
-            <Grid.RowDefinitions>
-                <RowDefinition Height="54"/>
-                <RowDefinition Height="*"/>
-                <RowDefinition Height="Auto"/>
-            </Grid.RowDefinitions>
-
-            <!-- Header -->
-            <Grid Grid.Row="0" Background="Transparent" MouseLeftButtonDown="Header_MouseLeftButtonDown">
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="34"/>
-                    <ColumnDefinition Width="*"/>
-                    <ColumnDefinition Width="32"/>
-                </Grid.ColumnDefinitions>
-                <Border Grid.Column="0" Width="28" Height="28" CornerRadius="{DynamicResource Radius.Md}"
-                        Background="{DynamicResource Accent}" VerticalAlignment="Center">
-                    <TextBlock Text="AI" FontSize="{StaticResource Type.Monogram}" FontWeight="Bold"
-                               Foreground="{DynamicResource OnAccent}"
-                               HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                </Border>
-                <StackPanel Grid.Column="1" VerticalAlignment="Center" Margin="{DynamicResource Gap.Left}">
-                    <TextBlock Text="Настройки AI Ассистента" FontSize="{StaticResource Type.Subtitle}" FontWeight="SemiBold"
-                               Foreground="{DynamicResource TextPrimary}"/>
-                    <TextBlock Text="Провайдеры · API-ключи · Выбор моделей и автороутинг" FontSize="{StaticResource Type.Caption}"
-                               Foreground="{DynamicResource TextMuted}" Margin="{DynamicResource Gap.BlockTopSm}"
-                               TextTrimming="CharacterEllipsis"/>
-                </StackPanel>
-                <Button Grid.Column="2" x:Name="BtnClose"
-                        Width="28" Height="28" Click="BtnClose_Click"
-                        Style="{DynamicResource DialogCloseButton}"
-                        VerticalAlignment="Center">
-                    <TextBlock Text="&#xE8BB;" FontFamily="{DynamicResource Font.Icon}" FontSize="{StaticResource Type.Caption}"/>
-                </Button>
-            </Grid>
-
-            <!-- Main scrollable form content -->
-            <ScrollViewer Grid.Row="1"
-                          VerticalScrollBarVisibility="Auto"
-                          HorizontalScrollBarVisibility="Disabled"
-                          Focusable="False">
-                <StackPanel Margin="{DynamicResource Gap.BlockTop}">
-
-                    <!-- Слайдер стиля ответов и температуры -->
-                    <Border Margin="{DynamicResource Gap.BlockLg}" Padding="{DynamicResource Pad.Card}" Background="{DynamicResource SectionBg}"
-                            BorderBrush="{DynamicResource Border}" BorderThickness="1" CornerRadius="{DynamicResource Radius.Md}">
-                        <Grid>
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="Auto"/>
-                                <ColumnDefinition Width="*"/>
-                                <ColumnDefinition Width="Auto"/>
-                            </Grid.ColumnDefinitions>
-                            <StackPanel Grid.Column="0" Margin="{DynamicResource Gap.InlineLg}" VerticalAlignment="Center">
-                                <TextBlock Text="Стиль ответов AI:" FontSize="{StaticResource Type.Caption}" FontWeight="SemiBold" Foreground="{DynamicResource TextPrimary}"/>
-                                <TextBlock x:Name="TxtStyleDescription" Text="Строгий инженерный (0.2)" FontSize="{StaticResource Type.Caption}" Foreground="{DynamicResource TextMuted}"/>
-                            </StackPanel>
-                            <Slider Grid.Column="1" x:Name="SldrTemperature" Minimum="0.0" Maximum="0.6" SmallChange="0.1" LargeChange="0.2"
-                                    TickFrequency="0.1" IsSnapToTickEnabled="True" VerticalAlignment="Center"
-                                    ValueChanged="SldrTemperature_ValueChanged"/>
-                            <TextBlock Grid.Column="2" x:Name="TxtTemperatureValue" Text="0.2" FontSize="{StaticResource Type.Caption}"
-                                       FontWeight="Bold" Foreground="{DynamicResource AccentText}" Margin="{DynamicResource Gap.LeftLg}" VerticalAlignment="Center"/>
-                        </Grid>
-                    </Border>
-
-                    <!-- ── ПРОВАЙДЕРЫ (СЕГМЕНТИРОВАННЫЕ ВКЛАДКИ) ──────────────── -->
-                    <Grid Margin="{DynamicResource Gap.BlockSm}">
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="*"/>
-                            <ColumnDefinition Width="Auto"/>
-                        </Grid.ColumnDefinitions>
-                        <TextBlock Text="ПРОВАЙДЕРЫ И КЛЮЧИ" FontSize="{StaticResource Type.Caption}" FontWeight="Bold"
-                                   Foreground="{DynamicResource TextMuted}" VerticalAlignment="Center"/>
-                        <Button Grid.Column="1" x:Name="BtnTestKeys"
-                                Content="Проверить подключение" Height="26" Click="BtnTestKeys_Click"
-                                Style="{StaticResource DialogOutlineButton}" FontSize="{StaticResource Type.Caption}"
-                                Padding="{DynamicResource Pad.ButtonSm}"
-                                ToolTip="Параллельно проверить все настроенные сервисы"/>
-                    </Grid>
-
-                    <!-- Segmented tab selector buttons -->
-                    <UniformGrid Columns="3" Margin="{DynamicResource Gap.Block}">
-                        <!-- OpenRouter Tab -->
-                        <Border x:Name="TabBtnOpenRouter" Margin="{DynamicResource Gap.InlineSm}" Padding="{DynamicResource Pad.Row}" CornerRadius="{DynamicResource Radius.Md}"
-                                Background="{DynamicResource SectionBg}" BorderBrush="{DynamicResource Border}" BorderThickness="1"
-                                Cursor="Hand" PreviewMouseLeftButtonDown="TabBtnOpenRouter_Click" MouseLeftButtonUp="TabBtnOpenRouter_Click">
-                            <Grid>
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="Auto"/>
-                                    <ColumnDefinition Width="*"/>
-                                    <ColumnDefinition Width="Auto"/>
-                                </Grid.ColumnDefinitions>
-                                <Border Grid.Column="0" Width="20" Height="20" CornerRadius="{DynamicResource Radius.Sm}"
-                                        Background="{DynamicResource ChipBg}" Margin="{DynamicResource Gap.Inline}">
-                                    <TextBlock Text="OR" FontSize="{StaticResource Type.Monogram}" FontWeight="Bold"
-                                               Foreground="{DynamicResource AccentText}"
-                                               HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                                </Border>
-                                <TextBlock Grid.Column="1" Text="OpenRouter" FontSize="{StaticResource Type.Body}" FontWeight="SemiBold"
-                                           Foreground="{DynamicResource TextPrimary}" VerticalAlignment="Center"/>
-                                <Border Grid.Column="2" x:Name="TabDotOr" Width="8" Height="8" CornerRadius="{DynamicResource Radius.Sm}"
-                                        Background="{DynamicResource TextMuted}" VerticalAlignment="Center"
-                                        ToolTip="Статус OpenRouter"/>
-                            </Grid>
-                        </Border>
-
-                        <!-- NVIDIA Tab -->
-                        <Border x:Name="TabBtnNvidia" Margin="{DynamicResource Gap.HairH}" Padding="{DynamicResource Pad.Row}" CornerRadius="{DynamicResource Radius.Md}"
-                                Background="{DynamicResource SectionBg}" BorderBrush="{DynamicResource Border}" BorderThickness="1"
-                                Cursor="Hand" PreviewMouseLeftButtonDown="TabBtnNvidia_Click" MouseLeftButtonUp="TabBtnNvidia_Click">
-                            <Grid>
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="Auto"/>
-                                    <ColumnDefinition Width="*"/>
-                                    <ColumnDefinition Width="Auto"/>
-                                </Grid.ColumnDefinitions>
-                                <Border Grid.Column="0" Width="20" Height="20" CornerRadius="{DynamicResource Radius.Sm}"
-                                        Background="{DynamicResource BadgeSuccessBg}" Margin="{DynamicResource Gap.Inline}">
-                                    <TextBlock Text="NV" FontSize="{StaticResource Type.Monogram}" FontWeight="Bold"
-                                               Foreground="{DynamicResource Success}"
-                                               HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                                </Border>
-                                <TextBlock Grid.Column="1" Text="NVIDIA" FontSize="{StaticResource Type.Body}" FontWeight="SemiBold"
-                                           Foreground="{DynamicResource TextPrimary}" VerticalAlignment="Center"/>
-                                <Border Grid.Column="2" x:Name="TabDotNv" Width="8" Height="8" CornerRadius="{DynamicResource Radius.Sm}"
-                                        Background="{DynamicResource TextMuted}" VerticalAlignment="Center"
-                                        ToolTip="Статус NVIDIA"/>
-                            </Grid>
-                        </Border>
-
-                        <!-- FreeLLMAPI Tab -->
-                        <Border x:Name="TabBtnFreeLlm" Margin="{DynamicResource Gap.LeftSm}" Padding="{DynamicResource Pad.Row}" CornerRadius="{DynamicResource Radius.Md}"
-                                Background="{DynamicResource SectionBg}" BorderBrush="{DynamicResource Border}" BorderThickness="1"
-                                Cursor="Hand" PreviewMouseLeftButtonDown="TabBtnFreeLlm_Click" MouseLeftButtonUp="TabBtnFreeLlm_Click">
-                            <Grid>
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="Auto"/>
-                                    <ColumnDefinition Width="*"/>
-                                    <ColumnDefinition Width="Auto"/>
-                                </Grid.ColumnDefinitions>
-                                <Border Grid.Column="0" Width="20" Height="20" CornerRadius="{DynamicResource Radius.Sm}"
-                                        Background="{DynamicResource BadgeVisionBg}" Margin="{DynamicResource Gap.Inline}">
-                                    <TextBlock Text="FL" FontSize="{StaticResource Type.Monogram}" FontWeight="Bold"
-                                               Foreground="{DynamicResource BadgeVisionFg}"
-                                               HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                                </Border>
-                                <TextBlock Grid.Column="1" Text="FreeLLMAPI" FontSize="{StaticResource Type.Body}" FontWeight="SemiBold"
-                                           Foreground="{DynamicResource TextPrimary}" VerticalAlignment="Center"/>
-                                <Border Grid.Column="2" x:Name="TabDotFl" Width="8" Height="8" CornerRadius="{DynamicResource Radius.Sm}"
-                                        Background="{DynamicResource Success}" VerticalAlignment="Center"
-                                        ToolTip="Статус FreeLLMAPI"/>
-                            </Grid>
-                        </Border>
-                    </UniformGrid>
-
-                    <!-- Active Provider Configuration Card -->
-                    <Border CornerRadius="{DynamicResource Radius.Md}" Padding="{DynamicResource Pad.Card}"
-                            Background="{DynamicResource SectionBg}"
-                            BorderBrush="{DynamicResource Border}" BorderThickness="1">
-                        <Grid>
-                            <!-- Panel: OpenRouter -->
-                            <StackPanel x:Name="PanelOpenRouter" Visibility="Collapsed">
-                                <TextBlock Text="API-ключ OpenRouter:" FontSize="{StaticResource Type.Caption}" Foreground="{DynamicResource TextMuted}" Margin="{DynamicResource Gap.BlockSm}"/>
-                                <Grid>
-                                    <PasswordBox x:Name="TxtApiKey" Height="32" Padding="{DynamicResource Pad.Control}" FontSize="{StaticResource Type.Caption}"
-                                                 BorderBrush="{DynamicResource Border}" BorderThickness="1"
-                                                 Background="{DynamicResource Surface}" Foreground="{DynamicResource TextPrimary}"
-                                                 VerticalContentAlignment="Center"
-                                                 PasswordChanged="TxtApiKey_PasswordChanged"
-                                                 PreviewMouseLeftButtonDown="PasswordBox_PreviewMouseLeftButtonDown"
-                                                 ToolTip="Вставьте ключ OpenRouter"/>
-                                    <TextBlock x:Name="ApiKeyPlaceholder"
-                                               Text="Вставьте ключ OpenRouter (необязательно)"
-                                               FontSize="{StaticResource Type.Caption}" Foreground="{DynamicResource TextMuted}"
-                                               Margin="{DynamicResource Gap.Left}" VerticalAlignment="Center"
-                                               IsHitTestVisible="False"/>
-                                </Grid>
-                                <Grid Margin="{DynamicResource Gap.Top}">
-                                    <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="Auto"/>
-                                        <ColumnDefinition Width="*"/>
-                                        <ColumnDefinition Width="Auto"/>
-                                    </Grid.ColumnDefinitions>
-                                    <Border Grid.Column="0" x:Name="OrTestStatus" CornerRadius="{DynamicResource Radius.Sm}" Padding="{DynamicResource Pad.Pill}"
-                                            Background="{DynamicResource Surface}"
-                                            BorderBrush="{DynamicResource SubtleBorder}" BorderThickness="1">
-                                        <StackPanel Orientation="Horizontal">
-                                            <Border x:Name="OrTestDot" Width="8" Height="8" CornerRadius="{DynamicResource Radius.Sm}"
-                                                    Background="{DynamicResource TextMuted}" Margin="{DynamicResource Gap.InlineSm}"
-                                                    VerticalAlignment="Center"/>
-                                            <TextBlock x:Name="TxtOrTestStatus" Text="не проверено" FontSize="{StaticResource Type.Caption}"
-                                                       Foreground="{DynamicResource TextMuted}" VerticalAlignment="Center"/>
-                                        </StackPanel>
-                                    </Border>
-                                    <TextBlock Grid.Column="1" x:Name="TxtCurrentKey" Text="ключ не задан"
-                                               FontSize="{StaticResource Type.Caption}" Foreground="{DynamicResource TextMuted}"
-                                               Margin="{DynamicResource Gap.Left}" VerticalAlignment="Center" TextTrimming="CharacterEllipsis"/>
-                                    <TextBlock Grid.Column="2" Text="Бесплатные ключи → openrouter.ai/keys" FontSize="{StaticResource Type.Caption}"
-                                               Foreground="{DynamicResource AccentText}" VerticalAlignment="Center" Cursor="Hand"
-                                               MouseLeftButtonDown="Link_MouseLeftButtonDown" TextDecorations="Underline"/>
-                                </Grid>
-                            </StackPanel>
-
-                            <!-- Panel: NVIDIA -->
-                            <StackPanel x:Name="PanelNvidia" Visibility="Collapsed">
-                                <TextBlock Text="API-ключ NVIDIA NIM:" FontSize="{StaticResource Type.Caption}" Foreground="{DynamicResource TextMuted}" Margin="{DynamicResource Gap.BlockSm}"/>
-                                <Grid>
-                                    <PasswordBox x:Name="TxtNvidiaKey" Height="32" Padding="{DynamicResource Pad.Control}" FontSize="{StaticResource Type.Caption}"
-                                                 BorderBrush="{DynamicResource Border}" BorderThickness="1"
-                                                 Background="{DynamicResource Surface}" Foreground="{DynamicResource TextPrimary}"
-                                                 VerticalContentAlignment="Center"
-                                                 PasswordChanged="TxtNvidiaKey_PasswordChanged"
-                                                 PreviewMouseLeftButtonDown="PasswordBox_PreviewMouseLeftButtonDown"
-                                                 ToolTip="Вставьте ключ NVIDIA"/>
-                                    <TextBlock x:Name="NvidiaKeyPlaceholder"
-                                               Text="Вставьте ключ NVIDIA (необязательно)"
-                                               FontSize="{StaticResource Type.Caption}" Foreground="{DynamicResource TextMuted}"
-                                               Margin="{DynamicResource Gap.Left}" VerticalAlignment="Center"
-                                               IsHitTestVisible="False"/>
-                                </Grid>
-                                <Grid Margin="{DynamicResource Gap.Top}">
-                                    <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="Auto"/>
-                                        <ColumnDefinition Width="*"/>
-                                        <ColumnDefinition Width="Auto"/>
-                                    </Grid.ColumnDefinitions>
-                                    <Border Grid.Column="0" x:Name="NvTestStatus" CornerRadius="{DynamicResource Radius.Sm}" Padding="{DynamicResource Pad.Pill}"
-                                            Background="{DynamicResource Surface}"
-                                            BorderBrush="{DynamicResource SubtleBorder}" BorderThickness="1">
-                                        <StackPanel Orientation="Horizontal">
-                                            <Border x:Name="NvTestDot" Width="8" Height="8" CornerRadius="{DynamicResource Radius.Sm}"
-                                                    Background="{DynamicResource TextMuted}" Margin="{DynamicResource Gap.InlineSm}"
-                                                    VerticalAlignment="Center"/>
-                                            <TextBlock x:Name="TxtNvTestStatus" Text="не проверено" FontSize="{StaticResource Type.Caption}"
-                                                       Foreground="{DynamicResource TextMuted}" VerticalAlignment="Center"/>
-                                        </StackPanel>
-                                    </Border>
-                                    <TextBlock Grid.Column="1" x:Name="TxtCurrentNvidiaKey" Text="ключ не задан"
-                                               FontSize="{StaticResource Type.Caption}" Foreground="{DynamicResource TextMuted}"
-                                               Margin="{DynamicResource Gap.Left}" VerticalAlignment="Center" TextTrimming="CharacterEllipsis"/>
-                                    <TextBlock Grid.Column="2" Text="Ключи NVIDIA NIM → build.nvidia.com" FontSize="{StaticResource Type.Caption}"
-                                               Foreground="{DynamicResource Success}" VerticalAlignment="Center" Cursor="Hand"
-                                               MouseLeftButtonDown="LinkNvidia_MouseLeftButtonDown" TextDecorations="Underline"/>
-                                </Grid>
-                            </StackPanel>
-
-                            <!-- Panel: FreeLLMAPI -->
-                            <StackPanel x:Name="PanelFreeLlm" Visibility="Visible">
-                                <Grid Margin="{DynamicResource Gap.BlockSm}">
-                                    <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="1.1*"/>
-                                        <ColumnDefinition Width="0.9*"/>
-                                    </Grid.ColumnDefinitions>
-                                    <!-- URL endpoint -->
-                                    <StackPanel Grid.Column="0" Margin="{DynamicResource Gap.InlineSm}">
-                                        <TextBlock Text="URL эндпоинта FreeLLMAPI:" FontSize="{StaticResource Type.Caption}" Foreground="{DynamicResource TextMuted}" Margin="{DynamicResource Gap.BlockSm}"/>
-                                        <TextBox x:Name="TxtFreeLlmEndpoint" Height="32" Padding="{DynamicResource Pad.Control}" FontSize="{StaticResource Type.Caption}"
-                                                 BorderBrush="{DynamicResource Border}" BorderThickness="1"
-                                                 Background="{DynamicResource Surface}" Foreground="{DynamicResource TextPrimary}"
-                                                 VerticalContentAlignment="Center"
-                                                 TextChanged="TxtFreeLlmEndpoint_TextChanged"
-                                                 ToolTip="URL шлюза FreeLLMAPI. Сервер: http://localhost:3001/v1 · Desktop: http://127.0.0.1:31415/v1. Суффикс /v1 обязателен."/>
-                                        <TextBlock x:Name="TxtFreeLlmEffective"
-                                                   Text="" FontSize="{StaticResource Type.Monogram}" Foreground="{DynamicResource TextMuted}"
-                                                   Margin="{DynamicResource Gap.BlockTopSm}" TextTrimming="CharacterEllipsis"
-                                                   ToolTip="Фактический адрес запросов — он собирается из указанной выше базы"/>
-                                    </StackPanel>
-                                    <!-- API key (optional) -->
-                                    <StackPanel Grid.Column="1" Margin="{DynamicResource Gap.LeftSm}">
-                                        <TextBlock Text="API-ключ (необязательно):" FontSize="{StaticResource Type.Caption}" Foreground="{DynamicResource TextMuted}" Margin="{DynamicResource Gap.BlockSm}"/>
-                                        <Grid>
-                                            <PasswordBox x:Name="TxtFreeLlmKey" Height="32" Padding="{DynamicResource Pad.Control}" FontSize="{StaticResource Type.Caption}"
-                                                         BorderBrush="{DynamicResource Border}" BorderThickness="1"
-                                                         Background="{DynamicResource Surface}" Foreground="{DynamicResource TextPrimary}"
-                                                         VerticalContentAlignment="Center"
-                                                         PasswordChanged="TxtFreeLlmKey_PasswordChanged"
-                                                         PreviewMouseLeftButtonDown="PasswordBox_PreviewMouseLeftButtonDown"
-                                                         ToolTip="Ключ FreeLLMAPI (не требуется для локального шлюза)"/>
-                                            <TextBlock x:Name="FreeLlmKeyPlaceholder"
-                                                       Text="Токен (для защищённых шлюзов)"
-                                                       FontSize="{StaticResource Type.Caption}" Foreground="{DynamicResource TextMuted}"
-                                                       Margin="{DynamicResource Gap.Left}" VerticalAlignment="Center"
-                                                       IsHitTestVisible="False"/>
-                                        </Grid>
-                                    </StackPanel>
-                                </Grid>
-                                <Grid Margin="{DynamicResource Gap.Top}">
-                                    <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="Auto"/>
-                                        <ColumnDefinition Width="*"/>
-                                        <ColumnDefinition Width="Auto"/>
-                                    </Grid.ColumnDefinitions>
-                                    <Border Grid.Column="0" x:Name="FlTestStatus" CornerRadius="{DynamicResource Radius.Sm}" Padding="{DynamicResource Pad.Pill}"
-                                            Background="{DynamicResource Surface}"
-                                            BorderBrush="{DynamicResource SubtleBorder}" BorderThickness="1">
-                                        <StackPanel Orientation="Horizontal">
-                                            <Border x:Name="FlTestDot" Width="8" Height="8" CornerRadius="{DynamicResource Radius.Sm}"
-                                                    Background="{DynamicResource TextMuted}" Margin="{DynamicResource Gap.InlineSm}"
-                                                    VerticalAlignment="Center"/>
-                                            <TextBlock x:Name="TxtFlTestStatus" Text="не проверено" FontSize="{StaticResource Type.Caption}"
-                                                       Foreground="{DynamicResource TextMuted}" VerticalAlignment="Center"/>
-                                        </StackPanel>
-                                    </Border>
-                                    <TextBlock Grid.Column="1" x:Name="TxtCurrentFreeLlmKey" Text="локальный шлюз"
-                                               FontSize="{StaticResource Type.Caption}" Foreground="{DynamicResource TextMuted}"
-                                               Margin="{DynamicResource Gap.Left}" VerticalAlignment="Center" TextTrimming="CharacterEllipsis"/>
-                                    <TextBlock Grid.Column="2" Text="Шлюз FreeLLMAPI · tashfeenahmed" FontSize="{StaticResource Type.Caption}"
-                                               Foreground="{DynamicResource BadgeVisionFg}" VerticalAlignment="Center"/>
-                                </Grid>
-                            </StackPanel>
-                        </Grid>
-                    </Border>
-
-                    <!-- Divider -->
-                    <Border Height="1" Background="{DynamicResource SubtleBorder}" Margin="{DynamicResource Gap.Section}"/>
-
-                    <!-- ── ВЫБОР МОДЕЛЕЙ И АВТОВЫБОР ────────────────────────── -->
-                    <Grid Margin="{DynamicResource Gap.BlockSm}">
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="*"/>
-                            <ColumnDefinition Width="Auto"/>
-                            <ColumnDefinition Width="Auto"/>
-                        </Grid.ColumnDefinitions>
-                        <StackPanel Grid.Column="0">
-                            <StackPanel Orientation="Horizontal">
-                                <TextBlock Text="Выбор моделей" FontSize="{StaticResource Type.Body}" FontWeight="SemiBold"
-                                           Foreground="{DynamicResource TextPrimary}"/>
-                                <Border CornerRadius="{DynamicResource Radius.Sm}" Padding="{DynamicResource Pad.Pill}" Margin="{DynamicResource Gap.Left}"
-                                        Background="{DynamicResource ChipBg}">
-                                    <TextBlock Text="НЕСКОЛЬКО" FontSize="{StaticResource Type.Monogram}" FontWeight="Bold"
-                                               Foreground="{DynamicResource AccentText}"/>
-                                </Border>
-                            </StackPanel>
-                            <TextBlock x:Name="TxtModelDescription"
-                                       Text="Автовыбор подбирает лучшую модель под задачу (расчёт, эскиз, чат); отмеченные — приоритетный пул"
-                                       FontSize="{StaticResource Type.Caption}" Foreground="{DynamicResource TextMuted}" Margin="{DynamicResource Gap.BlockTopSm}"
-                                       TextTrimming="CharacterEllipsis"/>
-                        </StackPanel>
-                        <!-- Auto-select toggle -->
-                        <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center"
-                                    Margin="{DynamicResource Gap.InlineLg}" ToolTip="Автоматически выбирать лучшую модель под задачу. Модели из списка используются как приоритетный резерв.">
-                            <ToggleButton x:Name="TglAutoSelect" Width="36" Height="20"
-                                          Checked="TglAutoSelect_Changed" Unchecked="TglAutoSelect_Changed"
-                                          Focusable="True" IsTabStop="True" Cursor="Hand"
-                                          ToolTip="Автоматически выбрать лучшую бесплатную модель под текущую задачу"
-                                          AutomationProperties.Name="Автоматический выбор модели">
-                                <ToggleButton.Style>
-                                    <Style TargetType="ToggleButton">
-                                        <Setter Property="Template">
-                                            <Setter.Value>
-                                                <ControlTemplate TargetType="ToggleButton">
-                                                    <Border x:Name="SwitchTrack" Width="36" Height="20"
-                                                            CornerRadius="{DynamicResource Radius.Lg}" Background="{DynamicResource Border}">
-                                                        <Border x:Name="SwitchThumb" Width="16" Height="16"
-                                                                CornerRadius="{DynamicResource Radius.Md}" Background="White"
-                                                                HorizontalAlignment="Left" Margin="{DynamicResource Gap.LeftHair}"/>
-                                                    </Border>
-                                                    <ControlTemplate.Triggers>
-                                                        <Trigger Property="IsChecked" Value="True">
-                                                            <Setter TargetName="SwitchTrack" Property="Background"
-                                                                    Value="{DynamicResource Accent}"/>
-                                                            <Setter TargetName="SwitchThumb" Property="HorizontalAlignment"
-                                                                    Value="Right"/>
-                                                            <Setter TargetName="SwitchThumb" Property="Margin"
-                                                                    Value="0,0,2,0"/>
-                                                        </Trigger>
-                                                    </ControlTemplate.Triggers>
-                                                </ControlTemplate>
-                                            </Setter.Value>
-                                        </Setter>
-                                    </Style>
-                                </ToggleButton.Style>
-                            </ToggleButton>
-                            <TextBlock x:Name="TxtAutoLabel" Text="Автовыбор" FontSize="{StaticResource Type.Caption}"
-                                       Foreground="{DynamicResource TextMuted}" VerticalAlignment="Center"
-                                       Margin="{DynamicResource Gap.LeftSm}"/>
-                        </StackPanel>
-                        <Button Grid.Column="2" x:Name="BtnRefreshModels" Content="↻" Width="30" Height="30"
-                                Click="BtnRefreshModels_Click" ToolTip="Обновить список моделей с серверов"
-                                Style="{StaticResource DialogOutlineButton}" FontSize="{StaticResource Type.Subtitle}" Padding="{DynamicResource Pad.None}"/>
-                    </Grid>
-
-                    <!-- Search Box & Filter Chips Bar -->
-                    <Grid Margin="{DynamicResource Gap.BlockSm}">
-                        <TextBox x:Name="TxtSearch" Height="32" Padding="{DynamicResource Pad.SearchBox}" FontSize="{StaticResource Type.Caption}"
-                                 BorderBrush="{DynamicResource Border}" BorderThickness="1"
-                                 Background="{DynamicResource SectionBg}" Foreground="{DynamicResource TextPrimary}"
-                                 VerticalContentAlignment="Center"
-                                 TextChanged="TxtSearch_TextChanged" KeyDown="TxtSearch_KeyDown"/>
-                        <TextBlock Text="⌕" FontSize="{StaticResource Type.Subtitle}" Foreground="{DynamicResource TextMuted}"
-                                   VerticalAlignment="Center" Margin="{DynamicResource Gap.Left}" IsHitTestVisible="False"/>
-                        <Button x:Name="BtnClearSearch" Visibility="Collapsed" Content="✕" Width="20" Height="20"
-                                Click="BtnClearSearch_Click" Background="Transparent" BorderThickness="0"
-                                Foreground="{DynamicResource TextMuted}" Cursor="Hand" HorizontalAlignment="Right"
-                                VerticalAlignment="Center" Margin="{DynamicResource Gap.InlineSm}" ToolTip="Очистить поиск"/>
-                    </Grid>
-
-                    <!-- Fast Category Filter Bar (Segmented Control) -->
-                    <Border Margin="{DynamicResource Gap.Block}" Padding="{DynamicResource Pad.Hair}"
-                            Background="{DynamicResource SectionBg}"
-                            BorderBrush="{DynamicResource Border}"
-                            BorderThickness="1"
-                            CornerRadius="{DynamicResource Radius.Md}">
-                        <UniformGrid Columns="6">
-                            <Border x:Name="ChipAll" Padding="{DynamicResource Pad.Tiny}" CornerRadius="{DynamicResource Radius.Sm}"
-                                    Background="{DynamicResource Accent}" BorderThickness="0"
-                                    Cursor="Hand" PreviewMouseLeftButtonDown="ChipFilter_Click" MouseLeftButtonUp="ChipFilter_Click" Tag="All">
-                                <TextBlock x:Name="TxtChipAll" Text="Все (0)" FontSize="{StaticResource Type.Caption}"
-                                           FontWeight="SemiBold" Foreground="{DynamicResource OnAccent}"
-                                           HorizontalAlignment="Center" VerticalAlignment="Center" TextTrimming="CharacterEllipsis"/>
-                            </Border>
-                            <Border x:Name="ChipFreeLlm" Padding="{DynamicResource Pad.Tiny}" CornerRadius="{DynamicResource Radius.Sm}"
-                                    Background="Transparent" BorderThickness="0"
-                                    Cursor="Hand" PreviewMouseLeftButtonDown="ChipFilter_Click" MouseLeftButtonUp="ChipFilter_Click" Tag="FreeLlm">
-                                <TextBlock x:Name="TxtChipFreeLlm" Text="FreeLLM (0)" FontSize="{StaticResource Type.Caption}"
-                                           Foreground="{DynamicResource TextPrimary}"
-                                           HorizontalAlignment="Center" VerticalAlignment="Center" TextTrimming="CharacterEllipsis"/>
-                            </Border>
-                            <Border x:Name="ChipOpenRouter" Padding="{DynamicResource Pad.Tiny}" CornerRadius="{DynamicResource Radius.Sm}"
-                                    Background="Transparent" BorderThickness="0"
-                                    Cursor="Hand" PreviewMouseLeftButtonDown="ChipFilter_Click" MouseLeftButtonUp="ChipFilter_Click" Tag="OpenRouter">
-                                <TextBlock x:Name="TxtChipOpenRouter" Text="OpenRouter (0)" FontSize="{StaticResource Type.Caption}"
-                                           Foreground="{DynamicResource TextPrimary}"
-                                           HorizontalAlignment="Center" VerticalAlignment="Center" TextTrimming="CharacterEllipsis"/>
-                            </Border>
-                            <Border x:Name="ChipNvidia" Padding="{DynamicResource Pad.Tiny}" CornerRadius="{DynamicResource Radius.Sm}"
-                                    Background="Transparent" BorderThickness="0"
-                                    Cursor="Hand" PreviewMouseLeftButtonDown="ChipFilter_Click" MouseLeftButtonUp="ChipFilter_Click" Tag="Nvidia">
-                                <TextBlock x:Name="TxtChipNvidia" Text="NVIDIA (0)" FontSize="{StaticResource Type.Caption}"
-                                           Foreground="{DynamicResource TextPrimary}"
-                                           HorizontalAlignment="Center" VerticalAlignment="Center" TextTrimming="CharacterEllipsis"/>
-                            </Border>
-                            <Border x:Name="ChipVision" Padding="{DynamicResource Pad.Tiny}" CornerRadius="{DynamicResource Radius.Sm}"
-                                    Background="Transparent" BorderThickness="0"
-                                    Cursor="Hand" PreviewMouseLeftButtonDown="ChipFilter_Click" MouseLeftButtonUp="ChipFilter_Click" Tag="Vision">
-                                <TextBlock x:Name="TxtChipVision" Text="📷 Vision (0)" FontSize="{StaticResource Type.Caption}"
-                                           Foreground="{DynamicResource TextPrimary}"
-                                           HorizontalAlignment="Center" VerticalAlignment="Center" TextTrimming="CharacterEllipsis"/>
-                            </Border>
-                            <Border x:Name="ChipSelected" Padding="{DynamicResource Pad.Tiny}" CornerRadius="{DynamicResource Radius.Sm}"
-                                    Background="Transparent" BorderThickness="0"
-                                    Cursor="Hand" PreviewMouseLeftButtonDown="ChipFilter_Click" MouseLeftButtonUp="ChipFilter_Click" Tag="Selected">
-                                <TextBlock x:Name="TxtChipSelected" Text="✓ Выбрано (0)" FontSize="{StaticResource Type.Caption}"
-                                           Foreground="{DynamicResource TextPrimary}"
-                                           HorizontalAlignment="Center" VerticalAlignment="Center" TextTrimming="CharacterEllipsis"/>
-                            </Border>
-                        </UniformGrid>
-                    </Border>
-
-                    <!-- Model list status & batch selection bar (ABOVE models list so it is always visible) -->
-                    <Grid Margin="{DynamicResource Gap.BlockSm}">
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="*"/>
-                            <ColumnDefinition Width="Auto"/>
-                        </Grid.ColumnDefinitions>
-                        <TextBlock Grid.Column="0" x:Name="TxtModelStatus" FontSize="{StaticResource Type.Caption}"
-                                   Foreground="{DynamicResource TextMuted}" VerticalAlignment="Center"
-                                   TextTrimming="CharacterEllipsis"/>
-                        <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
-                            <Button x:Name="BtnPingModels" Content="⚡ Пинг" Height="26"
-                                    Click="BtnPingModels_Click" Style="{StaticResource DialogOutlineButton}" FontSize="{StaticResource Type.Caption}"
-                                    Padding="{DynamicResource Pad.Tiny}" Margin="{DynamicResource Gap.InlineSm}" ToolTip="Проверить отклик и доступность выбранных моделей"/>
-                            <Button x:Name="BtnSelectAll" Content="Выбрать всё" Height="26"
-                                    Click="BtnSelectAll_Click" Style="{StaticResource DialogOutlineButton}" FontSize="{StaticResource Type.Caption}"
-                                    Padding="{DynamicResource Pad.Tiny}" Margin="{DynamicResource Gap.InlineSm}" ToolTip="Выбрать все модели в текущей вкладке/списке"/>
-                            <Button x:Name="BtnClearAll" Content="Снять всё" Height="26"
-                                    Click="BtnClearAll_Click" Style="{StaticResource DialogOutlineButton}" FontSize="{StaticResource Type.Caption}"
-                                    Padding="{DynamicResource Pad.Tiny}" ToolTip="Снять выбор с моделей"/>
-                        </StackPanel>
-                    </Grid>
-
-                    <!-- Models ListBox with fixed/comfortable bounds -->
-                    <Border CornerRadius="{DynamicResource Radius.Md}" BorderBrush="{DynamicResource Border}"
-                            BorderThickness="1" Background="{DynamicResource Surface}">
-                        <ListBox x:Name="LstModels" Height="225" MaxHeight="240" Padding="{DynamicResource Gap.Separator}" BorderThickness="0"
-                                 Background="Transparent" Foreground="{DynamicResource TextPrimary}"
-                                 Focusable="True" SelectionMode="Single"
-                                 KeyboardNavigation.TabNavigation="Continue"
-                                 VirtualizingPanel.ScrollUnit="Pixel">
-                            <ListBox.ItemContainerStyle>
-                                <Style TargetType="ListBoxItem">
-                                    <Setter Property="Padding" Value="0"/>
-                                    <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
-                                    <Setter Property="Background" Value="Transparent"/>
-                                    <Setter Property="BorderThickness" Value="3,0,0,0"/>
-                                    <Setter Property="BorderBrush" Value="Transparent"/>
-                                    <Style.Triggers>
-                                        <Trigger Property="IsMouseOver" Value="True">
-                                            <Setter Property="Background" Value="{DynamicResource RowHover}"/>
-                                        </Trigger>
-                                        <DataTrigger Binding="{Binding IsSelected}" Value="True">
-                                            <Setter Property="Background" Value="{DynamicResource RowAltSelected}"/>
-                                            <Setter Property="BorderBrush" Value="{DynamicResource Accent}"/>
-                                        </DataTrigger>
-                                    </Style.Triggers>
-                                </Style>
-                            </ListBox.ItemContainerStyle>
-                            <ListBox.ItemTemplate>
-                                <DataTemplate>
-                                    <Border Background="Transparent" Cursor="Hand"
-                                            Height="36" Padding="{DynamicResource Pad.InputH}"
-                                            MouseLeftButtonDown="Row_MouseLeftButtonDown" Tag="{Binding}">
-                                        <Grid>
-                                            <Grid.ColumnDefinitions>
-                                                <ColumnDefinition Width="Auto"/>
-                                                <ColumnDefinition Width="*"/>
-                                                <ColumnDefinition Width="Auto"/>
-                                            </Grid.ColumnDefinitions>
-                                            <CheckBox Grid.Column="0" Margin="{DynamicResource Gap.InlineLg}"
-                                                      IsChecked="{Binding IsSelected, Mode=TwoWay}"
-                                                      Click="RowCheck_Click" Style="{StaticResource DialogCheckBox}"/>
-                                            <StackPanel Grid.Column="1" VerticalAlignment="Center">
-                                                <StackPanel Orientation="Horizontal">
-                                                    <TextBlock Text="{Binding DisplayName}" FontSize="{StaticResource Type.Body}"
-                                                               Foreground="{DynamicResource TextPrimary}"
-                                                               TextTrimming="CharacterEllipsis"/>
-                                                    <!-- Router badge -->
-                                                    <Border Margin="{DynamicResource Gap.Left}" Padding="{DynamicResource Pad.Hair}" CornerRadius="{DynamicResource Radius.Sm}"
-                                                            Background="{DynamicResource ChipBg}" VerticalAlignment="Center">
-                                                        <Border.Style>
-                                                            <Style TargetType="Border">
-                                                                <Setter Property="Visibility" Value="Collapsed"/>
-                                                                <Style.Triggers>
-                                                                    <DataTrigger Binding="{Binding IsRouter}" Value="True">
-                                                                        <Setter Property="Visibility" Value="Visible"/>
-                                                                    </DataTrigger>
-                                                                </Style.Triggers>
-                                                            </Style>
-                                                        </Border.Style>
-                                                        <TextBlock Text="{Binding RouterBadgeText}" FontSize="{StaticResource Type.Monogram}"
-                                                                   FontWeight="Bold" Foreground="{DynamicResource AccentText}"/>
-                                                    </Border>
-                                                </StackPanel>
-                                            </StackPanel>
-                                            <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center" Margin="{DynamicResource Gap.Left}">
-                                                <!-- Latency/Ping badge -->
-                                                <Border CornerRadius="{DynamicResource Radius.Sm}" Padding="{DynamicResource Pad.Tiny}" Margin="{DynamicResource Gap.InlineSm}"
-                                                        Background="{DynamicResource BubbleOverlayDim}"
-                                                        Visibility="{Binding HasLatency, Converter={StaticResource BoolToVis}}"
-                                                        ToolTip="Задержка отклика модели">
-                                                    <TextBlock Text="{Binding LatencyText}" FontSize="{StaticResource Type.Caption}"
-                                                               FontWeight="SemiBold" Foreground="{DynamicResource TextMuted}"/>
-                                                </Border>
-                                                <!-- Vision badge: visible only for models accepting images -->
-                                                <Border CornerRadius="{DynamicResource Radius.Sm}" Padding="{DynamicResource Pad.Tiny}"
-                                                        Margin="{DynamicResource Gap.InlineSm}" ToolTip="{Binding VisionTooltip}">
-                                                    <Border.Style>
-                                                        <Style TargetType="Border">
-                                                            <Setter Property="Background" Value="{DynamicResource BadgeVisionBg}"/>
-                                                            <Setter Property="Visibility" Value="Collapsed"/>
-                                                            <Style.Triggers>
-                                                                <DataTrigger Binding="{Binding IsVisionCapable}" Value="True">
-                                                                    <Setter Property="Visibility" Value="Visible"/>
-                                                                </DataTrigger>
-                                                            </Style.Triggers>
-                                                        </Style>
-                                                    </Border.Style>
-                                                    <TextBlock Text="📷 Vision" FontSize="{StaticResource Type.Caption}"
-                                                               FontWeight="SemiBold" Foreground="{DynamicResource BadgeVisionFg}"/>
-                                                </Border>
-                                                <!-- Provider badge -->
-                                                <Border CornerRadius="{DynamicResource Radius.Sm}" Padding="{DynamicResource Pad.Tiny}" MinWidth="28"
-                                                        ToolTip="{Binding ProviderTooltip}">
-                                                    <Border.Style>
-                                                        <Style TargetType="Border">
-                                                            <Setter Property="Background" Value="{DynamicResource ChipBg}"/>
-                                                            <Style.Triggers>
-                                                                <DataTrigger Binding="{Binding Model.Provider}" Value="Nvidia">
-                                                                    <Setter Property="Background" Value="{DynamicResource BadgeSuccessBg}"/>
-                                                                </DataTrigger>
-                                                                <DataTrigger Binding="{Binding Model.Provider}" Value="FreeLlmApi">
-                                                                    <Setter Property="Background" Value="{DynamicResource BadgeVisionBg}"/>
-                                                                </DataTrigger>
-                                                            </Style.Triggers>
-                                                        </Style>
-                                                    </Border.Style>
-                                                    <TextBlock FontSize="{StaticResource Type.Monogram}" FontWeight="Bold"
-                                                               HorizontalAlignment="Center">
-                                                        <TextBlock.Style>
-                                                            <Style TargetType="TextBlock">
-                                                                <Setter Property="Text" Value="OR"/>
-                                                                <Setter Property="Foreground" Value="{DynamicResource Accent}"/>
-                                                                <Style.Triggers>
-                                                                    <DataTrigger Binding="{Binding Model.Provider}" Value="Nvidia">
-                                                                        <Setter Property="Text" Value="NV"/>
-                                                                        <Setter Property="Foreground" Value="{DynamicResource Success}"/>
-                                                                    </DataTrigger>
-                                                                    <DataTrigger Binding="{Binding Model.Provider}" Value="FreeLlmApi">
-                                                                        <Setter Property="Text" Value="FL"/>
-                                                                        <Setter Property="Foreground" Value="{DynamicResource BadgeVisionFg}"/>
-                                                                    </DataTrigger>
-                                                                </Style.Triggers>
-                                                            </Style>
-                                                        </TextBlock.Style>
-                                                    </TextBlock>
-                                                </Border>
-                                            </StackPanel>
-                                        </Grid>
-                                    </Border>
-                                </DataTemplate>
-                            </ListBox.ItemTemplate>
-                        </ListBox>
-                    </Border>
-
-                </StackPanel>
-            </ScrollViewer>
-
-            <!-- Bottom actions (pinned to bottom) -->
-            <Border Grid.Row="2" Margin="-1,0,-1,0" Padding="{DynamicResource Pad.Header}"
-                    BorderBrush="{DynamicResource SubtleBorder}" BorderThickness="0,1,0,0"
-                    VerticalAlignment="Stretch">
-                <Grid>
-                    <TextBlock Text="● Настройки сохраняются локально в ai-settings.json" FontSize="{StaticResource Type.Caption}"
-                               Foreground="{DynamicResource TextMuted}" VerticalAlignment="Center"/>
-                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center">
-                        <Button Content="Отмена" Click="BtnCancel_Click" Width="88" Height="35"
-                                Style="{StaticResource DialogOutlineButton}" Margin="{DynamicResource Gap.Inline}" FontSize="{StaticResource Type.Body}"/>
-                        <Button Content="Сохранить" Click="BtnSave_Click" Width="116" Height="35"
-                                Style="{StaticResource DialogPrimaryButton}" FontSize="{StaticResource Type.Body}"/>
-                    </StackPanel>
-                </Grid>
-            </Border>
-        </Grid>
-    </Border>
-</Window>
+<Window x:Class="MosquitoNetCalculator.Controls.AiApiKeyDialog"
+        Style="{DynamicResource Window.Shared}"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Настройки AI"
+        Width="660" Height="760"
+        WindowStartupLocation="CenterOwner"
+        WindowStyle="None" ResizeMode="NoResize"
+        Background="{DynamicResource AppBg}"
+        Foreground="{DynamicResource TextPrimary}"
+        ShowInTaskbar="False"
+        Topmost="True">
+
+    <Window.Resources>
+        <!-- DialogCheckBox inherits unified Fluent CheckBox -->
+        <Style x:Key="DialogCheckBox" TargetType="CheckBox" BasedOn="{StaticResource {x:Type CheckBox}}">
+            <Setter Property="Focusable" Value="False"/>
+            <Setter Property="VerticalAlignment" Value="Center"/>
+        </Style>
+    </Window.Resources>
+
+    <Border BorderBrush="{DynamicResource Border}" BorderThickness="1" CornerRadius="{DynamicResource Radius.Lg}"
+            Background="{DynamicResource Surface}">
+        <Grid Margin="{DynamicResource Pad.InputH}">
+            <!-- Three-zone layout that can never clip the footer -->
+            <Grid.RowDefinitions>
+                <RowDefinition Height="54"/>
+                <RowDefinition Height="*"/>
+                <RowDefinition Height="Auto"/>
+            </Grid.RowDefinitions>
+
+            <!-- Header -->
+            <Grid Grid.Row="0" Background="Transparent" MouseLeftButtonDown="Header_MouseLeftButtonDown">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="34"/>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="32"/>
+                </Grid.ColumnDefinitions>
+                <Border Grid.Column="0" Width="28" Height="28" CornerRadius="{DynamicResource Radius.Md}"
+                        Background="{DynamicResource Accent}" VerticalAlignment="Center">
+                    <TextBlock Text="AI" FontSize="{StaticResource Type.Monogram}" FontWeight="Bold"
+                               Foreground="{DynamicResource OnAccent}"
+                               HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                </Border>
+                <StackPanel Grid.Column="1" VerticalAlignment="Center" Margin="{DynamicResource Gap.Left}">
+                    <TextBlock Text="Настройки AI Ассистента" FontSize="{StaticResource Type.Subtitle}" FontWeight="SemiBold"
+                               Foreground="{DynamicResource TextPrimary}"/>
+                    <TextBlock Text="Провайдеры · API-ключи · Выбор моделей и автороутинг" FontSize="{StaticResource Type.Caption}"
+                               Foreground="{DynamicResource TextMuted}" Margin="{DynamicResource Gap.BlockTopSm}"
+                               TextTrimming="CharacterEllipsis"/>
+                </StackPanel>
+                <Button Grid.Column="2" x:Name="BtnClose"
+                        Width="28" Height="28" Click="BtnClose_Click"
+                        Style="{DynamicResource DialogCloseButton}"
+                        VerticalAlignment="Center">
+                    <TextBlock Text="&#xE8BB;" FontFamily="{DynamicResource Font.Icon}" FontSize="{StaticResource Type.Caption}"/>
+                </Button>
+            </Grid>
+
+            <!-- Main scrollable form content -->
+            <ScrollViewer Grid.Row="1"
+                          VerticalScrollBarVisibility="Auto"
+                          HorizontalScrollBarVisibility="Disabled"
+                          Focusable="False">
+                <StackPanel Margin="{DynamicResource Gap.BlockTop}">
+
+                    <!-- Слайдер стиля ответов и температуры -->
+                    <Border Margin="{DynamicResource Gap.BlockLg}" Padding="{DynamicResource Pad.Card}" Background="{DynamicResource SectionBg}"
+                            BorderBrush="{DynamicResource Border}" BorderThickness="1" CornerRadius="{DynamicResource Radius.Md}">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+                            <StackPanel Grid.Column="0" Margin="{DynamicResource Gap.InlineLg}" VerticalAlignment="Center">
+                                <TextBlock Text="Стиль ответов AI:" FontSize="{StaticResource Type.Caption}" FontWeight="SemiBold" Foreground="{DynamicResource TextPrimary}"/>
+                                <TextBlock x:Name="TxtStyleDescription" Text="Строгий инженерный (0.2)" FontSize="{StaticResource Type.Caption}" Foreground="{DynamicResource TextMuted}"/>
+                            </StackPanel>
+                            <Slider Grid.Column="1" x:Name="SldrTemperature" Minimum="0.0" Maximum="0.6" SmallChange="0.1" LargeChange="0.2"
+                                    TickFrequency="0.1" IsSnapToTickEnabled="True" VerticalAlignment="Center"
+                                    ValueChanged="SldrTemperature_ValueChanged"/>
+                            <TextBlock Grid.Column="2" x:Name="TxtTemperatureValue" Text="0.2" FontSize="{StaticResource Type.Caption}"
+                                       FontWeight="Bold" Foreground="{DynamicResource AccentText}" Margin="{DynamicResource Gap.LeftLg}" VerticalAlignment="Center"/>
+                        </Grid>
+                    </Border>
+
+                    <!-- ── ПРОВАЙДЕРЫ (СЕГМЕНТИРОВАННЫЕ ВКЛАДКИ) ──────────────── -->
+                    <Grid Margin="{DynamicResource Gap.BlockSm}">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+                        <TextBlock Text="ПРОВАЙДЕРЫ И КЛЮЧИ" FontSize="{StaticResource Type.Caption}" FontWeight="Bold"
+                                   Foreground="{DynamicResource TextMuted}" VerticalAlignment="Center"/>
+                        <Button Grid.Column="1" x:Name="BtnTestKeys"
+                                Content="Проверить подключение" Height="26" Click="BtnTestKeys_Click"
+                                Style="{StaticResource DialogOutlineButton}" FontSize="{StaticResource Type.Caption}"
+                                Padding="{DynamicResource Pad.ButtonSm}"
+                                ToolTip="Параллельно проверить все настроенные сервисы"/>
+                    </Grid>
+
+                    <!-- Segmented tab selector buttons -->
+                    <UniformGrid Columns="3" Margin="{DynamicResource Gap.Block}">
+                        <!-- OpenRouter Tab -->
+                        <Border x:Name="TabBtnOpenRouter" Margin="{DynamicResource Gap.InlineSm}" Padding="{DynamicResource Pad.Row}" CornerRadius="{DynamicResource Radius.Md}"
+                                Background="{DynamicResource SectionBg}" BorderBrush="{DynamicResource Border}" BorderThickness="1"
+                                Cursor="Hand" PreviewMouseLeftButtonDown="TabBtnOpenRouter_Click" MouseLeftButtonUp="TabBtnOpenRouter_Click">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto"/>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+                                <Border Grid.Column="0" Width="20" Height="20" CornerRadius="{DynamicResource Radius.Sm}"
+                                        Background="{DynamicResource ChipBg}" Margin="{DynamicResource Gap.Inline}">
+                                    <TextBlock Text="OR" FontSize="{StaticResource Type.Monogram}" FontWeight="Bold"
+                                               Foreground="{DynamicResource AccentText}"
+                                               HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                </Border>
+                                <TextBlock Grid.Column="1" Text="OpenRouter" FontSize="{StaticResource Type.Body}" FontWeight="SemiBold"
+                                           Foreground="{DynamicResource TextPrimary}" VerticalAlignment="Center"/>
+                                <Border Grid.Column="2" x:Name="TabDotOr" Width="8" Height="8" CornerRadius="{DynamicResource Radius.Sm}"
+                                        Background="{DynamicResource TextMuted}" VerticalAlignment="Center"
+                                        ToolTip="Статус OpenRouter"/>
+                            </Grid>
+                        </Border>
+
+                        <!-- NVIDIA Tab -->
+                        <Border x:Name="TabBtnNvidia" Margin="{DynamicResource Gap.HairH}" Padding="{DynamicResource Pad.Row}" CornerRadius="{DynamicResource Radius.Md}"
+                                Background="{DynamicResource SectionBg}" BorderBrush="{DynamicResource Border}" BorderThickness="1"
+                                Cursor="Hand" PreviewMouseLeftButtonDown="TabBtnNvidia_Click" MouseLeftButtonUp="TabBtnNvidia_Click">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto"/>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+                                <Border Grid.Column="0" Width="20" Height="20" CornerRadius="{DynamicResource Radius.Sm}"
+                                        Background="{DynamicResource BadgeSuccessBg}" Margin="{DynamicResource Gap.Inline}">
+                                    <TextBlock Text="NV" FontSize="{StaticResource Type.Monogram}" FontWeight="Bold"
+                                               Foreground="{DynamicResource Success}"
+                                               HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                </Border>
+                                <TextBlock Grid.Column="1" Text="NVIDIA" FontSize="{StaticResource Type.Body}" FontWeight="SemiBold"
+                                           Foreground="{DynamicResource TextPrimary}" VerticalAlignment="Center"/>
+                                <Border Grid.Column="2" x:Name="TabDotNv" Width="8" Height="8" CornerRadius="{DynamicResource Radius.Sm}"
+                                        Background="{DynamicResource TextMuted}" VerticalAlignment="Center"
+                                        ToolTip="Статус NVIDIA"/>
+                            </Grid>
+                        </Border>
+
+                        <!-- FreeLLMAPI Tab -->
+                        <Border x:Name="TabBtnFreeLlm" Margin="{DynamicResource Gap.LeftSm}" Padding="{DynamicResource Pad.Row}" CornerRadius="{DynamicResource Radius.Md}"
+                                Background="{DynamicResource SectionBg}" BorderBrush="{DynamicResource Border}" BorderThickness="1"
+                                Cursor="Hand" PreviewMouseLeftButtonDown="TabBtnFreeLlm_Click" MouseLeftButtonUp="TabBtnFreeLlm_Click">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto"/>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+                                <Border Grid.Column="0" Width="20" Height="20" CornerRadius="{DynamicResource Radius.Sm}"
+                                        Background="{DynamicResource BadgeVisionBg}" Margin="{DynamicResource Gap.Inline}">
+                                    <TextBlock Text="FL" FontSize="{StaticResource Type.Monogram}" FontWeight="Bold"
+                                               Foreground="{DynamicResource BadgeVisionFg}"
+                                               HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                </Border>
+                                <TextBlock Grid.Column="1" Text="FreeLLMAPI" FontSize="{StaticResource Type.Body}" FontWeight="SemiBold"
+                                           Foreground="{DynamicResource TextPrimary}" VerticalAlignment="Center"/>
+                                <Border Grid.Column="2" x:Name="TabDotFl" Width="8" Height="8" CornerRadius="{DynamicResource Radius.Sm}"
+                                        Background="{DynamicResource Success}" VerticalAlignment="Center"
+                                        ToolTip="Статус FreeLLMAPI"/>
+                            </Grid>
+                        </Border>
+                    </UniformGrid>
+
+                    <!-- Active Provider Configuration Card -->
+                    <Border CornerRadius="{DynamicResource Radius.Md}" Padding="{DynamicResource Pad.Card}"
+                            Background="{DynamicResource SectionBg}"
+                            BorderBrush="{DynamicResource Border}" BorderThickness="1">
+                        <Grid>
+                            <!-- Panel: OpenRouter -->
+                            <StackPanel x:Name="PanelOpenRouter" Visibility="Collapsed">
+                                <TextBlock Text="API-ключ OpenRouter:" FontSize="{StaticResource Type.Caption}" Foreground="{DynamicResource TextMuted}" Margin="{DynamicResource Gap.BlockSm}"/>
+                                <Grid>
+                                    <PasswordBox x:Name="TxtApiKey" Height="32" Padding="{DynamicResource Pad.Control}" FontSize="{StaticResource Type.Caption}"
+                                                 BorderBrush="{DynamicResource Border}" BorderThickness="1"
+                                                 Background="{DynamicResource Surface}" Foreground="{DynamicResource TextPrimary}"
+                                                 VerticalContentAlignment="Center"
+                                                 PasswordChanged="TxtApiKey_PasswordChanged"
+                                                 PreviewMouseLeftButtonDown="PasswordBox_PreviewMouseLeftButtonDown"
+                                                 ToolTip="Вставьте ключ OpenRouter"/>
+                                    <TextBlock x:Name="ApiKeyPlaceholder"
+                                               Text="Вставьте ключ OpenRouter (необязательно)"
+                                               FontSize="{StaticResource Type.Caption}" Foreground="{DynamicResource TextMuted}"
+                                               Margin="{DynamicResource Gap.Left}" VerticalAlignment="Center"
+                                               IsHitTestVisible="False"/>
+                                </Grid>
+                                <Grid Margin="{DynamicResource Gap.Top}">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="Auto"/>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                    </Grid.ColumnDefinitions>
+                                    <Border Grid.Column="0" x:Name="OrTestStatus" CornerRadius="{DynamicResource Radius.Sm}" Padding="{DynamicResource Pad.Pill}"
+                                            Background="{DynamicResource Surface}"
+                                            BorderBrush="{DynamicResource SubtleBorder}" BorderThickness="1">
+                                        <StackPanel Orientation="Horizontal">
+                                            <Border x:Name="OrTestDot" Width="8" Height="8" CornerRadius="{DynamicResource Radius.Sm}"
+                                                    Background="{DynamicResource TextMuted}" Margin="{DynamicResource Gap.InlineSm}"
+                                                    VerticalAlignment="Center"/>
+                                            <TextBlock x:Name="TxtOrTestStatus" Text="не проверено" FontSize="{StaticResource Type.Caption}"
+                                                       Foreground="{DynamicResource TextMuted}" VerticalAlignment="Center"/>
+                                        </StackPanel>
+                                    </Border>
+                                    <TextBlock Grid.Column="1" x:Name="TxtCurrentKey" Text="ключ не задан"
+                                               FontSize="{StaticResource Type.Caption}" Foreground="{DynamicResource TextMuted}"
+                                               Margin="{DynamicResource Gap.Left}" VerticalAlignment="Center" TextTrimming="CharacterEllipsis"/>
+                                    <TextBlock Grid.Column="2" Text="Бесплатные ключи → openrouter.ai/keys" FontSize="{StaticResource Type.Caption}"
+                                               Foreground="{DynamicResource AccentText}" VerticalAlignment="Center" Cursor="Hand"
+                                               MouseLeftButtonDown="Link_MouseLeftButtonDown" TextDecorations="Underline"/>
+                                </Grid>
+                            </StackPanel>
+
+                            <!-- Panel: NVIDIA -->
+                            <StackPanel x:Name="PanelNvidia" Visibility="Collapsed">
+                                <TextBlock Text="API-ключ NVIDIA NIM:" FontSize="{StaticResource Type.Caption}" Foreground="{DynamicResource TextMuted}" Margin="{DynamicResource Gap.BlockSm}"/>
+                                <Grid>
+                                    <PasswordBox x:Name="TxtNvidiaKey" Height="32" Padding="{DynamicResource Pad.Control}" FontSize="{StaticResource Type.Caption}"
+                                                 BorderBrush="{DynamicResource Border}" BorderThickness="1"
+                                                 Background="{DynamicResource Surface}" Foreground="{DynamicResource TextPrimary}"
+                                                 VerticalContentAlignment="Center"
+                                                 PasswordChanged="TxtNvidiaKey_PasswordChanged"
+                                                 PreviewMouseLeftButtonDown="PasswordBox_PreviewMouseLeftButtonDown"
+                                                 ToolTip="Вставьте ключ NVIDIA"/>
+                                    <TextBlock x:Name="NvidiaKeyPlaceholder"
+                                               Text="Вставьте ключ NVIDIA (необязательно)"
+                                               FontSize="{StaticResource Type.Caption}" Foreground="{DynamicResource TextMuted}"
+                                               Margin="{DynamicResource Gap.Left}" VerticalAlignment="Center"
+                                               IsHitTestVisible="False"/>
+                                </Grid>
+                                <Grid Margin="{DynamicResource Gap.Top}">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="Auto"/>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                    </Grid.ColumnDefinitions>
+                                    <Border Grid.Column="0" x:Name="NvTestStatus" CornerRadius="{DynamicResource Radius.Sm}" Padding="{DynamicResource Pad.Pill}"
+                                            Background="{DynamicResource Surface}"
+                                            BorderBrush="{DynamicResource SubtleBorder}" BorderThickness="1">
+                                        <StackPanel Orientation="Horizontal">
+                                            <Border x:Name="NvTestDot" Width="8" Height="8" CornerRadius="{DynamicResource Radius.Sm}"
+                                                    Background="{DynamicResource TextMuted}" Margin="{DynamicResource Gap.InlineSm}"
+                                                    VerticalAlignment="Center"/>
+                                            <TextBlock x:Name="TxtNvTestStatus" Text="не проверено" FontSize="{StaticResource Type.Caption}"
+                                                       Foreground="{DynamicResource TextMuted}" VerticalAlignment="Center"/>
+                                        </StackPanel>
+                                    </Border>
+                                    <TextBlock Grid.Column="1" x:Name="TxtCurrentNvidiaKey" Text="ключ не задан"
+                                               FontSize="{StaticResource Type.Caption}" Foreground="{DynamicResource TextMuted}"
+                                               Margin="{DynamicResource Gap.Left}" VerticalAlignment="Center" TextTrimming="CharacterEllipsis"/>
+                                    <TextBlock Grid.Column="2" Text="Ключи NVIDIA NIM → build.nvidia.com" FontSize="{StaticResource Type.Caption}"
+                                               Foreground="{DynamicResource Success}" VerticalAlignment="Center" Cursor="Hand"
+                                               MouseLeftButtonDown="LinkNvidia_MouseLeftButtonDown" TextDecorations="Underline"/>
+                                </Grid>
+                            </StackPanel>
+
+                            <!-- Panel: FreeLLMAPI -->
+                            <StackPanel x:Name="PanelFreeLlm" Visibility="Visible">
+                                <Grid Margin="{DynamicResource Gap.BlockSm}">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="1.1*"/>
+                                        <ColumnDefinition Width="0.9*"/>
+                                    </Grid.ColumnDefinitions>
+                                    <!-- URL endpoint -->
+                                    <StackPanel Grid.Column="0" Margin="{DynamicResource Gap.InlineSm}">
+                                        <TextBlock Text="URL эндпоинта FreeLLMAPI:" FontSize="{StaticResource Type.Caption}" Foreground="{DynamicResource TextMuted}" Margin="{DynamicResource Gap.BlockSm}"/>
+                                        <TextBox x:Name="TxtFreeLlmEndpoint" Height="32" Padding="{DynamicResource Pad.Control}" FontSize="{StaticResource Type.Caption}"
+                                                 BorderBrush="{DynamicResource Border}" BorderThickness="1"
+                                                 Background="{DynamicResource Surface}" Foreground="{DynamicResource TextPrimary}"
+                                                 VerticalContentAlignment="Center"
+                                                 TextChanged="TxtFreeLlmEndpoint_TextChanged"
+                                                 ToolTip="URL шлюза FreeLLMAPI. Сервер: http://localhost:3001/v1 · Desktop: http://127.0.0.1:31415/v1. Суффикс /v1 обязателен."/>
+                                        <TextBlock x:Name="TxtFreeLlmEffective"
+                                                   Text="" FontSize="{StaticResource Type.Monogram}" Foreground="{DynamicResource TextMuted}"
+                                                   Margin="{DynamicResource Gap.BlockTopSm}" TextTrimming="CharacterEllipsis"
+                                                   ToolTip="Фактический адрес запросов — он собирается из указанной выше базы"/>
+                                    </StackPanel>
+                                    <!-- API key (optional) -->
+                                    <StackPanel Grid.Column="1" Margin="{DynamicResource Gap.LeftSm}">
+                                        <TextBlock Text="API-ключ (необязательно):" FontSize="{StaticResource Type.Caption}" Foreground="{DynamicResource TextMuted}" Margin="{DynamicResource Gap.BlockSm}"/>
+                                        <Grid>
+                                            <PasswordBox x:Name="TxtFreeLlmKey" Height="32" Padding="{DynamicResource Pad.Control}" FontSize="{StaticResource Type.Caption}"
+                                                         BorderBrush="{DynamicResource Border}" BorderThickness="1"
+                                                         Background="{DynamicResource Surface}" Foreground="{DynamicResource TextPrimary}"
+                                                         VerticalContentAlignment="Center"
+                                                         PasswordChanged="TxtFreeLlmKey_PasswordChanged"
+                                                         PreviewMouseLeftButtonDown="PasswordBox_PreviewMouseLeftButtonDown"
+                                                         ToolTip="Ключ FreeLLMAPI (не требуется для локального шлюза)"/>
+                                            <TextBlock x:Name="FreeLlmKeyPlaceholder"
+                                                       Text="Токен (для защищённых шлюзов)"
+                                                       FontSize="{StaticResource Type.Caption}" Foreground="{DynamicResource TextMuted}"
+                                                       Margin="{DynamicResource Gap.Left}" VerticalAlignment="Center"
+                                                       IsHitTestVisible="False"/>
+                                        </Grid>
+                                    </StackPanel>
+                                </Grid>
+                                <Grid Margin="{DynamicResource Gap.Top}">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="Auto"/>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                    </Grid.ColumnDefinitions>
+                                    <Border Grid.Column="0" x:Name="FlTestStatus" CornerRadius="{DynamicResource Radius.Sm}" Padding="{DynamicResource Pad.Pill}"
+                                            Background="{DynamicResource Surface}"
+                                            BorderBrush="{DynamicResource SubtleBorder}" BorderThickness="1">
+                                        <StackPanel Orientation="Horizontal">
+                                            <Border x:Name="FlTestDot" Width="8" Height="8" CornerRadius="{DynamicResource Radius.Sm}"
+                                                    Background="{DynamicResource TextMuted}" Margin="{DynamicResource Gap.InlineSm}"
+                                                    VerticalAlignment="Center"/>
+                                            <TextBlock x:Name="TxtFlTestStatus" Text="не проверено" FontSize="{StaticResource Type.Caption}"
+                                                       Foreground="{DynamicResource TextMuted}" VerticalAlignment="Center"/>
+                                        </StackPanel>
+                                    </Border>
+                                    <TextBlock Grid.Column="1" x:Name="TxtCurrentFreeLlmKey" Text="локальный шлюз"
+                                               FontSize="{StaticResource Type.Caption}" Foreground="{DynamicResource TextMuted}"
+                                               Margin="{DynamicResource Gap.Left}" VerticalAlignment="Center" TextTrimming="CharacterEllipsis"/>
+                                    <TextBlock Grid.Column="2" Text="Шлюз FreeLLMAPI · tashfeenahmed" FontSize="{StaticResource Type.Caption}"
+                                               Foreground="{DynamicResource BadgeVisionFg}" VerticalAlignment="Center"/>
+                                </Grid>
+                            </StackPanel>
+                        </Grid>
+                    </Border>
+
+                    <!-- Divider -->
+                    <Border Height="1" Background="{DynamicResource SubtleBorder}" Margin="{DynamicResource Gap.Section}"/>
+
+                    <!-- ── ВЫБОР МОДЕЛЕЙ И АВТОВЫБОР ────────────────────────── -->
+                    <Grid Margin="{DynamicResource Gap.BlockSm}">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+                        <StackPanel Grid.Column="0">
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock Text="Выбор моделей" FontSize="{StaticResource Type.Body}" FontWeight="SemiBold"
+                                           Foreground="{DynamicResource TextPrimary}"/>
+                                <Border CornerRadius="{DynamicResource Radius.Sm}" Padding="{DynamicResource Pad.Pill}" Margin="{DynamicResource Gap.Left}"
+                                        Background="{DynamicResource ChipBg}">
+                                    <TextBlock Text="НЕСКОЛЬКО" FontSize="{StaticResource Type.Monogram}" FontWeight="Bold"
+                                               Foreground="{DynamicResource AccentText}"/>
+                                </Border>
+                            </StackPanel>
+                            <TextBlock x:Name="TxtModelDescription"
+                                       Text="Автовыбор подбирает лучшую модель под задачу (расчёт, эскиз, чат); отмеченные — приоритетный пул"
+                                       FontSize="{StaticResource Type.Caption}" Foreground="{DynamicResource TextMuted}" Margin="{DynamicResource Gap.BlockTopSm}"
+                                       TextTrimming="CharacterEllipsis"/>
+                        </StackPanel>
+                        <!-- Auto-select toggle -->
+                        <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center"
+                                    Margin="{DynamicResource Gap.InlineLg}" ToolTip="Автоматически выбирать лучшую модель под задачу. Модели из списка используются как приоритетный резерв.">
+                            <ToggleButton x:Name="TglAutoSelect" Width="36" Height="20"
+                                          Checked="TglAutoSelect_Changed" Unchecked="TglAutoSelect_Changed"
+                                          Focusable="True" IsTabStop="True" Cursor="Hand"
+                                          ToolTip="Автоматически выбрать лучшую бесплатную модель под текущую задачу"
+                                          AutomationProperties.Name="Автоматический выбор модели">
+                                <ToggleButton.Style>
+                                    <Style TargetType="ToggleButton">
+                                        <Setter Property="Template">
+                                            <Setter.Value>
+                                                <ControlTemplate TargetType="ToggleButton">
+                                                    <Border x:Name="SwitchTrack" Width="36" Height="20"
+                                                            CornerRadius="{DynamicResource Radius.Lg}" Background="{DynamicResource Border}">
+                                                        <Border x:Name="SwitchThumb" Width="16" Height="16"
+                                                                CornerRadius="{DynamicResource Radius.Md}" Background="White"
+                                                                HorizontalAlignment="Left" Margin="{DynamicResource Gap.LeftHair}"/>
+                                                    </Border>
+                                                    <ControlTemplate.Triggers>
+                                                        <Trigger Property="IsChecked" Value="True">
+                                                            <Setter TargetName="SwitchTrack" Property="Background"
+                                                                    Value="{DynamicResource Accent}"/>
+                                                            <Setter TargetName="SwitchThumb" Property="HorizontalAlignment"
+                                                                    Value="Right"/>
+                                                            <Setter TargetName="SwitchThumb" Property="Margin"
+                                                                    Value="0,0,2,0"/>
+                                                        </Trigger>
+                                                    </ControlTemplate.Triggers>
+                                                </ControlTemplate>
+                                            </Setter.Value>
+                                        </Setter>
+                                    </Style>
+                                </ToggleButton.Style>
+                            </ToggleButton>
+                            <TextBlock x:Name="TxtAutoLabel" Text="Автовыбор" FontSize="{StaticResource Type.Caption}"
+                                       Foreground="{DynamicResource TextMuted}" VerticalAlignment="Center"
+                                       Margin="{DynamicResource Gap.LeftSm}"/>
+                        </StackPanel>
+                        <Button Grid.Column="2" x:Name="BtnRefreshModels" Content="↻" Width="30" Height="30"
+                                Click="BtnRefreshModels_Click" ToolTip="Обновить список моделей с серверов"
+                                Style="{StaticResource DialogOutlineButton}" FontSize="{StaticResource Type.Subtitle}" Padding="{DynamicResource Pad.None}"/>
+                    </Grid>
+
+                    <!-- Search Box & Filter Chips Bar -->
+                    <Grid Margin="{DynamicResource Gap.BlockSm}">
+                        <TextBox x:Name="TxtSearch" Height="32" Padding="{DynamicResource Pad.SearchBox}" FontSize="{StaticResource Type.Caption}"
+                                 BorderBrush="{DynamicResource Border}" BorderThickness="1"
+                                 Background="{DynamicResource SectionBg}" Foreground="{DynamicResource TextPrimary}"
+                                 VerticalContentAlignment="Center"
+                                 TextChanged="TxtSearch_TextChanged" KeyDown="TxtSearch_KeyDown"/>
+                        <TextBlock Text="⌕" FontSize="{StaticResource Type.Subtitle}" Foreground="{DynamicResource TextMuted}"
+                                   VerticalAlignment="Center" Margin="{DynamicResource Gap.Left}" IsHitTestVisible="False"/>
+                        <Button x:Name="BtnClearSearch" Visibility="Collapsed" Content="✕" Width="20" Height="20"
+                                Click="BtnClearSearch_Click" Background="Transparent" BorderThickness="0"
+                                Foreground="{DynamicResource TextMuted}" Cursor="Hand" HorizontalAlignment="Right"
+                                VerticalAlignment="Center" Margin="{DynamicResource Gap.InlineSm}" ToolTip="Очистить поиск"/>
+                    </Grid>
+
+                    <!-- Fast Category Filter Bar (Segmented Control) -->
+                    <Border Margin="{DynamicResource Gap.Block}" Padding="{DynamicResource Pad.Hair}"
+                            Background="{DynamicResource SectionBg}"
+                            BorderBrush="{DynamicResource Border}"
+                            BorderThickness="1"
+                            CornerRadius="{DynamicResource Radius.Md}">
+                        <UniformGrid Columns="6">
+                            <Border x:Name="ChipAll" Padding="{DynamicResource Pad.Tiny}" CornerRadius="{DynamicResource Radius.Sm}"
+                                    Background="{DynamicResource Accent}" BorderThickness="0"
+                                    Cursor="Hand" PreviewMouseLeftButtonDown="ChipFilter_Click" MouseLeftButtonUp="ChipFilter_Click" Tag="All">
+                                <TextBlock x:Name="TxtChipAll" Text="Все (0)" FontSize="{StaticResource Type.Caption}"
+                                           FontWeight="SemiBold" Foreground="{DynamicResource OnAccent}"
+                                           HorizontalAlignment="Center" VerticalAlignment="Center" TextTrimming="CharacterEllipsis"/>
+                            </Border>
+                            <Border x:Name="ChipFreeLlm" Padding="{DynamicResource Pad.Tiny}" CornerRadius="{DynamicResource Radius.Sm}"
+                                    Background="Transparent" BorderThickness="0"
+                                    Cursor="Hand" PreviewMouseLeftButtonDown="ChipFilter_Click" MouseLeftButtonUp="ChipFilter_Click" Tag="FreeLlm">
+                                <TextBlock x:Name="TxtChipFreeLlm" Text="FreeLLM (0)" FontSize="{StaticResource Type.Caption}"
+                                           Foreground="{DynamicResource TextPrimary}"
+                                           HorizontalAlignment="Center" VerticalAlignment="Center" TextTrimming="CharacterEllipsis"/>
+                            </Border>
+                            <Border x:Name="ChipOpenRouter" Padding="{DynamicResource Pad.Tiny}" CornerRadius="{DynamicResource Radius.Sm}"
+                                    Background="Transparent" BorderThickness="0"
+                                    Cursor="Hand" PreviewMouseLeftButtonDown="ChipFilter_Click" MouseLeftButtonUp="ChipFilter_Click" Tag="OpenRouter">
+                                <TextBlock x:Name="TxtChipOpenRouter" Text="OpenRouter (0)" FontSize="{StaticResource Type.Caption}"
+                                           Foreground="{DynamicResource TextPrimary}"
+                                           HorizontalAlignment="Center" VerticalAlignment="Center" TextTrimming="CharacterEllipsis"/>
+                            </Border>
+                            <Border x:Name="ChipNvidia" Padding="{DynamicResource Pad.Tiny}" CornerRadius="{DynamicResource Radius.Sm}"
+                                    Background="Transparent" BorderThickness="0"
+                                    Cursor="Hand" PreviewMouseLeftButtonDown="ChipFilter_Click" MouseLeftButtonUp="ChipFilter_Click" Tag="Nvidia">
+                                <TextBlock x:Name="TxtChipNvidia" Text="NVIDIA (0)" FontSize="{StaticResource Type.Caption}"
+                                           Foreground="{DynamicResource TextPrimary}"
+                                           HorizontalAlignment="Center" VerticalAlignment="Center" TextTrimming="CharacterEllipsis"/>
+                            </Border>
+                            <Border x:Name="ChipVision" Padding="{DynamicResource Pad.Tiny}" CornerRadius="{DynamicResource Radius.Sm}"
+                                    Background="Transparent" BorderThickness="0"
+                                    Cursor="Hand" PreviewMouseLeftButtonDown="ChipFilter_Click" MouseLeftButtonUp="ChipFilter_Click" Tag="Vision">
+                                <TextBlock x:Name="TxtChipVision" Text="📷 Vision (0)" FontSize="{StaticResource Type.Caption}"
+                                           Foreground="{DynamicResource TextPrimary}"
+                                           HorizontalAlignment="Center" VerticalAlignment="Center" TextTrimming="CharacterEllipsis"/>
+                            </Border>
+                            <Border x:Name="ChipSelected" Padding="{DynamicResource Pad.Tiny}" CornerRadius="{DynamicResource Radius.Sm}"
+                                    Background="Transparent" BorderThickness="0"
+                                    Cursor="Hand" PreviewMouseLeftButtonDown="ChipFilter_Click" MouseLeftButtonUp="ChipFilter_Click" Tag="Selected">
+                                <TextBlock x:Name="TxtChipSelected" Text="✓ Выбрано (0)" FontSize="{StaticResource Type.Caption}"
+                                           Foreground="{DynamicResource TextPrimary}"
+                                           HorizontalAlignment="Center" VerticalAlignment="Center" TextTrimming="CharacterEllipsis"/>
+                            </Border>
+                        </UniformGrid>
+                    </Border>
+
+                    <!-- Model list status & batch selection bar (ABOVE models list so it is always visible) -->
+                    <Grid Margin="{DynamicResource Gap.BlockSm}">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+                        <TextBlock Grid.Column="0" x:Name="TxtModelStatus" FontSize="{StaticResource Type.Caption}"
+                                   Foreground="{DynamicResource TextMuted}" VerticalAlignment="Center"
+                                   TextTrimming="CharacterEllipsis"/>
+                        <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
+                            <Button x:Name="BtnPingModels" Content="⚡ Пинг" Height="26"
+                                    Click="BtnPingModels_Click" Style="{StaticResource DialogOutlineButton}" FontSize="{StaticResource Type.Caption}"
+                                    Padding="{DynamicResource Pad.Tiny}" Margin="{DynamicResource Gap.InlineSm}" ToolTip="Проверить отклик и доступность выбранных моделей"/>
+                            <Button x:Name="BtnSelectAll" Content="Выбрать всё" Height="26"
+                                    Click="BtnSelectAll_Click" Style="{StaticResource DialogOutlineButton}" FontSize="{StaticResource Type.Caption}"
+                                    Padding="{DynamicResource Pad.Tiny}" Margin="{DynamicResource Gap.InlineSm}" ToolTip="Выбрать все модели в текущей вкладке/списке"/>
+                            <Button x:Name="BtnClearAll" Content="Снять всё" Height="26"
+                                    Click="BtnClearAll_Click" Style="{StaticResource DialogOutlineButton}" FontSize="{StaticResource Type.Caption}"
+                                    Padding="{DynamicResource Pad.Tiny}" ToolTip="Снять выбор с моделей"/>
+                        </StackPanel>
+                    </Grid>
+
+                    <!-- Models ListBox with fixed/comfortable bounds -->
+                    <Border CornerRadius="{DynamicResource Radius.Md}" BorderBrush="{DynamicResource Border}"
+                            BorderThickness="1" Background="{DynamicResource Surface}">
+                        <ListBox x:Name="LstModels" Height="225" MaxHeight="240" Padding="{DynamicResource Gap.Separator}" BorderThickness="0"
+                                 Background="Transparent" Foreground="{DynamicResource TextPrimary}"
+                                 Focusable="True" SelectionMode="Single"
+                                 KeyboardNavigation.TabNavigation="Continue"
+                                 VirtualizingPanel.ScrollUnit="Pixel">
+                            <ListBox.ItemContainerStyle>
+                                <Style TargetType="ListBoxItem">
+                                    <Setter Property="Padding" Value="0"/>
+                                    <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
+                                    <Setter Property="Background" Value="Transparent"/>
+                                    <Setter Property="BorderThickness" Value="3,0,0,0"/>
+                                    <Setter Property="BorderBrush" Value="Transparent"/>
+                                    <Style.Triggers>
+                                        <Trigger Property="IsMouseOver" Value="True">
+                                            <Setter Property="Background" Value="{DynamicResource RowHover}"/>
+                                        </Trigger>
+                                        <DataTrigger Binding="{Binding IsSelected}" Value="True">
+                                            <Setter Property="Background" Value="{DynamicResource RowAltSelected}"/>
+                                            <Setter Property="BorderBrush" Value="{DynamicResource Accent}"/>
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </ListBox.ItemContainerStyle>
+                            <ListBox.ItemTemplate>
+                                <DataTemplate>
+                                    <Border Background="Transparent" Cursor="Hand"
+                                            Height="36" Padding="{DynamicResource Pad.InputH}"
+                                            MouseLeftButtonDown="Row_MouseLeftButtonDown" Tag="{Binding}">
+                                        <Grid>
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="Auto"/>
+                                                <ColumnDefinition Width="*"/>
+                                                <ColumnDefinition Width="Auto"/>
+                                            </Grid.ColumnDefinitions>
+                                            <CheckBox Grid.Column="0" Margin="{DynamicResource Gap.InlineLg}"
+                                                      IsChecked="{Binding IsSelected, Mode=TwoWay}"
+                                                      Click="RowCheck_Click" Style="{StaticResource DialogCheckBox}"/>
+                                            <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                                                <StackPanel Orientation="Horizontal">
+                                                    <TextBlock Text="{Binding DisplayName}" FontSize="{StaticResource Type.Body}"
+                                                               Foreground="{DynamicResource TextPrimary}"
+                                                               TextTrimming="CharacterEllipsis"/>
+                                                    <!-- Router badge -->
+                                                    <Border Margin="{DynamicResource Gap.Left}" Padding="{DynamicResource Pad.Hair}" CornerRadius="{DynamicResource Radius.Sm}"
+                                                            Background="{DynamicResource ChipBg}" VerticalAlignment="Center">
+                                                        <Border.Style>
+                                                            <Style TargetType="Border">
+                                                                <Setter Property="Visibility" Value="Collapsed"/>
+                                                                <Style.Triggers>
+                                                                    <DataTrigger Binding="{Binding IsRouter}" Value="True">
+                                                                        <Setter Property="Visibility" Value="Visible"/>
+                                                                    </DataTrigger>
+                                                                </Style.Triggers>
+                                                            </Style>
+                                                        </Border.Style>
+                                                        <TextBlock Text="{Binding RouterBadgeText}" FontSize="{StaticResource Type.Monogram}"
+                                                                   FontWeight="Bold" Foreground="{DynamicResource AccentText}"/>
+                                                    </Border>
+                                                </StackPanel>
+                                            </StackPanel>
+                                            <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center" Margin="{DynamicResource Gap.Left}">
+                                                <!-- Latency/Ping badge -->
+                                                <Border CornerRadius="{DynamicResource Radius.Sm}" Padding="{DynamicResource Pad.Tiny}" Margin="{DynamicResource Gap.InlineSm}"
+                                                        Background="{DynamicResource BubbleOverlayDim}"
+                                                        Visibility="{Binding HasLatency, Converter={StaticResource BoolToVis}}"
+                                                        ToolTip="Задержка отклика модели">
+                                                    <TextBlock Text="{Binding LatencyText}" FontSize="{StaticResource Type.Caption}"
+                                                               FontWeight="SemiBold" Foreground="{DynamicResource TextMuted}"/>
+                                                </Border>
+                                                <!-- Vision badge: visible only for models accepting images -->
+                                                <Border CornerRadius="{DynamicResource Radius.Sm}" Padding="{DynamicResource Pad.Tiny}"
+                                                        Margin="{DynamicResource Gap.InlineSm}" ToolTip="{Binding VisionTooltip}">
+                                                    <Border.Style>
+                                                        <Style TargetType="Border">
+                                                            <Setter Property="Background" Value="{DynamicResource BadgeVisionBg}"/>
+                                                            <Setter Property="Visibility" Value="Collapsed"/>
+                                                            <Style.Triggers>
+                                                                <DataTrigger Binding="{Binding IsVisionCapable}" Value="True">
+                                                                    <Setter Property="Visibility" Value="Visible"/>
+                                                                </DataTrigger>
+                                                            </Style.Triggers>
+                                                        </Style>
+                                                    </Border.Style>
+                                                    <TextBlock Text="📷 Vision" FontSize="{StaticResource Type.Caption}"
+                                                               FontWeight="SemiBold" Foreground="{DynamicResource BadgeVisionFg}"/>
+                                                </Border>
+                                                <!-- Provider badge -->
+                                                <Border CornerRadius="{DynamicResource Radius.Sm}" Padding="{DynamicResource Pad.Tiny}" MinWidth="28"
+                                                        ToolTip="{Binding ProviderTooltip}">
+                                                    <Border.Style>
+                                                        <Style TargetType="Border">
+                                                            <Setter Property="Background" Value="{DynamicResource ChipBg}"/>
+                                                            <Style.Triggers>
+                                                                <DataTrigger Binding="{Binding Model.Provider}" Value="Nvidia">
+                                                                    <Setter Property="Background" Value="{DynamicResource BadgeSuccessBg}"/>
+                                                                </DataTrigger>
+                                                                <DataTrigger Binding="{Binding Model.Provider}" Value="FreeLlmApi">
+                                                                    <Setter Property="Background" Value="{DynamicResource BadgeVisionBg}"/>
+                                                                </DataTrigger>
+                                                            </Style.Triggers>
+                                                        </Style>
+                                                    </Border.Style>
+                                                    <TextBlock FontSize="{StaticResource Type.Monogram}" FontWeight="Bold"
+                                                               HorizontalAlignment="Center">
+                                                        <TextBlock.Style>
+                                                            <Style TargetType="TextBlock">
+                                                                <Setter Property="Text" Value="OR"/>
+                                                                <Setter Property="Foreground" Value="{DynamicResource Accent}"/>
+                                                                <Style.Triggers>
+                                                                    <DataTrigger Binding="{Binding Model.Provider}" Value="Nvidia">
+                                                                        <Setter Property="Text" Value="NV"/>
+                                                                        <Setter Property="Foreground" Value="{DynamicResource Success}"/>
+                                                                    </DataTrigger>
+                                                                    <DataTrigger Binding="{Binding Model.Provider}" Value="FreeLlmApi">
+                                                                        <Setter Property="Text" Value="FL"/>
+                                                                        <Setter Property="Foreground" Value="{DynamicResource BadgeVisionFg}"/>
+                                                                    </DataTrigger>
+                                                                </Style.Triggers>
+                                                            </Style>
+                                                        </TextBlock.Style>
+                                                    </TextBlock>
+                                                </Border>
+                                            </StackPanel>
+                                        </Grid>
+                                    </Border>
+                                </DataTemplate>
+                            </ListBox.ItemTemplate>
+                        </ListBox>
+                    </Border>
+
+                    <!-- Divider -->
+                    <Border Height="1" Background="{DynamicResource SubtleBorder}" Margin="{DynamicResource Gap.Section}"/>
+
+                    <!-- ── АВТОПРОСЧЁТ ПВХ (CCalc 9.12) ────────────────────────── -->
+                    <Border CornerRadius="{DynamicResource Radius.Md}" Padding="{DynamicResource Pad.Card}"
+                            Background="{DynamicResource SectionBg}"
+                            BorderBrush="{DynamicResource Border}" BorderThickness="1"
+                            Margin="{DynamicResource Gap.Block}">
+                        <StackPanel>
+                            <Grid Margin="{DynamicResource Gap.BlockSm}">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+                                <StackPanel Grid.Column="0">
+                                    <StackPanel Orientation="Horizontal">
+                                        <TextBlock Text="🪟 Автопросчёт ПВХ-окна (CCalc 9.12)" FontSize="{StaticResource Type.Body}" FontWeight="SemiBold"
+                                                   Foreground="{DynamicResource TextPrimary}"/>
+                                        <Border CornerRadius="{DynamicResource Radius.Sm}" Padding="{DynamicResource Pad.Pill}" Margin="{DynamicResource Gap.Left}"
+                                                Background="{DynamicResource ChipBg}">
+                                            <TextBlock Text="РОБОТ" FontSize="{StaticResource Type.Monogram}" FontWeight="Bold"
+                                                       Foreground="{DynamicResource AccentText}"/>
+                                        </Border>
+                                    </StackPanel>
+                                    <TextBlock Text="Автоматический расчёт окон по фото/эскизам замерщика и перенос в смету"
+                                               FontSize="{StaticResource Type.Caption}" Foreground="{DynamicResource TextMuted}" Margin="{DynamicResource Gap.BlockTopSm}"
+                                               TextTrimming="CharacterEllipsis"/>
+                                </StackPanel>
+                                <CheckBox Grid.Column="1" x:Name="ChkEnableCcalc" Content="Включить"
+                                          VerticalAlignment="Center" FontWeight="SemiBold"
+                                          Foreground="{DynamicResource TextPrimary}"
+                                          Style="{StaticResource DialogCheckBox}"
+                                          ToolTip="Разрешить управление программой CCalc на этом ПК"/>
+                            </Grid>
+
+                            <!-- CCalc executable path -->
+                            <TextBlock Text="Путь к исполняемому файлу программы (ProgMain9.12...exe):"
+                                       FontSize="{StaticResource Type.Caption}" Foreground="{DynamicResource TextMuted}"
+                                       Margin="{DynamicResource Gap.BlockSm}"/>
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+                                <TextBox Grid.Column="0" x:Name="TxtCcalcPath" Height="32"
+                                         Padding="{DynamicResource Pad.Control}" FontSize="{StaticResource Type.Caption}"
+                                         BorderBrush="{DynamicResource Border}" BorderThickness="1"
+                                         Background="{DynamicResource Surface}" Foreground="{DynamicResource TextPrimary}"
+                                         VerticalContentAlignment="Center"
+                                         ToolTip="Путь к ProgMain9.12.Dealer+_чистый.exe или аналогу"/>
+                                <Button Grid.Column="1" x:Name="BtnBrowseCcalc" Content="Обзор..." Height="32" Width="80"
+                                        Margin="{DynamicResource Gap.LeftSm}" Click="BtnBrowseCcalc_Click"
+                                        Style="{StaticResource DialogOutlineButton}" FontSize="{StaticResource Type.Caption}"/>
+                            </Grid>
+
+                            <!-- CCalc credentials -->
+                            <Grid Margin="{DynamicResource Gap.BlockSm}">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+                                <StackPanel Grid.Column="0" Margin="{DynamicResource Gap.RightSm}">
+                                    <TextBlock Text="Пользователь CCalc:" FontSize="{StaticResource Type.Caption}" Foreground="{DynamicResource TextMuted}" Margin="{DynamicResource Gap.BlockSm}"/>
+                                    <TextBox x:Name="TxtCcalcUser" Height="30" Padding="{DynamicResource Pad.Control}" FontSize="{StaticResource Type.Caption}"
+                                             BorderBrush="{DynamicResource Border}" BorderThickness="1"
+                                             Background="{DynamicResource Surface}" Foreground="{DynamicResource TextPrimary}"
+                                             VerticalContentAlignment="Center" ToolTip="Имя пользователя для входа в CCalc (по умолчанию: оно)"/>
+                                </StackPanel>
+                                <StackPanel Grid.Column="1" Margin="{DynamicResource Gap.LeftSm}">
+                                    <TextBlock Text="Пароль CCalc:" FontSize="{StaticResource Type.Caption}" Foreground="{DynamicResource TextMuted}" Margin="{DynamicResource Gap.BlockSm}"/>
+                                    <PasswordBox x:Name="TxtCcalcPass" Height="30" Padding="{DynamicResource Pad.Control}" FontSize="{StaticResource Type.Caption}"
+                                                 BorderBrush="{DynamicResource Border}" BorderThickness="1"
+                                                 Background="{DynamicResource Surface}" Foreground="{DynamicResource TextPrimary}"
+                                                 VerticalContentAlignment="Center" ToolTip="Пароль для входа в CCalc (по умолчанию: 1234)"/>
+                                </StackPanel>
+                            </Grid>
+                            <TextBlock Text="Калибровка робота настроена на разрешение 1920×1080. У каждого филиала/ПК может быть свой путь."
+                                       FontSize="{StaticResource Type.Monogram}" Foreground="{DynamicResource TextMuted}"
+                                       Margin="{DynamicResource Gap.BlockTopSm}"/>
+                        </StackPanel>
+                    </Border>
+
+                </StackPanel>
+            </ScrollViewer>
+
+            <!-- Bottom actions (pinned to bottom) -->
+            <Border Grid.Row="2" Margin="-1,0,-1,0" Padding="{DynamicResource Pad.Header}"
+                    BorderBrush="{DynamicResource SubtleBorder}" BorderThickness="0,1,0,0"
+                    VerticalAlignment="Stretch">
+                <Grid>
+                    <TextBlock Text="● Настройки сохраняются локально в ai-settings.json" FontSize="{StaticResource Type.Caption}"
+                               Foreground="{DynamicResource TextMuted}" VerticalAlignment="Center"/>
+                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center">
+                        <Button Content="Отмена" Click="BtnCancel_Click" Width="88" Height="35"
+                                Style="{StaticResource DialogOutlineButton}" Margin="{DynamicResource Gap.Inline}" FontSize="{StaticResource Type.Body}"/>
+                        <Button Content="Сохранить" Click="BtnSave_Click" Width="116" Height="35"
+                                Style="{StaticResource DialogPrimaryButton}" FontSize="{StaticResource Type.Body}"/>
+                    </StackPanel>
+                </Grid>
+            </Border>
+        </Grid>
+    </Border>
+</Window>

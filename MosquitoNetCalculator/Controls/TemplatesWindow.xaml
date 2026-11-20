@@ -108,15 +108,10 @@
                     MouseLeftButtonDown="TitleBar_MouseLeftButtonDown">
                 <Grid>
                     <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="Auto"/>
                         <ColumnDefinition Width="*"/>
                         <ColumnDefinition Width="Auto"/>
                     </Grid.ColumnDefinitions>
-                    <Border Grid.Column="0" Width="4"
-                            Background="{DynamicResource Accent}"
-                            CornerRadius="{DynamicResource Radius.StripeLeft}"
-                            VerticalAlignment="Stretch"/>
-                    <StackPanel Grid.Column="1" Orientation="Horizontal"
+                    <StackPanel Grid.Column="0" Orientation="Horizontal"
                                 VerticalAlignment="Center" Margin="{DynamicResource Pad.TitleBar}">
                         <TextBlock Text="&#xE8A5;" FontSize="{StaticResource Type.BodyLg}"
                                    Style="{DynamicResource FluentIconSection}"
@@ -126,8 +121,8 @@
                                    Foreground="{DynamicResource TextPrimary}"
                                    VerticalAlignment="Center"/>
                     </StackPanel>
-                    <Button Grid.Column="2" x:Name="BtnClose"
-                            Width="40" Height="40"
+                    <Button Grid.Column="1" x:Name="BtnClose"
+                            Width="38" Height="38"
                             Style="{DynamicResource DialogCloseButton}"
                             Click="BtnClose_Click"
                             AutomationProperties.Name="Закрыть">

@@ -47,7 +47,8 @@ namespace MosquitoNetCalculator.Services
         ApplyTemplate,
         SaveOrder,
         PrintKp,
-        ExportPdf
+        ExportPdf,
+        AddAdditionalKp
     }
 
     public sealed class AiCommandParams
@@ -92,5 +93,9 @@ namespace MosquitoNetCalculator.Services
         public string ClientAddress { get; init; } = "";
         public string ContractNumber { get; init; } = "";
         public string Notes { get; init; } = "";
+
+        // Дополнительные КП (CCalc и т.д.)
+        public string AdditionalKpNumber { get; set; } = "";
+        public double AdditionalKpAmount { get; set; }
     }
 }

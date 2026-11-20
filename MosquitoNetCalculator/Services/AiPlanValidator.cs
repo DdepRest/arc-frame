@@ -126,6 +126,7 @@ namespace MosquitoNetCalculator.Services
                 case AiCommandType.SaveOrder:
                 case AiCommandType.PrintKp:
                 case AiCommandType.ExportPdf:
+                case AiCommandType.AddAdditionalKp:
                     break;
                 case AiCommandType.UpdateItemByIndex:
                     if (p.ItemIndex <= 0)

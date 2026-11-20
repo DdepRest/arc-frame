@@ -37,6 +37,15 @@ namespace MosquitoNetCalculator.Services
             public bool MultiModelConsensus { get; set; } = true;
             public double Temperature { get; set; } = 0.2;
             public string QuickPreset { get; set; } = "free";
+
+            public bool EnableCcalcAutomation { get; set; } = true;
+
+            public string CcalcProgramPath { get; set; } = @"C:\Program Files\ПРОФИПЛАСТ\Программа135\Программа\ProgMain9.12.Dealer+_чистый.exe";
+
+            public string CcalcUsername { get; set; } = "окно";
+
+            public string CcalcPassword { get; set; } = "1234";
+
         }
 
         /// <summary>
@@ -414,5 +423,83 @@ namespace MosquitoNetCalculator.Services
                 SaveAiSettingsCore(settings);
             }
         }
+            public static bool LoadEnableCcalcAutomation()
+        {
+            lock (SettingsLock)
+            {
+                return LoadAiSettingsCore().EnableCcalcAutomation;
+            }
+        }
+
+        public static void SaveEnableCcalcAutomation(bool enabled)
+        {
+            lock (SettingsLock)
+            {
+                var settings = LoadAiSettingsCore();
+                settings.EnableCcalcAutomation = enabled;
+                SaveAiSettingsCore(settings);
+            }
+        }
+
+        public static string LoadCcalcProgramPath()
+        {
+            lock (SettingsLock)
+            {
+                var p = LoadAiSettingsCore().CcalcProgramPath;
+                return string.IsNullOrWhiteSpace(p) ? @"C:\Program Files\ПРОФИПЛАСТ\Программа135\Программа\ProgMain9.12.Dealer+_чистый.exe" : p;
+            }
+        }
+
+        public static void SaveCcalcProgramPath(string path)
+        {
+            lock (SettingsLock)
+            {
+                var settings = LoadAiSettingsCore();
+                settings.CcalcProgramPath = path?.Trim() ?? "";
+                SaveAiSettingsCore(settings);
+            }
+        }
+
+        public static string LoadCcalcUsername()
+        {
+            lock (SettingsLock)
+            {
+                var u = LoadAiSettingsCore().CcalcUsername;
+                return string.IsNullOrWhiteSpace(u) || u == "оно" ? "окно" : u;
+            }
+        }
+
+        public static void SaveCcalcUsername(string username)
+        {
+            lock (SettingsLock)
+            {
+                var settings = LoadAiSettingsCore();
+                settings.CcalcUsername = string.IsNullOrWhiteSpace(username) || username.Trim() == "оно" ? "окно" : username.Trim();
+                SaveAiSettingsCore(settings);
+            }
+        }
+
+        public static string LoadCcalcPassword()
+        {
+            lock (SettingsLock)
+            {
+                var p = LoadAiSettingsCore().CcalcPassword;
+                return string.IsNullOrWhiteSpace(p) ? "1234" : p;
+            }
+        }
+
+        public static void SaveCcalcPassword(string password)
+        {
+            lock (SettingsLock)
+            {
+                var settings = LoadAiSettingsCore();
+                settings.CcalcPassword = password?.Trim() ?? "1234";
+                SaveAiSettingsCore(settings);
+            }
+        }
+
+
     }
+
 }
+

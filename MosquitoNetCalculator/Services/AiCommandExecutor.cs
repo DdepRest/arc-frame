@@ -25,6 +25,7 @@ namespace MosquitoNetCalculator.Services
         private readonly Action? _printKp;
         private readonly Action? _exportPdf;
         private readonly Func<string, string, double>? _getCatalogPrice;
+        private readonly Action<string, double>? _addAdditionalKp;
 
         public AiCommandExecutor(
             CalculationViewModel calcVM,
@@ -39,7 +40,8 @@ namespace MosquitoNetCalculator.Services
             Action? saveOrder = null,
             Action? printKp = null,
             Action? exportPdf = null,
-            Func<string, string, double>? getCatalogPrice = null)
+            Func<string, string, double>? getCatalogPrice = null,
+            Action<string, double>? addAdditionalKp = null)
         {
             _calcVM = calcVM ?? throw new ArgumentNullException(nameof(calcVM));
             _pushUndo = pushUndo ?? throw new ArgumentNullException(nameof(pushUndo));
@@ -54,6 +56,7 @@ namespace MosquitoNetCalculator.Services
             _printKp = printKp;
             _exportPdf = exportPdf;
             _getCatalogPrice = getCatalogPrice;
+            _addAdditionalKp = addAdditionalKp;
         }
 
         /// <summary>
@@ -381,6 +384,22 @@ namespace MosquitoNetCalculator.Services
                         _exportPdf();
                         if (pushUndo)
                             _showToast("📄 Экспорт в PDF выполнен", ToastType.Success);
+                        return true;
+                    }
+
+                    case AiCommandType.AddAdditionalKp:
+                    {
+                        if (_addAdditionalKp == null)
+                        {
+                            error = "Добавление доп. КП недоступно.";
+                            return false;
+                        }
+                        if (pushUndo) _pushUndo();
+                        _addAdditionalKp(command.Params.AdditionalKpNumber, command.Params.AdditionalKpAmount);
+                        _markDirty();
+                        _recalculateAndUpdateTotal();
+                        if (pushUndo)
+                            _showToast($"📋 Добавлен доп. КП №{command.Params.AdditionalKpNumber}", ToastType.Success);
                         return true;
                     }
 

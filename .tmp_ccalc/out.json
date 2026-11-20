@@ -1,0 +1,22 @@
+{
+  "success": true,
+  "address": "Демитрова 45/46",
+  "order_number": "1",
+  "total_amount": 32380.0,
+  "mosquito_net": {
+    "brand": "Anwis (ПП)",
+    "width_mm": 480,
+    "height_mm": 1250
+  },
+  "net_removed": false,
+  "flashing": {
+    "width_mm": 130,
+    "length_mm": 1200
+  },
+  "windowsill": {
+    "width_mm": 400,
+    "length_mm": 1350
+  },
+  "discount": "20%",
+  "error": null
+}

@@ -433,6 +433,27 @@ namespace MosquitoNetCalculator.Tests.Services
 
             Assert.True(AiKeyValidator.HasAnyConfiguredApiKey);
         }
+
+        [Fact]
+        public void LoadCcalcUsername_DefaultIsOkno()
+        {
+            Assert.Equal("окно", AppSettingsServiceAi.LoadCcalcUsername());
+        }
+
+        [Fact]
+        public void LoadCcalcUsername_MigratesLegacyTypoOnoToOkno()
+        {
+            AppSettingsServiceAi.SaveCcalcUsername("оно");
+            Assert.Equal("окно", AppSettingsServiceAi.LoadCcalcUsername());
+        }
+
+        [Fact]
+        public void SaveAndLoad_CcalcUsername_Roundtrip()
+        {
+            AppSettingsServiceAi.SaveCcalcUsername("дилер1");
+            Assert.Equal("дилер1", AppSettingsServiceAi.LoadCcalcUsername());
+        }
     }
 
 }
+

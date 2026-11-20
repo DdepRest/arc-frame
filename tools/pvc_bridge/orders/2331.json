@@ -1,0 +1,23 @@
+{
+  "order_number": "2331",
+  "address": "Димитрова 45/46",
+  "total_amount": 18630.0,
+  "frame": {
+    "width_mm": 1060,
+    "height_mm": 1340
+  },
+  "windowsill": {
+    "width_mm": 400,
+    "length_mm": 1350
+  },
+  "flashing": {
+    "width_mm": 130,
+    "length_mm": 1250
+  },
+  "mosquito_net": {
+    "brand": "Anwis (ПП)",
+    "width_mm": 445,
+    "height_mm": 1235
+  },
+  "saved_at": "2026-11-15 13:49:25"
+}

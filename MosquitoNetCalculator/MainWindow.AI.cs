@@ -70,7 +70,17 @@ namespace MosquitoNetCalculator
                 saveOrder: () => ActionBarControl.BtnSaveOrder_Click(this, new RoutedEventArgs()),
                 printKp: () => TriggerPrinterPrintWithProductionCopy(),
                 exportPdf: () => TriggerPdfExport(),
-                getCatalogPrice: (t, c) => PricesVM.GetPrice(t, c));
+                getCatalogPrice: (t, c) => PricesVM.GetPrice(t, c),
+                addAdditionalKp: (number, amount) =>
+                {
+                    ClientInfo.AdditionalKps.Add(new Models.AdditionalKpItem
+                    {
+                        Number = number,
+                        Amount = amount,
+                        IsActive = true
+                    });
+                    ClientInfo.HasAdditionalKp = true;
+                });
 
             // Bind the in-panel AI control to the shared ViewModel.
             AiAssistantControl.DataContext = AiVm;
@@ -636,5 +646,40 @@ namespace MosquitoNetCalculator
             ToggleAiOverlay();
         }
 
+            /// <summary>
+        /// Executes auto-calculation of PVC window structure from sketch image.
+        /// </summary>
+        public async Task ProcessPvcSketchAsync(string imagePath)
+        {
+            try
+            {
+                bool isEnabled = AppSettingsServiceAi.LoadEnableCcalcAutomation();
+                ToastService.ShowToast("Распознавание эскиза окна через FreeLLMAPI...", ToastType.Info);
+
+                var result = await PvcAutoCalcService.ProcessSketchAsync(imagePath, dryRun: !isEnabled);
+                if (!result.Success)
+                {
+                    ToastService.ShowToast(result.Error ?? "Не удалось просчитать окно", ToastType.Error);
+                    return;
+                }
+
+                PushUndo();
+                PvcAutoCalcService.ApplyToOrder(result, CalcVM, ClientInfo, RecalculateAndUpdateTotal);
+                MarkDirty();
+
+                var orderLabel = string.IsNullOrWhiteSpace(result.OrderNumber) ? "" : $" (Заказ: {result.OrderNumber})";
+                ToastService.ShowToast($"Окно ПВХ на сумму {MoneyFormatService.Format(result.TotalAmount)} ₽ добавлено в Доп. КП{orderLabel}!", ToastType.Success);
+            }
+            catch (Exception ex)
+            {
+                ToastService.ShowToast($"Ошибка автопросчёта: {ex.Message}", ToastType.Error);
+            }
+        }
+
+
+    
+
     }
+
 }
+

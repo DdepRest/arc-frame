@@ -1,0 +1,99 @@
+{
+  "success": true,
+  "width_mm": 1060,
+  "height_mm": 1340,
+  "glass": "24 4-16-4",
+  "hardware": "vorne",
+  "address": "Демитрова 45/46",
+  "order_number": "2331",
+  "total_amount": 18630.0,
+  "steps": [
+    {
+      "step": "рама",
+      "ok": true,
+      "detail": "автопроверка пройдена"
+    },
+    {
+      "step": "импост",
+      "ok": true,
+      "detail": "автопроверка пройдена"
+    },
+    {
+      "step": "створка",
+      "ok": true,
+      "detail": "автопроверка пройдена"
+    },
+    {
+      "step": "ручка + стеклопакет",
+      "ok": true,
+      "detail": "автопроверка пройдена"
+    },
+    {
+      "step": "фурнитура",
+      "ok": true,
+      "detail": "автопроверка пройдена"
+    },
+    {
+      "step": "доп. элементы (анкерные пластины + подоконник)",
+      "ok": true,
+      "detail": "автопроверка пройдена"
+    },
+    {
+      "step": "лист заказа",
+      "ok": true,
+      "detail": "адрес Демитрова 45/46, скидка 20%, монтаж 2365, демонтаж 100"
+    },
+    {
+      "step": "сохранение",
+      "ok": true,
+      "detail": "заказ сохранён, номер: 2331"
+    }
+  ],
+  "recognized_data": {
+    "address": "Демитрова 45/46",
+    "frame": {
+      "width_mm": 1060,
+      "height_mm": 1340
+    },
+    "accessories": {
+      "windowsill": {
+        "width_mm": 400,
+        "length_mm": 1350
+      },
+      "flashing": {
+        "width_mm": 130,
+        "length_mm": 1250
+      },
+      "anchor_plates": {
+        "count": 10
+      }
+    }
+  },
+  "calculation": {
+    "order_number": "2331",
+    "total_amount": 18630.0,
+    "address": "Демитрова 45/46",
+    "mosquito_net": {
+      "brand": "Anwis (ПП)",
+      "width_mm": 445,
+      "height_mm": 1235
+    },
+    "flashing": {
+      "width_mm": 130,
+      "length_mm": 1250
+    },
+    "windowsill": {
+      "width_mm": 400,
+      "length_mm": 1350
+    }
+  },
+  "order_sheet": {
+    "order_number": "1",
+    "total_amount": 18630.0,
+    "mosquito_net": {
+      "brand": "Anwis (ПП)",
+      "width_mm": 445,
+      "height_mm": 1235
+    }
+  }
+}

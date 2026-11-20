@@ -97,6 +97,7 @@
     <Thickness x:Key="Gap.HairH">2,0</Thickness>
     <Thickness x:Key="Gap.LeftHair">2,0,0,0</Thickness>
     <Thickness x:Key="Gap.RightHair">0,0,2,0</Thickness>
+    <Thickness x:Key="Gap.RightSm">0,0,4,0</Thickness>
     <Thickness x:Key="Gap.ToggleSignRight">0,0,8,1</Thickness>
     <Thickness x:Key="Gap.ToggleSignLeft">8,0,0,1</Thickness>
     <Thickness x:Key="Gap.InlineH">8,0,8,0</Thickness>

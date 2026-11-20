@@ -298,6 +298,7 @@ namespace MosquitoNetCalculator.ViewModels
                 AiCommandType.ClearAll => "🗑 Очищен весь расчёт",
                 AiCommandType.ListProducts => "📋 Список товаров",
                 AiCommandType.CalcSlope => $"🏗 Просчёт откосов {command.Params.Width}×{command.Params.Height} мм, глубина {command.Params.Depth} мм, {command.Params.Quantity} отк.",
+                AiCommandType.AddAdditionalKp => $"📋 Доп. КП №{command.Params.AdditionalKpNumber} ({command.Params.AdditionalKpAmount:N0} ₽)",
                 _ => "✅ Команда выполнена"
             };
         }

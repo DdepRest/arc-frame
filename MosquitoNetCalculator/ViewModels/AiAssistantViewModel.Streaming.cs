@@ -327,6 +327,84 @@ namespace MosquitoNetCalculator.ViewModels
             // the worker thread.
             var requestToken = _cts.Token;
 
+            // ── PVC Window Sketch / CCalc Automation Interception ──────
+            // When an image is attached and the request or OCR text indicates a PVC window / sketch:
+            // Route through FreeLLMAPI vision + CCalc 9.12 bot instead of general mosquito net prompt.
+            if (stagedAttachments.Count > 0 && (
+                AiKeywordLexicon.IsPvcWindowRequest(userText) ||
+                AiKeywordLexicon.IsPvcWindowRequest(ocrLines) ||
+                AiKeywordLexicon.IsPvcWindowRequest(attachmentLabels)))
+            {
+                StatusText = "Распознавание эскиза ПВХ через FreeLLMAPI…";
+                try
+                {
+                    var firstAtt = stagedAttachments[0];
+                    var bytes = AttachmentOcrService.TryDecodeDataUrl(firstAtt.DataUrl);
+                    if (bytes != null && bytes.Length > 0)
+                    {
+                        var tempFile = Path.Combine(Path.GetTempPath(), $"pvc_sketch_{Guid.NewGuid():N}.jpg");
+                        await File.WriteAllBytesAsync(tempFile, bytes);
+
+                        bool isEnabled = AppSettingsServiceAi.LoadEnableCcalcAutomation();
+                        StatusText = isEnabled
+                            ? "Анализ эскиза и расчёт в CCalc 9.12…"
+                            : "Анализ эскиза окна (FreeLLMAPI)…";
+
+                        var sketchResult = await PvcAutoCalcService.ProcessSketchAsync(tempFile, dryRun: !isEnabled);
+
+                        try { File.Delete(tempFile); } catch { }
+
+                        if (sketchResult.Success)
+                        {
+                            var plan = PvcAutoCalcService.BuildPlanFromPvcResult(sketchResult, sourceUserText: userText);
+                            AiPlanValidator.Validate(plan);
+
+                            var planMsg = new AiChatMessage
+                            {
+                                Text = plan.Reasoning ?? plan.ReplyText,
+                                IsUser = false,
+                                ActionPlan = plan,
+                                IsAwaitingConfirmation = true,
+                                ModelLabel = isEnabled ? "CCalc 9.12 + FreeLLMAPI" : "FreeLLMAPI (Симуляция)"
+                            };
+                            plan.SourceMessageId = planMsg.MessageId;
+                            lock (_planLock) _planMessages[plan.PlanId] = planMsg;
+                            Messages.Add(planMsg);
+
+                            IsBusy = false;
+                            ApplyVisibleCap();
+                            var historyToSave = Messages.ToList();
+                            await Task.Run(() => AppSettingsServiceAi.SaveChatHistory(historyToSave));
+                            StatusText = "Готово ✓";
+                            return;
+                        }
+                        else
+                        {
+                            Messages.Add(new AiChatMessage
+                            {
+                                Text = $"⚠️ Не удалось выполнить автопросчёт эскиза:\n{sketchResult.Error}\n\nПроверьте, запущена ли FreeLLMAPI и корректен ли путь к CCalc в «⚙ Настройки AI».",
+                                IsUser = false,
+                                ModelLabel = "FreeLLMAPI"
+                            });
+                            IsBusy = false;
+                            StatusText = "Ошибка";
+                            return;
+                        }
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Messages.Add(new AiChatMessage
+                    {
+                        Text = $"⚠️ Ошибка при обработке эскиза: {ex.Message}",
+                        IsUser = false
+                    });
+                    IsBusy = false;
+                    StatusText = "Ошибка";
+                    return;
+                }
+            }
+
             // Multi-Model Vision Consensus for Drawing/Sketch requests:
             // When images are attached, consensus is enabled, and the user asks to calculate/recognize items,
             // query vision models concurrently and cross-validate using local OCR ground truth.

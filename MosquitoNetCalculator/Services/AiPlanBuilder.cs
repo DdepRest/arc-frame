@@ -92,6 +92,7 @@ namespace MosquitoNetCalculator.Services
                 AiCommandType.SaveOrder => "💾 Сохранить заказ",
                 AiCommandType.PrintKp => "🖨 Печать КП",
                 AiCommandType.ExportPdf => "📄 Экспорт КП в PDF",
+                AiCommandType.AddAdditionalKp => $"📋 Записать в доп. КП: CCalc №{p.AdditionalKpNumber} на {p.AdditionalKpAmount:N0} ₽",
                 _ => "✅ Действие"
             };
         }

@@ -52,6 +52,14 @@
                         </StackPanel>
                     </Button>
                     <Button Style="{DynamicResource GhostButton}"
+                            Click="BtnImportFromCcalc_Click" Margin="{DynamicResource Gap.Inline}"
+                            ToolTip="Загрузить в заказы сохранённый заказ CCalc 9.12">
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Style="{DynamicResource FluentIconButton}" Text="&#xE896;"/>
+                            <TextBlock Text="Из CCalc"/>
+                        </StackPanel>
+                    </Button>
+                    <Button Style="{DynamicResource GhostButton}"
                             Click="BtnExportOrders_Click" Margin="{DynamicResource Gap.Inline}"
                             ToolTip="Экспортировать заказы в файл">
                         <StackPanel Orientation="Horizontal">

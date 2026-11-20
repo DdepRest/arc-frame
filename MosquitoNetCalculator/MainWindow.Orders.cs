@@ -73,6 +73,81 @@ namespace MosquitoNetCalculator
                 RefreshOrdersList();
         }
 
+        // ─── Импорт сохранённого заказа CCalc 9.12 ─────────────────
+        //
+        // Бот после сохранения заказа пишет реестр
+        // tools/pvc_bridge/orders/<номер>.json (адрес, сумма, сетка, отлив).
+        // Кнопка «Из CCalc» превращает эти записи в обычные заказы A.R.C. Frame —
+        // без фото записки и без повторного прогона CCalc.
+
+        internal void BtnImportFromCcalc_Click(object sender, RoutedEventArgs e)
+        {
+            List<OrderData> candidates;
+            try
+            {
+                candidates = PvcAutoCalcService.LoadOrdersFromCcalcRegistry();
+            }
+            catch (Exception ex)
+            {
+                ToastService.ShowToast($"Не удалось прочитать реестр CCalc: {ex.Message}", ToastType.Error);
+                return;
+            }
+
+            if (candidates.Count == 0)
+            {
+                ToastService.ShowToast("Нет сохранённых заказов CCalc: сначала просчитайте заказ в CCalc.", ToastType.Info);
+                return;
+            }
+
+            List<OrderData> selected;
+            if (candidates.Count == 1)
+            {
+                var only = candidates[0];
+                string items = only.Items.Count > 0
+                    ? string.Join(", ", only.Items.Select(i => $"{i.Name} {i.Width:0}×{i.Height:0}"))
+                    : "без доп. позиций";
+                if (!DialogService.ShowConfirm(
+                        $"Импортировать заказ CCalc №{only.AdditionalKpNumber} — {only.ClientAddress}\n" +
+                        $"Сумма {MoneyFormatService.Format(only.TotalAmount)} ₽, позиции: {items}.",
+                        "Импорт из CCalc", this))
+                    return;
+                selected = candidates;
+            }
+            else
+            {
+                var dlg = new ImportDialogWindow(candidates, this);
+                dlg.ShowDialog();
+                if (!dlg.DialogResultOk) return;
+                selected = dlg.SelectedOrders ?? new List<OrderData>();
+            }
+
+            if (selected.Count == 0) return;
+
+            // Номер КП — по той же схеме, что у обычного заказа
+            string prefix = Sidebar?.TxtPrefix?.Text?.Trim() ?? "";
+            if (string.IsNullOrEmpty(prefix)) prefix = "1";
+            foreach (var order in selected)
+            {
+                if (string.IsNullOrWhiteSpace(order.ContractNumber))
+                    order.ContractNumber = ViewModel.OrdersVM.GenerateContractNumber(prefix);
+            }
+
+            try
+            {
+                var imported = ViewModel.OrdersVM.MergeImport(selected);
+                RefreshOrdersList();
+                ToastService.ShowToast(
+                    imported.Count > 0
+                        ? $"Из CCalc импортировано заказов: {imported.Count}"
+                        : "Заказы CCalc уже есть в списке.",
+                    imported.Count > 0 ? ToastType.Success : ToastType.Info);
+            }
+            catch (Exception ex)
+            {
+                ToastService.ShowToast($"Ошибка импорта из CCalc: {ex.Message}", ToastType.Error);
+            }
+        }
+
         // ─── Double-click → open order ─────────────────────────────
 
         private void OrdersList_MouseDoubleClick(object sender, MouseButtonEventArgs e)

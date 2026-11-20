@@ -257,6 +257,10 @@ namespace MosquitoNetCalculator.Models
                 if (Params.InstallationMode == 0) sb.Append(" с монтажом");
                 return sb.ToString();
             }
+            if (CommandType == AiCommandType.AddAdditionalKp)
+            {
+                return $"📋 Записать в доп. КП: CCalc №{Params.AdditionalKpNumber} на {Params.AdditionalKpAmount:N0} ₽";
+            }
             return _previewText;
         }
 
