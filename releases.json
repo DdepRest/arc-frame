@@ -1,7 +1,21 @@
 {
-  "latest": "3.54.3",
+  "latest": "3.58.0",
   "minRequired": "",
   "releases": [
+    {
+      "changes": [
+        "Исправления стабильности и внутренние улучшения.",
+        "Обновление устанавливается как обычно — данные, заказы и настройки остаются на месте."
+      ],
+      "version": "3.58.0",
+      "type": "Исправление",
+      "size": 94040797,
+      "title": "Технические исправления",
+      "url": "https://github.com/DdepRest/arc-frame/releases/download/v3.58.0/ARC-Frame-3.58.0-full.zip",
+      "sha256": "43601e20e3caf002a4a67006ae8bb2916d6deb27f9252c88c7d81ceb8e9ca7be",
+      "date": "2026-11-20",
+      "mirrorUrl": "https://raw.githubusercontent.com/DdepRest/arc-frame/mirror-latest/ARC-Frame-3.58.0-full.zip"
+    },
     {
       "mirrorUrl": "https://raw.githubusercontent.com/DdepRest/arc-frame/mirror-latest/ARC-Frame-3.54.3-full.zip",
       "date": "2026-10-04",
