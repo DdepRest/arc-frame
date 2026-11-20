@@ -85,6 +85,8 @@ namespace MosquitoNetCalculator.Services
             public bool AskInstallationModeOnAdd { get; set; } = true;
             public int DefaultInstallationMode { get; set; } = -1;
             public bool TemplateAutoSplitMode { get; set; } = true;
+            // Версия, для которой было выполнено единоразовое подтверждение офиса.
+            public string? OfficePromptConfirmedVersion { get; set; }
         }
 
         private static Settings LoadSettings()
@@ -721,6 +723,33 @@ namespace MosquitoNetCalculator.Services
         public static void MarkLocationConfirmed()
         {
             SaveLocationConfirmedAtUtc(DateTime.UtcNow);
+        }
+
+        public const string TargetOfficePromptVersion = "3.58.0";
+
+        /// <summary>
+        /// Требуется ли обязательное единоразовое подтверждение офиса после обновления на целевую версию (3.58.0).
+        /// </summary>
+        public static bool IsOfficePromptRequired()
+        {
+            lock (_lock)
+            {
+                var settings = LoadSettings();
+                return !string.Equals(settings.OfficePromptConfirmedVersion, TargetOfficePromptVersion, StringComparison.OrdinalIgnoreCase);
+            }
+        }
+
+        /// <summary>
+        /// Фиксирует, что офис подтверждён для целевой версии (3.58.0).
+        /// </summary>
+        public static void MarkOfficePromptConfirmed()
+        {
+            lock (_lock)
+            {
+                var settings = LoadSettings();
+                settings.OfficePromptConfirmedVersion = TargetOfficePromptVersion;
+                SaveSettings(settings);
+            }
         }
 
         public static bool LoadTemplateAutoSplitMode()

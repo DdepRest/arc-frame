@@ -38,7 +38,8 @@
                         <ColumnDefinition Width="Auto"/>
                         <ColumnDefinition Width="Auto"/>
                     </Grid.ColumnDefinitions>
-                    <TextBlock Grid.Column="0"
+                    <TextBlock x:Name="TxtTitle"
+                               Grid.Column="0"
                                Text="Добро пожаловать в A.R.C. Frame"
                                FontSize="{StaticResource Type.Body}" FontWeight="SemiBold"
                                Foreground="{DynamicResource TextPrimary}"
@@ -104,6 +105,7 @@
                     <!-- Close button. UX-14: shared DialogCloseButton (was a private
                          60-line copy); локальный ToolTip перекрывает сеттер стиля. -->
                     <Button Grid.Column="2"
+                            x:Name="BtnClose"
                             Width="32" Height="32"
                             Style="{DynamicResource DialogCloseButton}"
                             ToolTip="Закрыть"
@@ -126,11 +128,13 @@
 
                 <!-- Header -->
                 <StackPanel Grid.Row="0">
-                    <TextBlock Text="Выберите своё местоположение"
+                    <TextBlock x:Name="TxtHeader"
+                               Text="Выберите своё местоположение"
                                FontSize="{StaticResource Type.Subtitle}" FontWeight="SemiBold"
                                Foreground="{DynamicResource TextPrimary}"
                                Margin="{DynamicResource Gap.BlockSm}"/>
-                    <TextBlock Text="Это определит нумерацию договоров."
+                    <TextBlock x:Name="TxtSubHeader"
+                               Text="Это определит нумерацию договоров."
                                FontSize="{StaticResource Type.Body}"
                                Foreground="{DynamicResource TextMuted}"
                                TextWrapping="Wrap"

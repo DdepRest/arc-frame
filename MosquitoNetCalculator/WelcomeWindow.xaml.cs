@@ -26,6 +26,12 @@ namespace MosquitoNetCalculator
         public bool IsFirstRun { get; }
 
         /// <summary>
+        /// When true, closing without selecting is forbidden.
+        /// The close button is hidden, Alt+F4 and Escape are blocked.
+        /// </summary>
+        public bool IsMandatory { get; }
+
+        /// <summary>
         /// Contract prefix chosen by the user (e.g. "1"–"5").
         /// Falls back to the default prefix before the user has confirmed.
         /// </summary>
@@ -37,19 +43,36 @@ namespace MosquitoNetCalculator
         /// </summary>
         public string SelectedLocationName => _selected?.LocationName ?? string.Empty;
 
-        public WelcomeWindow(bool isFirstRun = false)
+        public WelcomeWindow(bool isFirstRun = false, bool isMandatory = false)
         {
             IsFirstRun = isFirstRun;
+            IsMandatory = isMandatory;
             InitializeComponent();
 
-            // First-run: no auto-selection — user must explicitly pick.
+            // First-run / mandatory: no auto-selection — user must explicitly pick.
             // Settings flow: pre-select the currently saved location.
-            if (!IsFirstRun)
+            if (!IsFirstRun && !IsMandatory)
             {
                 string current = AppSettingsService.LoadContractPrefix();
                 _selected = LocationOptions.IsValidPrefix(current)
                     ? LocationOptions.GetByPrefixOrDefault(current)
                     : LocationOptions.All[0];
+            }
+
+            if (IsMandatory)
+            {
+                if (BtnClose != null)
+                    BtnClose.Visibility = Visibility.Collapsed;
+
+                if (!IsFirstRun)
+                {
+                    if (TxtTitle != null)
+                        TxtTitle.Text = "Выбор офиса — A.R.C. Frame";
+                    if (TxtHeader != null)
+                        TxtHeader.Text = "Выберите ваш офис";
+                    if (TxtSubHeader != null)
+                        TxtSubHeader.Text = "Пожалуйста, подтвердите текущий офис для корректной нумерации договоров и синхронизации.";
+                }
             }
 
             // Keep the theme toggle icon in sync with the current theme.
@@ -81,8 +104,8 @@ namespace MosquitoNetCalculator
                 UpdatePreview();
             }
 
-            // First-run guard: disable Continue until user explicitly picks
-            if (IsFirstRun && BtnContinue != null)
+            // First-run or mandatory guard: disable Continue until user explicitly picks
+            if ((IsFirstRun || IsMandatory) && BtnContinue != null)
             {
                 BtnContinue.IsEnabled = false;
             }
@@ -95,8 +118,8 @@ namespace MosquitoNetCalculator
                 _selected = option;
                 UpdatePreview();
 
-                // Enable Continue on first explicit selection (first-run guard)
-                if (IsFirstRun && BtnContinue != null)
+                // Enable Continue on explicit selection (first-run or mandatory guard)
+                if ((IsFirstRun || IsMandatory) && BtnContinue != null)
                     BtnContinue.IsEnabled = true;
             }
         }
@@ -119,6 +142,7 @@ namespace MosquitoNetCalculator
             // по старой отметке через пару дней.
             AppSettingsService.MarkLocationConfirmed();
             AppSettingsService.MarkFirstRunComplete();
+            AppSettingsService.MarkOfficePromptConfirmed();
 
             DialogResult = true;
             Close();
@@ -126,6 +150,9 @@ namespace MosquitoNetCalculator
 
         private void BtnClose_Click(object sender, RoutedEventArgs e)
         {
+            if (IsMandatory)
+                return;
+
             // First run: X closes the dialog with false result.
             // App.xaml.cs checks DialogResult and shuts down the app
             // if the user didn't pick a location — this avoids the
@@ -166,6 +193,25 @@ namespace MosquitoNetCalculator
         {
             if (e.ChangedButton == MouseButton.Left)
                 DragMove();
+        }
+
+        protected override void OnClosing(System.ComponentModel.CancelEventArgs e)
+        {
+            base.OnClosing(e);
+            if (IsMandatory && DialogResult != true)
+            {
+                e.Cancel = true;
+            }
+        }
+
+        protected override void OnKeyDown(KeyEventArgs e)
+        {
+            if (IsMandatory && e.Key == Key.Escape)
+            {
+                e.Handled = true;
+                return;
+            }
+            base.OnKeyDown(e);
         }
     }
 }

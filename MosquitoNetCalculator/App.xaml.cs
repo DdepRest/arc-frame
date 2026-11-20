@@ -195,7 +195,7 @@ namespace MosquitoNetCalculator
             // On first run of the new version, migrate existing data.
             MigrateDataToAppData();
 
-            // ── First-run welcome window ──
+            // ── First-run welcome window / One-time post-update office selection ──
             // ShutdownMode=OnExplicitShutdown is set in App.xaml — the app stays
             // alive until Shutdown() is called explicitly. We hook that to
             // MainWindow.Closed below so closing the welcome screen does NOT
@@ -204,13 +204,13 @@ namespace MosquitoNetCalculator
             {
                 try
                 {
-                    var welcome = new WelcomeWindow(isFirstRun: true);
+                    var welcome = new WelcomeWindow(isFirstRun: true, isMandatory: true);
                     if (welcome.ShowDialog() != true)
                     {
                         // User closed without selecting a location — exit the app.
-                        // The welcome dialog already set DialogResult=false (user
-                        // clicked X) and did NOT call MarkFirstRunComplete(), so
-                        // the welcome screen will appear again on next launch.
+                        // The welcome dialog already set DialogResult=false and did
+                        // NOT call MarkFirstRunComplete(), so the screen will appear
+                        // again on next launch.
                         Shutdown();
                         return;
                     }
@@ -220,6 +220,20 @@ namespace MosquitoNetCalculator
                     ShowError(ex);
                     // Ensure first run is marked even if welcome crashes
                     try { AppSettingsService.MarkFirstRunComplete(); } catch { }
+                    try { AppSettingsService.MarkOfficePromptConfirmed(); } catch { }
+                }
+            }
+            else if (AppSettingsService.IsOfficePromptRequired())
+            {
+                try
+                {
+                    var welcome = new WelcomeWindow(isFirstRun: false, isMandatory: true);
+                    welcome.ShowDialog();
+                }
+                catch (Exception ex)
+                {
+                    ShowError(ex);
+                    try { AppSettingsService.MarkOfficePromptConfirmed(); } catch { }
                 }
             }
 
