@@ -14,7 +14,7 @@
 
 | ActionBarControl | class | Controls/ActionBarControl.xaml.cs | | Methods: BtnSaveOrder_Click |
 | AdditionalKpsControl | class | Controls/AdditionalKpsControl.xaml.cs | |
-| AdminPanelControl | class | Controls/AdminPanelControl.xaml.cs | Props: Rows, StatsRows | Methods: RefreshAsync, RefreshInBackgroundAsync, StartAsync, StopAutoRefresh, UpdateEmptyStates, UpdateTokenStatus |
+| AdminPanelControl | class | Controls/AdminPanelControl.xaml.cs | Props: Rows, StatsRows | Methods: RefreshAsync, RefreshInBackgroundAsync, StartAsync, StopAutoRefresh, UpdateEmptyStates, UpdateSummary, UpdateTokenStatus |
 | AdminPasswordWindow | class | Controls/AdminPasswordWindow.xaml.cs | |
 | AiApiKeyDialog | class | Controls/AiApiKeyDialog.xaml.cs | Props: ApiKey, SelectedModels |
 | AiAssistantControl | class | Controls/AiAssistantControl.xaml.cs | |
@@ -41,7 +41,7 @@
 | SidebarControl | class | Controls/SidebarControl.xaml.cs | | Methods: NotesPastingFilter, ResetScroll | Static: M:NotesPastingFilter |
 | SlopeEconomyDetailsWindow | class | Controls/SlopeEconomyDetailsWindow.xaml.cs | | Methods: LoadData |
 | SlopePanelControl | class | Controls/SlopePanelControl.xaml.cs | Props: TotalWindowCountInOrder | Methods: BuildMaterialSummaryRows, ComputePanelTotal, ComputeTotalSavings, LoadForEdit, PrefillDimensions, Reset, SetPriceService | Static: M:BuildMaterialSummaryRows, M:ComputePanelTotal, M:ComputeTotalSavings |
-| TemplatesWindow | class | Controls/TemplatesWindow.xaml.cs | |
+| TemplatesWindow | class | Controls/TemplatesWindow.xaml.cs | | Methods: CenterOnOwner |
 | TitleBarControl | class | Controls/TitleBarControl.xaml.cs | | Methods: OpenSettingsWindow, RefreshUpdateBadge, UpdateSettingsMenu |
 | TotalCardControl | class | Controls/TotalCardControl.xaml.cs | | Methods: SetUndoVisible, UpdatePositionsMeta |
 | UpdateAvailableWindow | class | Controls/UpdateAvailableWindow.xaml.cs | Props: Accepted |

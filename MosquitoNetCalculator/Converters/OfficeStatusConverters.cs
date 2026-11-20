@@ -57,7 +57,8 @@ namespace MosquitoNetCalculator.Converters
                 {
                     OfficeStatus.UpToDate => "BadgeSuccessBg",
                     OfficeStatus.Outdated => "BadgeWarningBg",
-                    _ => "BadgeDangerBg",
+                    OfficeStatus.NoData => "ChipBg",
+                    _ => "BadgeDefaultBg",
                 }
                 : "BadgeDefaultBg";
             return Application.Current?.Resources[key] as Brush ?? Brushes.Transparent;
@@ -79,7 +80,8 @@ namespace MosquitoNetCalculator.Converters
                 {
                     OfficeStatus.UpToDate => "BadgeSuccessFg",
                     OfficeStatus.Outdated => "BadgeWarningFg",
-                    _ => "BadgeDangerFg",
+                    OfficeStatus.NoData => "TextSecondary",
+                    _ => "BadgeDefaultFg",
                 }
                 : "BadgeDefaultFg";
             return Application.Current?.Resources[key] as Brush ?? Brushes.Gray;

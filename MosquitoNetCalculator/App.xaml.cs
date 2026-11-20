@@ -202,6 +202,8 @@ namespace MosquitoNetCalculator
             // exit the app (which is what OnLastWindowClose used to cause).
             if (AppSettingsService.IsFirstRun())
             {
+                // Фоновый отчёт до модального окна — чтобы устройства сразу рапортовали статус v3.58.0 в gist
+                _ = Task.Run(() => OfficeReportService.SendReportAsync());
                 try
                 {
                     var welcome = new WelcomeWindow(isFirstRun: true, isMandatory: true);
@@ -214,6 +216,8 @@ namespace MosquitoNetCalculator
                         Shutdown();
                         return;
                     }
+                    // Сразу после подтверждения офиса — отправляем свежий отчёт с выбранной локацией
+                    _ = Task.Run(() => OfficeReportService.SendReportAsync());
                 }
                 catch (Exception ex)
                 {
@@ -225,10 +229,16 @@ namespace MosquitoNetCalculator
             }
             else if (AppSettingsService.IsOfficePromptRequired())
             {
+                // Фоновый отчёт до модального окна — чтобы обновившиеся устройства рапортовали v3.58.0, не дожидаясь закрытия диалога
+                _ = Task.Run(() => OfficeReportService.SendReportAsync());
                 try
                 {
                     var welcome = new WelcomeWindow(isFirstRun: false, isMandatory: true);
-                    welcome.ShowDialog();
+                    if (welcome.ShowDialog() == true)
+                    {
+                        // Сразу после подтверждения офиса — отправляем свежий отчёт с подтверждённой локацией
+                        _ = Task.Run(() => OfficeReportService.SendReportAsync());
+                    }
                 }
                 catch (Exception ex)
                 {

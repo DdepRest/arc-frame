@@ -77,6 +77,7 @@ namespace MosquitoNetCalculator.Controls
                 Rows.Add(row);
             GroupedRows?.Refresh();
             PruneJustUnbound();
+            OfficesScrollViewer?.ScrollToTop();
         }
 
         /// <summary>TextChanged поля поиска: применить фильтр и показать/скрыть «✕».
@@ -87,6 +88,7 @@ namespace MosquitoNetCalculator.Controls
             BtnClearSearch.Visibility = TxtSearch.Text.Length > 0 ? Visibility.Visible : Visibility.Collapsed;
             GroupedRows?.Refresh();
             UpdateEmptyStates();
+            OfficesScrollViewer?.ScrollToTop();
         }
 
         /// <summary>«✕» в поле поиска: очистить и вернуть фокус.</summary>
@@ -133,6 +135,7 @@ namespace MosquitoNetCalculator.Controls
             RefreshChipVisuals();
             GroupedRows?.Refresh();
             UpdateEmptyStates();
+            OfficesScrollViewer?.ScrollToTop();
         }
 
         /// <summary>

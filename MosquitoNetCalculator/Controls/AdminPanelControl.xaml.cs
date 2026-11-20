@@ -159,15 +159,7 @@ namespace MosquitoNetCalculator.Controls
                 // Сводка по УСТРОЙСТВАМ: в одном офисе может быть несколько ПК.
                 // Актуальность считаем по свежим устройствам; устаревшие офисы —
                 // по строкам (клик по ним копирует напоминание).
-                int knownDevices = rows.Sum(r => r.DeviceCount);
-                int upToDateDevices = rows.Sum(r => r.Devices.Count(d => d.Status == OfficeStatus.UpToDate));
-                int outdatedRows = rows.Count(r => r.Status == OfficeStatus.Outdated);
-                TxtSummary.Text = $"{upToDateDevices} из {knownDevices} устройств актуальны";
-                TxtSummaryBadge.Text = $"{upToDateDevices}/{knownDevices}";
-
-                // Прогресс-бар сводки + состояние быстрых действий.
-                UpdateSummaryProgress(upToDateDevices, knownDevices);
-                UpdateQuickActionsState();
+                UpdateSummary(rows);
 
                 // 4) Статистика.
                 var statsRows = OfficeStatsCalculator.BuildRows(LocationOptions.All, reports, currentPrefix);
@@ -215,6 +207,23 @@ namespace MosquitoNetCalculator.Controls
                 // Тик обратного отсчёта в шапке — на каждом рефреше/тике.
                 UpdateRefreshStatusText();
             }
+        }
+
+        /// <summary>
+        /// Обновляет текстовую сводку и бейдж процентов актуальных устройств.
+        /// </summary>
+        internal void UpdateSummary(IReadOnlyList<OfficeStatusRow> rows)
+        {
+            int knownDevices = rows.Sum(r => r.DeviceCount);
+            int upToDateDevices = rows.Sum(r => r.Devices.Count(d => d.Status == OfficeStatus.UpToDate));
+            int outdatedRows = rows.Count(r => r.Status == OfficeStatus.Outdated);
+            TxtSummary.Text = $"{upToDateDevices} из {knownDevices} устройств актуальны";
+            int percent = knownDevices > 0 ? (upToDateDevices * 100) / knownDevices : 0;
+            TxtSummaryBadge.Text = knownDevices > 0 ? $"{percent}%" : string.Empty;
+
+            // Прогресс-бар сводки + состояние быстрых действий.
+            UpdateSummaryProgress(upToDateDevices, knownDevices);
+            UpdateQuickActionsState();
         }
 
         /// <summary>

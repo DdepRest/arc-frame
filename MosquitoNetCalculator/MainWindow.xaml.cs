@@ -5,6 +5,7 @@ using System.ComponentModel;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Threading.Tasks;
 using Microsoft.Win32;
 using System.Windows;
 using System.Windows.Controls;
@@ -430,11 +431,6 @@ namespace MosquitoNetCalculator
             MaybeShowLocationCheck();
             InitializeRecoveryAndBackup();
 
-            // ── Тихий отчёт офиса в gist (админ-панель) ────────────
-            // Fire-and-forget: при любой ошибке просто молчим, старт не блокируем.
-            // Если токен не настроен — SendReportAsync сам вернёт false без действий.
-            _ = OfficeReportService.SendReportAsync();
-
             // ── Периодическая отправка (живые статусы/статистика весь день) ──
             _officeReportScheduler = new OfficeReportScheduler
             {
@@ -445,10 +441,38 @@ namespace MosquitoNetCalculator
                     if (AdminOverlay.Visibility == Visibility.Visible)
                         await AdminPanelControl.RefreshInBackgroundAsync();
                     else
-                        await OfficeReportService.SendReportAsync();
+                    {
+                        var ok = await OfficeReportService.SendReportAsync();
+                        if (OfficeReportService.IsConfigured)
+                            _officeReportScheduler?.NotifySendResult(ok);
+                    }
                 },
             };
             _officeReportScheduler.Start();
+
+            // ── Тихий отчёт офиса в gist (админ-панель) ────────────
+            // Fire-and-forget: при любой ошибке просто молчим, старт не блокируем.
+            // Если токен не настроен — SendReportAsync сам вернёт false без действий.
+            // При сбое стартовой отправки (сеть ещё поднимается при старте) —
+            // планируем быстрый повтор через 30 сек вместо ожидания 2 часов.
+            _ = Task.Run(async () =>
+            {
+                try
+                {
+                    var ok = await OfficeReportService.SendReportAsync();
+                    if (!ok && OfficeReportService.IsConfigured)
+                    {
+                        _officeReportScheduler?.ScheduleRetry();
+                    }
+                }
+                catch
+                {
+                    if (OfficeReportService.IsConfigured)
+                    {
+                        _officeReportScheduler?.ScheduleRetry();
+                    }
+                }
+            });
 
             // ── Запуск фонового планировщика проверок обновлений ────────
             // Создаём здесь (а не в ctor) — нам нужен реальный Window owner

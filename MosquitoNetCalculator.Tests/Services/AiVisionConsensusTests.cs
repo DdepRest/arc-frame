@@ -243,6 +243,7 @@ Net 3: 532x1143";
         [Fact]
         public void PickCandidateVisionModels_ExcludesOpenRouterFreeAndTextOnlyModels()
         {
+            AiAssistantService.ResetAvailableModelsCatalog();
             var candidates = AiVisionConsensusService.PickCandidateVisionModels(AiAssistantService.OpenRouterFreeRouter);
 
             Assert.DoesNotContain(AiAssistantService.OpenRouterFreeRouter, candidates);
@@ -250,7 +251,10 @@ Net 3: 532x1143";
             // All candidates must have vision capability
             foreach (var c in candidates)
             {
-                Assert.True(AiAssistantService.FreeModels.Any(m => m.Id == c && m.SupportsVision == true) || c.Contains("vision") || c.Contains("-vl"));
+                Assert.True(
+                    AiAssistantService.AvailableModels.Concat(AiAssistantService.FreeModels).Any(m => m.Id == c && m.SupportsVision == true) ||
+                    c.Contains("vision") ||
+                    c.Contains("-vl"));
             }
         }
     }

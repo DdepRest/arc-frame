@@ -85,6 +85,7 @@ namespace MosquitoNetCalculator.Tests.Controls
             };
 
             panel.ReplaceRows(list);
+            panel.UpdateSummary(list);
 
             // Контейнеры ItemsControl материализуются асинхронно (диспетчер):
             // прокачиваем очередь до простоя и перестраиваем layout.
@@ -425,6 +426,84 @@ namespace MosquitoNetCalculator.Tests.Controls
                 panel.OfficesList.RaiseEvent(args2);
                 Assert.False(args2.Handled,
                     "вне режима отвязки панель пометила Preview клика по интерактивному элементу карточки как Handled");
+            });
+        }
+
+        [Fact]
+        public void OfficesScrollViewer_ExistsAndIsNamed()
+        {
+            RunOnSta(() =>
+            {
+                var panel = OpenPanelWithData(out var rows);
+                Assert.NotNull(panel.OfficesScrollViewer);
+                panel.OfficesScrollViewer.ScrollToVerticalOffset(150);
+                panel.ReplaceRows(rows);
+                Assert.Equal(0, panel.OfficesScrollViewer.VerticalOffset);
+            });
+        }
+
+        [Fact]
+        public void TxtSummaryBadge_DisplaysPercentageCalculation()
+        {
+            RunOnSta(() =>
+            {
+                var panel = OpenPanelWithData(out var _);
+                // OpenPanelWithData creates:
+                // Row 1: 3 devices (2 UpToDate, 1 Outdated)
+                // Row 2: 1 device (1 Outdated)
+                // Row 3: 1 device (1 UpToDate)
+                // Row 4: 1 device (1 NoData)
+                // Row 5: 0 devices
+                // Total known: 6; UpToDate: 3. Expected percentage: 3 * 100 / 6 = 50%
+                Assert.Equal("50%", panel.TxtSummaryBadge.Text);
+                Assert.Equal("3 из 6 устройств актуальны", panel.TxtSummary.Text);
+
+                // 100% when all devices up-to-date
+                var allUpToDate = new List<OfficeStatusRow>
+                {
+                    new()
+                    {
+                        Prefix = "1",
+                        LocationName = "Офис 1",
+                        DeviceCount = 2,
+                        Devices = new[]
+                        {
+                            new OfficeDeviceRow { DeviceId = "d1", Status = OfficeStatus.UpToDate },
+                            new OfficeDeviceRow { DeviceId = "d2", Status = OfficeStatus.UpToDate }
+                        }
+                    }
+                };
+                panel.UpdateSummary(allUpToDate);
+                Assert.Equal("100%", panel.TxtSummaryBadge.Text);
+                Assert.Equal("2 из 2 устройств актуальны", panel.TxtSummary.Text);
+
+                // 0% when none are up-to-date
+                var noneUpToDate = new List<OfficeStatusRow>
+                {
+                    new()
+                    {
+                        Prefix = "1",
+                        LocationName = "Офис 1",
+                        DeviceCount = 2,
+                        Devices = new[]
+                        {
+                            new OfficeDeviceRow { DeviceId = "d1", Status = OfficeStatus.Outdated },
+                            new OfficeDeviceRow { DeviceId = "d2", Status = OfficeStatus.NoData }
+                        }
+                    }
+                };
+                panel.UpdateSummary(noneUpToDate);
+                Assert.Equal("0%", panel.TxtSummaryBadge.Text);
+                Assert.Equal("0 из 2 устройств актуальны", panel.TxtSummary.Text);
+
+                // string.Empty when 0 known devices
+                var zeroDevices = new List<OfficeStatusRow>
+                {
+                    new() { Prefix = "1", LocationName = "Офис 1", DeviceCount = 0, Devices = Array.Empty<OfficeDeviceRow>() }
+                };
+                panel.UpdateSummary(zeroDevices);
+                Assert.Equal(string.Empty, panel.TxtSummaryBadge.Text);
+                Assert.Equal("0 из 0 устройств актуальны", panel.TxtSummary.Text);
             });
         }
 

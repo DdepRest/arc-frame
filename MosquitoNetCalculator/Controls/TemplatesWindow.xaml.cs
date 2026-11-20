@@ -5,9 +5,11 @@ using System.Windows;
 using System.Windows.Automation;
 using System.Windows.Controls;
 using System.Windows.Input;
+using System.Windows.Interop;
 using System.Windows.Media;
 using System.Windows.Media.Animation;
 using System.Windows.Shapes;
+using System.Windows.Threading;
 using MosquitoNetCalculator.Helpers;
 using MosquitoNetCalculator.Models;
 using MosquitoNetCalculator.Services;
@@ -55,6 +57,7 @@ namespace MosquitoNetCalculator.Controls
 
             Loaded += (_, _) =>
             {
+                CenterOnOwner();
                 var storyboard = (Storyboard)FindResource("WindowOpenAnimation");
                 Storyboard.SetTarget(storyboard, RootBorder);
                 Motion.Run(storyboard);
@@ -345,7 +348,8 @@ namespace MosquitoNetCalculator.Controls
             GalleryView.Visibility = Visibility.Collapsed;
             ChecklistView.Visibility = Visibility.Visible;
             SizeToContent = SizeToContent.Manual;
-            Height = _checklistHeight > 500 ? _checklistHeight : 700;
+            double desiredH = _checklistHeight > 500 ? _checklistHeight : 700;
+            CenterOnOwner(desiredH);
         }
 
         private void ShowGalleryView()
@@ -356,6 +360,115 @@ namespace MosquitoNetCalculator.Controls
             _template = null;
             SizeToContent = SizeToContent.Height;
             Height = double.NaN;
+            Dispatcher.BeginInvoke(DispatcherPriority.Loaded, () => CenterOnOwner());
+        }
+
+        internal static (double Left, double Top, double Height) ComputeCenteredBounds(
+            double ownerLeft, double ownerTop, double ownerWidth, double ownerHeight,
+            double windowWidth, double desiredHeight,
+            double workAreaLeft, double workAreaTop, double workAreaRight, double workAreaBottom)
+        {
+            double availableHeight = workAreaBottom - workAreaTop;
+            double clampedHeight = Math.Min(desiredHeight, Math.Max(380, availableHeight - 40));
+
+            double centerX = ownerLeft + ownerWidth / 2.0;
+            double centerY = ownerTop + ownerHeight / 2.0;
+
+            double left = centerX - windowWidth / 2.0;
+            double top = centerY - clampedHeight / 2.0;
+
+            left = Math.Max(workAreaLeft, Math.Min(left, workAreaRight - windowWidth));
+            top = Math.Max(workAreaTop, Math.Min(top, workAreaBottom - clampedHeight));
+
+            return (left, top, clampedHeight);
+        }
+
+        public void CenterOnOwner(double? targetHeight = null)
+        {
+            Window? owner = _mw ?? Owner as MainWindow;
+            double winWidth = ActualWidth > 0 ? ActualWidth : (double.IsNaN(Width) ? 640 : Width);
+            double desiredH = targetHeight ?? (ActualHeight > 0 ? ActualHeight : 500);
+
+            double dpiScaleX = 1.0;
+            double dpiScaleY = 1.0;
+            if (owner != null)
+            {
+                var dpi = VisualTreeHelper.GetDpi(owner);
+                if (dpi.DpiScaleX > 0) dpiScaleX = dpi.DpiScaleX;
+                if (dpi.DpiScaleY > 0) dpiScaleY = dpi.DpiScaleY;
+            }
+
+            Rect workAreaDip;
+            if (owner != null)
+            {
+                var helper = new WindowInteropHelper(owner);
+                IntPtr hwnd = helper.Handle == IntPtr.Zero ? helper.EnsureHandle() : helper.Handle;
+                var screen = System.Windows.Forms.Screen.FromHandle(hwnd);
+                if (screen != null)
+                {
+                    var wa = screen.WorkingArea;
+                    workAreaDip = new Rect(
+                        wa.Left / dpiScaleX,
+                        wa.Top / dpiScaleY,
+                        wa.Width / dpiScaleX,
+                        wa.Height / dpiScaleY);
+                }
+                else
+                {
+                    workAreaDip = SystemParameters.WorkArea;
+                }
+            }
+            else
+            {
+                workAreaDip = SystemParameters.WorkArea;
+            }
+
+            double oLeft, oTop, oWidth, oHeight;
+            if (owner != null)
+            {
+                if (owner.WindowState == WindowState.Maximized)
+                {
+                    Point screenOrigin;
+                    try
+                    {
+                        screenOrigin = owner.PointToScreen(new Point(0, 0));
+                    }
+                    catch
+                    {
+                        screenOrigin = new Point(workAreaDip.Left * dpiScaleX, workAreaDip.Top * dpiScaleY);
+                    }
+                    oLeft = screenOrigin.X / dpiScaleX;
+                    oTop = screenOrigin.Y / dpiScaleY;
+                    oWidth = owner.ActualWidth > 0 ? owner.ActualWidth : workAreaDip.Width;
+                    oHeight = owner.ActualHeight > 0 ? owner.ActualHeight : workAreaDip.Height;
+                }
+                else
+                {
+                    oLeft = owner.Left;
+                    oTop = owner.Top;
+                    oWidth = owner.ActualWidth > 0 ? owner.ActualWidth : (double.IsNaN(owner.Width) ? 900 : owner.Width);
+                    oHeight = owner.ActualHeight > 0 ? owner.ActualHeight : (double.IsNaN(owner.Height) ? 600 : owner.Height);
+                }
+            }
+            else
+            {
+                oLeft = workAreaDip.Left;
+                oTop = workAreaDip.Top;
+                oWidth = workAreaDip.Width;
+                oHeight = workAreaDip.Height;
+            }
+
+            var (newLeft, newTop, newHeight) = ComputeCenteredBounds(
+                oLeft, oTop, oWidth, oHeight,
+                winWidth, desiredH,
+                workAreaDip.Left, workAreaDip.Top, workAreaDip.Right, workAreaDip.Bottom);
+
+            Left = newLeft;
+            Top = newTop;
+            if (targetHeight.HasValue)
+            {
+                Height = newHeight;
+            }
         }
 
         // ─────────────────────────────────────────────────────────

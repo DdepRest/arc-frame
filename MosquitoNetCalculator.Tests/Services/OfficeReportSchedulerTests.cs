@@ -146,5 +146,108 @@ namespace MosquitoNetCalculator.Tests.Services
             // Сам колбэк в тесте не дёргается (тестируется только чистая логика).
             Assert.Equal(0, fireCount);
         }
+
+        [Fact]
+        public void RapidRetryInterval_MatchProductionContract()
+        {
+            Assert.Equal(TimeSpan.FromSeconds(30), OfficeReportScheduler.RapidRetryInterval);
+            Assert.Equal(OfficeReportScheduler.RapidRetryInterval, new OfficeReportScheduler().RetryInterval);
+        }
+
+        [Fact]
+        public void ScheduleRetry_TriggersAfterRapidRetryInterval_InsteadOfFullInterval()
+        {
+            var (s, clock) = MakeScheduler();
+            s.Start();
+
+            // Сразу после старта отправка подавлена
+            Assert.False(s.ShouldSendAt(clock.Now));
+            Assert.False(s.IsRetryPending);
+
+            // Сбой отправки — планируем быстрый повтор
+            s.ScheduleRetry();
+
+            Assert.True(s.IsRetryPending);
+            Assert.Equal(clock.Now.AddSeconds(30), s.RetryDueTime);
+
+            // Через 15 секунд — ещё рано
+            clock.Now = clock.Now.AddSeconds(15);
+            Assert.False(s.ShouldSendAt(clock.Now));
+
+            // Через 30 секунд — пора слать повтор
+            clock.Now = clock.Now.AddSeconds(15);
+            Assert.True(s.ShouldSendAt(clock.Now));
+
+            // После успешного MarkSent() retry сброшен, следующий отчёт только через полный Interval (30 мин)
+            s.MarkSent();
+            Assert.False(s.IsRetryPending);
+            Assert.False(s.ShouldSendAt(clock.Now));
+
+            clock.Now = clock.Now.AddMinutes(29);
+            Assert.False(s.ShouldSendAt(clock.Now));
+
+            clock.Now = clock.Now.AddMinutes(1);
+            Assert.True(s.ShouldSendAt(clock.Now));
+        }
+
+        [Fact]
+        public void NotifySendResult_False_SchedulesRetry_True_ClearsRetry()
+        {
+            var (s, clock) = MakeScheduler();
+            s.Start();
+            Assert.Equal(s.Interval, s.CurrentTimerInterval);
+
+            s.NotifySendResult(false);
+            Assert.True(s.IsRetryPending);
+            Assert.Equal(s.RetryInterval, s.CurrentTimerInterval);
+
+            s.NotifySendResult(true);
+            Assert.False(s.IsRetryPending);
+            Assert.Equal(s.Interval, s.CurrentTimerInterval);
+        }
+
+        [Fact]
+        public void MarkSent_RestoresDefaultTimerInterval()
+        {
+            var (s, _) = MakeScheduler();
+            s.Start();
+            s.ScheduleRetry();
+            Assert.Equal(s.RetryInterval, s.CurrentTimerInterval);
+
+            s.MarkSent();
+            Assert.False(s.IsRetryPending);
+            Assert.Equal(s.Interval, s.CurrentTimerInterval);
+        }
+
+        [Fact]
+        public void TimerJitterTolerance_AllowsSlightlyEarlyTick()
+        {
+            var (s, clock) = MakeScheduler();
+            s.Start();
+
+            // Retry scheduled for T+30s
+            s.ScheduleRetry();
+
+            // Windows timer ticks 50 ms before 30 seconds (due to standard 15.6ms OS timer resolution)
+            var slightlyEarlyRetry = clock.Now.AddSeconds(30).AddMilliseconds(-50);
+            Assert.True(s.ShouldSendAt(slightlyEarlyRetry), "Небольшой джиттер таймера не должен приводить к пропуску тика повтора");
+
+            // Normal interval T+30 min: ticks 500 ms early
+            s.MarkSent();
+            var slightlyEarlyInterval = clock.Now.AddMinutes(30).AddMilliseconds(-500);
+            Assert.True(s.ShouldSendAt(slightlyEarlyInterval), "Джиттер таймера не должен приводить к пропуску 2-часового планового отчёта");
+        }
+
+        [Fact]
+        public void Stop_ClearsPendingRetry()
+        {
+            var (s, clock) = MakeScheduler();
+            s.Start();
+            s.ScheduleRetry();
+            Assert.True(s.IsRetryPending);
+
+            s.Stop();
+            Assert.False(s.IsRetryPending);
+        }
     }
 }

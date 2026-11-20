@@ -595,5 +595,103 @@ namespace MosquitoNetCalculator.Tests.Controls
                 }
             });
         }
+
+        [Fact]
+        public void ComputeCenteredBounds_CentersOverNormalWindow()
+        {
+            // Owner: left 100, top 100, width 1000, height 800 -> center is (600, 500)
+            // Window: width 640, desiredHeight 500 -> half-size is (320, 250) -> left 280, top 250
+            // WorkArea: 0, 0, 1920, 1080
+            var (left, top, height) = TemplatesWindow.ComputeCenteredBounds(
+                ownerLeft: 100, ownerTop: 100, ownerWidth: 1000, ownerHeight: 800,
+                windowWidth: 640, desiredHeight: 500,
+                workAreaLeft: 0, workAreaTop: 0, workAreaRight: 1920, workAreaBottom: 1080);
+
+            Assert.Equal(280, left);
+            Assert.Equal(250, top);
+            Assert.Equal(500, height);
+        }
+
+        [Fact]
+        public void ComputeCenteredBounds_MaximizedOrOffsetWindow()
+        {
+            // Owner on second monitor: left 1920, top 0, width 1920, height 1080 -> center is (2880, 540)
+            // Window: width 640, desiredHeight 700 -> half-size is (320, 350) -> left 2560, top 190
+            // WorkArea: 1920, 0, 3840, 1080
+            var (left, top, height) = TemplatesWindow.ComputeCenteredBounds(
+                ownerLeft: 1920, ownerTop: 0, ownerWidth: 1920, ownerHeight: 1080,
+                windowWidth: 640, desiredHeight: 700,
+                workAreaLeft: 1920, workAreaTop: 0, workAreaRight: 3840, workAreaBottom: 1080);
+
+            Assert.Equal(2560, left);
+            Assert.Equal(190, top);
+            Assert.Equal(700, height);
+        }
+
+        [Fact]
+        public void ComputeCenteredBounds_ClampsToWorkArea_WhenWindowIsTallerThanScreen()
+        {
+            // Small screen: height 600 (workArea: top 0, bottom 600). availableHeight = 600.
+            // clampedHeight = Math.Min(900, Math.Max(380, 600 - 40)) = 560.
+            // Owner: left 0, top 0, width 800, height 600 -> center is (400, 300)
+            // Window: width 640, desiredHeight 900 -> half-size is (320, 280) -> top 20
+            // clamped to workArea: top 20 (within 0 .. 600 - 560 = 40)
+            var (left, top, height) = TemplatesWindow.ComputeCenteredBounds(
+                ownerLeft: 0, ownerTop: 0, ownerWidth: 800, ownerHeight: 600,
+                windowWidth: 640, desiredHeight: 900,
+                workAreaLeft: 0, workAreaTop: 0, workAreaRight: 800, workAreaBottom: 600);
+
+            Assert.Equal(560, height);
+            Assert.Equal(80, left);
+            Assert.Equal(20, top);
+
+            // Test clamping against boundary: owner pushed far off-screen to the right/bottom
+            var (leftOff, topOff, heightOff) = TemplatesWindow.ComputeCenteredBounds(
+                ownerLeft: 2000, ownerTop: 2000, ownerWidth: 800, ownerHeight: 600,
+                windowWidth: 640, desiredHeight: 500,
+                workAreaLeft: 0, workAreaTop: 0, workAreaRight: 800, workAreaBottom: 600);
+
+            Assert.Equal(800 - 640, leftOff); // 160
+            Assert.Equal(600 - 500, topOff);  // 100
+            Assert.Equal(500, heightOff);
+        }
+
+        [Fact]
+        public void ShowChecklistView_And_ShowGalleryView_UpdatesWindowBounds()
+        {
+            TestAppThemes.RunOnSta(() =>
+            {
+                var window = new TemplatesWindow(null!);
+                try
+                {
+                    // CenterOnOwner with null owner centers on SystemParameters.WorkArea safely
+                    window.CenterOnOwner();
+                    Assert.False(double.IsNaN(window.Left));
+                    Assert.False(double.IsNaN(window.Top));
+
+                    // ShowChecklistView switches view and centers with desiredHeight
+                    var showChecklist = typeof(TemplatesWindow).GetMethod("ShowChecklistView", BindingFlags.Instance | BindingFlags.NonPublic);
+                    Assert.NotNull(showChecklist);
+                    showChecklist.Invoke(window, null);
+
+                    Assert.Equal(Visibility.Visible, window.ChecklistView.Visibility);
+                    Assert.Equal(Visibility.Collapsed, window.GalleryView.Visibility);
+                    Assert.True(window.Height >= 380);
+
+                    // ShowGalleryView returns to gallery view and resets Height to NaN
+                    var showGallery = typeof(TemplatesWindow).GetMethod("ShowGalleryView", BindingFlags.Instance | BindingFlags.NonPublic);
+                    Assert.NotNull(showGallery);
+                    showGallery.Invoke(window, null);
+
+                    Assert.Equal(Visibility.Collapsed, window.ChecklistView.Visibility);
+                    Assert.Equal(Visibility.Visible, window.GalleryView.Visibility);
+                    Assert.True(double.IsNaN(window.Height));
+                }
+                finally
+                {
+                    window.Close();
+                }
+            });
+        }
     }
 }
