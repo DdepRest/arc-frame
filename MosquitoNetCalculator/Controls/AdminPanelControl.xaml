@@ -87,12 +87,12 @@
         <!-- ═══════════════════════════════════════════════════════ -->
         <!-- БАННЕРЫ                                                 -->
         <!-- ═══════════════════════════════════════════ легаси -->
-        <StackPanel Grid.Row="1" Margin="{DynamicResource Gap.PanelSection}">
+        <StackPanel Grid.Row="1">
             <Border x:Name="BannerNotConfigured"
                     Background="{DynamicResource BadgeWarningBg}"
                     CornerRadius="{DynamicResource Radius.Lg}"
                     Padding="{DynamicResource Pad.Card}"
-                    Margin="{DynamicResource Gap.Block}"
+                    Margin="{DynamicResource Gap.PanelSection}"
                     Visibility="Collapsed">
                 <StackPanel Orientation="Horizontal">
                     <TextBlock Text="&#xE7BA;" FontFamily="{DynamicResource Font.Icon}"
@@ -110,7 +110,7 @@
                     Background="{DynamicResource BadgeDangerBg}"
                     CornerRadius="{DynamicResource Radius.Lg}"
                     Padding="{DynamicResource Pad.Card}"
-                    Margin="{DynamicResource Gap.Block}"
+                    Margin="{DynamicResource Gap.PanelSection}"
                     Visibility="Collapsed">
                 <StackPanel Orientation="Horizontal">
                     <TextBlock Text="&#xE7BA;" FontFamily="{DynamicResource Font.Icon}"
@@ -431,7 +431,7 @@
                                 </ItemsControl.GroupStyle>
                                 <ItemsControl.ItemTemplate>
                                     <DataTemplate>
-                                        <Border CornerRadius="{DynamicResource Radius.Md}" Margin="{DynamicResource Gap.BlockSm}" Padding="{DynamicResource Pad.None}"
+                                        <Border CornerRadius="{DynamicResource Radius.Card}" Margin="{DynamicResource Gap.BlockSm}" Padding="{DynamicResource Pad.None}"
                                                 Background="{DynamicResource Surface}"
                                                 BorderBrush="{DynamicResource Border}" BorderThickness="1"
                                                 ClipToBounds="True">

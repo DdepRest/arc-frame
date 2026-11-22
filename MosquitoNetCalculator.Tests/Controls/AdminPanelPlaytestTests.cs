@@ -594,5 +594,33 @@ namespace MosquitoNetCalculator.Tests.Controls
             return null;
         }
 
+        [Fact]
+        public void Playtest_BannersCollapsed_DoesNotOccupyVerticalSpace()
+        {
+            RunOnSta(() =>
+            {
+                var panel = OpenPanelWithData(out var _);
+                panel.Measure(new Size(800, 600));
+                panel.Arrange(new Rect(0, 0, 800, 600));
+                panel.UpdateLayout();
+
+                var bannersHost = (StackPanel)panel.BannerNotConfigured.Parent;
+                Assert.Equal(0, bannersHost.ActualHeight);
+            });
+        }
+
+        [Fact]
+        public void Playtest_OfficeCard_OuterBorderUsesRadiusCard_ConcentricWithInnerStripe()
+        {
+            RunOnSta(() =>
+            {
+                var panel = OpenPanelWithData(out var _);
+                var card = FindOfficeCardByPrefix(panel, "1");
+                Assert.NotNull(card);
+
+                var expectedRadius = (CornerRadius)Application.Current.Resources["Radius.Card"];
+                Assert.Equal(expectedRadius, card!.CornerRadius);
+            });
+        }
     }
 }
