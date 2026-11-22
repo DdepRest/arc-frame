@@ -431,7 +431,7 @@
                                 </ItemsControl.GroupStyle>
                                 <ItemsControl.ItemTemplate>
                                     <DataTemplate>
-                                        <Border CornerRadius="{DynamicResource Radius.Lg}" Margin="{DynamicResource Gap.Block}" Padding="{DynamicResource Pad.None}"
+                                        <Border CornerRadius="{DynamicResource Radius.Md}" Margin="{DynamicResource Gap.BlockSm}" Padding="{DynamicResource Pad.None}"
                                                 Background="{DynamicResource Surface}"
                                                 BorderBrush="{DynamicResource Border}" BorderThickness="1"
                                                 ClipToBounds="True">
@@ -449,196 +449,192 @@
                                                     CornerRadius="{DynamicResource Radius.StripeInner}"
                                                     BorderBrush="{Binding Status, Converter={StaticResource OfficeStatusStripeBrush}}">
                                                 <StackPanel Margin="{DynamicResource Pad.Card}">
-                                                    <!-- Строка 1: Информация об офисе слева + отчёт и прогресс справа -->
-                                                    <Grid>
+                                                    <!-- Line 1: Office Header (Clean 1-line Grid, never wraps or fragments) -->
+                                                    <Grid VerticalAlignment="Center">
                                                         <Grid.ColumnDefinitions>
                                                             <ColumnDefinition Width="*"/>
                                                             <ColumnDefinition Width="Auto"/>
                                                         </Grid.ColumnDefinitions>
 
-                                                        <!-- Слева: название + префикс + этот офис + бейдж статуса + кол-во устройств -->
-                                                        <WrapPanel Grid.Column="0" VerticalAlignment="Center" Margin="{DynamicResource Gap.RightSm}">
+                                                        <!-- Left: [Офис X] + Name + [этот офис] -->
+                                                        <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center">
+                                                            <Border Background="{DynamicResource ChipBg}"
+                                                                    CornerRadius="{DynamicResource Radius.Sm}"
+                                                                    Padding="{DynamicResource Pad.Tiny}"
+                                                                    VerticalAlignment="Center"
+                                                                    Margin="{DynamicResource Gap.InlineSm}">
+                                                                <TextBlock Text="{Binding Prefix, StringFormat=Офис {0}}"
+                                                                           FontSize="{StaticResource Type.Caption}" FontWeight="Bold"
+                                                                           Foreground="{DynamicResource TextSecondary}"
+                                                                           VerticalAlignment="Center"/>
+                                                            </Border>
                                                             <TextBlock Text="{Binding LocationName}"
-                                                                       FontSize="{StaticResource Type.BodyLg}" FontWeight="SemiBold"
+                                                                       FontSize="{StaticResource Type.Body}" FontWeight="SemiBold"
                                                                        Foreground="{DynamicResource TextPrimary}"
-                                                                       VerticalAlignment="Center" Margin="{DynamicResource Gap.RightSm}"/>
-                                                            <WrapPanel VerticalAlignment="Center">
-                                                                <Border Background="{DynamicResource ChipBg}"
-                                                                        CornerRadius="{DynamicResource Radius.Md}" Padding="{DynamicResource Pad.Pill}"
-                                                                        Margin="{DynamicResource Gap.InlineSm}" VerticalAlignment="Center">
-                                                                    <TextBlock Text="{Binding Prefix, StringFormat=Офис {0}}"
-                                                                               FontSize="{StaticResource Type.Caption}" FontWeight="SemiBold"
-                                                                               Foreground="{DynamicResource TextSecondary}"
-                                                                               VerticalAlignment="Center"/>
-                                                                </Border>
-                                                                <Border Background="{DynamicResource AccentLight}"
-                                                                        CornerRadius="{DynamicResource Radius.Md}" Padding="{DynamicResource Pad.Pill}"
-                                                                        Margin="{DynamicResource Gap.InlineSm}" VerticalAlignment="Center"
-                                                                        Visibility="Collapsed">
-                                                                    <Border.Style>
-                                                                        <Style TargetType="Border">
-                                                                            <Style.Triggers>
-                                                                                <DataTrigger Binding="{Binding IsCurrentOffice}" Value="True">
-                                                                                    <Setter Property="Visibility" Value="Visible"/>
-                                                                                </DataTrigger>
-                                                                            </Style.Triggers>
-                                                                        </Style>
-                                                                    </Border.Style>
-                                                                    <TextBlock Text="этот офис"
-                                                                               FontSize="{StaticResource Type.Caption}" FontWeight="SemiBold"
-                                                                               Foreground="{DynamicResource AccentText}"
-                                                                               VerticalAlignment="Center"/>
-                                                                </Border>
-                                                                <!-- Бейдж статуса справа от заголовка -->
-                                                                <Border VerticalAlignment="Center" Margin="{DynamicResource Gap.InlineSm}"
-                                                                        CornerRadius="{DynamicResource Radius.Md}" Padding="{DynamicResource Pad.Pill}"
-                                                                        Background="{Binding Status, Converter={StaticResource OfficeStatusBadgeBg}}">
-                                                                    <StackPanel Orientation="Horizontal">
-                                                                        <TextBlock Text="{Binding StatusGlyph}"
-                                                                                   FontFamily="{DynamicResource Font.Icon}"
-                                                                                   FontSize="{StaticResource Type.Body}" FontWeight="Bold"
-                                                                                   Foreground="{Binding Status, Converter={StaticResource OfficeStatusBadgeFg}}"
-                                                                                   VerticalAlignment="Center"
-                                                                                   Margin="{DynamicResource Gap.InlineSm}"/>
-                                                                        <TextBlock Text="{Binding StatusText}"
-                                                                                   FontSize="{StaticResource Type.Caption}" FontWeight="SemiBold"
-                                                                                   Foreground="{Binding Status, Converter={StaticResource OfficeStatusBadgeFg}}"
-                                                                                   VerticalAlignment="Center"/>
-                                                                    </StackPanel>
-                                                                </Border>
-                                                                <!-- Кол-во устройств офиса -->
-                                                                <Border Background="{DynamicResource ChipBg}"
-                                                                        CornerRadius="{DynamicResource Radius.Md}" Padding="{DynamicResource Pad.Pill}"
-                                                                        Margin="{DynamicResource Gap.InlineSm}" VerticalAlignment="Center"
-                                                                        Visibility="Visible">
-                                                                    <Border.Style>
-                                                                        <Style TargetType="Border">
-                                                                            <Style.Triggers>
-                                                                                <DataTrigger Binding="{Binding DeviceCount}" Value="0">
-                                                                                    <Setter Property="Visibility" Value="Collapsed"/>
-                                                                                </DataTrigger>
-                                                                            </Style.Triggers>
-                                                                        </Style>
-                                                                    </Border.Style>
-                                                                    <TextBlock Text="{Binding DeviceCountDisplay}"
-                                                                               FontSize="{StaticResource Type.Caption}" FontWeight="SemiBold"
-                                                                               Foreground="{DynamicResource TextSecondary}"
-                                                                               VerticalAlignment="Center"/>
-                                                                </Border>
-                                                            </WrapPanel>
-                                                        </WrapPanel>
+                                                                       TextTrimming="CharacterEllipsis"
+                                                                       VerticalAlignment="Center"
+                                                                       Margin="{DynamicResource Gap.InlineSm}"/>
+                                                            <Border Background="{DynamicResource AccentLight}"
+                                                                    CornerRadius="{DynamicResource Radius.Sm}"
+                                                                    Padding="{DynamicResource Pad.Tiny}"
+                                                                    VerticalAlignment="Center"
+                                                                    Margin="{DynamicResource Gap.InlineSm}"
+                                                                    Visibility="Collapsed">
+                                                                <Border.Style>
+                                                                    <Style TargetType="Border">
+                                                                        <Style.Triggers>
+                                                                            <DataTrigger Binding="{Binding IsCurrentOffice}" Value="True">
+                                                                                <Setter Property="Visibility" Value="Visible"/>
+                                                                            </DataTrigger>
+                                                                        </Style.Triggers>
+                                                                    </Style>
+                                                                </Border.Style>
+                                                                <TextBlock Text="этот офис"
+                                                                           FontSize="{StaticResource Type.Caption}" FontWeight="SemiBold"
+                                                                           Foreground="{DynamicResource AccentText}"
+                                                                           VerticalAlignment="Center"/>
+                                                            </Border>
+                                                        </StackPanel>
 
-                                                        <!-- Справа: Отчёт + мини-прогресс «1/4» -->
+                                                        <!-- Right: Status Badge + Progress + Freshness -->
                                                         <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
-                                                            <TextBlock Text="Отчёт:"
+                                                            <Border CornerRadius="{DynamicResource Radius.Sm}"
+                                                                    Padding="{DynamicResource Pad.Tiny}"
+                                                                    Background="{Binding Status, Converter={StaticResource OfficeStatusBadgeBg}}"
+                                                                    VerticalAlignment="Center"
+                                                                    Margin="{DynamicResource Gap.InlineSm}">
+                                                                <StackPanel Orientation="Horizontal">
+                                                                    <TextBlock Text="{Binding StatusGlyph}"
+                                                                               FontFamily="{DynamicResource Font.Icon}"
+                                                                               FontSize="{StaticResource Type.Caption}" FontWeight="Bold"
+                                                                               Foreground="{Binding Status, Converter={StaticResource OfficeStatusBadgeFg}}"
+                                                                               VerticalAlignment="Center"
+                                                                               Margin="{DynamicResource Gap.RightHair}"/>
+                                                                    <TextBlock Text="{Binding StatusText}"
+                                                                               FontSize="{StaticResource Type.Caption}" FontWeight="SemiBold"
+                                                                               Foreground="{Binding Status, Converter={StaticResource OfficeStatusBadgeFg}}"
+                                                                               VerticalAlignment="Center"/>
+                                                                </StackPanel>
+                                                            </Border>
+
+                                                            <TextBlock Text="{Binding ProgressText}"
+                                                                       FontSize="{StaticResource Type.Caption}" FontWeight="SemiBold"
+                                                                       Foreground="{DynamicResource TextSecondary}"
+                                                                       Margin="{DynamicResource Gap.InlineSm}"
+                                                                       VerticalAlignment="Center"/>
+
+                                                            <TextBlock Text="{Binding LastReportDisplay, StringFormat='· {0}'}"
                                                                        FontSize="{StaticResource Type.Caption}"
                                                                        Foreground="{DynamicResource TextMuted}"
                                                                        VerticalAlignment="Center"/>
-                                                            <TextBlock Text="{Binding LastReportDisplay}"
-                                                                       FontSize="{StaticResource Type.Caption}" FontWeight="SemiBold"
-                                                                       Foreground="{DynamicResource TextSecondary}"
-                                                                       Margin="{DynamicResource Gap.LeftSm}"
-                                                                       VerticalAlignment="Center"/>
-                                                            <!-- Мини-прогресс «2/3» с тонкой полосой -->
-                                                            <Border Background="{DynamicResource ChipBg}" CornerRadius="{DynamicResource Radius.Md}" Padding="{DynamicResource Pad.Pill}"
-                                                                    Margin="{DynamicResource Gap.Left}" VerticalAlignment="Center"
-                                                                    ToolTip="Сколько устройств офиса в актуальной версии">
-                                                                <StackPanel Orientation="Horizontal">
-                                                                    <Border Width="34" Height="5" CornerRadius="{DynamicResource Radius.CapsuleSm}"
-                                                                            Background="{DynamicResource Border}" VerticalAlignment="Center">
-                                                                        <Border Width="{Binding ProgressWidth}"
-                                                                                HorizontalAlignment="Left" CornerRadius="{DynamicResource Radius.CapsuleSm}"
-                                                                                Background="{DynamicResource Success}"/>
-                                                                    </Border>
-                                                                    <TextBlock Text="{Binding ProgressText}"
-                                                                               FontSize="{StaticResource Type.Caption}" FontWeight="SemiBold"
-                                                                               Foreground="{DynamicResource TextSecondary}"
-                                                                               Margin="{DynamicResource Gap.LeftSm}" VerticalAlignment="Center"/>
-                                                                </StackPanel>
-                                                            </Border>
                                                         </StackPanel>
                                                     </Grid>
 
-                                                    <!-- Строка 2: Устройства офиса (если есть) -->
-                                                    <StackPanel Margin="{DynamicResource Gap.BlockTopSm}" Visibility="Visible">
-                                                        <StackPanel.Style>
-                                                            <Style TargetType="StackPanel">
+                                                    <!-- Line 2: Devices (Clean compact chips without the redundant 'Устройства:' label) -->
+                                                    <ItemsControl ItemsSource="{Binding Devices}" Margin="{DynamicResource Gap.BlockTopSm}">
+                                                        <ItemsControl.Style>
+                                                            <Style TargetType="ItemsControl">
                                                                 <Style.Triggers>
                                                                     <DataTrigger Binding="{Binding Devices.Count}" Value="0">
                                                                         <Setter Property="Visibility" Value="Collapsed"/>
                                                                     </DataTrigger>
                                                                 </Style.Triggers>
                                                             </Style>
-                                                        </StackPanel.Style>
-                                                        <TextBlock Text="Устройства:"
-                                                                   FontSize="{StaticResource Type.Caption}"
-                                                                   Foreground="{DynamicResource TextMuted}"
-                                                                   Margin="{DynamicResource Gap.BlockSm}"/>
-                                                        <ItemsControl ItemsSource="{Binding Devices}">
-                                                            <ItemsControl.ItemsPanel>
-                                                                <ItemsPanelTemplate>
-                                                                    <WrapPanel/>
-                                                                </ItemsPanelTemplate>
-                                                            </ItemsControl.ItemsPanel>
-                                                            <ItemsControl.ItemTemplate>
-                                                                <DataTemplate>
-                                                                    <!-- Чип устройства: имя · версия · статус, в режиме отвязки — с чекбоксом -->
-                                                                    <Border Background="{Binding Status, Converter={StaticResource OfficeStatusBadgeBg}}"
-                                                                            CornerRadius="{DynamicResource Radius.Md}"
-                                                                            Padding="{DynamicResource Pad.Chip}"
-                                                                            Margin="{DynamicResource Gap.InlineSm}"
-                                                                            ToolTip="{Binding ToolTipText}">
-                                                                        <StackPanel Orientation="Horizontal">
-                                                                            <CheckBox x:Name="DeviceUnbindCheck" Margin="{DynamicResource Gap.InlineSm}"
-                                                                                      Style="{StaticResource AdminDeviceCheckBox}"
-                                                                                      Visibility="{Binding Tag, ElementName=OfficesList, Converter={StaticResource UnbindModeToVisibility}}"
-                                                                                      IsChecked="{Binding IsChecked, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                                                                                      Checked="DeviceUnbindCheck_Changed" Unchecked="DeviceUnbindCheck_Changed"
-                                                                                      ToolTip="Отметить для отвязки"/>
-                                                                            <TextBlock Text="{Binding DeviceLabel}"
-                                                                                       FontSize="{StaticResource Type.Caption}" FontWeight="SemiBold"
-                                                                                       Foreground="{Binding Status, Converter={StaticResource OfficeStatusBadgeFg}}"
-                                                                                       VerticalAlignment="Center"/>
-                                                                            <TextBlock Text="{Binding Version}"
-                                                                                       FontSize="{StaticResource Type.Caption}" FontWeight="SemiBold"
-                                                                                       Foreground="{Binding Status, Converter={StaticResource OfficeStatusBadgeFg}}"
-                                                                                       Margin="{DynamicResource Gap.LeftSm}"
-                                                                                       VerticalAlignment="Center"/>
-                                                                            <TextBlock Text="{Binding StatusGlyph}"
-                                                                                       FontFamily="{DynamicResource Font.Icon}"
-                                                                                       FontSize="{StaticResource Type.Caption}" FontWeight="Bold"
-                                                                                       Foreground="{Binding Status, Converter={StaticResource OfficeStatusBadgeFg}}"
-                                                                                       Margin="{DynamicResource Gap.LeftSm}"
-                                                                                       VerticalAlignment="Center"/>
-                                                                            <!-- Давно не подтверждали локацию: «локация не подтверждена 62 дн.» -->
-                                                                            <TextBlock Text="{Binding LocationCheckHint}"
+                                                        </ItemsControl.Style>
+                                                        <ItemsControl.ItemsPanel>
+                                                            <ItemsPanelTemplate>
+                                                                <WrapPanel/>
+                                                            </ItemsPanelTemplate>
+                                                        </ItemsControl.ItemsPanel>
+                                                        <ItemsControl.ItemTemplate>
+                                                            <DataTemplate>
+                                                                <Border Background="{DynamicResource ChipBg}"
+                                                                        BorderBrush="{DynamicResource Border}"
+                                                                        BorderThickness="1"
+                                                                        CornerRadius="{DynamicResource Radius.Sm}"
+                                                                        Padding="{DynamicResource Pad.Control}"
+                                                                        Margin="{DynamicResource Gap.InlineSm}"
+                                                                        ToolTip="{Binding ToolTipText}">
+                                                                    <Border.Style>
+                                                                        <Style TargetType="Border">
+                                                                            <Style.Triggers>
+                                                                                <DataTrigger Binding="{Binding Status}" Value="UpToDate">
+                                                                                    <Setter Property="BorderBrush" Value="{DynamicResource Success}"/>
+                                                                                </DataTrigger>
+                                                                                <DataTrigger Binding="{Binding Status}" Value="Outdated">
+                                                                                    <Setter Property="BorderBrush" Value="{DynamicResource Warning}"/>
+                                                                                </DataTrigger>
+                                                                            </Style.Triggers>
+                                                                        </Style>
+                                                                    </Border.Style>
+                                                                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                                                        <CheckBox x:Name="DeviceUnbindCheck"
+                                                                                  Margin="{DynamicResource Gap.InlineSm}"
+                                                                                  Style="{StaticResource AdminDeviceCheckBox}"
+                                                                                  Visibility="{Binding Tag, ElementName=OfficesList, Converter={StaticResource UnbindModeToVisibility}}"
+                                                                                  IsChecked="{Binding IsChecked, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                                                                  Checked="DeviceUnbindCheck_Changed" Unchecked="DeviceUnbindCheck_Changed"
+                                                                                  ToolTip="Отметить для отвязки"/>
+                                                                        <TextBlock Text="&#xE7F8;" FontFamily="{DynamicResource Font.Icon}"
+                                                                                   FontSize="{StaticResource Type.Caption}"
+                                                                                   Foreground="{DynamicResource TextMuted}"
+                                                                                   VerticalAlignment="Center"
+                                                                                   Margin="{DynamicResource Gap.RightHair}"/>
+                                                                        <TextBlock Text="{Binding DeviceLabel}"
+                                                                                   FontSize="{StaticResource Type.Caption}" FontWeight="SemiBold"
+                                                                                   Foreground="{DynamicResource TextPrimary}"
+                                                                                   VerticalAlignment="Center"/>
+                                                                        <TextBlock Text="·"
+                                                                                   FontSize="{StaticResource Type.Caption}"
+                                                                                   Foreground="{DynamicResource TextMuted}"
+                                                                                   Margin="{DynamicResource Gap.InlineSm}"
+                                                                                   VerticalAlignment="Center"/>
+                                                                        <TextBlock Text="{Binding Version, StringFormat='v{0}'}"
+                                                                                   FontSize="{StaticResource Type.Caption}"
+                                                                                   Foreground="{DynamicResource TextSecondary}"
+                                                                                   VerticalAlignment="Center"/>
+                                                                        <TextBlock Text="{Binding StatusGlyph}"
+                                                                                   FontFamily="{DynamicResource Font.Icon}"
+                                                                                   FontSize="{StaticResource Type.Caption}" FontWeight="Bold"
+                                                                                   Foreground="{Binding Status, Converter={StaticResource OfficeStatusBadgeFg}}"
+                                                                                   Margin="{DynamicResource Gap.LeftSm}"
+                                                                                   VerticalAlignment="Center"/>
+                                                                        <!-- Location unconfirmed: compact pin icon badge instead of full 30-char text -->
+                                                                        <Border Background="{DynamicResource BadgeWarningBg}"
+                                                                                CornerRadius="{DynamicResource Radius.Sm}"
+                                                                                Padding="{DynamicResource Pad.Tiny}"
+                                                                                Margin="{DynamicResource Gap.LeftSm}"
+                                                                                VerticalAlignment="Center"
+                                                                                ToolTip="{Binding LocationCheckHint}">
+                                                                            <Border.Style>
+                                                                                <Style TargetType="Border">
+                                                                                    <Setter Property="Visibility" Value="Visible"/>
+                                                                                    <Style.Triggers>
+                                                                                        <DataTrigger Binding="{Binding LocationCheckHint}" Value="">
+                                                                                            <Setter Property="Visibility" Value="Collapsed"/>
+                                                                                        </DataTrigger>
+                                                                                    </Style.Triggers>
+                                                                                </Style>
+                                                                            </Border.Style>
+                                                                            <TextBlock Text="&#xE707;" FontFamily="{DynamicResource Font.Icon}"
                                                                                        FontSize="{StaticResource Type.Caption}"
-                                                                                       FontWeight="SemiBold"
                                                                                        Foreground="{DynamicResource Warning}"
-                                                                                       Margin="{DynamicResource Gap.LeftSm}"
-                                                                                       VerticalAlignment="Center">
-                                                                                <TextBlock.Style>
-                                                                                    <Style TargetType="TextBlock">
-                                                                                        <Style.Triggers>
-                                                                                            <DataTrigger Binding="{Binding LocationCheckHint}" Value="">
-                                                                                                <Setter Property="Visibility" Value="Collapsed"/>
-                                                                                                <Setter Property="Margin" Value="{DynamicResource Gap.None}"/>
-                                                                                            </DataTrigger>
-                                                                                        </Style.Triggers>
-                                                                                    </Style>
-                                                                                </TextBlock.Style>
-                                                                            </TextBlock>
-                                                                            <TextBlock Text="{Binding LastSeenHint}"
-                                                                                       FontSize="{StaticResource Type.Caption}"
-                                                                                       Foreground="{Binding Status, Converter={StaticResource OfficeStatusBadgeFg}}"
-                                                                                       Margin="{DynamicResource Gap.LeftSm}"
                                                                                        VerticalAlignment="Center"/>
-                                                                        </StackPanel>
-                                                                    </Border>
-                                                                </DataTemplate>
-                                                            </ItemsControl.ItemTemplate>
-                                                        </ItemsControl>
-                                                    </StackPanel>
+                                                                        </Border>
+                                                                        <!-- Accessible textual hint for screen readers and UI tests (collapsed visually for compact chips) -->
+                                                                        <TextBlock Text="{Binding LocationCheckHint}"
+                                                                                   Visibility="Collapsed"/>
+                                                                        <!-- Stale last seen hint -->
+                                                                        <TextBlock Text="{Binding LastSeenHint}"
+                                                                                   FontSize="{StaticResource Type.Caption}"
+                                                                                   Foreground="{DynamicResource TextMuted}"
+                                                                                   Margin="{DynamicResource Gap.LeftSm}"
+                                                                                   VerticalAlignment="Center"/>
+                                                                    </StackPanel>
+                                                                </Border>
+                                                            </DataTemplate>
+                                                        </ItemsControl.ItemTemplate>
+                                                    </ItemsControl>
                                                 </StackPanel>
                                             </Border>
                                         </Border>
