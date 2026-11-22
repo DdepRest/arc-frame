@@ -19,7 +19,7 @@
     <WindowChrome.WindowChrome>
         <WindowChrome CaptionHeight="40"
                       CornerRadius="{DynamicResource Radius.None}"
-                      GlassFrameThickness="0"
+                      GlassFrameThickness="1"
                       ResizeBorderThickness="6"
                       UseAeroCaptionButtons="False"/>
     </WindowChrome.WindowChrome>
@@ -147,7 +147,10 @@
         </Style>
     </Window.Resources>
 
-    <Grid Background="{DynamicResource AppBg}">
+    <Border x:Name="WindowBorder"
+            BorderBrush="{DynamicResource WindowBorderBrush}"
+            BorderThickness="1">
+        <Grid Background="{DynamicResource AppBg}">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>  <!-- Title bar -->
             <RowDefinition Height="Auto"/>  <!-- Периодическая проверка местоположения -->
@@ -512,7 +515,7 @@
                 <!-- OVERLAY: AI ASSISTANT                  -->
                 <!-- ══════════════════════════════════════════════════ -->
                 <Grid x:Name="AiOverlay" Visibility="Collapsed" Panel.ZIndex="15"
-                      HorizontalAlignment="Right" Width="480">
+                      HorizontalAlignment="Right" Width="380">
                     <Border x:Name="AiPanel"
                             Background="{DynamicResource Surface}"
                             BorderBrush="{DynamicResource Border}" BorderThickness="1,0,0,0">
@@ -789,4 +792,5 @@
               HorizontalAlignment="Stretch" VerticalAlignment="Stretch"
               ClipToBounds="True"/>
     </Grid>
+    </Border>
 </Window>

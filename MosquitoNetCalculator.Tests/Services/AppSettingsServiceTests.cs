@@ -284,5 +284,47 @@ namespace MosquitoNetCalculator.Tests.Services
             Assert.Null(AppSettingsService.LoadLocationSnoozeUntilUtc());
             Assert.Equal("2", AppSettingsService.LoadContractPrefix());
         }
+
+        [Fact]
+        public void UpdateDeferral_GetAndIncrement_TrackPerVersion()
+        {
+            Assert.Equal(0, AppSettingsService.GetUpdateDeferralCount("1.0.0"));
+            Assert.Equal(1, AppSettingsService.IncrementUpdateDeferral("1.0.0"));
+            Assert.Equal(2, AppSettingsService.IncrementUpdateDeferral("1.0.0"));
+            Assert.Equal(2, AppSettingsService.GetUpdateDeferralCount("1.0.0"));
+
+            // New version resets to 0
+            Assert.Equal(0, AppSettingsService.GetUpdateDeferralCount("1.1.0"));
+            Assert.Equal(1, AppSettingsService.IncrementUpdateDeferral("1.1.0"));
+        }
+
+        [Fact]
+        public void UpdateDeferral_Reset_SetsToZero()
+        {
+            AppSettingsService.IncrementUpdateDeferral("1.0.0");
+            AppSettingsService.IncrementUpdateDeferral("1.0.0");
+            Assert.Equal(2, AppSettingsService.LoadUpdateDeferralCount());
+
+            AppSettingsService.ResetUpdateDeferral();
+            Assert.Equal(0, AppSettingsService.LoadUpdateDeferralCount());
+        }
+
+        [Fact]
+        public void UpdateDeferral_Failure_ResetsCount_AndTriggersCooldown()
+        {
+            AppSettingsService.IncrementUpdateDeferral("1.0.0");
+            AppSettingsService.IncrementUpdateDeferral("1.0.0");
+            Assert.Equal(2, AppSettingsService.LoadUpdateDeferralCount());
+            Assert.False(AppSettingsService.IsUpdateInCooldown());
+
+            AppSettingsService.RecordUpdateFailure();
+
+            Assert.Equal(0, AppSettingsService.LoadUpdateDeferralCount());
+            Assert.True(AppSettingsService.IsUpdateInCooldown());
+
+            // 25 hours later, cooldown expired
+            AppSettingsService.SetUpdateLastErrorTimeUtc(DateTime.UtcNow.AddHours(-25));
+            Assert.False(AppSettingsService.IsUpdateInCooldown());
+        }
     }
 }

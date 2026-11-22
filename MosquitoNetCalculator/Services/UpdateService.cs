@@ -314,6 +314,55 @@ namespace MosquitoNetCalculator.Services
                 // Доступно обновление — фиксируем pending (на случай краша).
                 AppSettingsService.SavePendingUpdateVersion(release.Version);
 
+                // Тихое фоновое скачивание и проверка архива в %TEMP%\arc-update-{version}-ready.zip
+                string readyZip = Path.Combine(Path.GetTempPath(), $"arc-update-{release.Version}-ready.zip");
+                bool isReady = File.Exists(readyZip) &&
+                               !string.IsNullOrEmpty(release.Sha256) &&
+                               UpdateVerifier.VerifyHash(readyZip, release.Sha256);
+
+                if (!isReady)
+                {
+                    IsDownloading = true;
+                    DownloadProgress = 0;
+                    string tempZip = Path.Combine(Path.GetTempPath(),
+                        $"arc-update-{release.Version}-{Guid.NewGuid():N}.part");
+
+                    var (downloaded, downloadReason, _) = await TryDownloadAndVerifyAsync(
+                        release, tempZip, new Progress<int>(p => DownloadProgress = p), null)
+                        .ConfigureAwait(true);
+
+                    IsDownloading = false;
+
+                    if (!downloaded)
+                    {
+                        TryDelete(tempZip);
+                        AppSettingsService.RecordUpdateFailure(); // Fuse!
+                        Debug.WriteLine($"[UpdateService] Background download failed: {downloadReason}");
+                        return;
+                    }
+
+                    try
+                    {
+                        if (File.Exists(readyZip)) File.Delete(readyZip);
+                        File.Move(tempZip, readyZip);
+                    }
+                    catch
+                    {
+                        readyZip = tempZip;
+                    }
+                }
+
+                int deferralCount = AppSettingsService.GetUpdateDeferralCount(release.Version);
+                bool isForced = deferralCount >= 3 && !AppSettingsService.IsUpdateInCooldown();
+
+                // В принудительном режиме сразу открываем модальное окно установки
+                if (isForced)
+                {
+                    if (owner != null)
+                        _ = CheckAndApplyAsync(owner, isAutomatic: true);
+                    return;
+                }
+
                 // Плашку показываем только один раз на версию за сессию.
                 if (_lastNotifiedVersion == release.Version) return;
                 _lastNotifiedVersion = release.Version;
@@ -328,14 +377,14 @@ namespace MosquitoNetCalculator.Services
                     // следующий фоновый tick смог предложить установить снова.
                     _lastNotifiedVersion = null;
                     if (owner != null)
-                        _ = CheckAndApplyAsync(owner, isAutomatic: false);
+                        _ = CheckAndApplyAsync(owner, isAutomatic: true);
                 };
 
-                // onLater — пользователь сам решил не сейчас. Pending остаётся,
-                // плашка закрывается. При следующем tick-е того же релиза —
-                // плашка НЕ покажется (см. guard выше); покажется при выходе
-                // новой версии.
-                Action onLater = () => { /* pending уже сохранён */ };
+                // onLater — пользователь отложил обновление. Инкрементируем счётчик.
+                Action onLater = () =>
+                {
+                    AppSettingsService.IncrementUpdateDeferral(release.Version);
+                };
 
                 ToastService.ShowUpdateNotification(
                     version: release.Version,
@@ -365,8 +414,8 @@ namespace MosquitoNetCalculator.Services
         }
 
         /// <summary>
-        /// Silent background check on startup. If an update is available,
-        /// shows the update dialog automatically with changelog.
+        /// Silent background check on startup. Downloads update silently in background,
+        /// verifies SHA-256 integrity, and only then shows the installation dialog.
         /// Called from App.OnStartup after MainWindow is shown.
         /// </summary>
         public static async Task CheckOnStartupAsync()
@@ -374,7 +423,72 @@ namespace MosquitoNetCalculator.Services
             var owner = Application.Current?.MainWindow;
             if (owner == null) return;
 
-            await RunUpdateFlowAsync(owner, isAutomatic: true);
+            if (IsChecking) return;
+            IsChecking = true;
+            try
+            {
+                var fetch = await UpdateManifestClient.FetchManifestDiagnosticsAsync().ConfigureAwait(true);
+                var manifest = fetch.Manifest;
+                var release = GetAvailableUpdate(manifest, CurrentVersion);
+                if (release == null)
+                {
+                    AppSettingsService.SavePendingUpdateVersion(null);
+                    return;
+                }
+
+                AppSettingsService.SavePendingUpdateVersion(release.Version);
+
+                // Тихое фоновое скачивание и проверка архива в %TEMP%\arc-update-{version}-ready.zip
+                string readyZip = Path.Combine(Path.GetTempPath(), $"arc-update-{release.Version}-ready.zip");
+                bool isReady = File.Exists(readyZip) &&
+                               !string.IsNullOrEmpty(release.Sha256) &&
+                               UpdateVerifier.VerifyHash(readyZip, release.Sha256);
+
+                if (!isReady)
+                {
+                    IsDownloading = true;
+                    DownloadProgress = 0;
+                    string tempZip = Path.Combine(Path.GetTempPath(),
+                        $"arc-update-{release.Version}-{Guid.NewGuid():N}.part");
+
+                    var (downloaded, downloadReason, _) = await TryDownloadAndVerifyAsync(
+                        release, tempZip, new Progress<int>(p => DownloadProgress = p), null)
+                        .ConfigureAwait(true);
+
+                    IsDownloading = false;
+
+                    if (!downloaded)
+                    {
+                        TryDelete(tempZip);
+                        AppSettingsService.RecordUpdateFailure(); // Fuse!
+                        Debug.WriteLine($"[UpdateService] Startup background download failed: {downloadReason}");
+                        return;
+                    }
+
+                    try
+                    {
+                        if (File.Exists(readyZip)) File.Delete(readyZip);
+                        File.Move(tempZip, readyZip);
+                    }
+                    catch
+                    {
+                        readyZip = tempZip;
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"[UpdateService] Startup background check failed: {ex}");
+                return;
+            }
+            finally
+            {
+                IsChecking = false;
+                IsDownloading = false;
+            }
+
+            // После тихого скачивания запускаем диалог установки уже готового архива
+            await RunUpdateFlowAsync(owner, isAutomatic: true).ConfigureAwait(true);
         }
 
         /// <summary>
@@ -442,80 +556,92 @@ namespace MosquitoNetCalculator.Services
                     return;
                 }
 
-                // Phase 2: Confirm download with changelog
+                // Phase 2: Check deferrals and forced mode, then show install confirmation dialog
+                int deferralCount = AppSettingsService.GetUpdateDeferralCount(release.Version);
+                bool isForced = deferralCount >= 3 && !AppSettingsService.IsUpdateInCooldown();
+
                 var changelog = UpdateLog.GetChangesSince(CurrentVersion);
                 // ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░
                 // Dialog mock seam: tests inject ShowUpdateAvailableOverride to bypass
                 // WPF modal. Production path is unchanged when override is null.
                 // ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░
-                bool confirmed = ShowUpdateAvailableOverride?.Invoke(manifest!.Latest, changelog)
-                    ?? DialogService.ShowUpdateAvailable(manifest!.Latest, changelog, owner, isAutomatic);
+                bool confirmed = ShowUpdateAvailableOverride?.Invoke(release.Version, changelog)
+                    ?? DialogService.ShowUpdateAvailable(release.Version, changelog, owner, isAutomatic, isForced, deferralCount);
 
                 // Fire UpdateDetected as soon as the user ACCEPTS the dialog
-                // (gated by `confirmed` so cancel-and-defer doesn't spam the
-                // Updates tab). The mock used here mirrors CheckInBackgroundAsync:
-                // running binary can't see the next version's full changelog
-                // (encoded in its own embedded update-log.json), so we ship a
-                // stub. The Modal flow + the Background flow now agree on the
-                // same payload shape and same fire contract.
                 if (confirmed)
                 {
-                    FireUpdateDetected(CreateReleaseStub(manifest.Latest));
+                    FireUpdateDetected(CreateReleaseStub(release.Version));
                 }
                 else
                 {
-                    // User deferred — still save pending for next session.
-                    AppSettingsService.SavePendingUpdateVersion(manifest.Latest);
+                    // User deferred — increment deferral counter and save pending
+                    AppSettingsService.IncrementUpdateDeferral(release.Version);
+                    AppSettingsService.SavePendingUpdateVersion(release.Version);
                     return;
                 }
 
-                // Phase 3+4: Download with progress (основной канал, при сбое —
-                // запасной mirrorUrl из манифеста) и проверка SHA-256.
-                // Целостность проверяется по одному и тому же хешу манифеста
-                // независимо от канала, поэтому файл с зеркала безопасен ровно
-                // так же, как и файл с основного адреса.
-                IsDownloading = true;
-                DownloadProgress = 0;
+                // Phase 3: Silent background download & SHA-256 verification into %TEMP%\arc-update-{version}-ready.zip
+                // If background task already downloaded and verified the archive, use it directly!
+                string readyZip = Path.Combine(Path.GetTempPath(),
+                    $"arc-update-{release.Version}-ready.zip");
+                bool isReady = File.Exists(readyZip) &&
+                               !string.IsNullOrEmpty(release.Sha256) &&
+                               UpdateVerifier.VerifyHash(readyZip, release.Sha256);
 
-                string tempZip = Path.Combine(Path.GetTempPath(),
-                    $"arc-update-{manifest.Latest}-{Guid.NewGuid():N}.zip");
-
-                var (downloaded, downloadReason, mirrorTried) = await TryDownloadAndVerifyAsync(
-                    release, tempZip, new Progress<int>(p => DownloadProgress = p), httpClient)
-                    .ConfigureAwait(true);
-
-                if (!downloaded)
+                if (!isReady)
                 {
-                    TryDelete(tempZip);
-                    var reason = BuildDownloadFailureReason(mirrorTried, downloadReason);
-                    if (isAutomatic)
+                    IsDownloading = true;
+                    DownloadProgress = 0;
+
+                    string tempZip = Path.Combine(Path.GetTempPath(),
+                        $"arc-update-{release.Version}-{Guid.NewGuid():N}.part");
+
+                    var (downloaded, downloadReason, mirrorTried) = await TryDownloadAndVerifyAsync(
+                        release, tempZip, new Progress<int>(p => DownloadProgress = p), httpClient)
+                        .ConfigureAwait(true);
+
+                    IsDownloading = false;
+
+                    if (!downloaded)
                     {
-                        ToastService.ShowToast($"Не удалось скачать обновление: {reason}", ToastType.Error);
+                        TryDelete(tempZip);
+                        AppSettingsService.RecordUpdateFailure(); // Fuse!
+                        var reason = BuildDownloadFailureReason(mirrorTried, downloadReason);
+                        if (isAutomatic)
+                        {
+                            ToastService.ShowToast($"Не удалось скачать обновление: {reason}", ToastType.Error);
+                        }
+                        else
+                        {
+                            DialogService.ShowMessage(
+                                $"Не удалось скачать обновление:\n{reason}\n\nВы можете скачать архив вручную с GitHub Releases.",
+                                "Ошибка скачивания", owner);
+                        }
+                        return;
                     }
-                    else
+
+                    try
                     {
-                        DialogService.ShowMessage(
-                            $"Не удалось скачать обновление:\n{reason}",
-                            "Ошибка скачивания");
+                        if (File.Exists(readyZip)) File.Delete(readyZip);
+                        File.Move(tempZip, readyZip);
                     }
-                    return;
+                    catch
+                    {
+                        readyZip = tempZip;
+                    }
                 }
 
-                IsDownloading = false;
                 DownloadProgress = 100;
 
-                // Phase 5: Stage update and restart
+                // Phase 4: Stage update and restart
                 ToastService.ShowToast("Установка обновления...", ToastType.Info);
 
-                // Phase 5a (v3.48.0, Phase 2.A): PRE-FLIGHT — confirm write
-                // permissions to BOTH the staging (%AppData%) and target
-                // (BasePath) directories. Without this check, UAC-cancelled
-                // installs on Program Files silently spend 120 sec in the
-                // watchdog waiting for a write that will never happen.
                 var preflight = WatchdogService.PreFlightCheck();
                 if (!preflight.CanWriteInstallDir)
                 {
-                    TryDelete(tempZip);
+                    TryDelete(readyZip);
+                    AppSettingsService.RecordUpdateFailure(); // Fuse!
                     var reason = preflight.FailureReason ?? "Нет прав для установки обновления.";
                     if (isAutomatic)
                     {
@@ -525,15 +651,12 @@ namespace MosquitoNetCalculator.Services
                     {
                         DialogService.ShowMessage(
                             $"Не удалось установить обновление:\n{reason}",
-                            "Ошибка установки");
+                            "Ошибка установки", owner);
                     }
                     return;
                 }
 
-                // Stage update files only after we KNOW we can install —
-                // avoid leaving arc-stage-* orphans in %AppData% from a
-                // cancelled install.
-                WatchdogService.StageUpdate(tempZip);
+                WatchdogService.StageUpdate(readyZip);
 
                 // Phase 5b (v3.48.0, Phase 2.A): Launch watchdog .bat with
                 // UAC elevation. Win32Exception with native codes 1223/740/1313
@@ -576,6 +699,7 @@ namespace MosquitoNetCalculator.Services
                 if (!watchdogLaunched)
                 {
                     WatchdogService.CleanupStagedUpdate();
+                    AppSettingsService.RecordUpdateFailure(); // Fuse!
                     AppSettingsService.SavePendingUpdateVersion(release.Version);
                     if (isAutomatic)
                     {
@@ -587,13 +711,13 @@ namespace MosquitoNetCalculator.Services
                     {
                         DialogService.ShowMessage(
                             "Установка обновления отменена. Запустите программу с правами администратора или обратитесь к ответственному за установку.",
-                            "Отменено");
+                            "Отменено", owner);
                     }
                     return;
                 }
 
-                // Success path — clear pending state and reset session-level
-                // notification flag so next background tick can offer a new version.
+                // Success path — clear pending state, reset deferrals and session-level notification flag
+                AppSettingsService.ResetUpdateDeferral();
                 AppSettingsService.SavePendingUpdateVersion(null);
                 _lastNotifiedVersion = null;
                 Application.Current.Shutdown();
@@ -957,6 +1081,7 @@ namespace MosquitoNetCalculator.Services
             var preflight = WatchdogService.PreFlightCheck();
             if (!preflight.CanWriteInstallDir)
             {
+                AppSettingsService.RecordUpdateFailure(); // Fuse!
                 var reason = preflight.FailureReason ?? "Нет прав для установки обновления.";
                 DialogService.ShowMessage($"Не удалось установить обновление:\n{reason}", "Ошибка установки", owner);
                 return;
@@ -995,12 +1120,14 @@ namespace MosquitoNetCalculator.Services
                 if (!watchdogLaunched)
                 {
                     WatchdogService.CleanupStagedUpdate();
+                    AppSettingsService.RecordUpdateFailure(); // Fuse!
                     DialogService.ShowMessage(
                         "Установка обновления отменена. Для установки требуются права администратора.",
                         "Отменено", owner);
                     return;
                 }
 
+                AppSettingsService.ResetUpdateDeferral();
                 AppSettingsService.SavePendingUpdateVersion(null);
                 _lastNotifiedVersion = null;
                 Application.Current?.Shutdown();
@@ -1008,6 +1135,7 @@ namespace MosquitoNetCalculator.Services
             catch (Exception ex)
             {
                 WatchdogService.CleanupStagedUpdate();
+                AppSettingsService.RecordUpdateFailure(); // Fuse!
                 if (owner != null) DialogService.ShowMessage($"Не удалось выполнить обновление: {ex.Message}", "Ошибка", owner); else ToastService.ShowToast($"Не удалось выполнить обновление: {ex.Message}", ToastType.Error);
             }
         }

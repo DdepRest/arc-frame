@@ -205,9 +205,15 @@ namespace MosquitoNetCalculator.Services
         /// <paramref name="isAutomatic"/> controls whether the anti-recommend
         /// text is shown next to the "Отложить" button.
         /// </summary>
-        public static bool ShowUpdateAvailable(string version, IEnumerable<UpdateItem> changelog, Window? owner = null, bool isAutomatic = false)
+        public static bool ShowUpdateAvailable(
+            string version,
+            IEnumerable<UpdateItem> changelog,
+            Window? owner = null,
+            bool isAutomatic = false,
+            bool isForced = false,
+            int deferralCount = 0)
         {
-            var window = new UpdateAvailableWindow(version, changelog, isAutomatic) { Owner = owner };
+            var window = new UpdateAvailableWindow(version, changelog, isAutomatic, isForced, deferralCount) { Owner = owner };
             window.ShowDialog();
             return window.Accepted;
         }

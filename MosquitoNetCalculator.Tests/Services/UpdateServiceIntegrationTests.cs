@@ -977,6 +977,68 @@ namespace MosquitoNetCalculator.Tests.Services
             Assert.Equal(TestVersion, result.PendingAtEnd);
         }
 
+        [Fact]
+        public async Task RunUpdateFlowAsync_DeclinedUac_TriggersFuse_ResetsDeferralCount_AndSetsCooldown()
+        {
+            const string TestVersion = "999.0.5";
+            var originalSettingsPath = AppSettingsService.SettingsPath;
+            var tempSettingsPath = Path.Combine(Path.GetTempPath(), $"arc-settings-test-{Guid.NewGuid():N}.json");
+            AppSettingsService.SettingsPath = tempSettingsPath;
+            var originalDataDir = WatchdogService.UpdateDataDir;
+            var tempWatchdogDir = Path.Combine(Path.GetTempPath(), $"arc-watchdog-test-{Guid.NewGuid():N}");
+            WatchdogService.UpdateDataDir = tempWatchdogDir;
+
+            AppSettingsService.IncrementUpdateDeferral(TestVersion);
+            AppSettingsService.IncrementUpdateDeferral(TestVersion);
+            Assert.Equal(2, AppSettingsService.LoadUpdateDeferralCount());
+
+            var zipBytes = UacTestHelpers.CreateMinimalZipBytes();
+            var zipSha = UacTestHelpers.ComputeSha256Hex(zipBytes);
+            var manifest = new UpdateManifest
+            {
+                Latest = TestVersion,
+                Releases = new()
+                {
+                    new ReleaseInfo
+                    {
+                        Version = TestVersion,
+                        Url = "http://mock.test/uac-fuse-test.zip",
+                        Sha256 = zipSha
+                    }
+                }
+            };
+
+            var mockClient = CreateMockClient((req, ct) =>
+            {
+                var url = req.RequestUri?.ToString() ?? "";
+                if (url.Contains("releases.json"))
+                    return Task.FromResult(new HttpResponseMessage(HttpStatusCode.OK) { Content = new StringContent(JsonSerializer.Serialize(manifest)) });
+                if (url.Contains("uac-fuse-test.zip"))
+                    return Task.FromResult(new HttpResponseMessage(HttpStatusCode.OK) { Content = new ByteArrayContent(zipBytes) });
+                throw new InvalidOperationException($"Unexpected URL: {url}");
+            });
+
+            UpdateService.ShowUpdateAvailableOverride = (_, _) => true;
+            UpdateService.LaunchWatchdogForTest = _ => throw new System.ComponentModel.Win32Exception(1223, "ERROR_CANCELLED");
+
+            try
+            {
+                await UpdateService.RunUpdateFlowAsync(owner: null, isAutomatic: true, httpClient: mockClient);
+
+                Assert.Equal(0, AppSettingsService.LoadUpdateDeferralCount());
+                Assert.True(AppSettingsService.IsUpdateInCooldown());
+            }
+            finally
+            {
+                UpdateService.ShowUpdateAvailableOverride = null;
+                UpdateService.LaunchWatchdogForTest = null;
+                AppSettingsService.SettingsPath = originalSettingsPath;
+                WatchdogService.UpdateDataDir = originalDataDir;
+                if (File.Exists(tempSettingsPath)) File.Delete(tempSettingsPath);
+                try { if (Directory.Exists(tempWatchdogDir)) Directory.Delete(tempWatchdogDir, recursive: true); } catch { }
+            }
+        }
+
     }
 
     // ─── Helpers used by v3.48.0 UAC e2e test ──────────────────────────────────

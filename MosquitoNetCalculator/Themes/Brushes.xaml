@@ -56,6 +56,7 @@
     <SolidColorBrush x:Key="TrackBg"       Color="#D4D4D4"/>
     <SolidColorBrush x:Key="ScrollBarThumb" Color="#B0B0B0"/>
     <SolidColorBrush x:Key="SubtleBorder"  Color="#EBEBEB"/>
+    <SolidColorBrush x:Key="WindowBorderBrush" Color="#B8B8C4"/>
     <SolidColorBrush x:Key="DangerGhostBorder" Color="#F0C6CA"/>
     <SolidColorBrush x:Key="MenuItemPressed"   Color="#E8EDF5"/>
     <Color x:Key="ShadowColor">#1A1A1A</Color>

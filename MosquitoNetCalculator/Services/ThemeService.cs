@@ -324,6 +324,7 @@ namespace MosquitoNetCalculator.Services
             ["Border"]        = "#E0E0E8",
             ["BorderHover"]   = "#C0C0CC",
             ["SubtleBorder"]  = "#EEEEF2",
+            ["WindowBorderBrush"] = "#B8B8C4",
             // Синхронно с тёмной: разделитель должен читаться и на белом.
             ["GridLine"]      = "#E4E6EC",
             ["TrackBg"]       = "#E0E0E8",
@@ -447,6 +448,7 @@ namespace MosquitoNetCalculator.Services
             ["Border"]            = "#46464F",
             ["BorderHover"]       = "#5A5A64",
             ["SubtleBorder"]      = "#303035",
+            ["WindowBorderBrush"] = "#46464F",
             ["GridLine"]          = "#3A3A42",
             ["TrackBg"]           = "#2B2B30",
             ["ScrollBarThumb"]    = "#53535C",

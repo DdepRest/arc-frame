@@ -191,13 +191,22 @@ namespace MosquitoNetCalculator
         }
 
         /// <summary>
+        /// Pure logic: computes whether the screen working area is wide enough to dock
+        /// the separate AI window side-by-side with the main window.
+        /// </summary>
+        internal static bool CanFitAiWindowSideBySide(double screenWorkAreaWidth, double mainWindowWidth, double aiWindowWidth = 380, double spacing = 10)
+        {
+            return screenWorkAreaWidth >= (mainWindowWidth + aiWindowWidth + spacing);
+        }
+
+        /// <summary>
         /// Pure logic: computes the target Margin for CalculationView given the state of
         /// left navigation and whether AI is open in maximized mode.
         /// </summary>
         internal static Thickness ComputeCalculationViewTargetMargin(bool isNavExpanded, bool isAiOpenInMaximized)
         {
             double left = isNavExpanded ? 160 : 52;
-            double right = isAiOpenInMaximized ? 480 : 0;
+            double right = isAiOpenInMaximized ? 380 : 0;
             return new Thickness(left, 0, right, 0);
         }
 
@@ -240,7 +249,14 @@ namespace MosquitoNetCalculator
         /// </summary>
         private void OpenAiAssistant()
         {
-            if (WindowState == WindowState.Maximized)
+            var helper = new System.Windows.Interop.WindowInteropHelper(this);
+            var handle = helper.Handle == IntPtr.Zero ? helper.EnsureHandle() : helper.Handle;
+            var screen = System.Windows.Forms.Screen.FromHandle(handle);
+            double workAreaWidth = screen != null ? screen.WorkingArea.Width : SystemParameters.WorkArea.Width;
+            double currentWidth = ActualWidth > 0 ? ActualWidth : Width;
+            bool canFitSideBySide = CanFitAiWindowSideBySide(workAreaWidth, currentWidth, 380, 10);
+
+            if (WindowState == WindowState.Maximized || !canFitSideBySide)
             {
                 CloseAllOverlays();
                 ToastService.RegisterCanvas(ToastService.AiScope, AiAssistantControl.ToastCanvas);
@@ -250,7 +266,7 @@ namespace MosquitoNetCalculator
                 if (AiSlideTransform != null)
                 {
                     AiSlideTransform.BeginAnimation(TranslateTransform.XProperty, null);
-                    var slideAnim = new DoubleAnimation(480, 0, Motion.Slow)
+                    var slideAnim = new DoubleAnimation(380, 0, Motion.Slow)
                     {
                         EasingFunction = new CubicEase { EasingMode = EasingMode.EaseOut }
                     };
@@ -388,7 +404,7 @@ namespace MosquitoNetCalculator
 
                 if (AiSlideTransform != null)
                 {
-                    var slideOut = new DoubleAnimation(480, Motion.Base)
+                    var slideOut = new DoubleAnimation(380, Motion.Base)
                     {
                         EasingFunction = new CubicEase { EasingMode = EasingMode.EaseIn }
                     };
@@ -450,8 +466,15 @@ namespace MosquitoNetCalculator
             // ShowDockedAiWindow / OpenAiAssistant re-registers cleanly.
             ToastService.UnregisterCanvas(ToastService.AiScope);
 
+            var helper = new System.Windows.Interop.WindowInteropHelper(this);
+            var handle = helper.Handle == IntPtr.Zero ? helper.EnsureHandle() : helper.Handle;
+            var screen = System.Windows.Forms.Screen.FromHandle(handle);
+            double workAreaWidth = screen != null ? screen.WorkingArea.Width : SystemParameters.WorkArea.Width;
+            double currentWidth = ActualWidth > 0 ? ActualWidth : Width;
+            bool canFitSideBySide = CanFitAiWindowSideBySide(workAreaWidth, currentWidth, 380, 10);
+
             // Show the mode matching the new state.
-            if (WindowState == WindowState.Maximized)
+            if (WindowState == WindowState.Maximized || !canFitSideBySide)
             {
                 ToastService.RegisterCanvas(ToastService.AiScope, AiAssistantControl.ToastCanvas);
                 AiOverlay.Visibility = Visibility.Visible;

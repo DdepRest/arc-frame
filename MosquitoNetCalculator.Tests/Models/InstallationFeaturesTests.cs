@@ -9,6 +9,7 @@ using Xunit;
 
 namespace MosquitoNetCalculator.Tests.Models
 {
+    [Collection("FileSystem")]
     public class InstallationFeaturesTests : IDisposable
     {
         private readonly string _tempSettingsDir;

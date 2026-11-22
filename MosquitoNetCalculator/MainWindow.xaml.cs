@@ -343,6 +343,7 @@ namespace MosquitoNetCalculator
             {
                 if (TitleBarControl.MaxIcon != null)
                     TitleBarControl.MaxIcon.Text = WindowState == WindowState.Maximized ? "\uE923" : "\uE739";
+                UpdateWindowBorderThickness();
             };
 
             // NavigationView badge refresh timer
@@ -351,6 +352,17 @@ namespace MosquitoNetCalculator
             // ── Phase 1: initialize extracted services ──────────────────
             InitializeServices();
             InitAiAssistant();
+            UpdateWindowBorderThickness();
+        }
+
+        internal void UpdateWindowBorderThickness()
+        {
+            if (WindowBorder != null)
+            {
+                WindowBorder.BorderThickness = WindowState == WindowState.Maximized
+                    ? new Thickness(0)
+                    : new Thickness(1);
+            }
         }
 
         // ═══════════════════════════════════════════════════════════════

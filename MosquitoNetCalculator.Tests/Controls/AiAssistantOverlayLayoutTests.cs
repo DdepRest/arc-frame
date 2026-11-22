@@ -11,8 +11,8 @@ namespace MosquitoNetCalculator.Tests.Controls
         [Theory]
         [InlineData(true, false, 160, 0)]
         [InlineData(false, false, 52, 0)]
-        [InlineData(true, true, 160, 480)]
-        [InlineData(false, true, 52, 480)]
+        [InlineData(true, true, 160, 380)]
+        [InlineData(false, true, 52, 380)]
         public void ComputeCalculationViewTargetMargin_ComputesExpectedThickness(
             bool isNavExpanded, bool isAiOpenInMaximized, double expectedLeft, double expectedRight)
         {
@@ -24,14 +24,26 @@ namespace MosquitoNetCalculator.Tests.Controls
             Assert.Equal(0, margin.Bottom);
         }
 
+        [Theory]
+        [InlineData(1920, 1000, 380, 10, true)]
+        [InlineData(1390, 1000, 380, 10, true)]
+        [InlineData(1389, 1000, 380, 10, false)]
+        [InlineData(1280, 1000, 380, 10, false)]
+        public void CanFitAiWindowSideBySide_ChecksAvailableWidthCorrectly(
+            double screenWidth, double mainWidth, double aiWidth, double spacing, bool expected)
+        {
+            bool fits = MainWindow.CanFitAiWindowSideBySide(screenWidth, mainWidth, aiWidth, spacing);
+            Assert.Equal(expected, fits);
+        }
+
         [Fact]
         public void MainWindowXaml_AiOverlay_IsRightDocked_HasSlideTransform_AndNoBlockingBackdrop()
         {
             var xaml = File.ReadAllText(LocateSource("MainWindow.xaml"));
 
-            // AiOverlay must be constrained to the right edge with width 480
+            // AiOverlay must be constrained to the right edge with width 380
             Assert.Contains("x:Name=\"AiOverlay\"", xaml);
-            Assert.Contains("HorizontalAlignment=\"Right\" Width=\"480\"", xaml);
+            Assert.Contains("HorizontalAlignment=\"Right\" Width=\"380\"", xaml);
 
             // AiBackdrop was removed so it does not block mouse clicks over CalculationView
             Assert.DoesNotContain("x:Name=\"AiBackdrop\"", xaml);

@@ -87,6 +87,9 @@ namespace MosquitoNetCalculator.Services
             public bool TemplateAutoSplitMode { get; set; } = true;
             // Версия, для которой было выполнено единоразовое подтверждение офиса.
             public string? OfficePromptConfirmedVersion { get; set; }
+            public int UpdateDeferralCount { get; set; } = 0;
+            public string? UpdateDeferralVersion { get; set; }
+            public DateTime? UpdateLastErrorTimeUtc { get; set; }
         }
 
         private static Settings LoadSettings()
@@ -274,6 +277,116 @@ namespace MosquitoNetCalculator.Services
             {
                 var settings = LoadSettings();
                 settings.PendingUpdateVersion = version;
+                SaveSettings(settings);
+            }
+        }
+
+        /// <summary>
+        /// Возвращает число откладываний для указанной версии.
+        /// Если версия сменилась по сравнению с сохранённой, счётчик сбрасывается в 0.
+        /// </summary>
+        public static int GetUpdateDeferralCount(string version)
+        {
+            lock (_lock)
+            {
+                var settings = LoadSettings();
+                if (settings.UpdateDeferralVersion != version)
+                {
+                    settings.UpdateDeferralVersion = version;
+                    settings.UpdateDeferralCount = 0;
+                    SaveSettings(settings);
+                }
+                return settings.UpdateDeferralCount;
+            }
+        }
+
+        /// <summary>
+        /// Инкрементирует счётчик откладываний для указанной версии и возвращает новое значение.
+        /// Если версия сменилась, счётчик предварительно сбрасывается в 0.
+        /// </summary>
+        public static int IncrementUpdateDeferral(string version)
+        {
+            lock (_lock)
+            {
+                var settings = LoadSettings();
+                if (settings.UpdateDeferralVersion != version)
+                {
+                    settings.UpdateDeferralVersion = version;
+                    settings.UpdateDeferralCount = 0;
+                }
+                settings.UpdateDeferralCount++;
+                SaveSettings(settings);
+                return settings.UpdateDeferralCount;
+            }
+        }
+
+        /// <summary>
+        /// Сбрасывает счётчик откладываний обновления в 0.
+        /// </summary>
+        public static void ResetUpdateDeferral()
+        {
+            lock (_lock)
+            {
+                var settings = LoadSettings();
+                settings.UpdateDeferralCount = 0;
+                SaveSettings(settings);
+            }
+        }
+
+        /// <summary>
+        /// Фиксирует сбой обновления (предохранитель): сбрасывает счётчик откладываний в 0
+        /// и устанавливает метку времени последнего сбоя в UTC.
+        /// </summary>
+        public static void RecordUpdateFailure()
+        {
+            lock (_lock)
+            {
+                var settings = LoadSettings();
+                settings.UpdateDeferralCount = 0;
+                settings.UpdateLastErrorTimeUtc = DateTime.UtcNow;
+                SaveSettings(settings);
+            }
+        }
+
+        /// <summary>
+        /// Проверяет, находится ли обновление в режиме кулдауна (24 часа с момента последнего сбоя).
+        /// </summary>
+        public static bool IsUpdateInCooldown()
+        {
+            lock (_lock)
+            {
+                var settings = LoadSettings();
+                if (!settings.UpdateLastErrorTimeUtc.HasValue)
+                    return false;
+                return (DateTime.UtcNow - settings.UpdateLastErrorTimeUtc.Value) < TimeSpan.FromHours(24);
+            }
+        }
+
+        /// <summary>Для тестов: чтение текущего счётчика откладываний.</summary>
+        public static int LoadUpdateDeferralCount()
+        {
+            lock (_lock) { return LoadSettings().UpdateDeferralCount; }
+        }
+
+        /// <summary>Для тестов: чтение версии, для которой велся подсчёт откладываний.</summary>
+        public static string? LoadUpdateDeferralVersion()
+        {
+            lock (_lock) { return LoadSettings().UpdateDeferralVersion; }
+        }
+
+        /// <summary>Для тестов: чтение времени последней ошибки обновления.</summary>
+        public static DateTime? LoadUpdateLastErrorTimeUtc()
+        {
+            lock (_lock) { return LoadSettings().UpdateLastErrorTimeUtc; }
+        }
+
+        /// <summary>Для тестов: ручная установка времени ошибки обновления.</summary>
+        public static void SetUpdateLastErrorTimeUtc(DateTime? time)
+        {
+            lock (_lock)
+            {
+                var settings = LoadSettings();
+                settings.UpdateLastErrorTimeUtc = time;
                 SaveSettings(settings);
             }
         }

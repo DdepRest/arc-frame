@@ -31,10 +31,12 @@
             <Grid>
             <Grid.RowDefinitions>
                 <RowDefinition Height="Auto"/>  <!-- Title bar -->
+                <RowDefinition Height="Auto"/>  <!-- Forced update badge -->
                 <RowDefinition Height="Auto"/>  <!-- Version badge -->
                 <RowDefinition Height="Auto"/>  <!-- Changelog -->
+                <RowDefinition Height="Auto"/>  <!-- Manual update block -->
                 <RowDefinition Height="Auto"/>  <!-- Hint -->
-                <RowDefinition Height="Auto"/>  <!-- Buttons -->
+                <RowDefinition Height="Auto"/>  <!-- Buttons & Deferral chips -->
             </Grid.RowDefinitions>
 
             <!-- Title bar -->
@@ -55,8 +57,8 @@
                                Foreground="{DynamicResource TextPrimary}"
                                VerticalAlignment="Center"
                                HorizontalAlignment="Left"/>
-                    <!-- UX-14: shared DialogCloseButton (was a private 60-line copy) -->
-                    <Button Grid.Column="1"
+                    <Button x:Name="BtnClose"
+                            Grid.Column="1"
                             Width="32" Height="32"
                             Style="{DynamicResource DialogCloseButton}"
                             Click="CloseButton_Click">
@@ -65,8 +67,27 @@
                 </Grid>
             </Border>
 
+            <!-- Forced warning badge -->
+            <Border x:Name="ForcedBadge"
+                    Grid.Row="1"
+                    Background="{DynamicResource BadgeDangerBg}"
+                    BorderBrush="{DynamicResource Danger}"
+                    BorderThickness="1"
+                    CornerRadius="{DynamicResource Radius.Md}"
+                    Padding="{DynamicResource Pad.DialogBanner}"
+                    HorizontalAlignment="Stretch"
+                    Margin="{DynamicResource Gap.DialogBanner}"
+                    Visibility="Collapsed">
+                <TextBlock Text="🔒 Обязательное обновление: лимит откладываний (3 из 3) исчерпан. Для продолжения работы требуется установка обновления."
+                           FontSize="{StaticResource Type.Caption}"
+                           FontWeight="SemiBold"
+                           Foreground="{DynamicResource Danger}"
+                           TextWrapping="Wrap"
+                           VerticalAlignment="Center"/>
+            </Border>
+
             <!-- Version badge -->
-            <Border Grid.Row="1"
+            <Border Grid.Row="2"
                     Background="{DynamicResource Accent}"
                     CornerRadius="{DynamicResource Radius.Md}"
                     Padding="{DynamicResource Pad.DialogBanner}"
@@ -80,7 +101,7 @@
 
             <!-- Changelog -->
             <ScrollViewer x:Name="ChangelogScroll"
-                          Grid.Row="2"
+                          Grid.Row="3"
                           MaxHeight="220"
                           VerticalScrollBarVisibility="Auto"
                           HorizontalScrollBarVisibility="Disabled"
@@ -89,7 +110,7 @@
             </ScrollViewer>
 
             <TextBlock x:Name="NoChangelogText"
-                       Grid.Row="2"
+                       Grid.Row="3"
                        Text="Список изменений недоступен."
                        FontSize="{StaticResource Type.Body}"
                        Foreground="{DynamicResource TextMuted}"
@@ -97,60 +118,100 @@
                        Margin="{DynamicResource Gap.DialogBanner}"
                        Visibility="Collapsed"/>
 
+            <!-- Manual update block -->
+            <StackPanel Grid.Row="4"
+                        Orientation="Horizontal"
+                        VerticalAlignment="Center"
+                        Margin="{DynamicResource Gap.DialogBanner}">
+                <Button x:Name="BtnManualArchive"
+                        Content="Выбрать ZIP-архив вручную..."
+                        Style="{DynamicResource GhostButton}"
+                        Padding="{DynamicResource Pad.DialogBtn}"
+                        FontSize="{StaticResource Type.Caption}"
+                        FontWeight="Normal"
+                        Cursor="Hand"
+                        Click="BtnManualArchive_Click"/>
+                <TextBlock VerticalAlignment="Center" Margin="{DynamicResource Gap.Left}">
+                    <Hyperlink x:Name="LnkGitHubReleases"
+                               Foreground="{DynamicResource AccentText}"
+                               FontSize="{StaticResource Type.Caption}"
+                               Click="LnkGitHubReleases_Click">
+                        GitHub Releases
+                    </Hyperlink>
+                </TextBlock>
+            </StackPanel>
+
             <!-- Hint -->
-            <TextBlock Grid.Row="3"
+            <TextBlock Grid.Row="5"
                        Text="Приложение будет перезапущено после установки."
                        FontSize="{StaticResource Type.Body}"
                        Foreground="{DynamicResource TextMuted}"
                        TextWrapping="Wrap"
                        Margin="{DynamicResource Gap.EconomyDialog}"/>
 
-            <!-- Buttons -->
-            <StackPanel Grid.Row="4"
-                        Orientation="Horizontal"
-                        HorizontalAlignment="Right"
-                        Margin="{DynamicResource Gap.DialogFooterLg}">
-                <Button x:Name="BtnCancel"
-                        Content="Отмена"
-                        Style="{DynamicResource GhostButton}"
-                        MinWidth="90"
-                        Padding="{DynamicResource Pad.DialogBtn}"
-                        Margin="{DynamicResource Gap.Left}"
-                        FontSize="{StaticResource Type.Body}"
-                        FontWeight="Normal"
-                        Cursor="Hand"
-                        IsCancel="True"
-                        Click="BtnCancel_Click"/>
-                <StackPanel x:Name="DeferHintPanel"
+            <!-- Buttons & Deferral Indicator -->
+            <Grid Grid.Row="6" Margin="{DynamicResource Gap.DialogFooterLg}">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+
+                <!-- Deferral Chips & Warning Text -->
+                <StackPanel x:Name="DeferralPanel"
+                            Grid.Column="0"
                             Orientation="Vertical"
                             VerticalAlignment="Center"
-                            Margin="{DynamicResource Gap.LeftSm}"
+                            HorizontalAlignment="Left"
+                            ToolTip="Обновление можно отложить не более 3 раз. На 4-й раз установка станет обязательной."
                             Visibility="Collapsed">
-                    <TextBlock Text="Не рекомендуется откладывать"
+                    <StackPanel Orientation="Horizontal" Margin="{DynamicResource Gap.BlockSm}">
+                        <Border x:Name="Chip1" Width="24" Height="6"
+                                CornerRadius="{DynamicResource Radius.CapsuleSm}"
+                                Background="{DynamicResource SubtleBorder}"
+                                Margin="{DynamicResource Gap.RightSm}"/>
+                        <Border x:Name="Chip2" Width="24" Height="6"
+                                CornerRadius="{DynamicResource Radius.CapsuleSm}"
+                                Background="{DynamicResource SubtleBorder}"
+                                Margin="{DynamicResource Gap.RightSm}"/>
+                        <Border x:Name="Chip3" Width="24" Height="6"
+                                CornerRadius="{DynamicResource Radius.CapsuleSm}"
+                                Background="{DynamicResource SubtleBorder}"/>
+                    </StackPanel>
+                    <TextBlock x:Name="DeferralText"
+                               Text="Отложено: 0 из 3. Осталось 3"
                                FontSize="{StaticResource Type.Caption}"
-                               FontStyle="Italic"
-                               Foreground="{DynamicResource TextMuted}"
-                               TextWrapping="Wrap"
-                               MaxWidth="140"/>
-                    <TextBlock Text="обновление надолго"
-                               FontSize="{StaticResource Type.Caption}"
-                               FontStyle="Italic"
-                               Foreground="{DynamicResource TextMuted}"
-                               TextWrapping="Wrap"
-                               MaxWidth="140"/>
+                               Foreground="{DynamicResource TextMuted}"/>
                 </StackPanel>
-                <Button x:Name="BtnDownload"
-                        Content="Скачать и установить"
-                        Style="{DynamicResource SuccessButton}"
-                        MinWidth="150"
-                        Padding="{DynamicResource Pad.DialogBtn}"
-                        Margin="{DynamicResource Gap.Left}"
-                        FontSize="{StaticResource Type.Body}"
-                        FontWeight="SemiBold"
-                        Cursor="Hand"
-                        IsDefault="True"
-                        Click="BtnDownload_Click"/>
-            </StackPanel>
+
+                <StackPanel Grid.Column="1"
+                            Orientation="Horizontal"
+                            HorizontalAlignment="Right"
+                            VerticalAlignment="Center">
+                    <Button x:Name="BtnCancel"
+                            Content="Отложить"
+                            Style="{DynamicResource GhostButton}"
+                            MinWidth="90"
+                            Padding="{DynamicResource Pad.DialogBtn}"
+                            Margin="{DynamicResource Gap.Left}"
+                            FontSize="{StaticResource Type.Body}"
+                            FontWeight="Normal"
+                            Cursor="Hand"
+                            ToolTip="Обновление можно отложить не более 3 раз. На 4-й раз установка станет обязательной."
+                            IsCancel="True"
+                            Click="BtnCancel_Click"/>
+                    <Button x:Name="BtnDownload"
+                            Content="Скачать и установить"
+                            Style="{DynamicResource SuccessButton}"
+                            MinWidth="150"
+                            Padding="{DynamicResource Pad.DialogBtn}"
+                            Margin="{DynamicResource Gap.Left}"
+                            FontSize="{StaticResource Type.Body}"
+                            FontWeight="SemiBold"
+                            Cursor="Hand"
+                            IsDefault="True"
+                            Click="BtnDownload_Click"/>
+                </StackPanel>
+            </Grid>
         </Grid>
     </Border>
     </Grid>
