@@ -25,14 +25,14 @@ namespace MosquitoNetCalculator.Tests.Controls
         }
 
         [Theory]
-        [InlineData(1920, 1000, 380, 10, true)]
-        [InlineData(1390, 1000, 380, 10, true)]
-        [InlineData(1389, 1000, 380, 10, false)]
-        [InlineData(1280, 1000, 380, 10, false)]
+        [InlineData(1920, 1000, 0, 0, 380, 10, true)]
+        [InlineData(1920, 1000, 600, 0, 380, 10, true)] // 600 + 1000 + 380 = 1980 > 1920, but center fits (left = (1920-1380)/2 = 270)
+        [InlineData(1390, 1000, 0, 0, 380, 10, false)] // < 1440px work area threshold -> always uses in-window overlay
+        [InlineData(1280, 1000, 0, 0, 380, 10, false)]
         public void CanFitAiWindowSideBySide_ChecksAvailableWidthCorrectly(
-            double screenWidth, double mainWidth, double aiWidth, double spacing, bool expected)
+            double screenWidth, double mainWidth, double mainLeft, double screenLeft, double aiWidth, double spacing, bool expected)
         {
-            bool fits = MainWindow.CanFitAiWindowSideBySide(screenWidth, mainWidth, aiWidth, spacing);
+            bool fits = MainWindow.CanFitAiWindowSideBySide(screenWidth, mainWidth, mainLeft, screenLeft, aiWidth, spacing);
             Assert.Equal(expected, fits);
         }
 

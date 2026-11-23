@@ -597,10 +597,16 @@ namespace MosquitoNetCalculator.Services
         private static bool _isAdminSessionUnlocked;
 
         /// <summary>
-        /// Флаг успешной проверки пароля администратора в текущем сеансе работы приложения.
-        /// Сбрасывается при перезапуске программы.
+        /// Возвращает true, если запущен режим разработки (переменная среды ARC_DEV_MODE=1, dev.bat).
         /// </summary>
-        public static bool IsAdminUnlocked => _isAdminSessionUnlocked;
+        public static bool IsDevMode =>
+            string.Equals(Environment.GetEnvironmentVariable("ARC_DEV_MODE"), "1", StringComparison.OrdinalIgnoreCase);
+
+        /// <summary>
+        /// Флаг успешной проверки пароля администратора в текущем сеансе работы приложения.
+        /// Сбрасывается при перезапуске программы. В режиме разработки (ARC_DEV_MODE=1) всегда true.
+        /// </summary>
+        public static bool IsAdminUnlocked => IsDevMode || _isAdminSessionUnlocked;
 
         /// <summary>
         /// Помечает сессию администратора как авторизованную (действует до закрытия приложения).
@@ -614,11 +620,11 @@ namespace MosquitoNetCalculator.Services
 
         /// <summary>
         /// Запрашивает пароль администратора только если сессия ещё не авторизована.
-        /// Возвращает true, если доступ разрешён (уже введён ранее или успешно подтверждён сейчас).
+        /// Возвращает true, если доступ разрешён (уже введён ранее, запущен dev-режим или успешно подтверждён сейчас).
         /// </summary>
         public static bool EnsureAdminUnlocked(System.Windows.Window? owner = null)
         {
-            if (_isAdminSessionUnlocked) return true;
+            if (IsDevMode || _isAdminSessionUnlocked) return true;
 
             var enterDialog = new Controls.AdminPasswordWindow { Owner = owner };
             if (enterDialog.ShowDialog() == true)

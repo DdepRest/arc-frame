@@ -8,6 +8,7 @@ echo ============================================
 echo  Source: %CD%
 echo.
 
+set "ARC_DEV_MODE=1"
 set "APPDATA_AI=%APPDATA%\MosquitoNetCalculator\ai-settings.json"
 set "LOCAL_AI=%~dp0ai-settings.local.json"
 

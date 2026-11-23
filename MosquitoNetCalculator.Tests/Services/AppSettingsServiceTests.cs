@@ -181,17 +181,32 @@ namespace MosquitoNetCalculator.Tests.Services
         [Fact]
         public void AdminSession_UnlockAndReset_TracksSessionState()
         {
-            AppSettingsService.ResetAdminSession();
-            Assert.False(AppSettingsService.IsAdminUnlocked);
+            var oldDev = Environment.GetEnvironmentVariable("ARC_DEV_MODE");
+            try
+            {
+                Environment.SetEnvironmentVariable("ARC_DEV_MODE", null);
+                AppSettingsService.ResetAdminSession();
+                Assert.False(AppSettingsService.IsAdminUnlocked);
 
-            AppSettingsService.UnlockAdminSession();
-            Assert.True(AppSettingsService.IsAdminUnlocked);
+                AppSettingsService.UnlockAdminSession();
+                Assert.True(AppSettingsService.IsAdminUnlocked);
 
-            // EnsureAdminUnlocked returns true immediately when already unlocked without dialog
-            Assert.True(AppSettingsService.EnsureAdminUnlocked(null));
+                // EnsureAdminUnlocked returns true immediately when already unlocked without dialog
+                Assert.True(AppSettingsService.EnsureAdminUnlocked(null));
 
-            AppSettingsService.ResetAdminSession();
-            Assert.False(AppSettingsService.IsAdminUnlocked);
+                AppSettingsService.ResetAdminSession();
+                Assert.False(AppSettingsService.IsAdminUnlocked);
+
+                // In Dev Mode (ARC_DEV_MODE=1), admin is automatically unlocked
+                Environment.SetEnvironmentVariable("ARC_DEV_MODE", "1");
+                Assert.True(AppSettingsService.IsAdminUnlocked);
+                Assert.True(AppSettingsService.EnsureAdminUnlocked(null));
+            }
+            finally
+            {
+                Environment.SetEnvironmentVariable("ARC_DEV_MODE", oldDev);
+                AppSettingsService.ResetAdminSession();
+            }
         }
 
         // ─────────────────────────────────────────────────────────

@@ -191,12 +191,37 @@ namespace MosquitoNetCalculator
         }
 
         /// <summary>
-        /// Pure logic: computes whether the screen working area is wide enough to dock
-        /// the separate AI window side-by-side with the main window.
+        /// Pure logic: computes whether the separate AI window can fit docked to the right of the
+        /// main window without overlapping it or being clipped off-screen.
+        /// When windowed, checks both total work area width AND whether the window has sufficient
+        /// room to its right (or can be shifted safely without pushing either window out of view).
         /// </summary>
-        internal static bool CanFitAiWindowSideBySide(double screenWorkAreaWidth, double mainWindowWidth, double aiWindowWidth = 380, double spacing = 10)
+        internal static bool CanFitAiWindowSideBySide(
+            double screenWorkAreaWidth,
+            double mainWindowWidth,
+            double mainWindowLeft = 0,
+            double screenLeft = 0,
+            double aiWindowWidth = 380,
+            double spacing = 10)
         {
-            return screenWorkAreaWidth >= (mainWindowWidth + aiWindowWidth + spacing);
+            // 1. Overall screen capacity: work area must be large enough for both windows + margins.
+            if (screenWorkAreaWidth < (mainWindowWidth + aiWindowWidth + spacing))
+                return false;
+
+            // 2. Minimum screen width guard: on small displays (≤1366px), always prefer in-window overlay.
+            if (screenWorkAreaWidth < 1440)
+                return false;
+
+            // 3. Right-side clearance: if mainWindowLeft is known, check if right edge + dock fits within screenRight.
+            double screenRight = screenLeft + screenWorkAreaWidth;
+            double neededRight = mainWindowLeft + mainWindowWidth + aiWindowWidth;
+            if (neededRight <= screenRight)
+                return true;
+
+            // 4. Centering feasibility: if not fitting flush right, can both fit centered on the screen?
+            double centeredLeft = ComputeCenteredGroupLeft(screenLeft, screenRight, mainWindowWidth, aiWindowWidth);
+            double dockedAiLeft = centeredLeft + mainWindowWidth;
+            return (dockedAiLeft + aiWindowWidth <= screenRight) && (centeredLeft >= screenLeft);
         }
 
         /// <summary>
@@ -253,8 +278,10 @@ namespace MosquitoNetCalculator
             var handle = helper.Handle == IntPtr.Zero ? helper.EnsureHandle() : helper.Handle;
             var screen = System.Windows.Forms.Screen.FromHandle(handle);
             double workAreaWidth = screen != null ? screen.WorkingArea.Width : SystemParameters.WorkArea.Width;
+            double screenLeft = screen != null ? screen.WorkingArea.Left : SystemParameters.WorkArea.Left;
             double currentWidth = ActualWidth > 0 ? ActualWidth : Width;
-            bool canFitSideBySide = CanFitAiWindowSideBySide(workAreaWidth, currentWidth, 380, 10);
+            bool canFitSideBySide = CanFitAiWindowSideBySide(
+                workAreaWidth, currentWidth, Left, screenLeft, 380, 10);
 
             if (WindowState == WindowState.Maximized || !canFitSideBySide)
             {
@@ -470,8 +497,10 @@ namespace MosquitoNetCalculator
             var handle = helper.Handle == IntPtr.Zero ? helper.EnsureHandle() : helper.Handle;
             var screen = System.Windows.Forms.Screen.FromHandle(handle);
             double workAreaWidth = screen != null ? screen.WorkingArea.Width : SystemParameters.WorkArea.Width;
+            double screenLeft = screen != null ? screen.WorkingArea.Left : SystemParameters.WorkArea.Left;
             double currentWidth = ActualWidth > 0 ? ActualWidth : Width;
-            bool canFitSideBySide = CanFitAiWindowSideBySide(workAreaWidth, currentWidth, 380, 10);
+            bool canFitSideBySide = CanFitAiWindowSideBySide(
+                workAreaWidth, currentWidth, Left, screenLeft, 380, 10);
 
             // Show the mode matching the new state.
             if (WindowState == WindowState.Maximized || !canFitSideBySide)
